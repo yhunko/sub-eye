@@ -1,10 +1,24 @@
-import { DashboardNavbar } from "@/features/dashboard/ui/dashboard-navbar";
+import { DashboardNavbar } from "@/features/dashboard";
+import { subscriptionsQueryKeys } from "@/entities/subscription";
+import { getQueryClient } from "@/shared/lib/react-query";
+import { getSubscriptions } from "@/entities/subscription/api/actions";
+import { dehydrate } from "@tanstack/query-core";
+import { HydrationBoundary } from "@tanstack/react-query";
 
-export default function Home() {
+export default async function Home() {
+  const queryClient = getQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: subscriptionsQueryKeys.list.queryKey,
+    queryFn: getSubscriptions,
+  });
+
   return (
-    <div className="">
-      <DashboardNavbar />
-      <main>TEST</main>
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="">
+        <DashboardNavbar />
+        <main>TEST</main>
+      </div>
+    </HydrationBoundary>
   );
 }
