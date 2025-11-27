@@ -17,11 +17,11 @@ import {
 } from "@/shared/components";
 import { CurrencyInput } from "../currency-input/currency-input";
 import { useAddSubscription } from "@/entities/subscription";
-import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { SubscriptionDateSelect } from "./ui/subscription-date-select";
 
-export const AddSubscriptionForm = () => {
+const AddSubscriptionForm = () => {
   const formMethods = useForm({
     resolver: valibotResolver(AddSubscriptionSchema),
     defaultValues: {
@@ -35,19 +35,15 @@ export const AddSubscriptionForm = () => {
   const { control, handleSubmit } = formMethods;
 
   const router = useRouter();
-  const { userId } = useAuth();
   const { mutate: addSubscription, isPending: isAddingSubscription } =
     useAddSubscription();
 
   const onSubmit: SubmitHandler<InferOutput<typeof AddSubscriptionSchema>> = (
     data,
   ) => {
-    if (!userId) return;
-
     addSubscription(
       {
         ...data,
-        userId,
         currency: "UAH",
         period: "month",
       },
@@ -92,6 +88,22 @@ export const AddSubscriptionForm = () => {
             </FormItem>
           )}
         />
+        <FormField
+          control={control}
+          name="nextPaymentDate"
+          render={({ field }) => (
+            <FormItem className="col-span-full md:col-span-full">
+              <FormLabel>Next Payment Date</FormLabel>
+              <FormControl>
+                <SubscriptionDateSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="col-span-full flex justify-end">
           <Button type="submit" disabled={isAddingSubscription}>
@@ -103,3 +115,4 @@ export const AddSubscriptionForm = () => {
     </Form>
   );
 };
+export default AddSubscriptionForm;
