@@ -4,6 +4,8 @@ import { getQueryClient } from "@/shared/lib/react-query";
 import { getSubscriptions } from "@/entities/subscription/api/actions";
 import { dehydrate } from "@tanstack/query-core";
 import { HydrationBoundary } from "@tanstack/react-query";
+import { AddSubscriptionButton } from "@/features/add-subscription-button/add-subscription-button";
+import { DashboardLayout } from "@/features/dashboard/ui/dashboard.layout";
 
 export default async function Home() {
   const queryClient = getQueryClient();
@@ -15,10 +17,11 @@ export default async function Home() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="">
-        <DashboardNavbar />
+      <DashboardLayout Navbar={<DashboardNavbar />}>
         <main>TEST</main>
-      </div>
+      </DashboardLayout>
+
+      <AddSubscriptionButton />
     </HydrationBoundary>
   );
 }

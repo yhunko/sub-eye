@@ -6,6 +6,7 @@ import {
   numeric,
   timestamp,
   boolean,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const currencyEnum = pgEnum("currency", ["UAH", "EUR", "USD"]);
@@ -31,7 +32,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
   currency: currencyEnum("currency").notNull(),
 
   // Billing period
-  every: numeric("every", { precision: 5, scale: 0 }).notNull().default("1"),
+  every: integer("every").notNull().default(1),
   period: periodEnum("period").notNull().default("month"),
 
   // Payment details
@@ -49,4 +50,4 @@ export const subscriptionsTable = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 export type SubscriptionDto = typeof subscriptionsTable.$inferSelect;
-export type PostSubscriptionDto = typeof subscriptionsTable.$inferInsert;
+export type AddSubscriptionDto = typeof subscriptionsTable.$inferInsert;
