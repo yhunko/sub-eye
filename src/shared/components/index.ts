@@ -11,3 +11,4 @@ export * from "./ui/select";
 export * from "./ui/separator";
 export * from "./ui/sonner";
 export * from "./ui/spinner";
+export * from "./ui/table";

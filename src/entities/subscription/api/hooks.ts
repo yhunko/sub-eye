@@ -9,9 +9,7 @@ export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
   list: null,
 });
 
-export const useSubscriptions = ({
-  options,
-}: QueryHook<SubscriptionDto[] | null>) => {
+export const useSubscriptions = ({ options }: QueryHook<SubscriptionDto[]>) => {
   return useQuery({
     queryKey: subscriptionsQueryKeys.list.queryKey,
     queryFn: async () => {

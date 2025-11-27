@@ -10,7 +10,7 @@ export const getSubscriptions = async () => {
   const user = await auth();
 
   if (!user.isAuthenticated) {
-    return null; // not signed in
+    return []; // not signed in
   }
 
   try {
