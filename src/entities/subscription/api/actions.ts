@@ -1,9 +1,10 @@
 "use server";
 
-import { subscriptionsTable, AddSubscriptionDto } from "@/shared/lib/db";
+import { subscriptionsTable } from "@/shared/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/shared/lib/db/client";
+import { AddSubscriptionParams } from "./params";
 
 export const getSubscriptions = async () => {
   const user = await auth();
@@ -26,7 +27,7 @@ export const getSubscriptions = async () => {
   }
 };
 
-export const addSubscription = async (payload: AddSubscriptionDto) => {
+export const addSubscription = async (payload: AddSubscriptionParams) => {
   const user = await auth();
 
   if (!user.isAuthenticated) {
@@ -34,7 +35,13 @@ export const addSubscription = async (payload: AddSubscriptionDto) => {
   }
 
   try {
-    return db.insert(subscriptionsTable).values(payload).returning();
+    return db
+      .insert(subscriptionsTable)
+      .values({
+        ...payload,
+        userId: user.userId,
+      })
+      .returning();
   } catch (error) {
     console.error(error);
     throw new Error("Failed to fetch subscriptions");
