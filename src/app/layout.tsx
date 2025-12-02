@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ReactQueryProvider } from "@/shared/lib/react-query";
 import { Toaster } from "@/shared/components";
+import { ThemeProvider } from "@/features/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,12 +28,19 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
         >
           <ReactQueryProvider>
-            {children}
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
 
             <Toaster />
           </ReactQueryProvider>

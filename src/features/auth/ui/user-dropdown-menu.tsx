@@ -39,9 +39,9 @@ export const UserDropdownMenu = () => {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
             <div className="flex flex-col">
-              <span className="font-medium leading-tight">{fullName}</span>
+              <span className="leading-tight font-medium">{fullName}</span>
               {email && (
-                <span className="text-xs text-muted-foreground truncate">
+                <span className="text-muted-foreground truncate text-xs">
                   {email}
                 </span>
               )}
@@ -54,7 +54,7 @@ export const UserDropdownMenu = () => {
             <SignOutButton signOutOptions={{ redirectUrl: "/auth/sign-in" }}>
               <button
                 type="button"
-                className="w-full min-w-full flex items-center gap-2 text-left"
+                className="flex w-full min-w-full items-center gap-2 text-left"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign out</span>

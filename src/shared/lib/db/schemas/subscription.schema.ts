@@ -1,26 +1,13 @@
 import {
-  pgEnum,
   pgTable,
   serial,
   text,
   numeric,
+  integer,
   timestamp,
   boolean,
-  integer,
 } from "drizzle-orm/pg-core";
-
-export const currencyEnum = pgEnum("currency", ["UAH", "EUR", "USD"]);
-export const periodEnum = pgEnum("period", ["day", "week", "month", "year"]);
-
-export const exchangeRatesTable = pgTable("exchange_rates", {
-  id: serial("id").primaryKey(),
-  fromCurrency: currencyEnum("from_currency").notNull(),
-  toCurrency: currencyEnum("to_currency").notNull(),
-  rate: numeric("rate", { precision: 18, scale: 6 }).notNull(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-export type ExchangeRate = typeof exchangeRatesTable.$inferSelect;
-export type NewExchangeRate = typeof exchangeRatesTable.$inferInsert;
+import { periodEnum } from "./enums.schema";
 
 export const subscriptionsTable = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
@@ -29,7 +16,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
 
   // Cost in original currency
   cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
-  currency: currencyEnum("currency").notNull(),
+  currency: integer().notNull(),
 
   // Billing period
   every: integer("every").notNull().default(1),
@@ -49,5 +36,5 @@ export const subscriptionsTable = pgTable("subscriptions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-export type SubscriptionDto = typeof subscriptionsTable.$inferSelect;
-export type AddSubscriptionDto = typeof subscriptionsTable.$inferInsert;
+export type SubscriptionSchema = typeof subscriptionsTable.$inferSelect;
+export type AddSubscriptionSchema = typeof subscriptionsTable.$inferInsert;

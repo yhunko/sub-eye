@@ -1,49 +1,31 @@
 "use server";
 
-import { subscriptionsTable } from "@/shared/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
-import { db } from "@/shared/lib/db/client";
-import { AddSubscriptionParams } from "./params";
+import { SubscriptionController } from "../lib/subscription.controller";
+import { AddSubscriptionParams } from "../model/subscription.params";
+import { SubscriptionDto } from "../model/subscription.dtos";
 
-export const getSubscriptions = async () => {
-  const user = await auth();
+// Each export must be an async function
+export async function getSubscriptionsAction(): Promise<SubscriptionDto[]> {
+  const { isAuthenticated, userId } = await auth();
 
-  if (!user.isAuthenticated) {
-    return []; // not signed in
+  if (!isAuthenticated) {
+    throw new Error("Unauthorized");
   }
 
-  try {
-    // Ensure plain data only
-    return (
-      (await db
-        .select()
-        .from(subscriptionsTable)
-        .where(eq(subscriptionsTable.userId, user.userId))) ?? []
-    );
-  } catch (error) {
-    console.error(error);
-    throw new Error("Failed to fetch subscriptions");
-  }
-};
+  const controller = new SubscriptionController(userId);
+  return await controller.getSubscriptions();
+}
 
-export const addSubscription = async (payload: AddSubscriptionParams) => {
-  const user = await auth();
+export async function addSubscriptionAction(
+  payload: AddSubscriptionParams,
+): Promise<SubscriptionDto> {
+  const { isAuthenticated, userId } = await auth();
 
-  if (!user.isAuthenticated) {
-    return null; // not signed in
+  if (!isAuthenticated) {
+    throw new Error("Unauthorized");
   }
 
-  try {
-    return db
-      .insert(subscriptionsTable)
-      .values({
-        ...payload,
-        userId: user.userId,
-      })
-      .returning();
-  } catch (error) {
-    console.error(error);
-    throw new Error("Failed to fetch subscriptions");
-  }
-};
+  const controller = new SubscriptionController(userId);
+  return await controller.addSubscription(payload);
+}
