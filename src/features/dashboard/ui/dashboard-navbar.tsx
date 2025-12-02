@@ -1,5 +1,6 @@
 import { UserDropdownMenu } from "../../auth/ui/user-dropdown-menu";
 import { DashboardLogo } from "./dashboard-logo";
+import { ThemeSwitchButton } from "../../theme";
 
 export const DashboardNavbar = () => {
   return (
@@ -8,6 +9,7 @@ export const DashboardNavbar = () => {
         <DashboardLogo />
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <ThemeSwitchButton />
           <UserDropdownMenu />
         </div>
       </div>

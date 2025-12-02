@@ -18,8 +18,8 @@ export function CurrencyInput({ InputProps }: CurrencyInputProps) {
   const [currency, setCurrency] = React.useState("$");
 
   return (
-    <ButtonGroup>
-      <ButtonGroup>
+    <ButtonGroup className="w-full">
+      <ButtonGroup className="w-full">
         <Select value={currency} onValueChange={setCurrency}>
           <SelectTrigger className="font-mono">{currency}</SelectTrigger>
           <SelectContent className="min-w-24">

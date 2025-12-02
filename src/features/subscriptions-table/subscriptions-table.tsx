@@ -2,20 +2,9 @@
 
 import { FC, useMemo } from "react";
 import { useSubscriptions } from "@/entities/subscription";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-} from "@tanstack/react-table";
+import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import { columns } from "./model/columns";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/shared/components";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/shared/components";
 
 export const SubscriptionsTable: FC = () => {
   const { data: subscriptions } = useSubscriptions({});
@@ -34,14 +23,14 @@ export const SubscriptionsTable: FC = () => {
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
+                if (header.isPlaceholder) return <TableHead key={header.id} />;
+
                 return (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
                   </TableHead>
                 );
               })}

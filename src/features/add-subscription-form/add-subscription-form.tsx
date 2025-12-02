@@ -14,6 +14,8 @@ import {
   FormMessage,
   Button,
   Spinner,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@/shared/components";
 import { CurrencyInput } from "../currency-input/currency-input";
 import { useAddSubscription } from "@/entities/subscription";
@@ -32,7 +34,8 @@ const AddSubscriptionForm = () => {
       period: "month",
     },
   });
-  const { control, handleSubmit } = formMethods;
+  const { control, setValue, watch, handleSubmit } = formMethods;
+  const period = watch("period");
 
   const router = useRouter();
   const { mutate: addSubscription, isPending: isAddingSubscription } =
@@ -44,7 +47,7 @@ const AddSubscriptionForm = () => {
     addSubscription(
       {
         ...data,
-        currency: "UAH",
+        currency: 840,
         period: "month",
       },
       {
@@ -92,7 +95,7 @@ const AddSubscriptionForm = () => {
           control={control}
           name="nextPaymentDate"
           render={({ field }) => (
-            <FormItem className="col-span-full md:col-span-full">
+            <FormItem className="col-span-full md:col-span-1">
               <FormLabel>Next Payment Date</FormLabel>
               <FormControl>
                 <SubscriptionDateSelect
@@ -104,8 +107,56 @@ const AddSubscriptionForm = () => {
             </FormItem>
           )}
         />
+        <FormField
+          control={control}
+          name="period"
+          render={({ field }) => (
+            <div className="relative">
+              <div className="col-span-full flex flex-col gap-2 md:col-span-1 md:flex-row md:items-end">
+                <FormItem>
+                  <FormLabel>Billing cycle</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Every..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+                <ToggleGroup
+                  value={period}
+                  type="single"
+                  variant="outline"
+                  spacing={0}
+                >
+                  <ToggleGroupItem
+                    value="week"
+                    aria-label="Toggle bold"
+                    onClick={() => setValue("period", "week")}
+                  >
+                    Week
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="month"
+                    aria-label="Toggle italic"
+                    onClick={() => setValue("period", "month")}
+                  >
+                    Month
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="year"
+                    aria-label="Toggle strikethrough"
+                    onClick={() => setValue("period", "year")}
+                  >
+                    Year
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              <span className="text-muted-foreground absolute bottom-0 translate-y-full text-sm">
+                What is the cycle? For example: every 1 month
+              </span>
+            </div>
+          )}
+        />
 
-        <div className="col-span-full flex justify-end">
+        <div className="col-span-full mt-4 flex justify-end">
           <Button type="submit" disabled={isAddingSubscription}>
             {isAddingSubscription && <Spinner />}
             Add subscription
