@@ -3,7 +3,7 @@ import { subscriptionsQueryKeys } from "@/entities/subscription";
 import { getQueryClient } from "@/shared/lib/react-query";
 import { dehydrate } from "@tanstack/query-core";
 import { HydrationBoundary } from "@tanstack/react-query";
-import { AddSubscriptionButton } from "@/features/add-subscription-button";
+import { AddSubscriptionButton } from "@/features/add-subscription";
 import { SubscriptionsTable } from "@/features/subscriptions-table";
 import { getSubscriptionsAction } from "@/entities/subscription/api/actions";
 import { monobankQueryKeys } from "@/entities/monobank/api/hooks";
