@@ -30,7 +30,7 @@ const AddSubscriptionForm = () => {
       name: "",
       cost: "",
       nextPaymentDate: new Date(),
-      every: 1,
+      every: '1',
       period: "month",
     },
   });
@@ -109,7 +109,7 @@ const AddSubscriptionForm = () => {
         />
         <FormField
           control={control}
-          name="period"
+          name="every"
           render={({ field }) => (
             <div className="relative">
               <div className="col-span-full flex flex-col gap-2 md:col-span-1 md:flex-row md:items-end">
