@@ -30,7 +30,7 @@ const AddSubscriptionForm = () => {
       name: "",
       cost: "",
       nextPaymentDate: new Date(),
-      every: '1',
+      every: "1",
       period: "month",
     },
   });
