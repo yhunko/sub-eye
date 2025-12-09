@@ -5,5 +5,8 @@ export const AddSubscriptionSchema = v.object({
   cost: v.string(),
   nextPaymentDate: v.date(),
   period: v.string(),
-  every: v.number(),
+  every: v.pipe(
+    v.string(),
+    v.transform((i) => parseInt(i)),
+  ),
 });
