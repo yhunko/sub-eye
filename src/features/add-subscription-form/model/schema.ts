@@ -10,3 +10,5 @@ export const AddSubscriptionSchema = v.object({
     v.transform((i) => parseInt(i)),
   ),
 });
+export type AddSubscriptionInput = v.InferInput<typeof AddSubscriptionSchema>;
+export type AddSubscriptionOutput = v.InferOutput<typeof AddSubscriptionSchema>;
