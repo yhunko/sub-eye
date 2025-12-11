@@ -1,6 +1,9 @@
 import { UserDropdownMenu } from "../../auth/ui/user-dropdown-menu";
 import { DashboardLogo } from "./dashboard-logo";
-import { ThemeSwitchButton } from "../../theme";
+import { Cog } from "lucide-react";
+import { Button } from "@/shared/components";
+import * as React from "react";
+import Link from "next/link";
 
 export const DashboardNavbar = () => {
   return (
@@ -9,7 +12,13 @@ export const DashboardNavbar = () => {
         <DashboardLogo />
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <ThemeSwitchButton />
+          <Button asChild variant="outline" size="icon">
+            <Link href="/settings">
+              <Cog className="h-[1.2rem] w-[1.2rem] transition-all" />
+              <span className="sr-only">Go to settings</span>
+            </Link>
+          </Button>
+
           <UserDropdownMenu />
         </div>
       </div>
