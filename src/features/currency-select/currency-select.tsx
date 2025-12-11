@@ -1,3 +1,5 @@
+import { FC, useMemo } from "react";
+import { useUncontrolled } from "@mantine/hooks";
 import {
   Select,
   SelectTrigger,
@@ -5,30 +7,39 @@ import {
   SelectItem,
 } from "@/shared/components";
 import { CurrenciesMap } from "@/entities/monobank";
-import * as React from "react";
-import { FC } from "react";
-import { useUncontrolled } from "@mantine/hooks";
 
-type CurrencySelectProps = {
+export interface CurrencySelectProps {
   id?: string;
   value?: number;
   onChange?: (value: number) => void;
   disabled?: boolean;
-};
+  defaultValue?: number;
+}
 
 export const CurrencySelect: FC<CurrencySelectProps> = ({
   id,
   onChange,
   value,
-  disabled,
+  disabled = false,
+  defaultValue = 840,
 }) => {
+  const currencies = useMemo(() => Array.from(CurrenciesMap.entries()), []);
+
   const [selectedCurrency, setSelectedCurrency] = useUncontrolled({
     value: value?.toString(),
     onChange: (newValue) => {
-      onChange?.(parseInt(newValue, 10));
+      const parsed = parseInt(newValue, 10);
+      if (!isNaN(parsed)) {
+        onChange?.(parsed);
+      }
     },
-    defaultValue: "840",
+    defaultValue: defaultValue.toString(),
   });
+
+  const selectedCurrencyCode = useMemo(() => {
+    const code = parseInt(selectedCurrency, 10);
+    return CurrenciesMap.get(code)?.code ?? "???";
+  }, [selectedCurrency]);
 
   return (
     <Select
@@ -36,17 +47,17 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
       onValueChange={setSelectedCurrency}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className="font-mono">
-        {CurrenciesMap.get(parseInt(selectedCurrency, 10))}
+      <SelectTrigger id={id} className="font-mono" aria-label="Select currency">
+        {selectedCurrencyCode}
       </SelectTrigger>
       <SelectContent className="min-w-24">
-        {CurrenciesMap.entries()
-          .toArray()
-          .map(([key, currency]) => (
-            <SelectItem key={key} value={key.toString()}>
-              <span className="text-muted-foreground">{currency}</span>
-            </SelectItem>
-          ))}
+        {currencies.map(([key, currency]) => (
+          <SelectItem key={key} value={key.toString()}>
+            <span className="text-muted-foreground">
+              {currency?.code ?? key}
+            </span>
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );

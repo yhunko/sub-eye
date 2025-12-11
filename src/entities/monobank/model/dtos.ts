@@ -6,8 +6,3 @@ export type MonobankCurrencyDto = {
   rateBuy: number;
   rateCross: number;
 };
-
-export interface CurrencyDto extends MonobankCurrencyDto {
-  from: string;
-  to: string;
-}

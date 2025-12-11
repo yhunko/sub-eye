@@ -8,6 +8,7 @@ import {
   boolean,
 } from "drizzle-orm/pg-core";
 import { periodEnum } from "./enums.schema";
+import { Period } from "../model/enums";
 
 export const subscriptionsTable = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
@@ -20,7 +21,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
 
   // Billing period
   every: integer("every").notNull().default(1),
-  period: periodEnum("period").notNull().default("month"),
+  period: periodEnum("period").notNull().default(Period.MONTH),
 
   // Payment details
   nextPaymentDate: timestamp("next_payment_date").notNull(),

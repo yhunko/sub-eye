@@ -1,4 +1,4 @@
 import { pgEnum } from "drizzle-orm/pg-core";
+import { Period } from "../model/enums";
 
-export const currencyEnum = pgEnum("currency", ["UAH", "EUR", "USD"]);
-export const periodEnum = pgEnum("period", ["day", "week", "month", "year"]);
+export const periodEnum = pgEnum("period", Period);
