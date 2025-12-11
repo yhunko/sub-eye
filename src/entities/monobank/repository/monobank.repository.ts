@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { MonobankCurrencyDto } from "../model/dtos";
+import * as Sentry from "@sentry/nextjs";
 
 export class MonobankRepository {
   protected client: AxiosInstance;
@@ -34,10 +35,23 @@ export class MonobankRepository {
 
       return data;
     } catch (error) {
-      // TODO: Add Sentry
       if (MonobankRepository.cache) {
+        Sentry.captureException(error, {
+          tags: { source: "get-monobank-currencies" },
+          extra: {
+            isCacheHit: true,
+          },
+        });
+
         return MonobankRepository.cache;
       }
+
+      Sentry.captureException(error, {
+        tags: { source: "get-monobank-currencies" },
+        extra: {
+          isCacheHit: false,
+        },
+      });
 
       return [];
     }
