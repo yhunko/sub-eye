@@ -1,6 +1,7 @@
 import { SubscriptionService } from "./subscription.service";
 import { AddSubscriptionParams } from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
+import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
 export class SubscriptionController {
   private readonly userId: string;
@@ -17,7 +18,7 @@ export class SubscriptionController {
 
   async addSubscription(
     payload: AddSubscriptionParams,
-  ): Promise<SubscriptionDto> {
+  ): Promise<SubscriptionSchema> {
     return await this.service.addSubscription(payload, this.userId);
   }
 }
