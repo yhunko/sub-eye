@@ -1,4 +1,4 @@
-import { SubscriptionSchema, subscriptionsTable } from "@/shared/lib/db";
+import { SubscriptionSchema, subscriptionsTable } from "@/shared/lib/db/schema";
 import { db } from "@/shared/lib/drizzle/client";
 import { eq } from "drizzle-orm";
 import { AddSubscriptionParams } from "../model/subscription.params";

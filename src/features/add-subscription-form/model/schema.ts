@@ -1,10 +1,12 @@
 import * as v from "valibot";
+import { Period } from "@/shared/lib/db";
 
 export const AddSubscriptionSchema = v.object({
   name: v.pipe(v.string(), v.nonEmpty()),
   cost: v.string(),
   nextPaymentDate: v.date(),
-  period: v.string(),
+  period: v.enum(Period),
+  currency: v.number(),
   every: v.pipe(
     v.string(),
     v.transform((i) => parseInt(i)),

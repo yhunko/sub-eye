@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, useWatch } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { AddSubscriptionSchema } from "./model/schema";
 import { InferOutput } from "valibot";
@@ -22,6 +22,8 @@ import { useAddSubscription } from "@/entities/subscription";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { SubscriptionDateSelect } from "./ui/subscription-date-select";
+import { CurrencySelect } from "../currency-select";
+import { Period } from "@/shared/lib/db";
 
 const AddSubscriptionForm = () => {
   const formMethods = useForm({
@@ -31,11 +33,19 @@ const AddSubscriptionForm = () => {
       cost: "",
       nextPaymentDate: new Date(),
       every: "1",
-      period: "month",
+      period: Period.MONTH,
+      currency: 840,
     },
   });
-  const { control, setValue, watch, handleSubmit } = formMethods;
-  const period = watch("period");
+  const { control, setValue, handleSubmit } = formMethods;
+  const period = useWatch({
+    control,
+    name: "period",
+  });
+  const currency = useWatch({
+    control,
+    name: "currency",
+  });
 
   const router = useRouter();
   const { mutate: addSubscription, isPending: isAddingSubscription } =
@@ -44,19 +54,12 @@ const AddSubscriptionForm = () => {
   const onSubmit: SubmitHandler<InferOutput<typeof AddSubscriptionSchema>> = (
     data,
   ) => {
-    addSubscription(
-      {
-        ...data,
-        currency: 840,
-        period: "month",
+    addSubscription(data, {
+      async onSuccess() {
+        toast.success("Subscription added successfully!");
+        router.replace("/");
       },
-      {
-        async onSuccess() {
-          toast.success("Subscription added successfully!");
-          router.replace("/");
-        },
-      },
-    );
+    });
   };
 
   return (
@@ -85,7 +88,15 @@ const AddSubscriptionForm = () => {
             <FormItem className="col-span-full md:col-span-1">
               <FormLabel>Cost</FormLabel>
               <FormControl>
-                <CurrencyInput InputProps={field} />
+                <CurrencyInput
+                  CurrencySelect={
+                    <CurrencySelect
+                      value={currency}
+                      onChange={(value) => setValue("currency", value)}
+                    />
+                  }
+                  InputProps={field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -127,23 +138,23 @@ const AddSubscriptionForm = () => {
                   spacing={0}
                 >
                   <ToggleGroupItem
-                    value="week"
+                    value={Period.WEEK}
                     aria-label="Toggle bold"
-                    onClick={() => setValue("period", "week")}
+                    onClick={() => setValue("period", Period.WEEK)}
                   >
                     Week
                   </ToggleGroupItem>
                   <ToggleGroupItem
-                    value="month"
+                    value={Period.MONTH}
                     aria-label="Toggle italic"
-                    onClick={() => setValue("period", "month")}
+                    onClick={() => setValue("period", Period.MONTH)}
                   >
                     Month
                   </ToggleGroupItem>
                   <ToggleGroupItem
-                    value="year"
+                    value={Period.YEAR}
                     aria-label="Toggle strikethrough"
-                    onClick={() => setValue("period", "year")}
+                    onClick={() => setValue("period", Period.YEAR)}
                   >
                     Year
                   </ToggleGroupItem>

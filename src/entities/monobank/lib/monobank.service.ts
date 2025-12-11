@@ -5,10 +5,8 @@ export class MonobankService {
   constructor(private repository = new MonobankRepository()) {}
 
   async getCurrencies() {
-    const { data: currencies } = await this.repository.getCurrencies();
+    const currencies = await this.repository.getCurrencies();
 
-    return currencies
-      .filter(MonobankMapper.hasAvailableCurrencies)
-      .map(MonobankMapper.toDto);
+    return currencies.filter(MonobankMapper.hasAvailableCurrencies);
   }
 }

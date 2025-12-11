@@ -1,18 +1,29 @@
 import { ColumnDef } from "@tanstack/table-core";
-import { SubscriptionSchema } from "@/shared/lib/db";
 import { format, isDate } from "date-fns";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
 import { CreditCard, Calendar1 } from "lucide-react";
+import { SubscriptionDto } from "@/entities/subscription";
+import { CurrenciesMap } from "@/entities/monobank";
 
-export const columns: ColumnDef<SubscriptionSchema>[] = [
+export const columns: ColumnDef<SubscriptionDto>[] = [
   {
     accessorKey: "name",
     header: "Subscription name",
   },
   {
-    accessorKey: "cost",
+    accessorKey: "billing",
     header: () => {
       return <SubscriptionTableHead header="Cost" Icon={CreditCard} />;
+    },
+    cell: ({ getValue }) => {
+      const billing = getValue<SubscriptionDto["billing"]>();
+      const currencyMeta = CurrenciesMap.get(billing.preferred.currencyCode);
+
+      if (currencyMeta) {
+        return `${currencyMeta.symbol}${billing.preferred.amount}`;
+      }
+
+      return billing.preferred.amount;
     },
   },
   {

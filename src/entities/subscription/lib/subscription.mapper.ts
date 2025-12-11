@@ -1,13 +1,17 @@
-import { SubscriptionSchema } from "@/shared/lib/db";
-import { SubscriptionDto } from "../model/subscription.dtos";
+import { SubscriptionSchema } from "@/shared/lib/db/schema";
+import {
+  SubscriptionDto,
+  SubscriptionBillingDetails,
+} from "../model/subscription.dtos";
 
 export class SubscriptionMapper {
-  static toDto(subscription: SubscriptionSchema): SubscriptionDto {
+  static toDto(
+    subscription: SubscriptionSchema,
+    billing: SubscriptionBillingDetails,
+  ): SubscriptionDto {
     return {
       ...subscription,
-
-      // TODO: Add logic to calculate monthly cost
-      monthlyCost: Number(subscription.cost) / 12,
+      billing,
     };
   }
 }
