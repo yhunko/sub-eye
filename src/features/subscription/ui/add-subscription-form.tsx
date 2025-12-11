@@ -2,7 +2,7 @@
 
 import { useForm, SubmitHandler, useWatch } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { AddSubscriptionSchema } from "./model/schema";
+import { AddSubscriptionSchema } from "../model/schema";
 import { InferOutput } from "valibot";
 import {
   Form,
@@ -17,15 +17,14 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/shared/components";
-import { CurrencyInput } from "../currency-input/currency-input";
 import { useAddSubscription } from "@/entities/subscription";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { SubscriptionDateSelect } from "./ui/subscription-date-select";
-import { CurrencySelect } from "../currency-select";
+import { SubscriptionDateSelect } from "./subscription-date-select";
 import { Period } from "@/shared/lib/db";
+import { CurrencyInput, CurrencySelect } from "../../currency";
 
-const AddSubscriptionForm = () => {
+export const AddSubscriptionForm = () => {
   const formMethods = useForm({
     resolver: valibotResolver(AddSubscriptionSchema),
     defaultValues: {
@@ -177,4 +176,3 @@ const AddSubscriptionForm = () => {
     </Form>
   );
 };
-export default AddSubscriptionForm;

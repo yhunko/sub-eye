@@ -1,7 +1,7 @@
 import { DashboardNavbar } from "@/features/dashboard";
 import { DashboardLayout } from "@/features/dashboard/ui/dashboard.layout";
-import { AddSubscriptionForm } from "@/features/add-subscription-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components";
+import { AddSubscriptionForm } from "@/features/subscription";
 
 export default async function AddSubscriptionPage() {
   return (
