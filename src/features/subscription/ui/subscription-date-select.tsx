@@ -9,6 +9,9 @@ import {
 } from "@/shared/components";
 import { ChevronDownIcon } from "lucide-react";
 import { useState, FC } from "react";
+import { addYears } from "date-fns";
+
+const endMonth = addYears(new Date(), 2);
 
 type SubscriptionDateSelectProps = {
   value?: Date;
@@ -42,6 +45,7 @@ export const SubscriptionDateSelect: FC<SubscriptionDateSelectProps> = ({
             onChange(date);
             setOpen(false);
           }}
+          endMonth={endMonth}
         />
       </PopoverContent>
     </Popover>

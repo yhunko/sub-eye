@@ -3,12 +3,12 @@
 import { FC } from "react";
 import { Field, FieldLabel, Spinner } from "@/shared/components";
 import { useUser } from "@clerk/nextjs";
-import { useUpdateUserMetadata } from "@/entities/user";
+import { useUpdateUserPublicMetadata } from "@/entities/user";
 import { CurrencySelect } from "../../currency";
 
 export const PreferredCurrencySelect: FC = () => {
   const { user, isLoaded } = useUser();
-  const { mutate, isPending } = useUpdateUserMetadata();
+  const { mutate, isPending } = useUpdateUserPublicMetadata();
 
   const isLoading = isPending || !isLoaded;
 

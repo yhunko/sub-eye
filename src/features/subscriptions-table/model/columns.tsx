@@ -3,7 +3,7 @@ import { format, isDate } from "date-fns";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
 import { CreditCard, Calendar1 } from "lucide-react";
 import { SubscriptionDto } from "@/entities/subscription";
-import { CurrenciesMap } from "@/entities/monobank";
+import { CurrencyBadge } from "../../currency/ui/currency-badge";
 
 export const columns: ColumnDef<SubscriptionDto>[] = [
   {
@@ -13,17 +13,19 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
   {
     accessorKey: "billing",
     header: () => {
-      return <SubscriptionTableHead header="Cost" Icon={CreditCard} />;
+      return (
+        <SubscriptionTableHead header="Cost (per month)" Icon={CreditCard} />
+      );
     },
     cell: ({ getValue }) => {
       const billing = getValue<SubscriptionDto["billing"]>();
-      const currencyMeta = CurrenciesMap.get(billing.preferred.currencyCode);
 
-      if (currencyMeta) {
-        return `${currencyMeta.symbol}${billing.preferred.amount}`;
-      }
-
-      return billing.preferred.amount;
+      return (
+        <CurrencyBadge
+          currencyCode={billing.preferred.currencyCode}
+          amount={billing.preferred.amount}
+        />
+      );
     },
   },
   {
