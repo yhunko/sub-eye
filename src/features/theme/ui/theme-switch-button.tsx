@@ -57,7 +57,7 @@ export const ThemeSwitchButton = () => {
             <Icon className="size-4" />
             <span>{getThemeLabel()}</span>
           </span>
-          <ChevronDown className="h-4 w-4 opacity-50" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

@@ -17,3 +17,4 @@ export * from "./ui/table";
 export * from "./ui/tabs";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";
+export * from "./ui/timezone-select";
