@@ -5,7 +5,7 @@ import { UserJSON } from "@clerk/nextjs/server";
 import { updateUserPublicMetadataAction } from "./actions";
 import { useUser } from "@clerk/nextjs";
 
-export const useUpdateUserMetadata = ({
+export const useUpdateUserPublicMetadata = ({
   options,
 }: MutationHook<UserJSON | null, Partial<UserPublicMetadata>> = {}) => {
   const { user } = useUser();
