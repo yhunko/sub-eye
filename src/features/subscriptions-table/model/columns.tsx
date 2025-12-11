@@ -1,16 +1,19 @@
 import { ColumnDef } from "@tanstack/table-core";
-import { format, isDate } from "date-fns";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
-import { CreditCard, Calendar1 } from "lucide-react";
+import { CreditCard, Calendar1, CalendarSync } from "lucide-react";
 import { SubscriptionDto } from "@/entities/subscription";
 import { CurrencyBadge } from "../../currency/ui/currency-badge";
+import { PeriodBadge } from "../../subscription/ui/period-badge";
+import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bill";
 
 export const columns: ColumnDef<SubscriptionDto>[] = [
   {
+    id: "name",
     accessorKey: "name",
     header: "Subscription name",
   },
   {
+    id: "cost",
     accessorKey: "billing",
     header: () => {
       return (
@@ -29,16 +32,33 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
     },
   },
   {
-    accessorKey: "nextPaymentDate",
+    id: "interval",
+    header: () => {
+      return <SubscriptionTableHead header="Period" Icon={CalendarSync} />;
+    },
+    cell: ({ row }) => {
+      const subscription = row.original;
+
+      return (
+        <PeriodBadge every={subscription.every} period={subscription.period} />
+      );
+    },
+  },
+  {
+    id: "nextBillDate",
     header: () => {
       return <SubscriptionTableHead header="Next bill" Icon={Calendar1} />;
     },
-    cell: ({ getValue }) => {
-      const date = getValue();
+    cell: ({ row }) => {
+      const subscription = row.original;
 
-      if (isDate(date)) return format(date, "MMM dd, yyyy");
-
-      return "Unknown or corrupted date";
+      return (
+        <SubscriptionNextBill
+          every={subscription.every}
+          period={subscription.period}
+          nextBillDate={subscription.nextPaymentDate}
+        />
+      );
     },
   },
 ];

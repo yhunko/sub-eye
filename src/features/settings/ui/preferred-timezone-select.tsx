@@ -7,14 +7,17 @@ import {
   Spinner,
   TimezoneSelect,
 } from "@/shared/components";
-import { useUser } from "@clerk/nextjs";
-import { useUpdateUserPublicMetadata } from "@/entities/user";
+import {
+  useUpdateUserPublicMetadata,
+  useUserPublicMetadata,
+} from "@/entities/user";
 
 export const PreferredTimezoneSelect: FC = () => {
-  const { user, isLoaded } = useUser();
+  const { data: publicMetadata, isLoading: isPublicMetadataLoading } =
+    useUserPublicMetadata();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
-  const isLoading = isPending || !isLoaded;
+  const isLoading = isPending || isPublicMetadataLoading;
 
   return (
     <Field>
@@ -23,7 +26,7 @@ export const PreferredTimezoneSelect: FC = () => {
         {isLoading && <Spinner />}
       </FieldLabel>
       <TimezoneSelect
-        value={user?.publicMetadata.preferredTimezone as string | undefined}
+        value={publicMetadata?.preferredTimezone}
         onChange={(preferredTimezone) => mutate({ preferredTimezone })}
         disabled={isLoading}
       />

@@ -2,15 +2,18 @@
 
 import { FC } from "react";
 import { Field, FieldLabel, Spinner } from "@/shared/components";
-import { useUser } from "@clerk/nextjs";
-import { useUpdateUserPublicMetadata } from "@/entities/user";
+import {
+  useUpdateUserPublicMetadata,
+  useUserPublicMetadata,
+} from "@/entities/user";
 import { CurrencySelect } from "../../currency";
 
 export const PreferredCurrencySelect: FC = () => {
-  const { user, isLoaded } = useUser();
+  const { data: publicMetadata, isLoading: isPublicMetadataLoading } =
+    useUserPublicMetadata();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
-  const isLoading = isPending || !isLoaded;
+  const isLoading = isPending || isPublicMetadataLoading;
 
   return (
     <Field>
@@ -20,7 +23,7 @@ export const PreferredCurrencySelect: FC = () => {
       </FieldLabel>
       <CurrencySelect
         id="preferred-currency"
-        value={user?.publicMetadata.preferredCurrency as number | undefined}
+        value={publicMetadata?.preferredCurrency}
         onChange={(currency) => mutate({ preferredCurrency: currency })}
         disabled={isLoading}
       />

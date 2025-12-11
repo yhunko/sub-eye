@@ -36,13 +36,6 @@ export class MonobankRepository {
       return data;
     } catch (error) {
       if (MonobankRepository.cache) {
-        Sentry.captureException(error, {
-          tags: { source: "get-monobank-currencies" },
-          extra: {
-            isCacheHit: true,
-          },
-        });
-
         return MonobankRepository.cache;
       }
 
