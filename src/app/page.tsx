@@ -3,11 +3,11 @@ import { subscriptionsQueryKeys } from "@/entities/subscription";
 import { getQueryClient } from "@/shared/lib/react-query";
 import { dehydrate } from "@tanstack/query-core";
 import { HydrationBoundary } from "@tanstack/react-query";
-import { AddSubscriptionButton } from "@/features/add-subscription";
 import { SubscriptionsTable } from "@/features/subscriptions-table";
 import { getSubscriptionsAction } from "@/entities/subscription/api/actions";
 import { monobankQueryKeys } from "@/entities/monobank/api/hooks";
 import { getCurrenciesAction } from "@/entities/monobank/api/actions";
+import { AddSubscriptionButton } from "@/features/subscription";
 
 export default async function Home() {
   const queryClient = getQueryClient();

@@ -2,9 +2,9 @@
 
 import { FC } from "react";
 import { Field, FieldLabel, Spinner } from "@/shared/components";
-import { CurrencySelect } from "../../currency-select";
 import { useUser } from "@clerk/nextjs";
 import { useUpdateUserMetadata } from "@/entities/user";
+import { CurrencySelect } from "../../currency";
 
 export const PreferredCurrencySelect: FC = () => {
   const { user, isLoaded } = useUser();
