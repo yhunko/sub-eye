@@ -1,19 +1,17 @@
 import { FC, useMemo } from "react";
-import { Period } from "@/shared/lib/db";
-import { cn } from "@/shared/lib";
-import { SubscriptionDateService } from "../lib/subscription-date.service";
+import { cn, DateTimezoneUtils } from "@/shared/lib";
 import { SubscriptionUIMapper } from "../lib/subscription-ui.mapper";
 import { useUserPublicMetadata } from "@/entities/user";
 
 type SubscriptionNextBillProps = {
-  every: number;
-  period: Period;
+  /**
+   * Next payment date already calculated on the backend.
+   * ISO string.
+   */
   nextBillDate: string;
 };
 
 export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
-  every,
-  period,
   nextBillDate,
 }) => {
   const { data: publicMetadata, isLoading } = useUserPublicMetadata();
@@ -22,22 +20,10 @@ export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
     if (isLoading) return null;
 
     const timezone = publicMetadata?.preferredTimezone;
+    const zonedDate = DateTimezoneUtils.toZoned(nextBillDate, timezone);
 
-    const actualNextDate = SubscriptionDateService.getNextBillDate(
-      nextBillDate,
-      every,
-      period,
-      timezone,
-    );
-
-    return SubscriptionUIMapper.toDisplayState(actualNextDate, timezone);
-  }, [
-    isLoading,
-    publicMetadata?.preferredTimezone,
-    nextBillDate,
-    every,
-    period,
-  ]);
+    return SubscriptionUIMapper.toDisplayState(zonedDate, timezone);
+  }, [isLoading, publicMetadata?.preferredTimezone, nextBillDate]);
 
   if (isLoading || !displayState) return null;
 

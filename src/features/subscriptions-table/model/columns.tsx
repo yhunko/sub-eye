@@ -46,18 +46,15 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
   },
   {
     id: "nextBillDate",
-    header: () => {
+    header: ({ column }) => {
+      console.log(column.getIsSorted());
       return <SubscriptionTableHead header="Next bill" Icon={Calendar1} />;
     },
     cell: ({ row }) => {
       const subscription = row.original;
 
       return (
-        <SubscriptionNextBill
-          every={subscription.every}
-          period={subscription.period}
-          nextBillDate={subscription.paymentDate}
-        />
+        <SubscriptionNextBill nextBillDate={subscription.nextPaymentDate} />
       );
     },
   },
