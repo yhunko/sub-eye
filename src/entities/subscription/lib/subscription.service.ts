@@ -10,6 +10,17 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
 import { MonobankCurrencyDto } from "../../monobank/model/dtos";
 import { CurrencyUtils } from "../../monobank/lib/currency.utils";
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  addYears,
+  differenceInDays,
+  isPast,
+  compareAsc,
+} from "date-fns";
+import { DateTimezoneUtils } from "@/shared/lib";
+import { Period } from "@/shared/lib/db";
 
 export class SubscriptionService {
   constructor(
@@ -20,11 +31,16 @@ export class SubscriptionService {
   async getSubscriptionsForUser(userId: string): Promise<SubscriptionDto[]> {
     const subscriptions = await this.repository.findByUserId(userId);
     const rates = await this.monobankService.getCurrencies();
-    const preferredCurrency = await this.getUserPreferredCurrency(userId);
+    const { currency: preferredCurrency, timezone } =
+      await this.getUserPreferences(userId);
 
-    return subscriptions.map((subscription) =>
-      this.toDto(subscription, preferredCurrency, rates),
-    );
+    return subscriptions
+      .map((subscription) =>
+        this.toDto(subscription, preferredCurrency, rates, timezone),
+      )
+      .sort((a, b) => {
+        return compareAsc(a.nextPaymentDate, b.nextPaymentDate);
+      });
   }
 
   async addSubscription(
@@ -76,22 +92,67 @@ export class SubscriptionService {
     };
   }
 
-  private async getUserPreferredCurrency(userId: string): Promise<number> {
+  private async getUserPreferences(
+    userId: string,
+  ): Promise<{ currency: number; timezone?: string }> {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    return Number(user.publicMetadata.preferredCurrency) || 980;
+    const currency = Number(user.publicMetadata.preferredCurrency) || 980;
+    const timezoneValue = user.publicMetadata.preferredTimezone;
+    const timezone =
+      typeof timezoneValue === "string" ? timezoneValue : undefined;
+
+    return { currency, timezone };
+  }
+
+  private static calculateNextPaymentDate(
+    subscription: SubscriptionSchema,
+    timezone?: string,
+  ): string {
+    const now = DateTimezoneUtils.now(timezone);
+    let current = DateTimezoneUtils.toZoned(subscription.paymentDate, timezone);
+
+    while (isPast(current) && differenceInDays(now, current) > 0) {
+      current = this.addPeriod(
+        current,
+        subscription.every,
+        subscription.period,
+      );
+    }
+
+    return current.toISOString();
+  }
+
+  private static addPeriod(date: Date, amount: number, period: Period): Date {
+    switch (period) {
+      case "day":
+        return addDays(date, amount);
+      case "week":
+        return addWeeks(date, amount);
+      case "month":
+        return addMonths(date, amount);
+      case "year":
+        return addYears(date, amount);
+      default:
+        return date;
+    }
   }
 
   private toDto(
     subscription: SubscriptionSchema,
     preferredCurrency: number,
     rates: MonobankCurrencyDto[],
+    timezone?: string,
   ): SubscriptionDto {
     const billing = SubscriptionService.calculateBillingDetails(
       subscription,
       preferredCurrency,
       rates,
     );
-    return SubscriptionMapper.toDto(subscription, billing);
+    const nextPaymentDate = SubscriptionService.calculateNextPaymentDate(
+      subscription,
+      timezone,
+    );
+    return SubscriptionMapper.toDto(subscription, billing, nextPaymentDate);
   }
 }

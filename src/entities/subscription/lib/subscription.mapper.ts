@@ -8,10 +8,12 @@ export class SubscriptionMapper {
   static toDto(
     subscription: SubscriptionSchema,
     billing: SubscriptionBillingDetails,
+    nextPaymentDate: string,
   ): SubscriptionDto {
     return {
       ...subscription,
       billing,
+      nextPaymentDate,
     };
   }
 }

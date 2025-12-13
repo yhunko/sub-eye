@@ -28,4 +28,12 @@ export interface SubscriptionBillingDetails {
 
 export interface SubscriptionDto extends SubscriptionSchema {
   billing: SubscriptionBillingDetails;
+
+  /**
+   * The next scheduled payment date for this subscription, based on
+   * the original `paymentDate`, `every`, and `period` fields.
+   *
+   * ISO string in UTC, suitable for client-side parsing.
+   */
+  nextPaymentDate: string;
 }
