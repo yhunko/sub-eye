@@ -8,7 +8,7 @@ import { useUserPublicMetadata } from "@/entities/user";
 type SubscriptionNextBillProps = {
   every: number;
   period: Period;
-  nextBillDate: Date;
+  nextBillDate: string;
 };
 
 export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({

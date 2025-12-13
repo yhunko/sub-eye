@@ -1,4 +1,9 @@
-import { useMutation, useQuery, keepPreviousData } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  keepPreviousData,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { MutationHook, QueryHook } from "@/shared/lib/react-query";
 import { UserPublicMetadata } from "../model/user.model";
 import { UserJSON } from "@clerk/nextjs/server";
@@ -30,14 +35,19 @@ export const useUserPublicMetadata = ({
 export const useUpdateUserPublicMetadata = ({
   options,
 }: MutationHook<UserJSON | null, Partial<UserPublicMetadata>> = {}) => {
-  const { user } = useUser();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (params) => {
       return updateUserPublicMetadataAction(params);
     },
-    async onSuccess() {
-      await user?.reload();
+    async onSuccess(user) {
+      if (user) {
+        queryClient.setQueryData(
+          userQueryKeys.publicMetadata.queryKey,
+          user?.public_metadata,
+        );
+      }
     },
     ...options,
   });

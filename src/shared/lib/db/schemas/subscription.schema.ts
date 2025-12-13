@@ -24,7 +24,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
   period: periodEnum("period").notNull().default(Period.MONTH),
 
   // Payment details
-  nextPaymentDate: timestamp("next_payment_date", {
+  paymentDate: timestamp("payment_date", {
     withTimezone: true,
     mode: "string",
   }).notNull(),
