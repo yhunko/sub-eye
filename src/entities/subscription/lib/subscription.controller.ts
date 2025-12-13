@@ -1,5 +1,5 @@
 import { SubscriptionService } from "./subscription.service";
-import { AddSubscriptionParams } from "../model/subscription.params";
+import { AddSubscriptionParams, GetSubscriptionsParams } from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
@@ -12,8 +12,10 @@ export class SubscriptionController {
     this.userId = userId;
   }
 
-  async getSubscriptions(): Promise<SubscriptionDto[]> {
-    return await this.service.getSubscriptionsForUser(this.userId);
+  async getSubscriptions(
+    params?: GetSubscriptionsParams,
+  ): Promise<SubscriptionDto[]> {
+    return await this.service.getSubscriptionsForUser(this.userId, params);
   }
 
   async addSubscription(

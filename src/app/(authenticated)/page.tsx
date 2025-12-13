@@ -1,5 +1,8 @@
 import { DashboardNavbar, DashboardLayout } from "@/features/dashboard";
-import { subscriptionsQueryKeys } from "@/entities/subscription";
+import {
+  subscriptionsQueryKeys,
+  defaultGetSubscriptionsParams,
+} from "@/entities/subscription";
 import { getQueryClient } from "@/shared/lib/react-query";
 import { dehydrate } from "@tanstack/query-core";
 import { HydrationBoundary } from "@tanstack/react-query";
@@ -13,8 +16,9 @@ export default async function Home() {
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
-    queryKey: subscriptionsQueryKeys.list.queryKey,
-    queryFn: getSubscriptionsAction,
+    queryKey: subscriptionsQueryKeys.list(defaultGetSubscriptionsParams)
+      .queryKey,
+    queryFn: () => getSubscriptionsAction(defaultGetSubscriptionsParams),
   });
 
   await queryClient.prefetchQuery({

@@ -45,10 +45,18 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
     },
   },
   {
-    id: "nextBillDate",
+    id: "nextPaymentDate",
+    accessorKey: "nextPaymentDate",
+    enableSorting: true,
     header: ({ column }) => {
-      console.log(column.getIsSorted());
-      return <SubscriptionTableHead header="Next bill" Icon={Calendar1} />;
+      return (
+        <SubscriptionTableHead
+          header="Next bill"
+          Icon={Calendar1}
+          sorted={column.getIsSorted()}
+          onSort={column.getToggleSortingHandler()}
+        />
+      );
     },
     cell: ({ row }) => {
       const subscription = row.original;

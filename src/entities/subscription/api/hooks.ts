@@ -1,20 +1,26 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { QueryHook, MutationHook } from "@/shared/lib/react-query";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AddSubscriptionParams } from "../model/subscription.params";
+import {
+  AddSubscriptionParams,
+  GetSubscriptionsParams,
+} from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
 import { getSubscriptionsAction, addSubscriptionAction } from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
-  list: null,
+  list: (params?: GetSubscriptionsParams) => [params],
 });
 
-export const useSubscriptions = ({ options }: QueryHook<SubscriptionDto[]>) => {
+export const useSubscriptions = ({
+  options,
+  params,
+}: QueryHook<SubscriptionDto[], GetSubscriptionsParams>) => {
   return useQuery({
-    queryKey: subscriptionsQueryKeys.list.queryKey,
+    queryKey: subscriptionsQueryKeys.list(params).queryKey,
     queryFn: async () => {
-      return await getSubscriptionsAction();
+      return await getSubscriptionsAction(params);
     },
     ...options,
   });
