@@ -4,7 +4,10 @@ import {
   SubscriptionDto,
   SubscriptionBillingDetails,
 } from "../model/subscription.dtos";
-import { AddSubscriptionParams } from "../model/subscription.params";
+import {
+  AddSubscriptionParams,
+  GetSubscriptionsParams,
+} from "../model/subscription.params";
 import { MonobankService } from "../../monobank/lib/monobank.service";
 import { clerkClient } from "@clerk/nextjs/server";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
@@ -18,6 +21,7 @@ import {
   differenceInDays,
   isPast,
   compareAsc,
+  compareDesc,
 } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
 import { Period } from "@/shared/lib/db";
@@ -28,19 +32,20 @@ export class SubscriptionService {
     private monobankService = new MonobankService(),
   ) {}
 
-  async getSubscriptionsForUser(userId: string): Promise<SubscriptionDto[]> {
+  async getSubscriptionsForUser(
+    userId: string,
+    params?: GetSubscriptionsParams,
+  ): Promise<SubscriptionDto[]> {
     const subscriptions = await this.repository.findByUserId(userId);
     const rates = await this.monobankService.getCurrencies();
     const { currency: preferredCurrency, timezone } =
       await this.getUserPreferences(userId);
 
-    return subscriptions
-      .map((subscription) =>
-        this.toDto(subscription, preferredCurrency, rates, timezone),
-      )
-      .sort((a, b) => {
-        return compareAsc(a.nextPaymentDate, b.nextPaymentDate);
-      });
+    const dtos = subscriptions.map((subscription) =>
+      this.toDto(subscription, preferredCurrency, rates, timezone),
+    );
+
+    return this.sortSubscriptions(dtos, params);
   }
 
   async addSubscription(
@@ -154,5 +159,28 @@ export class SubscriptionService {
       timezone,
     );
     return SubscriptionMapper.toDto(subscription, billing, nextPaymentDate);
+  }
+
+  private sortSubscriptions(
+    subscriptions: SubscriptionDto[],
+    params?: GetSubscriptionsParams,
+  ): SubscriptionDto[] {
+    const sortBy = params?.sortBy ?? "nextPaymentDate";
+    const direction = params?.direction ?? "asc";
+
+    switch (sortBy) {
+      case "nextPaymentDate": {
+        return subscriptions.sort((a, b) => {
+          const aDate = new Date(a.nextPaymentDate);
+          const bDate = new Date(b.nextPaymentDate);
+          return direction === "asc"
+            ? compareAsc(aDate, bDate)
+            : compareDesc(aDate, bDate);
+        });
+      }
+      default: {
+        return subscriptions;
+      }
+    }
   }
 }

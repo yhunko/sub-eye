@@ -14,6 +14,7 @@ export * from "./ui/separator";
 export * from "./ui/sonner";
 export * from "./ui/spinner";
 export * from "./ui/table";
+export * from "./ui/table-body-loader";
 export * from "./ui/tabs";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";

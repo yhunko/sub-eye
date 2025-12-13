@@ -31,7 +31,9 @@ export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
 
   return (
     <div className="flex flex-col">
-      <span className="font-medium text-gray-900">{formattedDate}</span>
+      <span className="font-medium text-gray-800 dark:text-gray-200">
+        {formattedDate}
+      </span>
       <span className={cn("text-sm", colorClass)}>{relativeText}</span>
     </div>
   );
