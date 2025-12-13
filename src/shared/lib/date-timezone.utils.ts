@@ -1,4 +1,5 @@
 import { TZDate } from "@date-fns/tz";
+import { parseISO } from "date-fns";
 
 export class DateTimezoneUtils {
   /**
@@ -11,7 +12,7 @@ export class DateTimezoneUtils {
   /**
    * Converts a specific date to the target timezone if provided.
    */
-  static toZoned(date: Date, timezone?: string): Date {
-    return timezone ? new TZDate(date, timezone) : date;
+  static toZoned(date: string, timezone?: string): Date {
+    return timezone ? new TZDate(date, timezone) : parseISO(date);
   }
 }

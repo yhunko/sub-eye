@@ -11,7 +11,7 @@ import { DateTimezoneUtils } from "@/shared/lib";
 
 export class SubscriptionDateService {
   static getNextBillDate(
-    startDate: Date,
+    startDate: string,
     every: number,
     period: Period,
     timezone?: string,

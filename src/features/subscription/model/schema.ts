@@ -4,7 +4,7 @@ import { Period } from "@/shared/lib/db";
 export const AddSubscriptionSchema = v.object({
   name: v.pipe(v.string(), v.nonEmpty()),
   cost: v.string(),
-  nextPaymentDate: v.pipe(
+  paymentDate: v.pipe(
     v.date(),
     v.transform((d) => d.toISOString()),
   ),

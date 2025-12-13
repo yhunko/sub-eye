@@ -41,10 +41,10 @@ export class SubscriptionUIMapper {
     const relativeText = `in ${daysUntil} days`;
 
     if (daysUntil <= 3) {
-      return { relativeText, colorClass: "text-orange-600 font-medium" };
+      return { relativeText, colorClass: "text-red-500 font-medium" };
     }
     if (daysUntil <= 7) {
-      return { relativeText, colorClass: "text-orange-500" };
+      return { relativeText, colorClass: "font-medium text-orange-500" };
     }
     if (daysUntil <= 14) {
       return { relativeText, colorClass: "text-yellow-600" };

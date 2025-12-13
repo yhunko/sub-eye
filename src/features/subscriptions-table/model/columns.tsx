@@ -56,7 +56,7 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
         <SubscriptionNextBill
           every={subscription.every}
           period={subscription.period}
-          nextBillDate={subscription.nextPaymentDate}
+          nextBillDate={subscription.paymentDate}
         />
       );
     },

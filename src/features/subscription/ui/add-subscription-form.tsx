@@ -30,7 +30,7 @@ export const AddSubscriptionForm = () => {
     defaultValues: {
       name: "",
       cost: "",
-      nextPaymentDate: new Date(),
+      paymentDate: new Date(),
       every: "1",
       period: Period.MONTH,
       currency: 840,
@@ -103,7 +103,7 @@ export const AddSubscriptionForm = () => {
         />
         <FormField
           control={control}
-          name="nextPaymentDate"
+          name="paymentDate"
           render={({ field }) => (
             <FormItem className="col-span-full md:col-span-1">
               <FormLabel>Next Payment Date</FormLabel>
