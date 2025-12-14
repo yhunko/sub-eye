@@ -7,9 +7,10 @@ import {
 import { MutationHook, QueryHook } from "@/shared/lib/react-query";
 import { UserPublicMetadata } from "../model/user.model";
 import { UserJSON } from "@clerk/nextjs/server";
-import { updateUserPublicMetadataAction } from "./actions";
+import { updateUserPublicMetadataAction, deleteAccountAction } from "./actions";
 import { useUser } from "@clerk/nextjs";
 import { createQueryKeys } from "@lukemorales/query-key-factory";
+import { DeleteUserDto } from "../model/user.dtos";
 
 export const userQueryKeys = createQueryKeys("USER", {
   publicMetadata: null,
@@ -49,6 +50,15 @@ export const useUpdateUserPublicMetadata = ({
         );
       }
     },
+    ...options,
+  });
+};
+
+export const useDeleteAccount = ({
+  options,
+}: MutationHook<DeleteUserDto, unknown> = {}) => {
+  return useMutation({
+    mutationFn: () => deleteAccountAction(),
     ...options,
   });
 };

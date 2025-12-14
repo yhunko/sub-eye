@@ -1,9 +1,9 @@
-import { UserDropdownMenu } from "../../auth/ui/user-dropdown-menu";
 import { DashboardLogo } from "./dashboard-logo";
 import { Cog, Plus } from "lucide-react";
 import { Button } from "@/shared/components";
 import * as React from "react";
 import Link from "next/link";
+import { UserDropdownMenu } from "../../auth/ui/user-dropdown-menu";
 
 export const DashboardNavbar = () => {
   return (
