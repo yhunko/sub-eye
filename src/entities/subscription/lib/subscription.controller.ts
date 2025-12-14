@@ -1,5 +1,8 @@
 import { SubscriptionService } from "./subscription.service";
-import { AddSubscriptionParams, GetSubscriptionsParams } from "../model/subscription.params";
+import {
+  AddSubscriptionParams,
+  GetSubscriptionsParams,
+} from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
@@ -22,5 +25,11 @@ export class SubscriptionController {
     payload: AddSubscriptionParams,
   ): Promise<SubscriptionSchema> {
     return await this.service.addSubscription(payload, this.userId);
+  }
+
+  async deleteAllForCurrentUser(): Promise<boolean> {
+    await this.service.deleteAllForUser(this.userId);
+
+    return true;
   }
 }

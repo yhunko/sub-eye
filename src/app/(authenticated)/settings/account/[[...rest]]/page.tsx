@@ -1,5 +1,9 @@
 import { DashboardLayout, DashboardNavbar } from "@/features/dashboard";
-import { SettingsLayout, SettingsTab } from "@/features/settings";
+import {
+  SettingsLayout,
+  SettingsTab,
+  SettingsAccountForm,
+} from "@/features/settings";
 import {
   Card,
   CardHeader,
@@ -17,7 +21,9 @@ export default async function SettingsPageAccount() {
             <CardTitle>Account settings</CardTitle>
             <CardDescription>Manage your account settings</CardDescription>
           </CardHeader>
-          <CardContent>ACCOUNT</CardContent>
+          <CardContent>
+            <SettingsAccountForm />
+          </CardContent>
         </Card>
       </SettingsLayout>
     </DashboardLayout>

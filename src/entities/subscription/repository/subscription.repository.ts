@@ -26,4 +26,10 @@ export class SubscriptionRepository {
 
     return subscription;
   }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    await db
+      .delete(subscriptionsTable)
+      .where(eq(subscriptionsTable.userId, userId));
+  }
 }

@@ -55,6 +55,12 @@ export class SubscriptionService {
     return await this.repository.create(params, userId);
   }
 
+  async deleteAllForUser(userId: string): Promise<boolean> {
+    await this.repository.deleteByUserId(userId);
+
+    return true;
+  }
+
   static calculateBillingDetails(
     subscription: SubscriptionSchema,
     preferredCurrency: number,
