@@ -3,6 +3,7 @@ import {
   SettingsLayout,
   SettingsTab,
   SettingsAccountForm,
+  SettingsTabs,
 } from "@/features/settings";
 import {
   Card,
@@ -15,7 +16,7 @@ import {
 export default async function SettingsPageAccount() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SettingsLayout tab={SettingsTab.ACCOUNT}>
+      <SettingsLayout Tabs={<SettingsTabs tab={SettingsTab.ACCOUNT} />}>
         <Card>
           <CardHeader>
             <CardTitle>Account settings</CardTitle>

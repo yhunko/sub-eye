@@ -3,6 +3,7 @@ import {
   SettingsLayout,
   SettingsTab,
   SettingsGeneralForm,
+  SettingsTabs,
 } from "@/features/settings";
 import {
   Card,
@@ -15,7 +16,7 @@ import {
 export default async function SettingsPageGeneral() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SettingsLayout tab={SettingsTab.GENERAL}>
+      <SettingsLayout Tabs={<SettingsTabs tab={SettingsTab.GENERAL} />}>
         <Card>
           <CardHeader>
             <CardTitle>General settings</CardTitle>
