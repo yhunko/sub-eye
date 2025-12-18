@@ -22,6 +22,9 @@ jobs:
           fetch-depth: 0 # Important: Fetch all history for accurate versioning
           persist-credentials: false # Using a PAT for the git plugin
 
+      - name: Setup Node via Volta
+        uses: volta-cli/action@v4
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
