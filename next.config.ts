@@ -1,9 +1,13 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import { version } from "./package.json";
 
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
 };
 
 export default withSentryConfig(nextConfig, {
@@ -39,5 +43,9 @@ export default withSentryConfig(nextConfig, {
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
+  },
+
+  release: {
+    name: "sub-eye@" + version,
   },
 });

@@ -1,0 +1,5 @@
+echo "🔎 Checking TypeScript types across the application..."
+bunx tsc --noEmit --pretty
+
+echo "🎨 Running Linter and Prettier..."
+bunx lint-staged
