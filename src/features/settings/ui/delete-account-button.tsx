@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  Field,
-  FieldLabel,
   Button,
   Popover,
   PopoverTrigger,
   PopoverContent,
+  FieldDescription,
+  FieldSet,
+  FieldLegend,
 } from "@/shared/components";
 import { Shredder } from "lucide-react";
 import { useState } from "react";
@@ -35,11 +36,11 @@ export const DeleteAccountButton = () => {
   };
 
   return (
-    <Field>
-      <FieldLabel htmlFor="delete-account">
-        Delete Account
-        {/* Optional: show a spinner if you have one */}
-      </FieldLabel>
+    <FieldSet>
+      <FieldLegend>Delete Account</FieldLegend>
+      <FieldDescription>
+        This will remove all of the accosiated data
+      </FieldDescription>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -76,6 +77,6 @@ export const DeleteAccountButton = () => {
           </div>
         </PopoverContent>
       </Popover>
-    </Field>
+    </FieldSet>
   );
 };

@@ -39,6 +39,9 @@ export const subscriptionsTable = pgTable("subscriptions", {
   // Timestamps
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+
+  // ID of the pending QStash job (so we can cancel it if user deletes sub)
+  qstashMessageId: text("qstash_message_id"),
 });
 export type SubscriptionSchema = typeof subscriptionsTable.$inferSelect;
 export type AddSubscriptionSchema = typeof subscriptionsTable.$inferInsert;
