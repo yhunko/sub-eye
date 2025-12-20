@@ -25,11 +25,13 @@ import {
 } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
 import { Period } from "@/shared/lib/db";
+import { PushNotificationsSchedulerService } from "../../push-notifications/lib/push-notifications-scheduler.service";
 
 export class SubscriptionService {
   constructor(
     private repository = new SubscriptionRepository(),
     private monobankService = new MonobankService(),
+    private notificationScheduler = new PushNotificationsSchedulerService(),
   ) {}
 
   async getSubscriptionsForUser(
@@ -52,7 +54,33 @@ export class SubscriptionService {
     params: AddSubscriptionParams,
     userId: string,
   ): Promise<SubscriptionSchema> {
-    return await this.repository.create(params, userId);
+    const subscription = await this.repository.create(params, userId);
+
+    // Schedule notification for new subscription
+    await this.notificationScheduler.scheduleForSubscription(subscription);
+
+    return subscription;
+  }
+
+  async deleteSubscription(id: number): Promise<void> {
+    const subscription = await this.repository.findById(id);
+
+    if (subscription) {
+      await this.notificationScheduler.cancelForSubscription(subscription);
+      await this.repository.delete(id);
+    }
+  }
+
+  async updateSubscription(
+    id: number,
+    params: Partial<AddSubscriptionParams>,
+  ): Promise<SubscriptionSchema> {
+    const subscription = await this.repository.update(id, params);
+
+    // Reschedule notification
+    await this.notificationScheduler.rescheduleForSubscription(subscription);
+
+    return subscription;
   }
 
   async deleteAllForUser(userId: string): Promise<boolean> {
