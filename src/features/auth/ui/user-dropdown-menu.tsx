@@ -5,12 +5,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Avatar,
   AvatarFallback,
   AvatarImage,
+  Item,
+  ItemTitle,
+  ItemContent,
+  ItemMedia,
+  DropdownMenuLabel,
 } from "@/shared/components";
 import { LogOut } from "lucide-react";
 
@@ -37,28 +41,27 @@ export const UserDropdownMenu = () => {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span className="leading-tight font-medium">{fullName}</span>
-              {email && (
-                <span className="text-muted-foreground truncate text-xs">
-                  {email}
-                </span>
-              )}
-            </div>
+          <DropdownMenuLabel className="flex flex-col">
+            <span className="leading-tight font-medium">{fullName}</span>
+            {email && (
+              <span className="text-muted-foreground truncate text-xs">
+                {email}
+              </span>
+            )}
           </DropdownMenuLabel>
 
           <DropdownMenuSeparator />
 
           <DropdownMenuItem className="cursor-pointer" asChild>
             <SignOutButton signOutOptions={{ redirectUrl: "/auth/sign-in" }}>
-              <button
-                type="button"
-                className="flex w-full min-w-full items-center gap-2 text-left"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign out</span>
-              </button>
+              <Item size="sm">
+                <ItemMedia>
+                  <LogOut />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>Sign out</ItemTitle>
+                </ItemContent>
+              </Item>
             </SignOutButton>
           </DropdownMenuItem>
         </DropdownMenuContent>
