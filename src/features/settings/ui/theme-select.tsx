@@ -1,12 +1,16 @@
 import { FC } from "react";
 import { ThemeSwitchButton } from "../../theme";
-import { FieldLabel, Field } from "@/shared/components";
+import { Item, ItemContent, ItemTitle, ItemActions } from "@/shared/components";
 
 export const ThemeSelect: FC = () => {
   return (
-    <Field>
-      <FieldLabel>Theme</FieldLabel>
-      <ThemeSwitchButton />
-    </Field>
+    <Item variant="outline">
+      <ItemContent>
+        <ItemTitle>Theme</ItemTitle>
+      </ItemContent>
+      <ItemActions>
+        <ThemeSwitchButton />
+      </ItemActions>
+    </Item>
   );
 };

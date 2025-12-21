@@ -1,7 +1,13 @@
 "use client";
 
 import { FC } from "react";
-import { Field, FieldLabel, Spinner } from "@/shared/components";
+import {
+  Spinner,
+  Item,
+  ItemContent,
+  ItemTitle,
+  ItemActions,
+} from "@/shared/components";
 import {
   useUpdateUserPublicMetadata,
   useUserPublicMetadata,
@@ -16,17 +22,21 @@ export const PreferredCurrencySelect: FC = () => {
   const isLoading = isPending || isPublicMetadataLoading;
 
   return (
-    <Field>
-      <FieldLabel htmlFor="preferred-currency">
-        Preferred Currency
-        {isLoading && <Spinner />}
-      </FieldLabel>
-      <CurrencySelect
-        id="preferred-currency"
-        value={publicMetadata?.preferredCurrency}
-        onChange={(currency) => mutate({ preferredCurrency: currency })}
-        disabled={isLoading}
-      />
-    </Field>
+    <Item variant="outline">
+      <ItemContent>
+        <ItemTitle>
+          Preferred Currency
+          {isLoading && <Spinner />}
+        </ItemTitle>
+      </ItemContent>
+      <ItemActions>
+        <CurrencySelect
+          id="preferred-currency"
+          value={publicMetadata?.preferredCurrency}
+          onChange={(currency) => mutate({ preferredCurrency: currency })}
+          disabled={isLoading}
+        />
+      </ItemActions>
+    </Item>
   );
 };

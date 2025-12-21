@@ -2,10 +2,11 @@
 
 import { FC } from "react";
 import {
-  Field,
-  FieldLabel,
   Spinner,
   TimezoneSelect,
+  Item,
+  ItemContent,
+  ItemTitle,
 } from "@/shared/components";
 import {
   useUpdateUserPublicMetadata,
@@ -20,16 +21,21 @@ export const PreferredTimezoneSelect: FC = () => {
   const isLoading = isPending || isPublicMetadataLoading;
 
   return (
-    <Field>
-      <FieldLabel htmlFor="preferred-timezone">
-        Preferred Timezone
-        {isLoading && <Spinner />}
-      </FieldLabel>
-      <TimezoneSelect
-        value={publicMetadata?.preferredTimezone}
-        onChange={(preferredTimezone) => mutate({ preferredTimezone })}
-        disabled={isLoading}
-      />
-    </Field>
+    <Item variant="outline" className="flex w-full flex-col items-stretch">
+      <ItemContent>
+        <ItemTitle>
+          Preferred Timezone
+          {isLoading && <Spinner />}
+        </ItemTitle>
+      </ItemContent>
+
+      <div className="w-full">
+        <TimezoneSelect
+          value={publicMetadata?.preferredTimezone}
+          onChange={(preferredTimezone) => mutate({ preferredTimezone })}
+          disabled={isLoading}
+        />
+      </div>
+    </Item>
   );
 };
