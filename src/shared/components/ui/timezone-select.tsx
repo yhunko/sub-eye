@@ -50,7 +50,7 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
       onValueChange={onChange}
       disabled={disabled}
     >
-      <SelectTrigger>
+      <SelectTrigger className="w-full">
         <SelectValue placeholder="Select Timezone">{currentValue}</SelectValue>
       </SelectTrigger>
 
