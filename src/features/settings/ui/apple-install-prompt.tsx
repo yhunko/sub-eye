@@ -12,9 +12,9 @@ export const AppleInstallPrompt: FC = () => {
 
   const isIOS = os === "ios";
 
-  // if (!isIOS || isApplePushSupported) {
-  //   return null;
-  // }
+  if (!isIOS || isApplePushSupported) {
+    return null;
+  }
 
   return (
     <Alert className="relative border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
