@@ -42,7 +42,7 @@ export const DeleteAccountButton = () => {
       <ItemContent>
         <ItemTitle>Delete Account</ItemTitle>
         <ItemDescription>
-          This will remove all of the accosiated data
+          This will remove all of the associated data
         </ItemDescription>
       </ItemContent>
       <ItemActions>
