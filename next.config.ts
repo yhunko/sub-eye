@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },
+  serverExternalPackages: ["esbuild-wasm"],
   async headers() {
     return [
       {
@@ -28,7 +29,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/push-notifications.worker.js",
+        source: "/sw.js",
         headers: [
           {
             key: "Content-Type",

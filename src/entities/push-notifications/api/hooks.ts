@@ -3,6 +3,7 @@ import { subscribeUserAction, unsubscribeUserAction } from "./actions";
 import { PushNotificationsUtils } from "../lib/push-notifications.utils";
 import { MutationHook, QueryHook } from "@/shared/lib/react-query";
 import { createQueryKeys } from "@lukemorales/query-key-factory";
+import { ServiceWorkerUtils } from "@/shared/lib";
 
 export const pushNotificationsQueryKeys = createQueryKeys(
   "PUSH_NOTIFICATIONS",
@@ -11,34 +12,15 @@ export const pushNotificationsQueryKeys = createQueryKeys(
   },
 );
 
-let registrationPromise: Promise<ServiceWorkerRegistration>;
-
-function getPushRegistration() {
-  if (typeof window === "undefined") return null;
-
-  if (!registrationPromise) {
-    registrationPromise = navigator.serviceWorker.register(
-      "/push-notifications.worker.js",
-      {
-        scope: "/",
-        updateViaCache: "none",
-      },
-    );
-  }
-  return registrationPromise;
-}
-
 export const usePushNotificationsSubscription = ({
   options,
 }: QueryHook<PushSubscription | null> = {}) => {
   return useQuery({
     queryKey: pushNotificationsQueryKeys.subscription.queryKey,
     queryFn: async () => {
-      const registration = await getPushRegistration();
+      const registration = await ServiceWorkerUtils.getRegistration();
 
       if (!registration) return null;
-
-      await navigator.serviceWorker.ready;
 
       return await registration.pushManager.getSubscription();
     },
