@@ -4,6 +4,8 @@ const isPublicRoute = createRouteMatcher([
   "/auth(.*)",
   // QStash webhook endpoint - needs to be additionally protected
   "/api/notifications/send",
+  // Public service worker
+  "/serwist/sw.js",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

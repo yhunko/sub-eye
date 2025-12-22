@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/sw.js",
+        source: "/serwist/sw.js",
         headers: [
           {
             key: "Content-Type",
