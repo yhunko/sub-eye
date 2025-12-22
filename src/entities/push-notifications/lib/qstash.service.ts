@@ -19,6 +19,10 @@ export class QStashService {
 
     const response = await this.client.publishJSON({
       url: `${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`,
+      headers: {
+        "x-vercel-protection-bypass":
+          process.env.VERCEL_AUTOMATION_BYPASS_SECRET!,
+      },
       body: {
         userId,
         subscriptionId,
