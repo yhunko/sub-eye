@@ -1,19 +1,43 @@
 import Link from "next/link";
+import Image from "next/image";
+import { Badge } from "@/shared/components";
+import { Construction } from "lucide-react";
 
 export const DashboardLogo = () => {
+  const isDev = process.env.NEXT_PUBLIC_APP_ENV !== "production";
+
   return (
-    <Link href="/" className="flex items-center gap-2">
-      <span className="bg-primary text-primary-foreground inline-flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold">
-        SE
-      </span>
-      <div className="flex flex-col gap-0 md:flex-row md:items-center md:gap-2">
+    <div className="group flex items-center gap-2">
+      <Link
+        href="/"
+        className="flex flex-col gap-0 md:flex-row md:items-center md:gap-2"
+      >
+        <div className="overflow-hidden rounded-md">
+          <Image
+            src="/android-chrome-512x512.png"
+            alt="app logo"
+            width={24}
+            height={24}
+            priority
+            className="transition-transform duration-300 ease-in-out will-change-transform group-hover:scale-125"
+          />
+        </div>
+
         <span className="text-sm font-semibold tracking-tight md:text-base">
           SubEye
         </span>
-        <span className="text-accent-foreground text-xs">
+      </Link>
+      <Badge asChild variant="secondary">
+        <Link
+          href={`https://github.com/yhunko/sub-eye/releases/tag/v${process.env.NEXT_PUBLIC_APP_VERSION}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline"
+        >
+          {isDev && <Construction className="text-orange-500" />}
           (v{process.env.NEXT_PUBLIC_APP_VERSION})
-        </span>
-      </div>
-    </Link>
+        </Link>
+      </Badge>
+    </div>
   );
 };
