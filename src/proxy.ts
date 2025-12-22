@@ -6,13 +6,23 @@ const isPublicRoute = createRouteMatcher([
   "/api/notifications/send",
   // Public service worker
   "/serwist/sw.js",
+  "/~offline",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
-});
+export default clerkMiddleware(
+  async (auth, req) => {
+    if (!isPublicRoute(req)) {
+      await auth.protect();
+    }
+  },
+  {
+    contentSecurityPolicy: {
+      directives: {
+        "worker-src": ["'self'", "blob:"],
+      },
+    },
+  },
+);
 
 export const config = {
   matcher: [
