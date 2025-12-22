@@ -2,8 +2,18 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import { version } from "./package.json";
 
+const cspHeader = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://real-satyr-3.clerk.accounts.dev https://challenges.cloudflare.com",
+  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev",
+  "img-src 'self' https://img.clerk.com",
+  "worker-src 'self' blob:",
+  "style-src 'self' 'unsafe-inline'",
+  "frame-src 'self' https://challenges.cloudflare.com",
+  "form-action 'self'",
+].join(";");
+
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
@@ -11,23 +21,6 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["esbuild-wasm"],
   async headers() {
     return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-        ],
-      },
       {
         source: "/serwist/sw.js",
         headers: [
@@ -41,7 +34,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self'",
+            value: cspHeader,
           },
         ],
       },
