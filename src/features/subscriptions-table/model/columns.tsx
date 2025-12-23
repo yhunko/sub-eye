@@ -1,10 +1,20 @@
-import { ColumnDef } from "@tanstack/table-core";
+import { ColumnDef, RowData } from "@tanstack/table-core";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
-import { CreditCard, Calendar1, CalendarSync } from "lucide-react";
+import { CreditCard, Calendar1, CalendarSync, Minus } from "lucide-react";
 import { SubscriptionDto } from "@/entities/subscription";
 import { CurrencyBadge } from "../../currency/ui/currency-badge";
 import { PeriodBadge } from "../../subscription/ui/period-badge";
 import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bill";
+import { Button } from "@/shared/components";
+import * as React from "react";
+
+declare module "@tanstack/table-core" {
+  // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface TableMeta<TData extends RowData> {
+    deleteRow?: (id: number) => void;
+  }
+}
 
 export const columns: ColumnDef<SubscriptionDto>[] = [
   {
@@ -15,9 +25,17 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
   {
     id: "cost",
     accessorKey: "billing",
-    header: () => {
+    enableSorting: true,
+    sortingFn: (a, b) =>
+      a.original.billing.preferred.amount - b.original.billing.preferred.amount,
+    header: ({ column }) => {
       return (
-        <SubscriptionTableHead header="Cost (per month)" Icon={CreditCard} />
+        <SubscriptionTableHead
+          header="Cost (per month)"
+          Icon={CreditCard}
+          sorted={column.getIsSorted()}
+          onSort={column.getToggleSortingHandler()}
+        />
       );
     },
     cell: ({ getValue }) => {
@@ -63,6 +81,26 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
 
       return (
         <SubscriptionNextBill nextBillDate={subscription.nextPaymentDate} />
+      );
+    },
+  },
+  {
+    id: "actions",
+    accessorKey: "id",
+    header: "",
+    cell: ({ getValue, table }) => {
+      const id = getValue<SubscriptionDto["id"]>();
+
+      return (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => table.options.meta?.deleteRow?.(id)}
+          >
+            <Minus className="size-5 transition-all" />
+          </Button>
+        </div>
       );
     },
   },
