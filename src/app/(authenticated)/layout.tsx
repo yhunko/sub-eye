@@ -1,8 +1,8 @@
 import { getQueryClient } from "@/shared/lib/react-query";
 import { auth } from "@clerk/nextjs/server";
-import { userQueryKeys } from "@/entities/user";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { PropsWithChildren } from "react";
+import { userQueryKeys } from "@/entities/user";
 
 export default async function AuthenticatedLayout({
   children,

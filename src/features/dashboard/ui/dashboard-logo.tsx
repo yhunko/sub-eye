@@ -7,23 +7,22 @@ export const DashboardLogo = () => {
   const isDev = process.env.NEXT_PUBLIC_APP_ENV !== "production";
 
   return (
-    <div className="group flex items-center gap-2">
+    <div className="flex items-center gap-1 md:gap-2">
       <Link
         href="/"
-        className="flex flex-col gap-0 md:flex-row md:items-center md:gap-2"
+        className="group flex flex-col gap-0 md:flex-row md:items-center md:gap-2"
       >
-        <div className="overflow-hidden rounded-md">
+        <div className="relative size-6 md:size-8">
           <Image
-            src="/android-chrome-512x512.png"
+            src="/logo.svg"
             alt="app logo"
-            width={24}
-            height={24}
             priority
-            className="transition-transform duration-300 ease-in-out will-change-transform group-hover:scale-125"
+            fill
+            className="transition-transform duration-300 ease-in-out will-change-transform not-motion-reduce:group-hover:scale-110"
           />
         </div>
 
-        <span className="text-sm font-semibold tracking-tight md:text-base">
+        <span className="hidden text-sm font-semibold tracking-tight md:inline-block md:text-base">
           SubEye
         </span>
       </Link>
@@ -34,8 +33,12 @@ export const DashboardLogo = () => {
           rel="noopener noreferrer"
           className="hover:underline"
         >
-          {isDev && <Construction className="text-orange-500" />}
-          (v{process.env.NEXT_PUBLIC_APP_VERSION})
+          {isDev && (
+            <Construction className="hidden text-orange-500 md:inline-block" />
+          )}
+          <span className="text-xs">
+            (v{process.env.NEXT_PUBLIC_APP_VERSION})
+          </span>
         </Link>
       </Badge>
     </div>

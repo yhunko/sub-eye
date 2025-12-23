@@ -7,12 +7,14 @@ import {
   ItemContent,
   ItemTitle,
   ItemActions,
+  ItemMedia,
 } from "@/shared/components";
 import {
   useUpdateUserPublicMetadata,
   useUserPublicMetadata,
 } from "@/entities/user";
 import { CurrencySelect } from "../../currency";
+import { DollarSign } from "lucide-react";
 
 export const PreferredCurrencySelect: FC = () => {
   const { data: publicMetadata, isLoading: isPublicMetadataLoading } =
@@ -23,6 +25,9 @@ export const PreferredCurrencySelect: FC = () => {
 
   return (
     <Item variant="outline">
+      <ItemMedia>
+        <DollarSign />
+      </ItemMedia>
       <ItemContent>
         <ItemTitle>
           Preferred Currency

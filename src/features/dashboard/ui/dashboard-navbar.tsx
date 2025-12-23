@@ -1,5 +1,5 @@
 import { DashboardLogo } from "./dashboard-logo";
-import { Cog, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/shared/components";
 import * as React from "react";
 import Link from "next/link";
@@ -16,12 +16,6 @@ export const DashboardNavbar = () => {
             <Link href="/subscriptions/add">
               <Plus className="size-5 transition-all" />
               <span className="sr-only">Add subscription</span>
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="icon">
-            <Link href="/settings">
-              <Cog className="size-5 transition-all" />
-              <span className="sr-only">Go to settings</span>
             </Link>
           </Button>
 
