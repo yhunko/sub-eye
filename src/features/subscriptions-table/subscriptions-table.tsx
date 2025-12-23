@@ -24,6 +24,7 @@ import {
 } from "@/shared/components";
 import { keepPreviousData } from "@tanstack/react-query";
 import { cn } from "@/shared/lib";
+import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
 
 export const SubscriptionsTable: FC = () => {
   const [sorting, setSorting] = useState<SortingState>([
@@ -33,7 +34,11 @@ export const SubscriptionsTable: FC = () => {
   const sortBy = sorting[0]?.id as SubscriptionSortField;
   const direction = sorting[0]?.desc ? "desc" : "asc";
 
-  const { data: subscriptions, isPlaceholderData } = useSubscriptions({
+  const {
+    data: subscriptions,
+    isLoading,
+    isPlaceholderData,
+  } = useSubscriptions({
     params: {
       sortBy,
       direction,
@@ -53,9 +58,11 @@ export const SubscriptionsTable: FC = () => {
     onSortingChange: setSorting,
   });
 
+  const isTableLoading = isLoading || isPlaceholderData;
+
   return (
     <div className="relative overflow-hidden rounded-md border">
-      <Table className={cn(isPlaceholderData && "pointer-events-none")}>
+      <Table className={cn(isTableLoading && "pointer-events-none")}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -77,7 +84,7 @@ export const SubscriptionsTable: FC = () => {
         <TableBody className="relative overflow-hidden">
           <TableBodyLoader
             columnsLength={columns.length}
-            loading={isPlaceholderData}
+            loading={isTableLoading}
           />
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
@@ -93,11 +100,7 @@ export const SubscriptionsTable: FC = () => {
               </TableRow>
             ))
           ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
+            <SubscriptionsTableNoResults loading={isTableLoading} />
           )}
         </TableBody>
       </Table>

@@ -7,11 +7,13 @@ import {
   Item,
   ItemContent,
   ItemTitle,
+  ItemMedia,
 } from "@/shared/components";
 import {
   useUpdateUserPublicMetadata,
   useUserPublicMetadata,
 } from "@/entities/user";
+import { Globe } from "lucide-react";
 
 export const PreferredTimezoneSelect: FC = () => {
   const { data: publicMetadata, isLoading: isPublicMetadataLoading } =
@@ -21,7 +23,10 @@ export const PreferredTimezoneSelect: FC = () => {
   const isLoading = isPending || isPublicMetadataLoading;
 
   return (
-    <Item variant="outline" className="flex w-full flex-col items-stretch">
+    <Item variant="outline">
+      <ItemMedia>
+        <Globe />
+      </ItemMedia>
       <ItemContent>
         <ItemTitle>
           Preferred Timezone

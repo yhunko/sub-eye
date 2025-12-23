@@ -54,7 +54,7 @@ export const DeleteAccountButton = () => {
               disabled={isPending}
             >
               <Shredder />
-              {isPending ? "Deleting..." : "Delete Account"}
+              {isPending ? "Deleting..." : "Delete"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">

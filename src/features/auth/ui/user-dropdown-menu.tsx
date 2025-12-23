@@ -16,7 +16,8 @@ import {
   ItemMedia,
   DropdownMenuLabel,
 } from "@/shared/components";
-import { LogOut } from "lucide-react";
+import { LogOut, Cog } from "lucide-react";
+import Link from "next/link";
 
 export const UserDropdownMenu = () => {
   const { user } = useUser();
@@ -49,6 +50,21 @@ export const UserDropdownMenu = () => {
               </span>
             )}
           </DropdownMenuLabel>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Item size="sm" asChild>
+              <Link href="/settings">
+                <ItemMedia>
+                  <Cog />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>Settings</ItemTitle>
+                </ItemContent>
+              </Link>
+            </Item>
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator />
 
