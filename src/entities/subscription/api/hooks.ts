@@ -6,7 +6,11 @@ import {
   GetSubscriptionsParams,
 } from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
-import { getSubscriptionsAction, addSubscriptionAction } from "./actions";
+import {
+  getSubscriptionsAction,
+  addSubscriptionAction,
+  deleteSubscriptionAction,
+} from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
@@ -32,6 +36,17 @@ export const useAddSubscription = ({
   return useMutation({
     mutationFn: async (params) => {
       return await addSubscriptionAction(params);
+    },
+    ...options,
+  });
+};
+
+export const useDeleteSubscription = ({
+  options,
+}: MutationHook<void, number> = {}) => {
+  return useMutation({
+    mutationFn: async (id) => {
+      return await deleteSubscriptionAction(id);
     },
     ...options,
   });
