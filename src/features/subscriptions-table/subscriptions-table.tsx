@@ -6,7 +6,6 @@ import {
   SubscriptionSortField,
   defaultSubscriptionsSortParams,
   useDeleteSubscription,
-  subscriptionsQueryKeys,
 } from "@/entities/subscription";
 import {
   useReactTable,
@@ -24,7 +23,7 @@ import {
   TableCell,
   TableBodyLoader,
 } from "@/shared/components";
-import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
 import { cn } from "@/shared/lib";
 import { toast } from "sonner";
 import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
@@ -51,21 +50,16 @@ export const SubscriptionsTable: FC = () => {
     },
   });
 
-  const queryClient = useQueryClient();
   const { mutate: deleteSubscription } = useDeleteSubscription();
   const onDeleteSubscription = useCallback(
     (id: number) => {
       deleteSubscription(id, {
         async onSuccess() {
-          await queryClient.invalidateQueries({
-            queryKey: subscriptionsQueryKeys.list._def,
-          });
-
           toast.success("Subscription deleted successfully!");
         },
       });
     },
-    [deleteSubscription, queryClient],
+    [deleteSubscription],
   );
 
   const data = useMemo(() => subscriptions ?? [], [subscriptions]);
