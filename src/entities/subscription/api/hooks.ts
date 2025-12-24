@@ -51,7 +51,7 @@ export const useDeleteSubscription = ({
       return await deleteSubscriptionAction(id);
     },
     async onSuccess() {
-      await queryClient.invalidateQueries({
+      return await queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
       });
     },

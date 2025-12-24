@@ -15,6 +15,7 @@ import { Shredder } from "lucide-react";
 import { useState } from "react";
 import { useDeleteAccount } from "@/entities/user/api/hooks";
 import { useRouter } from "next/navigation";
+import { PopoverConfirmationContent } from "@/shared/components/ui/popover-confirmation-content";
 
 export const DeleteAccountButton = () => {
   const [open, setOpen] = useState(false);
@@ -58,12 +59,10 @@ export const DeleteAccountButton = () => {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
-            <div className="space-y-3">
-              <p className="text-sm">
-                Are you sure? This action is destructive and will permanently
-                delete your account and all associated data.
-              </p>
-              <div className="flex justify-end gap-2">
+            <PopoverConfirmationContent
+              description="Are you sure? This action is destructive and will permanently
+                delete your account and all associated data."
+              CancelButton={
                 <Button
                   variant="outline"
                   onClick={() => setOpen(false)}
@@ -71,6 +70,8 @@ export const DeleteAccountButton = () => {
                 >
                   Cancel
                 </Button>
+              }
+              ConfirmButton={
                 <Button
                   variant="destructive"
                   onClick={handleConfirm}
@@ -78,8 +79,8 @@ export const DeleteAccountButton = () => {
                 >
                   {isPending ? "Deleting..." : "Yes, delete my account"}
                 </Button>
-              </div>
-            </div>
+              }
+            />
           </PopoverContent>
         </Popover>
       </ItemActions>

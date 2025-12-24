@@ -1,12 +1,12 @@
 import { ColumnDef, RowData } from "@tanstack/table-core";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
-import { CreditCard, Calendar1, CalendarSync, Minus } from "lucide-react";
+import { CreditCard, Calendar1, CalendarSync } from "lucide-react";
 import { SubscriptionDto } from "@/entities/subscription";
 import { CurrencyBadge } from "../../currency/ui/currency-badge";
 import { PeriodBadge } from "../../subscription/ui/period-badge";
 import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bill";
-import { Button } from "@/shared/components";
 import * as React from "react";
+import { SubscriptionDeleteButton } from "../ui/subscription-delete-button";
 
 declare module "@tanstack/table-core" {
   // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
@@ -88,20 +88,10 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
     id: "actions",
     accessorKey: "id",
     header: "",
-    cell: ({ getValue, table }) => {
+    cell: ({ getValue }) => {
       const id = getValue<SubscriptionDto["id"]>();
 
-      return (
-        <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => table.options.meta?.deleteRow?.(id)}
-          >
-            <Minus className="size-5 transition-all" />
-          </Button>
-        </div>
-      );
+      return <SubscriptionDeleteButton subscriptionId={id} />;
     },
   },
 ];

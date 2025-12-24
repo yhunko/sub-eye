@@ -1,11 +1,10 @@
 "use client";
 
-import { FC, useCallback, useMemo, useState } from "react";
+import { FC, useMemo, useState } from "react";
 import {
   useSubscriptions,
   SubscriptionSortField,
   defaultSubscriptionsSortParams,
-  useDeleteSubscription,
 } from "@/entities/subscription";
 import {
   useReactTable,
@@ -25,7 +24,6 @@ import {
 } from "@/shared/components";
 import { keepPreviousData } from "@tanstack/react-query";
 import { cn } from "@/shared/lib";
-import { toast } from "sonner";
 import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
 
 export const SubscriptionsTable: FC = () => {
@@ -50,18 +48,6 @@ export const SubscriptionsTable: FC = () => {
     },
   });
 
-  const { mutate: deleteSubscription } = useDeleteSubscription();
-  const onDeleteSubscription = useCallback(
-    (id: number) => {
-      deleteSubscription(id, {
-        async onSuccess() {
-          toast.success("Subscription deleted successfully!");
-        },
-      });
-    },
-    [deleteSubscription],
-  );
-
   const data = useMemo(() => subscriptions ?? [], [subscriptions]);
   const table = useReactTable({
     data,
@@ -70,9 +56,6 @@ export const SubscriptionsTable: FC = () => {
     manualSorting: true,
     state: { sorting },
     onSortingChange: setSorting,
-    meta: {
-      deleteRow: onDeleteSubscription,
-    },
   });
 
   const isTableLoading = isLoading || isPlaceholderData;
