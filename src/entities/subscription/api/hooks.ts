@@ -1,12 +1,16 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { QueryHook, MutationHook } from "@/shared/lib/react-query";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AddSubscriptionParams,
   GetSubscriptionsParams,
 } from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
-import { getSubscriptionsAction, addSubscriptionAction } from "./actions";
+import {
+  getSubscriptionsAction,
+  addSubscriptionAction,
+  deleteSubscriptionAction,
+} from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
@@ -32,6 +36,24 @@ export const useAddSubscription = ({
   return useMutation({
     mutationFn: async (params) => {
       return await addSubscriptionAction(params);
+    },
+    ...options,
+  });
+};
+
+export const useDeleteSubscription = ({
+  options,
+}: MutationHook<void, number> = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      return await deleteSubscriptionAction(id);
+    },
+    async onSuccess() {
+      return await queryClient.invalidateQueries({
+        queryKey: subscriptionsQueryKeys.list._def,
+      });
     },
     ...options,
   });
