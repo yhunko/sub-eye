@@ -19,17 +19,21 @@ const useServiceWorkerUpdate = () => {
           label: "Update Now",
           onClick: () => {
             serwist.messageSkipWaiting();
-            window.location.reload();
           },
         },
       });
     };
 
-    // 'waiting' is the state where a new SW is installed but not active
+    const onControllerChange = () => {
+      window.location.reload();
+    };
+
     serwist.addEventListener("waiting", onUpdateFound);
+    serwist.addEventListener("controlling", onControllerChange);
 
     return () => {
       serwist.removeEventListener("waiting", onUpdateFound);
+      serwist.removeEventListener("controlling", onControllerChange);
     };
   }, [serwist]);
 };
