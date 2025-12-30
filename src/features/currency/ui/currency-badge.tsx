@@ -25,7 +25,7 @@ export const CurrencyBadge: FC<CurrencyBadgeProps> = ({
 
   return (
     <div className="pointer-events-none inline-flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-linear-to-br from-slate-50 to-slate-100 px-2 text-xs shadow-sm transition-shadow hover:shadow dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
-      <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
+      <span className="font-mono text-sm font-bold text-slate-600 dark:text-slate-300">
         {symbol}
       </span>
       <span className="font-semibold text-slate-700 dark:text-slate-200">

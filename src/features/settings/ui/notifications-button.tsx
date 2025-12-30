@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Label,
   Switch,
   Item,
   ItemActions,
@@ -52,27 +51,5 @@ export const NotificationsButton = () => {
         />
       </ItemActions>
     </Item>
-  );
-
-  return (
-    <div className="bg-card flex items-center justify-between rounded-lg border p-4">
-      <div className="space-y-0.5">
-        <Label
-          htmlFor="notification-toggle"
-          className="cursor-pointer text-base"
-        >
-          Enable Notifications
-        </Label>
-        <p className="text-muted-foreground text-sm">
-          Receive push notifications about important updates
-        </p>
-      </div>
-      <Switch
-        id="notification-toggle"
-        checked={!!subscription}
-        onCheckedChange={handleToggleNotifications}
-        disabled={isDisabled}
-      />
-    </div>
   );
 };

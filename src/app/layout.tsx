@@ -1,20 +1,17 @@
+import { ReactNode } from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Sono } from "next/font/google";
 import { ClerkProvider } from "@/shared/lib/clerk";
 import { ReactQueryProvider } from "@/shared/lib/react-query";
 import { Toaster } from "@/shared/components";
 import { ThemeProvider } from "@/features/theme";
 import { SerwistProvider } from "@/shared/lib/serwist/provider";
+import { cn } from "@/shared/lib";
 
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sono = Sono({
+  variable: "--font-sono",
   subsets: ["latin"],
 });
 
@@ -37,13 +34,16 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
+          className={cn(
+            sono.variable,
+            "flex min-h-screen flex-col antialiased",
+          )}
         >
           <ReactQueryProvider>
             <ThemeProvider
