@@ -5,6 +5,7 @@ export * from "./ui/button";
 export * from "./ui/button-group";
 export * from "./ui/calendar";
 export * from "./ui/card";
+export * from "./ui/chart";
 export * from "./ui/dropdown-menu";
 export * from "./ui/field";
 export * from "./ui/form";

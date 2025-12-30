@@ -2,6 +2,7 @@ export type Currency = {
   code: string;
   symbol: string;
   format: string;
+  flagEmoji: string;
 };
 
 export const CurrenciesMap = new Map<number, Currency>([
@@ -11,6 +12,7 @@ export const CurrenciesMap = new Map<number, Currency>([
       code: "USD",
       symbol: "$",
       format: "en-US",
+      flagEmoji: "🇺🇸",
     },
   ],
   [
@@ -19,6 +21,7 @@ export const CurrenciesMap = new Map<number, Currency>([
       code: "UAH",
       symbol: "₴",
       format: "uk-UA",
+      flagEmoji: "🇺🇦",
     },
   ],
 ]);
