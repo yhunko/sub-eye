@@ -19,6 +19,7 @@ export default clerkMiddleware(
     contentSecurityPolicy: {
       directives: {
         "worker-src": ["'self'", "blob:"],
+        "frame-src": ["vercel.live"],
       },
     },
   },
