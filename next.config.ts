@@ -5,7 +5,7 @@ import { version } from "./package.json";
 const cspHeader = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://real-satyr-3.clerk.accounts.dev https://challenges.cloudflare.com",
-  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev",
+  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev https://vercel.live",
   "img-src 'self' https://img.clerk.com",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
