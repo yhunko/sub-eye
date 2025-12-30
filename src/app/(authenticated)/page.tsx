@@ -1,21 +1,13 @@
 import { DashboardNavbar, DashboardLayout } from "@/features/dashboard";
-import { getQueryClient } from "@/shared/lib/react-query";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { SubscriptionsTable } from "@/features/subscriptions-table";
-import { AddSubscriptionButton } from "@/features/subscription";
+import { CashFlowChart } from "@/features/analytics/ui/cash-flow-chart";
+import { AnalyticsWidget } from "@/features/analytics/ui/analytics-widget";
 
 export default async function Home() {
-  const queryClient = getQueryClient();
-
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <DashboardLayout Navbar={<DashboardNavbar />}>
-        <main>
-          <SubscriptionsTable />
-        </main>
-      </DashboardLayout>
-
-      <AddSubscriptionButton />
-    </HydrationBoundary>
+    <DashboardLayout Navbar={<DashboardNavbar />}>
+      <AnalyticsWidget>
+        <CashFlowChart />
+      </AnalyticsWidget>
+    </DashboardLayout>
   );
 }

@@ -11,6 +11,7 @@ import { updateUserPublicMetadataAction, deleteAccountAction } from "./actions";
 import { useUser } from "@clerk/nextjs";
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { DeleteUserDto } from "../model/user.dtos";
+import { analyticsQueryKeys } from "../../analytics/api/hooks";
 
 export const userQueryKeys = createQueryKeys("USER", {
   publicMetadata: null,
@@ -19,14 +20,14 @@ export const userQueryKeys = createQueryKeys("USER", {
 export const useUserPublicMetadata = ({
   options,
 }: QueryHook<UserPublicMetadata> = {}) => {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
 
   return useQuery({
     queryKey: userQueryKeys.publicMetadata.queryKey,
     queryFn: async () => {
       return user!.publicMetadata;
     },
-    enabled: isLoaded && !!user,
+    enabled: !!user,
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
     ...options,
@@ -48,6 +49,9 @@ export const useUpdateUserPublicMetadata = ({
           userQueryKeys.publicMetadata.queryKey,
           user?.public_metadata,
         );
+        return queryClient.invalidateQueries({
+          queryKey: analyticsQueryKeys.dashboard.queryKey,
+        });
       }
     },
     ...options,

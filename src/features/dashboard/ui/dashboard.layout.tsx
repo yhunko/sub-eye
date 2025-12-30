@@ -12,7 +12,7 @@ export const DashboardLayout: FC<PropsWithChildren<DashboardLayoutProps>> = ({
     <div className="flex flex-col gap-2 md:gap-4">
       {Navbar}
 
-      <div className="container">{children}</div>
+      <main className="container">{children}</main>
     </div>
   );
 };

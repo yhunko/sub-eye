@@ -52,7 +52,12 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
       </SelectTrigger>
       <SelectContent className="min-w-24">
         {currencies.map(([key, currency]) => (
-          <SelectItem key={key} value={key.toString()}>
+          <SelectItem
+            key={key}
+            className="flex items-center"
+            value={key.toString()}
+          >
+            <span>{currency.flagEmoji}</span>
             <span className="text-muted-foreground">
               {currency?.code ?? key}
             </span>
