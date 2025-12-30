@@ -1,12 +1,12 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Sono } from "next/font/google";
-import { ClerkProvider } from "@/shared/lib/clerk";
 import { ReactQueryProvider } from "@/shared/lib/react-query";
 import { Toaster } from "@/shared/components";
 import { ThemeProvider } from "@/features/theme";
 import { SerwistProvider } from "@/shared/lib/serwist/provider";
 import { cn } from "@/shared/lib";
+import { SwUpdateManager } from "@/shared/lib/serwist/sw-update-manager";
 
 import "./globals.css";
 
@@ -37,14 +37,11 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={cn(
-            sono.variable,
-            "flex min-h-screen flex-col antialiased",
-          )}
-        >
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={cn(sono.variable, "flex min-h-screen flex-col antialiased")}
+      >
+        <SerwistProvider>
           <ReactQueryProvider>
             <ThemeProvider
               attribute="class"
@@ -52,13 +49,14 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <SerwistProvider>{children}</SerwistProvider>
+              {children}
             </ThemeProvider>
 
             <Toaster />
+            <SwUpdateManager />
           </ReactQueryProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </SerwistProvider>
+      </body>
+    </html>
   );
 }
