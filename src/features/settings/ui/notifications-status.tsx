@@ -40,7 +40,7 @@ export const NotificationsStatus = () => {
   return (
     <div className="bg-muted/30 rounded-lg border p-3 text-sm">
       <div className="space-y-2 md:space-y-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <Badge variant="outline">
             {getBrowserIcon()}
 
