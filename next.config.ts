@@ -9,7 +9,7 @@ const cspHeader = [
   "img-src 'self' https://img.clerk.com",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
-  "frame-src 'self' https://challenges.cloudflare.com",
+  "frame-src 'self' https://challenges.cloudflare.com https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://vercel.live",
   "form-action 'self'",
 ].join(";");
 
