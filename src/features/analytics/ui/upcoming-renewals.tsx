@@ -10,7 +10,14 @@ import {
 } from "@/shared/components/ui/card";
 import { cn } from "@/shared/lib/utils";
 import { FC } from "react";
-import { Item, ItemContent, ItemTitle, ItemActions } from "@/shared/components";
+import {
+  Item,
+  ItemContent,
+  ItemTitle,
+  ItemActions,
+  ItemMedia,
+} from "@/shared/components";
+import { BrandfetchImage } from "../../brandfetch";
 
 type UpcomingRenewalsProps = {
   className?: string;
@@ -46,6 +53,10 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
       <CardContent className="flex flex-col gap-4">
         {data.upcomingRenewals.map((item) => (
           <Item key={item.id} size="sm" variant="muted">
+            <ItemMedia>
+              <BrandfetchImage domain={item.brandDomain} />
+            </ItemMedia>
+
             <ItemContent>
               <ItemTitle>{item.name}</ItemTitle>
             </ItemContent>

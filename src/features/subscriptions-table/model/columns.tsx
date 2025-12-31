@@ -2,11 +2,12 @@ import { ColumnDef, RowData } from "@tanstack/table-core";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
 import { CreditCard, Calendar1, CalendarSync } from "lucide-react";
 import { SubscriptionDto } from "@/entities/subscription";
-import { CurrencyBadge } from "../../currency/ui/currency-badge";
+import { CurrencyBadge } from "../../currency";
 import { PeriodBadge } from "../../subscription/ui/period-badge";
 import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bill";
 import * as React from "react";
 import { SubscriptionDeleteButton } from "../ui/subscription-delete-button";
+import { BrandfetchImage } from "../../brandfetch";
 
 declare module "@tanstack/table-core" {
   // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
@@ -17,6 +18,17 @@ declare module "@tanstack/table-core" {
 }
 
 export const columns: ColumnDef<SubscriptionDto>[] = [
+  {
+    id: "icon",
+    accessorKey: "brandDomain",
+    header: "",
+    size: 40,
+    cell: ({ getValue }) => {
+      const brandDomain = getValue<SubscriptionDto["brandDomain"]>();
+
+      return <BrandfetchImage domain={brandDomain} />;
+    },
+  },
   {
     id: "name",
     accessorKey: "name",

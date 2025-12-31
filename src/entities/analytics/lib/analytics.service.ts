@@ -1,5 +1,8 @@
 import { SubscriptionService } from "../../subscription/lib/subscription.service";
-import { DashboardAnalyticsDto } from "../model/analytics.dtos";
+import {
+  DashboardAnalyticsDto,
+  MostExpensiveSubscriptionDto,
+} from "../model/analytics.dtos";
 import {
   addDays,
   isSameDay,
@@ -26,7 +29,11 @@ export class AnalyticsService {
     let activeSubscriptionsAuto = 0;
     let activeSubscriptionsManual = 0;
 
-    let mostExpensiveSubscription = { name: "N/A", cost: 0 };
+    let mostExpensiveSubscription: MostExpensiveSubscriptionDto = {
+      name: "N/A",
+      yearlyAmount: 0,
+      brandDomain: "",
+    };
 
     const mappedSubscriptions = subscriptions.map((subscription) => {
       monthlyBurnRate += subscription.billing.preferred.monthly;
@@ -38,10 +45,11 @@ export class AnalyticsService {
       }
 
       const yearlyCost = subscription.billing.preferred.monthly * 12;
-      if (yearlyCost > mostExpensiveSubscription.cost) {
+      if (yearlyCost > mostExpensiveSubscription.yearlyAmount) {
         mostExpensiveSubscription = {
           name: subscription.name,
-          cost: yearlyCost,
+          yearlyAmount: yearlyCost,
+          brandDomain: subscription.brandDomain,
         };
       }
 
@@ -63,15 +71,26 @@ export class AnalyticsService {
       .filter((s) => s.daysUntil >= 0)
       .sort((a, b) => a.daysUntil - b.daysUntil)
       .slice(0, 4)
-      .map(({ id, name, category, billing, nextPaymentDate, daysUntil }) => ({
-        id: id,
-        name: name,
-        provider: category || "Subscription",
-        amount: billing.preferred.amount,
-        currencyCode: preferredCurrencyCode,
-        nextPaymentDate: nextPaymentDate.toISOString(),
-        daysUntil: daysUntil,
-      }));
+      .map(
+        ({
+          id,
+          name,
+          category,
+          billing,
+          nextPaymentDate,
+          daysUntil,
+          brandDomain,
+        }) => ({
+          id: id,
+          name: name,
+          provider: category || "Subscription",
+          amount: billing.preferred.amount,
+          currencyCode: preferredCurrencyCode,
+          nextPaymentDate: nextPaymentDate.toISOString(),
+          daysUntil: daysUntil,
+          brandDomain,
+        }),
+      );
 
     const cashFlowForecast = [];
     let cumulative = 0;
@@ -114,10 +133,7 @@ export class AnalyticsService {
       activeSubscriptionsTotal: subscriptions.length,
       activeSubscriptionsAuto,
       activeSubscriptionsManual,
-      mostExpensiveSubscription: {
-        name: mostExpensiveSubscription.name,
-        yearlyAmount: mostExpensiveSubscription.cost,
-      },
+      mostExpensiveSubscription,
       cashFlowForecast,
       upcomingRenewals,
       totalUpcomingMonth,

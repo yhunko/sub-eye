@@ -13,8 +13,9 @@ import {
   FieldLegend,
   FieldDescription,
 } from "@/shared/components";
-import { CurrencyInput, CurrencySelect } from "../../currency";
-import { AddSubscriptionInput } from "../model/schema";
+import { CurrencyInput, CurrencySelect } from "../../../currency";
+import { AddSubscriptionInput } from "../../model/schema";
+import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
 
 export const SubscriptionFormBasicInfo = () => {
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
@@ -27,6 +28,8 @@ export const SubscriptionFormBasicInfo = () => {
     <FieldSet>
       <FieldLegend>Basic Information</FieldLegend>
       <FieldDescription>Enter the subscription name and cost</FieldDescription>
+
+      <AddSubscriptionBrandImage />
 
       <FieldGroup>
         <FormField
