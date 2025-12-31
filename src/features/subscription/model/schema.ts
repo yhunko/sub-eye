@@ -15,11 +15,13 @@ export const AddSubscriptionFormSchema = v.object({
     v.string(),
     v.transform((i) => parseInt(i)),
   ),
-  brandDomain: v.pipe(
-    v.custom<BrandfetchSearchDto>((val) => {
-      return typeof val === "object" && val !== null && "domain" in val;
-    }, "Please select a valid brand"),
-    v.transform((brand) => brand.domain),
+  brandDomain: v.optional(
+    v.pipe(
+      v.custom<BrandfetchSearchDto>((val) => {
+        return typeof val === "object" && val !== null && "domain" in val;
+      }, "Please select a valid brand"),
+      v.transform((brand) => brand.domain),
+    ),
   ),
 });
 export type AddSubscriptionInput = v.InferInput<
