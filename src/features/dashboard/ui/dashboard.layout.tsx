@@ -9,10 +9,10 @@ export const DashboardLayout: FC<PropsWithChildren<DashboardLayoutProps>> = ({
   children,
 }) => {
   return (
-    <div className="flex flex-col gap-2 md:gap-4">
+    <>
       {Navbar}
 
-      <main className="container">{children}</main>
-    </div>
+      <main className="container my-2 md:my-4">{children}</main>
+    </>
   );
 };
