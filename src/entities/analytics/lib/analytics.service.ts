@@ -1,56 +1,101 @@
 import { SubscriptionService } from "../../subscription/lib/subscription.service";
+import { DashboardAnalyticsDto } from "../model/analytics.dtos";
 import {
-  SubscriptionAnalyticsDto,
-  CashFlowPoint,
-} from "../model/analytics.dtos";
-import {
-  format,
   addDays,
   isSameDay,
   startOfDay,
-  getDaysInMonth,
+  differenceInCalendarDays,
+  isSameMonth,
 } from "date-fns";
+import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
+import { CurrencyUtils } from "@/shared/lib/currency.utils";
 
 export class AnalyticsService {
   constructor(private subscriptionService = new SubscriptionService()) {}
 
-  async getDashboardStats(userId: string): Promise<SubscriptionAnalyticsDto> {
+  async getDashboardStats(userId: string): Promise<DashboardAnalyticsDto> {
+    const today = startOfDay(new Date());
     const subscriptions =
       await this.subscriptionService.getSubscriptionsForUser(userId);
 
-    // Get user's preferred currency from the first sub (as service already converted them)
-    // or fallback to UAH (980)
     const preferredCurrencyCode =
-      subscriptions[0]?.billing.preferred.currencyCode ?? 980;
+      subscriptions[0]?.billing.preferred.currencyCode ??
+      CurrencyUtils.DEFAULT_CURRENCY_CODE;
 
-    const monthlyBurnRate = subscriptions.reduce(
-      (acc, sub) => acc + sub.billing.preferred.monthly,
-      0,
-    );
+    let monthlyBurnRate = 0;
+    let activeSubscriptionsAuto = 0;
+    let activeSubscriptionsManual = 0;
 
-    // Generate Cash Flow for next 30 days
-    const cashFlowForecast: CashFlowPoint[] = [];
+    let mostExpensiveSubscription = { name: "N/A", cost: 0 };
+
+    const mappedSubscriptions = subscriptions.map((subscription) => {
+      monthlyBurnRate += subscription.billing.preferred.monthly;
+
+      if (subscription.autoPaid) {
+        activeSubscriptionsAuto += 1;
+      } else {
+        activeSubscriptionsManual += 1;
+      }
+
+      const yearlyCost = subscription.billing.preferred.monthly * 12;
+      if (yearlyCost > mostExpensiveSubscription.cost) {
+        mostExpensiveSubscription = {
+          name: subscription.name,
+          cost: yearlyCost,
+        };
+      }
+
+      const nextDate = RecurrenceUtils.getNextOccurrence(
+        subscription.paymentDate,
+        subscription.every,
+        subscription.period,
+        today,
+      );
+
+      return {
+        ...subscription,
+        nextPaymentDate: nextDate,
+        daysUntil: differenceInCalendarDays(nextDate, today),
+      };
+    });
+
+    const upcomingRenewals = mappedSubscriptions
+      .filter((s) => s.daysUntil >= 0)
+      .sort((a, b) => a.daysUntil - b.daysUntil)
+      .slice(0, 4)
+      .map(({ id, name, category, billing, nextPaymentDate, daysUntil }) => ({
+        id: id,
+        name: name,
+        provider: category || "Subscription",
+        amount: billing.preferred.amount,
+        currencyCode: preferredCurrencyCode,
+        nextPaymentDate: nextPaymentDate.toISOString(),
+        daysUntil: daysUntil,
+      }));
+
+    const cashFlowForecast = [];
     let cumulative = 0;
-    const today = startOfDay(new Date());
-    const daysInMonth = getDaysInMonth(today);
+    let remainingThisMonth = 0;
 
-    for (let i = 0; i < daysInMonth; i++) {
-      const date = addDays(today, i);
+    for (let i = 0; i < 30; i++) {
+      const targetDate = addDays(today, i);
 
-      // Find subscriptions due on this specific date
-      const dueToday = subscriptions.filter((sub) =>
-        isSameDay(new Date(sub.nextPaymentDate), date),
+      const dueToday = mappedSubscriptions.filter((sub) =>
+        isSameDay(sub.nextPaymentDate, targetDate),
       );
 
       const dailyAmount = dueToday.reduce(
-        (acc, sub) => acc + sub.billing.preferred.amount,
+        (sum, s) => sum + s.billing.preferred.amount,
         0,
       );
       cumulative += dailyAmount;
 
+      if (isSameMonth(targetDate, today)) {
+        remainingThisMonth += dailyAmount;
+      }
+
       cashFlowForecast.push({
-        date: date.toISOString(),
-        formattedDate: format(date, "MMM dd"),
+        date: targetDate.toISOString(),
         amount: Number(dailyAmount.toFixed(2)),
         cumulative: Number(cumulative.toFixed(2)),
       });
@@ -65,8 +110,18 @@ export class AnalyticsService {
       preferredCurrencyCode,
       monthlyBurnRate,
       yearlyForecast: monthlyBurnRate * 12,
+      remainingThisMonth,
+      activeSubscriptionsTotal: subscriptions.length,
+      activeSubscriptionsAuto,
+      activeSubscriptionsManual,
+      mostExpensiveSubscription: {
+        name: mostExpensiveSubscription.name,
+        yearlyAmount: mostExpensiveSubscription.cost,
+      },
       cashFlowForecast,
+      upcomingRenewals,
       totalUpcomingMonth,
+      currencyCode: preferredCurrencyCode,
     };
   }
 }

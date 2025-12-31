@@ -12,20 +12,11 @@ import { MonobankService } from "../../monobank/lib/monobank.service";
 import { clerkClient } from "@clerk/nextjs/server";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
 import { MonobankCurrencyDto } from "../../monobank/model/dtos";
-import { CurrencyUtils } from "../../monobank/lib/currency.utils";
-import {
-  addDays,
-  addMonths,
-  addWeeks,
-  addYears,
-  differenceInDays,
-  isPast,
-  compareAsc,
-  compareDesc,
-} from "date-fns";
+import { compareAsc, compareDesc } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
-import { Period } from "@/shared/lib/db";
 import { PushNotificationsSchedulerService } from "../../push-notifications/lib/push-notifications-scheduler.service";
+import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
+import { CurrencyUtils } from "@/shared/lib/currency.utils";
 
 export class SubscriptionService {
   constructor(
@@ -136,7 +127,9 @@ export class SubscriptionService {
   ): Promise<{ currency: number; timezone?: string }> {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    const currency = Number(user.publicMetadata.preferredCurrency) || 980;
+    const currency =
+      Number(user.publicMetadata.preferredCurrency) ||
+      CurrencyUtils.DEFAULT_CURRENCY_CODE;
     const timezoneValue = user.publicMetadata.preferredTimezone;
     const timezone =
       typeof timezoneValue === "string" ? timezoneValue : undefined;
@@ -149,32 +142,20 @@ export class SubscriptionService {
     timezone?: string,
   ): string {
     const now = DateTimezoneUtils.now(timezone);
-    let current = DateTimezoneUtils.toZoned(subscription.paymentDate, timezone);
 
-    while (isPast(current) && differenceInDays(now, current) > 0) {
-      current = this.addPeriod(
-        current,
-        subscription.every,
-        subscription.period,
-      );
-    }
+    const startDateZoned = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
 
-    return current.toISOString();
-  }
+    const nextPayment = RecurrenceUtils.getNextOccurrence(
+      startDateZoned,
+      subscription.every,
+      subscription.period,
+      now,
+    );
 
-  private static addPeriod(date: Date, amount: number, period: Period): Date {
-    switch (period) {
-      case "day":
-        return addDays(date, amount);
-      case "week":
-        return addWeeks(date, amount);
-      case "month":
-        return addMonths(date, amount);
-      case "year":
-        return addYears(date, amount);
-      default:
-        return date;
-    }
+    return nextPayment.toISOString();
   }
 
   private toDto(

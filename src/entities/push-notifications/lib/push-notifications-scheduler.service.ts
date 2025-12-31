@@ -2,10 +2,10 @@ import { QStashService } from "./qstash.service";
 import { SubscriptionRepository } from "../../subscription/repository/subscription.repository";
 import { clerkClient } from "@clerk/nextjs/server";
 import { UserPublicMetadata } from "@/entities/user/model/user.model";
-import { addDays, addMonths, addWeeks, addYears, subDays } from "date-fns";
+import { subDays } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
-import { Period } from "@/shared/lib/db";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
+import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
 
 export class PushNotificationsSchedulerService {
   constructor(
@@ -86,8 +86,19 @@ export class PushNotificationsSchedulerService {
     const notificationTime = metadata.notificationTime || "10:00";
     const notificationOffset = metadata.notificationOffset || 0; // 0 = same day, 1 = day before
 
+    const now = DateTimezoneUtils.now(timezone);
+    const startDateZoned = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
+
     // Calculate next payment date
-    const nextPayment = this.calculateNextPaymentDate(subscription, timezone);
+    const nextPayment = RecurrenceUtils.getNextOccurrence(
+      startDateZoned,
+      subscription.every,
+      subscription.period,
+      now,
+    );
 
     // Apply offset (send notification X days before)
     const notifyDate = subDays(nextPayment, notificationOffset);
@@ -103,38 +114,5 @@ export class PushNotificationsSchedulerService {
     notifyAt.setHours(hours, minutes, 0, 0);
 
     return notifyAt;
-  }
-
-  private calculateNextPaymentDate(
-    subscription: SubscriptionSchema,
-    timezone?: string,
-  ): Date {
-    const now = DateTimezoneUtils.now(timezone);
-    let current = DateTimezoneUtils.toZoned(subscription.paymentDate, timezone);
-
-    while (current <= now) {
-      current = this.addPeriod(
-        current,
-        subscription.every,
-        subscription.period,
-      );
-    }
-
-    return current;
-  }
-
-  private addPeriod(date: Date, amount: number, period: Period): Date {
-    switch (period) {
-      case "day":
-        return addDays(date, amount);
-      case "week":
-        return addWeeks(date, amount);
-      case "month":
-        return addMonths(date, amount);
-      case "year":
-        return addYears(date, amount);
-      default:
-        return date;
-    }
   }
 }

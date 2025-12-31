@@ -7,7 +7,9 @@ import {
   CartesianGrid,
   Area,
   ComposedChart,
+  ResponsiveContainer,
 } from "recharts";
+import { format, parseISO } from "date-fns"; // Import date-fns here
 import { useDashboardAnalytics } from "@/entities/analytics/api/hooks";
 import { CurrencyBadge } from "@/features/currency/ui/currency-badge";
 import {
@@ -34,7 +36,7 @@ export function CashFlowChart() {
         <div className="space-y-2">
           <CardTitle>Cash Flow Forecast</CardTitle>
           <CardDescription>
-            Cumulative funds needed for subscriptions over the next 30 days.
+            Cumulative funds needed for the next 30 days.
           </CardDescription>
         </div>
 
@@ -54,80 +56,83 @@ export function CashFlowChart() {
             cumulative: { label: "Total Needed", color: "var(--chart-1)" },
             amount: { label: "Daily Bill", color: "var(--chart-2)" },
           }}
-          className="h-[350px] w-full"
+          className="w-full"
         >
-          <ComposedChart data={data.cashFlowForecast}>
-            <CartesianGrid
-              vertical={false}
-              strokeDasharray="3 3"
-              opacity={0.3}
-            />
-            <XAxis
-              dataKey="formattedDate"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={10}
-              interval={4}
-            />
-            <YAxis
-              domain={[0, "auto"]}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              width={40}
-              className="text-muted-foreground font-mono text-[10px] font-medium"
-              tickFormatter={(value) => `${currencySymbol}${value}`}
-            />
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data.cashFlowForecast}>
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                opacity={0.3}
+              />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={10}
+                minTickGap={32}
+                tickFormatter={(val) => format(parseISO(val), "MMM dd")}
+              />
+              <YAxis
+                domain={[0, "auto"]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={40}
+                className="text-muted-foreground font-mono text-[10px] font-medium"
+                tickFormatter={(value) => `${currencySymbol}${value}`}
+              />
 
-            <ChartTooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const item = payload[0].payload;
-                  return (
-                    <div className="bg-background rounded-lg border p-3 shadow-md">
-                      <p className="text-muted-foreground mb-2 text-xs font-medium">
-                        {item.formattedDate}
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-xs">Daily Amount:</span>
-                          <CurrencyBadge
-                            amount={item.amount}
-                            currencyCode={data.preferredCurrencyCode}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-4 border-t pt-2">
-                          <span className="text-xs font-bold">
-                            Total Needed:
-                          </span>
-                          <CurrencyBadge
-                            amount={item.cumulative}
-                            currencyCode={data.preferredCurrencyCode}
-                          />
+              <ChartTooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const item = payload[0].payload;
+                    return (
+                      <div className="bg-background/95 rounded-lg border p-3 shadow-md backdrop-blur-sm">
+                        <p className="text-muted-foreground mb-2 text-xs font-medium">
+                          {format(parseISO(item.date), "MMM dd, yyyy")}
+                        </p>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-xs">Daily Amount:</span>
+                            <CurrencyBadge
+                              amount={item.amount}
+                              currencyCode={data.preferredCurrencyCode}
+                            />
+                          </div>
+                          <div className="mt-2 flex items-center justify-between gap-4 border-t pt-2">
+                            <span className="text-xs font-bold">
+                              Total Needed:
+                            </span>
+                            <CurrencyBadge
+                              amount={item.cumulative}
+                              currencyCode={data.preferredCurrencyCode}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
+                    );
+                  }
+                  return null;
+                }}
+              />
 
-            <Bar
-              dataKey="amount"
-              fill="var(--color-amount)"
-              radius={[4, 4, 0, 0]}
-              barSize={20}
-            />
-            <Area
-              type="monotone"
-              dataKey="cumulative"
-              fill="var(--color-cumulative)"
-              fillOpacity={0.1}
-              stroke="var(--color-cumulative)"
-              strokeWidth={2}
-            />
-          </ComposedChart>
+              <Bar
+                dataKey="amount"
+                fill="var(--color-amount)"
+                radius={[4, 4, 0, 0]}
+                barSize={20}
+              />
+              <Area
+                type="monotone"
+                dataKey="cumulative"
+                fill="var(--color-cumulative)"
+                fillOpacity={0.1}
+                stroke="var(--color-cumulative)"
+                strokeWidth={2}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
     </Card>
