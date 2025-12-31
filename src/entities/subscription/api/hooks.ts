@@ -12,6 +12,7 @@ import {
   deleteSubscriptionAction,
 } from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
+import { analyticsQueryKeys } from "../../analytics/api/hooks";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
   list: (params?: GetSubscriptionsParams) => [params],
@@ -33,9 +34,16 @@ export const useSubscriptions = ({
 export const useAddSubscription = ({
   options,
 }: MutationHook<SubscriptionSchema, AddSubscriptionParams> = {}) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (params) => {
       return await addSubscriptionAction(params);
+    },
+    async onSuccess() {
+      return await queryClient.invalidateQueries({
+        queryKey: analyticsQueryKeys.dashboard.queryKey,
+      });
     },
     ...options,
   });
@@ -51,9 +59,14 @@ export const useDeleteSubscription = ({
       return await deleteSubscriptionAction(id);
     },
     async onSuccess() {
-      return await queryClient.invalidateQueries({
-        queryKey: subscriptionsQueryKeys.list._def,
-      });
+      return await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: subscriptionsQueryKeys.list._def,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: analyticsQueryKeys.dashboard.queryKey,
+        }),
+      ]);
     },
     ...options,
   });
