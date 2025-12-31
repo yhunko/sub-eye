@@ -36,6 +36,20 @@
       "when": 1766151687213,
       "tag": "0004_tiresome_mach_iv",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1767194776393,
+      "tag": "0005_chubby_surge",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767196399564,
+      "tag": "0006_cooing_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

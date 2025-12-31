@@ -5,8 +5,8 @@ import { version } from "./package.json";
 const cspHeader = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://real-satyr-3.clerk.accounts.dev https://challenges.cloudflare.com",
-  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev https://vercel.live",
-  "img-src 'self' https://img.clerk.com",
+  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev https://vercel.live https://cdn.brandfetch.io https://api.brandfetch.io",
+  "img-src 'self' https://img.clerk.com https://cdn.brandfetch.io",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   "frame-src 'self' https://challenges.cloudflare.com https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://vercel.live",
@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.brandfetch.io",
+      },
+    ],
   },
   serverExternalPackages: ["esbuild-wasm"],
   async headers() {

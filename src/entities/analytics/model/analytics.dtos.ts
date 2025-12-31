@@ -1,3 +1,5 @@
+import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
+
 export interface CashFlowPoint {
   date: string;
   amount: number;
@@ -7,6 +9,7 @@ export interface CashFlowPoint {
 export interface UpcomingRenewalDto {
   id: number;
   name: string;
+  brandDomain: SubscriptionSchema["brandDomain"];
   provider: string;
   amount: number;
   currencyCode: number;
@@ -17,6 +20,7 @@ export interface UpcomingRenewalDto {
 export interface MostExpensiveSubscriptionDto {
   name: string;
   yearlyAmount: number;
+  brandDomain: SubscriptionSchema["brandDomain"];
 }
 
 export interface DashboardAnalyticsDto {

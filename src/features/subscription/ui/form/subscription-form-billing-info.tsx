@@ -15,8 +15,8 @@ import {
   FieldDescription,
 } from "@/shared/components";
 import { useFormContext, useWatch } from "react-hook-form";
-import { AddSubscriptionInput } from "../model/schema";
-import { SubscriptionDateSelect } from "./subscription-date-select";
+import { AddSubscriptionInput } from "../../model/schema";
+import { SubscriptionDateSelect } from "../subscription-date-select";
 import { Period } from "@/shared/lib/db";
 
 export const SubscriptionFormBillingInfo = () => {
@@ -54,7 +54,7 @@ export const SubscriptionFormBillingInfo = () => {
           control={control}
           name="every"
           render={({ field }) => (
-            <div className="relative">
+            <>
               <div className="flex flex-col gap-2 md:col-span-1 md:flex-row md:items-end">
                 <FormItem>
                   <FormLabel>Billing cycle</FormLabel>
@@ -92,11 +92,11 @@ export const SubscriptionFormBillingInfo = () => {
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
-              <span className="text-muted-foreground absolute -bottom-1 translate-y-full text-sm">
+              <span className="text-muted-foreground text-sm">
                 For example: &#34;Every 1 month&#34; means you&#39;re billed
                 monthly
               </span>
-            </div>
+            </>
           )}
         />
       </FieldGroup>

@@ -1,0 +1,1 @@
+ALTER TABLE "subscriptions" RENAME COLUMN "branded_domain" TO "brand_domain";

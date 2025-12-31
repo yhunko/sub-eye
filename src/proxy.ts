@@ -18,8 +18,10 @@ export default clerkMiddleware(
   {
     contentSecurityPolicy: {
       directives: {
+        "connect-src": ["https://api.brandfetch.io"],
         "worker-src": ["'self'", "blob:"],
-        "frame-src": ["vercel.live"],
+        "frame-src": ["https://vercel.live"],
+        "img-src": ["https://cdn.brandfetch.io"],
       },
     },
   },
