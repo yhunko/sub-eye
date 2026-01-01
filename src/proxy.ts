@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
 
 const isPublicRoute = createRouteMatcher([
   "/auth(.*)",
@@ -21,7 +22,7 @@ export default clerkMiddleware(
         "connect-src": ["https://api.brandfetch.io"],
         "worker-src": ["'self'", "blob:"],
         "frame-src": ["https://vercel.live"],
-        "img-src": ["https://cdn.brandfetch.io"],
+        "img-src": [`https://${BrandfetchUtils.HOSTNAME}`],
       },
     },
   },

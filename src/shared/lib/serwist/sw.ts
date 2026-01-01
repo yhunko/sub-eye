@@ -1,6 +1,12 @@
 import { defaultCache } from "@serwist/turbopack/worker";
-import { Serwist, SerwistGlobalConfig, PrecacheEntry } from "serwist";
+import {
+  Serwist,
+  SerwistGlobalConfig,
+  PrecacheEntry,
+  CacheFirst,
+} from "serwist";
 import { registerPushNotificationsListeners } from "@/entities/push-notifications/lib/push-notifications.worker";
+import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -18,7 +24,26 @@ const serwist = new Serwist({
   skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    {
+      matcher: ({ url }) => url.hostname === BrandfetchUtils.HOSTNAME,
+      // CacheFirst is best for static assets like logos to save API hits.
+      handler: new CacheFirst({
+        cacheName: "brandfetch-images",
+        plugins: [
+          {
+            cacheWillUpdate: async ({ response }) => {
+              if (response && response.status === 200) {
+                return response;
+              }
+              return null;
+            },
+          },
+        ],
+      }),
+    },
+    ...defaultCache,
+  ],
   fallbacks: {
     entries: [
       {
