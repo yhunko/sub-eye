@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
-import { Sono } from "next/font/google";
+import { Nunito } from "next/font/google";
 import { ReactQueryProvider } from "@/shared/lib/react-query";
 import { Toaster } from "@/shared/components";
 import { ThemeProvider } from "@/features/theme";
@@ -10,8 +10,8 @@ import { SwUpdateManager } from "@/shared/lib/serwist/sw-update-manager";
 
 import "./globals.css";
 
-const sono = Sono({
-  variable: "--font-sono",
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
 });
 
@@ -39,7 +39,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={cn(sono.variable, "flex min-h-screen flex-col antialiased")}
+        className={cn(
+          nunito.variable,
+          "flex min-h-screen flex-col antialiased",
+        )}
       >
         <SerwistProvider>
           <ReactQueryProvider>
