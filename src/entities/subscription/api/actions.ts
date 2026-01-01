@@ -10,51 +10,76 @@ import {
 import { SubscriptionDto } from "../model/subscription.dtos";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
-// Each export must be an async function
 export async function getSubscriptionsAction(
   params?: GetSubscriptionsParams,
 ): Promise<SubscriptionDto[]> {
-  const { isAuthenticated, userId } = await auth();
+  return Sentry.withServerActionInstrumentation(
+    "getSubscriptionsAction",
+    {
+      recordResponse: true,
+    },
+    async () => {
+      const { isAuthenticated, userId } = await auth();
 
-  if (!isAuthenticated) {
-    throw new Error("Unauthorized");
-  }
+      if (!isAuthenticated || !userId) {
+        throw new Error(
+          "Unauthorized: User must be logged in to fetch subscriptions",
+        );
+      }
 
-  const controller = new SubscriptionController(userId);
-  return await controller.getSubscriptions(params);
+      Sentry.setUser({ id: userId });
+
+      const controller = new SubscriptionController(userId);
+      return await controller.getSubscriptions(params);
+    },
+  );
 }
 
 export async function addSubscriptionAction(
   payload: AddSubscriptionParams,
 ): Promise<SubscriptionSchema> {
-  const { isAuthenticated, userId } = await auth();
+  return Sentry.withServerActionInstrumentation(
+    "addSubscriptionAction",
+    {
+      recordResponse: true,
+    },
+    async () => {
+      const { isAuthenticated, userId } = await auth();
 
-  if (!isAuthenticated) {
-    throw new Error("Unauthorized");
-  }
+      if (!isAuthenticated || !userId) {
+        throw new Error(
+          "Unauthorized: User must be logged in to add a subscription",
+        );
+      }
 
-  try {
-    const controller = new SubscriptionController(userId);
-    return await controller.addSubscription(payload);
-  } catch (error) {
-    Sentry.withScope((scope) => {
-      scope.setUser({ id: userId });
-      scope.setTag("action", "addSubscriptionAction");
-      scope.setExtra("payload", payload);
+      Sentry.setUser({ id: userId });
 
-      Sentry.captureException(error);
-    });
-    throw error;
-  }
+      const controller = new SubscriptionController(userId);
+      return await controller.addSubscription(payload);
+    },
+  );
 }
 
 export async function deleteSubscriptionAction(id: number): Promise<void> {
-  const { isAuthenticated, userId } = await auth();
+  return Sentry.withServerActionInstrumentation(
+    "deleteSubscriptionAction",
+    {
+      recordResponse: true,
+    },
+    async () => {
+      const { isAuthenticated, userId } = await auth();
 
-  if (!isAuthenticated) {
-    throw new Error("Unauthorized");
-  }
+      if (!isAuthenticated || !userId) {
+        throw new Error(
+          "Unauthorized: User must be logged in to delete a subscription",
+        );
+      }
 
-  const controller = new SubscriptionController(userId);
-  return await controller.deleteSubscription(id);
+      Sentry.setUser({ id: userId });
+      Sentry.setTag("subscription_id", id);
+
+      const controller = new SubscriptionController(userId);
+      return await controller.deleteSubscription(id);
+    },
+  );
 }
