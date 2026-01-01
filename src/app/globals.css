@@ -10,9 +10,9 @@ body {
 }
 
 @theme inline {
-  --font-sono: var(--font-sono);
-  --font-sans: var(--font-sono);
-  --font-display: var(--font-sono);
+  --font-nunito: var(--font-nunito);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-nunito);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -126,7 +126,7 @@ body {
   }
 
   body {
-    @apply bg-background text-foreground font-sono;
+    @apply bg-background text-foreground font-nunito;
   }
 }
 
