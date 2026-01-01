@@ -22,6 +22,7 @@ export class QStashService {
       headers: {
         "x-vercel-protection-bypass":
           process.env.VERCEL_AUTOMATION_BYPASS_SECRET!,
+        "Upstash-Retries": "1",
       },
       body: {
         userId,

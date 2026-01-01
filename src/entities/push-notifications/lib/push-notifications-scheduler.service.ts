@@ -2,7 +2,7 @@ import { QStashService } from "./qstash.service";
 import { SubscriptionRepository } from "../../subscription/repository/subscription.repository";
 import { clerkClient } from "@clerk/nextjs/server";
 import { UserPublicMetadata } from "@/entities/user/model/user.model";
-import { subDays } from "date-fns";
+import { subDays, isSameDay } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
 import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
@@ -107,11 +107,28 @@ export class PushNotificationsSchedulerService {
     const [hours, minutes] = notificationTime.split(":").map(Number);
 
     // Create notification datetime in user's timezone
-    const notifyAt = DateTimezoneUtils.toZoned(
+    let notifyAt = DateTimezoneUtils.toZoned(
       notifyDate.toISOString(),
       timezone,
     );
     notifyAt.setHours(hours, minutes, 0, 0);
+
+    // If notification time is today, schedule for the next payment occurrence.
+    if (isSameDay(notifyAt, now)) {
+      const nextNextPayment = RecurrenceUtils.getNextOccurrence(
+        startDateZoned,
+        subscription.every,
+        subscription.period,
+        RecurrenceUtils.addPeriod(nextPayment, 1, subscription.period), // Move past the current one
+      );
+
+      const nextNotifyDate = subDays(nextNextPayment, notificationOffset);
+      notifyAt = DateTimezoneUtils.toZoned(
+        nextNotifyDate.toISOString(),
+        timezone,
+      );
+      notifyAt.setHours(hours, minutes, 0, 0);
+    }
 
     return notifyAt;
   }
