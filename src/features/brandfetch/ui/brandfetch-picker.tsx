@@ -27,15 +27,12 @@ import {
   AvatarImage,
   AvatarFallback,
 } from "@/shared/components";
-import {
-  useDebouncedState,
-  useUncontrolled,
-  useMediaQuery,
-} from "@mantine/hooks";
+import { useDebouncedState, useUncontrolled } from "@mantine/hooks";
 import { useBrandfetchSearch } from "@/entities/brandfetch/api/hooks";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { keepPreviousData } from "@tanstack/react-query";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
+import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 
 interface BrandPickerProps {
   value?: BrandfetchSearchDto;
@@ -43,7 +40,7 @@ interface BrandPickerProps {
 }
 
 export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isDesktop = useBreakpoint("lg");
   const [selected, setSelected] = useUncontrolled({ value, onChange });
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useDebouncedState("", 500);
@@ -61,7 +58,7 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
 
   const PickerContent = useMemo(
     () => (
-      <Command shouldFilter={false} className="h-[60vh]">
+      <Command shouldFilter={false} className="h-[60vh] lg:h-auto">
         <CommandInput
           placeholder="Search brands..."
           onValueChange={setQuery}
@@ -122,31 +119,29 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
     </Button>
   );
 
-  if (isMobile) {
+  if (isDesktop) {
     return (
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>{Trigger}</DrawerTrigger>
-        <DrawerContent className="p-0">
-          <VisuallyHidden.Root>
-            <DrawerHeader>
-              <DrawerTitle>Search Brand</DrawerTitle>
-              <DrawerDescription>
-                Select a brand from the list
-              </DrawerDescription>
-            </DrawerHeader>
-          </VisuallyHidden.Root>
-          <div className="mt-4 border-t">{PickerContent}</div>
-        </DrawerContent>
-      </Drawer>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>{Trigger}</PopoverTrigger>
+        <PopoverContent className="w-[350px] p-0" align="start">
+          {PickerContent}
+        </PopoverContent>
+      </Popover>
     );
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{Trigger}</PopoverTrigger>
-      <PopoverContent className="w-[350px] p-0" align="start">
-        {PickerContent}
-      </PopoverContent>
-    </Popover>
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerTrigger asChild>{Trigger}</DrawerTrigger>
+      <DrawerContent className="p-0">
+        <VisuallyHidden.Root>
+          <DrawerHeader>
+            <DrawerTitle>Search Brand</DrawerTitle>
+            <DrawerDescription>Select a brand from the list</DrawerDescription>
+          </DrawerHeader>
+        </VisuallyHidden.Root>
+        <div className="mt-4 border-t">{PickerContent}</div>
+      </DrawerContent>
+    </Drawer>
   );
 };

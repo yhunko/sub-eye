@@ -28,7 +28,7 @@ export const CurrencyText: FC<CurrencyTextProps> = ({
 
   return (
     <>
-      <span className="font-mono text-sm font-bold text-slate-600 dark:text-slate-300">
+      <span className="font-bold text-slate-600 dark:text-slate-300">
         {symbol}
       </span>
       <span className="font-semibold text-slate-700 dark:text-slate-200">
