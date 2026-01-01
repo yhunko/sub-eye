@@ -61,7 +61,7 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
 
   const PickerContent = useMemo(
     () => (
-      <Command shouldFilter={false} className="h-[60vh] sm:h-auto">
+      <Command shouldFilter={false} className="h-[60vh]">
         <CommandInput
           placeholder="Search brands..."
           onValueChange={setQuery}

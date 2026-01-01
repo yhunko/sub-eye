@@ -5,8 +5,8 @@ import {
   ItemMedia,
   ItemContent,
   ItemTitle,
-  ItemDescription,
   FormField,
+  ItemDescription,
 } from "@/shared/components";
 import { BrandfetchPicker } from "../../../brandfetch";
 import Link from "next/link";
@@ -27,8 +27,8 @@ export const AddSubscriptionBrandImage = () => {
           </ItemMedia>
           <ItemContent>
             <ItemTitle>Subscription icon</ItemTitle>
-            <ItemDescription>
-              It will be fetched using{" "}
+            <ItemDescription className="text-xs">
+              Powered by{" "}
               <Link
                 href="https://brandfetch.com"
                 target="_blank"

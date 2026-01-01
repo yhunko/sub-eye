@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { SubscriptionController } from "../lib/subscription.controller";
 import {
@@ -32,8 +33,19 @@ export async function addSubscriptionAction(
     throw new Error("Unauthorized");
   }
 
-  const controller = new SubscriptionController(userId);
-  return await controller.addSubscription(payload);
+  try {
+    const controller = new SubscriptionController(userId);
+    return await controller.addSubscription(payload);
+  } catch (error) {
+    Sentry.withScope((scope) => {
+      scope.setUser({ id: userId });
+      scope.setTag("action", "addSubscriptionAction");
+      scope.setExtra("payload", payload);
+
+      Sentry.captureException(error);
+    });
+    throw error;
+  }
 }
 
 export async function deleteSubscriptionAction(id: number): Promise<void> {

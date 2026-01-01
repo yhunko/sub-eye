@@ -73,6 +73,8 @@ export default withSentryConfig(nextConfig, {
   // side errors will fail.
   tunnelRoute: "/monitoring",
 
+  debug: process.env.NODE_ENV === "development",
+
   webpack: {
     treeshake: {
       // Automatically tree-shake Sentry logger statements to reduce bundle size
