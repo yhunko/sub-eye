@@ -16,8 +16,13 @@ import {
 import { LogOut, Cog, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { UserAvatar } from "./user-avatar";
+import { FC } from "react";
 
-export const UserDropdownMenu = () => {
+type UserDropdownMenuProps = {
+  triggerId: string;
+};
+
+export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
   const { user } = useUser();
 
   const fullName = user?.fullName ?? user?.username ?? "User";
@@ -25,7 +30,10 @@ export const UserDropdownMenu = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="cursor-pointer outline-none">
+      <DropdownMenuTrigger
+        id={triggerId}
+        className="cursor-pointer outline-none"
+      >
         <UserAvatar />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
