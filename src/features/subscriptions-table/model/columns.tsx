@@ -6,8 +6,8 @@ import { CurrencyBadge } from "../../currency";
 import { PeriodBadge } from "../../subscription/ui/period-badge";
 import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bill";
 import * as React from "react";
-import { SubscriptionDeleteButton } from "../../subscription/ui/subscription-delete-button";
 import { BrandfetchImage } from "../../brandfetch";
+import { SubscriptionDeleteButton } from "../../subscription";
 
 declare module "@tanstack/table-core" {
   // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
