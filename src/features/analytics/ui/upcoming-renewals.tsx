@@ -1,5 +1,7 @@
 "use client";
 
+import { FC, useMemo } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useDashboardAnalytics } from "@/entities/analytics/api/hooks";
 import { CurrencyBadge } from "@/features/currency/ui/currency-badge";
 import {
@@ -8,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { cn } from "@/shared/lib/utils";
-import { FC } from "react";
+import { cn, DateTimezoneUtils } from "@/shared/lib";
 import {
   Item,
   ItemContent,
@@ -17,6 +18,7 @@ import {
   ItemActions,
   ItemMedia,
 } from "@/shared/components";
+import { SubscriptionUIMapper } from "@/features/subscription/lib/subscription-ui.mapper";
 import { BrandfetchImage } from "../../brandfetch";
 
 type UpcomingRenewalsProps = {
@@ -24,7 +26,32 @@ type UpcomingRenewalsProps = {
 };
 
 export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
-  const { data, isLoading } = useDashboardAnalytics();
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const { data, isLoading: isAnalyticsLoading } = useDashboardAnalytics();
+
+  const upcomingRenewals = data?.upcomingRenewals;
+  const timezone = user?.publicMetadata?.preferredTimezone;
+  const isLoading = !isUserLoaded || isAnalyticsLoading;
+
+  const renewalsWithDisplayState = useMemo(() => {
+    if (!upcomingRenewals || !isUserLoaded) return [];
+
+    return upcomingRenewals.map((item) => {
+      const zonedDate = DateTimezoneUtils.toZoned(
+        item.nextPaymentDate,
+        timezone,
+      );
+      const displayState = SubscriptionUIMapper.toDisplayState(
+        zonedDate,
+        timezone,
+      );
+
+      return {
+        ...item,
+        displayState,
+      };
+    });
+  }, [upcomingRenewals, isUserLoaded, timezone]);
 
   if (isLoading) {
     return (
@@ -32,7 +59,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
     );
   }
 
-  if (!data?.upcomingRenewals.length) {
+  if (!renewalsWithDisplayState.length) {
     return (
       <Card className={className}>
         <CardHeader>
@@ -51,7 +78,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
         <CardTitle>Upcoming Renewals</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {data.upcomingRenewals.map((item) => (
+        {renewalsWithDisplayState.map((item) => (
           <Item key={item.id} size="sm" variant="muted">
             <ItemMedia>
               <BrandfetchImage domain={item.brandDomain} />
@@ -62,13 +89,17 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
             </ItemContent>
 
             <ItemActions>
-              <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                <span>in {item.daysUntil} days</span>
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 text-xs",
+                  item.displayState.colorClass,
+                )}
+              >
+                <span>{item.displayState.relativeText}</span>
               </div>
               <CurrencyBadge
                 amount={item.amount}
                 currencyCode={item.currencyCode}
-                // className="w-[60px] justify-end text-sm font-semibold"
               />
             </ItemActions>
           </Item>

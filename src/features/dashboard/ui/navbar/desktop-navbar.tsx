@@ -33,10 +33,10 @@ export const DesktopNavbar = () => {
                     href="/subscriptions"
                     className={cn(
                       navigationMenuTriggerStyle(),
-                      "cursor-pointer transition-colors",
+                      "transition-colors",
                       pathname.startsWith("/subscriptions")
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:text-foreground bg-transparent",
+                        ? "bg-accent text-accent-foreground pointer-events-none"
+                        : "text-muted-foreground hover:text-foreground cursor-pointer bg-transparent",
                     )}
                   >
                     Subscriptions
