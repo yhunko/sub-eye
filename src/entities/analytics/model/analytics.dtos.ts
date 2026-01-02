@@ -23,6 +23,11 @@ export interface MostExpensiveSubscriptionDto {
   brandDomain: SubscriptionSchema["brandDomain"];
 }
 
+export interface MonthlyTrendPoint {
+  date: string;
+  amount: number;
+}
+
 export interface DashboardAnalyticsDto {
   preferredCurrencyCode: number;
   monthlyBurnRate: number;
@@ -35,5 +40,5 @@ export interface DashboardAnalyticsDto {
   cashFlowForecast: CashFlowPoint[];
   upcomingRenewals: UpcomingRenewalDto[];
   totalUpcomingMonth: number;
-  currencyCode: number;
+  monthlyTrend: MonthlyTrendPoint[];
 }

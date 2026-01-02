@@ -13,14 +13,14 @@ export const YearlyCostCard = () => {
       <div className="space-y-1">
         <div className="text-xl font-bold">
           <CurrencyText
-            currencyCode={data.currencyCode}
+            currencyCode={data?.preferredCurrencyCode}
             amount={data.yearlyForecast}
           />
         </div>
         <div className="text-muted-foreground inline-flex gap-2 text-sm">
           <span>
             <CurrencyText
-              currencyCode={data.currencyCode}
+              currencyCode={data?.preferredCurrencyCode}
               amount={data.monthlyBurnRate}
             />{" "}
             / month

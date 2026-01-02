@@ -25,7 +25,7 @@ export const MostExpensiveSubscriptionCard = () => {
           <span>
             <CurrencyText
               amount={data.mostExpensiveSubscription.yearlyAmount}
-              currencyCode={data.currencyCode}
+              currencyCode={data.preferredCurrencyCode}
             />{" "}
             / year
           </span>
