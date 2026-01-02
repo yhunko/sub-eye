@@ -1,31 +1,22 @@
 import { DashboardLayout, DashboardNavbar } from "@/features/dashboard";
-import {
-  SettingsLayout,
-  SettingsTab,
-  SettingsAccountForm,
-  SettingsTabs,
-} from "@/features/settings";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/shared/components";
+import { SettingsLayout, SettingsTab, SettingsTabs } from "@/features/settings";
+import { UserProfile } from "@clerk/nextjs";
 
 export default async function SettingsPageAccount() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SettingsLayout Tabs={<SettingsTabs tab={SettingsTab.ACCOUNT} />}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Account settings</CardTitle>
-            <CardDescription>Manage your account settings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingsAccountForm />
-          </CardContent>
-        </Card>
+      <SettingsLayout
+        className="flex max-w-full flex-col"
+        Tabs={
+          <SettingsTabs
+            tab={SettingsTab.ACCOUNT}
+            className="w-full max-w-xl self-center"
+          />
+        }
+      >
+        <div className="flex justify-center">
+          <UserProfile />
+        </div>
       </SettingsLayout>
     </DashboardLayout>
   );

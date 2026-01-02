@@ -9,18 +9,15 @@ import {
   ItemTitle,
   ItemMedia,
 } from "@/shared/components";
-import {
-  useUpdateUserPublicMetadata,
-  useUserPublicMetadata,
-} from "@/entities/user";
+import { useUpdateUserPublicMetadata } from "@/entities/user";
 import { Globe } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export const PreferredTimezoneSelect: FC = () => {
-  const { data: publicMetadata, isLoading: isPublicMetadataLoading } =
-    useUserPublicMetadata();
+  const { user, isLoaded } = useUser();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
-  const isLoading = isPending || isPublicMetadataLoading;
+  const isLoading = isPending || !isLoaded;
 
   return (
     <Item variant="outline">
@@ -36,7 +33,7 @@ export const PreferredTimezoneSelect: FC = () => {
 
       <div className="w-full">
         <TimezoneSelect
-          value={publicMetadata?.preferredTimezone}
+          value={user?.publicMetadata?.preferredTimezone}
           onChange={(preferredTimezone) => mutate({ preferredTimezone })}
           disabled={isLoading}
         />

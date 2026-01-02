@@ -7,11 +7,12 @@ import { SettingsTab } from "../model/props";
 
 type SettingsTabsProps = {
   tab: SettingsTab;
+  className?: string;
 };
 
-export const SettingsTabs: FC<SettingsTabsProps> = ({ tab }) => {
+export const SettingsTabs: FC<SettingsTabsProps> = ({ tab, className }) => {
   return (
-    <Tabs defaultValue={tab}>
+    <Tabs defaultValue={tab} className={className}>
       <TabsList className="w-full">
         <TabsTrigger value={SettingsTab.GENERAL} asChild>
           <Link href="/settings/general">General</Link>

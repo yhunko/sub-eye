@@ -1,7 +1,6 @@
 "use server";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { UserPublicMetadata } from "../model/user.model";
 import { DeleteUserDto } from "../model/user.dtos";
 import { SubscriptionController } from "../../subscription/lib/subscription.controller";
 

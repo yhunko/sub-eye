@@ -1,7 +1,6 @@
 import { QStashService } from "./qstash.service";
 import { SubscriptionRepository } from "../../subscription/repository/subscription.repository";
 import { clerkClient } from "@clerk/nextjs/server";
-import { UserPublicMetadata } from "@/entities/user/model/user.model";
 import { subDays, isSameDay } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";

@@ -9,19 +9,16 @@ import {
   ItemActions,
   ItemMedia,
 } from "@/shared/components";
-import {
-  useUpdateUserPublicMetadata,
-  useUserPublicMetadata,
-} from "@/entities/user";
+import { useUpdateUserPublicMetadata } from "@/entities/user";
 import { CurrencySelect } from "../../currency";
 import { DollarSign } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export const PreferredCurrencySelect: FC = () => {
-  const { data: publicMetadata, isLoading: isPublicMetadataLoading } =
-    useUserPublicMetadata();
+  const { user, isLoaded } = useUser();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
-  const isLoading = isPending || isPublicMetadataLoading;
+  const isLoading = isPending || !isLoaded;
 
   return (
     <Item variant="outline">
@@ -37,7 +34,7 @@ export const PreferredCurrencySelect: FC = () => {
       <ItemActions>
         <CurrencySelect
           id="preferred-currency"
-          value={publicMetadata?.preferredCurrency}
+          value={user?.publicMetadata?.preferredCurrency}
           onChange={(currency) => mutate({ preferredCurrency: currency })}
           disabled={isLoading}
         />

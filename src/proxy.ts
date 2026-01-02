@@ -5,6 +5,8 @@ const isPublicRoute = createRouteMatcher([
   "/auth(.*)",
   // QStash webhook endpoint - needs to be additionally protected
   "/api/notifications/send",
+  // Public route for webhooks
+  "/api/webhooks/clerk/user/deleted",
   // Public service worker
   "/serwist/sw.js",
   "/~offline",
@@ -19,10 +21,9 @@ export default clerkMiddleware(
   {
     contentSecurityPolicy: {
       directives: {
-        "connect-src": ["https://api.brandfetch.io"],
-        "worker-src": ["'self'", "blob:"],
+        "connect-src": [`https://${BrandfetchUtils.API_HOSTNAME}`],
         "frame-src": ["https://vercel.live"],
-        "img-src": [`https://${BrandfetchUtils.HOSTNAME}`],
+        "img-src": [`https://${BrandfetchUtils.CDN_HOSTNAME}`],
       },
     },
   },
