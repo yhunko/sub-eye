@@ -40,9 +40,9 @@ export const AddSubscriptionForm = () => {
     InferOutput<typeof AddSubscriptionFormSchema>
   > = (data) => {
     addSubscription(data, {
-      async onSuccess() {
+      onSuccess() {
         toast.success("Subscription added successfully!");
-        router.replace("/");
+        router.push("/subscriptions");
       },
     });
   };

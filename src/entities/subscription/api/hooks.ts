@@ -16,18 +16,45 @@ import { analyticsQueryKeys } from "../../analytics/api/hooks";
 import { useUser } from "@clerk/nextjs";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
-  list: (params?: GetSubscriptionsParams) => [params],
+  user: (userId: string) => ({
+    queryKey: [userId],
+    contextQueries: {
+      list: (params?: GetSubscriptionsParams) => [params],
+    },
+  }),
 });
+
+const useInvalidateSubscriptionsData = () => {
+  const queryClient = useQueryClient();
+  const { user } = useUser();
+
+  return () => {
+    if (!user?.id) return;
+
+    const keys = [
+      subscriptionsQueryKeys.user(user.id)._ctx.list._def,
+      analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+    ];
+
+    return Promise.all(
+      keys.map((key) => queryClient.invalidateQueries({ queryKey: key })),
+    );
+  };
+};
 
 export const useSubscriptions = ({
   options,
   params,
 }: QueryHook<SubscriptionDto[], GetSubscriptionsParams>) => {
+  const { user, isLoaded, isSignedIn } = useUser();
+
   return useQuery({
-    queryKey: subscriptionsQueryKeys.list(params).queryKey,
+    queryKey: subscriptionsQueryKeys.user(user?.id as string)._ctx.list(params)
+      .queryKey,
     queryFn: async () => {
       return await getSubscriptionsAction(params);
     },
+    enabled: isSignedIn && isLoaded,
     ...options,
   });
 };
@@ -35,19 +62,14 @@ export const useSubscriptions = ({
 export const useAddSubscription = ({
   options,
 }: MutationHook<SubscriptionSchema, AddSubscriptionParams> = {}) => {
-  const queryClient = useQueryClient();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const invalidateSubscriptionData = useInvalidateSubscriptionsData();
 
   return useMutation({
     mutationFn: async (params) => {
       return await addSubscriptionAction(params);
     },
     async onSuccess() {
-      if (isLoaded && isSignedIn) {
-        return await queryClient.invalidateQueries({
-          queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
-        });
-      }
+      return invalidateSubscriptionData();
     },
     ...options,
   });
@@ -56,29 +78,14 @@ export const useAddSubscription = ({
 export const useDeleteSubscription = ({
   options,
 }: MutationHook<void, number> = {}) => {
-  const queryClient = useQueryClient();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const invalidateSubscriptionData = useInvalidateSubscriptionsData();
 
   return useMutation({
     mutationFn: async (id) => {
       return await deleteSubscriptionAction(id);
     },
     async onSuccess() {
-      const promises: Promise<void>[] = [
-        queryClient.invalidateQueries({
-          queryKey: subscriptionsQueryKeys.list._def,
-        }),
-      ];
-
-      if (isLoaded && isSignedIn) {
-        promises.push(
-          queryClient.invalidateQueries({
-            queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
-          }),
-        );
-      }
-
-      return await Promise.all(promises);
+      return invalidateSubscriptionData();
     },
     ...options,
   });

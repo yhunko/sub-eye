@@ -17,14 +17,12 @@ export const RemainingThisMonthCard = () => {
             currencyCode={data.currencyCode}
           />
         </div>
-        <div className="text-muted-foreground inline-flex gap-2 text-sm">
-          <span>Next month forecast:</span>
-          <span>
-            <CurrencyText
-              amount={data?.monthlyBurnRate}
-              currencyCode={data.currencyCode}
-            />
-          </span>
+        <div className="text-muted-foreground text-xs sm:text-sm">
+          Next month forecast:
+          <CurrencyText
+            amount={data?.monthlyBurnRate}
+            currencyCode={data.currencyCode}
+          />
         </div>
       </div>
     </StatCard>
