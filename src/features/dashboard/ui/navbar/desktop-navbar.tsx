@@ -55,7 +55,7 @@ export const DesktopNavbar = () => {
             </Link>
           </Button>
 
-          <UserDropdownMenu />
+          <UserDropdownMenu triggerId="navbar-user-trigger-desktop" />
         </div>
       </div>
     </header>

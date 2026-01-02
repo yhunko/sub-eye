@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   Area,
   ComposedChart,
-  ResponsiveContainer,
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { useDashboardAnalytics } from "@/entities/analytics/api/hooks";
@@ -58,81 +57,102 @@ export function CashFlowChart() {
           }}
           className="w-full"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data.cashFlowForecast}>
-              <CartesianGrid
-                vertical={false}
-                strokeDasharray="3 3"
-                opacity={0.3}
-              />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                minTickGap={32}
-                tickFormatter={(val) => format(parseISO(val), "MMM dd")}
-              />
-              <YAxis
-                domain={[0, "auto"]}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                width={40}
-                className="text-muted-foreground font-mono text-[10px] font-medium"
-                tickFormatter={(value) => `${currencySymbol}${value}`}
-              />
+          <ComposedChart data={data.cashFlowForecast}>
+            <defs>
+              <linearGradient id="fillCumulative" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-cumulative)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-cumulative)"
+                  stopOpacity={0.1}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              vertical={true}
+              horizontal={true}
+              strokeDasharray="4 4"
+              stroke="var(--border)"
+              syncWithTicks
+            />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              minTickGap={32}
+              tickFormatter={(val) => format(parseISO(val), "MMM dd")}
+            />
+            <YAxis
+              domain={[0, "auto"]}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              width={35}
+              className="text-muted-foreground font-mono text-[10px] font-medium"
+              tickFormatter={(value) => `${currencySymbol}${value}`}
+            />
 
-              <ChartTooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const item = payload[0].payload;
-                    return (
-                      <div className="bg-background/95 rounded-lg border p-3 shadow-md backdrop-blur-sm">
-                        <p className="text-muted-foreground mb-2 text-xs font-medium">
-                          {format(parseISO(item.date), "MMM dd, yyyy")}
-                        </p>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-xs">Daily Amount:</span>
-                            <CurrencyBadge
-                              amount={item.amount}
-                              currencyCode={data.preferredCurrencyCode}
-                            />
-                          </div>
-                          <div className="mt-2 flex items-center justify-between gap-4 border-t pt-2">
-                            <span className="text-xs font-bold">
-                              Total Needed:
-                            </span>
-                            <CurrencyBadge
-                              amount={item.cumulative}
-                              currencyCode={data.preferredCurrencyCode}
-                            />
-                          </div>
+            <ChartTooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const item = payload[0].payload;
+                  return (
+                    <div className="bg-background/95 rounded-lg border p-3 shadow-md backdrop-blur-sm">
+                      <p className="text-muted-foreground mb-2 text-xs font-medium">
+                        {format(parseISO(item.date), "MMM dd, yyyy")}
+                      </p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-xs">Daily Amount:</span>
+                          <CurrencyBadge
+                            amount={item.amount}
+                            currencyCode={data.preferredCurrencyCode}
+                          />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-4 border-t pt-2">
+                          <span className="text-xs font-bold">
+                            Total Needed:
+                          </span>
+                          <CurrencyBadge
+                            amount={item.cumulative}
+                            currencyCode={data.preferredCurrencyCode}
+                          />
                         </div>
                       </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
 
-              <Bar
-                dataKey="amount"
-                fill="var(--chart-2)"
-                radius={[4, 4, 0, 0]}
-                barSize={20}
-              />
-              <Area
-                type="monotone"
-                dataKey="cumulative"
-                fill="var(--color-cumulative)"
-                fillOpacity={0.1}
-                stroke="var(--color-cumulative)"
-                strokeWidth={2}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+            <Bar
+              dataKey="amount"
+              fill="var(--color-amount)"
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+            <Area
+              type="monotone"
+              dataKey="cumulative"
+              fill="url(#fillCumulative)"
+              fillOpacity={0.7}
+              stroke="var(--color-cumulative)"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{
+                r: 6,
+                fill: "var(--background)",
+                stroke: "var(--color-cumulative)",
+                strokeWidth: 2,
+              }}
+            />
+          </ComposedChart>
         </ChartContainer>
       </CardContent>
     </Card>

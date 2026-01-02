@@ -55,7 +55,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
 
   if (isLoading) {
     return (
-      <Card className={cn("bg-muted/20 h-[200px] animate-pulse", className)} />
+      <Card className={cn("bg-muted/20 h-full animate-pulse", className)} />
     );
   }
 
