@@ -55,7 +55,7 @@ export default function RootLayout({
               {children}
             </ThemeProvider>
 
-            <Toaster />
+            <Toaster position="top-right" richColors />
             <SwUpdateManager />
           </ReactQueryProvider>
         </SerwistProvider>

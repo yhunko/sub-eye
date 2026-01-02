@@ -13,11 +13,11 @@ export const MostExpensiveSubscriptionCard = () => {
   return (
     <StatCard title="Most expensive">
       <div className="space-y-1">
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row items-center gap-2">
           <BrandfetchImage
             domain={data.mostExpensiveSubscription?.brandDomain}
           />
-          <div className="text-xl font-bold">
+          <div className="text-base sm:text-xl sm:font-bold">
             {data?.mostExpensiveSubscription?.name}
           </div>
         </div>
