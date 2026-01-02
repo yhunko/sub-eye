@@ -1,10 +1,10 @@
 import { DashboardLayout, DashboardNavbar } from "@/features/dashboard";
-import { SubscriptionsTable } from "@/features/subscriptions-table";
+import { SubscriptionsListWidget } from "@/features/subscription/ui/subscriptions-list-widget";
 
 export default async function SubscriptionsPage() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SubscriptionsTable />
+      <SubscriptionsListWidget />
     </DashboardLayout>
   );
 }
