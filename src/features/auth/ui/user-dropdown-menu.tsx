@@ -13,7 +13,7 @@ import {
   ItemMedia,
   DropdownMenuLabel,
 } from "@/shared/components";
-import { LogOut, Cog } from "lucide-react";
+import { LogOut, Cog, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { UserAvatar } from "./user-avatar";
 
@@ -29,14 +29,34 @@ export const UserDropdownMenu = () => {
         <UserAvatar />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex flex-col">
-          <span className="leading-tight font-medium">{fullName}</span>
-          {email && (
-            <span className="text-muted-foreground truncate text-xs">
-              {email}
-            </span>
-          )}
+        <DropdownMenuLabel className="p-0 font-normal">
+          <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+            <UserAvatar />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{fullName}</span>
+              {email && (
+                <span className="text-muted-foreground truncate text-xs">
+                  {email}
+                </span>
+              )}
+            </div>
+          </div>
         </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem className="cursor-pointer" asChild>
+          <Item size="sm" asChild>
+            <Link href="/settings/account/billing">
+              <ItemMedia>
+                <Sparkles />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>Support development</ItemTitle>
+              </ItemContent>
+            </Link>
+          </Item>
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 

@@ -9,6 +9,10 @@ import {
   startOfDay,
   differenceInCalendarDays,
   isSameMonth,
+  format,
+  startOfMonth,
+  addMonths,
+  isBefore,
 } from "date-fns";
 import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
 import { CurrencyUtils } from "@/shared/lib/currency.utils";
@@ -35,6 +39,13 @@ export class AnalyticsService {
       brandDomain: "",
     };
 
+    const trendMap = new Map<string, number>();
+    for (let i = 0; i < 12; i++) {
+      const monthKey = format(startOfMonth(addMonths(today, i)), "yyyy-MM-dd");
+      trendMap.set(monthKey, 0);
+    }
+    const oneYearFromNow = addMonths(today, 12);
+
     const mappedSubscriptions = subscriptions.map((subscription) => {
       monthlyBurnRate += subscription.billing.preferred.monthly;
 
@@ -59,6 +70,26 @@ export class AnalyticsService {
         subscription.period,
         today,
       );
+
+      let projectionDate = nextDate;
+      while (isBefore(projectionDate, oneYearFromNow)) {
+        const monthKey = format(startOfMonth(projectionDate), "yyyy-MM-dd");
+
+        if (trendMap.has(monthKey)) {
+          const currentTotal = trendMap.get(monthKey) || 0;
+          trendMap.set(
+            monthKey,
+            currentTotal + subscription.billing.preferred.amount,
+          );
+        }
+
+        projectionDate = RecurrenceUtils.getNextOccurrence(
+          projectionDate,
+          subscription.every,
+          subscription.period,
+          addDays(projectionDate, 1),
+        );
+      }
 
       return {
         ...subscription,
@@ -98,21 +129,16 @@ export class AnalyticsService {
 
     for (let i = 0; i < 30; i++) {
       const targetDate = addDays(today, i);
-
       const dueToday = mappedSubscriptions.filter((sub) =>
         isSameDay(sub.nextPaymentDate, targetDate),
       );
-
       const dailyAmount = dueToday.reduce(
         (sum, s) => sum + s.billing.preferred.amount,
         0,
       );
+
       cumulative += dailyAmount;
-
-      if (isSameMonth(targetDate, today)) {
-        remainingThisMonth += dailyAmount;
-      }
-
+      if (isSameMonth(targetDate, today)) remainingThisMonth += dailyAmount;
       cashFlowForecast.push({
         date: targetDate.toISOString(),
         amount: Number(dailyAmount.toFixed(2)),
@@ -123,6 +149,13 @@ export class AnalyticsService {
     const totalUpcomingMonth = cashFlowForecast.reduce(
       (acc, point) => acc + point.amount,
       0,
+    );
+
+    const monthlyTrend = Array.from(trendMap.entries()).map(
+      ([date, amount]) => ({
+        date,
+        amount: Number(amount.toFixed(2)),
+      }),
     );
 
     return {
@@ -137,7 +170,7 @@ export class AnalyticsService {
       cashFlowForecast,
       upcomingRenewals,
       totalUpcomingMonth,
-      currencyCode: preferredCurrencyCode,
+      monthlyTrend,
     };
   }
 }

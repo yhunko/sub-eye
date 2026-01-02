@@ -14,14 +14,14 @@ export const RemainingThisMonthCard = () => {
         <div className="text-xl font-bold">
           <CurrencyText
             amount={data?.remainingThisMonth}
-            currencyCode={data.currencyCode}
+            currencyCode={data?.preferredCurrencyCode}
           />
         </div>
         <div className="text-muted-foreground text-xs sm:text-sm">
           Next month forecast:&nbsp;
           <CurrencyText
             amount={data?.monthlyBurnRate}
-            currencyCode={data.currencyCode}
+            currencyCode={data?.preferredCurrencyCode}
           />
         </div>
       </div>

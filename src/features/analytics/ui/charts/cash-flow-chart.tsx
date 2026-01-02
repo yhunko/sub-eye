@@ -9,9 +9,9 @@ import {
   ComposedChart,
   ResponsiveContainer,
 } from "recharts";
-import { format, parseISO } from "date-fns"; // Import date-fns here
+import { format, parseISO } from "date-fns";
 import { useDashboardAnalytics } from "@/entities/analytics/api/hooks";
-import { CurrencyBadge } from "@/features/currency/ui/currency-badge";
+import { CurrencyBadge } from "../../../currency";
 import {
   Card,
   CardContent,
@@ -119,7 +119,7 @@ export function CashFlowChart() {
 
               <Bar
                 dataKey="amount"
-                fill="var(--color-amount)"
+                fill="var(--chart-2)"
                 radius={[4, 4, 0, 0]}
                 barSize={20}
               />

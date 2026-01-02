@@ -4,6 +4,7 @@ import {
   AnalyticsWidget,
   UpcomingRenewals,
   StatCards,
+  MonthlySpendingTrendChart,
 } from "@/features/analytics";
 
 export default async function Home() {
@@ -12,7 +13,8 @@ export default async function Home() {
       <AnalyticsWidget>
         <StatCards className="col-span-full" />
         <CashFlowChart />
-        <UpcomingRenewals className="col-span-full" />
+        <UpcomingRenewals />
+        <MonthlySpendingTrendChart className="col-span-full" />
       </AnalyticsWidget>
     </DashboardLayout>
   );
