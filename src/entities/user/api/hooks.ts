@@ -2,11 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MutationHook } from "@/shared/lib/react-query";
 import { UserJSON } from "@clerk/nextjs/server";
 import { updateUserPublicMetadataAction, deleteAccountAction } from "./actions";
-import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { DeleteUserDto } from "../model/user.dtos";
 import { analyticsQueryKeys } from "../../analytics/api/hooks";
-
-export const userQueryKeys = createQueryKeys("USER");
 
 export const useUpdateUserPublicMetadata = ({
   options,
@@ -19,8 +16,8 @@ export const useUpdateUserPublicMetadata = ({
     },
     async onSuccess(user) {
       if (user) {
-        return queryClient.invalidateQueries({
-          queryKey: analyticsQueryKeys.dashboard.queryKey,
+        return await queryClient.invalidateQueries({
+          queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
         });
       }
     },

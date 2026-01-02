@@ -13,6 +13,7 @@ import {
 } from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 import { analyticsQueryKeys } from "../../analytics/api/hooks";
+import { useUser } from "@clerk/nextjs";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
   list: (params?: GetSubscriptionsParams) => [params],
@@ -35,15 +36,18 @@ export const useAddSubscription = ({
   options,
 }: MutationHook<SubscriptionSchema, AddSubscriptionParams> = {}) => {
   const queryClient = useQueryClient();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   return useMutation({
     mutationFn: async (params) => {
       return await addSubscriptionAction(params);
     },
     async onSuccess() {
-      return await queryClient.invalidateQueries({
-        queryKey: analyticsQueryKeys.dashboard.queryKey,
-      });
+      if (isLoaded && isSignedIn) {
+        return await queryClient.invalidateQueries({
+          queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+        });
+      }
     },
     ...options,
   });
@@ -53,20 +57,28 @@ export const useDeleteSubscription = ({
   options,
 }: MutationHook<void, number> = {}) => {
   const queryClient = useQueryClient();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   return useMutation({
     mutationFn: async (id) => {
       return await deleteSubscriptionAction(id);
     },
     async onSuccess() {
-      return await Promise.all([
+      const promises: Promise<void>[] = [
         queryClient.invalidateQueries({
           queryKey: subscriptionsQueryKeys.list._def,
         }),
-        queryClient.invalidateQueries({
-          queryKey: analyticsQueryKeys.dashboard.queryKey,
-        }),
-      ]);
+      ];
+
+      if (isLoaded && isSignedIn) {
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+          }),
+        );
+      }
+
+      return await Promise.all(promises);
     },
     ...options,
   });
