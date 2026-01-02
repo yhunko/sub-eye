@@ -26,7 +26,7 @@ const serwist = new Serwist({
   navigationPreload: true,
   runtimeCaching: [
     {
-      matcher: ({ url }) => url.hostname === BrandfetchUtils.HOSTNAME,
+      matcher: ({ url }) => url.hostname === BrandfetchUtils.CDN_HOSTNAME,
       // CacheFirst is best for static assets like logos to save API hits.
       handler: new CacheFirst({
         cacheName: "brandfetch-images",

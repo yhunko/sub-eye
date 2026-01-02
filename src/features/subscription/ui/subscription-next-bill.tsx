@@ -1,7 +1,7 @@
 import { FC, useMemo } from "react";
 import { cn, DateTimezoneUtils } from "@/shared/lib";
 import { SubscriptionUIMapper } from "../lib/subscription-ui.mapper";
-import { useUserPublicMetadata } from "@/entities/user";
+import { useUser } from "@clerk/nextjs";
 
 type SubscriptionNextBillProps = {
   /**
@@ -14,18 +14,18 @@ type SubscriptionNextBillProps = {
 export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
   nextBillDate,
 }) => {
-  const { data: publicMetadata, isLoading } = useUserPublicMetadata();
+  const { user, isLoaded } = useUser();
 
   const displayState = useMemo(() => {
-    if (isLoading) return null;
+    if (!isLoaded) return null;
 
-    const timezone = publicMetadata?.preferredTimezone;
+    const timezone = user?.publicMetadata?.preferredTimezone;
     const zonedDate = DateTimezoneUtils.toZoned(nextBillDate, timezone);
 
     return SubscriptionUIMapper.toDisplayState(zonedDate, timezone);
-  }, [isLoading, publicMetadata?.preferredTimezone, nextBillDate]);
+  }, [isLoaded, user?.publicMetadata?.preferredTimezone, nextBillDate]);
 
-  if (isLoading || !displayState) return null;
+  if (!isLoaded || !displayState) return null;
 
   const { formattedDate, relativeText, colorClass } = displayState;
 

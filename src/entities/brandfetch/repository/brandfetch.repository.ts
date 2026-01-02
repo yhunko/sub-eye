@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import { BrandfetchSearchDto } from "../model/dtos";
 import { BrandfetchSearchParams } from "../model/params";
+import { BrandfetchUtils } from "../lib/brandfetch-utils";
 
 export class BrandfetchRepository {
   private readonly clientId = process.env.BRANDFETCH_CLIENT_ID!;
@@ -8,7 +9,7 @@ export class BrandfetchRepository {
 
   constructor() {
     this.client = axios.create({
-      baseURL: "https://api.brandfetch.io/v2",
+      baseURL: `https://${BrandfetchUtils.API_HOSTNAME}/v2`,
       params: {
         params: { c: this.clientId },
       },
