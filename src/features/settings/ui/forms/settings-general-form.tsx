@@ -1,6 +1,6 @@
-import { PreferredCurrencySelect } from "./preferred-currency-select";
-import { PreferredTimezoneSelect } from "./preferred-timezone-select";
-import { ThemeSelect } from "./theme-select";
+import { PreferredCurrencySelect } from "../preferred-currency-select";
+import { PreferredTimezoneSelect } from "../preferred-timezone-select";
+import { ThemeSelect } from "../theme-select";
 import { SettingsFormLayout } from "./settings-form-layout";
 import { ItemGroup } from "@/shared/components";
 

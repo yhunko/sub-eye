@@ -46,106 +46,104 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[250px] w-full">
-          <ChartContainer
-            config={{
-              amount: {
-                label: "Total Spending",
-                color: "var(--chart-1)",
-              },
-            }}
-            className="h-full w-full"
+        <ChartContainer
+          config={{
+            amount: {
+              label: "Total Spending",
+              color: "var(--chart-1)",
+            },
+          }}
+          className="h-full w-full md:max-h-72"
+        >
+          <AreaChart
+            data={data.monthlyTrend}
+            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
           >
-            <AreaChart
-              data={data.monthlyTrend}
-              margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--color-amount)"
-                    stopOpacity={0.8}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--color-amount)"
-                    stopOpacity={0.1}
-                  />
-                </linearGradient>
-              </defs>
+            <defs>
+              <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-amount)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-amount)"
+                  stopOpacity={0.1}
+                />
+              </linearGradient>
+            </defs>
 
-              <CartesianGrid
-                vertical={true}
-                horizontal={true}
-                strokeDasharray="4 4"
-                stroke="var(--border)"
-                syncWithTicks
-              />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                tickFormatter={(val) => format(parseISO(val), "MMM yyyy")}
-                className="text-muted-foreground text-xs"
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                width={45}
-                dy={4}
-                className="text-muted-foreground font-mono text-[10px] font-medium"
-                tickFormatter={(value) => `${currencySymbol}${value}`}
-              />
-              <ChartTooltip
-                cursor={{
-                  stroke: "var(--border)",
-                  strokeWidth: 1,
-                  strokeDasharray: "0",
-                }}
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const item = payload[0].payload;
-                    return (
-                      <div className="bg-background/95 border-border rounded-lg border p-3 shadow-md backdrop-blur-sm">
-                        <p className="text-muted-foreground mb-2 text-xs font-medium">
-                          {format(parseISO(item.date), "MMMM yyyy")}
-                        </p>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-foreground text-sm font-bold">
-                            Total:
-                          </span>
-                          <CurrencyBadge
-                            amount={item.amount}
-                            currencyCode={data.preferredCurrencyCode}
-                          />
-                        </div>
+            <CartesianGrid
+              vertical={true}
+              horizontal={true}
+              strokeDasharray="4 4"
+              stroke="var(--border)"
+              syncWithTicks
+            />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              tickFormatter={(val) => format(parseISO(val), "MMM yyyy")}
+              className="text-muted-foreground text-xs"
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              width={45}
+              dy={4}
+              className="text-muted-foreground font-mono text-[10px] font-medium"
+              tickFormatter={(value) => `${currencySymbol}${value}`}
+            />
+            <ChartTooltip
+              cursor={{
+                stroke: "var(--border)",
+                strokeWidth: 1,
+                strokeDasharray: "0",
+              }}
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const item = payload[0].payload;
+                  return (
+                    <div className="bg-background/95 border-border rounded-lg border p-3 shadow-md backdrop-blur-sm">
+                      <p className="text-muted-foreground mb-2 text-xs font-medium">
+                        {format(parseISO(item.date), "MMMM yyyy")}
+                      </p>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-foreground text-sm font-bold">
+                          Total:
+                        </span>
+                        <CurrencyBadge
+                          amount={item.amount}
+                          currencyCode={data.preferredCurrencyCode}
+                        />
                       </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="amount"
-                stroke="var(--color-amount)"
-                strokeWidth={2}
-                fill="url(#fillAmount)"
-                fillOpacity={0.7}
-                dot={false}
-                activeDot={{
-                  r: 6,
-                  fill: "var(--background)",
-                  stroke: "var(--color-amount)",
-                  strokeWidth: 2,
-                }}
-              />
-            </AreaChart>
-          </ChartContainer>
-        </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="amount"
+              stroke="var(--color-amount)"
+              strokeWidth={2}
+              fill="url(#fillAmount)"
+              fillOpacity={0.7}
+              dot={false}
+              activeDot={{
+                r: 6,
+                fill: "var(--background)",
+                stroke: "var(--color-amount)",
+                strokeWidth: 2,
+              }}
+            />
+          </AreaChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

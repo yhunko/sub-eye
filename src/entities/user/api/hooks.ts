@@ -1,35 +1,38 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MutationHook } from "@/shared/lib/react-query";
 import { UserJSON } from "@clerk/nextjs/server";
-import { updateUserPublicMetadataAction, deleteAccountAction } from "./actions";
-import { DeleteUserDto } from "../model/user.dtos";
+import { updateUserPublicMetadataAction } from "./actions";
 import { analyticsQueryKeys } from "../../analytics/api/hooks";
+import { useUser } from "@clerk/nextjs";
 
 export const useUpdateUserPublicMetadata = ({
   options,
 }: MutationHook<UserJSON | null, Partial<UserPublicMetadata>> = {}) => {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: (params) => {
       return updateUserPublicMetadataAction(params);
     },
-    async onSuccess(user) {
-      if (user) {
-        return await queryClient.invalidateQueries({
-          queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
-        });
-      }
-    },
-    ...options,
-  });
-};
+    async onSuccess(userData) {
+      const promises: Promise<unknown>[] = [];
 
-export const useDeleteAccount = ({
-  options,
-}: MutationHook<DeleteUserDto, unknown> = {}) => {
-  return useMutation({
-    mutationFn: () => deleteAccountAction(),
+      if (user) {
+        promises.push(user.reload());
+      }
+
+      if (userData) {
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: analyticsQueryKeys.user(userData.id)._ctx.dashboard
+              .queryKey,
+          }),
+        );
+      }
+
+      return await Promise.all(promises);
+    },
     ...options,
   });
 };

@@ -1,8 +1,6 @@
 "use server";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { DeleteUserDto } from "../model/user.dtos";
-import { SubscriptionController } from "../../subscription/lib/subscription.controller";
 
 export const updateUserPublicMetadataAction = async (
   publicMetadata: UserPublicMetadata,
@@ -21,19 +19,3 @@ export const updateUserPublicMetadataAction = async (
 
   return user.raw;
 };
-
-export async function deleteAccountAction(): Promise<DeleteUserDto> {
-  const { isAuthenticated, userId } = await auth();
-
-  if (!isAuthenticated || !userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const controller = new SubscriptionController(userId);
-  const deletedSubscriptions = await controller.deleteAllForCurrentUser();
-
-  const client = await clerkClient();
-  await client.users.deleteUser(userId);
-
-  return { deletedSubscriptions, userDeleted: true };
-}
