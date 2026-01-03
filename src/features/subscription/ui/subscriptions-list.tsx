@@ -13,6 +13,7 @@ import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
 import { SubscriptionDeleteButton } from "./subscription-delete-button";
 import { SubscriptionNextBill } from "./subscription-next-bill";
+import Link from "next/link";
 
 export const SubscriptionsList = () => {
   const { data: subscriptions } = useSubscriptions({
@@ -28,17 +29,25 @@ export const SubscriptionsList = () => {
   return (
     <div className="flex flex-col gap-2">
       {subscriptions?.map((sub) => (
-        <Item key={sub.id} variant="outline" size="default" className="w-full">
-          <ItemMedia>
-            <BrandfetchImage domain={sub.brandDomain} />
-          </ItemMedia>
-          <ItemContent className="gap-0.5">
-            <ItemTitle>{sub.name}</ItemTitle>
-            <SubscriptionNextBill nextBillDate={sub.nextPaymentDate} />
-          </ItemContent>
-          <ItemActions>
-            <SubscriptionDeleteButton subscriptionId={sub.id} />
-          </ItemActions>
+        <Item
+          key={sub.id}
+          variant="outline"
+          size="sm"
+          className="w-full"
+          asChild
+        >
+          <Link href={`/subscriptions/${sub.id}`}>
+            <ItemMedia>
+              <BrandfetchImage domain={sub.brandDomain} />
+            </ItemMedia>
+            <ItemContent className="gap-0.5">
+              <ItemTitle>{sub.name}</ItemTitle>
+              <SubscriptionNextBill nextBillDate={sub.nextPaymentDate} />
+            </ItemContent>
+            <ItemActions>
+              <SubscriptionDeleteButton subscriptionId={sub.id} />
+            </ItemActions>
+          </Link>
         </Item>
       ))}
     </div>

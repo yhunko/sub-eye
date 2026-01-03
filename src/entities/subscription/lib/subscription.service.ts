@@ -80,6 +80,27 @@ export class SubscriptionService {
     return true;
   }
 
+  async getSubscriptionById(
+    id: string,
+    userId: string,
+  ): Promise<SubscriptionDto> {
+    const subscription = await this.repository.findById(id);
+
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+
+    if (subscription.userId !== userId) {
+      throw new Error("Unauthorized: Subscription does not belong to user");
+    }
+
+    const rates = await this.monobankService.getCurrencies();
+    const { currency: preferredCurrency, timezone } =
+      await this.getUserPreferences(userId);
+
+    return this.toDto(subscription, preferredCurrency, rates, timezone);
+  }
+
   static calculateBillingDetails(
     subscription: SubscriptionSchema,
     preferredCurrency: number,

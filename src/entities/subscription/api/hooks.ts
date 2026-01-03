@@ -4,12 +4,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AddSubscriptionParams,
   GetSubscriptionsParams,
+  GetSubscriptionParams,
 } from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
 import {
   getSubscriptionsAction,
   addSubscriptionAction,
   deleteSubscriptionAction,
+  getSubscriptionAction,
+  updateSubscriptionAction,
 } from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 import { analyticsQueryKeys } from "../../analytics/api/hooks";
@@ -20,6 +23,7 @@ export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
     queryKey: [userId],
     contextQueries: {
       list: (params?: GetSubscriptionsParams) => [params],
+      detail: ({ id, ...params }: GetSubscriptionParams) => [id, params],
     },
   }),
 });
@@ -32,7 +36,7 @@ const useInvalidateSubscriptionsData = () => {
     if (!user?.id) return;
 
     const keys = [
-      subscriptionsQueryKeys.user(user.id)._ctx.list._def,
+      subscriptionsQueryKeys.user(user.id).queryKey, // Invalidates all queries for this user (list and detail)
       analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
     ];
 
@@ -83,6 +87,43 @@ export const useDeleteSubscription = ({
   return useMutation({
     mutationFn: async (id) => {
       return await deleteSubscriptionAction(id);
+    },
+    async onSuccess() {
+      return invalidateSubscriptionData();
+    },
+    ...options,
+  });
+};
+
+export const useSubscription = ({
+  params,
+  options,
+}: QueryHook<SubscriptionDto, GetSubscriptionParams>) => {
+  const { user, isLoaded, isSignedIn } = useUser();
+
+  return useQuery({
+    queryKey: subscriptionsQueryKeys
+      .user(user?.id as string)
+      ._ctx.detail(params).queryKey,
+    queryFn: async () => {
+      return await getSubscriptionAction(params);
+    },
+    enabled: isSignedIn && isLoaded,
+    ...options,
+  });
+};
+
+export const useUpdateSubscription = ({
+  options,
+}: MutationHook<
+  SubscriptionSchema,
+  { id: string; params: Partial<AddSubscriptionParams> }
+> = {}) => {
+  const invalidateSubscriptionData = useInvalidateSubscriptionsData();
+
+  return useMutation({
+    mutationFn: async ({ id, params }) => {
+      return await updateSubscriptionAction(id, params);
     },
     async onSuccess() {
       return invalidateSubscriptionData();

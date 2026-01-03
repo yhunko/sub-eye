@@ -11,6 +11,10 @@ export type GetSubscriptionsParams = {
   direction?: SortDirection;
 };
 
+export type GetSubscriptionParams = {
+  id: string;
+};
+
 export const defaultGetSubscriptionsParams: GetSubscriptionsParams = {
   sortBy: "nextPaymentDate",
   direction: "asc",

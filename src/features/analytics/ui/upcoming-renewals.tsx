@@ -20,6 +20,8 @@ import {
 } from "@/shared/components";
 import { SubscriptionUIMapper } from "@/features/subscription/lib/subscription-ui.mapper";
 import { BrandfetchImage } from "../../brandfetch";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 type UpcomingRenewalsProps = {
   className?: string;
@@ -77,31 +79,34 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
       <CardHeader>
         <CardTitle>Upcoming Renewals</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-2">
         {renewalsWithDisplayState.map((item) => (
-          <Item key={item.id} size="sm" variant="muted">
-            <ItemMedia>
-              <BrandfetchImage domain={item.brandDomain} />
-            </ItemMedia>
+          <Item key={item.id} size="sm" variant="outline" asChild>
+            <Link href={`/subscriptions/${item.id}`}>
+              <ItemMedia>
+                <BrandfetchImage domain={item.brandDomain} />
+              </ItemMedia>
 
-            <ItemContent>
-              <ItemTitle>{item.name}</ItemTitle>
-            </ItemContent>
+              <ItemContent>
+                <ItemTitle>{item.name}</ItemTitle>
+              </ItemContent>
 
-            <ItemActions>
-              <div
-                className={cn(
-                  "flex items-center gap-1.5 text-xs",
-                  item.displayState.colorClass,
-                )}
-              >
-                <span>{item.displayState.relativeText}</span>
-              </div>
-              <CurrencyBadge
-                amount={item.amount}
-                currencyCode={item.currencyCode}
-              />
-            </ItemActions>
+              <ItemActions>
+                <div
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs",
+                    item.displayState.colorClass,
+                  )}
+                >
+                  <span>{item.displayState.relativeText}</span>
+                </div>
+                <CurrencyBadge
+                  amount={item.amount}
+                  currencyCode={item.currencyCode}
+                />
+                <ChevronRight className="size-4" />
+              </ItemActions>
+            </Link>
           </Item>
         ))}
       </CardContent>

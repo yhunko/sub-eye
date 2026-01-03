@@ -2,6 +2,7 @@ import { SubscriptionService } from "./subscription.service";
 import {
   AddSubscriptionParams,
   GetSubscriptionsParams,
+  GetSubscriptionParams,
 } from "../model/subscription.params";
 import { SubscriptionDto } from "../model/subscription.dtos";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
@@ -35,5 +36,18 @@ export class SubscriptionController {
     await this.service.deleteAllForUser(this.userId);
 
     return true;
+  }
+
+  async getSubscriptionById(
+    params: GetSubscriptionParams,
+  ): Promise<SubscriptionDto> {
+    return await this.service.getSubscriptionById(params.id, this.userId);
+  }
+
+  async updateSubscription(
+    id: string,
+    payload: Partial<AddSubscriptionParams>,
+  ): Promise<SubscriptionSchema> {
+    return await this.service.updateSubscription(id, payload);
   }
 }
