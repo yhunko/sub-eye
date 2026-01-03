@@ -1,0 +1,101 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { valibotResolver } from "@hookform/resolvers/valibot";
+import {
+  AddSubscriptionFormSchema,
+  AddSubscriptionInput,
+  AddSubscriptionOutput,
+} from "../model/schema";
+import {
+  Form,
+  Button,
+  Spinner,
+  FieldSeparator,
+  FieldGroup,
+} from "@/shared/components";
+import {
+  useAddSubscription,
+  useUpdateSubscription,
+} from "@/entities/subscription";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Period } from "@/shared/lib/db";
+import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
+import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
+
+type SubscriptionFormProps = {
+  defaultValues?: Partial<AddSubscriptionInput>;
+  subscriptionId?: string;
+};
+
+export const SubscriptionForm = ({
+  defaultValues,
+  subscriptionId,
+}: SubscriptionFormProps) => {
+  const formMethods = useForm({
+    resolver: valibotResolver(AddSubscriptionFormSchema),
+    defaultValues: {
+      name: "",
+      cost: "",
+      paymentDate: new Date(),
+      every: "1",
+      period: Period.MONTH,
+      currency: 840,
+      ...defaultValues,
+    },
+  });
+  const { handleSubmit } = formMethods;
+
+  const router = useRouter();
+  const { mutate: addSubscription, isPending: isAddingSubscription } =
+    useAddSubscription();
+  const { mutate: updateSubscription, isPending: isUpdatingSubscription } =
+    useUpdateSubscription();
+
+  const isPending = isAddingSubscription || isUpdatingSubscription;
+  const isEditMode = !!subscriptionId;
+
+  const onSubmit = (data: AddSubscriptionOutput) => {
+    if (isEditMode && subscriptionId) {
+      updateSubscription(
+        { id: subscriptionId, params: data },
+        {
+          onSuccess() {
+            toast.success("Subscription updated successfully!");
+            router.push("/subscriptions");
+          },
+        },
+      );
+    } else {
+      addSubscription(data, {
+        onSuccess() {
+          toast.success("Subscription added successfully!");
+          router.push("/subscriptions");
+        },
+      });
+    }
+  };
+
+  return (
+    <Form {...formMethods}>
+      <form
+        className="space-y-2 md:space-y-4"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <FieldGroup>
+          <SubscriptionFormBasicInfo />
+          <FieldSeparator />
+          <SubscriptionFormBillingInfo />
+        </FieldGroup>
+
+        <div className="col-span-full flex justify-end">
+          <Button type="submit" disabled={isPending}>
+            {isPending && <Spinner />}
+            {isEditMode ? "Update subscription" : "Add subscription"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+};

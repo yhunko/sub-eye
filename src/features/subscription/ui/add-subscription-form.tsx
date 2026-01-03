@@ -1,71 +1,7 @@
 "use client";
 
-import { useForm, SubmitHandler } from "react-hook-form";
-import { valibotResolver } from "@hookform/resolvers/valibot";
-import { AddSubscriptionFormSchema } from "../model/schema";
-import { InferOutput } from "valibot";
-import {
-  Form,
-  Button,
-  Spinner,
-  FieldSeparator,
-  FieldGroup,
-} from "@/shared/components";
-import { useAddSubscription } from "@/entities/subscription";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { Period } from "@/shared/lib/db";
-import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
-import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
+import { SubscriptionForm } from "./subscription-form";
 
 export const AddSubscriptionForm = () => {
-  const formMethods = useForm({
-    resolver: valibotResolver(AddSubscriptionFormSchema),
-    defaultValues: {
-      name: "",
-      cost: "",
-      paymentDate: new Date(),
-      every: "1",
-      period: Period.MONTH,
-      currency: 840,
-    },
-  });
-  const { handleSubmit } = formMethods;
-
-  const router = useRouter();
-  const { mutate: addSubscription, isPending: isAddingSubscription } =
-    useAddSubscription();
-
-  const onSubmit: SubmitHandler<
-    InferOutput<typeof AddSubscriptionFormSchema>
-  > = (data) => {
-    addSubscription(data, {
-      onSuccess() {
-        toast.success("Subscription added successfully!");
-        router.push("/subscriptions");
-      },
-    });
-  };
-
-  return (
-    <Form {...formMethods}>
-      <form
-        className="space-y-2 md:space-y-4"
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <FieldGroup>
-          <SubscriptionFormBasicInfo />
-          <FieldSeparator />
-          <SubscriptionFormBillingInfo />
-        </FieldGroup>
-
-        <div className="col-span-full flex justify-end">
-          <Button type="submit" disabled={isAddingSubscription}>
-            {isAddingSubscription && <Spinner />}
-            Add subscription
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
+  return <SubscriptionForm />;
 };
