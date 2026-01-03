@@ -5,8 +5,8 @@ import {
   CardDescription,
   CardContent,
 } from "@/shared/components";
-import { NotificationsButton } from "./notifications-button";
-import { NotificationsStatus } from "./notifications-status";
+import { NotificationsButton } from "../notifications-button";
+import { NotificationsStatus } from "../notifications-status";
 
 export const SettingsNotificationsForm = () => {
   return (
