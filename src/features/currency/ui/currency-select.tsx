@@ -1,5 +1,4 @@
-import { FC, useMemo } from "react";
-import { useUncontrolled } from "@mantine/hooks";
+import { FC, useMemo, useCallback } from "react";
 import {
   Select,
   SelectTrigger,
@@ -10,8 +9,8 @@ import { CurrenciesMap } from "@/entities/monobank";
 
 export interface CurrencySelectProps {
   id?: string;
-  value?: number;
-  onChange?: (value: number) => void;
+  value: number;
+  onChange: (value: number) => void;
   disabled?: boolean;
   defaultValue?: number;
 }
@@ -21,30 +20,30 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
   onChange,
   value,
   disabled = false,
-  defaultValue = 840,
 }) => {
   const currencies = useMemo(() => Array.from(CurrenciesMap.entries()), []);
 
-  const [selectedCurrency, setSelectedCurrency] = useUncontrolled({
-    value: value?.toString(),
-    onChange: (newValue) => {
-      const parsed = parseInt(newValue, 10);
-      if (!isNaN(parsed)) {
-        onChange?.(parsed);
-      }
-    },
-    defaultValue: defaultValue.toString(),
-  });
+  const selectedCurrency = value.toString();
 
   const selectedCurrencyCode = useMemo(() => {
     const code = parseInt(selectedCurrency, 10);
     return CurrenciesMap.get(code)?.code ?? "???";
   }, [selectedCurrency]);
 
+  const handleSelect = useCallback(
+    (newValue: string) => {
+      const parsed = parseInt(newValue, 10);
+      if (!isNaN(parsed)) {
+        onChange?.(parsed);
+      }
+    },
+    [onChange],
+  );
+
   return (
     <Select
       value={selectedCurrency}
-      onValueChange={setSelectedCurrency}
+      onValueChange={handleSelect}
       disabled={disabled}
     >
       <SelectTrigger id={id} className="font-mono" aria-label="Select currency">

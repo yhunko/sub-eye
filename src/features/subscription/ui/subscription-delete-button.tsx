@@ -41,7 +41,7 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
           <Trash2 className="size-4 transition-all" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent>
+      <PopoverContent side="right">
         <PopoverConfirmationContent
           description="Are you sure?"
           CancelButton={

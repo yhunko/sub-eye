@@ -23,6 +23,8 @@ import { useRouter } from "next/navigation";
 import { Period } from "@/shared/lib/db";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
+import { SubscriptionDeleteButton } from "./subscription-delete-button";
+import { cn } from "@/shared/lib";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -89,8 +91,16 @@ export const SubscriptionForm = ({
           <SubscriptionFormBillingInfo />
         </FieldGroup>
 
-        <div className="col-span-full flex justify-end">
-          <Button type="submit" disabled={isPending}>
+        <div className="col-span-full flex justify-between">
+          {isEditMode && (
+            <SubscriptionDeleteButton subscriptionId={subscriptionId} />
+          )}
+
+          <Button
+            type="submit"
+            disabled={isPending}
+            className={cn(isEditMode && "justify-self-end")}
+          >
             {isPending && <Spinner />}
             {isEditMode ? "Update subscription" : "Add subscription"}
           </Button>

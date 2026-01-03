@@ -11,9 +11,9 @@ import { useSubscriptions } from "@/entities/subscription";
 import { keepPreviousData } from "@tanstack/react-query";
 import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
-import { SubscriptionDeleteButton } from "./subscription-delete-button";
 import { SubscriptionNextBill } from "./subscription-next-bill";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 export const SubscriptionsList = () => {
   const { data: subscriptions } = useSubscriptions({
@@ -45,7 +45,7 @@ export const SubscriptionsList = () => {
               <SubscriptionNextBill nextBillDate={sub.nextPaymentDate} />
             </ItemContent>
             <ItemActions>
-              <SubscriptionDeleteButton subscriptionId={sub.id} />
+              <ChevronRight className="size-5" />
             </ItemActions>
           </Link>
         </Item>
