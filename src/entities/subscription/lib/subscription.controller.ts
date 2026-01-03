@@ -27,7 +27,7 @@ export class SubscriptionController {
     return await this.service.addSubscription(payload, this.userId);
   }
 
-  async deleteSubscription(id: number): Promise<void> {
+  async deleteSubscription(id: string): Promise<void> {
     return await this.service.deleteSubscription(id);
   }
 

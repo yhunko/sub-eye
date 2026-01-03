@@ -7,7 +7,7 @@ export interface CashFlowPoint {
 }
 
 export interface UpcomingRenewalDto {
-  id: number;
+  id: string;
   name: string;
   brandDomain: SubscriptionSchema["brandDomain"];
   provider: string;

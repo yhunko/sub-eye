@@ -31,7 +31,7 @@ export class SubscriptionRepository {
     return subscription;
   }
 
-  async update(id: number, data: Partial<AddSubscriptionSchema>) {
+  async update(id: string, data: Partial<AddSubscriptionSchema>) {
     const [result] = await db
       .update(subscriptionsTable)
       .set({ ...data, updatedAt: new Date() })
@@ -46,7 +46,7 @@ export class SubscriptionRepository {
       .where(eq(subscriptionsTable.userId, userId));
   }
 
-  async findById(id: number): Promise<SubscriptionSchema | null> {
+  async findById(id: string): Promise<SubscriptionSchema | null> {
     const [result] = await db
       .select()
       .from(subscriptionsTable)
@@ -54,7 +54,7 @@ export class SubscriptionRepository {
     return result || null;
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     await db.delete(subscriptionsTable).where(eq(subscriptionsTable.id, id));
   }
 }

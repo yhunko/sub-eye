@@ -15,7 +15,7 @@ import { useDeleteSubscription } from "@/entities/subscription";
 import { toast } from "sonner";
 
 type SubscriptionDeleteButtonProps = {
-  subscriptionId: number;
+  subscriptionId: string;
 };
 
 export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
@@ -37,7 +37,7 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button variant="destructive" size="icon">
           <Trash2 className="size-4 transition-all" />
         </Button>
       </PopoverTrigger>
