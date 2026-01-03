@@ -1,6 +1,6 @@
 import {
   pgTable,
-  serial,
+  uuid,
   text,
   numeric,
   integer,
@@ -11,7 +11,7 @@ import { periodEnum } from "./enums.schema";
 import { Period } from "../model/enums";
 
 export const subscriptionsTable = pgTable("subscriptions", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
 

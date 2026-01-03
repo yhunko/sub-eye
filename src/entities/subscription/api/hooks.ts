@@ -77,7 +77,7 @@ export const useAddSubscription = ({
 
 export const useDeleteSubscription = ({
   options,
-}: MutationHook<void, number> = {}) => {
+}: MutationHook<void, string> = {}) => {
   const invalidateSubscriptionData = useInvalidateSubscriptionsData();
 
   return useMutation({

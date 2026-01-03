@@ -11,7 +11,7 @@ export class QStashService {
 
   async scheduleNotification(params: {
     userId: string;
-    subscriptionId: number;
+    subscriptionId: string;
     subscriptionName: string;
     notifyAt: Date;
   }): Promise<string> {
@@ -46,7 +46,7 @@ export class QStashService {
   async rescheduleNotification(params: {
     oldMessageId: string;
     userId: string;
-    subscriptionId: number;
+    subscriptionId: string;
     subscriptionName: string;
     notifyAt: Date;
   }): Promise<string> {

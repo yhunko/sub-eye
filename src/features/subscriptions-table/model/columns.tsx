@@ -8,6 +8,7 @@ import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bi
 import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
 import { SubscriptionDeleteButton } from "../../subscription";
+import { SubscriptionEditButton } from "../../subscription/ui/subscription-edit-button";
 
 declare module "@tanstack/table-core" {
   // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
@@ -103,7 +104,12 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
     cell: ({ getValue }) => {
       const id = getValue<SubscriptionDto["id"]>();
 
-      return <SubscriptionDeleteButton subscriptionId={id} />;
+      return (
+        <div className="flex flex-row flex-wrap gap-1">
+          <SubscriptionEditButton subscriptionId={id} />
+          <SubscriptionDeleteButton subscriptionId={id} />
+        </div>
+      );
     },
   },
 ];

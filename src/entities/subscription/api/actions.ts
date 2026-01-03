@@ -60,7 +60,7 @@ export async function addSubscriptionAction(
   );
 }
 
-export async function deleteSubscriptionAction(id: number): Promise<void> {
+export async function deleteSubscriptionAction(id: string): Promise<void> {
   return Sentry.withServerActionInstrumentation(
     "deleteSubscriptionAction",
     {

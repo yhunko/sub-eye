@@ -53,7 +53,7 @@ export class SubscriptionService {
     return subscription;
   }
 
-  async deleteSubscription(id: number): Promise<void> {
+  async deleteSubscription(id: string): Promise<void> {
     const subscription = await this.repository.findById(id);
 
     if (subscription) {
@@ -63,7 +63,7 @@ export class SubscriptionService {
   }
 
   async updateSubscription(
-    id: number,
+    id: string,
     params: Partial<AddSubscriptionParams>,
   ): Promise<SubscriptionSchema> {
     const subscription = await this.repository.update(id, params);
