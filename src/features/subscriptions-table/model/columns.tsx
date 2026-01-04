@@ -1,6 +1,12 @@
 import { ColumnDef, RowData } from "@tanstack/table-core";
 import { SubscriptionTableHead } from "../ui/subscription-table-head";
-import { CreditCard, Calendar1, CalendarSync } from "lucide-react";
+import {
+  CreditCard,
+  Calendar1,
+  CalendarSync,
+  EyeIcon,
+  Edit,
+} from "lucide-react";
 import { SubscriptionDto } from "@/entities/subscription";
 import { CurrencyBadge } from "../../currency";
 import { PeriodBadge } from "../../subscription/ui/period-badge";
@@ -8,7 +14,8 @@ import { SubscriptionNextBill } from "../../subscription/ui/subscription-next-bi
 import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
 import { SubscriptionDeleteButton } from "../../subscription";
-import { SubscriptionEditButton } from "../../subscription/ui/subscription-edit-button";
+import { Button, ButtonGroup } from "@/shared/components";
+import Link from "next/link";
 
 declare module "@tanstack/table-core" {
   // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
@@ -105,10 +112,23 @@ export const columns: ColumnDef<SubscriptionDto>[] = [
       const id = getValue<SubscriptionDto["id"]>();
 
       return (
-        <div className="flex flex-row flex-wrap gap-1">
-          <SubscriptionEditButton subscriptionId={id} />
+        <ButtonGroup
+          orientation="horizontal"
+          aria-label="Subscription actions"
+          className="h-fit"
+        >
+          <Button variant="outline" size="icon-sm" asChild>
+            <Link href={`/subscriptions/${id}`} passHref>
+              <EyeIcon />
+            </Link>
+          </Button>
+          <Button variant="outline" size="icon-sm" asChild>
+            <Link href={`/subscriptions/${id}/edit`} passHref>
+              <Edit className="size-4 transition-all" />
+            </Link>
+          </Button>
           <SubscriptionDeleteButton subscriptionId={id} />
-        </div>
+        </ButtonGroup>
       );
     },
   },

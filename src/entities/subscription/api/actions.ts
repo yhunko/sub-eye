@@ -114,7 +114,7 @@ export async function getSubscriptionAction(
 export async function updateSubscriptionAction(
   id: string,
   payload: Partial<AddSubscriptionParams>,
-): Promise<SubscriptionSchema> {
+): Promise<SubscriptionDto> {
   return Sentry.withServerActionInstrumentation(
     "updateSubscriptionAction",
     {
@@ -133,7 +133,7 @@ export async function updateSubscriptionAction(
       Sentry.setTag("subscription_id", id);
 
       const controller = new SubscriptionController(userId);
-      return await controller.updateSubscription(id, payload);
+      return await controller.updateSubscription(id, userId, payload);
     },
   );
 }

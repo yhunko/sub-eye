@@ -13,7 +13,7 @@ import {
   ItemMedia,
   DropdownMenuLabel,
 } from "@/shared/components";
-import { LogOut, Cog, Sparkles } from "lucide-react";
+import { LogOut, Cog } from "lucide-react";
 import Link from "next/link";
 import { UserAvatar } from "./user-avatar";
 import { FC } from "react";
@@ -53,20 +53,20 @@ export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="cursor-pointer" asChild>
-          <Item size="sm" asChild>
-            <Link href="/settings/account/billing">
-              <ItemMedia>
-                <Sparkles />
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Support development</ItemTitle>
-              </ItemContent>
-            </Link>
-          </Item>
-        </DropdownMenuItem>
+        {/*<DropdownMenuItem className="cursor-pointer" asChild>*/}
+        {/*  <Item size="sm" asChild>*/}
+        {/*    <Link href="/settings/account/billing">*/}
+        {/*      <ItemMedia>*/}
+        {/*        <Sparkles />*/}
+        {/*      </ItemMedia>*/}
+        {/*      <ItemContent>*/}
+        {/*        <ItemTitle>Support development</ItemTitle>*/}
+        {/*      </ItemContent>*/}
+        {/*    </Link>*/}
+        {/*  </Item>*/}
+        {/*</DropdownMenuItem>*/}
 
-        <DropdownMenuSeparator />
+        {/*<DropdownMenuSeparator />*/}
 
         <DropdownMenuItem className="cursor-pointer" asChild>
           <Item size="sm" asChild>

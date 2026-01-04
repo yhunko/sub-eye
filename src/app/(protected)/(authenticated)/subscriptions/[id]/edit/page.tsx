@@ -1,6 +1,7 @@
 import { DashboardNavbar } from "@/features/dashboard";
 import { DashboardLayout } from "@/features/dashboard/ui/dashboard.layout";
-import { SubscriptionOverview } from "@/features/subscription";
+import { Card, CardContent } from "@/shared/components";
+import { EditSubscriptionForm } from "@/features/subscription";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getQueryClient } from "@/shared/lib/react-query";
 import {
@@ -10,13 +11,13 @@ import {
 import { auth } from "@clerk/nextjs/server";
 import { getSubscriptionAction } from "@/entities/subscription/api/actions";
 
-type SubscriptionPageProps = {
+type EditSubscriptionPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function SubscriptionPage({
+export default async function SubscriptionEditPage({
   params,
-}: SubscriptionPageProps) {
+}: EditSubscriptionPageProps) {
   const { id } = await params;
 
   const { userId } = await auth();
@@ -37,11 +38,13 @@ export default async function SubscriptionPage({
 
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <SubscriptionOverview subscriptionId={id} />
-        </HydrationBoundary>
-      </div>
+      <Card className="mx-auto max-w-screen-sm">
+        <CardContent>
+          <HydrationBoundary state={dehydrate(queryClient)}>
+            <EditSubscriptionForm subscriptionId={id} />
+          </HydrationBoundary>
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }

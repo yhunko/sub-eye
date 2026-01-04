@@ -34,7 +34,7 @@ export const DesktopNavbar = () => {
                     className={cn(
                       navigationMenuTriggerStyle(),
                       "transition-colors",
-                      pathname.startsWith("/subscriptions")
+                      pathname === "/subscriptions"
                         ? "bg-accent text-accent-foreground pointer-events-none"
                         : "text-muted-foreground hover:text-foreground cursor-pointer bg-transparent",
                     )}

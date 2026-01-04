@@ -64,14 +64,19 @@ export class SubscriptionService {
 
   async updateSubscription(
     id: string,
+    userId: string,
     params: Partial<AddSubscriptionParams>,
-  ): Promise<SubscriptionSchema> {
+  ): Promise<SubscriptionDto> {
+    const rates = await this.monobankService.getCurrencies();
+    const { currency: preferredCurrency, timezone } =
+      await this.getUserPreferences(userId);
+
     const subscription = await this.repository.update(id, params);
 
     // Reschedule notification
     await this.notificationScheduler.rescheduleForSubscription(subscription);
 
-    return subscription;
+    return this.toDto(subscription, preferredCurrency, rates, timezone);
   }
 
   async deleteAllForUser(userId: string): Promise<boolean> {
@@ -132,12 +137,14 @@ export class SubscriptionService {
 
     return {
       original: {
+        currencyCode: subscription.currency,
         monthly: Number(originalMonthly.toFixed(2)),
       },
       preferred: {
         currencyCode: preferredCurrency,
         amount: Number(convertedCost.toFixed(2)),
         monthly: Number(convertedMonthly.toFixed(2)),
+        yearly: Number((convertedMonthly * 12).toFixed(2)),
         exchangeRate: Number(effectiveRate.toFixed(4)),
       },
     };
@@ -156,6 +163,27 @@ export class SubscriptionService {
       typeof timezoneValue === "string" ? timezoneValue : undefined;
 
     return { currency, timezone };
+  }
+
+  private static calculatePreviousPaymentDate(
+    subscription: SubscriptionSchema,
+    timezone?: string,
+  ): string | null {
+    const now = DateTimezoneUtils.now(timezone);
+
+    const startDateZoned = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
+
+    const previousPayment = RecurrenceUtils.getPreviousOccurrence(
+      startDateZoned,
+      subscription.every,
+      subscription.period,
+      now,
+    );
+
+    return previousPayment ? previousPayment.toISOString() : null;
   }
 
   private static calculateNextPaymentDate(
@@ -194,7 +222,15 @@ export class SubscriptionService {
       subscription,
       timezone,
     );
-    return SubscriptionMapper.toDto(subscription, billing, nextPaymentDate);
+    const previousPaymentDate =
+      SubscriptionService.calculatePreviousPaymentDate(subscription, timezone);
+
+    return SubscriptionMapper.toDto(
+      subscription,
+      billing,
+      nextPaymentDate,
+      previousPaymentDate,
+    );
   }
 
   private sortSubscriptions(
