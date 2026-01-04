@@ -28,24 +28,6 @@ export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
   }),
 });
 
-const useInvalidateSubscriptionsData = () => {
-  const queryClient = useQueryClient();
-  const { user } = useUser();
-
-  return () => {
-    if (!user?.id) return;
-
-    const keys = [
-      subscriptionsQueryKeys.user(user.id).queryKey, // Invalidates all queries for this user (list and detail)
-      analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
-    ];
-
-    return Promise.all(
-      keys.map((key) => queryClient.invalidateQueries({ queryKey: key })),
-    );
-  };
-};
-
 export const useSubscriptions = ({
   options,
   params,
@@ -66,14 +48,30 @@ export const useSubscriptions = ({
 export const useAddSubscription = ({
   options,
 }: MutationHook<SubscriptionSchema, AddSubscriptionParams> = {}) => {
-  const invalidateSubscriptionData = useInvalidateSubscriptionsData();
+  const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: async (params) => {
       return await addSubscriptionAction(params);
     },
     async onSuccess() {
-      return invalidateSubscriptionData();
+      const promises: Promise<unknown>[] = [];
+
+      if (user) {
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.list._def,
+          }),
+        );
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+          }),
+        );
+      }
+
+      return await Promise.all(promises);
     },
     ...options,
   });
@@ -82,14 +80,36 @@ export const useAddSubscription = ({
 export const useDeleteSubscription = ({
   options,
 }: MutationHook<void, string> = {}) => {
-  const invalidateSubscriptionData = useInvalidateSubscriptionsData();
+  const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: async (id) => {
       return await deleteSubscriptionAction(id);
     },
-    async onSuccess() {
-      return invalidateSubscriptionData();
+    async onSuccess(_, id) {
+      const promises: Promise<unknown>[] = [];
+
+      if (user) {
+        promises.push(
+          queryClient.cancelQueries({
+            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.detail({ id })
+              .queryKey,
+          }),
+        );
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.list._def,
+          }),
+        );
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+          }),
+        );
+      }
+
+      return await Promise.all(promises);
     },
     ...options,
   });
@@ -116,17 +136,29 @@ export const useSubscription = ({
 export const useUpdateSubscription = ({
   options,
 }: MutationHook<
-  SubscriptionSchema,
+  SubscriptionDto,
   { id: string; params: Partial<AddSubscriptionParams> }
 > = {}) => {
-  const invalidateSubscriptionData = useInvalidateSubscriptionsData();
+  const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: async ({ id, params }) => {
       return await updateSubscriptionAction(id, params);
     },
-    async onSuccess() {
-      return invalidateSubscriptionData();
+    async onSuccess(subscription) {
+      if (user) {
+        queryClient.setQueryData(
+          subscriptionsQueryKeys
+            .user(user.id)
+            ._ctx.detail({ id: subscription.id }).queryKey,
+          subscription,
+        );
+
+        return await queryClient.invalidateQueries({
+          queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+        });
+      }
     },
     ...options,
   });

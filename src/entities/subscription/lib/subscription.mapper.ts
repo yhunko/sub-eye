@@ -9,11 +9,13 @@ export class SubscriptionMapper {
     subscription: SubscriptionSchema,
     billing: SubscriptionBillingDetails,
     nextPaymentDate: string,
+    lastPaymentDate: string | null,
   ): SubscriptionDto {
     return {
       ...subscription,
       billing,
       nextPaymentDate,
+      lastPaymentDate,
     };
   }
 }

@@ -46,8 +46,9 @@ export class SubscriptionController {
 
   async updateSubscription(
     id: string,
+    userId: string,
     payload: Partial<AddSubscriptionParams>,
-  ): Promise<SubscriptionSchema> {
-    return await this.service.updateSubscription(id, payload);
+  ): Promise<SubscriptionDto> {
+    return await this.service.updateSubscription(id, userId, payload);
   }
 }

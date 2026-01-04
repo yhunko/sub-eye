@@ -59,4 +59,35 @@ export class RecurrenceUtils {
 
     return current;
   }
+
+  static getPreviousOccurrence(
+    startDate: Date | string,
+    every: number,
+    period: Period,
+    relativeTo: Date = new Date(),
+  ): Date | null {
+    const start = new Date(startDate);
+    const target = new Date(relativeTo);
+
+    // If start date is today or in the future, there is no "previous" payment yet
+    if (isBefore(target, start) || isSameDay(target, start)) {
+      return null;
+    }
+
+    let current = start;
+    let previous = start;
+
+    while (isBefore(current, target)) {
+      previous = current;
+      current = this.addPeriod(current, every, period);
+
+      // If the incremented date hits exactly "now",
+      // the "previous" is the one we just left.
+      if (isSameDay(current, target)) {
+        return current;
+      }
+    }
+
+    return previous;
+  }
 }

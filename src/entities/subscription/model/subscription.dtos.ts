@@ -3,6 +3,7 @@ import { SubscriptionSchema } from "@/shared/lib/db/schema";
 export interface SubscriptionBillingDetails {
   // Logic for the original currency (e.g., USD)
   original: {
+    currencyCode: number;
     // The normalized monthly cost in original currency
     // UI Use: The gray text "$6.39/mo" next to the bold "$5.90"
     monthly: number;
@@ -19,6 +20,7 @@ export interface SubscriptionBillingDetails {
     // The normalized monthly cost in preferred currency
     // UI Use: "265 UAH/mo" OR used for sorting/summing total expenses
     monthly: number;
+    yearly: number;
 
     // The effective exchange rate used (1.0 if same currency)
     // UI Use: Tooltip "Converted at rate 41.5"
@@ -36,4 +38,5 @@ export interface SubscriptionDto extends SubscriptionSchema {
    * ISO string in UTC, suitable for client-side parsing.
    */
   nextPaymentDate: string;
+  lastPaymentDate: string | null;
 }

@@ -16,10 +16,16 @@ import { toast } from "sonner";
 
 type SubscriptionDeleteButtonProps = {
   subscriptionId: string;
+  fullWidth?: boolean;
+  buttonClassName?: string;
+  onSuccess?: () => void;
 };
 
 export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
   subscriptionId,
+  buttonClassName,
+  fullWidth = false,
+  onSuccess,
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -28,20 +34,27 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
   const handleDelete = useCallback(() => {
     deleteSubscription(subscriptionId, {
       async onSuccess() {
+        onSuccess?.();
         setOpen(false);
         toast.success("Subscription deleted successfully!");
       },
     });
-  }, [deleteSubscription, subscriptionId]);
+  }, [deleteSubscription, onSuccess, subscriptionId]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="destructive" size="icon">
+        <Button
+          variant="destructive"
+          size={fullWidth ? "lg" : "icon-sm"}
+          className={buttonClassName}
+        >
           <Trash2 className="size-4 transition-all" />
+          {fullWidth && !isPending && <span>Delete subscription</span>}
+          {fullWidth && isPending && <span>Deleting...</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="right">
+      <PopoverContent side="top">
         <PopoverConfirmationContent
           description="Are you sure?"
           CancelButton={
