@@ -1,6 +1,6 @@
 {
   "title": "Settings",
-  "tabs": {
+  "pages": {
     "general": "General",
     "notifications": "Notifications",
     "account": "Account"
