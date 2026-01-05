@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 
@@ -16,9 +16,11 @@ import {
   navigationMenuTriggerStyle,
 } from "@/shared/components";
 import { cn } from "@/shared/lib";
+import { useTranslations } from "next-intl";
 
 export const DesktopNavbar = () => {
   const pathname = usePathname();
+  const t = useTranslations("navigation");
 
   return (
     <header className="bg-background/60 supports-backdrop-filter:bg-background/60 sticky top-0 z-40 hidden w-full border-b backdrop-blur md:block">
@@ -39,7 +41,7 @@ export const DesktopNavbar = () => {
                         : "text-muted-foreground hover:text-foreground cursor-pointer bg-transparent",
                     )}
                   >
-                    Subscriptions
+                    {t("subscriptions")}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -51,7 +53,7 @@ export const DesktopNavbar = () => {
           <Button asChild variant="outline" size="icon">
             <Link href="/subscriptions/add">
               <Plus className="size-5 transition-all" />
-              <span className="sr-only">Add subscription</span>
+              <span className="sr-only">{t("addSubscription")}</span>
             </Link>
           </Button>
 

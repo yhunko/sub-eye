@@ -20,8 +20,10 @@ import {
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { CurrenciesMap } from "@/entities/monobank";
+import { useTranslations } from "next-intl";
 
 export function CashFlowChart() {
+  const t = useTranslations("analytics.charts.cashFlow");
   const { data, isLoading } = useDashboardAnalytics();
 
   if (isLoading || !data)
@@ -33,15 +35,13 @@ export function CashFlowChart() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-2">
-          <CardTitle>Cash Flow Forecast</CardTitle>
-          <CardDescription>
-            Cumulative funds needed for the next 30 days.
-          </CardDescription>
+          <CardTitle>{t("title")}</CardTitle>
+          <CardDescription>{t("subtitle")}</CardDescription>
         </div>
 
         <div className="flex flex-col items-end gap-1">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-            30-Day Total
+            {t("30DaysTotal")}
           </span>
           <CurrencyBadge
             amount={data.totalUpcomingMonth}

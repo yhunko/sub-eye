@@ -1,0 +1,36 @@
+{
+  "title": "Аналітика",
+  "stats": {
+    "activeSubscriptions": {
+      "title": "Активні підписки",
+      "auto": "авто",
+      "manual": "вручну"
+    },
+    "yearlyCost": {
+      "title": "Річна вартість",
+      "perMonth": "/ місяць"
+    },
+    "remainingThisMonth": {
+      "title": "Залишилось цього місяця",
+      "nextMonthForecast": "Прогноз на наступний місяць:"
+    },
+    "mostExpensive": {
+      "title": "Найдорожча"
+    }
+  },
+  "upcomingRenewals": {
+    "title": "Майбутні оновлення",
+    "noUpcoming": "Немає майбутніх платежів протягом наступних 30 днів."
+  },
+  "charts": {
+    "cashFlow": {
+      "title": "Грошовий потік",
+      "subtitle": "Кумулятивні кошти, необхідні на наступні 30 днів.",
+      "30DaysTotal": "Сума на 30 днів"
+    },
+    "monthlySpending": {
+      "title": "Тренд щомісячних витрат",
+      "subtitle": "Прогнозовані витрати на наступні 12 місяців."
+    }
+  }
+}

@@ -16,8 +16,10 @@ import {
 import { CurrencyInput, CurrencySelect } from "../../../currency";
 import { AddSubscriptionInput } from "../../model/schema";
 import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
+import { useTranslations } from "next-intl";
 
 export const SubscriptionFormBasicInfo = () => {
+  const t = useTranslations("subscription.form.basicInfo");
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const currency = useWatch({
     control,
@@ -26,8 +28,8 @@ export const SubscriptionFormBasicInfo = () => {
 
   return (
     <FieldSet>
-      <FieldLegend>Basic Information</FieldLegend>
-      <FieldDescription>Enter the subscription name and cost</FieldDescription>
+      <FieldLegend>{t("title")}</FieldLegend>
+      <FieldDescription>{t("description")}</FieldDescription>
 
       <AddSubscriptionBrandImage />
 
@@ -37,9 +39,9 @@ export const SubscriptionFormBasicInfo = () => {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>{t("name.label")}</FormLabel>
               <FormControl>
-                <Input placeholder="Subscription name..." {...field} />
+                <Input placeholder={t("name.placeholder")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -50,7 +52,7 @@ export const SubscriptionFormBasicInfo = () => {
           name="cost"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cost</FormLabel>
+              <FormLabel>{t("cost.label")}</FormLabel>
               <FormControl>
                 <CurrencyInput
                   CurrencySelect={

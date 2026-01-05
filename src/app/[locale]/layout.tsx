@@ -7,8 +7,10 @@ import { ThemeProvider } from "@/features/theme";
 import { SerwistProvider } from "@/shared/lib/serwist/provider";
 import { cn } from "@/shared/lib";
 import { SwUpdateManager } from "@/shared/lib/serwist/sw-update-manager";
+import { NextIntlClientProvider } from "next-intl";
 
-import "./globals.css";
+import "../globals.css";
+import { setRequestLocale, getMessages } from "next-intl/server";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -31,34 +33,46 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: ReactNode;
+  params: Promise<{ locale: string }>;
 }>) {
+  const { locale } = await params;
+
+  setRequestLocale(locale);
+
+  // Providing all messages to the client
+  // side is the easiest way to get started
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
           nunito.variable,
           "flex min-h-screen flex-col antialiased",
         )}
       >
-        <SerwistProvider>
-          <ReactQueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <SerwistProvider>
+            <ReactQueryProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
 
-            <Toaster position="top-right" richColors />
-            <SwUpdateManager />
-          </ReactQueryProvider>
-        </SerwistProvider>
+              <Toaster position="top-right" richColors />
+              <SwUpdateManager />
+            </ReactQueryProvider>
+          </SerwistProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

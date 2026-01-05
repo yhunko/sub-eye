@@ -1,7 +1,7 @@
 "use client";
 
 import { FC, useMemo } from "react";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { SubscriptionOverviewStats } from "./overview/subscription-overview-stats";
 import { format } from "date-fns";
 import { SubscriptionDeleteButton } from "./subscription-delete-button";
+import { useTranslations } from "next-intl";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -41,6 +42,8 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   const { data: subscription } = useSubscription({
     params: { id: subscriptionId },
   });
+  const t = useTranslations("subscription.overview");
+  const tCommon = useTranslations("common.actions");
 
   const displayState = useMemo(() => {
     if (!subscription || !isLoaded) return null;
@@ -60,9 +63,11 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     router.push("/subscriptions");
   };
 
+  const tSub = useTranslations("subscription");
+
   const handleMarkAsCanceled = () => {
     // TODO: Implement mark as canceled functionality
-    toast.info("Mark as canceled feature coming soon");
+    toast.info(tSub("messages.markAsCanceledComingSoon"));
   };
 
   return (
@@ -76,7 +81,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
             className="h-10 w-10 rounded-full"
           >
             <ChevronLeft className="size-5" />
-            <span className="sr-only">Back</span>
+            <span className="sr-only">{tCommon("back")}</span>
           </Button>
           <div className="flex flex-1 flex-col items-center gap-4 md:flex-row md:justify-center">
             <BrandfetchImage
@@ -92,7 +97,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
           <Button variant="outline" size="sm" asChild>
             <Link href={`/subscriptions/${subscription.id}/edit`}>
               <PencilIcon />
-              Edit
+              {t("edit")}
             </Link>
           </Button>
         </div>
@@ -106,7 +111,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
             <CalendarSync />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>Next payment</ItemTitle>
+            <ItemTitle>{t("nextPayment")}</ItemTitle>
             <ItemDescription className={displayState?.colorClass}>
               {displayState?.relativeText}
             </ItemDescription>
@@ -118,7 +123,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
               <CalendarClock />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Previous payment</ItemTitle>
+              <ItemTitle>{t("previousPayment")}</ItemTitle>
               <ItemDescription>
                 {format(subscription.lastPaymentDate, "dd MMMM yyyy")}
               </ItemDescription>
@@ -136,7 +141,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
           onClick={handleMarkAsCanceled}
         >
           <XCircle className="mr-2 size-4" />
-          Mark as canceled
+          {t("markAsCanceled")}
         </Button>
         <SubscriptionDeleteButton
           subscriptionId={subscriptionId}

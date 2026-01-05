@@ -1,0 +1,36 @@
+{
+  "title": "Analytics",
+  "stats": {
+    "activeSubscriptions": {
+      "title": "Active Subscriptions",
+      "auto": "auto",
+      "manual": "manual"
+    },
+    "yearlyCost": {
+      "title": "Yearly Cost",
+      "perMonth": "/ month"
+    },
+    "remainingThisMonth": {
+      "title": "Remaining this month",
+      "nextMonthForecast": "Next month forecast:"
+    },
+    "mostExpensive": {
+      "title": "Most Expensive"
+    }
+  },
+  "upcomingRenewals": {
+    "title": "Upcoming Renewals",
+    "noUpcoming": "No upcoming payments in the next 30 days."
+  },
+  "charts": {
+    "cashFlow": {
+      "title": "Cash Flow Forecast",
+      "subtitle": "Cumulative funds needed for the next 30 days.",
+      "30DayTotal": "30-Day Total:"
+    },
+    "monthlySpending": {
+      "title": "Monthly Spending Trend",
+      "subtitle": "Projected expenses for the next 12 months."
+    }
+  }
+}

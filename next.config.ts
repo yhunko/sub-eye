@@ -1,6 +1,7 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig, SentryBuildOptions } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import { version } from "./package.json";
+import createNextIntlPlugin from "next-intl/plugin";
 
 const cspHeader = [
   "default-src 'self'",
@@ -50,7 +51,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const withNextIntl = createNextIntlPlugin({
+  requestConfig: "./src/features/i18n/lib/request.ts",
+});
+
+const sentryBuildOptions: SentryBuildOptions = {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -90,4 +95,6 @@ export default withSentryConfig(nextConfig, {
   release: {
     name: "sub-eye@" + version,
   },
-});
+};
+
+export default withSentryConfig(withNextIntl(nextConfig), sentryBuildOptions);

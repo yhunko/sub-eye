@@ -20,8 +20,9 @@ import {
 } from "@/shared/components";
 import { SubscriptionUIMapper } from "@/features/subscription/lib/subscription-ui.mapper";
 import { BrandfetchImage } from "../../brandfetch";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type UpcomingRenewalsProps = {
   className?: string;
@@ -30,6 +31,7 @@ type UpcomingRenewalsProps = {
 export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
   const { user, isLoaded: isUserLoaded } = useUser();
   const { data, isLoading: isAnalyticsLoading } = useDashboardAnalytics();
+  const t = useTranslations("analytics.upcomingRenewals");
 
   const upcomingRenewals = data?.upcomingRenewals;
   const timezone = user?.publicMetadata?.preferredTimezone;
@@ -65,10 +67,10 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle>Upcoming Renewals</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground text-sm">
-          No upcoming payments in the next 30 days.
+          {t("noUpcoming")}
         </CardContent>
       </Card>
     );
@@ -77,7 +79,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Upcoming Renewals</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         {renewalsWithDisplayState.map((item) => (
