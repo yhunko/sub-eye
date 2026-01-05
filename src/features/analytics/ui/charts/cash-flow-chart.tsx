@@ -55,7 +55,7 @@ export function CashFlowChart() {
             cumulative: { label: "Total Needed", color: "var(--chart-1)" },
             amount: { label: "Daily Bill", color: "var(--chart-2)" },
           }}
-          className="min-h-80 w-full md:min-h-72"
+          className="h-full min-h-80 w-full md:min-h-72"
         >
           <ComposedChart data={data.cashFlowForecast}>
             <defs>
