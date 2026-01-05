@@ -2,14 +2,17 @@ import { useDashboardAnalytics } from "@/entities/analytics/api/hooks";
 import { StatCard } from "../stat-card";
 import { CurrencyText } from "../../../currency";
 import { StatCardSkeleton } from "../stat-card-skeleton";
+import { useTranslations } from "next-intl";
 
 export const YearlyCostCard = () => {
   const { data, isSuccess } = useDashboardAnalytics();
+  const t = useTranslations("analytics.stats.yearlyCost");
+  const tCommon = useTranslations("common");
 
   if (!isSuccess) return <StatCardSkeleton />;
 
   return (
-    <StatCard title="Yearly Cost">
+    <StatCard title={t("title")}>
       <div className="space-y-1">
         <div className="text-xl font-bold">
           <CurrencyText
@@ -23,7 +26,7 @@ export const YearlyCostCard = () => {
               currencyCode={data?.preferredCurrencyCode}
               amount={data.monthlyBurnRate}
             />{" "}
-            / month
+            {tCommon("per.month")}
           </span>
         </div>
       </div>

@@ -15,7 +15,8 @@ import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
 import { SubscriptionDeleteButton } from "../../subscription";
 import { Button, ButtonGroup } from "@/shared/components";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
+import { useTranslations } from "next-intl";
 
 declare module "@tanstack/table-core" {
   // Official tanstack table example: https://tanstack.com/table/latest/docs/api/core/table#options
@@ -25,111 +26,121 @@ declare module "@tanstack/table-core" {
   }
 }
 
-export const columns: ColumnDef<SubscriptionDto>[] = [
-  {
-    id: "icon",
-    accessorKey: "brandDomain",
-    header: "",
-    size: 40,
-    cell: ({ getValue }) => {
-      const brandDomain = getValue<SubscriptionDto["brandDomain"]>();
+export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
+  const t = useTranslations("subscription.table.columns");
 
-      return <BrandfetchImage domain={brandDomain} />;
-    },
-  },
-  {
-    id: "name",
-    accessorKey: "name",
-    header: "Subscription name",
-  },
-  {
-    id: "cost",
-    accessorKey: "billing",
-    enableSorting: true,
-    sortingFn: (a, b) =>
-      a.original.billing.preferred.amount - b.original.billing.preferred.amount,
-    header: ({ column }) => {
-      return (
-        <SubscriptionTableHead
-          header="Cost (per month)"
-          Icon={CreditCard}
-          sorted={column.getIsSorted()}
-          onSort={column.getToggleSortingHandler()}
-        />
-      );
-    },
-    cell: ({ getValue }) => {
-      const billing = getValue<SubscriptionDto["billing"]>();
+  return [
+    {
+      id: "icon",
+      accessorKey: "brandDomain",
+      header: "",
+      size: 40,
+      cell: ({ getValue }) => {
+        const brandDomain = getValue<SubscriptionDto["brandDomain"]>();
 
-      return (
-        <CurrencyBadge
-          currencyCode={billing.preferred.currencyCode}
-          amount={billing.preferred.amount}
-        />
-      );
+        return <BrandfetchImage domain={brandDomain} />;
+      },
     },
-  },
-  {
-    id: "interval",
-    header: () => {
-      return <SubscriptionTableHead header="Period" Icon={CalendarSync} />;
+    {
+      id: "name",
+      accessorKey: "name",
+      header: t("name"),
     },
-    cell: ({ row }) => {
-      const subscription = row.original;
+    {
+      id: "cost",
+      accessorKey: "billing",
+      enableSorting: true,
+      sortingFn: (a, b) =>
+        a.original.billing.preferred.amount -
+        b.original.billing.preferred.amount,
+      header: ({ column }) => {
+        return (
+          <SubscriptionTableHead
+            header={t("cost")}
+            Icon={CreditCard}
+            sorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()}
+          />
+        );
+      },
+      cell: ({ getValue }) => {
+        const billing = getValue<SubscriptionDto["billing"]>();
 
-      return (
-        <PeriodBadge every={subscription.every} period={subscription.period} />
-      );
+        return (
+          <CurrencyBadge
+            currencyCode={billing.preferred.currencyCode}
+            amount={billing.preferred.amount}
+          />
+        );
+      },
     },
-  },
-  {
-    id: "nextPaymentDate",
-    accessorKey: "nextPaymentDate",
-    enableSorting: true,
-    header: ({ column }) => {
-      return (
-        <SubscriptionTableHead
-          header="Next bill"
-          Icon={Calendar1}
-          sorted={column.getIsSorted()}
-          onSort={column.getToggleSortingHandler()}
-        />
-      );
-    },
-    cell: ({ row }) => {
-      const subscription = row.original;
+    {
+      id: "interval",
+      header: () => {
+        return (
+          <SubscriptionTableHead header={t("period")} Icon={CalendarSync} />
+        );
+      },
+      cell: ({ row }) => {
+        const subscription = row.original;
 
-      return (
-        <SubscriptionNextBill nextBillDate={subscription.nextPaymentDate} />
-      );
+        return (
+          <PeriodBadge
+            every={subscription.every}
+            period={subscription.period}
+          />
+        );
+      },
     },
-  },
-  {
-    id: "actions",
-    accessorKey: "id",
-    header: "",
-    cell: ({ getValue }) => {
-      const id = getValue<SubscriptionDto["id"]>();
+    {
+      id: "nextPaymentDate",
+      accessorKey: "nextPaymentDate",
+      enableSorting: true,
+      header: ({ column }) => {
+        return (
+          <SubscriptionTableHead
+            header={t("nextBill")}
+            Icon={Calendar1}
+            sorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()}
+          />
+        );
+      },
+      cell: ({ row }) => {
+        const subscription = row.original;
 
-      return (
-        <ButtonGroup
-          orientation="horizontal"
-          aria-label="Subscription actions"
-          className="h-fit"
-        >
-          <Button variant="outline" size="icon-sm" asChild>
-            <Link href={`/subscriptions/${id}`} passHref>
-              <EyeIcon />
-            </Link>
-          </Button>
-          <Button variant="outline" size="icon-sm" asChild>
-            <Link href={`/subscriptions/${id}/edit`} passHref>
-              <Edit className="size-4 transition-all" />
-            </Link>
-          </Button>
-          <SubscriptionDeleteButton subscriptionId={id} />
-        </ButtonGroup>
-      );
+        return (
+          <SubscriptionNextBill nextBillDate={subscription.nextPaymentDate} />
+        );
+      },
     },
-  },
-];
+    {
+      id: "actions",
+      accessorKey: "id",
+      header: "",
+      cell: ({ getValue }) => {
+        const id = getValue<SubscriptionDto["id"]>();
+
+        return (
+          <ButtonGroup
+            orientation="horizontal"
+            aria-label="Subscription actions"
+            className="h-fit"
+          >
+            <Button variant="outline" size="icon-sm" asChild>
+              <Link href={`/subscriptions/${id}`} passHref>
+                <EyeIcon />
+              </Link>
+            </Button>
+            <Button variant="outline" size="icon-sm" asChild>
+              <Link href={`/subscriptions/${id}/edit`} passHref>
+                <Edit className="size-4 transition-all" />
+              </Link>
+            </Button>
+            <SubscriptionDeleteButton subscriptionId={id} />
+          </ButtonGroup>
+        );
+      },
+    },
+  ];
+};

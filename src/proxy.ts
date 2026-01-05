@@ -1,7 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
+import createMiddleware from "next-intl/middleware";
+import { routing } from "@/features/i18n/lib/routing";
 
 const isPublicRoute = createRouteMatcher([
+  "/:locale/auth(.*)",
   "/auth(.*)",
   // QStash webhook endpoint - needs to be additionally protected
   "/api/notifications/send",
@@ -17,6 +20,10 @@ export default clerkMiddleware(
     if (!isPublicRoute(req)) {
       await auth.protect();
     }
+
+    const handleI18nRouting = createMiddleware(routing);
+
+    return handleI18nRouting(req);
   },
   {
     contentSecurityPolicy: {

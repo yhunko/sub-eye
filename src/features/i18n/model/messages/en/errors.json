@@ -1,0 +1,9 @@
+{
+  "generic": "Something went wrong",
+  "notFound": "Not found",
+  "unauthorized": "Unauthorized",
+  "forbidden": "Forbidden",
+  "serverError": "Server error",
+  "networkError": "Network error",
+  "tryAgain": "Please try again later"
+}

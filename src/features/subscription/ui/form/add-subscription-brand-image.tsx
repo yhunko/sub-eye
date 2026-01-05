@@ -9,7 +9,7 @@ import {
   ItemDescription,
 } from "@/shared/components";
 import { BrandfetchPicker } from "../../../brandfetch";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
 import { useFormContext } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
 

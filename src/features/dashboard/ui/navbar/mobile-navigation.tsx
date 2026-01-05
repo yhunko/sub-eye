@@ -3,7 +3,7 @@ import { LayoutDashboard, Plus, CreditCard } from "lucide-react";
 import { DashboardLogo } from "../dashboard-logo";
 import { UserDropdownMenu } from "../../../auth/ui/user-dropdown-menu";
 import { Button } from "@/shared/components";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
 import { cn } from "@/shared/lib";
 
 export const MobileNavigation = () => {

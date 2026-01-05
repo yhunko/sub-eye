@@ -8,6 +8,7 @@ declare global {
     preferredTimezone?: string;
     notificationTime?: string;
     notificationOffset?: number;
+    locale?: string;
   }
 
   interface CustomJwtSessionClaims {

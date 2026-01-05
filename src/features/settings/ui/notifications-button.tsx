@@ -14,8 +14,10 @@ import {
   useUnsubscribeFromPushNotifications,
 } from "@/entities/push-notifications/api/hooks";
 import { usePushNotificationsSupport } from "../hooks/use-push-notifications-support";
+import { useTranslations } from "next-intl";
 
 export const NotificationsButton = () => {
+  const t = useTranslations("settings.notifications");
   const isSupported = usePushNotificationsSupport();
 
   const { data: subscription } = usePushNotificationsSubscription();
@@ -37,10 +39,8 @@ export const NotificationsButton = () => {
   return (
     <Item variant="outline">
       <ItemContent>
-        <ItemTitle>Enable Notifications</ItemTitle>
-        <ItemDescription>
-          Receive push notifications about important updates
-        </ItemDescription>
+        <ItemTitle>{t("title")}</ItemTitle>
+        <ItemDescription>{t("description")}</ItemDescription>
       </ItemContent>
       <ItemActions>
         <Switch

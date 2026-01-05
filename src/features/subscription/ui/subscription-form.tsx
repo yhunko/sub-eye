@@ -25,6 +25,7 @@ import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionDeleteButton } from "./subscription-delete-button";
 import { cn } from "@/shared/lib";
+import { useTranslations } from "next-intl";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -54,6 +55,7 @@ export const SubscriptionForm = ({
     useAddSubscription();
   const { mutate: updateSubscription, isPending: isUpdatingSubscription } =
     useUpdateSubscription();
+  const t = useTranslations("subscription");
 
   const isPending = isAddingSubscription || isUpdatingSubscription;
   const isEditMode = !!subscriptionId;
@@ -64,7 +66,7 @@ export const SubscriptionForm = ({
         { id: subscriptionId, params: data },
         {
           onSuccess() {
-            toast.success("Subscription updated successfully!");
+            toast.success(t("messages.updated"));
             router.push("/subscriptions");
           },
         },
@@ -72,7 +74,7 @@ export const SubscriptionForm = ({
     } else {
       addSubscription(data, {
         onSuccess() {
-          toast.success("Subscription added successfully!");
+          toast.success(t("messages.added"));
           router.push("/subscriptions");
         },
       });
@@ -102,7 +104,7 @@ export const SubscriptionForm = ({
             className={cn(isEditMode && "justify-self-end")}
           >
             {isPending && <Spinner />}
-            {isEditMode ? "Update subscription" : "Add subscription"}
+            {isEditMode ? t("form.buttons.update") : t("form.buttons.add")}
           </Button>
         </div>
       </form>

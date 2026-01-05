@@ -15,6 +15,7 @@ import { CurrenciesMap } from "@/entities/monobank";
 import { CurrencyBadge } from "@/features/currency/ui/currency-badge";
 import { FC } from "react";
 import { cn } from "@/shared/lib";
+import { useTranslations } from "next-intl";
 
 type MonthlySpendingTrendProps = {
   className?: string;
@@ -23,6 +24,7 @@ type MonthlySpendingTrendProps = {
 export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendProps> = ({
   className,
 }) => {
+  const t = useTranslations("analytics.charts.monthlySpending");
   const { data, isLoading } = useDashboardAnalytics();
 
   if (isLoading || !data)
@@ -40,10 +42,8 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendProps> = ({
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader>
-        <CardTitle>Monthly Spending Trend</CardTitle>
-        <CardDescription>
-          Projected expenses for the next 12 months.
-        </CardDescription>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer

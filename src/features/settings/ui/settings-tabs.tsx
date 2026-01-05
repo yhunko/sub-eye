@@ -1,9 +1,10 @@
 "use client";
 
 import { FC } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/components";
-import Link from "next/link";
+import { Tabs, TabsList } from "@/shared/components";
+import { Link } from "@/features/i18n/lib/navigation";
 import { SettingsTab } from "../model/props";
+import { useTranslations } from "next-intl";
 
 type SettingsTabsProps = {
   tab: SettingsTab;
@@ -11,18 +12,14 @@ type SettingsTabsProps = {
 };
 
 export const SettingsTabs: FC<SettingsTabsProps> = ({ tab, className }) => {
+  const t = useTranslations("settings.tabs");
+
   return (
     <Tabs defaultValue={tab} className={className}>
       <TabsList className="w-full">
-        <TabsTrigger value={SettingsTab.GENERAL} asChild>
-          <Link href="/settings/general">General</Link>
-        </TabsTrigger>
-        <TabsTrigger value={SettingsTab.NOTIFICATIONS} asChild>
-          <Link href="/settings/notifications">Notifications</Link>
-        </TabsTrigger>
-        <TabsTrigger value={SettingsTab.ACCOUNT} asChild>
-          <Link href="/settings/account">Account</Link>
-        </TabsTrigger>
+        <Link href="/settings/general">{t("general")}</Link>
+        <Link href="/settings/notifications">{t("notifications")}</Link>
+        <Link href="/settings/account">{t("account")}</Link>
       </TabsList>
     </Tabs>
   );

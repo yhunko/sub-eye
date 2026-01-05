@@ -14,9 +14,10 @@ import {
   DropdownMenuLabel,
 } from "@/shared/components";
 import { LogOut, Cog } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/features/i18n/lib/navigation";
 import { UserAvatar } from "./user-avatar";
 import { FC } from "react";
+import { useTranslations } from "next-intl";
 
 type UserDropdownMenuProps = {
   triggerId: string;
@@ -24,6 +25,7 @@ type UserDropdownMenuProps = {
 
 export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
   const { user } = useUser();
+  const t = useTranslations("auth.user.menu");
 
   const fullName = user?.fullName ?? user?.username ?? "User";
   const email = user?.primaryEmailAddress?.emailAddress;
@@ -75,7 +77,7 @@ export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
                 <Cog />
               </ItemMedia>
               <ItemContent>
-                <ItemTitle>Settings</ItemTitle>
+                <ItemTitle>{t("settings")}</ItemTitle>
               </ItemContent>
             </Link>
           </Item>
@@ -90,7 +92,7 @@ export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
                 <LogOut />
               </ItemMedia>
               <ItemContent>
-                <ItemTitle>Sign out</ItemTitle>
+                <ItemTitle>{t("signOut")}</ItemTitle>
               </ItemContent>
             </Item>
           </SignOutButton>

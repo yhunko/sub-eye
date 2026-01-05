@@ -13,6 +13,7 @@ import { PopoverConfirmationContent } from "@/shared/components/ui/popover-confi
 import { Trash2 } from "lucide-react";
 import { useDeleteSubscription } from "@/entities/subscription";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 type SubscriptionDeleteButtonProps = {
   subscriptionId: string;
@@ -28,6 +29,8 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
   onSuccess,
 }) => {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("subscription");
+  const tCommon = useTranslations("common.actions");
 
   const { mutate: deleteSubscription, isPending } = useDeleteSubscription();
 
@@ -36,10 +39,10 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
       async onSuccess() {
         onSuccess?.();
         setOpen(false);
-        toast.success("Subscription deleted successfully!");
+        toast.success(t("messages.deleted"));
       },
     });
-  }, [deleteSubscription, onSuccess, subscriptionId]);
+  }, [deleteSubscription, onSuccess, subscriptionId, t]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -50,16 +53,16 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
           className={buttonClassName}
         >
           <Trash2 className="size-4 transition-all" />
-          {fullWidth && !isPending && <span>Delete subscription</span>}
-          {fullWidth && isPending && <span>Deleting...</span>}
+          {fullWidth && !isPending && <span>{t("delete.button")}</span>}
+          {fullWidth && isPending && <span>{tCommon("deleting")}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent side="top">
         <PopoverConfirmationContent
-          description="Are you sure?"
+          description={t("delete.confirm")}
           CancelButton={
             <Button size="sm" onClick={() => setOpen(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
           }
           ConfirmButton={
@@ -70,7 +73,7 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
               disabled={isPending}
             >
               {isPending && <Spinner />}
-              Yes
+              {tCommon("yes")}
             </Button>
           }
         />

@@ -1,0 +1,41 @@
+{
+  "title": "Settings",
+  "tabs": {
+    "general": "General",
+    "notifications": "Notifications",
+    "account": "Account"
+  },
+  "notifications": {
+    "title": "Enable Notifications",
+    "description": "Receive push notifications about important updates",
+    "status": {
+      "enabled": "Notifications enabled",
+      "disabled": "Notifications disabled",
+      "unsupported": "Push notifications are not supported in your browser"
+    }
+  },
+  "general": {
+    "title": "General Settings",
+    "locale": {
+      "label": "Language",
+      "description": "Choose your preferred language"
+    },
+    "currency": {
+      "label": "Preferred Currency",
+      "description": "Select your default currency for displaying amounts"
+    },
+    "timezone": {
+      "label": "Preferred Timezone",
+      "description": "Select your timezone for date and time display"
+    },
+    "theme": {
+      "label": "Theme",
+      "description": "Choose your preferred theme",
+      "options": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@ import {
   flexRender,
   SortingState,
 } from "@tanstack/react-table";
-import { columns } from "./model/columns";
+import { useColumns } from "./model/columns";
 import {
   Table,
   TableHeader,
@@ -48,6 +48,7 @@ export const SubscriptionsTable: FC = () => {
     },
   });
 
+  const columns = useColumns();
   const data = useMemo(() => subscriptions ?? [], [subscriptions]);
   const table = useReactTable({
     data,
@@ -100,7 +101,10 @@ export const SubscriptionsTable: FC = () => {
               </TableRow>
             ))
           ) : (
-            <SubscriptionsTableNoResults loading={isTableLoading} />
+            <SubscriptionsTableNoResults
+              loading={isTableLoading}
+              columnsLength={columns.length}
+            />
           )}
         </TableBody>
       </Table>

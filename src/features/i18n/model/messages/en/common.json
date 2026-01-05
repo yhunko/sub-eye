@@ -1,0 +1,74 @@
+{
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "close": "Close",
+    "submit": "Submit",
+    "update": "Update",
+    "loading": "Loading...",
+    "deleting": "Deleting...",
+    "saving": "Saving...",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset"
+  },
+  "labels": {
+    "name": "Name",
+    "cost": "Cost",
+    "currency": "Currency",
+    "date": "Date",
+    "period": "Period",
+    "status": "Status",
+    "description": "Description"
+  },
+  "placeholders": {
+    "search": "Search...",
+    "select": "Select...",
+    "enter": "Enter...",
+    "name": "Enter name...",
+    "amount": "Enter amount..."
+  },
+  "periods": {
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "weeks": "Weeks",
+    "months": "Months",
+    "years": "Years"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "ago": "ago",
+    "in": "in",
+    "days": "days",
+    "day": "day",
+    "weeks": "weeks",
+    "week": "week",
+    "months": "months",
+    "month": "month"
+  },
+  "per": {
+    "month": "/ month",
+    "year": "/ year"
+  },
+  "empty": {
+    "noResults": "No results",
+    "noData": "No data available",
+    "nothingHere": "Nothing here yet"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalid": "Invalid value",
+    "generic": "Something went wrong",
+    "tryAgain": "Please try again"
+  }
+}
