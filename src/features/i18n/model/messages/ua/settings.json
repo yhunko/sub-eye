@@ -1,6 +1,6 @@
 {
   "title": "Налаштування",
-  "tabs": {
+  "pages": {
     "general": "Загальні",
     "notifications": "Сповіщення",
     "account": "Обліковий запис"
