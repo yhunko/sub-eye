@@ -1,5 +1,6 @@
 import { getRequestConfig } from "next-intl/server";
 import { auth } from "@clerk/nextjs/server";
+import { getLocaleAction } from "@/entities/locale/api/actions";
 
 const namespaces = [
   "common",
@@ -33,8 +34,9 @@ async function loadMessages(locale: string) {
 
 export default getRequestConfig(async () => {
   const { sessionClaims } = await auth();
+  const cookiesLocale = await getLocaleAction();
 
-  const locale = sessionClaims?.publicMetadata?.locale || "en";
+  const locale = cookiesLocale ?? sessionClaims?.publicMetadata?.locale ?? "en";
 
   return {
     locale,
