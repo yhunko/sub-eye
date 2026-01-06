@@ -10,7 +10,7 @@ import { SwUpdateManager } from "@/shared/lib/serwist/sw-update-manager";
 import { NextIntlClientProvider } from "next-intl";
 
 import "../globals.css";
-import { setRequestLocale, getMessages } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -44,10 +44,6 @@ export default async function RootLayout({
 
   setRequestLocale(locale);
 
-  // Providing all messages to the client
-  // side is the easiest way to get started
-  const messages = await getMessages();
-
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
@@ -56,7 +52,7 @@ export default async function RootLayout({
           "flex min-h-screen flex-col antialiased",
         )}
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale}>
           <SerwistProvider>
             <ReactQueryProvider>
               <ThemeProvider
