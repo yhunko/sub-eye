@@ -14,7 +14,7 @@ import {
   DropdownMenuLabel,
 } from "@/shared/components";
 import { LogOut, Cog } from "lucide-react";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { UserAvatar } from "./user-avatar";
 import { FC } from "react";
 import { useTranslations } from "next-intl";

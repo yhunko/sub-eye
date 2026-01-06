@@ -7,7 +7,7 @@ import {
   BreadcrumbLink,
 } from "@/shared/components";
 import { useTranslations } from "next-intl";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 
 export type SettingsLayoutProps = {
   Breadcrumbs: ReactNode;

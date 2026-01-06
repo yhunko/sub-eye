@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 

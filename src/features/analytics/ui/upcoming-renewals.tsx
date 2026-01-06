@@ -20,7 +20,7 @@ import {
 } from "@/shared/components";
 import { SubscriptionUIMapper } from "@/features/subscription/lib/subscription-ui.mapper";
 import { BrandfetchImage } from "../../brandfetch";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 

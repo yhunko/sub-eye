@@ -2,7 +2,7 @@
 
 import { FC } from "react";
 import { Tabs, TabsList } from "@/shared/components";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { SettingsTab } from "../model/props";
 import { useTranslations } from "next-intl";
 

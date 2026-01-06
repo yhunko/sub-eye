@@ -1,7 +1,6 @@
 "use client";
 
-import { FC, useTransition } from "react";
-import { useLocale } from "next-intl";
+import { FC, startTransition } from "react";
 import {
   Select,
   SelectTrigger,
@@ -9,8 +8,9 @@ import {
   SelectItem,
   SelectValue,
 } from "@/shared/components";
-import { useRouter, usePathname } from "@/features/i18n/lib/navigation";
-import { useParams } from "next/navigation";
+import { useUpdateUserPublicMetadata } from "@/entities/user";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 const supportedLocales = [
   { code: "en", label: "English", emoji: "🇺🇸" },
@@ -18,22 +18,26 @@ const supportedLocales = [
 ] as const;
 
 export const LocaleSwitcher: FC = () => {
-  const locale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const [isPending, startTransition] = useTransition();
+  const { user } = useUser();
+  const { mutate, isPending } = useUpdateUserPublicMetadata();
 
   const handleSelect = (nextLocale: string) => {
-    startTransition(() => {
-      router.replace(
-        // @ts-expect-error - params may vary depending on your route setup
-        { pathname, params },
-        { locale: nextLocale },
-      );
-    });
+    mutate(
+      {
+        locale: nextLocale,
+      },
+      {
+        onSuccess() {
+          startTransition(() => {
+            router.refresh();
+          });
+        },
+      },
+    );
   };
 
+  const locale = user?.publicMetadata?.locale ?? "en";
   const selected =
     supportedLocales.find((l) => l.code === locale) || supportedLocales[0];
 

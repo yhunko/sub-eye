@@ -1,7 +1,7 @@
 import { PropsWithChildren } from "react";
 import { ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import Image from "next/image";
-import Logo from "../../icon0.svg";
+import Logo from "../icon0.svg";
 
 export default async function ProtectedClerkPages({
   children,
