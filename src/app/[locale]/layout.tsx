@@ -8,9 +8,19 @@ import { SerwistProvider } from "@/shared/lib/serwist/provider";
 import { cn } from "@/shared/lib";
 import { SwUpdateManager } from "@/shared/lib/serwist/sw-update-manager";
 import { NextIntlClientProvider } from "next-intl";
+import { setRequestLocale } from "next-intl/server";
+import { LocalizationResource } from "@clerk/types";
+import { ConfiguredClerkProvider } from "@/shared/lib/clerk";
 
 import "../globals.css";
-import { setRequestLocale } from "next-intl/server";
+
+const clerkLocalizationMapper: Record<
+  string,
+  () => Promise<LocalizationResource>
+> = {
+  en: () => import("@clerk/localizations").then((m) => m.enUS),
+  ua: () => import("@clerk/localizations").then((m) => m.ukUA),
+};
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -34,6 +44,8 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
+  const clerkLocalizationLoader = clerkLocalizationMapper[locale];
+  const localization = await clerkLocalizationLoader();
 
   setRequestLocale(locale);
 
@@ -54,7 +66,9 @@ export default async function RootLayout({
                 enableSystem
                 disableTransitionOnChange
               >
-                {children}
+                <ConfiguredClerkProvider localization={localization}>
+                  {children}
+                </ConfiguredClerkProvider>
               </ThemeProvider>
 
               <Toaster position="top-right" richColors />

@@ -94,10 +94,9 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
               </h1>
             </div>
           </div>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="icon" asChild>
             <Link href={`/subscriptions/${subscription.id}/edit`}>
               <PencilIcon />
-              {t("edit")}
             </Link>
           </Button>
         </div>

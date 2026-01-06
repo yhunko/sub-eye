@@ -1,28 +1,27 @@
-import { ClerkProvider } from "@/shared/lib/clerk";
-import { ReactNode } from "react";
-import { routing } from "@/features/i18n/lib/routing";
-import { LocalizationResource } from "@clerk/types";
+import { PropsWithChildren } from "react";
+import { ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
+import Image from "next/image";
 
-const localizationMapper: Record<string, () => Promise<LocalizationResource>> =
-  {
-    en: () => import("@clerk/localizations").then((m) => m.enUS),
-    ua: () => import("@clerk/localizations").then((m) => m.ukUA),
-  };
-
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}
-
-export default async function ProtectedLayout({
+export default async function ProtectedClerkPages({
   children,
-  params,
-}: Readonly<{
-  children: ReactNode;
-  params: Promise<{ locale: string }>;
-}>) {
-  const { locale } = await params;
-  const clerkLocalizationLoader = localizationMapper[locale];
-  const localization = await clerkLocalizationLoader();
-
-  return <ClerkProvider localization={localization}>{children}</ClerkProvider>;
+}: Readonly<PropsWithChildren>) {
+  return (
+    <>
+      <ClerkLoading>
+        <div className="flex h-svh items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <Image
+              src="/assets/logo.svg"
+              className="animate-bounce"
+              alt="Logo"
+              width={128}
+              height={128}
+            />
+            <p className="text-xl">Loading...</p>
+          </div>
+        </div>
+      </ClerkLoading>
+      <ClerkLoaded>{children}</ClerkLoaded>
+    </>
+  );
 }

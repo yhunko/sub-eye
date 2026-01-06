@@ -53,8 +53,7 @@
   "overview": {
     "nextPayment": "Next payment",
     "previousPayment": "Previous payment",
-    "markAsCanceled": "Mark as canceled",
-    "edit": "Edit"
+    "markAsCanceled": "Mark as canceled"
   },
   "messages": {
     "added": "Subscription added successfully!",

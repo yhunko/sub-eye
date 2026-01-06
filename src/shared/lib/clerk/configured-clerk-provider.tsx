@@ -9,10 +9,9 @@ type ClerkProviderProps = {
   localization: LocalizationResource;
 };
 
-export const ClerkProvider: FC<PropsWithChildren<ClerkProviderProps>> = ({
-  localization,
-  children,
-}) => {
+export const ConfiguredClerkProvider: FC<
+  PropsWithChildren<ClerkProviderProps>
+> = ({ localization, children }) => {
   return (
     <Provider
       appearance={{

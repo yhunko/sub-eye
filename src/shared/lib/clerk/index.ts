@@ -1,1 +1,1 @@
-export * from "./clerk-provider";
+export * from "./configured-clerk-provider";

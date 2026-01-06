@@ -53,8 +53,7 @@
   "overview": {
     "nextPayment": "Наступний платіж",
     "previousPayment": "Попередній платіж",
-    "markAsCanceled": "Позначити як скасовану",
-    "edit": "Редагувати"
+    "markAsCanceled": "Позначити як скасовану"
   },
   "messages": {
     "added": "Підписку успішно додано!",
