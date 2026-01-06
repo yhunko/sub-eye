@@ -14,7 +14,7 @@ export const DashboardLogo = () => {
       >
         <div className="relative size-6 md:size-8">
           <Image
-            src="/logo.svg"
+            src="/assets/logo.svg"
             alt="app logo"
             priority
             fill
