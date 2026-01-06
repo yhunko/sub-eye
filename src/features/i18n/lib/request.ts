@@ -36,7 +36,7 @@ export default getRequestConfig(async () => {
   const { sessionClaims } = await auth();
   const cookiesLocale = await getLocaleAction();
 
-  const locale = cookiesLocale ?? sessionClaims?.publicMetadata?.locale ?? "en";
+  const locale = sessionClaims?.publicMetadata?.locale ?? cookiesLocale ?? "en";
 
   return {
     locale,
