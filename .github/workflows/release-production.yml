@@ -40,7 +40,7 @@ jobs:
       - name: Run Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: bunx semantic-release
+        run: HUSKY=0 bunx semantic-release
 
       - name: Pull Vercel Environment Information
         run: bunx vercel@latest pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
