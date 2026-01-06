@@ -7,6 +7,7 @@ import {
   BreadcrumbLink,
 } from "@/shared/components";
 import { useTranslations } from "next-intl";
+import { Link } from "@/features/i18n/lib/navigation";
 
 export type SettingsLayoutProps = {
   Breadcrumbs: ReactNode;
@@ -26,7 +27,9 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/settings">{t("title")}</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/settings">{t("title")}</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
 
             {Breadcrumbs}

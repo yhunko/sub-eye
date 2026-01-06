@@ -11,7 +11,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { LocalizationResource } from "@clerk/types";
 import { ConfiguredClerkProvider } from "@/shared/lib/clerk";
-
+import { LocalizedDateFnsProvider } from "@/shared/lib/date-fns/localized-date-fns-provider";
 import "../globals.css";
 
 const clerkLocalizationMapper: Record<
@@ -67,6 +67,8 @@ export default async function RootLayout({
                 disableTransitionOnChange
               >
                 <ConfiguredClerkProvider localization={localization}>
+                  <LocalizedDateFnsProvider locale={locale} />
+
                   {children}
                 </ConfiguredClerkProvider>
               </ThemeProvider>
