@@ -8,11 +8,11 @@ import { SerwistProvider } from "@/shared/lib/serwist/provider";
 import { cn } from "@/shared/lib";
 import { SwUpdateManager } from "@/shared/lib/serwist/sw-update-manager";
 import { NextIntlClientProvider } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getLocale } from "next-intl/server";
 import { LocalizationResource } from "@clerk/types";
 import { ConfiguredClerkProvider } from "@/shared/lib/clerk";
 import { LocalizedDateFnsProvider } from "@/shared/lib/date-fns/localized-date-fns-provider";
-import "../globals.css";
+import "./globals.css";
 
 const clerkLocalizationMapper: Record<
   string,
@@ -38,12 +38,10 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params,
 }: Readonly<{
   children: ReactNode;
-  params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params;
+  const locale = await getLocale();
   const clerkLocalizationLoader = clerkLocalizationMapper[locale];
   const localization = await clerkLocalizationLoader();
 

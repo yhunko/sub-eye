@@ -12,7 +12,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
 import { SubscriptionNextBill } from "./subscription-next-bill";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 export const SubscriptionsList = () => {

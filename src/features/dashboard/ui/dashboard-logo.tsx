@@ -1,4 +1,4 @@
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/shared/components";
 import { Construction } from "lucide-react";

@@ -15,7 +15,7 @@ import * as React from "react";
 import { BrandfetchImage } from "../../brandfetch";
 import { SubscriptionDeleteButton } from "../../subscription";
 import { Button, ButtonGroup } from "@/shared/components";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 declare module "@tanstack/table-core" {

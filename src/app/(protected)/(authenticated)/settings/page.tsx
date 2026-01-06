@@ -11,7 +11,7 @@ import {
   CardHeader,
   ItemGroup,
 } from "@/shared/components";
-import { Link } from "@/features/i18n/lib/navigation";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Cog, BellRing, UserRound, ChevronRight } from "lucide-react";
 

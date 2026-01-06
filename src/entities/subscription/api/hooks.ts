@@ -155,9 +155,14 @@ export const useUpdateSubscription = ({
           subscription,
         );
 
-        return await queryClient.invalidateQueries({
-          queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
-        });
+        return await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.list._def,
+          }),
+          queryClient.invalidateQueries({
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,
+          }),
+        ]);
       }
     },
     ...options,
