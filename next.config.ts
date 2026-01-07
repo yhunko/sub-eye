@@ -6,7 +6,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 const cspHeader = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://real-satyr-3.clerk.accounts.dev https://challenges.cloudflare.com",
-  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev https://vercel.live https://cdn.brandfetch.io https://api.brandfetch.io https://challenges.cloudflare.com",
+  "connect-src 'self' https://img.clerk.com https://real-satyr-3.clerk.accounts.dev https://vercel.live https://cdn.brandfetch.io https://api.brandfetch.io https://challenges.cloudflare.com https://*.posthog.com",
   "img-src 'self' https://img.clerk.com https://cdn.brandfetch.io",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
