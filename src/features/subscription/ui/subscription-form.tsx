@@ -3,9 +3,9 @@
 import { useForm } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import {
-  AddSubscriptionFormSchema,
   AddSubscriptionInput,
   AddSubscriptionOutput,
+  useAddSubscriptionFormSchema,
 } from "../model/schema";
 import {
   Form,
@@ -36,8 +36,11 @@ export const SubscriptionForm = ({
   defaultValues,
   subscriptionId,
 }: SubscriptionFormProps) => {
+  const t = useTranslations("subscription");
+
+  const schema = useAddSubscriptionFormSchema();
   const formMethods = useForm({
-    resolver: valibotResolver(AddSubscriptionFormSchema),
+    resolver: valibotResolver(schema),
     defaultValues: {
       name: "",
       cost: "",
@@ -55,7 +58,6 @@ export const SubscriptionForm = ({
     useAddSubscription();
   const { mutate: updateSubscription, isPending: isUpdatingSubscription } =
     useUpdateSubscription();
-  const t = useTranslations("subscription");
 
   const isPending = isAddingSubscription || isUpdatingSubscription;
   const isEditMode = !!subscriptionId;

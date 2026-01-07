@@ -5,25 +5,27 @@ import { UserDropdownMenu } from "../../../auth/ui/user-dropdown-menu";
 import { Button } from "@/shared/components";
 import Link from "next/link";
 import { cn } from "@/shared/lib";
+import { useTranslations } from "next-intl";
 
 export const MobileNavigation = () => {
   const pathname = usePathname();
+  const t = useTranslations("navigation.mobile");
 
   const navItems = [
     {
-      label: "Home",
+      label: t("home"),
       href: "/",
       icon: LayoutDashboard,
       isActive: pathname === "/",
     },
     {
-      label: "Add",
+      label: t("add"),
       href: "/subscriptions/add",
       icon: Plus,
       isPrimary: true, // Special styling for the action button
     },
     {
-      label: "Subs",
+      label: t("subs"),
       href: "/subscriptions",
       icon: CreditCard,
       isActive: pathname === "/subscriptions",

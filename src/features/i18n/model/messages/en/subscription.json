@@ -55,6 +55,12 @@
     "previousPayment": "Previous payment",
     "markAsCanceled": "Mark as canceled"
   },
+  "date": {
+    "selectDate": "Select date",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "in {count} days"
+  },
   "messages": {
     "added": "Subscription added successfully!",
     "updated": "Subscription updated successfully!",

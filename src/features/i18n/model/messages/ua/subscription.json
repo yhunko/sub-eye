@@ -55,6 +55,12 @@
     "previousPayment": "Попередній платіж",
     "markAsCanceled": "Позначити як скасовану"
   },
+  "date": {
+    "selectDate": "Вибрати дату",
+    "today": "Сьогодні",
+    "tomorrow": "Завтра",
+    "inDays": "через {count} днів"
+  },
   "messages": {
     "added": "Підписку успішно додано!",
     "updated": "Підписку успішно оновлено!",

@@ -52,8 +52,11 @@ export function CashFlowChart() {
       <CardContent>
         <ChartContainer
           config={{
-            cumulative: { label: "Total Needed", color: "var(--chart-1)" },
-            amount: { label: "Daily Bill", color: "var(--chart-2)" },
+            cumulative: {
+              label: t("labels.totalNeeded"),
+              color: "var(--chart-1)",
+            },
+            amount: { label: t("labels.dailyBill"), color: "var(--chart-2)" },
           }}
           className="h-full min-h-80 w-full md:min-h-72"
         >
@@ -110,7 +113,9 @@ export function CashFlowChart() {
                       </p>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-xs">Daily Amount:</span>
+                          <span className="text-xs">
+                            {t("labels.dailyAmount")}
+                          </span>
                           <CurrencyBadge
                             amount={item.amount}
                             currencyCode={data.preferredCurrencyCode}
@@ -118,7 +123,7 @@ export function CashFlowChart() {
                         </div>
                         <div className="mt-2 flex items-center justify-between gap-4 border-t pt-2">
                           <span className="text-xs font-bold">
-                            Total Needed:
+                            {t("labels.totalNeededLabel")}
                           </span>
                           <CurrencyBadge
                             amount={item.cumulative}

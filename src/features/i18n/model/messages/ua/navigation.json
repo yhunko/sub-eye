@@ -5,5 +5,10 @@
   "addSubscription": "Додати підписку",
   "editSubscription": "Редагувати підписку",
   "deleteSubscription": "Видалити підписку",
-  "viewSubscription": "Переглянути підписку"
+  "viewSubscription": "Переглянути підписку",
+  "mobile": {
+    "home": "Головна",
+    "add": "Додати",
+    "subs": "Підписки"
+  }
 }

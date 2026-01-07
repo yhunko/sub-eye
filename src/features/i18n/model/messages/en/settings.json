@@ -11,7 +11,21 @@
     "status": {
       "enabled": "Notifications enabled",
       "disabled": "Notifications disabled",
-      "unsupported": "Push notifications are not supported in your browser"
+      "unsupported": "Push notifications are not supported in your browser",
+      "checking": "Checking...",
+      "supported": "Supported",
+      "notSupported": "Not supported",
+      "subscribed": "Subscribed",
+      "notSubscribed": "Not subscribed"
+    },
+    "appleInstall": {
+      "title": "Install App for Notifications",
+      "description": "To enable push notifications on iOS, you need to install this app to your Home Screen.",
+      "howToInstall": "How to install:",
+      "step1": "Tap the Share button (usually at the bottom or top of Safari)",
+      "step2": "Scroll down and tap \"Add to Home Screen\"",
+      "step3": "Tap \"Add\" in the top right corner",
+      "step4": "Open the app from your Home Screen"
     }
   },
   "general": {

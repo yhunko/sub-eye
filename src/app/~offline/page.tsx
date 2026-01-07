@@ -1,8 +1,12 @@
-export default function OfflinePage() {
+import { getTranslations } from "next-intl/server";
+
+export default async function OfflinePage() {
+  const t = await getTranslations("common.offline");
+
   return (
     <div>
-      <h1>You are currently offline</h1>
-      <p>Please check your internet connection.</p>
+      <h1>{t("title")}</h1>
+      <p>{t("description")}</p>
     </div>
   );
 }
