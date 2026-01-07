@@ -2,6 +2,7 @@ import { FC, useMemo } from "react";
 import { cn, DateTimezoneUtils } from "@/shared/lib";
 import { SubscriptionUIMapper } from "../lib/subscription-ui.mapper";
 import { useUser } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 
 type SubscriptionNextBillProps = {
   /**
@@ -15,6 +16,7 @@ export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
   nextBillDate,
 }) => {
   const { user, isLoaded } = useUser();
+  const t = useTranslations("subscription.date");
 
   const displayState = useMemo(() => {
     if (!isLoaded) return null;
@@ -22,8 +24,8 @@ export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
     const timezone = user?.publicMetadata?.preferredTimezone;
     const zonedDate = DateTimezoneUtils.toZoned(nextBillDate, timezone);
 
-    return SubscriptionUIMapper.toDisplayState(zonedDate, timezone);
-  }, [isLoaded, user?.publicMetadata?.preferredTimezone, nextBillDate]);
+    return SubscriptionUIMapper.toDisplayState(zonedDate, timezone, t);
+  }, [isLoaded, user?.publicMetadata?.preferredTimezone, nextBillDate, t]);
 
   if (!displayState) return null;
 

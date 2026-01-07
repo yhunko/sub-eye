@@ -12,10 +12,12 @@ import {
 } from "@/shared/components";
 import { useMounted } from "@mantine/hooks";
 import { ForwardRefExoticComponent, RefAttributes, useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 export const ThemeSwitchButton = () => {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
+  const t = useTranslations("settings.general.theme.options");
 
   const Icon: ForwardRefExoticComponent<
     Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
@@ -35,17 +37,17 @@ export const ThemeSwitchButton = () => {
   }, [mounted, theme]);
 
   const getThemeLabel = () => {
-    if (!mounted) return "Light";
+    if (!mounted) return t("light");
 
     switch (theme) {
       case "light":
-        return "Light";
+        return t("light");
       case "dark":
-        return "Dark";
+        return t("dark");
       case "system":
-        return "System";
+        return t("system");
       default:
-        return "Light";
+        return t("light");
     }
   };
 
@@ -70,7 +72,7 @@ export const ThemeSwitchButton = () => {
           className="cursor-pointer gap-3"
         >
           <Sun className="size-4" />
-          <span>Light</span>
+          <span>{t("light")}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={theme === "dark"}
@@ -78,7 +80,7 @@ export const ThemeSwitchButton = () => {
           className="cursor-pointer gap-3"
         >
           <Moon className="size-4" />
-          <span>Dark</span>
+          <span>{t("dark")}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={theme === "system"}
@@ -86,7 +88,7 @@ export const ThemeSwitchButton = () => {
           className="cursor-pointer gap-3"
         >
           <MonitorCog className="size-4" />
-          <span>System</span>
+          <span>{t("system")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

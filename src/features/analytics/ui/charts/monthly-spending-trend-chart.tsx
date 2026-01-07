@@ -49,7 +49,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendProps> = ({
         <ChartContainer
           config={{
             amount: {
-              label: "Total Spending",
+              label: t("labels.totalSpending"),
               color: "var(--chart-1)",
             },
           }}
@@ -114,7 +114,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendProps> = ({
                       </p>
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-foreground text-sm font-bold">
-                          Total:
+                          {t("labels.total")}
                         </span>
                         <CurrencyBadge
                           amount={item.amount}

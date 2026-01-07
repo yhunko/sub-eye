@@ -26,11 +26,21 @@
     "cashFlow": {
       "title": "Cash Flow Forecast",
       "subtitle": "Cumulative funds needed for the next 30 days.",
-      "30DaysTotal": "30-Days Total"
+      "30DaysTotal": "30-Days Total",
+      "labels": {
+        "totalNeeded": "Total Needed",
+        "dailyBill": "Daily Bill",
+        "dailyAmount": "Daily Amount:",
+        "totalNeededLabel": "Total Needed:"
+      }
     },
     "monthlySpending": {
       "title": "Monthly Spending Trend",
-      "subtitle": "Projected expenses for the next 12 months."
+      "subtitle": "Projected expenses for the next 12 months.",
+      "labels": {
+        "totalSpending": "Total Spending",
+        "total": "Total:"
+      }
     }
   }
 }

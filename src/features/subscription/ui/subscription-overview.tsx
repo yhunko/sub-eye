@@ -45,6 +45,8 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   const t = useTranslations("subscription.overview");
   const tCommon = useTranslations("common.actions");
 
+  const tDate = useTranslations("subscription.date");
+
   const displayState = useMemo(() => {
     if (!subscription || !isLoaded) return null;
 
@@ -56,8 +58,8 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       timezone,
     );
 
-    return SubscriptionUIMapper.toDisplayState(zonedDate, timezone);
-  }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
+    return SubscriptionUIMapper.toDisplayState(zonedDate, timezone, tDate);
+  }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone, tDate]);
 
   const handleDeleteSuccess = () => {
     router.push("/subscriptions");

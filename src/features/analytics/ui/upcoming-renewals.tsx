@@ -32,6 +32,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
   const { user, isLoaded: isUserLoaded } = useUser();
   const { data, isLoading: isAnalyticsLoading } = useDashboardAnalytics();
   const t = useTranslations("analytics.upcomingRenewals");
+  const tDate = useTranslations("subscription.date");
 
   const upcomingRenewals = data?.upcomingRenewals;
   const timezone = user?.publicMetadata?.preferredTimezone;
@@ -48,6 +49,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
       const displayState = SubscriptionUIMapper.toDisplayState(
         zonedDate,
         timezone,
+        tDate,
       );
 
       return {
@@ -55,7 +57,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
         displayState,
       };
     });
-  }, [upcomingRenewals, isUserLoaded, timezone]);
+  }, [upcomingRenewals, isUserLoaded, timezone, tDate]);
 
   if (isLoading) {
     return (

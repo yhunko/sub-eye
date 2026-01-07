@@ -26,8 +26,9 @@ type UserDropdownMenuProps = {
 export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
   const { user } = useUser();
   const t = useTranslations("auth.user.menu");
+  const tCommon = useTranslations("common.user");
 
-  const fullName = user?.fullName ?? user?.username ?? "User";
+  const fullName = user?.fullName ?? user?.username ?? tCommon("fallback");
   const email = user?.primaryEmailAddress?.emailAddress;
 
   return (

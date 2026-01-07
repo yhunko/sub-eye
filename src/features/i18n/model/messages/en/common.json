@@ -33,7 +33,8 @@
     "select": "Select...",
     "enter": "Enter...",
     "name": "Enter name...",
-    "amount": "Enter amount..."
+    "amount": "Enter amount...",
+    "selectDate": "Select date"
   },
   "periods": {
     "week": "Week",
@@ -59,7 +60,8 @@
     "weeks": "weeks",
     "week": "week",
     "months": "months",
-    "month": "month"
+    "month": "month",
+    "inDays": "in {count} days"
   },
   "per": {
     "month": "/ month",
@@ -74,6 +76,19 @@
     "required": "This field is required",
     "invalid": "Invalid value",
     "generic": "Something went wrong",
-    "tryAgain": "Please try again"
+    "tryAgain": "Please try again",
+    "nameRequired": "Name is required",
+    "costInvalid": "Cost must be a valid number",
+    "costPositive": "Cost cannot be zero or negative",
+    "mustBeWholeNumber": "Must be a whole number",
+    "intervalMin": "Interval must be at least 1",
+    "validBrand": "Please select a valid brand"
+  },
+  "user": {
+    "fallback": "User"
+  },
+  "offline": {
+    "title": "You are currently offline",
+    "description": "Please check your internet connection."
   }
 }

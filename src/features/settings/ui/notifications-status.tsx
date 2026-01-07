@@ -6,11 +6,13 @@ import { usePushNotificationsSubscription } from "@/entities/push-notifications/
 import { usePushNotificationsSupport } from "../hooks/use-push-notifications-support";
 import { useApplePushNotificationsSupport } from "../hooks/use-apple-push-notifications-support";
 import { AppleInstallPrompt } from "./apple-install-prompt";
+import { useTranslations } from "next-intl";
 
 export const NotificationsStatus = () => {
   const isAppleSupported = useApplePushNotificationsSupport();
   const isSupported = usePushNotificationsSupport();
   const { data: subscription, isLoading } = usePushNotificationsSubscription();
+  const t = useTranslations("settings.notifications.status");
 
   const isSubscribed = !!subscription;
 
@@ -28,13 +30,13 @@ export const NotificationsStatus = () => {
   };
 
   const getBrowserSupportLabel = () => {
-    if (isSupported === null) return "Checking...";
-    return isSupported ? "Supported" : "Not supported";
+    if (isSupported === null) return t("checking");
+    return isSupported ? t("supported") : t("notSupported");
   };
 
   const subscriptionLabel = () => {
-    if (isLoading) return "Checking...";
-    return isSubscribed ? "Subscribed" : "Not subscribed";
+    if (isLoading) return t("checking");
+    return isSubscribed ? t("subscribed") : t("notSubscribed");
   };
 
   return (
