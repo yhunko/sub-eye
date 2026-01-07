@@ -21,7 +21,10 @@ export default clerkMiddleware(
   {
     contentSecurityPolicy: {
       directives: {
-        "connect-src": [`https://${BrandfetchUtils.API_HOSTNAME}`],
+        "connect-src": [
+          `https://${BrandfetchUtils.API_HOSTNAME}`,
+          "https://*.posthog.com",
+        ],
         "frame-src": ["https://vercel.live"],
         "img-src": [`https://${BrandfetchUtils.CDN_HOSTNAME}`],
       },
