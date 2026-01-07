@@ -1,5 +1,6 @@
 import { Period } from "@/shared/lib/db";
 import { FC, useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 type PeriodBadgeProps = {
   every: number;
@@ -7,19 +8,21 @@ type PeriodBadgeProps = {
 };
 
 export const PeriodBadge: FC<PeriodBadgeProps> = ({ every, period }) => {
+  const t = useTranslations("common.periods");
+
   const formatPeriod = useMemo(() => {
     const periodMap: Record<Period, string> = {
-      [Period.DAY]: "Daily",
-      [Period.WEEK]: "Weekly",
-      [Period.MONTH]: "Monthly",
-      [Period.YEAR]: "Yearly",
+      [Period.DAY]: t("daily"),
+      [Period.WEEK]: t("weekly"),
+      [Period.MONTH]: t("monthly"),
+      [Period.YEAR]: t("yearly"),
     };
 
     const pluralMap: Record<Period, string> = {
-      [Period.DAY]: "Days",
-      [Period.WEEK]: "Weeks",
-      [Period.MONTH]: "Months",
-      [Period.YEAR]: "Years",
+      [Period.DAY]: t("days"),
+      [Period.WEEK]: t("weeks"),
+      [Period.MONTH]: t("months"),
+      [Period.YEAR]: t("years"),
     };
 
     if (every === 1) {
@@ -27,7 +30,7 @@ export const PeriodBadge: FC<PeriodBadgeProps> = ({ every, period }) => {
     }
 
     return `${every} ${pluralMap[period]}`;
-  }, [every, period]);
+  }, [every, period, t]);
 
   return <span>{formatPeriod}</span>;
 };

@@ -10,6 +10,7 @@ const namespaces = [
   "analytics",
   "auth",
   "errors",
+  "subscription-overview",
 ] as const;
 
 async function loadMessages(locale: string) {
