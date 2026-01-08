@@ -27,7 +27,6 @@ export * from "./ui/spinner";
 export * from "./ui/switch";
 export * from "./ui/table";
 export * from "./ui/table-body-loader";
-export * from "./ui/timezone-select";
 export * from "./ui/tabs";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";

@@ -3,7 +3,6 @@
 import { FC } from "react";
 import {
   Spinner,
-  TimezoneSelect,
   Item,
   ItemContent,
   ItemTitle,
@@ -13,9 +12,11 @@ import { useUpdateUserPublicMetadata } from "@/entities/user";
 import { Globe } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
+import { TimezoneSelect } from "../../timezone-select";
 
 export const PreferredTimezoneSelect: FC = () => {
   const t = useTranslations("settings.general.timezone");
+  const tComp = useTranslations("components.timezone-select");
   const { user, isLoaded } = useUser();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
@@ -38,6 +39,8 @@ export const PreferredTimezoneSelect: FC = () => {
           value={user?.publicMetadata?.preferredTimezone}
           onChange={(preferredTimezone) => mutate({ preferredTimezone })}
           disabled={isLoading}
+          placeholder={tComp("search")}
+          emptyTitle={tComp("empty")}
         />
       </div>
     </Item>
