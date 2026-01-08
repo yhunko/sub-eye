@@ -29,10 +29,8 @@ export default async function SettingsNotificationsPage() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Notifications settings</CardTitle>
-            <CardDescription>
-              Manage your notifications preferences
-            </CardDescription>
+            <CardTitle>{t("notifications.title")}</CardTitle>
+            <CardDescription>{t("notifications.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <SettingsNotificationsForm />
