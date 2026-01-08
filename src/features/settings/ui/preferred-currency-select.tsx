@@ -14,8 +14,10 @@ import { CurrencySelect } from "../../currency";
 import { DollarSign } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CurrencyUtils } from "@/shared/lib/currency.utils";
+import { useTranslations } from "next-intl";
 
 export const PreferredCurrencySelect: FC = () => {
+  const t = useTranslations("settings.general.currency");
   const { user, isLoaded } = useUser();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
@@ -28,7 +30,7 @@ export const PreferredCurrencySelect: FC = () => {
       </ItemMedia>
       <ItemContent>
         <ItemTitle>
-          Preferred Currency
+          {t("label")}
           {isLoading && <Spinner />}
         </ItemTitle>
       </ItemContent>

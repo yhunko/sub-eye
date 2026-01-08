@@ -8,15 +8,18 @@ import {
   ItemMedia,
 } from "@/shared/components";
 import { SwatchBook } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export const ThemeSelect: FC = () => {
+  const t = useTranslations("settings.general.theme");
+
   return (
     <Item variant="outline">
       <ItemMedia>
         <SwatchBook />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>Theme</ItemTitle>
+        <ItemTitle>{t("label")}</ItemTitle>
       </ItemContent>
       <ItemActions>
         <ThemeSwitchButton />

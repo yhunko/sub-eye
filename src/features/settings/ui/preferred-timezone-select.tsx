@@ -12,8 +12,10 @@ import {
 import { useUpdateUserPublicMetadata } from "@/entities/user";
 import { Globe } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 
 export const PreferredTimezoneSelect: FC = () => {
+  const t = useTranslations("settings.general.timezone");
   const { user, isLoaded } = useUser();
   const { mutate, isPending } = useUpdateUserPublicMetadata();
 
@@ -26,7 +28,7 @@ export const PreferredTimezoneSelect: FC = () => {
       </ItemMedia>
       <ItemContent>
         <ItemTitle>
-          Preferred Timezone
+          {t("label")}
           {isLoading && <Spinner />}
         </ItemTitle>
       </ItemContent>

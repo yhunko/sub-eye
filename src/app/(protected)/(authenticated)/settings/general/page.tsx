@@ -29,8 +29,8 @@ export default async function SettingsPageGeneral() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>General settings</CardTitle>
-            <CardDescription>Manage your preferences</CardDescription>
+            <CardTitle>{t("general.title")}</CardTitle>
+            <CardDescription>{t("general.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent>
             <SettingsGeneralForm />
