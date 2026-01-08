@@ -81,6 +81,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
             size="icon"
             onClick={() => router.back()}
             className="h-10 w-10 rounded-full"
+            aria-label={tCommon("back")}
           >
             <ChevronLeft className="size-5" />
             <span className="sr-only">{tCommon("back")}</span>
@@ -96,9 +97,15 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
               </h1>
             </div>
           </div>
-          <Button variant="outline" size="icon" asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            asChild
+            aria-label={`Edit ${subscription.name}`}
+          >
             <Link href={`/subscriptions/${subscription.id}/edit`}>
               <PencilIcon />
+              <span className="sr-only">Edit {subscription.name}</span>
             </Link>
           </Button>
         </div>
@@ -149,6 +156,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
           buttonClassName="grow"
           fullWidth
           onSuccess={handleDeleteSuccess}
+          subscriptionName={subscription?.name}
         />
       </div>
     </div>

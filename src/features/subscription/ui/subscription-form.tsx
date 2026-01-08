@@ -97,7 +97,10 @@ export const SubscriptionForm = ({
 
         <div className="col-span-full flex justify-between">
           {isEditMode && (
-            <SubscriptionDeleteButton subscriptionId={subscriptionId} />
+            <SubscriptionDeleteButton
+              subscriptionId={subscriptionId}
+              subscriptionName={defaultValues?.name}
+            />
           )}
 
           <Button

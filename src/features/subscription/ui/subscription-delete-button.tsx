@@ -20,6 +20,7 @@ type SubscriptionDeleteButtonProps = {
   fullWidth?: boolean;
   buttonClassName?: string;
   onSuccess?: () => void;
+  subscriptionName?: string;
 };
 
 export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
@@ -27,6 +28,7 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
   buttonClassName,
   fullWidth = false,
   onSuccess,
+  subscriptionName,
 }) => {
   const [open, setOpen] = useState(false);
   const t = useTranslations("subscription");
@@ -51,10 +53,16 @@ export const SubscriptionDeleteButton: FC<SubscriptionDeleteButtonProps> = ({
           variant="destructive"
           size={fullWidth ? "lg" : "icon-sm"}
           className={buttonClassName}
+          aria-label={
+            subscriptionName ? `Delete ${subscriptionName}` : t("delete.button")
+          }
         >
           <Trash2 className="size-4 transition-all" />
           {fullWidth && !isPending && <span>{t("delete.button")}</span>}
           {fullWidth && isPending && <span>{tCommon("deleting")}</span>}
+          {!fullWidth && subscriptionName && (
+            <span className="sr-only">Delete {subscriptionName}</span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent side="top">

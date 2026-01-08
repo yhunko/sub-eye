@@ -48,6 +48,11 @@ export const NotificationsButton = () => {
           checked={!!subscription}
           onCheckedChange={handleToggleNotifications}
           disabled={isDisabled}
+          aria-label={
+            subscription
+              ? `${t("title")} - ${t("description")}, currently enabled`
+              : `${t("title")} - ${t("description")}, currently disabled`
+          }
         />
       </ItemActions>
     </Item>

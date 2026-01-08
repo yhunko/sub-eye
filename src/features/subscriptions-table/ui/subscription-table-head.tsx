@@ -29,6 +29,13 @@ export const SubscriptionTableHead: FC<
         ? ChevronDown
         : ChevronsUpDown;
 
+  const sortLabel =
+    sorted === "asc"
+      ? `${header} (sorted ascending)`
+      : sorted === "desc"
+        ? `${header} (sorted descending)`
+        : `${header} (click to sort)`;
+
   return (
     <button
       type="button"
@@ -41,6 +48,7 @@ export const SubscriptionTableHead: FC<
           ? "cursor-pointer select-none hover:bg-black/10"
           : "cursor-default bg-transparent",
       )}
+      aria-label={isSortable ? sortLabel : header}
     >
       {Icon && <Icon className="text-muted-foreground" size={16} />}
       <span>{header}</span>
