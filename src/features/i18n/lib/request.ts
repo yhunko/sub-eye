@@ -3,13 +3,14 @@ import { auth } from "@clerk/nextjs/server";
 import { getLocaleAction } from "@/entities/locale/api/actions";
 
 const namespaces = [
-  "common",
-  "navigation",
-  "subscription",
-  "settings",
   "analytics",
   "auth",
+  "common",
+  "components",
   "errors",
+  "navigation",
+  "settings",
+  "subscription",
   "subscription-overview",
 ] as const;
 
