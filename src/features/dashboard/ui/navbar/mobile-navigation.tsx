@@ -51,6 +51,7 @@ export const MobileNavigation = () => {
                     asChild
                     size="icon"
                     className="size-12 rounded-full shadow-lg"
+                    aria-label={item.label}
                   >
                     <Link href={item.href}>
                       <Icon className="size-6" />

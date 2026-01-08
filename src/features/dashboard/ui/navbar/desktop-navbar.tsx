@@ -50,7 +50,12 @@ export const DesktopNavbar = () => {
         </div>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <Button asChild variant="outline" size="icon">
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            aria-label={t("addSubscription")}
+          >
             <Link href="/subscriptions/add">
               <Plus className="size-5 transition-all" />
               <span className="sr-only">{t("addSubscription")}</span>

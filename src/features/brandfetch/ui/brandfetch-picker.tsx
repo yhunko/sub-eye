@@ -67,15 +67,19 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   );
 
   const SelectButton = (
-    <Button size="icon" variant="outline">
+    <Button size="icon" variant="outline" aria-label="Search and select brand">
       <Search className="size-4" />
+      <span className="sr-only">Search and select brand</span>
     </Button>
   );
 
   if (!mounted) return SelectButton;
 
   const Trigger = selected ? (
-    <Avatar className="group cursor-pointer transition-transform duration-300 ease-in-out hover:scale-110">
+    <Avatar
+      className="group cursor-pointer transition-transform duration-300 ease-in-out hover:scale-110"
+      aria-label={`Selected brand: ${selected.name}, click to change`}
+    >
       <AvatarImage
         src={BrandfetchUtils.getImageUrl(selected?.domain)}
         alt={selected?.name || "Brand logo"}

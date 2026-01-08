@@ -46,22 +46,29 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
       onValueChange={handleSelect}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className="font-mono" aria-label="Select currency">
+      <SelectTrigger
+        id={id}
+        className="font-mono"
+        aria-label={`Select currency, currently ${selectedCurrencyCode}`}
+      >
         {selectedCurrencyCode}
       </SelectTrigger>
       <SelectContent className="min-w-24">
-        {currencies.map(([key, currency]) => (
-          <SelectItem
-            key={key}
-            className="flex items-center"
-            value={key.toString()}
-          >
-            <span>{currency.flagEmoji}</span>
-            <span className="text-muted-foreground">
-              {currency?.code ?? key}
-            </span>
-          </SelectItem>
-        ))}
+        {currencies.map(([key, currency]) => {
+          return (
+            <SelectItem
+              key={key}
+              className="flex items-center"
+              value={key.toString()}
+            >
+              <span>{currency.flagEmoji}</span>
+              <span className="text-muted-foreground">
+                {currency?.code ?? key}
+              </span>
+              <span className="sr-only">{currency?.code}</span>
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );

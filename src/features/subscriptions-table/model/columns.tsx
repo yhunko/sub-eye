@@ -118,8 +118,10 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       id: "actions",
       accessorKey: "id",
       header: "",
-      cell: ({ getValue }) => {
+      cell: ({ row, getValue }) => {
         const id = getValue<SubscriptionDto["id"]>();
+
+        const subscription = row.original;
 
         return (
           <ButtonGroup
@@ -127,17 +129,32 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
             aria-label="Subscription actions"
             className="h-fit"
           >
-            <Button variant="outline" size="icon-sm" asChild>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              asChild
+              aria-label={`View ${subscription.name}`}
+            >
               <Link href={`/subscriptions/${id}`} passHref>
                 <EyeIcon />
+                <span className="sr-only">View {subscription.name}</span>
               </Link>
             </Button>
-            <Button variant="outline" size="icon-sm" asChild>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              asChild
+              aria-label={`Edit ${subscription.name}`}
+            >
               <Link href={`/subscriptions/${id}/edit`} passHref>
                 <Edit className="size-4 transition-all" />
+                <span className="sr-only">Edit {subscription.name}</span>
               </Link>
             </Button>
-            <SubscriptionDeleteButton subscriptionId={id} />
+            <SubscriptionDeleteButton
+              subscriptionId={id}
+              subscriptionName={subscription.name}
+            />
           </ButtonGroup>
         );
       },
