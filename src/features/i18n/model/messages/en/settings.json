@@ -30,6 +30,7 @@
   },
   "general": {
     "title": "General Settings",
+    "subtitle": "Manage your preferences",
     "locale": {
       "label": "Language",
       "description": "Choose your preferred language"
