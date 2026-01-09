@@ -1,0 +1,74 @@
+{
+  "title": "Subscription",
+  "titles": {
+    "add": "Add Subscription",
+    "edit": "Edit Subscription",
+    "details": "Subscription Details",
+    "overview": "Overview"
+  },
+  "form": {
+    "basicInfo": {
+      "title": "Basic Information",
+      "description": "Enter the subscription name and cost",
+      "name": {
+        "label": "Name",
+        "placeholder": "Subscription name..."
+      },
+      "cost": {
+        "label": "Cost"
+      }
+    },
+    "billingInfo": {
+      "title": "Billing Details",
+      "description": "Configure when and how often you're billed",
+      "nextPaymentDate": {
+        "label": "Next Payment Date"
+      },
+      "billingCycle": {
+        "label": "Billing cycle",
+        "placeholder": "Every...",
+        "example": "For example: \"Every 1 month\" means you're billed monthly"
+      }
+    },
+    "buttons": {
+      "add": "Add subscription",
+      "update": "Update subscription",
+      "delete": "Delete subscription"
+    }
+  },
+  "table": {
+    "columns": {
+      "name": "Subscription name",
+      "cost": "Cost (per month)",
+      "period": "Period",
+      "nextBill": "Next bill"
+    },
+    "noResults": "No results",
+    "actions": {
+      "view": "View subscription",
+      "edit": "Edit subscription",
+      "delete": "Delete subscription"
+    }
+  },
+  "overview": {
+    "nextPayment": "Next payment",
+    "previousPayment": "Previous payment",
+    "markAsCanceled": "Mark as canceled"
+  },
+  "date": {
+    "selectDate": "Select date",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "in {count} days"
+  },
+  "messages": {
+    "added": "Subscription added successfully!",
+    "updated": "Subscription updated successfully!",
+    "deleted": "Subscription deleted successfully!",
+    "markAsCanceledComingSoon": "Mark as canceled feature coming soon"
+  },
+  "delete": {
+    "confirm": "Are you sure?",
+    "button": "Delete subscription"
+  }
+}

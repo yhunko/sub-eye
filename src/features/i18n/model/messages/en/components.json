@@ -1,0 +1,6 @@
+{
+  "timezone-select": {
+    "search": "Search timezone...",
+    "empty": "No timezone found"
+  }
+}

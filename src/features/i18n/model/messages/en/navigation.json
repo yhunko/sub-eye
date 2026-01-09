@@ -1,0 +1,14 @@
+{
+  "subscriptions": "Subscriptions",
+  "settings": "Settings",
+  "dashboard": "Dashboard",
+  "addSubscription": "Add subscription",
+  "editSubscription": "Edit subscription",
+  "deleteSubscription": "Delete subscription",
+  "viewSubscription": "View subscription",
+  "mobile": {
+    "home": "Home",
+    "add": "Add",
+    "subs": "Subs"
+  }
+}

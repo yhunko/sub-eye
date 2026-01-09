@@ -1,0 +1,56 @@
+{
+  "title": "Settings",
+  "pages": {
+    "general": "General",
+    "notifications": "Notifications",
+    "account": "Account"
+  },
+  "notifications": {
+    "title": "Enable Notifications",
+    "description": "Receive push notifications about important updates",
+    "status": {
+      "enabled": "Notifications enabled",
+      "disabled": "Notifications disabled",
+      "unsupported": "Push notifications are not supported in your browser",
+      "checking": "Checking...",
+      "supported": "Supported",
+      "notSupported": "Not supported",
+      "subscribed": "Subscribed",
+      "notSubscribed": "Not subscribed"
+    },
+    "appleInstall": {
+      "title": "Install App for Notifications",
+      "description": "To enable push notifications on iOS, you need to install this app to your Home Screen.",
+      "howToInstall": "How to install:",
+      "step1": "Tap the Share button (usually at the bottom or top of Safari)",
+      "step2": "Scroll down and tap \"Add to Home Screen\"",
+      "step3": "Tap \"Add\" in the top right corner",
+      "step4": "Open the app from your Home Screen"
+    }
+  },
+  "general": {
+    "title": "General Settings",
+    "subtitle": "Manage your preferences",
+    "locale": {
+      "label": "Language",
+      "description": "Choose your preferred language"
+    },
+    "currency": {
+      "label": "Preferred Currency",
+      "description": "Select your default currency for displaying amounts"
+    },
+    "timezone": {
+      "label": "Preferred Timezone",
+      "description": "Select your timezone for date and time display"
+    },
+    "theme": {
+      "label": "Theme",
+      "description": "Choose your preferred theme",
+      "options": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      }
+    }
+  }
+}
