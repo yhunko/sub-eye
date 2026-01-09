@@ -1,0 +1,42 @@
+import { DashboardNavbar, DashboardLayout } from "@/features/dashboard";
+import { SettingsLayout, SettingsGeneralForm } from "@/features/settings";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  BreadcrumbSeparator,
+  BreadcrumbItem,
+  BreadcrumbPage,
+} from "@/shared/components";
+import { getTranslations } from "next-intl/server";
+
+export default async function SettingsPageGeneral() {
+  const t = await getTranslations("settings");
+
+  return (
+    <DashboardLayout Navbar={<DashboardNavbar />}>
+      <SettingsLayout
+        Breadcrumbs={
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{t("pages.general")}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        }
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("general.title")}</CardTitle>
+            <CardDescription>{t("general.subtitle")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettingsGeneralForm />
+          </CardContent>
+        </Card>
+      </SettingsLayout>
+    </DashboardLayout>
+  );
+}
