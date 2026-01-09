@@ -3,12 +3,12 @@ import type { NextConfig } from "next";
 import { version } from "./package.json";
 import createNextIntlPlugin from "next-intl/plugin";
 
-const CLERK_URL = process.env.NEXT_PUBLIC_CLERK_FRONTEND_API;
+const APP_HOSTNAME = process.env.NEXT_PUBLIC_APP_HOSTNAME;
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${CLERK_URL} https://challenges.cloudflare.com`,
-  `connect-src 'self' https://img.clerk.com ${CLERK_URL} https://vercel.live https://cdn.brandfetch.io https://api.brandfetch.io https://challenges.cloudflare.com https://*.posthog.com`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.${APP_HOSTNAME} https://challenges.cloudflare.com`,
+  `connect-src 'self' https://img.clerk.com https://*.${APP_HOSTNAME} https://vercel.live https://cdn.brandfetch.io https://api.brandfetch.io https://challenges.cloudflare.com https://*.posthog.com`,
   "img-src 'self' https://img.clerk.com https://cdn.brandfetch.io",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
