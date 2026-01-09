@@ -1,1 +1,0 @@
-ALTER TABLE "subscriptions" ADD COLUMN "branded_domain" text;

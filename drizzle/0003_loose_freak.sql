@@ -1,1 +1,0 @@
-ALTER TABLE "subscriptions" RENAME COLUMN "next_payment_date" TO "payment_date";
