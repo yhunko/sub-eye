@@ -7,8 +7,7 @@ env:
 on:
   push:
     branches:
-      # TODO: Uncomment on release
-      - main_DISABLED
+      - main
 
 permissions:
   contents: write
