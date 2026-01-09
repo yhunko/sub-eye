@@ -9,7 +9,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN_URL,
   enabled: process.env.NODE_ENV !== "development",
-  environment: process.env.NEXT_PUBLIC_ENVIRONMENT,
+  environment: process.env.NEXT_PUBLIC_APP_ENV,
 
   tracesSampler: (samplingContext) => {
     // If the server decided to sample this request, respect that decision.
