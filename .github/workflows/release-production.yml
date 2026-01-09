@@ -7,8 +7,7 @@ env:
 on:
   push:
     branches:
-      # TODO: Uncomment on release
-      - main_DISABLED
+      - main
 
 permissions:
   contents: write
@@ -50,3 +49,28 @@ jobs:
 
       - name: Deploy Project Artifacts to Vercel
         run: bunx vercel@latest deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  back-merge:
+    name: Sync Main back to Dev
+    needs: release-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # PAT is required to trigger subsequent workflows and bypass branch protection
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Set Git Config
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Merge Main into Dev
+        run: |
+          git fetch origin dev
+          git checkout dev
+          git pull origin dev
+          git merge origin/main --no-edit -m "chore: sync release from main to dev [skip ci]"
+          git push origin dev
