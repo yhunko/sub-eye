@@ -2,6 +2,7 @@ import { SubscriptionService } from "../../subscription/lib/subscription.service
 import {
   DashboardAnalyticsDto,
   MostExpensiveSubscriptionDto,
+  UpcomingRenewalDto,
 } from "../model/analytics.dtos";
 import {
   addDays,
@@ -46,7 +47,10 @@ export class AnalyticsService {
     }
     const oneYearFromNow = addMonths(today, 12);
 
-    const mappedSubscriptions = subscriptions.map((subscription) => {
+    // Store every individual payment occurrence across all subs
+    const allUpcomingPayments: UpcomingRenewalDto[] = [];
+
+    subscriptions.forEach((subscription) => {
       monthlyBurnRate += subscription.billing.preferred.monthly;
 
       if (subscription.autoPaid) {
@@ -64,17 +68,33 @@ export class AnalyticsService {
         };
       }
 
-      const nextDate = RecurrenceUtils.getNextOccurrence(
+      // Calculate individual occurrences
+      let projectionDate = RecurrenceUtils.getNextOccurrence(
         subscription.paymentDate,
         subscription.every,
         subscription.period,
         today,
       );
 
-      let projectionDate = nextDate;
-      while (isBefore(projectionDate, oneYearFromNow)) {
-        const monthKey = format(startOfMonth(projectionDate), "yyyy-MM-dd");
+      // Initial "nextDate" for the mappedSubscriptions return object
+      const firstNextDate = projectionDate;
 
+      // Generate occurrences for the next year to cover trendMap and upcomingRenewals
+      while (isBefore(projectionDate, oneYearFromNow)) {
+        const daysUntil = differenceInCalendarDays(projectionDate, today);
+
+        allUpcomingPayments.push({
+          id: subscription.id,
+          name: subscription.name,
+          brandDomain: subscription.brandDomain,
+          provider: subscription.category || "Subscription",
+          amount: subscription.billing.preferred.amount,
+          currencyCode: preferredCurrencyCode,
+          nextPaymentDate: projectionDate.toISOString(),
+          daysUntil: daysUntil,
+        });
+
+        const monthKey = format(startOfMonth(projectionDate), "yyyy-MM-dd");
         if (trendMap.has(monthKey)) {
           const currentTotal = trendMap.get(monthKey) || 0;
           trendMap.set(
@@ -93,35 +113,14 @@ export class AnalyticsService {
 
       return {
         ...subscription,
-        nextPaymentDate: nextDate,
-        daysUntil: differenceInCalendarDays(nextDate, today),
+        nextPaymentDate: firstNextDate,
+        daysUntil: differenceInCalendarDays(firstNextDate, today),
       };
     });
 
-    const upcomingRenewals = mappedSubscriptions
-      .filter((s) => s.daysUntil >= 0)
+    const upcomingRenewals = allUpcomingPayments
       .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 4)
-      .map(
-        ({
-          id,
-          name,
-          category,
-          billing,
-          nextPaymentDate,
-          daysUntil,
-          brandDomain,
-        }) => ({
-          id: id,
-          name: name,
-          provider: category || "Subscription",
-          amount: billing.preferred.amount,
-          currencyCode: preferredCurrencyCode,
-          nextPaymentDate: nextPaymentDate.toISOString(),
-          daysUntil: daysUntil,
-          brandDomain,
-        }),
-      );
+      .slice(0, 5);
 
     const cashFlowForecast = [];
     let cumulative = 0;
@@ -129,13 +128,11 @@ export class AnalyticsService {
 
     for (let i = 0; i < 30; i++) {
       const targetDate = addDays(today, i);
-      const dueToday = mappedSubscriptions.filter((sub) =>
-        isSameDay(sub.nextPaymentDate, targetDate),
+      const dueToday = allUpcomingPayments.filter((payment) =>
+        isSameDay(new Date(payment.nextPaymentDate), targetDate),
       );
-      const dailyAmount = dueToday.reduce(
-        (sum, s) => sum + s.billing.preferred.amount,
-        0,
-      );
+
+      const dailyAmount = dueToday.reduce((sum, p) => sum + p.amount, 0);
 
       cumulative += dailyAmount;
       if (isSameMonth(targetDate, today)) remainingThisMonth += dailyAmount;
