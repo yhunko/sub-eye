@@ -1,6 +1,6 @@
 {
   "name": "sub-eye",
-  "version": "1.0.2",
+  "version": "1.0.3-beta.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
