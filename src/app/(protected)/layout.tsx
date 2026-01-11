@@ -19,7 +19,6 @@ export default async function ProtectedClerkPages({
               height={128}
               loading="eager"
             />
-            <p className="text-xl">Loading...</p>
           </div>
         </div>
       </ClerkLoading>
