@@ -85,7 +85,12 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         {renewalsWithDisplayState.map((item) => (
-          <Item key={item.id} size="sm" variant="outline" asChild>
+          <Item
+            key={`${item.id}-${item.nextPaymentDate}`}
+            size="sm"
+            variant="outline"
+            asChild
+          >
             <Link href={`/subscriptions/${item.id}`}>
               <ItemMedia>
                 <BrandfetchImage domain={item.brandDomain} />
