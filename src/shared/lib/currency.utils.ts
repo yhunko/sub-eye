@@ -1,16 +1,8 @@
 import { Period } from "./db";
 import * as Sentry from "@sentry/nextjs";
 
-export interface ExchangeRate {
-  currencyCodeA: number;
-  currencyCodeB: number;
-  rateBuy?: number;
-  rateSell?: number;
-  rateCross?: number;
-}
-
 export class CurrencyUtils {
-  public static readonly DEFAULT_CURRENCY_CODE = 980; // UAH
+  public static readonly DEFAULT_CURRENCY_CODE = "uah";
 
   /**
    * Calculates the monthly cost based on the amount, interval, and period.
@@ -34,76 +26,53 @@ export class CurrencyUtils {
     }
   }
 
-  static convert(
-    amount: number,
-    fromCode: number,
-    toCode: number,
-    rates: ExchangeRate[],
-  ): number {
-    if (fromCode === toCode || amount === 0) return amount;
+  static normalizeCode(code: string | number | unknown): string {
+    if (!code) return this.DEFAULT_CURRENCY_CODE;
 
-    // Try Direct
-    const directRate = this.findRate(fromCode, toCode, rates);
-    if (directRate !== null) {
-      return amount * directRate;
+    // Migration from legacy numeric codes (Monobank API style)
+    const numCode = Number(code);
+    if (!isNaN(numCode) && typeof code !== "boolean") {
+      if (numCode === 840) return "usd";
+      if (numCode === 980) return "uah";
+      if (numCode === 978) return "eur";
+      if (numCode === 985) return "pln";
+      if (numCode === 826) return "gbp";
     }
 
-    // Try Triangulation via UAH
-    if (
-      fromCode !== this.DEFAULT_CURRENCY_CODE &&
-      toCode !== this.DEFAULT_CURRENCY_CODE
-    ) {
-      const rateToUah = this.findRate(
-        fromCode,
-        this.DEFAULT_CURRENCY_CODE,
-        rates,
-      );
-      const rateFromUah = this.findRate(
-        this.DEFAULT_CURRENCY_CODE,
-        toCode,
-        rates,
-      );
+    if (typeof code === "string") {
+      return code.toLowerCase();
+    }
 
-      if (rateToUah !== null && rateFromUah !== null) {
-        return amount * rateToUah * rateFromUah;
-      }
+    return String(code).toLowerCase();
+  }
+
+  static convert(
+    amount: number,
+    fromCode: string | number | unknown,
+    toCode: string | number | unknown,
+    rates: Record<string, number>,
+  ): number {
+    const from = this.normalizeCode(fromCode);
+    const to = this.normalizeCode(toCode);
+
+    if (from === to || amount === 0) return amount;
+
+    // The API provides rates as: 1 baseCurrency = X targetCurrency
+    // When we fetch with toCode as base, rates[fromCode] is: 1 toCode = X fromCode
+    // So to convert fromCode to toCode: amount / rates[fromCode]
+    const rate = rates[from];
+
+    if (rate) {
+      return amount / rate;
     }
 
     Sentry.captureException(
-      `Exchange rate not found: ${fromCode} -> ${toCode}`,
+      `Exchange rate not found for conversion: ${from} -> ${to}`,
       {
-        extra: { method: "CurrencyUtils.convert" },
+        extra: { method: "CurrencyUtils.convert", from, to },
       },
     );
+
     return amount; // Fallback to original amount to avoid showing 0
-  }
-
-  private static findRate(
-    from: number,
-    to: number,
-    rates: ExchangeRate[],
-  ): number | null {
-    const pair = rates.find(
-      (r) =>
-        (r.currencyCodeA === from && r.currencyCodeB === to) ||
-        (r.currencyCodeA === to && r.currencyCodeB === from),
-    );
-
-    if (!pair) return null;
-
-    const rawRate = pair.rateCross || pair.rateSell || pair.rateBuy;
-    if (!rawRate) return null;
-
-    // If the rate is defined as A/B (e.g. USD/UAH = 41)
-    if (pair.currencyCodeA === from && pair.currencyCodeB === to) {
-      return rawRate; // USD -> UAH: Multiply by 41
-    }
-
-    // If we want B -> A (e.g. UAH -> USD)
-    if (pair.currencyCodeA === to && pair.currencyCodeB === from) {
-      return 1 / rawRate; // UAH -> USD: Divide by 41
-    }
-
-    return null;
   }
 }

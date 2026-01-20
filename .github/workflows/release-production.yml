@@ -72,8 +72,11 @@ jobs:
 
       - name: Merge Main into Dev
         run: |
-          git fetch origin dev
+          git fetch origin main dev
+
           git checkout dev
           git pull origin dev
+
           git merge origin/main --no-edit -m "chore: sync release from main to dev [skip ci]"
+
           git push origin dev

@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import { CurrenciesMap } from "@/entities/monobank";
+import { CurrenciesMap } from "@/entities/currency";
 import { useTranslations } from "next-intl";
 
 export function CashFlowChart() {
