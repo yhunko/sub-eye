@@ -4,6 +4,8 @@ import {
   SerwistGlobalConfig,
   PrecacheEntry,
   CacheFirst,
+  StaleWhileRevalidate,
+  ExpirationPlugin,
 } from "serwist";
 import { registerPushNotificationsListeners } from "@/entities/push-notifications/lib/push-notifications.worker";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
@@ -25,6 +27,24 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
+    {
+      matcher: ({ request, url }) => {
+        return (
+          request.mode === "navigate" &&
+          !url.pathname.startsWith("/auth") &&
+          !url.pathname.startsWith("/api") &&
+          !url.pathname.startsWith("/serwist")
+        );
+      },
+      handler: new StaleWhileRevalidate({
+        cacheName: "navigations",
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 20,
+          }),
+        ],
+      }),
+    },
     {
       matcher: ({ url }) => url.hostname === BrandfetchUtils.CDN_HOSTNAME,
       // CacheFirst is best for static assets like logos to save API hits.
