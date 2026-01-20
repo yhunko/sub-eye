@@ -23,6 +23,9 @@ export const PreferredCurrencySelect: FC = () => {
 
   const isLoading = isPending || !isLoaded;
 
+  const preferredCurrency = user?.publicMetadata?.preferredCurrency;
+  const currencyValue = CurrencyUtils.normalizeCode(preferredCurrency);
+
   return (
     <Item variant="outline">
       <ItemMedia>
@@ -37,10 +40,7 @@ export const PreferredCurrencySelect: FC = () => {
       <ItemActions>
         <CurrencySelect
           id="preferred-currency"
-          value={
-            user?.publicMetadata?.preferredCurrency ??
-            CurrencyUtils.DEFAULT_CURRENCY_CODE
-          }
+          value={currencyValue}
           onChange={(currency) => mutate({ preferredCurrency: currency })}
           disabled={isLoading}
         />

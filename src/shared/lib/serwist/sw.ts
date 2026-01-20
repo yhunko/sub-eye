@@ -62,6 +62,21 @@ const serwist = new Serwist({
         ],
       }),
     },
+    {
+      matcher: ({ url }) =>
+        (url.hostname === "cdn.jsdelivr.net" &&
+          url.pathname.includes("@fawazahmed0/currency-api")) ||
+        url.hostname.endsWith("currency-api.pages.dev"),
+      handler: new CacheFirst({
+        cacheName: "currency-api",
+        plugins: [
+          new ExpirationPlugin({
+            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxEntries: 100,
+          }),
+        ],
+      }),
+    },
     ...defaultCache,
   ],
   fallbacks: {

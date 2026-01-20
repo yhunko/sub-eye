@@ -22,7 +22,7 @@ export const useAddSubscriptionFormSchema = () => {
           v.transform((d) => d.toISOString()),
         ),
         period: v.enum(Period),
-        currency: v.number(),
+        currency: v.string(),
         every: v.pipe(
           v.string(),
           v.check((input) => /^\d+$/.test(input), t("mustBeWholeNumber")),

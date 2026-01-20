@@ -17,7 +17,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
 
   // Cost in original currency
   cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
-  currency: integer().notNull(),
+  currency: text("currency").notNull(),
 
   // Billing period
   every: integer("every").notNull().default(1),

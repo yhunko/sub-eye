@@ -12,7 +12,7 @@ export interface UpcomingRenewalDto {
   brandDomain: SubscriptionSchema["brandDomain"];
   provider: string;
   amount: number;
-  currencyCode: number;
+  currencyCode: string;
   nextPaymentDate: string;
   daysUntil: number;
 }
@@ -29,7 +29,7 @@ export interface MonthlyTrendPoint {
 }
 
 export interface DashboardAnalyticsDto {
-  preferredCurrencyCode: number;
+  preferredCurrencyCode: string;
   monthlyBurnRate: number;
   yearlyForecast: number;
   remainingThisMonth: number;

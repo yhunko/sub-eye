@@ -47,7 +47,7 @@ export const SubscriptionForm = ({
       paymentDate: new Date(),
       every: "1",
       period: Period.MONTH,
-      currency: 840,
+      currency: "usd",
       ...defaultValues,
     },
   });
