@@ -1,5 +1,9 @@
-CREATE TYPE "public"."period" AS ENUM('day', 'week', 'month', 'year');--> statement-breakpoint
-CREATE TABLE "push_subscriptions" (
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'period' AND typnamespace = 'public'::regnamespace) THEN
+        CREATE TYPE "public"."period" AS ENUM('day', 'week', 'month', 'year');
+    END IF;
+END $$;--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "push_subscriptions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"endpoint" text NOT NULL,
@@ -8,7 +12,7 @@ CREATE TABLE "push_subscriptions" (
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "subscriptions" (
+CREATE TABLE IF NOT EXISTS "subscriptions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
 	"name" text NOT NULL,
@@ -26,4 +30,8 @@ CREATE TABLE "subscriptions" (
 	"brand_domain" text
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX "unique_endpoint_idx" ON "push_subscriptions" USING btree ("user_id","endpoint");
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'unique_endpoint_idx' AND n.nspname = 'public') THEN
+        CREATE UNIQUE INDEX "unique_endpoint_idx" ON "push_subscriptions" USING btree ("user_id","endpoint");
+    END IF;
+END $$;

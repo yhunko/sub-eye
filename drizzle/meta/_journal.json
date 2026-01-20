@@ -8,6 +8,13 @@
       "when": 1767975230564,
       "tag": "0000_kind_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768921718769,
+      "tag": "0001_lazy_baron_zemo",
+      "breakpoints": true
     }
   ]
 }
