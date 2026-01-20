@@ -2,7 +2,7 @@ import { FC } from "react";
 import { CurrencyText } from "./currency-text";
 
 type CurrencyBadgeProps = {
-  currencyCode: number;
+  currencyCode: string;
   amount: number;
 };
 

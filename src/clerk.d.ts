@@ -4,7 +4,7 @@ export {}; // This ensures the file is treated as a module
 
 declare global {
   interface UserPublicMetadata {
-    preferredCurrency?: number;
+    preferredCurrency?: string;
     preferredTimezone?: string;
     notificationTime?: string;
     notificationOffset?: number;

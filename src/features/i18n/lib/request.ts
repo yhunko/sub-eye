@@ -35,10 +35,12 @@ async function loadMessages(locale: string) {
 }
 
 export default getRequestConfig(async () => {
-  const { sessionClaims } = await auth();
-  const cookiesLocale = await getLocaleAction();
+  let locale = await getLocaleAction();
 
-  const locale = sessionClaims?.publicMetadata?.locale ?? cookiesLocale ?? "en";
+  if (!locale) {
+    const { sessionClaims } = await auth();
+    locale = sessionClaims?.publicMetadata?.locale ?? "en";
+  }
 
   return {
     locale,

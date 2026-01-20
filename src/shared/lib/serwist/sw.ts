@@ -4,6 +4,8 @@ import {
   SerwistGlobalConfig,
   PrecacheEntry,
   CacheFirst,
+  StaleWhileRevalidate,
+  ExpirationPlugin,
 } from "serwist";
 import { registerPushNotificationsListeners } from "@/entities/push-notifications/lib/push-notifications.worker";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
@@ -26,6 +28,24 @@ const serwist = new Serwist({
   navigationPreload: true,
   runtimeCaching: [
     {
+      matcher: ({ request, url }) => {
+        return (
+          request.mode === "navigate" &&
+          !url.pathname.startsWith("/auth") &&
+          !url.pathname.startsWith("/api") &&
+          !url.pathname.startsWith("/serwist")
+        );
+      },
+      handler: new StaleWhileRevalidate({
+        cacheName: "navigations",
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 20,
+          }),
+        ],
+      }),
+    },
+    {
       matcher: ({ url }) => url.hostname === BrandfetchUtils.CDN_HOSTNAME,
       // CacheFirst is best for static assets like logos to save API hits.
       handler: new CacheFirst({
@@ -39,6 +59,21 @@ const serwist = new Serwist({
               return null;
             },
           },
+        ],
+      }),
+    },
+    {
+      matcher: ({ url }) =>
+        (url.hostname === "cdn.jsdelivr.net" &&
+          url.pathname.includes("@fawazahmed0/currency-api")) ||
+        url.hostname.endsWith("currency-api.pages.dev"),
+      handler: new CacheFirst({
+        cacheName: "currency-api",
+        plugins: [
+          new ExpirationPlugin({
+            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxEntries: 100,
+          }),
         ],
       }),
     },

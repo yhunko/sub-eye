@@ -3,7 +3,7 @@ import { SubscriptionSchema } from "@/shared/lib/db/schema";
 export interface SubscriptionBillingDetails {
   // Logic for the original currency (e.g., USD)
   original: {
-    currencyCode: number;
+    currencyCode: string;
     // The normalized monthly cost in original currency
     // UI Use: The gray text "$6.39/mo" next to the bold "$5.90"
     monthly: number;
@@ -11,7 +11,7 @@ export interface SubscriptionBillingDetails {
 
   // Logic for the user's preferred currency (e.g., UAH)
   preferred: {
-    currencyCode: number;
+    currencyCode: string;
 
     // The cost converted to preferred currency (Face value)
     // UI Use: "245 UAH" (If you toggle view to 'Preferred')

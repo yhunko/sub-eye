@@ -1,9 +1,9 @@
 import { FC, useMemo } from "react";
-import { CurrenciesMap } from "@/entities/monobank";
+import { CurrenciesMap } from "@/entities/currency";
 import { CurrencyUtils } from "@/shared/lib/currency.utils";
 
 type CurrencyTextProps = {
-  currencyCode?: number;
+  currencyCode?: string;
   amount: number;
 };
 
@@ -12,9 +12,7 @@ export const CurrencyText: FC<CurrencyTextProps> = ({
   amount,
 }) => {
   const currencyMetadata = useMemo(() => {
-    return CurrenciesMap.get(
-      currencyCode ?? CurrencyUtils.DEFAULT_CURRENCY_CODE,
-    );
+    return CurrenciesMap.get(CurrencyUtils.normalizeCode(currencyCode));
   }, [currencyCode]);
 
   if (!currencyMetadata) return null;

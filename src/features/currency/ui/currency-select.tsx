@@ -5,14 +5,15 @@ import {
   SelectContent,
   SelectItem,
 } from "@/shared/components";
-import { CurrenciesMap } from "@/entities/monobank";
+import { CurrenciesMap } from "@/entities/currency";
+import { CurrencyUtils } from "@/shared/lib/currency.utils";
 
 export interface CurrencySelectProps {
   id?: string;
-  value: number;
-  onChange: (value: number) => void;
+  value: string;
+  onChange: (value: string) => void;
   disabled?: boolean;
-  defaultValue?: number;
+  defaultValue?: string;
 }
 
 export const CurrencySelect: FC<CurrencySelectProps> = ({
@@ -23,19 +24,15 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
 }) => {
   const currencies = useMemo(() => Array.from(CurrenciesMap.entries()), []);
 
-  const selectedCurrency = value.toString();
+  const selectedCurrency = CurrencyUtils.normalizeCode(value);
 
   const selectedCurrencyCode = useMemo(() => {
-    const code = parseInt(selectedCurrency, 10);
-    return CurrenciesMap.get(code)?.code ?? "???";
+    return CurrenciesMap.get(selectedCurrency)?.code ?? "???";
   }, [selectedCurrency]);
 
   const handleSelect = useCallback(
     (newValue: string) => {
-      const parsed = parseInt(newValue, 10);
-      if (!isNaN(parsed)) {
-        onChange?.(parsed);
-      }
+      onChange?.(newValue);
     },
     [onChange],
   );
@@ -56,13 +53,9 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
       <SelectContent className="min-w-24">
         {currencies.map(([key, currency]) => {
           return (
-            <SelectItem
-              key={key}
-              className="flex items-center"
-              value={key.toString()}
-            >
+            <SelectItem key={key} className="flex items-center" value={key}>
               <span>{currency.flagEmoji}</span>
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground ml-2">
                 {currency?.code ?? key}
               </span>
               <span className="sr-only">{currency?.code}</span>

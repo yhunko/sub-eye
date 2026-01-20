@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import { CurrenciesMap } from "@/entities/monobank";
+import { CurrenciesMap } from "@/entities/currency";
 import { CurrencyBadge } from "@/features/currency/ui/currency-badge";
 import { FC } from "react";
 import { cn } from "@/shared/lib";

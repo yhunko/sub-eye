@@ -8,10 +8,9 @@ import {
   AddSubscriptionParams,
   GetSubscriptionsParams,
 } from "../model/subscription.params";
-import { MonobankService } from "../../monobank/lib/monobank.service";
+import { CurrencyService } from "../../currency/lib/currency.service";
 import { clerkClient } from "@clerk/nextjs/server";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
-import { MonobankCurrencyDto } from "../../monobank/model/dtos";
 import { compareAsc, compareDesc } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
 import { PushNotificationsSchedulerService } from "../../push-notifications/lib/push-notifications-scheduler.service";
@@ -21,7 +20,7 @@ import { CurrencyUtils } from "@/shared/lib/currency.utils";
 export class SubscriptionService {
   constructor(
     private repository = new SubscriptionRepository(),
-    private monobankService = new MonobankService(),
+    private currencyService = new CurrencyService(),
     private notificationScheduler = new PushNotificationsSchedulerService(),
   ) {}
 
@@ -30,12 +29,18 @@ export class SubscriptionService {
     params?: GetSubscriptionsParams,
   ): Promise<SubscriptionDto[]> {
     const subscriptions = await this.repository.findByUserId(userId);
-    const rates = await this.monobankService.getCurrencies();
     const { currency: preferredCurrency, timezone } =
       await this.getUserPreferences(userId);
 
+    const normalizedPreferredCurrency =
+      CurrencyUtils.normalizeCode(preferredCurrency);
+
+    const rates = await this.currencyService.getRates(
+      normalizedPreferredCurrency,
+    );
+
     const dtos = subscriptions.map((subscription) =>
-      this.toDto(subscription, preferredCurrency, rates, timezone),
+      this.toDto(subscription, normalizedPreferredCurrency, rates, timezone),
     );
 
     return this.sortSubscriptions(dtos, params);
@@ -67,9 +72,10 @@ export class SubscriptionService {
     userId: string,
     params: Partial<AddSubscriptionParams>,
   ): Promise<SubscriptionDto> {
-    const rates = await this.monobankService.getCurrencies();
     const { currency: preferredCurrency, timezone } =
       await this.getUserPreferences(userId);
+
+    const rates = await this.currencyService.getRates(preferredCurrency);
 
     const subscription = await this.repository.update(id, params);
 
@@ -99,19 +105,23 @@ export class SubscriptionService {
       throw new Error("Unauthorized: Subscription does not belong to user");
     }
 
-    const rates = await this.monobankService.getCurrencies();
     const { currency: preferredCurrency, timezone } =
       await this.getUserPreferences(userId);
+
+    const rates = await this.currencyService.getRates(preferredCurrency);
 
     return this.toDto(subscription, preferredCurrency, rates, timezone);
   }
 
   static calculateBillingDetails(
     subscription: SubscriptionSchema,
-    preferredCurrency: number,
-    rates: MonobankCurrencyDto[],
+    preferredCurrency: string,
+    rates: Record<string, number>,
   ): SubscriptionBillingDetails {
     const cost = parseFloat(subscription.cost);
+    const subscriptionCurrency = CurrencyUtils.normalizeCode(
+      subscription.currency,
+    );
 
     const originalMonthly = CurrencyUtils.toMonthly(
       cost,
@@ -121,14 +131,14 @@ export class SubscriptionService {
 
     const convertedCost = CurrencyUtils.convert(
       cost,
-      subscription.currency,
+      subscriptionCurrency,
       preferredCurrency,
       rates,
     );
 
     const convertedMonthly = CurrencyUtils.convert(
       originalMonthly,
-      subscription.currency,
+      subscriptionCurrency,
       preferredCurrency,
       rates,
     );
@@ -137,7 +147,7 @@ export class SubscriptionService {
 
     return {
       original: {
-        currencyCode: subscription.currency,
+        currencyCode: subscriptionCurrency,
         monthly: Number(originalMonthly.toFixed(2)),
       },
       preferred: {
@@ -152,12 +162,13 @@ export class SubscriptionService {
 
   private async getUserPreferences(
     userId: string,
-  ): Promise<{ currency: number; timezone?: string }> {
+  ): Promise<{ currency: string; timezone?: string }> {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    const currency =
-      Number(user.publicMetadata.preferredCurrency) ||
-      CurrencyUtils.DEFAULT_CURRENCY_CODE;
+
+    const preferredCurrency = user.publicMetadata.preferredCurrency;
+    const currency = CurrencyUtils.normalizeCode(preferredCurrency);
+
     const timezoneValue = user.publicMetadata.preferredTimezone;
     const timezone =
       typeof timezoneValue === "string" ? timezoneValue : undefined;
@@ -209,8 +220,8 @@ export class SubscriptionService {
 
   private toDto(
     subscription: SubscriptionSchema,
-    preferredCurrency: number,
-    rates: MonobankCurrencyDto[],
+    preferredCurrency: string,
+    rates: Record<string, number>,
     timezone?: string,
   ): SubscriptionDto {
     const billing = SubscriptionService.calculateBillingDetails(
