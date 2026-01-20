@@ -30,7 +30,6 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "SubEye",
   description: "Minimalist subscriptions tracker app",
-  manifest: "/manifest.json",
   appleWebApp: {
     title: "SubEye",
   },
