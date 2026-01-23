@@ -19,6 +19,8 @@ export default clerkMiddleware(
     }
   },
   {
+    signInUrl: "/auth/sign-in",
+    signUpUrl: "/auth/sign-up",
     contentSecurityPolicy: {
       directives: {
         "connect-src": [

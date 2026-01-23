@@ -1,16 +1,15 @@
 import { PropsWithChildren } from "react";
-import { ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
-import { AppLoading } from "@/shared/components";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 export default async function ProtectedClerkPages({
   children,
 }: Readonly<PropsWithChildren>) {
-  return (
-    <>
-      <ClerkLoading>
-        <AppLoading />
-      </ClerkLoading>
-      <ClerkLoaded>{children}</ClerkLoaded>
-    </>
-  );
+  const { isAuthenticated } = await auth();
+
+  if (!isAuthenticated) {
+    redirect("/auth/sign-in");
+  }
+
+  return <>{children}</>;
 }
