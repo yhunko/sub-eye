@@ -17,6 +17,8 @@ export const ConfiguredClerkProvider: FC<
       appearance={{
         theme: shadcn,
       }}
+      signInUrl="/auth/sign-in"
+      signUpUrl="/auth/sign-up"
       signInFallbackRedirectUrl="/"
       afterSignOutUrl="/auth/sign-in"
       localization={localization}
