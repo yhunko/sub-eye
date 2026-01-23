@@ -1,12 +1,21 @@
-import { headers } from "next/headers";
-import { userAgent } from "next/server";
-import { SubscriptionsTable } from "../../subscriptions-table";
-import { SubscriptionsList } from "./subscriptions-list";
+"use client";
 
-export const SubscriptionsListWidget = async () => {
-  const { device } = userAgent({ headers: await headers() });
+import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import dynamic from "next/dynamic";
 
-  const isMobile = device?.type === "mobile";
+const SubscriptionsTable = dynamic(
+  () =>
+    import("../../subscriptions-table").then((mod) => mod.SubscriptionsTable),
+  { ssr: false },
+);
 
-  return isMobile ? <SubscriptionsList /> : <SubscriptionsTable />;
+const SubscriptionsList = dynamic(
+  () => import("./subscriptions-list").then((mod) => mod.SubscriptionsList),
+  { ssr: false },
+);
+
+export const SubscriptionsListWidget = () => {
+  const isDesktop = useBreakpoint("md");
+
+  return isDesktop ? <SubscriptionsTable /> : <SubscriptionsList />;
 };
