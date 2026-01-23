@@ -25,12 +25,21 @@ import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import { cn } from "@/shared/lib";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
 
+function SelectButton() {
+  return (
+    <Button size="icon" variant="outline" aria-label="Select brand">
+      <Search className="size-4" />
+      <span className="sr-only">Select brand</span>
+    </Button>
+  );
+}
+
 const BrandfetchPickerDesktop = dynamic(
   () =>
     import("./brandfetch-picker.desktop").then(
       (mod) => mod.BrandfetchPickerDesktop,
     ),
-  { ssr: false },
+  { ssr: false, loading: SelectButton },
 );
 
 const BrandfetchPickerMobile = dynamic(
@@ -38,7 +47,7 @@ const BrandfetchPickerMobile = dynamic(
     import("./brandfetch-picker.mobile").then(
       (mod) => mod.BrandfetchPickerMobile,
     ),
-  { ssr: false },
+  { ssr: false, loading: SelectButton },
 );
 
 interface BrandPickerProps {

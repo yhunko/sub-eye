@@ -64,7 +64,7 @@ export const ThemeSwitchButton = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-[var(--radix-dropdown-menu-trigger-width)]"
+        className="w-(--radix-dropdown-menu-trigger-width)"
       >
         <DropdownMenuItem
           disabled={theme === "light"}

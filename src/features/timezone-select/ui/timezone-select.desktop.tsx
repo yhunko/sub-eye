@@ -6,21 +6,21 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components";
 type TimezoneSelectDesktopProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger: React.ReactNode;
-  content: React.ReactNode;
+  Trigger: React.ReactNode;
+  Content: React.ReactNode;
 };
 
 export const TimezoneSelectDesktop = ({
   open,
   onOpenChange,
-  trigger,
-  content,
+  Trigger,
+  Content,
 }: TimezoneSelectDesktopProps) => {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverTrigger asChild>{Trigger}</PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
-        {content}
+        {Content}
       </PopoverContent>
     </Popover>
   );
