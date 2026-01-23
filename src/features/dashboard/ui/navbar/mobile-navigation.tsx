@@ -1,3 +1,5 @@
+"use client";
+
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Plus, CreditCard } from "lucide-react";
 import { DashboardLogo } from "../dashboard-logo";

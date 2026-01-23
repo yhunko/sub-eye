@@ -1,4 +1,5 @@
 export * from "./ui/alert";
+export * from "./ui/app-loading";
 export * from "./ui/avatar";
 export * from "./ui/badge";
 export * from "./ui/breadcrumb";
