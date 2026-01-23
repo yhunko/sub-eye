@@ -252,6 +252,13 @@ export class SubscriptionService {
     const direction = params?.direction ?? "asc";
 
     switch (sortBy) {
+      case "cost": {
+        return subscriptions.sort((a, b) => {
+          const aAmount = a.billing.preferred.amount ?? 0;
+          const bAmount = b.billing.preferred.amount ?? 0;
+          return direction === "asc" ? aAmount - bAmount : bAmount - aAmount;
+        });
+      }
       case "nextPaymentDate": {
         return subscriptions.sort((a, b) => {
           const aDate = new Date(a.nextPaymentDate);

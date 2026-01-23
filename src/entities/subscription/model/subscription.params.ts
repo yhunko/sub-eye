@@ -4,7 +4,7 @@ import { ColumnSort } from "@tanstack/table-core";
 export type AddSubscriptionParams = Omit<AddSubscriptionSchema, "userId">;
 
 export type SortDirection = "asc" | "desc";
-export type SubscriptionSortField = "nextPaymentDate";
+export type SubscriptionSortField = "nextPaymentDate" | "cost";
 
 export type GetSubscriptionsParams = {
   sortBy?: SubscriptionSortField;
