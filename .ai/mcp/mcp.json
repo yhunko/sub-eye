@@ -3,6 +3,10 @@
     "Clerk": {
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://mcp.clerk.com/mcp"]
+    },
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
     }
   }
 }
