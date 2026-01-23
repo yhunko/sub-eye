@@ -7,22 +7,53 @@ import { ChevronsUpDown } from "lucide-react";
 import { useMounted } from "@mantine/hooks";
 import { Button } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { useTimezoneOptions } from "../lib/use-timezone-options";
+import { cn } from "@/shared/lib";
+import {
+  useTimezoneOptions,
+  TimezoneOption,
+} from "../lib/use-timezone-options";
 import { TimezoneList } from "./timezone-list";
 import { SharedProps } from "../model/props";
+
+type TimezoneSelectTriggerProps = {
+  open: boolean;
+  selectedOption?: TimezoneOption;
+  disabled?: boolean;
+} & React.ComponentProps<typeof Button>;
+function Trigger({
+  open,
+  selectedOption,
+  disabled,
+  className,
+  ...props
+}: TimezoneSelectTriggerProps) {
+  return (
+    <Button
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      className={cn("w-full justify-between", className)}
+      disabled={disabled}
+      {...props}
+    >
+      {selectedOption ? selectedOption.label : "Select timezone..."}
+      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+    </Button>
+  );
+}
 
 const TimezoneSelectDesktop = dynamic(
   () =>
     import("./timezone-select.desktop").then(
       (mod) => mod.TimezoneSelectDesktop,
     ),
-  { ssr: false },
+  { ssr: false, loading: () => <Trigger open={false} /> },
 );
 
 const TimezoneSelectMobile = dynamic(
   () =>
     import("./timezone-select.mobile").then((mod) => mod.TimezoneSelectMobile),
-  { ssr: false },
+  { ssr: false, loading: () => <Trigger open={false} /> },
 );
 
 interface TimezoneSelectProps extends SharedProps {
@@ -45,17 +76,7 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
   const selectedOption = options.find((opt) => opt.value === value);
 
   const sharedProps: SharedProps = { disabled, placeholder, emptyTitle };
-  const trigger = (
-    <Button
-      variant="outline"
-      role="combobox"
-      aria-expanded={open}
-      className="w-full justify-between"
-    >
-      {selectedOption ? selectedOption.label : "Select timezone..."}
-      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-    </Button>
-  );
+
   const content = (
     <TimezoneList
       options={options}
@@ -68,8 +89,12 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
     />
   );
 
+  const _Trigger = (
+    <Trigger selectedOption={selectedOption} open={open} disabled={disabled} />
+  );
+
   if (!mounted) {
-    return trigger;
+    return _Trigger;
   }
 
   if (isDesktop) {
@@ -77,8 +102,8 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
       <TimezoneSelectDesktop
         open={open}
         onOpenChange={setOpen}
-        trigger={trigger}
-        content={content}
+        Trigger={_Trigger}
+        Content={content}
       />
     );
   }
@@ -87,8 +112,8 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
     <TimezoneSelectMobile
       open={open}
       onOpenChange={setOpen}
-      trigger={trigger}
-      content={content}
+      Trigger={_Trigger}
+      Content={content}
     />
   );
 };

@@ -2,6 +2,13 @@ import * as React from "react";
 import { getTimeZones } from "@vvo/tzdb";
 import { formatGmtOffset } from "./format-gmt-offset";
 
+export type TimezoneOption = {
+  value: string;
+  label: string;
+  offset: string;
+  abbrev: string;
+  group: string;
+};
 export const useTimezoneOptions = () => {
   return React.useMemo(() => {
     const timeZones = getTimeZones({ includeUtc: true })
