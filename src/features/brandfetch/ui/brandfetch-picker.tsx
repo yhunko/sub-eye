@@ -2,22 +2,13 @@
 
 import * as React from "react";
 import { FC, useState } from "react";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import dynamic from "next/dynamic";
 import { Search, Check } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
   Command,
   CommandInput,
   CommandList,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerTrigger,
   CommandEmpty,
   Spinner,
   CommandGroup,
@@ -33,6 +24,22 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import { cn } from "@/shared/lib";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
+
+const BrandfetchPickerDesktop = dynamic(
+  () =>
+    import("./brandfetch-picker.desktop").then(
+      (mod) => mod.BrandfetchPickerDesktop,
+    ),
+  { ssr: false },
+);
+
+const BrandfetchPickerMobile = dynamic(
+  () =>
+    import("./brandfetch-picker.mobile").then(
+      (mod) => mod.BrandfetchPickerMobile,
+    ),
+  { ssr: false },
+);
 
 interface BrandPickerProps {
   value?: BrandfetchSearchDto;
@@ -91,28 +98,22 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
 
   if (isDesktop) {
     return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>{Trigger}</PopoverTrigger>
-        <PopoverContent className="w-[350px] p-0" align="start">
-          {Content}
-        </PopoverContent>
-      </Popover>
+      <BrandfetchPickerDesktop
+        open={open}
+        onOpenChange={setOpen}
+        trigger={Trigger}
+        content={Content}
+      />
     );
   }
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{Trigger}</DrawerTrigger>
-      <DrawerContent className="p-0">
-        <VisuallyHidden.Root>
-          <DrawerHeader>
-            <DrawerTitle>Search Brand</DrawerTitle>
-            <DrawerDescription>Select a brand from the list</DrawerDescription>
-          </DrawerHeader>
-        </VisuallyHidden.Root>
-        <div className="mt-4 border-t">{Content}</div>
-      </DrawerContent>
-    </Drawer>
+    <BrandfetchPickerMobile
+      open={open}
+      onOpenChange={setOpen}
+      trigger={Trigger}
+      content={Content}
+    />
   );
 };
 
