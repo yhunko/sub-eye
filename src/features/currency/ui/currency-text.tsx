@@ -25,13 +25,13 @@ export const CurrencyText: FC<CurrencyTextProps> = ({
   }).format(amount);
 
   return (
-    <>
+    <div>
       <span className="font-bold text-slate-600 dark:text-slate-300">
         {symbol}
       </span>
       <span className="font-semibold text-slate-700 dark:text-slate-200">
         {formattedAmount}
       </span>
-    </>
+    </div>
   );
 };

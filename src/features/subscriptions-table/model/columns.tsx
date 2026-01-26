@@ -4,6 +4,7 @@ import {
   CreditCard,
   Calendar1,
   CalendarSync,
+  Type,
   EyeIcon,
   Edit,
 } from "lucide-react";
@@ -44,7 +45,17 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
     {
       id: "name",
       accessorKey: "name",
-      header: t("name"),
+      enableSorting: true,
+      header: ({ column }) => {
+        return (
+          <SubscriptionTableHead
+            header={t("name")}
+            Icon={Type}
+            sorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()}
+          />
+        );
+      },
     },
     {
       id: "cost",

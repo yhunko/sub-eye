@@ -1,25 +1,23 @@
 import { AddSubscriptionSchema } from "@/shared/lib/db/schema";
-import { ColumnSort } from "@tanstack/table-core";
 
 export type AddSubscriptionParams = Omit<AddSubscriptionSchema, "userId">;
 
-export type SortDirection = "asc" | "desc";
-export type SubscriptionSortField = "nextPaymentDate" | "cost";
+export const subscriptionSortFields = [
+  "nextPaymentDate",
+  "name",
+  "cost",
+] as const;
+export type SubscriptionSortField = (typeof subscriptionSortFields)[number];
+
+export const sortDirections = ["asc", "desc"] as const;
+export type SortDirection = (typeof sortDirections)[number];
 
 export type GetSubscriptionsParams = {
   sortBy?: SubscriptionSortField;
   direction?: SortDirection;
+  search?: string;
 };
 
 export type GetSubscriptionParams = {
   id: string;
-};
-
-export const defaultGetSubscriptionsParams: GetSubscriptionsParams = {
-  sortBy: "nextPaymentDate",
-  direction: "asc",
-};
-export const defaultSubscriptionsSortParams: ColumnSort = {
-  id: "nextPaymentDate",
-  desc: false,
 };

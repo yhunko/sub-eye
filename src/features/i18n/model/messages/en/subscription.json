@@ -59,7 +59,8 @@
     "selectDate": "Select date",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "inDays": "in {count} days"
+    "inDays": "in {count} days",
+    "renewal": "Renewal"
   },
   "messages": {
     "added": "Subscription added successfully!",
@@ -70,5 +71,25 @@
   "delete": {
     "confirm": "Are you sure?",
     "button": "Delete subscription"
+  },
+  "filter": {
+    "sortBy": "Sort by",
+    "groupBy": "Group by",
+    "sort": {
+      "status": "Status",
+      "name": "Name",
+      "cost": "Cost",
+      "renewal": "Renewal"
+    },
+    "group": {
+      "status": "Status",
+      "category": "Category",
+      "paymentMethod": "Payment method",
+      "currency": "Currency",
+      "period": "Payment frequency"
+    }
+  },
+  "empty": {
+    "title": "No subscriptions found"
   }
 }
