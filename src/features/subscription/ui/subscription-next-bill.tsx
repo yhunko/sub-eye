@@ -10,10 +10,12 @@ type SubscriptionNextBillProps = {
    * ISO string.
    */
   nextBillDate: string;
+  format?: "long" | "short";
 };
 
 export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
   nextBillDate,
+  format = "long",
 }) => {
   const { user, isLoaded } = useUser();
   const t = useTranslations("subscription.date");
@@ -33,10 +35,12 @@ export const SubscriptionNextBill: FC<SubscriptionNextBillProps> = ({
 
   return (
     <div className="flex flex-row md:flex-col">
-      <span className="font-medium text-gray-800 dark:text-gray-200">
-        {formattedDate}
-        <span className="inline md:hidden">&nbsp;</span>
-      </span>
+      {format === "long" && (
+        <span className="font-medium text-gray-800 dark:text-gray-200">
+          {formattedDate}
+          <span className="inline md:hidden">&nbsp;</span>
+        </span>
+      )}
       <span className={cn("text-sm", colorClass)}>{relativeText}</span>
     </div>
   );

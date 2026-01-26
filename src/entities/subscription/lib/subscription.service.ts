@@ -43,7 +43,9 @@ export class SubscriptionService {
       this.toDto(subscription, normalizedPreferredCurrency, rates, timezone),
     );
 
-    return this.sortSubscriptions(dtos, params);
+    const filtered = this.filterSubscriptions(dtos, params?.search);
+
+    return this.sortSubscriptions(filtered, params);
   }
 
   async addSubscription(
@@ -251,16 +253,25 @@ export class SubscriptionService {
     const sortBy = params?.sortBy ?? "nextPaymentDate";
     const direction = params?.direction ?? "asc";
 
+    const sorted = structuredClone(subscriptions);
+
     switch (sortBy) {
+      case "name": {
+        return sorted.sort((a, b) =>
+          direction === "asc"
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name),
+        );
+      }
       case "cost": {
-        return subscriptions.sort((a, b) => {
+        return sorted.sort((a, b) => {
           const aAmount = a.billing.preferred.amount ?? 0;
           const bAmount = b.billing.preferred.amount ?? 0;
           return direction === "asc" ? aAmount - bAmount : bAmount - aAmount;
         });
       }
       case "nextPaymentDate": {
-        return subscriptions.sort((a, b) => {
+        return sorted.sort((a, b) => {
           const aDate = new Date(a.nextPaymentDate);
           const bDate = new Date(b.nextPaymentDate);
           return direction === "asc"
@@ -269,8 +280,23 @@ export class SubscriptionService {
         });
       }
       default: {
-        return subscriptions;
+        return sorted;
       }
     }
+  }
+
+  private filterSubscriptions(
+    subscriptions: SubscriptionDto[],
+    search?: string,
+  ): SubscriptionDto[] {
+    const query = search?.trim().toLowerCase();
+
+    if (!query) {
+      return subscriptions;
+    }
+
+    return subscriptions.filter((subscription) =>
+      subscription.name.toLowerCase().includes(query),
+    );
   }
 }

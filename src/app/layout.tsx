@@ -12,6 +12,7 @@ import { setRequestLocale, getLocale } from "next-intl/server";
 import { LocalizationResource } from "@clerk/types";
 import { ConfiguredClerkProvider } from "@/shared/lib/clerk";
 import { LocalizedDateFnsProvider } from "@/shared/lib/date-fns/localized-date-fns-provider";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
 const clerkLocalizationMapper: Record<
@@ -66,7 +67,7 @@ export default async function RootLayout({
                 <ConfiguredClerkProvider localization={localization}>
                   <LocalizedDateFnsProvider locale={locale} />
 
-                  {children}
+                  <NuqsAdapter>{children}</NuqsAdapter>
                 </ConfiguredClerkProvider>
               </ThemeProvider>
 

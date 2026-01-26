@@ -1,11 +1,15 @@
-import { headers } from "next/headers";
-import { userAgent } from "next/server";
-import { DesktopNavbar } from "./navbar/desktop-navbar";
+"use client";
+
 import { MobileNavigation } from "./navbar/mobile-navigation";
+import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import { DesktopNavbar } from "./navbar/desktop-navbar";
+import { useMounted } from "@mantine/hooks";
 
-export const DashboardNavbar = async () => {
-  const { device } = userAgent({ headers: await headers() });
-  const isMobile = device?.type === "mobile";
+export const DashboardNavbar = () => {
+  const mounted = useMounted();
+  const isDesktop = useBreakpoint("md");
 
-  return isMobile ? <MobileNavigation /> : <DesktopNavbar />;
+  if (!mounted) return <MobileNavigation />;
+
+  return isDesktop ? <DesktopNavbar /> : <MobileNavigation />;
 };
