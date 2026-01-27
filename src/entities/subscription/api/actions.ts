@@ -8,10 +8,7 @@ import {
   GetSubscriptionParams,
   GetSubscriptionsParams,
 } from "../model/subscription.params";
-import {
-  SubscriptionDto,
-  SubscriptionMonthlySpendDto,
-} from "../model/subscription.dtos";
+import { SubscriptionDto } from "../model/subscription.dtos";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
 export async function getSubscriptionsAction(
@@ -137,29 +134,6 @@ export async function updateSubscriptionAction(
 
       const controller = new SubscriptionController(userId);
       return await controller.updateSubscription(id, userId, payload);
-    },
-  );
-}
-
-export async function getMonthlySpendSummaryAction(): Promise<SubscriptionMonthlySpendDto> {
-  return Sentry.withServerActionInstrumentation(
-    "getMonthlySpendSummaryAction",
-    {
-      recordResponse: true,
-    },
-    async () => {
-      const { isAuthenticated, userId } = await auth();
-
-      if (!isAuthenticated || !userId) {
-        throw new Error(
-          "Unauthorized: User must be logged in to fetch subscription spend summary",
-        );
-      }
-
-      Sentry.setUser({ id: userId });
-
-      const controller = new SubscriptionController(userId);
-      return await controller.getMonthlySpendSummary();
     },
   );
 }

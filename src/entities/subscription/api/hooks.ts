@@ -6,17 +6,13 @@ import {
   GetSubscriptionsParams,
   GetSubscriptionParams,
 } from "../model/subscription.params";
-import {
-  SubscriptionDto,
-  SubscriptionMonthlySpendDto,
-} from "../model/subscription.dtos";
+import { SubscriptionDto } from "../model/subscription.dtos";
 import {
   getSubscriptionsAction,
   addSubscriptionAction,
   deleteSubscriptionAction,
   getSubscriptionAction,
   updateSubscriptionAction,
-  getMonthlySpendSummaryAction,
 } from "./actions";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 import { analyticsQueryKeys } from "../../analytics/api/hooks";
@@ -28,7 +24,6 @@ export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
     contextQueries: {
       list: (params?: GetSubscriptionsParams) => [params],
       detail: ({ id, ...params }: GetSubscriptionParams) => [id, params],
-      monthlySpend: () => ["monthly-spend"],
     },
   }),
 });
@@ -71,8 +66,8 @@ export const useAddSubscription = ({
         );
         promises.push(
           queryClient.invalidateQueries({
-            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.monthlySpend
-              ._def,
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.monthlySpend
+              .queryKey,
           }),
         );
         promises.push(
@@ -115,8 +110,8 @@ export const useDeleteSubscription = ({
         );
         promises.push(
           queryClient.invalidateQueries({
-            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.monthlySpend
-              ._def,
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.monthlySpend
+              .queryKey,
           }),
         );
         promises.push(
@@ -150,23 +145,6 @@ export const useSubscription = ({
   });
 };
 
-export const useSubscriptionsMonthlySpend = ({
-  options,
-}: QueryHook<SubscriptionMonthlySpendDto> = {}) => {
-  const { user, isLoaded, isSignedIn } = useUser();
-
-  return useQuery({
-    queryKey: subscriptionsQueryKeys
-      .user(user?.id as string)
-      ._ctx.monthlySpend().queryKey,
-    queryFn: async () => {
-      return await getMonthlySpendSummaryAction();
-    },
-    enabled: isSignedIn && isLoaded,
-    ...options,
-  });
-};
-
 export const useUpdateSubscription = ({
   options,
 }: MutationHook<
@@ -194,8 +172,8 @@ export const useUpdateSubscription = ({
             queryKey: subscriptionsQueryKeys.user(user.id)._ctx.list._def,
           }),
           queryClient.invalidateQueries({
-            queryKey: subscriptionsQueryKeys.user(user.id)._ctx.monthlySpend
-              ._def,
+            queryKey: analyticsQueryKeys.user(user.id)._ctx.monthlySpend
+              .queryKey,
           }),
           queryClient.invalidateQueries({
             queryKey: analyticsQueryKeys.user(user.id)._ctx.dashboard.queryKey,

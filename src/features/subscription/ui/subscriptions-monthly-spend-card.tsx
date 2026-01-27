@@ -2,7 +2,7 @@
 
 import { Area, AreaChart, XAxis } from "recharts";
 import { format, parseISO } from "date-fns";
-import { useSubscriptionsMonthlySpend } from "@/entities/subscription";
+import { useMonthlySpendSummary } from "@/entities/analytics/api/hooks";
 import { cn } from "@/shared/lib";
 import { Card, CardContent, Skeleton } from "@/shared/components";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
@@ -13,7 +13,7 @@ import { CurrencyText } from "@/features/currency";
 export const SubscriptionsMonthlySpendCard = () => {
   const t = useTranslations("subscription.monthlySpend");
 
-  const { data, isLoading, isSuccess } = useSubscriptionsMonthlySpend();
+  const { data, isLoading, isSuccess } = useMonthlySpendSummary();
 
   if (!isSuccess && isLoading) {
     return (
