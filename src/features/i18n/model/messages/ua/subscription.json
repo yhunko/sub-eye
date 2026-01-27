@@ -55,6 +55,12 @@
     "previousPayment": "Попередній платіж",
     "markAsCanceled": "Позначити як скасовану"
   },
+  "monthlySpend": {
+    "title": "Витрати за місяць",
+    "vsLastMonth": "проти мин. міс.",
+    "lastMonth": "Минулого місяця",
+    "noData": "Немає даних за минулий місяць"
+  },
   "date": {
     "selectDate": "Вибрати дату",
     "today": "Сьогодні",

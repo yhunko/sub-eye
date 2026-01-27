@@ -7,6 +7,7 @@ import { useSubscriptions } from "@/entities/subscription";
 import { SubscriptionsListWidget } from "./subscriptions-list-widget";
 import { SubscriptionsListToolbar } from "./subscriptions-list-toolbar";
 import { subscriptionsQueryParsers } from "../../lib/subscriptions-query";
+import { SubscriptionsMonthlySpendCard } from "../subscriptions-monthly-spend-card";
 
 export const SubscriptionsList = () => {
   const [filters] = useQueryStates(subscriptionsQueryParsers, {
@@ -41,6 +42,7 @@ export const SubscriptionsList = () => {
 
   return (
     <div className="flex min-h-full flex-col gap-4 pb-6">
+      <SubscriptionsMonthlySpendCard />
       <SubscriptionsListToolbar loading={isLoading || isPlaceholderData} />
       <SubscriptionsListWidget
         subscriptions={subscriptions ?? []}
