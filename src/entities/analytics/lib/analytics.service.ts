@@ -4,6 +4,7 @@ import {
   MonthlySpendSummaryDto,
   MostExpensiveSubscriptionDto,
   UpcomingRenewalDto,
+  WeeklyRenewalsSummaryDto,
 } from "../model/analytics.dtos";
 import {
   addDays,
@@ -17,6 +18,10 @@ import {
   startOfMonth,
   isAfter,
   isBefore,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  endOfDay,
 } from "date-fns";
 import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
 import { CurrencyUtils } from "@/shared/lib/currency.utils";
@@ -31,13 +36,10 @@ export class AnalyticsService {
   ) {}
 
   async getDashboardStats(userId: string): Promise<DashboardAnalyticsDto> {
-    const today = startOfDay(new Date());
-    const subscriptions =
-      await this.subscriptionService.getSubscriptionsForUser(userId);
+    const { subscriptions, preferredCurrencyCode, now } =
+      await this.getAnalyticsContext(userId);
 
-    const preferredCurrencyCode =
-      subscriptions[0]?.billing.preferred.currencyCode ??
-      CurrencyUtils.DEFAULT_CURRENCY_CODE;
+    const today = startOfDay(now);
 
     let monthlyBurnRate = 0;
     let activeSubscriptionsAuto = 0;
@@ -205,18 +207,10 @@ export class AnalyticsService {
   async getMonthlySpendSummary(
     userId: string,
   ): Promise<MonthlySpendSummaryDto> {
-    const subscriptions =
-      await this.subscriptionService.getSubscriptionsForUser(userId);
-    const metadata = await this.userService.getUserPreferences(userId);
-    const preferredCurrency = metadata.preferredCurrency;
-    const timezone = metadata.preferredTimezone;
+    const { subscriptions, timezone, preferredCurrencyCode, now } =
+      await this.getAnalyticsContext(userId);
 
-    const normalizedCurrency = CurrencyUtils.normalizeCode(preferredCurrency);
-    const preferredCurrencyCode =
-      subscriptions[0]?.billing.preferred.currencyCode ?? normalizedCurrency;
-
-    const now = DateTimezoneUtils.now(timezone);
-    const monthOffsets = [-2, -1, 0, 1, 2];
+    const monthOffsets = [-4, -3, -2, -1, 0, 1];
 
     const trend = monthOffsets.map((offset) => {
       const monthStart = startOfMonth(addMonths(now, offset));
@@ -260,6 +254,99 @@ export class AnalyticsService {
       previousMonthTotal,
       deltaPercentage,
       trend,
+    };
+  }
+
+  async getWeeklyRenewalsSummary(
+    userId: string,
+  ): Promise<WeeklyRenewalsSummaryDto> {
+    const { subscriptions, timezone, preferredCurrencyCode, now } =
+      await this.getAnalyticsContext(userId);
+
+    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 1 });
+
+    const totalThisWeek = subscriptions.reduce(
+      (sum, subscription) =>
+        sum +
+        AnalyticsService.calculateSpendForRange(
+          subscription,
+          subscription.billing.preferred.amount,
+          startOfCurrentWeek,
+          endOfCurrentWeek,
+          timezone,
+        ),
+      0,
+    );
+
+    const totalUpcomingWeek = subscriptions.reduce(
+      (sum, subscription) =>
+        sum +
+        AnalyticsService.calculateSpendForRange(
+          subscription,
+          subscription.billing.preferred.amount,
+          startOfDay(now),
+          endOfCurrentWeek,
+          timezone,
+        ),
+      0,
+    );
+
+    const daysInWeek = eachDayOfInterval({
+      start: startOfCurrentWeek,
+      end: endOfCurrentWeek,
+    });
+
+    const trend = daysInWeek.map((day) => {
+      const dayStart = startOfDay(day);
+
+      const dailyTotal = subscriptions.reduce(
+        (sum, subscription) =>
+          sum +
+          AnalyticsService.calculateSpendForRange(
+            subscription,
+            subscription.billing.preferred.amount,
+            dayStart,
+            endOfDay(dayStart),
+            timezone,
+          ),
+        0,
+      );
+
+      return {
+        date: dayStart.toISOString(),
+        amount: Number(dailyTotal.toFixed(2)),
+      };
+    });
+
+    return {
+      currencyCode: preferredCurrencyCode,
+      totalThisWeek: Number(totalThisWeek.toFixed(2)),
+      totalUpcomingWeek: Number(totalUpcomingWeek.toFixed(2)),
+      trend,
+    };
+  }
+
+  private async getAnalyticsContext(userId: string) {
+    const subscriptions =
+      await this.subscriptionService.getSubscriptionsForUser(userId);
+    const metadata = await this.userService.getUserPreferences(userId);
+
+    const preferredCurrency = metadata.preferredCurrency;
+    const timezone = metadata.preferredTimezone;
+
+    const normalizedCurrency = CurrencyUtils.normalizeCode(preferredCurrency);
+    const preferredCurrencyCode =
+      subscriptions[0]?.billing.preferred.currencyCode ?? normalizedCurrency;
+
+    const now = DateTimezoneUtils.now(timezone);
+
+    return {
+      subscriptions,
+      metadata,
+      preferredCurrencyCode,
+      timezone,
+      now,
     };
   }
 

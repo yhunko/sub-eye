@@ -14,4 +14,8 @@ export class AnalyticsController {
   async getMonthlySpendSummary() {
     return await this.service.getMonthlySpendSummary(this.userId);
   }
+
+  async getWeeklyRenewalsSummary() {
+    return await this.service.getWeeklyRenewalsSummary(this.userId);
+  }
 }

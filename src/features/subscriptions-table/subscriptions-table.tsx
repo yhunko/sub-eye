@@ -29,6 +29,7 @@ import { useTranslations } from "next-intl";
 import { SubscriptionsSearch } from "@/features/subscription/ui/subscriptions-search";
 import { subscriptionsQueryParsers } from "../subscription/lib/subscriptions-query";
 import { SubscriptionsMonthlySpendCard } from "../subscription/ui/subscriptions-monthly-spend-card";
+import { SubscriptionsWeeklyRenewalsCard } from "../subscription/ui/subscriptions-weekly-renewals-card";
 
 export const SubscriptionsTable: FC = () => {
   const tCommon = useTranslations("common");
@@ -100,7 +101,10 @@ export const SubscriptionsTable: FC = () => {
 
   return (
     <div className="flex flex-col gap-3">
-      <SubscriptionsMonthlySpendCard />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <SubscriptionsWeeklyRenewalsCard />
+        <SubscriptionsMonthlySpendCard />
+      </div>
       <SubscriptionsSearch placeholder={tCommon("placeholders.search")} />
       <div className="relative overflow-hidden rounded-md border">
         <Table className={cn(isTableLoading && "pointer-events-none")}>
