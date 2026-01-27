@@ -13,21 +13,20 @@ export const YearlyCostCard = () => {
 
   return (
     <StatCard title={t("title")}>
-      <div className="space-y-1">
+      <div className="flex h-full flex-col gap-1">
         <div className="text-xl font-bold">
           <CurrencyText
             currencyCode={data?.preferredCurrencyCode}
             amount={data.yearlyForecast}
           />
         </div>
-        <div className="text-muted-foreground inline-flex gap-2 text-sm">
-          <span>
-            <CurrencyText
-              currencyCode={data?.preferredCurrencyCode}
-              amount={data.monthlyBurnRate}
-            />{" "}
-            {tCommon("per.month")}
-          </span>
+        <div className="text-muted-foreground inline-flex grow items-end text-sm">
+          <CurrencyText
+            currencyCode={data?.preferredCurrencyCode}
+            amount={data.monthlyBurnRate}
+          />
+          <span>&nbsp;</span>
+          <span>{tCommon("per.month")}</span>
         </div>
       </div>
     </StatCard>
