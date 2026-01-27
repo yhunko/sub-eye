@@ -3,33 +3,26 @@ import { SubscriptionMapper } from "./subscription.mapper";
 import {
   SubscriptionDto,
   SubscriptionBillingDetails,
-  SubscriptionMonthlySpendDto,
 } from "../model/subscription.dtos";
 import {
   AddSubscriptionParams,
   GetSubscriptionsParams,
 } from "../model/subscription.params";
 import { CurrencyService } from "../../currency/lib/currency.service";
-import { clerkClient } from "@clerk/nextjs/server";
 import { SubscriptionSchema } from "@/shared/lib/db/schema";
-import {
-  compareAsc,
-  compareDesc,
-  addMonths,
-  endOfMonth,
-  isAfter,
-  startOfMonth,
-} from "date-fns";
+import { compareAsc, compareDesc } from "date-fns";
 import { DateTimezoneUtils } from "@/shared/lib";
 import { PushNotificationsSchedulerService } from "../../push-notifications/lib/push-notifications-scheduler.service";
 import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
 import { CurrencyUtils } from "@/shared/lib/currency.utils";
+import { UserService } from "../../user/lib/user.service";
 
 export class SubscriptionService {
   constructor(
     private repository = new SubscriptionRepository(),
     private currencyService = new CurrencyService(),
     private notificationScheduler = new PushNotificationsSchedulerService(),
+    private userService = new UserService(),
   ) {}
 
   async getSubscriptionsForUser(
@@ -37,8 +30,9 @@ export class SubscriptionService {
     params?: GetSubscriptionsParams,
   ): Promise<SubscriptionDto[]> {
     const subscriptions = await this.repository.findByUserId(userId);
-    const { currency: preferredCurrency, timezone } =
-      await this.getUserPreferences(userId);
+    const metadata = await this.userService.getUserPreferences(userId);
+    const preferredCurrency = metadata.preferredCurrency;
+    const timezone = metadata.preferredTimezone;
 
     const normalizedPreferredCurrency =
       CurrencyUtils.normalizeCode(preferredCurrency);
@@ -82,8 +76,9 @@ export class SubscriptionService {
     userId: string,
     params: Partial<AddSubscriptionParams>,
   ): Promise<SubscriptionDto> {
-    const { currency: preferredCurrency, timezone } =
-      await this.getUserPreferences(userId);
+    const metadata = await this.userService.getUserPreferences(userId);
+    const preferredCurrency = metadata.preferredCurrency;
+    const timezone = metadata.preferredTimezone;
 
     const rates = await this.currencyService.getRates(preferredCurrency);
 
@@ -115,85 +110,13 @@ export class SubscriptionService {
       throw new Error("Unauthorized: Subscription does not belong to user");
     }
 
-    const { currency: preferredCurrency, timezone } =
-      await this.getUserPreferences(userId);
+    const metadata = await this.userService.getUserPreferences(userId);
+    const preferredCurrency = metadata.preferredCurrency;
+    const timezone = metadata.preferredTimezone;
 
     const rates = await this.currencyService.getRates(preferredCurrency);
 
     return this.toDto(subscription, preferredCurrency, rates, timezone);
-  }
-
-  async getMonthlySpendSummary(
-    userId: string,
-  ): Promise<SubscriptionMonthlySpendDto> {
-    const subscriptions = await this.repository.findByUserId(userId);
-    const { currency: preferredCurrency, timezone } =
-      await this.getUserPreferences(userId);
-
-    const normalizedPreferredCurrency =
-      CurrencyUtils.normalizeCode(preferredCurrency);
-    const rates = await this.currencyService.getRates(
-      normalizedPreferredCurrency,
-    );
-
-    const now = DateTimezoneUtils.now(timezone);
-    const spendSources = subscriptions.map((subscription) => {
-      const billing = SubscriptionService.calculateBillingDetails(
-        subscription,
-        normalizedPreferredCurrency,
-        rates,
-      );
-
-      return {
-        subscription,
-        perPaymentAmount: billing.preferred.amount,
-      };
-    });
-
-    const monthOffsets = [-4, -3, -2, -1, 0];
-    const trend = monthOffsets.map((offset) => {
-      const monthStart = startOfMonth(addMonths(now, offset));
-      const monthEnd = endOfMonth(addMonths(now, offset));
-      const total = spendSources.reduce(
-        (sum, source) =>
-          sum +
-          SubscriptionService.calculateSpendForRange(
-            source.subscription,
-            source.perPaymentAmount,
-            monthStart,
-            monthEnd,
-            timezone,
-          ),
-        0,
-      );
-
-      return {
-        date: monthStart.toISOString(),
-        amount: Number(total.toFixed(2)),
-      };
-    });
-
-    const roundedCurrent =
-      trend.find((_, index) => monthOffsets[index] === 0)?.amount ?? 0;
-    const roundedPrevious =
-      trend.find((_, index) => monthOffsets[index] === -1)?.amount ?? 0;
-    const deltaPercentage =
-      roundedPrevious > 0
-        ? Number(
-            (
-              ((roundedCurrent - roundedPrevious) / roundedPrevious) *
-              100
-            ).toFixed(1),
-          )
-        : null;
-
-    return {
-      currencyCode: normalizedPreferredCurrency,
-      currentMonthTotal: roundedCurrent,
-      previousMonthTotal: roundedPrevious,
-      deltaPercentage,
-      trend,
-    };
   }
 
   static calculateBillingDetails(
@@ -243,22 +166,6 @@ export class SubscriptionService {
     };
   }
 
-  private async getUserPreferences(
-    userId: string,
-  ): Promise<{ currency: string; timezone?: string }> {
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-
-    const preferredCurrency = user.publicMetadata.preferredCurrency;
-    const currency = CurrencyUtils.normalizeCode(preferredCurrency);
-
-    const timezoneValue = user.publicMetadata.preferredTimezone;
-    const timezone =
-      typeof timezoneValue === "string" ? timezoneValue : undefined;
-
-    return { currency, timezone };
-  }
-
   private static calculatePreviousPaymentDate(
     subscription: SubscriptionSchema,
     timezone?: string,
@@ -299,39 +206,6 @@ export class SubscriptionService {
     );
 
     return nextPayment.toISOString();
-  }
-
-  private static calculateSpendForRange(
-    subscription: SubscriptionSchema,
-    perPaymentAmount: number,
-    rangeStart: Date,
-    rangeEnd: Date,
-    timezone?: string,
-  ): number {
-    const startDateZoned = DateTimezoneUtils.toZoned(
-      subscription.paymentDate,
-      timezone,
-    );
-
-    let occurrence = RecurrenceUtils.getNextOccurrence(
-      startDateZoned,
-      subscription.every,
-      subscription.period,
-      rangeStart,
-    );
-
-    let total = 0;
-
-    while (!isAfter(occurrence, rangeEnd)) {
-      total += perPaymentAmount;
-      occurrence = RecurrenceUtils.addPeriod(
-        occurrence,
-        subscription.every,
-        subscription.period,
-      );
-    }
-
-    return total;
   }
 
   private toDto(

@@ -1,25 +1,34 @@
 import { SubscriptionService } from "../../subscription/lib/subscription.service";
 import {
   DashboardAnalyticsDto,
+  MonthlySpendSummaryDto,
   MostExpensiveSubscriptionDto,
   UpcomingRenewalDto,
 } from "../model/analytics.dtos";
 import {
   addDays,
+  addMonths,
+  endOfMonth,
   isSameDay,
   startOfDay,
   differenceInCalendarDays,
   isSameMonth,
   format,
   startOfMonth,
-  addMonths,
+  isAfter,
   isBefore,
 } from "date-fns";
 import { RecurrenceUtils } from "@/shared/lib/recurrence.utils";
 import { CurrencyUtils } from "@/shared/lib/currency.utils";
+import { DateTimezoneUtils } from "@/shared/lib";
+import { SubscriptionSchema } from "@/shared/lib/db/schema";
+import { UserService } from "../../user/lib/user.service";
 
 export class AnalyticsService {
-  constructor(private subscriptionService = new SubscriptionService()) {}
+  constructor(
+    private subscriptionService = new SubscriptionService(),
+    private userService = new UserService(),
+  ) {}
 
   async getDashboardStats(userId: string): Promise<DashboardAnalyticsDto> {
     const today = startOfDay(new Date());
@@ -191,5 +200,103 @@ export class AnalyticsService {
       totalUpcomingMonth,
       monthlyTrend,
     };
+  }
+
+  async getMonthlySpendSummary(
+    userId: string,
+  ): Promise<MonthlySpendSummaryDto> {
+    const subscriptions =
+      await this.subscriptionService.getSubscriptionsForUser(userId);
+    const metadata = await this.userService.getUserPreferences(userId);
+    const preferredCurrency = metadata.preferredCurrency;
+    const timezone = metadata.preferredTimezone;
+
+    const normalizedCurrency = CurrencyUtils.normalizeCode(preferredCurrency);
+    const preferredCurrencyCode =
+      subscriptions[0]?.billing.preferred.currencyCode ?? normalizedCurrency;
+
+    const now = DateTimezoneUtils.now(timezone);
+    const monthOffsets = [-2, -1, 0, 1, 2];
+
+    const trend = monthOffsets.map((offset) => {
+      const monthStart = startOfMonth(addMonths(now, offset));
+      const monthEnd = endOfMonth(addMonths(now, offset));
+      const total = subscriptions.reduce(
+        (sum, subscription) =>
+          sum +
+          AnalyticsService.calculateSpendForRange(
+            subscription,
+            subscription.billing.preferred.amount,
+            monthStart,
+            monthEnd,
+            timezone,
+          ),
+        0,
+      );
+
+      return {
+        date: monthStart.toISOString(),
+        amount: Number(total.toFixed(2)),
+      };
+    });
+
+    const currentMonthTotal =
+      trend.find((_, index) => monthOffsets[index] === 0)?.amount ?? 0;
+    const previousMonthTotal =
+      trend.find((_, index) => monthOffsets[index] === -1)?.amount ?? 0;
+    const deltaPercentage =
+      previousMonthTotal > 0
+        ? Number(
+            (
+              ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) *
+              100
+            ).toFixed(1),
+          )
+        : null;
+
+    return {
+      currencyCode: preferredCurrencyCode,
+      currentMonthTotal,
+      previousMonthTotal,
+      deltaPercentage,
+      trend,
+    };
+  }
+
+  private static calculateSpendForRange(
+    subscription: {
+      paymentDate: string;
+      every: number;
+      period: SubscriptionSchema["period"];
+    },
+    perPaymentAmount: number,
+    rangeStart: Date,
+    rangeEnd: Date,
+    timezone?: string,
+  ): number {
+    const startDateZoned = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
+
+    let occurrence = RecurrenceUtils.getNextOccurrence(
+      startDateZoned,
+      subscription.every,
+      subscription.period,
+      rangeStart,
+    );
+
+    let total = 0;
+
+    while (!isAfter(occurrence, rangeEnd)) {
+      total += perPaymentAmount;
+      occurrence = RecurrenceUtils.addPeriod(
+        occurrence,
+        subscription.every,
+        subscription.period,
+      );
+    }
+
+    return total;
   }
 }

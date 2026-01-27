@@ -40,16 +40,3 @@ export interface SubscriptionDto extends SubscriptionSchema {
   nextPaymentDate: string;
   lastPaymentDate: string | null;
 }
-
-export interface SubscriptionMonthlySpendTrendPoint {
-  date: string;
-  amount: number;
-}
-
-export interface SubscriptionMonthlySpendDto {
-  currencyCode: string;
-  currentMonthTotal: number;
-  previousMonthTotal: number;
-  deltaPercentage: number | null;
-  trend: SubscriptionMonthlySpendTrendPoint[];
-}

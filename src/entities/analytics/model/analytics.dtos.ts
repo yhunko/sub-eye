@@ -28,6 +28,19 @@ export interface MonthlyTrendPoint {
   amount: number;
 }
 
+export interface MonthlySpendTrendPoint {
+  date: string;
+  amount: number;
+}
+
+export interface MonthlySpendSummaryDto {
+  currencyCode: string;
+  currentMonthTotal: number;
+  previousMonthTotal: number;
+  deltaPercentage: number | null;
+  trend: MonthlySpendTrendPoint[];
+}
+
 export interface DashboardAnalyticsDto {
   preferredCurrencyCode: string;
   monthlyBurnRate: number;

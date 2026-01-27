@@ -10,4 +10,8 @@ export class AnalyticsController {
   async getDashboardAnalytics() {
     return await this.service.getDashboardStats(this.userId);
   }
+
+  async getMonthlySpendSummary() {
+    return await this.service.getMonthlySpendSummary(this.userId);
+  }
 }

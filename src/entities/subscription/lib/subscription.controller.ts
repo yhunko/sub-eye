@@ -4,10 +4,7 @@ import {
   GetSubscriptionsParams,
   GetSubscriptionParams,
 } from "../model/subscription.params";
-import {
-  SubscriptionDto,
-  SubscriptionMonthlySpendDto,
-} from "../model/subscription.dtos";
+import { SubscriptionDto } from "../model/subscription.dtos";
 import { SubscriptionSchema } from "@/shared/lib/db/schemas/subscription.schema";
 
 export class SubscriptionController {
@@ -45,10 +42,6 @@ export class SubscriptionController {
     params: GetSubscriptionParams,
   ): Promise<SubscriptionDto> {
     return await this.service.getSubscriptionById(params.id, this.userId);
-  }
-
-  async getMonthlySpendSummary(): Promise<SubscriptionMonthlySpendDto> {
-    return await this.service.getMonthlySpendSummary(this.userId);
   }
 
   async updateSubscription(
