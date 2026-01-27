@@ -61,6 +61,11 @@
     "lastMonth": "Last month",
     "noData": "No last month data"
   },
+  "weeklyRenewals": {
+    "title": "Left This Week",
+    "upcoming": "Upcoming this week",
+    "total": "Total this week"
+  },
   "date": {
     "selectDate": "Select date",
     "today": "Today",

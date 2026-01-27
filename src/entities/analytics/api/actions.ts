@@ -2,7 +2,10 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { AnalyticsController } from "../lib/analytics.controller";
-import { MonthlySpendSummaryDto } from "../model/analytics.dtos";
+import {
+  MonthlySpendSummaryDto,
+  WeeklyRenewalsSummaryDto,
+} from "../model/analytics.dtos";
 
 export async function getDashboardAnalyticsAction() {
   const { isAuthenticated, userId } = await auth();
@@ -20,4 +23,13 @@ export async function getMonthlySpendSummaryAction(): Promise<MonthlySpendSummar
 
   const controller = new AnalyticsController(userId);
   return await controller.getMonthlySpendSummary();
+}
+
+export async function getWeeklyRenewalsSummaryAction(): Promise<WeeklyRenewalsSummaryDto> {
+  const { isAuthenticated, userId } = await auth();
+
+  if (!isAuthenticated || !userId) throw new Error("Unauthorized");
+
+  const controller = new AnalyticsController(userId);
+  return await controller.getWeeklyRenewalsSummary();
 }

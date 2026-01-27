@@ -41,6 +41,18 @@ export interface MonthlySpendSummaryDto {
   trend: MonthlySpendTrendPoint[];
 }
 
+export interface WeeklyRenewalTrendPoint {
+  date: string;
+  amount: number;
+}
+
+export interface WeeklyRenewalsSummaryDto {
+  currencyCode: string;
+  totalUpcomingWeek: number;
+  totalThisWeek: number;
+  trend: WeeklyRenewalTrendPoint[];
+}
+
 export interface DashboardAnalyticsDto {
   preferredCurrencyCode: string;
   monthlyBurnRate: number;

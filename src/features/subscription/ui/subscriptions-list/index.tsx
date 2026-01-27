@@ -8,6 +8,7 @@ import { SubscriptionsListWidget } from "./subscriptions-list-widget";
 import { SubscriptionsListToolbar } from "./subscriptions-list-toolbar";
 import { subscriptionsQueryParsers } from "../../lib/subscriptions-query";
 import { SubscriptionsMonthlySpendCard } from "../subscriptions-monthly-spend-card";
+import { SubscriptionsWeeklyRenewalsCard } from "../subscriptions-weekly-renewals-card";
 
 export const SubscriptionsList = () => {
   const [filters] = useQueryStates(subscriptionsQueryParsers, {
@@ -42,7 +43,10 @@ export const SubscriptionsList = () => {
 
   return (
     <div className="flex min-h-full flex-col gap-4 pb-6">
-      <SubscriptionsMonthlySpendCard />
+      <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-2">
+        <SubscriptionsWeeklyRenewalsCard />
+        <SubscriptionsMonthlySpendCard />
+      </div>
       <SubscriptionsListToolbar loading={isLoading || isPlaceholderData} />
       <SubscriptionsListWidget
         subscriptions={subscriptions ?? []}

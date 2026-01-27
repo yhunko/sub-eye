@@ -3,11 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getDashboardAnalyticsAction,
   getMonthlySpendSummaryAction,
+  getWeeklyRenewalsSummaryAction,
 } from "./actions";
 import { QueryHook } from "@/shared/lib/react-query";
 import {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
+  WeeklyRenewalsSummaryDto,
 } from "../model/analytics.dtos";
 import { useUser } from "@clerk/nextjs";
 
@@ -17,6 +19,7 @@ export const analyticsQueryKeys = createQueryKeys("ANALYTICS", {
     contextQueries: {
       dashboard: null,
       monthlySpend: null,
+      weeklyRenewals: null,
     },
   }),
 });
@@ -44,6 +47,20 @@ export const useMonthlySpendSummary = ({
     queryKey: analyticsQueryKeys.user(user?.id as string)._ctx.monthlySpend
       .queryKey,
     queryFn: () => getMonthlySpendSummaryAction(),
+    enabled: isSignedIn && isLoaded,
+    ...options,
+  });
+};
+
+export const useWeeklyRenewalsSummary = ({
+  options,
+}: QueryHook<WeeklyRenewalsSummaryDto> = {}) => {
+  const { user, isLoaded, isSignedIn } = useUser();
+
+  return useQuery({
+    queryKey: analyticsQueryKeys.user(user?.id as string)._ctx.weeklyRenewals
+      .queryKey,
+    queryFn: () => getWeeklyRenewalsSummaryAction(),
     enabled: isSignedIn && isLoaded,
     ...options,
   });
