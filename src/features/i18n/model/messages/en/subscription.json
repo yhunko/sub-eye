@@ -55,6 +55,12 @@
     "previousPayment": "Previous payment",
     "markAsCanceled": "Mark as canceled"
   },
+  "monthlySpend": {
+    "title": "Monthly Spend",
+    "vsLastMonth": "vs last mo",
+    "lastMonth": "Last month",
+    "noData": "No last month data"
+  },
   "date": {
     "selectDate": "Select date",
     "today": "Today",
