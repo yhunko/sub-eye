@@ -41,11 +41,16 @@ export class AnalyticsService {
     };
 
     const trendMap = new Map<string, number>();
+    const monthTrendStart = startOfMonth(today);
     for (let i = 0; i < 12; i++) {
-      const monthKey = format(startOfMonth(addMonths(today, i)), "yyyy-MM-dd");
+      const monthKey = format(
+        startOfMonth(addMonths(monthTrendStart, i)),
+        "yyyy-MM-dd",
+      );
       trendMap.set(monthKey, 0);
     }
     const oneYearFromNow = addMonths(today, 12);
+    const trendEnd = addMonths(monthTrendStart, 12);
 
     // Store every individual payment occurrence across all subs
     const allUpcomingPayments: UpcomingRenewalDto[] = [];
@@ -79,7 +84,7 @@ export class AnalyticsService {
       // Initial "nextDate" for the mappedSubscriptions return object
       const firstNextDate = projectionDate;
 
-      // Generate occurrences for the next year to cover trendMap and upcomingRenewals
+      // Generate occurrences for the next year to cover upcomingRenewals
       while (isBefore(projectionDate, oneYearFromNow)) {
         const daysUntil = differenceInCalendarDays(projectionDate, today);
 
@@ -94,7 +99,24 @@ export class AnalyticsService {
           daysUntil: daysUntil,
         });
 
-        const monthKey = format(startOfMonth(projectionDate), "yyyy-MM-dd");
+        projectionDate = RecurrenceUtils.getNextOccurrence(
+          projectionDate,
+          subscription.every,
+          subscription.period,
+          addDays(projectionDate, 1),
+        );
+      }
+
+      // Generate occurrences for trendMap starting from the beginning of the current month
+      let trendProjection = RecurrenceUtils.getNextOccurrence(
+        subscription.paymentDate,
+        subscription.every,
+        subscription.period,
+        monthTrendStart,
+      );
+
+      while (isBefore(trendProjection, trendEnd)) {
+        const monthKey = format(startOfMonth(trendProjection), "yyyy-MM-dd");
         if (trendMap.has(monthKey)) {
           const currentTotal = trendMap.get(monthKey) || 0;
           trendMap.set(
@@ -103,11 +125,11 @@ export class AnalyticsService {
           );
         }
 
-        projectionDate = RecurrenceUtils.getNextOccurrence(
-          projectionDate,
+        trendProjection = RecurrenceUtils.getNextOccurrence(
+          trendProjection,
           subscription.every,
           subscription.period,
-          addDays(projectionDate, 1),
+          addDays(trendProjection, 1),
         );
       }
 
