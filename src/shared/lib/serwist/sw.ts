@@ -4,8 +4,8 @@ import {
   SerwistGlobalConfig,
   PrecacheEntry,
   CacheFirst,
-  StaleWhileRevalidate,
   ExpirationPlugin,
+  NetworkFirst,
 } from "serwist";
 import { registerPushNotificationsListeners } from "@/entities/push-notifications/lib/push-notifications.worker";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
@@ -36,7 +36,7 @@ const serwist = new Serwist({
           !url.pathname.startsWith("/serwist")
         );
       },
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: "navigations",
         plugins: [
           new ExpirationPlugin({
