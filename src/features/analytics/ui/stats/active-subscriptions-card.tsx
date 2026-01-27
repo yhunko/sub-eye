@@ -12,13 +12,13 @@ export const ActiveSubscriptionsCard: FC = () => {
 
   return (
     <StatCard title={t("title")}>
-      <div className="space-y-1">
+      <div className="flex h-full flex-col gap-1">
         <div className="text-xl font-bold">{data.activeSubscriptionsTotal}</div>
-        <div className="text-muted-foreground inline-flex gap-2 text-sm">
+        <div className="text-muted-foreground inline-flex grow items-end text-sm">
           <span>
             {data.activeSubscriptionsAuto} {t("auto")}
           </span>
-          <span>&bull;</span>
+          <span>&nbsp;&bull;&nbsp;</span>
           <span>
             {data.activeSubscriptionsManual} {t("manual")}
           </span>

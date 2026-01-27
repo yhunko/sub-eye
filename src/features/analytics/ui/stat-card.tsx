@@ -19,7 +19,7 @@ export const StatCard: FC<PropsWithChildren<StatCardProps>> = ({
       <CardHeader>
         <CardDescription>{title}</CardDescription>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="h-full">{children}</CardContent>
     </Card>
   );
 };

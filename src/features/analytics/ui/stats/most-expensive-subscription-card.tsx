@@ -15,7 +15,7 @@ export const MostExpensiveSubscriptionCard = () => {
 
   return (
     <StatCard title={t("title")}>
-      <div className="space-y-1">
+      <div className="flex h-full flex-col gap-1">
         <div className="flex flex-row items-center gap-2">
           <BrandfetchImage
             domain={data.mostExpensiveSubscription?.brandDomain}
@@ -24,15 +24,13 @@ export const MostExpensiveSubscriptionCard = () => {
             {data?.mostExpensiveSubscription?.name}
           </div>
         </div>
-        <div className="text-muted-foreground inline-flex gap-2 text-sm">
-          <span>
-            <CurrencyText
-              amount={data.mostExpensiveSubscription.yearlyAmount}
-              currencyCode={data.preferredCurrencyCode}
-            />
-            &nbsp;
-            {tCommon("per.year")}
-          </span>
+        <div className="text-muted-foreground inline-flex grow items-end text-sm">
+          <CurrencyText
+            amount={data.mostExpensiveSubscription.yearlyAmount}
+            currencyCode={data.preferredCurrencyCode}
+          />
+          <span>&nbsp;</span>
+          <span>{tCommon("per.year")}</span>
         </div>
       </div>
     </StatCard>
