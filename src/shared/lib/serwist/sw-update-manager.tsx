@@ -1,68 +1,44 @@
+// sw-update-manager.tsx
 "use client";
 
-import { useEffect, FC } from "react";
+import { useEffect } from "react";
 import { useSerwist } from "@serwist/turbopack/react";
 import { toast } from "sonner";
 
-const useServiceWorkerUpdate = () => {
+const TOAST_ID = "sw-update";
+
+export function SwUpdateManager() {
   const { serwist } = useSerwist();
 
   useEffect(() => {
-    if (typeof window === "undefined" || !serwist) return;
-
-    let isUpdating = false;
-
-    const handleUpdate = () => {
-      if (isUpdating) return;
-
-      isUpdating = true;
-
-      serwist.messageSkipWaiting();
-
-      const handleControllerChange = () => {
-        window.location.reload();
-      };
-
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        handleControllerChange,
-        {
-          once: true,
-        },
-      );
-
-      // Fallback: if controllerchange doesn't fire within 3 seconds, reload anyway
-      setTimeout(() => {
-        navigator.serviceWorker.removeEventListener(
-          "controllerchange",
-          handleControllerChange,
-        );
-        window.location.reload();
-      }, 3000);
-    };
+    if (!serwist) return;
 
     const handleWaiting = () => {
+      toast.dismiss(TOAST_ID);
       toast("Update Available", {
+        id: TOAST_ID,
         description:
           "A new version of the app is available. Please update to get the latest features.",
-        duration: Number.POSITIVE_INFINITY,
+        duration: Infinity,
         action: {
           label: "Update Now",
-          onClick: handleUpdate,
+          onClick: () => serwist.messageSkipWaiting(),
         },
       });
     };
 
+    const handleControlling = () => {
+      window.location.reload();
+    };
+
     serwist.addEventListener("waiting", handleWaiting);
+    serwist.addEventListener("controlling", handleControlling);
 
     return () => {
       serwist.removeEventListener("waiting", handleWaiting);
+      serwist.removeEventListener("controlling", handleControlling);
     };
   }, [serwist]);
-};
-
-export const SwUpdateManager: FC = () => {
-  useServiceWorkerUpdate();
 
   return null;
-};
+}
