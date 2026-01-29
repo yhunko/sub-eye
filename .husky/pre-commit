@@ -1,0 +1,10 @@
+set -e
+
+echo "🎨 Running lint-staged (ESLint + Prettier)..."
+bunx lint-staged
+
+echo "🔎 Running lint across the repo..."
+bun run lint
+
+echo "🔎 Running type checks across the repo..."
+bun run type-check
