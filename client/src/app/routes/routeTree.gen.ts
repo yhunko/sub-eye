@@ -8,118 +8,138 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./../../pages/__root"
-import { Route as protectedRouteRouteImport } from "./../../pages/(protected)/route"
-import { Route as protectedIndexRouteImport } from "./../../pages/(protected)/index"
-import { Route as AuthSignUpRouteImport } from "./../../pages/auth/sign-up"
-import { Route as AuthSignInRouteImport } from "./../../pages/auth/sign-in"
+import { Route as rootRouteImport } from "./../../pages/__root";
+import { Route as protectedRouteRouteImport } from "./../../pages/(protected)/route";
+import { Route as protectedIndexRouteImport } from "./../../pages/(protected)/index";
+import { Route as AuthSignUpRouteImport } from "./../../pages/auth/sign-up";
+import { Route as AuthSignInRouteImport } from "./../../pages/auth/sign-in";
+import { Route as protectedSubscriptionsAddRouteImport } from "./../../pages/(protected)/subscriptions/add";
 
 const protectedRouteRoute = protectedRouteRouteImport.update({
   id: "/(protected)",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const protectedIndexRoute = protectedIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => protectedRouteRoute,
-} as any)
+} as any);
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: "/auth/sign-up",
   path: "/auth/sign-up",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: "/auth/sign-in",
   path: "/auth/sign-in",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const protectedSubscriptionsAddRoute =
+  protectedSubscriptionsAddRouteImport.update({
+    id: "/subscriptions/add",
+    path: "/subscriptions/add",
+    getParentRoute: () => protectedRouteRoute,
+  } as any);
 
 export interface FileRoutesByFullPath {
-  "/auth/sign-in": typeof AuthSignInRoute
-  "/auth/sign-up": typeof AuthSignUpRoute
-  "/": typeof protectedIndexRoute
+  "/auth/sign-in": typeof AuthSignInRoute;
+  "/auth/sign-up": typeof AuthSignUpRoute;
+  "/": typeof protectedIndexRoute;
+  "/subscriptions/add": typeof protectedSubscriptionsAddRoute;
 }
 export interface FileRoutesByTo {
-  "/auth/sign-in": typeof AuthSignInRoute
-  "/auth/sign-up": typeof AuthSignUpRoute
-  "/": typeof protectedIndexRoute
+  "/auth/sign-in": typeof AuthSignInRoute;
+  "/auth/sign-up": typeof AuthSignUpRoute;
+  "/": typeof protectedIndexRoute;
+  "/subscriptions/add": typeof protectedSubscriptionsAddRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  "/(protected)": typeof protectedRouteRouteWithChildren
-  "/auth/sign-in": typeof AuthSignInRoute
-  "/auth/sign-up": typeof AuthSignUpRoute
-  "/(protected)/": typeof protectedIndexRoute
+  __root__: typeof rootRouteImport;
+  "/(protected)": typeof protectedRouteRouteWithChildren;
+  "/auth/sign-in": typeof AuthSignInRoute;
+  "/auth/sign-up": typeof AuthSignUpRoute;
+  "/(protected)/": typeof protectedIndexRoute;
+  "/(protected)/subscriptions/add": typeof protectedSubscriptionsAddRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/auth/sign-in" | "/auth/sign-up" | "/"
-  fileRoutesByTo: FileRoutesByTo
-  to: "/auth/sign-in" | "/auth/sign-up" | "/"
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: "/auth/sign-in" | "/auth/sign-up" | "/" | "/subscriptions/add";
+  fileRoutesByTo: FileRoutesByTo;
+  to: "/auth/sign-in" | "/auth/sign-up" | "/" | "/subscriptions/add";
   id:
     | "__root__"
     | "/(protected)"
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/(protected)/"
-  fileRoutesById: FileRoutesById
+    | "/(protected)/subscriptions/add";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  protectedRouteRoute: typeof protectedRouteRouteWithChildren
-  AuthSignInRoute: typeof AuthSignInRoute
-  AuthSignUpRoute: typeof AuthSignUpRoute
+  protectedRouteRoute: typeof protectedRouteRouteWithChildren;
+  AuthSignInRoute: typeof AuthSignInRoute;
+  AuthSignUpRoute: typeof AuthSignUpRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
     "/(protected)": {
-      id: "/(protected)"
-      path: ""
-      fullPath: ""
-      preLoaderRoute: typeof protectedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: "/(protected)";
+      path: "";
+      fullPath: "";
+      preLoaderRoute: typeof protectedRouteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/(protected)/": {
-      id: "/(protected)/"
-      path: "/"
-      fullPath: "/"
-      preLoaderRoute: typeof protectedIndexRouteImport
-      parentRoute: typeof protectedRouteRoute
-    }
+      id: "/(protected)/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof protectedIndexRouteImport;
+      parentRoute: typeof protectedRouteRoute;
+    };
     "/auth/sign-up": {
-      id: "/auth/sign-up"
-      path: "/auth/sign-up"
-      fullPath: "/auth/sign-up"
-      preLoaderRoute: typeof AuthSignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: "/auth/sign-up";
+      path: "/auth/sign-up";
+      fullPath: "/auth/sign-up";
+      preLoaderRoute: typeof AuthSignUpRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/auth/sign-in": {
-      id: "/auth/sign-in"
-      path: "/auth/sign-in"
-      fullPath: "/auth/sign-in"
-      preLoaderRoute: typeof AuthSignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: "/auth/sign-in";
+      path: "/auth/sign-in";
+      fullPath: "/auth/sign-in";
+      preLoaderRoute: typeof AuthSignInRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/(protected)/subscriptions/add": {
+      id: "/(protected)/subscriptions/add";
+      path: "/subscriptions/add";
+      fullPath: "/subscriptions/add";
+      preLoaderRoute: typeof protectedSubscriptionsAddRouteImport;
+      parentRoute: typeof protectedRouteRoute;
+    };
   }
 }
 
 interface protectedRouteRouteChildren {
-  protectedIndexRoute: typeof protectedIndexRoute
+  protectedIndexRoute: typeof protectedIndexRoute;
+  protectedSubscriptionsAddRoute: typeof protectedSubscriptionsAddRoute;
 }
 
 const protectedRouteRouteChildren: protectedRouteRouteChildren = {
   protectedIndexRoute: protectedIndexRoute,
-}
+  protectedSubscriptionsAddRoute: protectedSubscriptionsAddRoute,
+};
 
 const protectedRouteRouteWithChildren = protectedRouteRoute._addFileChildren(
   protectedRouteRouteChildren,
-)
+);
 
 const rootRouteChildren: RootRouteChildren = {
   protectedRouteRoute: protectedRouteRouteWithChildren,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
