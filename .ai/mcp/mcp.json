@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "Clerk": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.clerk.com/mcp"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    }
+  }
+}
