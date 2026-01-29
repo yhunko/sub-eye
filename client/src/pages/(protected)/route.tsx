@@ -1,6 +1,7 @@
 import { createFileRoute, Navigate, Outlet } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
 import { SplashScreen } from "@/shared/ui/splash-screen";
+import { ReactQueryProvider } from "../../app/providers/react-query-provider";
 
 export const Route = createFileRoute("/(protected)")({
   component: ProtectedLayout,
@@ -17,5 +18,9 @@ function ProtectedLayout() {
     return <Navigate to="/auth/sign-in" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <ReactQueryProvider>
+      <Outlet />
+    </ReactQueryProvider>
+  );
 }
