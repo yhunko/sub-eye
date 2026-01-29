@@ -11,14 +11,14 @@ This project uses a Monorepo structure (`bhvr` template) with strict separation 
 **CRITICAL RULES:**
 
 1. **NO LEAKAGE:**
-    - `client` can import `shared`.
-    - `server` can import `shared`.
-    - `client` MUST NEVER import from `server` (RPC types are inferred, not imported directly from implementation files).
+   - `client` can import `shared`.
+   - `server` can import `shared`.
+   - `client` MUST NEVER import from `server` (RPC types are inferred, not imported directly from implementation files).
 2. **NAMING CONVENTION:**
-    - **Frontend:** strictly `kebab-case` (e.g., `user-profile.tsx`).
-    - **Backend:** strictly `camelCase` (e.g., `userService.ts`) to maintain JS/Node standards.
+   - **Frontend:** strictly `kebab-case` (e.g., `user-profile.tsx`).
+   - **Backend:** strictly `camelCase` (e.g., `userService.ts`) to maintain JS/Node standards.
 3. **DEPENDENCY MANAGEMENT:**
-    - Libraries used in both environments (e.g., `valibot`, `date-fns`) MUST be installed in the `shared` workspace to ensure version consistency.
+   - Libraries used in both environments (e.g., `valibot`, `date-fns`) MUST be installed in the `shared` workspace to ensure version consistency.
 
 ---
 
@@ -65,42 +65,43 @@ server/src/
 ### Layer Definitions
 
 1. **Controller Layer** (`routes/<name>.ts`)
-    - **Role:** The Public API Entry Point (Hono Route).
-    - **Responsibilities:**
-        - Defines route paths (e.g., `.post('/', ...)`).
-        - Validates inputs using **Valibot**.
-        - Returns strictly typed JSON (for RPC).
-        - Delegates work to the **Service**.
-    - **Naming:** Plural nouns (e.g., `users.ts`).
+   - **Role:** The Public API Entry Point (Hono Route).
+   - **Responsibilities:**
+     - Defines route paths (e.g., `.post('/', ...)`).
+     - Validates inputs using **Valibot**.
+     - Returns strictly typed JSON (for RPC).
+     - Delegates work to the **Service**.
+   - **Naming:** Plural nouns (e.g., `users.ts`).
 
 2. **Service Layer** (`domains/<name>/<name>Service.ts`)
-    - **Role:** Business Logic.
-    - **Responsibilities:**
-        - Orchestrates multiple Repositories.
-        - Handles logical validation (e.g., "User already exists").
-        - Throws business exceptions.
-    - **Syntax:** `export class UserService { static async doSomething(db, ...) }`
+   - **Role:** Business Logic.
+   - **Responsibilities:**
+     - Orchestrates multiple Repositories.
+     - Handles logical validation (e.g., "User already exists").
+     - Throws business exceptions.
+   - **Syntax:** `export class UserService { static async doSomething(db, ...) }`
 
 3. **Repository Layer** (`domains/<name>/<name>Repository.ts`)
-    - **Role:** Data Access Object (DAO).
-    - **Responsibilities:**
-        - Direct access to Drizzle `db` instance.
-        - Strictly database queries (select, insert, update).
-        - **NO** complex business logic.
+   - **Role:** Data Access Object (DAO).
+   - **Responsibilities:**
+     - Direct access to Drizzle `db` instance.
+     - Strictly database queries (select, insert, update).
+     - **NO** complex business logic.
 
 4. **Mapper Layer** (`domains/<name>/<name>Mapper.ts`)
-    - **Role:** DTO Transformation.
-    - **Responsibilities:**
-        - Converts DB Rows -> Client DTOs.
-        - Hides internal IDs or flags.
+   - **Role:** DTO Transformation.
+   - **Responsibilities:**
+     - Converts DB Rows -> Client DTOs.
+     - Hides internal IDs or flags.
 
 ### Code Style & Implementation
 
 **1. Repository (`server/src/domains/user/userRepository.ts`)**
+
 ```typescript
-import { eq } from 'drizzle-orm';
-import { db } from '../../db'; // Or inject via args
-import { users } from '../../db/schema';
+import { eq } from "drizzle-orm";
+import { db } from "../../db"; // Or inject via args
+import { users } from "../../db/schema";
 
 export class UserRepository {
   // Pass transaction/db context for transaction support
@@ -118,10 +119,11 @@ export class UserRepository {
 ```
 
 **2. Service (`server/src/domains/user/userService.ts`)**
+
 ```typescript
-import { db } from '../../db';
-import { UserRepository } from './userRepository';
-import { UserMapper } from './userMapper';
+import { db } from "../../db";
+import { UserRepository } from "./userRepository";
+import { UserMapper } from "./userMapper";
 
 export class UserService {
   static async register(name: string, email: string) {
@@ -137,30 +139,30 @@ export class UserService {
 }
 ```
 
-**3. Controller (`server/src/routes/users.ts`)**
+**3. Controller (`server/src/routes/currencies.ts`)**
+
 ```typescript
-import { Hono } from 'hono';
-import { sValidator } from '@hono/standard-validator';
-import * as v from 'shared'; // Import valibot from shared
-import { UserService } from '../domains/user/userService';
+import { Hono } from "hono";
+import { object } from "valibot";
+import { vValidator } from "@hono/valibot-validator";
+import { CurrencyService } from "../domains/currency/currencyService";
+import { currencyBaseSchema } from "../domains/currency/currencyModel";
 
-// Define Validation Schema
-const registerSchema = v.object({
-  name: v.string(),
-  email: v.string([v.email()]),
-});
+export const currencyRouter = new Hono().get(
+  "/rates/:base",
+  vValidator("param", object({ base: currencyBaseSchema })),
+  async (c) => {
+    // 'base' is already validated and transformed by the Model schema
+    const { base } = c.req.valid("param");
 
-const app = new Hono()
-  .post('/register', sValidator('json', registerSchema), async (c) => {
-    const data = c.req.valid('json');
-    
-    // Delegate to Service
-    const result = await UserService.register(data.name, data.email);
-    
-    return c.json(result);
-  });
+    const rates = await CurrencyService.getRates(base);
 
-export default app;
+    return c.json({
+      base,
+      rates,
+    });
+  },
+);
 ```
 
 ---
@@ -183,21 +185,23 @@ Files in `client/src/` MUST use **`kebab-case`**.
 We use **TanStack Query** wrapping **Hono RPC**.
 
 **1. RPC Client Setup (`client/src/shared/api/client.ts`)**
+
 ```typescript
-import { hc } from 'hono/client';
-import type { AppType } from '../../../../server/src'; // Import Type Only
+import { hc } from "hono/client";
+import type { AppType } from "../../../../server/src"; // Import Type Only
 
 export const client = hc<AppType>(import.meta.env.VITE_API_URL);
 ```
 
 **2. Entity Hook (`client/src/entities/user/api/use-user.ts`)**
+
 ```typescript
-import { useQuery } from '@tanstack/react-query';
-import { client } from '@/shared/api/client';
+import { useQuery } from "@tanstack/react-query";
+import { client } from "@/shared/api/client";
 
 export function useUser() {
   return useQuery({
-    queryKey: ['user', 'me'],
+    queryKey: ["user", "me"],
     queryFn: async () => {
       const res = await client.api.users.me.$get();
       if (!res.ok) throw new Error("Failed to fetch");
@@ -213,15 +217,15 @@ export function useUser() {
 In `client/src/app/providers/query-provider.tsx`:
 
 ```typescript
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // "Instant App" feel: Data remains fresh for 5 mins
-      staleTime: 5 * 60 * 1000, 
+      staleTime: 5 * 60 * 1000,
       // Keep in memory/storage for 24h to allow offline view
-      gcTime: 24 * 60 * 60 * 1000, 
+      gcTime: 24 * 60 * 60 * 1000,
       retry: 1,
     },
   },
@@ -235,13 +239,14 @@ const queryClient = new QueryClient({
 **Purpose:** Manage versions and share DTOs.
 
 `shared/src/index.ts`:
+
 ```typescript
 // Re-export external libs to ensure Client/Server use exact same version
-export * as v from 'valibot'; 
-export { format, addDays } from 'date-fns';
+export * as v from "valibot";
+export { format, addDays } from "date-fns";
 
 // Export Shared Types/Schemas
-export * from './schemas/subscription-dto';
+export * from "./schemas/subscription-dto";
 ```
 
 ---
@@ -250,19 +255,19 @@ export * from './schemas/subscription-dto';
 
 - **File:** `server/src/db/schema.ts` (Drizzle)
 - **Naming:**
-    - Tables/Columns: `snake_case` (DB standard).
-    - TypeScript objects: `camelCase` (Drizzle handles mapping).
+  - Tables/Columns: `snake_case` (DB standard).
+  - TypeScript objects: `camelCase` (Drizzle handles mapping).
 - **Operations:** Use `db.transaction` for complex Service logic.
 
 ---
 
 ## 7. Summary of Naming Conventions
 
-| Context            | Case Style   | Example            | Reason                                     |
-| :----------------- | :----------- | :----------------- | :----------------------------------------- |
-| **Frontend Files** | `kebab-case` | `user-card.tsx`    | Standard React/FSD style                   |
-| **Backend Files**  | `camelCase`  | `userService.ts`   | Node/JS Standard                           |
-| **DB Tables/Cols** | `snake_case` | `is_active`        | PostgreSQL Standard                        |
-| **Classes**        | `PascalCase` | `UserService`      | OOP Standard                               |
-| **Methods**        | `camelCase`  | `getById`          | JS Standard                                |
-| **Shared Libs**    | -            | `import { v } ...` | Import via `shared` package                |
+| Context            | Case Style   | Example            | Reason                      |
+| :----------------- | :----------- | :----------------- | :-------------------------- |
+| **Frontend Files** | `kebab-case` | `user-card.tsx`    | Standard React/FSD style    |
+| **Backend Files**  | `camelCase`  | `userService.ts`   | Node/JS Standard            |
+| **DB Tables/Cols** | `snake_case` | `is_active`        | PostgreSQL Standard         |
+| **Classes**        | `PascalCase` | `UserService`      | OOP Standard                |
+| **Methods**        | `camelCase`  | `getById`          | JS Standard                 |
+| **Shared Libs**    | -            | `import { v } ...` | Import via `shared` package |
