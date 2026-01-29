@@ -1,6 +1,6 @@
 {
   "client/**/*.{js,jsx,ts,tsx}": [
-    "eslint --config client/eslint.config.js --fix",
+    "bun x eslint --config client/eslint.config.js --fix",
     "prettier --config client/.prettierrc.json --plugin-search-dir=client --write"
   ],
   "server/**/*.{js,jsx,ts,tsx}": ["prettier --write"],

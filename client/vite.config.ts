@@ -5,18 +5,22 @@ import path from "node:path";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 export default defineConfig({
-	plugins: [
-		// Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
-		tanstackRouter({
-			target: "react",
-			autoCodeSplitting: true,
-		}),
-		react(),
-		tailwindcss(),
-	],
-	resolve: {
-		alias: {
-			"@": path.resolve(__dirname, "./src"),
-		},
-	},
+  plugins: [
+    // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
+    tanstackRouter({
+      target: "react",
+      autoCodeSplitting: true,
+      routesDirectory: "./src/pages",
+      generatedRouteTree: "./src/app/routes/routeTree.gen.ts",
+      routeFileIgnorePrefix: "-",
+      quoteStyle: "double",
+    }),
+    react(),
+    tailwindcss(),
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 });
