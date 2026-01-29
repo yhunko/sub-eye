@@ -44,8 +44,5 @@
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
-  },
-  "dependencies": {
-    "hono": "^4.11.7"
   }
 }
