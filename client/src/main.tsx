@@ -1,20 +1,9 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/app/providers/auth-provider";
 import "./index.css";
 // Import the generated route tree
 import { routeTree } from "./app/routes/routeTree.gen";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 24 * 60 * 60 * 1000,
-    },
-  },
-});
 
 // Create a new router instance
 const router = createRouter({ routeTree });
@@ -39,11 +28,7 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </AuthProvider>
+      <RouterProvider router={router} />
     </StrictMode>,
   );
 }
