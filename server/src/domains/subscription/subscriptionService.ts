@@ -13,7 +13,7 @@ import type {
   AddSubscriptionInput,
   SubscriptionDto,
   UpdateSubscriptionInput,
-} from "@shared/schemas/subscriptionSchemas";
+} from "@shared/domains/subscription/subscriptionSchemas";
 import type { GetSubscriptionsParams } from "@shared/domains/subscription";
 import type { UserPreferences } from "@shared/types";
 

@@ -1,20 +1,16 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
-import { object, string } from "valibot";
 import {
   AddSubscriptionSchema,
   UpdateSubscriptionSchema,
-} from "@shared/schemas/subscriptionSchemas";
-import { listQuerySchema } from "@shared/domains/subscription";
+  idQuerySchema,
+  listQuerySchema,
+} from "@shared/domains/subscription";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { SubscriptionWorkflow } from "../domains/subscription/subscriptionWorkflow";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
-
-const idParamSchema = object({
-  id: string(),
-});
 
 const handleServiceError = (context: Context, error: unknown) => {
   if (error instanceof Error) {
@@ -41,7 +37,7 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
-  .get("/:id", protect, vValidator("param", idParamSchema), async (context) => {
+  .get("/:id", protect, vValidator("param", idQuerySchema), async (context) => {
     const userId = requireUserId(context);
 
     try {
@@ -77,7 +73,7 @@ export const subscriptionRouter = new Hono()
   .patch(
     "/:id",
     protect,
-    vValidator("param", idParamSchema),
+    vValidator("param", idQuerySchema),
     vValidator("json", UpdateSubscriptionSchema),
     async (context) => {
       const userId = requireUserId(context);
@@ -99,7 +95,7 @@ export const subscriptionRouter = new Hono()
   .delete(
     "/:id",
     protect,
-    vValidator("param", idParamSchema),
+    vValidator("param", idQuerySchema),
     async (context) => {
       const userId = requireUserId(context);
 
