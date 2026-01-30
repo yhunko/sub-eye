@@ -13,8 +13,9 @@ import {
   strictObject,
   transform,
   type InferOutput,
+  object,
 } from "valibot";
-import { SubscriptionPeriod } from "../types";
+import { SubscriptionPeriod } from "../../types";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -34,6 +35,11 @@ const isoDateSchema = pipe(
   minLength(1),
   check((value) => !Number.isNaN(Date.parse(value)), "Invalid date"),
 );
+
+export const idQuerySchema = object({
+  id: string(),
+});
+export type IdParam = InferOutput<typeof idQuerySchema>;
 
 export const AddSubscriptionSchema = strictObject({
   name: pipe(

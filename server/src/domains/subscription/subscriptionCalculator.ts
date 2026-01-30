@@ -1,7 +1,7 @@
 import { CurrencyUtils } from "@shared/utils/currencyUtils";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
 import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
-import type { SubscriptionBillingDetails } from "@shared/schemas/subscriptionSchemas";
+import type { SubscriptionBillingDetails } from "@shared/domains/subscription/subscriptionSchemas";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionCalculator {

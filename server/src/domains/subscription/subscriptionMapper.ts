@@ -1,7 +1,7 @@
 import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
-} from "@shared/schemas/subscriptionSchemas";
+} from "@shared/domains/subscription/subscriptionSchemas";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionMapper {
