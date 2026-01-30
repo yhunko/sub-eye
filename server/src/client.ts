@@ -1,8 +1,8 @@
 import { hc } from "hono/client";
 import type { app } from "./index";
 
-export type AppType = typeof app;
-export type Client = ReturnType<typeof hc<AppType>>;
+export type ServerRpcType = typeof app;
+export type HonoClient = ReturnType<typeof hc<typeof app>>;
 
-export const hcWithType = (...args: Parameters<typeof hc>): Client =>
-  hc<AppType>(...args);
+export const honoClient = (...args: Parameters<typeof hc>): HonoClient =>
+  hc<ServerRpcType>(...args);

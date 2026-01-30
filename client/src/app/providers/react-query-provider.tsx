@@ -5,11 +5,12 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // "Instant App" feel: Data remains fresh for 5 mins
-      staleTime: 5 * 60 * 1000,
+      // "Instant App" feel: Data remains fresh for 10 mins
+      staleTime: 10 * 60 * 1000,
       // Keep in memory/storage for 24h to allow offline view
       gcTime: 24 * 60 * 60 * 1000,
       retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });

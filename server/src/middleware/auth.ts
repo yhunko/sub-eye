@@ -1,14 +1,10 @@
-import { clerkMiddleware } from "@hono/clerk-auth";
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
 import type { MiddlewareHandler } from "hono";
 
 const publicRoutePrefixes = ["/api/webhooks"];
 
 const isPublicRoute = (path: string) =>
   publicRoutePrefixes.some((prefix) => path.startsWith(prefix));
-
-type ClerkAuthContext = {
-  userId?: string | null;
-};
 
 export const clerkAuth = clerkMiddleware();
 
@@ -17,11 +13,13 @@ export const protect: MiddlewareHandler = async (context, next) => {
     return next();
   }
 
-  const auth = context.get("auth") as ClerkAuthContext | undefined;
+  const auth = getAuth(context);
 
   if (!auth?.userId) {
     return context.json({ error: "Unauthorized" }, 401);
   }
+
+  context.set("userId", auth.userId);
 
   return next();
 };

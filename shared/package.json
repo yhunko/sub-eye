@@ -8,6 +8,11 @@
     "dev": "tsc --watch",
     "type-check": "tsc --noEmit --pretty"
   },
+  "dependencies": {
+    "@date-fns/tz": "^1.4.1",
+    "date-fns": "^4.1.0",
+    "valibot": "^1.2.0"
+  },
   "devDependencies": {
     "typescript": "^5.9.3"
   }
