@@ -17,13 +17,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionDeleteButton } from "./subscription-delete-button";
-import { useTranslation } from "react-i18next";
 import { SubscriptionPeriod } from "@shared/types";
 import { cn } from "@/shared/lib/classes-utils";
 import {
   useCreateSubscription,
   useUpdateSubscription,
 } from "@/entities/subscription";
+import * as m from "@/i18n/messages";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -34,8 +34,6 @@ export const AddSubscriptionForm = ({
   defaultValues,
   subscriptionId,
 }: SubscriptionFormProps) => {
-  const { t } = useTranslation("subscription");
-
   const schema = useAddSubscriptionFormSchema();
   const formMethods = useForm({
     resolver: valibotResolver(schema),
@@ -72,17 +70,17 @@ export const AddSubscriptionForm = ({
         {
           async onSuccess() {
             await navigate({ to: "/subscriptions" });
+            toast.success(m.messages_updated());
           },
         },
       );
-      toast.success(t("messages.updated"));
     } else {
       addSubscription(payload, {
         async onSuccess() {
           await navigate({ to: "/subscriptions" });
+          toast.success(m.messages_added());
         },
       });
-      toast.success(t("messages.added"));
     }
   };
 
@@ -111,7 +109,7 @@ export const AddSubscriptionForm = ({
             className={cn(isEditMode && "justify-self-end")}
           >
             {isPending && <Spinner />}
-            {isEditMode ? t("form.buttons.update") : t("form.buttons.add")}
+            {isEditMode ? m.form_buttons_update() : m.form_buttons_add()}
           </Button>
         </div>
       </form>

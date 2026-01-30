@@ -14,10 +14,9 @@ import {
 import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { AddSubscriptionInput } from "../../model/schema";
 import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
-import { useTranslation } from "react-i18next";
+import * as m from "@/i18n/messages";
 
 export const SubscriptionFormBasicInfo = () => {
-  const { t } = useTranslation("subscription");
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const currency = useWatch({
     control,
@@ -26,8 +25,8 @@ export const SubscriptionFormBasicInfo = () => {
 
   return (
     <FieldSet>
-      <FieldLegend>{t("form.basicInfo.title")}</FieldLegend>
-      <FieldDescription>{t("form.basicInfo.description")}</FieldDescription>
+      <FieldLegend>{m.form_basicInfo_title()}</FieldLegend>
+      <FieldDescription>{m.form_basicInfo_description()}</FieldDescription>
 
       <AddSubscriptionBrandImage />
 
@@ -37,10 +36,10 @@ export const SubscriptionFormBasicInfo = () => {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("form.basicInfo.name.label")}</FormLabel>
+              <FormLabel>{m.form_basicInfo_name_label()}</FormLabel>
               <FormControl>
                 <Input
-                  placeholder={t("form.basicInfo.name.placeholder")}
+                  placeholder={m.form_basicInfo_name_placeholder()}
                   {...field}
                 />
               </FormControl>
@@ -53,7 +52,7 @@ export const SubscriptionFormBasicInfo = () => {
           name="cost"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("form.basicInfo.cost.label")}</FormLabel>
+              <FormLabel>{m.form_basicInfo_cost_label()}</FormLabel>
               <FormControl>
                 <CurrencyInput
                   CurrencySelect={

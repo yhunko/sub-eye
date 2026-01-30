@@ -8,7 +8,7 @@ import {
 import { ChevronDownIcon } from "lucide-react";
 import { useState, FC } from "react";
 import { addYears } from "date-fns";
-import { useTranslation } from "react-i18next";
+import * as m from "@/i18n/messages";
 
 const endMonth = addYears(new Date(), 10);
 
@@ -23,8 +23,6 @@ export const SubscriptionDateSelect: FC<SubscriptionDateSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
 
-  const { t } = useTranslation("subscription");
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -33,7 +31,7 @@ export const SubscriptionDateSelect: FC<SubscriptionDateSelectProps> = ({
           id="date"
           className="w-full justify-between font-normal"
         >
-          {value ? value.toLocaleDateString() : t("date.selectDate")}
+          {value ? value.toLocaleDateString() : m.date_selectDate()}
           <ChevronDownIcon />
         </Button>
       </PopoverTrigger>

@@ -15,14 +15,10 @@ import {
 import { useFormContext, useWatch } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
 import { SubscriptionDateSelect } from "../subscription-date-select";
-import { useTranslation } from "react-i18next";
 import { SubscriptionPeriod } from "@shared/types";
+import * as m from "@/i18n/messages";
 
 export const SubscriptionFormBillingInfo = () => {
-  const { t } = useTranslation("subscription");
-  const { t: tPeriods } = useTranslation("common", {
-    keyPrefix: "periods",
-  });
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const period = useWatch({
     control,
@@ -31,8 +27,8 @@ export const SubscriptionFormBillingInfo = () => {
 
   return (
     <FieldSet>
-      <FieldLegend>{t("form.billingInfo.title")}</FieldLegend>
-      <FieldDescription>{t("form.billingInfo.description")}</FieldDescription>
+      <FieldLegend>{m.form_billingInfo_title()}</FieldLegend>
+      <FieldDescription>{m.form_billingInfo_description()}</FieldDescription>
 
       <FieldGroup>
         <FormField
@@ -41,7 +37,7 @@ export const SubscriptionFormBillingInfo = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t("form.billingInfo.nextPaymentDate.label")}
+                {m.form_billingInfo_nextPaymentDate_label()}
               </FormLabel>
               <FormControl>
                 <SubscriptionDateSelect
@@ -61,14 +57,12 @@ export const SubscriptionFormBillingInfo = () => {
               <div className="flex flex-col gap-2 md:col-span-1 md:flex-row md:items-end">
                 <FormItem>
                   <FormLabel>
-                    {t("form.billingInfo.billingCycle.label")}
+                    {m.form_billingInfo_billingCycle_label()}
                   </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder={t(
-                        "form.billingInfo.billingCycle.placeholder",
-                      )}
+                      placeholder={m.form_billingInfo_billingCycle_placeholder()}
                       {...field}
                     />
                   </FormControl>
@@ -85,26 +79,26 @@ export const SubscriptionFormBillingInfo = () => {
                     aria-label="Toggle week"
                     onClick={() => setValue("period", SubscriptionPeriod.WEEK)}
                   >
-                    {tPeriods("weeks")}
+                    {m.periods_weeks()}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value={SubscriptionPeriod.MONTH}
                     aria-label="Toggle month"
                     onClick={() => setValue("period", SubscriptionPeriod.MONTH)}
                   >
-                    {tPeriods("months")}
+                    {m.periods_months()}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value={SubscriptionPeriod.YEAR}
                     aria-label="Toggle year"
                     onClick={() => setValue("period", SubscriptionPeriod.YEAR)}
                   >
-                    {tPeriods("years")}
+                    {m.periods_years()}
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
               <span className="text-muted-foreground text-sm">
-                {t("form.billingInfo.billingCycle.example")}
+                {m.form_billingInfo_billingCycle_example()}
               </span>
             </>
           )}

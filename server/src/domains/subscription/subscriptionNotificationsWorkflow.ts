@@ -16,7 +16,7 @@ export type SubscriptionWorkflowPayload = {
   paymentDate: string;
 };
 
-export class SubscriptionWorkflow {
+export class SubscriptionNotificationsWorkflow {
   static handler = serve<SubscriptionWorkflowPayload>(
     async (context: WorkflowContext<SubscriptionWorkflowPayload>) => {
       const { subscriptionId, paymentDate } = context.requestPayload;
@@ -32,16 +32,17 @@ export class SubscriptionWorkflow {
       const preferences = await UserService.getUserPreferences(
         subscription.userId,
       );
-      const notifyAt = SubscriptionWorkflow.calculateNotificationTime(
-        subscription,
-        preferences,
-        paymentDate,
-      );
+      const notifyAt =
+        SubscriptionNotificationsWorkflow.calculateNotificationTime(
+          subscription,
+          preferences,
+          paymentDate,
+        );
 
       await context.sleepUntil("wait-for-notification", notifyAt);
 
       await context.run("send-notification", async () => {
-        console.info("Stubbed notification", {
+        console.log("Stubbed notification", {
           userId: subscription.userId,
           subscriptionId: subscription.id,
         });
@@ -54,7 +55,7 @@ export class SubscriptionWorkflow {
       );
 
       await context.run("schedule-next-cycle", async () => {
-        const workflowRunId = await SubscriptionWorkflow.schedule({
+        const workflowRunId = await SubscriptionNotificationsWorkflow.schedule({
           subscriptionId: subscription.id,
           paymentDate: nextPayment.toISOString(),
         });

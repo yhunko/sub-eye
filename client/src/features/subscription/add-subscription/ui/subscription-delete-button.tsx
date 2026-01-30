@@ -1,8 +1,8 @@
 import { Button } from "@/shared/components";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import { useDeleteSubscription } from "@/entities/subscription";
+import * as m from "@/i18n/messages";
 
 type SubscriptionDeleteButtonProps = {
   subscriptionId: string;
@@ -13,12 +13,11 @@ export const SubscriptionDeleteButton = ({
   subscriptionId,
   subscriptionName,
 }: SubscriptionDeleteButtonProps) => {
-  const { t } = useTranslation("subscription");
   const { mutate: deleteSubscription } = useDeleteSubscription();
 
   const handleDelete = async () => {
     const confirmed = window.confirm(
-      t("messages.confirmDelete", { name: subscriptionName ?? "" }),
+      m.messages_confirmDelete({ name: subscriptionName ?? "" }),
     );
 
     if (!confirmed) return;
@@ -27,10 +26,10 @@ export const SubscriptionDeleteButton = ({
       { id: subscriptionId },
       {
         onSuccess() {
-          toast.success(t("messages.deleted"));
+          toast.success(m.messages_deleted());
         },
         onError() {
-          toast.error(t("messages.error"));
+          toast.error(m.messages_error());
         },
       },
     );
@@ -44,7 +43,7 @@ export const SubscriptionDeleteButton = ({
       size="icon"
     >
       <Trash2 />
-      <span className="sr-only">{t("form.buttons.delete")}</span>
+      <span className="sr-only">{m.form_buttons_delete()}</span>
     </Button>
   );
 };

@@ -1,6 +1,6 @@
 import * as v from "valibot";
-import { Period } from "@/entities/subscription/model/enums";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
+import { SubscriptionPeriod } from "@shared/types";
 
 export const addSubscriptionFormSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "Name is required")),
@@ -18,7 +18,7 @@ export const addSubscriptionFormSchema = v.object({
     v.minLength(1, "Billing cycle is required"),
     v.transform((value) => Number(value)),
   ),
-  period: v.picklist([Period.WEEK, Period.MONTH, Period.YEAR]),
+  period: v.enum_(SubscriptionPeriod),
   currency: v.string(),
   brandDomain: v.optional(
     v.pipe(

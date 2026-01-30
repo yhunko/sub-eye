@@ -16,6 +16,7 @@ import { LogOut } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import { FC } from "react";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
+import * as m from "@/i18n/messages";
 
 type UserDropdownMenuProps = {
   triggerId: string;
@@ -23,7 +24,6 @@ type UserDropdownMenuProps = {
 
 export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
   const { user } = useUser();
-  // const { t } = useTranslation("auth");
 
   const fullName = user?.fullName ?? user?.username;
   const email = user?.primaryEmailAddress?.emailAddress;
@@ -90,8 +90,7 @@ export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
                 <LogOut />
               </ItemMedia>
               <ItemContent>
-                {/*<ItemTitle>{t("user.menu.signOut")}</ItemTitle>*/}
-                <ItemTitle>Sign out</ItemTitle>
+                <ItemTitle>{m.user_menu_signOut()}</ItemTitle>
               </ItemContent>
             </Item>
           </SignOutButton>

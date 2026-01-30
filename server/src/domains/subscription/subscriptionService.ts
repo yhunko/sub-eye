@@ -7,7 +7,7 @@ import { SubscriptionRepository } from "./subscriptionRepository";
 import { SubscriptionCalculator } from "./subscriptionCalculator";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { CurrencyService } from "../currency/currencyService";
-import { SubscriptionWorkflow } from "./subscriptionWorkflow";
+import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
 import { UserService } from "../user/userService";
 import type {
   AddSubscriptionInput,
@@ -20,14 +20,14 @@ import type { UserPreferences } from "@shared/types";
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
   currencyService: typeof CurrencyService;
-  workflow: typeof SubscriptionWorkflow;
+  workflow: typeof SubscriptionNotificationsWorkflow;
   userService: typeof UserService;
 };
 
 const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
   currencyService: CurrencyService,
-  workflow: SubscriptionWorkflow,
+  workflow: SubscriptionNotificationsWorkflow,
   userService: UserService,
 };
 
