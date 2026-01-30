@@ -8,7 +8,7 @@ import {
   listQuerySchema,
 } from "@shared/domains/subscription";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
-import { SubscriptionWorkflow } from "../domains/subscription/subscriptionWorkflow";
+import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 
@@ -17,6 +17,13 @@ const handleServiceError = (context: Context, error: unknown) => {
     if (error.message === "Subscription not found") {
       return context.json({ error: error.message }, 404);
     }
+  }
+
+  if (error instanceof Error) {
+    return context.json(
+      { error: "Database Error", message: error.message },
+      500,
+    );
   }
 
   return context.json({ error: "Internal Server Error" }, 500);
@@ -118,4 +125,4 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
-  .post("/workflow", protect, SubscriptionWorkflow.handler);
+  .post("/workflow", SubscriptionNotificationsWorkflow.handler);

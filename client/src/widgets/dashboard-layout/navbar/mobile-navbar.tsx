@@ -6,6 +6,7 @@ import { Button } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 import { useLocation, Link } from "@tanstack/react-router";
 import { UserDropdownMenu } from "@/features/auth";
+import * as m from "@/i18n/messages";
 
 export const MobileNavbar = () => {
   const pathname = useLocation({
@@ -14,22 +15,19 @@ export const MobileNavbar = () => {
 
   const navItems = [
     {
-      // label: t("home"),
-      label: "Home",
+      label: m.common_home(),
       href: "/",
       icon: LayoutDashboard,
       isActive: pathname === "/",
     },
     {
-      // label: t("add"),
-      label: "Add",
+      label: m.common_add(),
       href: "/subscriptions/add",
       icon: Plus,
       isPrimary: true, // Special styling for the action button
     },
     {
-      // label: t("subscriptions"),
-      label: "Subscriptions",
+      label: m.common_subscriptions(),
       href: "/subscriptions",
       icon: CreditCard,
       isActive: pathname === "/subscriptions",
