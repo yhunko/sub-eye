@@ -8,12 +8,15 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "dev": "bun --watch run src/index.ts & tsc --watch",
-    "type-check": "tsc --noEmit --pretty"
+    "type-check": "tsc --noEmit --pretty",
+    "qstash:dev": "npx @upstash/qstash-cli dev"
   },
   "dependencies": {
     "@hono/clerk-auth": "^3.1.0",
     "@hono/valibot-validator": "^0.6.1",
     "@neondatabase/serverless": "^1.0.2",
+    "@upstash/workflow": "^1.1.0",
+    "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.10.8",
     "shared": "workspace:*",

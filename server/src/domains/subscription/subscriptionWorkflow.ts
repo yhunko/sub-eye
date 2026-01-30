@@ -1,0 +1,161 @@
+import { Client, type WorkflowContext } from "@upstash/workflow";
+import { serve } from "@upstash/workflow/hono";
+import { isSameDay, subDays } from "date-fns";
+import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
+import type { UserPreferences } from "@shared/types";
+import { db } from "../../db";
+import {
+  SubscriptionRepository,
+  type SubscriptionRecord,
+} from "./subscriptionRepository";
+import { UserService } from "../user/userService";
+
+export type SubscriptionWorkflowPayload = {
+  subscriptionId: string;
+  paymentDate: string;
+};
+
+export class SubscriptionWorkflow {
+  static handler = serve<SubscriptionWorkflowPayload>(
+    async (context: WorkflowContext<SubscriptionWorkflowPayload>) => {
+      const { subscriptionId, paymentDate } = context.requestPayload;
+      const subscription = await SubscriptionRepository.findById(
+        db,
+        subscriptionId,
+      );
+
+      if (!subscription) {
+        return;
+      }
+
+      const preferences = await UserService.getUserPreferences(
+        subscription.userId,
+      );
+      const notifyAt = SubscriptionWorkflow.calculateNotificationTime(
+        subscription,
+        preferences,
+        paymentDate,
+      );
+
+      await context.sleepUntil("wait-for-notification", notifyAt);
+
+      await context.run("send-notification", async () => {
+        console.info("Stubbed notification", {
+          userId: subscription.userId,
+          subscriptionId: subscription.id,
+        });
+      });
+
+      const nextPayment = RecurrenceUtils.addPeriod(
+        DateTimezoneUtils.toZoned(paymentDate, preferences.preferredTimezone),
+        subscription.every,
+        subscription.period,
+      );
+
+      await context.run("schedule-next-cycle", async () => {
+        const workflowRunId = await SubscriptionWorkflow.schedule({
+          subscriptionId: subscription.id,
+          paymentDate: nextPayment.toISOString(),
+        });
+        await SubscriptionRepository.update(db, subscription.id, {
+          qstashMessageId: workflowRunId,
+        });
+      });
+    },
+  );
+
+  static async schedule(payload: SubscriptionWorkflowPayload): Promise<string> {
+    const workflowUrl = process.env.UPSTASH_WORKFLOW_URL;
+    if (!workflowUrl) {
+      throw new Error("UPSTASH_WORKFLOW_URL is not set");
+    }
+
+    const client = this.createClient();
+    const result = await client.trigger({
+      url: workflowUrl,
+      body: payload,
+    });
+
+    return result.workflowRunId;
+  }
+
+  static async cancel(workflowRunId: string): Promise<void> {
+    const client = this.createClient();
+    await client.cancel({ ids: workflowRunId });
+  }
+
+  private static calculateNotificationTime(
+    subscription: SubscriptionRecord,
+    preferences: UserPreferences,
+    paymentDate: string,
+  ): Date {
+    const timezone = preferences.preferredTimezone;
+    const notificationTime = preferences.notificationTime;
+    const notificationOffset = Math.max(0, preferences.notificationOffset);
+
+    const now = DateTimezoneUtils.now(timezone);
+    const startDateZoned = DateTimezoneUtils.toZoned(paymentDate, timezone);
+
+    const nextPayment = RecurrenceUtils.getNextOccurrence(
+      startDateZoned,
+      subscription.every,
+      subscription.period,
+      now,
+    );
+
+    let notifyDate = subDays(nextPayment, notificationOffset);
+    let notifyAt = this.applyNotificationTime(
+      notifyDate,
+      timezone,
+      notificationTime,
+    );
+
+    if (isSameDay(notifyAt, now)) {
+      const nextPaymentAfter = RecurrenceUtils.addPeriod(
+        nextPayment,
+        subscription.every,
+        subscription.period,
+      );
+      notifyDate = subDays(nextPaymentAfter, notificationOffset);
+      notifyAt = this.applyNotificationTime(
+        notifyDate,
+        timezone,
+        notificationTime,
+      );
+    }
+
+    return notifyAt;
+  }
+
+  private static applyNotificationTime(
+    date: Date,
+    timezone: string,
+    notificationTime: string,
+  ): Date {
+    const [hoursRaw, minutesRaw] = notificationTime.split(":");
+    const hours = Number(hoursRaw);
+    const minutes = Number(minutesRaw);
+
+    const notifyAt = DateTimezoneUtils.toZoned(date, timezone);
+    notifyAt.setHours(
+      Number.isFinite(hours) ? hours : 10,
+      Number.isFinite(minutes) ? minutes : 0,
+      0,
+      0,
+    );
+
+    return notifyAt;
+  }
+
+  private static createClient(): Client {
+    const token =
+      process.env.QSTASH_TOKEN ?? process.env.UPSTASH_WORKFLOW_TOKEN;
+
+    if (!token) {
+      throw new Error("QSTASH_TOKEN is not set");
+    }
+
+    return new Client({ token });
+  }
+}
