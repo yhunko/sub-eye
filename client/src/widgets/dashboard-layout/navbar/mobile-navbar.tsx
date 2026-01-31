@@ -1,5 +1,3 @@
-"use client";
-
 import { LayoutDashboard, Plus, CreditCard } from "lucide-react";
 import { DashboardLogo } from "../dashboard-logo";
 import { Button } from "@/shared/components";

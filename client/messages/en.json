@@ -1,5 +1,13 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "subscription_empty_title": "No subscriptions found",
+  "subscription_date_renewal": "Renewal",
+  "subscription_filter_sortBy": "Sort by",
+  "subscription_filter_sort_renewal": "Renewal date",
+  "subscription_filter_sort_name": "Name",
+  "subscription_filter_sort_cost": "Cost",
+  "common_actions_filter": "Filter",
+  "common_placeholders_search": "Search...",
   "periods_days": "days",
   "periods_weeks": "weeks",
   "periods_months": "months",
