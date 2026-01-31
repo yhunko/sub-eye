@@ -43,5 +43,20 @@
   "common_add": "Додати",
   "common_home": "Головна",
   "common_noResults": "Результати не знайдено",
-  "common_subscriptions": "Підписки"
+  "common_subscriptions": "Підписки",
+  "settings_title": "Налаштування",
+  "settings_pages_general": "Загальні",
+  "settings_pages_notifications": "Сповіщення",
+  "settings_pages_account": "Обліковий запис",
+  "settings_general_title": "Загальні налаштування",
+  "settings_general_subtitle": "Налаштуйте мову, тему, валюту та часовий пояс.",
+  "settings_general_locale_label": "Мова",
+  "settings_general_theme_label": "Тема",
+  "settings_general_currency_label": "Бажана валюта",
+  "settings_general_timezone_label": "Бажаний часовий пояс",
+  "components_timezoneSelect_search": "Пошук часового поясу...",
+  "components_timezoneSelect_empty": "Часовий пояс не знайдено",
+  "billing_today": "Сьогодні",
+  "billing_tomorrow": "Завтра",
+  "billing_inDays": "через {count} дні"
 }
