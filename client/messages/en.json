@@ -1,8 +1,13 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "periods_days": "days",
   "periods_weeks": "weeks",
   "periods_months": "months",
   "periods_years": "years",
+  "periods_daily": "daily",
+  "periods_weekly": "weekly",
+  "periods_monthly": "monthly",
+  "periods_yearly": "yearly",
   "form_billingInfo_title": "Billing Info",
   "form_billingInfo_description": "Setup your billing cycle and next payment date.",
   "form_billingInfo_nextPaymentDate_label": "Next Payment Date",
@@ -29,5 +34,6 @@
   "date_selectDate": "Select date",
   "common_add": "Add",
   "common_home": "Home",
+  "common_noResults": "No results found",
   "common_subscriptions": "Subscriptions"
 }

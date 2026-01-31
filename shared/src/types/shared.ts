@@ -1,3 +1,3 @@
 export type ApiVoidReturn = {
-  success: true;
+  success: boolean;
 };

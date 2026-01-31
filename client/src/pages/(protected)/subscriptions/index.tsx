@@ -1,23 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSubscriptions } from "../../../entities/subscription";
-import { useAuth } from "@clerk/clerk-react";
+import {
+  DashboardLayout,
+  DashboardNavbar,
+} from "../../../widgets/dashboard-layout";
+import { SubscriptionsTable } from "@/features/subscription/subscriptions-table";
 
 export const Route = createFileRoute("/(protected)/subscriptions/")({
-  component: RouteComponent,
+  component: SubscriptionsPage,
 });
 
-function RouteComponent() {
-  const { userId } = useAuth();
-  const { data: subscriptions } = useSubscriptions({
-    params: {
-      userId: userId!,
-    },
-    options: {
-      enabled: !!userId,
-    },
-  });
-
-  console.log(subscriptions);
-
-  return <div>Hello "/(protected)/subscriptions/"!</div>;
+function SubscriptionsPage() {
+  return (
+    <DashboardLayout Navbar={<DashboardNavbar />}>
+      <SubscriptionsTable />
+    </DashboardLayout>
+  );
 }

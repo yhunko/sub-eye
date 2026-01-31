@@ -1,10 +1,10 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
-import type { GetSubscriptionsParams } from "shared";
+import { UseSubscriptionsParams } from "./params";
 
 export const subscriptionsKeys = createQueryKeys("subscriptions", {
-  list: (filters: { userId: string; params?: GetSubscriptionsParams }) => [
+  list: (filters: UseSubscriptionsParams) => [
     filters.userId,
-    filters.params,
+    filters.queryParams,
   ],
   detail: (filters: { userId: string; subscriptionId: string }) => [
     filters.userId,

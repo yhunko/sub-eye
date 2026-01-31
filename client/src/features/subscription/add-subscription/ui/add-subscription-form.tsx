@@ -75,6 +75,7 @@ export const AddSubscriptionForm = ({
         },
       );
     } else {
+      // @ts-expect-error TODO: Normalize payload types
       addSubscription(payload, {
         async onSuccess() {
           await navigate({ to: "/subscriptions" });

@@ -1,8 +1,13 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "periods_days": "дні",
   "periods_weeks": "тижні",
   "periods_months": "місяці",
   "periods_years": "роки",
+  "periods_daily": "щодня",
+  "periods_weekly": "щотижня",
+  "periods_monthly": "щомісяця",
+  "periods_yearly": "щорічно",
   "form_billingInfo_title": "Інформація про оплату",
   "form_billingInfo_description": "Налаштуйте цикл оплати та дату наступного платежу.",
   "form_billingInfo_nextPaymentDate_label": "Дата наступного платежу",
@@ -29,5 +34,6 @@
   "date_selectDate": "Оберіть дату",
   "common_add": "Додати",
   "common_home": "Головна",
+  "common_noResults": "Результати не знайдено",
   "common_subscriptions": "Підписки"
 }
