@@ -1,13 +1,17 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { AuthProvider } from "../app/providers/auth-provider";
+import { SplashScreen } from "@/shared/ui/splash-screen";
+import type { useAuth } from "@clerk/clerk-react";
 
-export const Route = createRootRoute({
+type RouterContext = {
+  auth: ReturnType<typeof useAuth>;
+};
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  pendingComponent: () => <SplashScreen />,
   component: () => (
     <>
-      <AuthProvider>
-        <Outlet />
-      </AuthProvider>
+      <Outlet />
 
       <TanStackRouterDevtools />
     </>

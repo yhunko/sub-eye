@@ -58,6 +58,7 @@ export const ReactQueryProvider: FC<PropsWithChildren> = ({ children }) => {
       }}
     >
       {children}
+
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
     </PersistQueryClientProvider>
   );
