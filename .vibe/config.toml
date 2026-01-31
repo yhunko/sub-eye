@@ -1,0 +1,11 @@
+[[mcp_servers]]
+name = "Clerk"
+transport = "stdio"
+command = "npx"
+args = ["-y", "mcp-remote", "https://mcp.clerk.com/mcp"]
+
+[[mcp_servers]]
+name = "shadcn"
+transport = "stdio"
+command = "npx"
+args = ["shadcn@latest", "mcp"]

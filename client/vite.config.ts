@@ -12,6 +12,9 @@ export default defineConfig({
       project: "./project.inlang",
       outdir: "./src/shared/lib/i18n",
       emitTsDeclarations: true,
+      emitGitIgnore: true,
+      emitPrettierIgnore: true,
+      includeEslintDisableComment: true,
     }),
     // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
     tanstackRouter({
