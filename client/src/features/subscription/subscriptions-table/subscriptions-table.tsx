@@ -1,5 +1,3 @@
-"use client";
-
 import { FC, useMemo } from "react";
 import {
   useReactTable,
@@ -20,7 +18,7 @@ import { useSubscriptions } from "../../../entities/subscription";
 import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
 
-export const SubscriptionsTable: FC = () => {
+const SubscriptionsTable: FC = () => {
   const { userId } = useAuth();
   const { data: subscriptions, isLoading } = useSubscriptions({
     params: {
@@ -91,3 +89,5 @@ export const SubscriptionsTable: FC = () => {
     </div>
   );
 };
+
+export default SubscriptionsTable;

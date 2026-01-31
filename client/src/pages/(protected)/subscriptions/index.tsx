@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  DashboardLayout,
-  DashboardNavbar,
-} from "../../../widgets/dashboard-layout";
-import { SubscriptionsTable } from "@/features/subscription/subscriptions-table";
+import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
+import { SubscriptionsWidget } from "@/widgets/subscriptions-widget";
+import { NuqsAdapter } from "nuqs/adapters/react";
 
 export const Route = createFileRoute("/(protected)/subscriptions/")({
   component: SubscriptionsPage,
@@ -12,7 +10,9 @@ export const Route = createFileRoute("/(protected)/subscriptions/")({
 function SubscriptionsPage() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SubscriptionsTable />
+      <NuqsAdapter>
+        <SubscriptionsWidget />
+      </NuqsAdapter>
     </DashboardLayout>
   );
 }

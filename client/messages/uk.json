@@ -1,5 +1,13 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "subscription_empty_title": "Підписки не знайдено",
+  "subscription_date_renewal": "Поновлення",
+  "subscription_filter_sortBy": "Сортувати за",
+  "subscription_filter_sort_renewal": "Дата поновлення",
+  "subscription_filter_sort_name": "Назва",
+  "subscription_filter_sort_cost": "Вартість",
+  "common_actions_filter": "Фільтр",
+  "common_placeholders_search": "Пошук...",
   "periods_days": "дні",
   "periods_weeks": "тижні",
   "periods_months": "місяці",
