@@ -5,6 +5,7 @@ import {
   isTomorrow,
 } from "date-fns";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import * as m from "@/i18n/messages";
 
 export interface BillDisplayState {
   formattedDate: string;
@@ -13,42 +14,32 @@ export interface BillDisplayState {
 }
 
 export class SubscriptionBillingUtils {
-  static toDisplayState(
-    targetDate: Date,
-    timezone?: string,
-    t?: (key: string, params?: { count: number }) => string,
-  ): BillDisplayState {
+  static toDisplayState(targetDate: Date, timezone?: string): BillDisplayState {
     const now = DateTimezoneUtils.now(timezone);
     const daysUntil = differenceInCalendarDays(targetDate, now);
 
     return {
       formattedDate: format(targetDate, "MMM d, yyyy"),
-      ...this.getUrgencyStyles(targetDate, daysUntil, t),
+      ...this.getUrgencyStyles(targetDate, daysUntil),
     };
   }
 
-  private static getUrgencyStyles(
-    targetDate: Date,
-    daysUntil: number,
-    t?: (key: string, params?: { count: number }) => string,
-  ) {
+  private static getUrgencyStyles(targetDate: Date, daysUntil: number) {
     if (isToday(targetDate)) {
       return {
-        relativeText: t ? t("today") : "Today",
+        relativeText: m.billing_today(),
         colorClass: "text-red-600 font-semibold",
       };
     }
 
     if (isTomorrow(targetDate)) {
       return {
-        relativeText: t ? t("tomorrow") : "Tomorrow",
+        relativeText: m.billing_tomorrow(),
         colorClass: "text-orange-500 font-medium",
       };
     }
 
-    const relativeText = t
-      ? t("inDays", { count: daysUntil })
-      : `in ${daysUntil} days`;
+    const relativeText = m.billing_inDays({ count: daysUntil });
 
     if (daysUntil <= 3) {
       return { relativeText, colorClass: "text-red-500 font-medium" };

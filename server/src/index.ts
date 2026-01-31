@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { clerkAuth } from "./middleware/auth";
 import { subscriptionRouter } from "./routes/subscriptions";
+import { userRouter } from "./routes/user";
 
 const corsOrigins = [process.env.CLIENT_ORIGIN ?? "http://localhost:5173"];
 
@@ -18,6 +19,7 @@ export const app = new Hono()
   .use("*", clerkAuth)
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)
-  .route("/api/subscriptions", subscriptionRouter);
+  .route("/api/subscriptions", subscriptionRouter)
+  .route("/api/user", userRouter);
 
 export default app;

@@ -1,6 +1,7 @@
 import { useAuth } from "@clerk/clerk-react";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./app/routes/routeTree.gen";
+import { ThemeProvider } from "./app/providers/theme-provider";
 
 const router = createRouter({
   routeTree,
@@ -22,5 +23,9 @@ declare module "@tanstack/react-router" {
 export function App() {
   const auth = useAuth();
 
-  return <RouterProvider router={router} context={{ auth }} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} context={{ auth }} />
+    </ThemeProvider>
+  );
 }

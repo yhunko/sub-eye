@@ -10,11 +10,12 @@ import {
   ItemMedia,
   DropdownMenuLabel,
 } from "@/shared/components";
-import { LogOut } from "lucide-react";
+import { LogOut, Cog } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import { FC } from "react";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
 import * as m from "@/i18n/messages";
+import { Link } from "@tanstack/react-router";
 
 type UserDropdownMenuProps = {
   triggerId: string;
@@ -66,20 +67,20 @@ export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
 
         {/*<DropdownMenuSeparator />*/}
 
-        {/*<DropdownMenuItem className="cursor-pointer" asChild>*/}
-        {/*  <Item size="sm" asChild>*/}
-        {/*    <Link to="/settings">*/}
-        {/*      <ItemMedia>*/}
-        {/*        <Cog />*/}
-        {/*      </ItemMedia>*/}
-        {/*      <ItemContent>*/}
-        {/*        <ItemTitle>{t("user.menu.settings")}</ItemTitle>*/}
-        {/*      </ItemContent>*/}
-        {/*    </Link>*/}
-        {/*  </Item>*/}
-        {/*</DropdownMenuItem>*/}
+        <DropdownMenuItem className="cursor-pointer" asChild>
+          <Item size="sm" asChild>
+            <Link to="/settings">
+              <ItemMedia>
+                <Cog />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>{m.user_menu_settings()}</ItemTitle>
+              </ItemContent>
+            </Link>
+          </Item>
+        </DropdownMenuItem>
 
-        {/*<DropdownMenuSeparator />*/}
+        <DropdownMenuSeparator />
 
         <DropdownMenuItem className="cursor-pointer" asChild>
           <SignOutButton signOutOptions={{ redirectUrl: "/auth/sign-in" }}>

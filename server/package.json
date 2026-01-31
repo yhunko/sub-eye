@@ -12,6 +12,7 @@
     "qstash:dev": "npx @upstash/qstash-cli dev"
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@hono/clerk-auth": "^3.1.0",
     "@hono/valibot-validator": "^0.6.1",
     "@neondatabase/serverless": "^1.0.2",
