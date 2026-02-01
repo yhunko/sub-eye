@@ -3,6 +3,8 @@ import {
   useReactTable,
   getCoreRowModel,
   flexRender,
+  SortingState,
+  OnChangeFn,
 } from "@tanstack/react-table";
 import { useColumns } from "./model/columns";
 import {
@@ -14,31 +16,95 @@ import {
   TableCell,
 } from "@/shared/components";
 import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
-import { useSubscriptions } from "../../../entities/subscription";
+import {
+  useSubscriptions,
+  subscriptionsQueryParsers,
+  SubscriptionsSearch,
+} from "@/entities/subscription";
 import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
+import { useQueryStates } from "nuqs";
+import { keepPreviousData } from "@tanstack/react-query";
+import { SubscriptionSortField } from "@shared/domains/subscription";
+import * as m from "@/i18n/messages";
+import { TableBodyLoader } from "@/shared/ui";
 
 const SubscriptionsTable: FC = () => {
+  const [filters, setFilters] = useQueryStates(subscriptionsQueryParsers, {
+    history: "replace",
+  });
+
+  const { search, sortBy, direction } = filters;
+
+  const queryParams = useMemo(() => {
+    const trimmedSearch = search.trim();
+
+    return {
+      sortBy,
+      direction,
+      ...(trimmedSearch ? { search: trimmedSearch } : {}),
+    };
+  }, [direction, search, sortBy]);
+
   const { userId } = useAuth();
-  const { data: subscriptions, isLoading } = useSubscriptions({
+  const {
+    data: subscriptions,
+    isLoading,
+    isPlaceholderData,
+  } = useSubscriptions({
     params: {
       userId: userId!,
+      queryParams,
+    },
+    options: {
+      placeholderData: keepPreviousData,
     },
   });
 
   const columns = useColumns();
   const data = useMemo(() => subscriptions ?? [], [subscriptions]);
+
+  const sorting: SortingState = useMemo(
+    () => [{ id: sortBy, desc: direction === "desc" }],
+    [sortBy, direction],
+  );
+
+  const onSortingChange: OnChangeFn<SortingState> = (updater) => {
+    const nextSorting =
+      typeof updater === "function" ? updater(sorting) : updater;
+    const sort = nextSorting[0];
+
+    if (sort) {
+      void setFilters({
+        sortBy: sort.id as SubscriptionSortField,
+        direction: sort.desc ? "desc" : "asc",
+      });
+    }
+  };
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
+    enableSortingRemoval: false,
+    state: {
+      sorting,
+    },
+    onSortingChange,
   });
 
-  const isTableLoading = isLoading;
+  const isTableLoading = isLoading || isPlaceholderData;
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <SubscriptionsSearch
+          placeholder={m.common_placeholders_search()}
+          className="max-w-sm"
+          loading={isTableLoading}
+        />
+      </div>
       <div className="relative overflow-hidden rounded-md border">
         <Table className={cn(isTableLoading && "pointer-events-none")}>
           <TableHeader>
@@ -61,6 +127,10 @@ const SubscriptionsTable: FC = () => {
             ))}
           </TableHeader>
           <TableBody className="relative overflow-hidden">
+            <TableBodyLoader
+              columnsLength={columns.length}
+              loading={isTableLoading}
+            />
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
