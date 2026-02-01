@@ -5,9 +5,19 @@ import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
 import { userRouter } from "./routes/user";
 
+type Bindings = {
+  CLERK_SECRET_KEY: string;
+  CLERK_PUBLISHABLE_KEY: string;
+  DATABASE_URL: string;
+  QSTASH_URL: string;
+  QSTASH_TOKEN: string;
+  QSTASH_CURRENT_SIGNING_KEY: string;
+  QSTASH_NEXT_SIGNING_KEY: string;
+};
+
 const corsOrigins = [process.env.CLIENT_ORIGIN ?? "http://localhost:5173"];
 
-export const app = new Hono()
+export const app = new Hono<{ Bindings: Bindings }>()
   .use(
     cors({
       origin: (origin) => {

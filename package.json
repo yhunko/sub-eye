@@ -23,7 +23,8 @@
     "type-check": "turbo type-check",
     "test": "turbo test",
     "postinstall": "turbo build --filter=shared --filter=server",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy": "turbo build && wrangler deploy --minify"
   },
   "keywords": [
     "bun",
@@ -34,13 +35,15 @@
     "turbo"
   ],
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260131.0",
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
     "bun-types": "latest",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "3.8.1",
-    "turbo": "^2.8.1"
+    "turbo": "^2.8.1",
+    "wrangler": "^4.61.1"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
