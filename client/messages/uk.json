@@ -58,5 +58,8 @@
   "components_timezoneSelect_empty": "Часовий пояс не знайдено",
   "billing_today": "Сьогодні",
   "billing_tomorrow": "Завтра",
-  "billing_inDays": "через {count} дні"
+  "billing_inDays": "через {count} дні",
+  "settings_theme_light": "Світла",
+  "settings_theme_dark": "Темна",
+  "settings_theme_system": "Системна"
 }

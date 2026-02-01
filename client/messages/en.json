@@ -58,5 +58,8 @@
   "components_timezoneSelect_empty": "No timezone found",
   "billing_today": "Today",
   "billing_tomorrow": "Tomorrow",
-  "billing_inDays": "in {count} days"
+  "billing_inDays": "in {count} days",
+  "settings_theme_light": "Light",
+  "settings_theme_dark": "Dark",
+  "settings_theme_system": "System"
 }
