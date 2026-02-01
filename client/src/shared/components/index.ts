@@ -21,6 +21,7 @@ export * from "./ui/navigation-menu";
 export * from "./ui/popover";
 export * from "./ui/select";
 export * from "./ui/separator";
+export * from "./ui/skeleton";
 export * from "./ui/sonner";
 export * from "./ui/spinner";
 export * from "./ui/table";

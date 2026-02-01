@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
@@ -14,19 +15,19 @@ type Bindings = {
   QSTASH_NEXT_SIGNING_KEY: string;
 };
 
-// const corsOrigins = [process.env.CLIENT_ORIGIN ?? "http://localhost:5173"];
+const corsOrigins = [process.env.CLIENT_ORIGIN ?? "http://localhost:5173"];
 
 export const app = new Hono<{ Bindings: Bindings }>()
   .basePath("/api")
-  // .use(
-  //   cors({
-  //     origin: (origin) => {
-  //       if (!origin) return "";
-  //       return corsOrigins.includes(origin) ? origin : "";
-  //     },
-  //     credentials: true,
-  //   }),
-  // )
+  .use(
+    cors({
+      origin: (origin) => {
+        if (!origin) return "";
+        return corsOrigins.includes(origin) ? origin : "";
+      },
+      credentials: true,
+    }),
+  )
   .use("*", clerkAuth)
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)

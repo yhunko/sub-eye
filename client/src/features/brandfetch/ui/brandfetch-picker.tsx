@@ -13,7 +13,7 @@ import {
   AvatarImage,
   AvatarFallback,
 } from "@/shared/components";
-import { useDebouncedState, useUncontrolled, useMounted } from "@mantine/hooks";
+import { useDebouncedState, useUncontrolled } from "@mantine/hooks";
 import { useBrandfetchSearch } from "@/entities/brandfetch/api/hooks";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { keepPreviousData } from "@tanstack/react-query";
@@ -35,7 +35,6 @@ interface BrandPickerProps {
 
 export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   const isDesktop = useBreakpoint("lg");
-  const mounted = useMounted();
   const [selected, setSelected] = useUncontrolled({ value, onChange });
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useDebouncedState("", 500);
@@ -75,8 +74,6 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
     ),
     [],
   );
-
-  if (!mounted) return SelectButton;
 
   const Trigger = selected ? (
     <BrandfetchImage domain={selected.domain} />

@@ -1,10 +1,10 @@
 import { FC } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { StatCard } from "../stat-card";
 import { StatCardSkeleton } from "../stat-card-skeleton";
 import * as m from "@/i18n/messages";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const ActiveSubscriptionsCard: FC = () => {
   const { userId } = useAuth();

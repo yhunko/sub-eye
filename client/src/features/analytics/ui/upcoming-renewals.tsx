@@ -1,5 +1,4 @@
 import { FC, useMemo } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { CurrencyBadge } from "@/entities/currency";
@@ -22,6 +21,7 @@ import { BrandfetchImage } from "@/features/brandfetch";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 type UpcomingRenewalsProps = {
   className?: string;

@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   Area,
   AreaChart,
@@ -23,6 +22,7 @@ import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { CurrencyBadge } from "@/entities/currency";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 type MonthlySpendingTrendChartProps = {
   className?: string;

@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   Bar,
   XAxis,
@@ -23,8 +22,12 @@ import {
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import * as m from "@/i18n/messages";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-export const CashFlowChart: FC = () => {
+type CashFlowChartProps = {
+  className?: string;
+};
+export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
   const { userId } = useAuth();
 
   const { data } = useSuspenseQuery(
@@ -42,7 +45,7 @@ export const CashFlowChart: FC = () => {
     CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-2">
           <CardTitle>{m.analytics_charts_cashFlow_title()}</CardTitle>

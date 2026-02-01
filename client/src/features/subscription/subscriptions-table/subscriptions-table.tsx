@@ -47,11 +47,7 @@ const SubscriptionsTable: FC = () => {
   }, [direction, search, sortBy]);
 
   const { userId } = useAuth();
-  const {
-    data: subscriptions,
-    isLoading,
-    isPlaceholderData,
-  } = useQuery(
+  const { data: subscriptions, isLoading } = useQuery(
     subscriptionsQuery({
       params: {
         userId: userId!,
@@ -96,7 +92,7 @@ const SubscriptionsTable: FC = () => {
     onSortingChange,
   });
 
-  const isTableLoading = isLoading || isPlaceholderData;
+  const isTableLoading = isLoading;
 
   return (
     <div className="flex flex-col gap-3">

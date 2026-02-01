@@ -1,6 +1,5 @@
-import { FC, ComponentProps, useState } from "react";
+import { FC, ComponentProps, useState, lazy, Suspense } from "react";
 import { ChevronsUpDown } from "lucide-react";
-import { useMounted } from "@mantine/hooks";
 import { Button } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import {
@@ -9,7 +8,6 @@ import {
 } from "../lib/use-timezone-options";
 import { TimezoneList } from "./timezone-list";
 import { SharedProps } from "../model/props";
-import { lazyRouteComponent } from "@tanstack/react-router";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 
@@ -42,13 +40,9 @@ function Trigger({
   );
 }
 
-const TimezoneSelectDesktop = lazyRouteComponent(
-  () => import("./timezone-select.desktop"),
-);
+const TimezoneSelectDesktop = lazy(() => import("./timezone-select.desktop"));
 
-const TimezoneSelectMobile = lazyRouteComponent(
-  () => import("./timezone-select.mobile"),
-);
+const TimezoneSelectMobile = lazy(() => import("./timezone-select.mobile"));
 
 interface TimezoneSelectProps extends SharedProps {
   value?: string;
@@ -63,7 +57,6 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
   emptyTitle = m.components_timezoneSelect_empty(),
 }) => {
   const [open, setOpen] = useState(false);
-  const mounted = useMounted();
   const isDesktop = useBreakpoint("md");
   const options = useTimezoneOptions();
 
@@ -87,27 +80,27 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
     <Trigger selectedOption={selectedOption} open={open} disabled={disabled} />
   );
 
-  if (!mounted) {
-    return _Trigger;
-  }
-
   if (isDesktop) {
     return (
-      <TimezoneSelectDesktop
+      <Suspense fallback={_Trigger}>
+        <TimezoneSelectDesktop
+          open={open}
+          onOpenChange={setOpen}
+          Trigger={_Trigger}
+          Content={content}
+        />
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={_Trigger}>
+      <TimezoneSelectMobile
         open={open}
         onOpenChange={setOpen}
         Trigger={_Trigger}
         Content={content}
       />
-    );
-  }
-
-  return (
-    <TimezoneSelectMobile
-      open={open}
-      onOpenChange={setOpen}
-      Trigger={_Trigger}
-      Content={content}
-    />
+    </Suspense>
   );
 };
