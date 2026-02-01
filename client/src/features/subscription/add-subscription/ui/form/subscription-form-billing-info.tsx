@@ -76,21 +76,21 @@ export const SubscriptionFormBillingInfo = () => {
                 >
                   <ToggleGroupItem
                     value={SubscriptionPeriod.WEEK}
-                    aria-label="Toggle week"
+                    aria-label={m.periods_weeks_ariaLabel()}
                     onClick={() => setValue("period", SubscriptionPeriod.WEEK)}
                   >
                     {m.periods_weeks()}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value={SubscriptionPeriod.MONTH}
-                    aria-label="Toggle month"
+                    aria-label={m.periods_months_ariaLabel()}
                     onClick={() => setValue("period", SubscriptionPeriod.MONTH)}
                   >
                     {m.periods_months()}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value={SubscriptionPeriod.YEAR}
-                    aria-label="Toggle year"
+                    aria-label={m.periods_years_ariaLabel()}
                     onClick={() => setValue("period", SubscriptionPeriod.YEAR)}
                   >
                     {m.periods_years()}

@@ -8,6 +8,8 @@ import {
 import { CurrenciesMap } from "@shared/domains/currency";
 import { CurrencyUtils } from "@shared/utils/currencyUtils";
 
+import * as m from "@/i18n/messages";
+
 export interface CurrencySelectProps {
   id?: string;
   value: string;
@@ -24,11 +26,9 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
 }) => {
   const currencies = useMemo(() => Array.from(CurrenciesMap.entries()), []);
 
-  const selectedCurrency = CurrencyUtils.normalizeCode(value);
-
-  const selectedCurrencyCode = useMemo(() => {
-    return CurrenciesMap.get(selectedCurrency)?.code ?? "usd";
-  }, [selectedCurrency]);
+  const selectedCurrency = useMemo(() => {
+    return CurrenciesMap.get(CurrencyUtils.normalizeCode(value));
+  }, [value]);
 
   const handleSelect = useCallback(
     (newValue: string) => {
@@ -39,18 +39,21 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
 
   return (
     <Select
-      value={selectedCurrency}
+      value={selectedCurrency?.code}
       onValueChange={handleSelect}
       disabled={disabled}
     >
       <SelectTrigger
         id={id}
-        className="font-mono"
-        aria-label={`Select currency, currently ${selectedCurrencyCode}`}
+        className="flex items-center font-mono"
+        aria-label={m.components_currencySelect_ariaLabel({
+          code: selectedCurrency?.code ?? "usd",
+        })}
       >
-        {selectedCurrencyCode}
+        <span>{selectedCurrency?.flagEmoji}</span>
+        <span>{selectedCurrency?.code}</span>
       </SelectTrigger>
-      <SelectContent className="min-w-24">
+      <SelectContent className="min-w-24" position="popper">
         {currencies.map(([key, currency]) => {
           return (
             <SelectItem key={key} className="flex items-center" value={key}>
