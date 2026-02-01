@@ -1,3 +1,4 @@
+export * from "./domains/analytics";
 export * from "./domains/currency";
 export * from "./domains/subscription";
 export * from "./types";

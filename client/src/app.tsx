@@ -2,11 +2,13 @@ import { useAuth } from "@clerk/clerk-react";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./app/routes/routeTree.gen";
 import { ThemeProvider } from "./app/providers/theme-provider";
+import { queryClient } from "./app/providers/react-query";
 
 const router = createRouter({
   routeTree,
   context: {
     auth: undefined!,
+    queryClient,
   },
   defaultPreload: "intent",
   // This prevents the "flash" of the splash screen for fast users.
@@ -25,7 +27,7 @@ export function App() {
 
   return (
     <ThemeProvider>
-      <RouterProvider router={router} context={{ auth }} />
+      <RouterProvider router={router} context={{ auth, queryClient }} />
     </ThemeProvider>
   );
 }

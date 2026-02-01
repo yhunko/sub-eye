@@ -3,7 +3,7 @@ import { MutationHook } from "@/shared/lib/react-query/types";
 import type { UserPreferences } from "@shared/types";
 import type { UpdateUserPublicMetadata } from "@shared/schemas/userSchemas";
 import { apiClient } from "@/shared/api/client";
-import { subscriptionsKeys } from "../../subscription";
+import { subscriptionsQueryKeys } from "../../subscription";
 import { useUser } from "@clerk/clerk-react";
 
 export const useUpdateUserMetadata = ({
@@ -26,7 +26,7 @@ export const useUpdateUserMetadata = ({
     async onSuccess() {
       await user?.reload();
       await queryClient.invalidateQueries({
-        queryKey: subscriptionsKeys._def,
+        queryKey: subscriptionsQueryKeys._def,
       });
     },
   });

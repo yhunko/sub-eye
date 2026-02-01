@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { clerkAuth } from "./middleware/auth";
+import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
 import { userRouter } from "./routes/user";
 
@@ -19,6 +20,7 @@ export const app = new Hono()
   .use("*", clerkAuth)
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)
+  .route("/api/analytics", analyticsRouter)
   .route("/api/subscriptions", subscriptionRouter)
   .route("/api/user", userRouter);
 

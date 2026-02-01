@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { ReactQueryProvider } from "../../app/providers/react-query-provider";
+import { ReactQueryProvider } from "../../app/providers/react-query";
 import { Toaster } from "@/shared/components";
 
 export const Route = createFileRoute("/(protected)")({
