@@ -3,6 +3,7 @@ import { SettingsFormLayout } from "../settings-form-layout";
 import { ItemGroup } from "@/shared/components";
 import { LocaleSelect } from "../locale-select";
 import { PreferredCurrencySelect } from "../preferred-currency-select";
+import { PreferredTimezoneSelect } from "../preferred-timezone-select";
 
 export const SettingsGeneralForm = () => {
   return (
@@ -11,7 +12,7 @@ export const SettingsGeneralForm = () => {
         <LocaleSelect />
         <ThemeSelect />
         <PreferredCurrencySelect />
-        {/*<PreferredTimezoneSelect />*/}
+        <PreferredTimezoneSelect />
       </ItemGroup>
     </SettingsFormLayout>
   );

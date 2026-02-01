@@ -40,16 +40,7 @@ export const PreferredCurrencySelect: FC = () => {
         <CurrencySelect
           id="preferred-currency"
           value={currencyValue}
-          onChange={(currency) =>
-            mutate(
-              { preferredCurrency: currency },
-              {
-                async onSuccess() {
-                  await user?.reload();
-                },
-              },
-            )
-          }
+          onChange={(currency) => mutate({ preferredCurrency: currency })}
           disabled={isLoading}
         />
       </ItemActions>

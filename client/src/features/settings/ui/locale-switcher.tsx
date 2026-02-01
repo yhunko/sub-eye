@@ -29,7 +29,6 @@ export const LocaleSwitcher: FC = () => {
       {
         onSuccess() {
           startTransition(async () => {
-            await user?.reload();
             setLocale(nextLocale);
           });
         },
