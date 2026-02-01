@@ -77,5 +77,8 @@
   "subscription_table_actionsAriaLabel": "Дії з підпискою",
   "common_loading": "Завантаження...",
   "common_breadcrumb": "Навігаційна стежка",
-  "common_more": "Більше"
+  "common_more": "Більше",
+  "components_timezoneSelect_trigger": "Оберіть часовий пояс...",
+  "components_timezoneSelect_mobile_description": "Знайдіть та оберіть свій часовий пояс",
+  "components_timezoneSelect_mobile_title": "Оберіть часовий пояс"
 }

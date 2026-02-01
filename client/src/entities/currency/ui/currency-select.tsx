@@ -50,8 +50,10 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
           code: selectedCurrency?.code ?? "usd",
         })}
       >
-        <span>{selectedCurrency?.flagEmoji}</span>
-        <span>{selectedCurrency?.code}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-lg">{selectedCurrency?.flagEmoji}</span>
+          <span>{selectedCurrency?.code}</span>
+        </span>
       </SelectTrigger>
       <SelectContent className="min-w-24" position="popper">
         {currencies.map(([key, currency]) => {

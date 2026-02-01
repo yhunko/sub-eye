@@ -77,5 +77,8 @@
   "subscription_table_actionsAriaLabel": "Subscription actions",
   "common_loading": "Loading...",
   "common_breadcrumb": "Breadcrumb",
-  "common_more": "More"
+  "common_more": "More",
+  "components_timezoneSelect_trigger": "Select timezone...",
+  "components_timezoneSelect_mobile_description": "Search and select your timezone",
+  "components_timezoneSelect_mobile_title": "Select Timezone"
 }

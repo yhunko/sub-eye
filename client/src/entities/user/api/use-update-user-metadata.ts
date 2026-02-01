@@ -4,11 +4,13 @@ import type { UserPreferences } from "@shared/types";
 import type { UpdateUserPublicMetadata } from "@shared/schemas/userSchemas";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsKeys } from "../../subscription";
+import { useUser } from "@clerk/clerk-react";
 
 export const useUpdateUserMetadata = ({
   options,
 }: MutationHook<UserPreferences, UpdateUserPublicMetadata> = {}) => {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     ...options,
@@ -22,6 +24,7 @@ export const useUpdateUserMetadata = ({
       return res.json();
     },
     async onSuccess() {
+      await user?.reload();
       await queryClient.invalidateQueries({
         queryKey: subscriptionsKeys._def,
       });
