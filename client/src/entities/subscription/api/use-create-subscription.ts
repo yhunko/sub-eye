@@ -5,7 +5,7 @@ import type {
   SubscriptionDto,
 } from "@shared/domains/subscription";
 import { apiClient } from "@/shared/api/client";
-import { subscriptionsKeys } from "../model/query-keys";
+import { subscriptionsQueryKeys } from "../model/query-keys";
 
 export const useCreateSubscription = ({
   options,
@@ -25,7 +25,7 @@ export const useCreateSubscription = ({
     },
     async onSuccess() {
       await queryClient.invalidateQueries({
-        queryKey: subscriptionsKeys.list._def,
+        queryKey: subscriptionsQueryKeys.list._def,
       });
     },
   });

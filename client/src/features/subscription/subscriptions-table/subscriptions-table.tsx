@@ -17,14 +17,14 @@ import {
 } from "@/shared/components";
 import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
 import {
-  useSubscriptions,
   subscriptionsQueryParsers,
   SubscriptionsSearch,
+  subscriptionsQuery,
 } from "@/entities/subscription";
 import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
 import { useQueryStates } from "nuqs";
-import { keepPreviousData } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { SubscriptionSortField } from "@shared/domains/subscription";
 import * as m from "@/i18n/messages";
 import { TableBodyLoader } from "@/shared/ui";
@@ -51,15 +51,17 @@ const SubscriptionsTable: FC = () => {
     data: subscriptions,
     isLoading,
     isPlaceholderData,
-  } = useSubscriptions({
-    params: {
-      userId: userId!,
-      queryParams,
-    },
-    options: {
-      placeholderData: keepPreviousData,
-    },
-  });
+  } = useQuery(
+    subscriptionsQuery({
+      params: {
+        userId: userId!,
+        queryParams,
+      },
+      options: {
+        placeholderData: keepPreviousData,
+      },
+    }),
+  );
 
   const columns = useColumns();
   const data = useMemo(() => subscriptions ?? [], [subscriptions]);

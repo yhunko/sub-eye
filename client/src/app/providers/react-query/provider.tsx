@@ -1,4 +1,3 @@
-import { QueryClient } from "@tanstack/react-query";
 import { FC, PropsWithChildren } from "react";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
@@ -6,17 +5,7 @@ import {
   Persister,
 } from "@tanstack/react-query-persist-client";
 import { get, set, del } from "idb-keyval";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 10 * 60 * 1000,
-      gcTime: 24 * 60 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { queryClient } from "./client";
 
 function throttle<TArgs extends unknown[]>(
   func: (...args: TArgs) => unknown,

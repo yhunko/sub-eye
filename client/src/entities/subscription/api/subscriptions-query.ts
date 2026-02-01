@@ -1,18 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import type { SubscriptionDto } from "shared";
-import type { QueryHook } from "@/shared/lib/react-query/types";
-import { subscriptionsKeys } from "../model/query-keys";
-import { apiClient } from "@/shared/api/client";
+import { queryOptions } from "@tanstack/react-query";
+import { subscriptionsQueryKeys } from "../model/query-keys";
+import { apiClient } from "../../../shared/api/client";
+import type { QueryHook } from "../../../shared/lib/react-query/types";
+import type { SubscriptionDto } from "@shared/domains/subscription";
 import { UseSubscriptionsParams } from "../model/params";
 
-export const useSubscriptions = ({
+export const subscriptionsQuery = ({
   params,
   options,
 }: QueryHook<SubscriptionDto[], UseSubscriptionsParams>) => {
   const { userId, queryParams = {} } = params;
 
-  return useQuery({
-    queryKey: subscriptionsKeys.list({
+  return queryOptions({
+    queryKey: subscriptionsQueryKeys.list({
       userId,
       queryParams,
     }).queryKey,

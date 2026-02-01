@@ -3,7 +3,7 @@ import { MutationHook } from "@/shared/lib/react-query/types";
 import { IdParam } from "@shared/domains/subscription";
 import { apiClient } from "@/shared/api/client";
 import { ApiVoidReturn } from "@shared/types";
-import { subscriptionsKeys } from "../model/query-keys";
+import { subscriptionsQueryKeys } from "../model/query-keys";
 
 export const useDeleteSubscription = ({
   options,
@@ -21,7 +21,7 @@ export const useDeleteSubscription = ({
     },
     async onSuccess() {
       await queryClient.invalidateQueries({
-        queryKey: subscriptionsKeys.list._def,
+        queryKey: subscriptionsQueryKeys.list._def,
       });
     },
   });
