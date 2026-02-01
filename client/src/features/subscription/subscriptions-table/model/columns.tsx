@@ -9,6 +9,8 @@ import { SubscriptionNextBill } from "../../billing";
 import { CurrencyBadge } from "@/entities/currency";
 import { PeriodBadge } from "../../period";
 
+import * as m from "@/i18n/messages";
+
 export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
   return [
     {
@@ -29,7 +31,7 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       header: ({ column }) => {
         return (
           <SubscriptionTableHead
-            header={"Name"}
+            header={m.subscription_table_column_name()}
             Icon={Type}
             sorted={column.getIsSorted()}
             onSort={column.getToggleSortingHandler()}
@@ -47,7 +49,7 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       header: ({ column }) => {
         return (
           <SubscriptionTableHead
-            header={"Cost"}
+            header={m.subscription_table_column_cost()}
             Icon={CreditCard}
             sorted={column.getIsSorted()}
             onSort={column.getToggleSortingHandler()}
@@ -68,7 +70,12 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
     {
       id: "interval",
       header: () => {
-        return <SubscriptionTableHead header={"Period"} Icon={CalendarSync} />;
+        return (
+          <SubscriptionTableHead
+            header={m.subscription_table_column_period()}
+            Icon={CalendarSync}
+          />
+        );
       },
       cell: ({ row }) => {
         const subscription = row.original;
@@ -88,7 +95,7 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       header: ({ column }) => {
         return (
           <SubscriptionTableHead
-            header={"Next bill"}
+            header={m.subscription_table_column_nextBill()}
             Icon={Calendar1}
             sorted={column.getIsSorted()}
             onSort={column.getToggleSortingHandler()}
@@ -113,7 +120,10 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
         const subscription = row.original;
 
         return (
-          <ButtonGroup aria-label="Subscription actions" className="h-fit">
+          <ButtonGroup
+            aria-label={m.subscription_table_actionsAriaLabel()}
+            className="h-fit"
+          >
             <SubscriptionDeleteButton
               subscriptionId={id}
               subscriptionName={subscription.name}

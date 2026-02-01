@@ -61,5 +61,21 @@
   "billing_inDays": "через {count} дні",
   "settings_theme_light": "Світла",
   "settings_theme_dark": "Темна",
-  "settings_theme_system": "Системна"
+  "settings_theme_system": "Системна",
+  "components_currencySelect_ariaLabel": "Виберіть валюту, зараз {code}",
+  "features_brandfetch_picker_searchAriaLabel": "Пошук та вибір бренду",
+  "features_brandfetch_picker_searchPlaceholder": "Пошук брендів...",
+  "features_brandfetch_picker_noResults": "Бренд не знайдено.",
+  "periods_days_ariaLabel": "Переключити на дні",
+  "periods_weeks_ariaLabel": "Переключити на тижні",
+  "periods_months_ariaLabel": "Переключити на місяці",
+  "periods_years_ariaLabel": "Переключити на роки",
+  "subscription_table_column_name": "Назва",
+  "subscription_table_column_cost": "Вартість",
+  "subscription_table_column_period": "Період",
+  "subscription_table_column_nextBill": "Наступна оплата",
+  "subscription_table_actionsAriaLabel": "Дії з підпискою",
+  "common_loading": "Завантаження...",
+  "common_breadcrumb": "Навігаційна стежка",
+  "common_more": "Більше"
 }

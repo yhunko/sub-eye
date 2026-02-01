@@ -61,5 +61,21 @@
   "billing_inDays": "in {count} days",
   "settings_theme_light": "Light",
   "settings_theme_dark": "Dark",
-  "settings_theme_system": "System"
+  "settings_theme_system": "System",
+  "components_currencySelect_ariaLabel": "Select currency, currently {code}",
+  "features_brandfetch_picker_searchAriaLabel": "Search and select brand",
+  "features_brandfetch_picker_searchPlaceholder": "Search brands...",
+  "features_brandfetch_picker_noResults": "No brand found.",
+  "periods_days_ariaLabel": "Toggle day",
+  "periods_weeks_ariaLabel": "Toggle week",
+  "periods_months_ariaLabel": "Toggle month",
+  "periods_years_ariaLabel": "Toggle year",
+  "subscription_table_column_name": "Name",
+  "subscription_table_column_cost": "Cost",
+  "subscription_table_column_period": "Period",
+  "subscription_table_column_nextBill": "Next bill",
+  "subscription_table_actionsAriaLabel": "Subscription actions",
+  "common_loading": "Loading...",
+  "common_breadcrumb": "Breadcrumb",
+  "common_more": "More"
 }

@@ -21,6 +21,8 @@ import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import { BrandfetchImage } from "./brandfetch-image";
 import { cn } from "@/shared/lib/classes-utils";
 
+import * as m from "@/i18n/messages";
+
 const BrandfetchPickerDesktop = lazy(
   () => import("./brandfetch-picker.desktop"),
 );
@@ -63,10 +65,12 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
       <Button
         size="icon"
         variant="outline"
-        aria-label="Search and select brand"
+        aria-label={m.features_brandfetch_picker_searchAriaLabel()}
       >
         <Search className="size-4" />
-        <span className="sr-only">Search and select brand</span>
+        <span className="sr-only">
+          {m.features_brandfetch_picker_searchAriaLabel()}
+        </span>
       </Button>
     ),
     [],
@@ -122,7 +126,7 @@ function PickerContent({
   return (
     <Command shouldFilter={false} className="h-[60vh] lg:h-auto">
       <CommandInput
-        placeholder="Search brands..."
+        placeholder={m.features_brandfetch_picker_searchPlaceholder()}
         onValueChange={setQuery}
         autoFocus
       />
@@ -131,7 +135,7 @@ function PickerContent({
           {isLoading ? (
             <Spinner className="size-12 md:size-8" />
           ) : (
-            <span>No brand found.</span>
+            <span>{m.features_brandfetch_picker_noResults()}</span>
           )}
         </CommandEmpty>
         <CommandGroup>
