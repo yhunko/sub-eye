@@ -1,11 +1,11 @@
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { lazyRouteComponent } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 
-const SubscriptionsTable = lazyRouteComponent(
+const SubscriptionsTable = lazy(
   () => import("../../features/subscription/subscriptions-table"),
 );
 
-const SubscriptionsListWidget = lazyRouteComponent(
+const SubscriptionsListWidget = lazy(
   () => import("../../features/subscription/subscriptions-list"),
 );
 
@@ -13,8 +13,16 @@ export const SubscriptionsWidget = () => {
   const isDesktop = useBreakpoint("md");
 
   if (isDesktop) {
-    return <SubscriptionsTable />;
+    return (
+      <Suspense>
+        <SubscriptionsTable />
+      </Suspense>
+    );
   }
 
-  return <SubscriptionsListWidget />;
+  return (
+    <Suspense>
+      <SubscriptionsListWidget />
+    </Suspense>
+  );
 };

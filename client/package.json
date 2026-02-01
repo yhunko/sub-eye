@@ -58,6 +58,8 @@
     "tailwindcss": "^4.1.18",
     "valibot": "^1.2.0",
     "vaul": "^1.1.2",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

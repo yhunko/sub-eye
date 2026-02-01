@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
-import { ClerkLoaded, ClerkLoading, ClerkProvider } from "@clerk/clerk-react";
-import { SplashScreen } from "@/shared/ui/splash-screen";
+import { ClerkProvider, ClerkLoading, ClerkLoaded } from "@clerk/clerk-react";
 import { shadcn } from "@clerk/themes";
+import { SplashScreen } from "@/shared/ui";
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 

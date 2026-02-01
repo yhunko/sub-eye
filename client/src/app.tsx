@@ -1,8 +1,8 @@
 import { useAuth } from "@clerk/clerk-react";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./app/routes/routeTree.gen";
-import { ThemeProvider } from "./app/providers/theme-provider";
-import { queryClient } from "./app/providers/react-query";
+import { queryClient, ReactQueryProvider } from "./app/providers/react-query";
+import { Toaster } from "@/shared/components";
 
 const router = createRouter({
   routeTree,
@@ -11,9 +11,7 @@ const router = createRouter({
     queryClient,
   },
   defaultPreload: "intent",
-  // This prevents the "flash" of the splash screen for fast users.
-  defaultPendingMs: 150,
-  defaultPendingMinMs: 500, // If splash shows, keep it for 500ms so it's not jarring
+  scrollRestoration: true,
 });
 
 declare module "@tanstack/react-router" {
@@ -26,8 +24,9 @@ export function App() {
   const auth = useAuth();
 
   return (
-    <ThemeProvider>
+    <ReactQueryProvider>
       <RouterProvider router={router} context={{ auth, queryClient }} />
-    </ThemeProvider>
+      <Toaster richColors />
+    </ReactQueryProvider>
   );
 }

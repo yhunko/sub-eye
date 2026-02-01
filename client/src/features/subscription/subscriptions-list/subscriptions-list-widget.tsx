@@ -30,7 +30,6 @@ const SubscriptionsListWidget = () => {
   const {
     data: subscriptions,
     isLoading,
-    isPlaceholderData,
     isSuccess,
   } = useQuery(
     subscriptionsQuery({
@@ -49,7 +48,7 @@ const SubscriptionsListWidget = () => {
   return (
     <div className="flex min-h-full flex-col gap-4 pb-6">
       <SubscriptionsListToolbar
-        loading={isLoading || isPlaceholderData}
+        loading={isLoading}
         sortBy={sortBy}
         onSortChange={(newSortBy, newDirection) => {
           void setFilters({ sortBy: newSortBy, direction: newDirection });

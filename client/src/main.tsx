@@ -6,13 +6,11 @@ import { App } from "./app";
 
 const rootElement = document.getElementById("root")!;
 
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <StrictMode>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </StrictMode>,
-  );
-}
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <StrictMode>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </StrictMode>,
+);

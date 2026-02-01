@@ -1,11 +1,11 @@
 import { FC } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { StatCardSkeleton } from "../stat-card-skeleton";
 import { StatCard } from "../stat-card";
 import { CurrencyText } from "@/entities/currency";
 import * as m from "@/i18n/messages";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const RemainingThisMonthCard: FC = () => {
   const { userId } = useAuth();

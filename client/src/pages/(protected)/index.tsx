@@ -7,18 +7,12 @@ import {
   StatCards,
   UpcomingRenewals,
 } from "@/features/analytics";
+import { SplashScreen } from "../../shared/ui";
 
 export const Route = createFileRoute("/(protected)/")({
   component: Dashboard,
-  // loader: async ({ context }) => {
-  //   await context.queryClient.ensureQueryData(
-  //     dashboardAnalyticsQuery({
-  //       params: {
-  //         userId: context.auth.userId!,
-  //       },
-  //     }),
-  //   );
-  // },
+  pendingComponent: () => <SplashScreen />,
+  wrapInSuspense: true,
 });
 
 function Dashboard() {
@@ -26,12 +20,8 @@ function Dashboard() {
     <DashboardLayout Navbar={<DashboardNavbar />}>
       <AnalyticsWidget>
         <StatCards className="col-span-full" />
-        <div className="lg:col-span-7">
-          <CashFlowChart />
-        </div>
-        <div className="lg:col-span-5">
-          <UpcomingRenewals className="h-full" />
-        </div>
+        <CashFlowChart className="lg:col-span-7" />
+        <UpcomingRenewals className="h-full lg:col-span-5" />
         <MonthlySpendingTrendChart className="col-span-full" />
       </AnalyticsWidget>
     </DashboardLayout>
