@@ -80,5 +80,8 @@
   "common_more": "More",
   "components_timezoneSelect_trigger": "Select timezone...",
   "components_timezoneSelect_mobile_description": "Search and select your timezone",
-  "components_timezoneSelect_mobile_title": "Select Timezone"
+  "components_timezoneSelect_mobile_title": "Select Timezone",
+  "subscription_table_sort_asc": "{header} (sorted ascending)",
+  "subscription_table_sort_desc": "{header} (sorted descending)",
+  "subscription_table_sort_none": "{header} (click to sort)"
 }

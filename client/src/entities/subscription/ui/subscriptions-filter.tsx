@@ -7,8 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "../../../../shared/components";
-import { cn } from "../../../../shared/lib/classes-utils";
+} from "@/shared/components";
+import { cn } from "@/shared/lib/classes-utils";
 import {
   SubscriptionSortField,
   SortDirection,

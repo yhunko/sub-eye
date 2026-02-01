@@ -80,5 +80,8 @@
   "common_more": "Більше",
   "components_timezoneSelect_trigger": "Оберіть часовий пояс...",
   "components_timezoneSelect_mobile_description": "Знайдіть та оберіть свій часовий пояс",
-  "components_timezoneSelect_mobile_title": "Оберіть часовий пояс"
+  "components_timezoneSelect_mobile_title": "Оберіть часовий пояс",
+  "subscription_table_sort_asc": "{header} (відсортовано за зростанням)",
+  "subscription_table_sort_desc": "{header} (відсортовано за спаданням)",
+  "subscription_table_sort_none": "{header} (натисніть, щоб відсортувати)"
 }

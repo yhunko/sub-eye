@@ -1,4 +1,5 @@
 import * as react from "react";
+import * as m from "@/i18n/messages";
 import { FC, PropsWithChildren, MouseEventHandler } from "react";
 import {
   LucideProps,
@@ -31,10 +32,10 @@ export const SubscriptionTableHead: FC<
 
   const sortLabel =
     sorted === "asc"
-      ? `${header} (sorted ascending)`
+      ? m.subscription_table_sort_asc({ header })
       : sorted === "desc"
-        ? `${header} (sorted descending)`
-        : `${header} (click to sort)`;
+        ? m.subscription_table_sort_desc({ header })
+        : m.subscription_table_sort_none({ header });
 
   return (
     <button

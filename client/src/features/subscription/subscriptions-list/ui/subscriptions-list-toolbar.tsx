@@ -1,6 +1,8 @@
 import * as React from "react";
-import { SubscriptionsFilter } from "./subscriptions-filter";
-import { SubscriptionsSearch } from "@/entities/subscription";
+import {
+  SubscriptionsSearch,
+  SubscriptionsFilter,
+} from "@/entities/subscription";
 import type {
   SubscriptionSortField,
   SortDirection,
