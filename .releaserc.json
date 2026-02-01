@@ -26,10 +26,7 @@
       "@semantic-release/github",
       {
         "successComment": false,
-        "addReleases": "bottom",
-        "assets": [
-          { "path": ".next/standalone/**", "label": "Standalone Build" }
-        ]
+        "addReleases": "bottom"
       }
     ],
     [
