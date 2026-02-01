@@ -1,4 +1,6 @@
-import { FC } from "react";
+"use client";
+
+import { FC, startTransition } from "react";
 import {
   Select,
   SelectTrigger,
@@ -7,7 +9,7 @@ import {
   SelectValue,
 } from "@/shared/components";
 import { useUser } from "@clerk/clerk-react";
-import { useUpdateUserMetadata } from "@/entities/user";
+import { useUpdateUserMetadata } from "../../../entities/user";
 import { setLocale } from "@/i18n/runtime";
 
 const supportedLocales = [
@@ -25,9 +27,11 @@ export const LocaleSwitcher: FC = () => {
         locale: nextLocale,
       },
       {
-        async onSuccess() {
-          await user?.reload();
-          setLocale(nextLocale);
+        onSuccess() {
+          startTransition(async () => {
+            await user?.reload();
+            setLocale(nextLocale);
+          });
         },
       },
     );
