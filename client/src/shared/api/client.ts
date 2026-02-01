@@ -1,6 +1,8 @@
 import { honoClient } from "@server/client";
 
-export const apiClient = honoClient(import.meta.env.VITE_API_URL, {
+const SERVER_URL = import.meta.env.DEV ? "http://localhost:3000/api" : "/api";
+
+export const apiClient = honoClient(SERVER_URL, {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
     fetch(input, {
       ...init,
