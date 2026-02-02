@@ -12,18 +12,14 @@ import { UserAvatar } from "../../auth";
 import { ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-export const ProfileCard: FC = () => {
+export const UserProfileCard: FC = () => {
   const { user } = useUser();
 
   const fullName = user?.fullName ?? user?.username;
   const email = user?.primaryEmailAddress?.emailAddress;
 
   return (
-    <Item
-      size="sm"
-      className="bg-card text-card-foreground rounded-xl border border-solid border-gray-200 px-6 py-3 shadow-sm"
-      asChild
-    >
+    <Item variant="outline" size="sm" asChild>
       <Link to="/settings/account">
         <ItemMedia>
           <UserAvatar className="size-16!" />
