@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   Item,
   ItemMedia,
@@ -12,8 +9,10 @@ import {
   ItemActions,
   ItemGroup,
 } from "@/shared/components";
-import { Cog, UserRound, ChevronRight } from "lucide-react";
+import { Cog, ChevronRight } from "lucide-react";
 import * as m from "@/i18n/messages";
+import { SettingsLayout } from "@/widgets/settings-layout";
+import { ProfileCard } from "../../../features/settings";
 
 export const Route = createFileRoute("/(protected)/settings/")({
   component: SettingsPage,
@@ -26,16 +25,13 @@ const pages = [
   //   path: "/settings/notifications",
   //   Icon: BellRing,
   // },
-  { key: m.settings_pages_account, path: "/settings/account", Icon: UserRound },
 ] as const;
 
 function SettingsPage() {
   return (
-    <DashboardLayout Navbar={<DashboardNavbar />}>
-      <Card className="mx-auto max-w-lg gap-2">
-        <CardHeader className="px-6">
-          <CardTitle>{m.settings_title()}</CardTitle>
-        </CardHeader>
+    <SettingsLayout title={m.settings_title()}>
+      <ProfileCard />
+      <Card className="mx-auto w-full max-w-lg gap-2">
         <CardContent className="px-2">
           <ItemGroup>
             {pages.map(({ key, path, Icon }) => (
@@ -56,6 +52,6 @@ function SettingsPage() {
           </ItemGroup>
         </CardContent>
       </Card>
-    </DashboardLayout>
+    </SettingsLayout>
   );
 }

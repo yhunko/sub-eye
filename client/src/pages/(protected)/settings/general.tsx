@@ -10,7 +10,7 @@ import {
   CardContent,
 } from "@/shared/components";
 import { DashboardNavbar, DashboardLayout } from "@/widgets/dashboard-layout";
-import { SettingsLayout } from "@/widgets/settings-layout";
+import { SettingsFormLayout } from "@/widgets/settings-layout";
 import { createFileRoute } from "@tanstack/react-router";
 import * as m from "@/i18n/messages";
 
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/(protected)/settings/general")({
 function SettingsGeneralPage() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SettingsLayout
+      <SettingsFormLayout
         Breadcrumbs={
           <>
             <BreadcrumbSeparator />
@@ -40,7 +40,7 @@ function SettingsGeneralPage() {
             <SettingsGeneralForm />
           </CardContent>
         </Card>
-      </SettingsLayout>
+      </SettingsFormLayout>
     </DashboardLayout>
   );
 }
