@@ -47,13 +47,22 @@ export default defineConfig({
         orientation: "portrait",
         icons: [
           {
-            src: "/assets/pwa/pwa-maskable-192x192.png",
-            sizes: "192x192",
+            src: "/assets/pwa/pwa-64x64.png",
+            sizes: "64x64",
             type: "image/png",
-            purpose: "maskable",
           },
           {
-            src: "/assets/pwa/pwa-maskable-512x512.png",
+            src: "/assets/pwa/pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "/assets/pwa/pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+          {
+            src: "/assets/pwa/maskable-icon-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
