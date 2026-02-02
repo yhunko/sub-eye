@@ -39,7 +39,7 @@ export default defineConfig({
       manifest: {
         name: "SubEye",
         short_name: "SubEye",
-        description: "Track your subscriptions seamlessly.",
+        description: "Minimalist subscriptions tracker app",
         theme_color: "#33A453",
         background_color: "#ffffff",
         display: "standalone",
