@@ -42,7 +42,7 @@ export const ReactQueryProvider: FC<PropsWithChildren> = ({ children }) => {
       client={queryClient}
       persistOptions={{
         persister: indexedDBPersister,
-        buster: "v1",
+        buster: import.meta.env.APP_VERSION,
         maxAge: 1000 * 60 * 60 * 24,
       }}
     >
