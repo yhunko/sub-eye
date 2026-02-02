@@ -40,29 +40,20 @@ export default defineConfig({
         name: "SubEye",
         short_name: "SubEye",
         description: "Minimalist subscriptions tracker app",
-        theme_color: "#33A453",
+        theme_color: "#ffffff",
         background_color: "#ffffff",
         display: "standalone",
         start_url: "/",
         orientation: "portrait",
         icons: [
           {
-            src: "/assets/pwa/pwa-64x64.png",
-            sizes: "64x64",
-            type: "image/png",
-          },
-          {
-            src: "/assets/pwa/pwa-192x192.png",
+            src: "/assets/pwa/web-app-manifest-192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "maskable",
           },
           {
-            src: "/assets/pwa/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "/assets/pwa/maskable-icon-512x512.png",
+            src: "/assets/pwa/web-app-manifest-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
