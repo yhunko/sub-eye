@@ -41,6 +41,7 @@
     "@tanstack/react-router-devtools": "^1.157.16",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.18",
+    "@tanstack/valibot-adapter": "^1.157.18",
     "@vvo/tzdb": "^6.198.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -48,6 +49,7 @@
     "date-fns": "^4.1.0",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.563.0",
+    "motion": "^12.30.0",
     "nuqs": "^2.8.7",
     "react": "^19.2.3",
     "react-day-picker": "^9.13.0",
@@ -62,8 +64,7 @@
     "valibot": "^1.2.0",
     "vaul": "^1.1.2",
     "vite-plugin-pwa": "^1.2.0",
-    "workbox-window": "^7.4.0",
-    "zod": "^4.3.6"
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@clerk/types": "^4.101.14",

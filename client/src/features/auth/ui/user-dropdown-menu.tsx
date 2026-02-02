@@ -15,13 +15,16 @@ import { UserAvatar } from "./user-avatar";
 import { FC } from "react";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
 import * as m from "@/i18n/messages";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 
 type UserDropdownMenuProps = {
   triggerId: string;
 };
 
 export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
+  const pathname = useLocation({
+    select: (location) => location.pathname,
+  });
   const { user } = useUser();
 
   const fullName = user?.fullName ?? user?.username;
@@ -69,7 +72,7 @@ export const UserDropdownMenu: FC<UserDropdownMenuProps> = ({ triggerId }) => {
 
         <DropdownMenuItem className="cursor-pointer" asChild>
           <Item size="sm" asChild>
-            <Link to="/settings">
+            <Link to="/settings" search={{ from: pathname }}>
               <ItemMedia>
                 <Cog />
               </ItemMedia>
