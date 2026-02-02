@@ -7,7 +7,12 @@ import path from "node:path";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+import { version } from "../package.json";
+
 export default defineConfig({
+  define: {
+    "import.meta.env.APP_VERSION": JSON.stringify(version),
+  },
   plugins: [
     paraglideVitePlugin({
       project: "./project.inlang",
