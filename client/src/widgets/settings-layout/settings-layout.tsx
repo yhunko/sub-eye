@@ -15,13 +15,14 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
   children,
 }) => {
   return (
-    <div className="container flex flex-col gap-2">
+    <div className="container flex min-h-svh flex-col gap-2">
       <div className="relative flex h-14 flex-row items-center justify-center">
         {backTo && (
           <Button
             variant="ghost"
             className="absolute left-0 rounded-full bg-gray-500/10 backdrop-blur-md"
             size="icon-lg"
+            asChild
           >
             <Link to={backTo}>
               <ChevronLeft />
@@ -32,7 +33,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
         <h1 className="text-2xl">{title}</h1>
       </div>
 
-      <div className="flex w-full flex-col gap-2">{children}</div>
+      <div className="flex w-full grow flex-col gap-2">{children}</div>
 
       <MobileBottomNav />
     </div>

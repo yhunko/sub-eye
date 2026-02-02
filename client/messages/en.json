@@ -49,6 +49,7 @@
   "settings_pages_notifications": "Notifications",
   "settings_pages_account": "Account",
   "settings_general_title": "General Preferences",
+  "settings_general_form_title": "App Preferences",
   "settings_general_subtitle": "Customize language, theme, currency, and timezone.",
   "settings_general_locale_label": "Language",
   "settings_general_theme_label": "Theme",
