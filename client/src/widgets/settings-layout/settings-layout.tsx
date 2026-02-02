@@ -15,7 +15,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
   children,
 }) => {
   return (
-    <div className="container flex min-h-svh flex-col gap-2">
+    <div className="container flex min-h-svh w-full max-w-xl flex-col gap-2">
       <div className="relative flex h-14 flex-row items-center justify-center">
         {backTo && (
           <Button
