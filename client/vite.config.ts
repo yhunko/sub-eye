@@ -31,8 +31,57 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 3000000,
       },
-      includeAssets: ["favicon.ico", "apple-touch-icon.png"],
-      manifest: false,
+      includeAssets: [
+        "assets/favicon.ico",
+        "assets/apple-touch-icon.png",
+        "assets/*.{png,svg,ico}",
+      ],
+      manifest: {
+        name: "SubEye",
+        short_name: "SubEye",
+        description: "Track your subscriptions seamlessly.",
+        theme_color: "#33A453",
+        background_color: "#ffffff",
+        display: "standalone",
+        start_url: "/",
+        orientation: "portrait",
+        icons: [
+          {
+            src: "/assets/pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "/assets/pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+          {
+            src: "/assets/pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/assets/pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/assets/pwa-maskable-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
+          },
+          {
+            src: "/assets/pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
     }),
     // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
     tanstackRouter({
