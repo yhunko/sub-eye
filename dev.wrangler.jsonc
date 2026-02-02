@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "subeye-dev",
+  "main": "./server/src/index.ts",
+  "compatibility_date": "2025-05-25",
+  "route": {
+    "pattern": "dev.subeye.cc/*",
+    "custom_domain": true
+  },
+  "assets": {
+    "directory": "./client/dist",
+    "not_found_handling": "single-page-application"
+  },
+  "tsconfig": "./tsconfig.json",
+  "compatibility_flags": ["nodejs_compat"]
+}

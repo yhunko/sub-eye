@@ -24,7 +24,7 @@
     "test": "turbo test",
     "postinstall": "turbo build --filter=shared --filter=server",
     "prepare": "husky",
-    "deploy:dev": "turbo build && wrangler -c wrangler-dev.jsonc deploy --minify"
+    "deploy:dev": "turbo build && wrangler -c dev.wrangler.jsonc deploy --minify"
   },
   "keywords": [
     "bun",
