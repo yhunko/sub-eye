@@ -1,1 +1,2 @@
-export * from "./ui/user-dropdown-menu";
+export { UserAvatar } from "./ui/user-avatar";
+export { UserDropdownMenu } from "./ui/user-dropdown-menu";

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
-import { SettingsLayout } from "@/widgets/settings-layout";
+import { SettingsFormLayout } from "@/widgets/settings-layout";
 import {
   BreadcrumbItem,
   BreadcrumbPage,
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/(protected)/settings/account")({
 function SettingsAccountPage() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <SettingsLayout
+      <SettingsFormLayout
         className="flex max-w-220 flex-col px-4 md:px-0"
         Breadcrumbs={
           <>
@@ -30,7 +30,7 @@ function SettingsAccountPage() {
         <div className="flex justify-center">
           <UserProfile />
         </div>
-      </SettingsLayout>
+      </SettingsFormLayout>
     </DashboardLayout>
   );
 }

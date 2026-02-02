@@ -1,10 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@fontsource-variable/nunito";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-nunito: var(--font-nunito);
+  --font-nunito: "Nunito Variable", sans-serif;
   --font-sans: var(--font-nunito);
   --font-display: var(--font-nunito);
 

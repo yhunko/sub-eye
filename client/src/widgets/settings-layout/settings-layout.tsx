@@ -1,41 +1,40 @@
-import { FC, PropsWithChildren, ReactNode } from "react";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-} from "@/shared/components";
-import { cn } from "@/shared/lib/classes-utils";
+import { FC, PropsWithChildren } from "react";
+import { Button } from "../../shared/components";
+import { ChevronLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import * as m from "@/i18n/messages";
+import { MobileBottomNav } from "../mobile-bottom-nav";
 
-export type SettingsLayoutProps = {
-  Breadcrumbs: ReactNode;
-  className?: string;
+type SettingsLayoutProps = {
+  title?: string;
+  backTo?: string;
 };
 
 export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
-  Breadcrumbs,
-  className,
+  title = " ",
+  backTo,
   children,
 }) => {
   return (
-    <div className="flex h-full w-full justify-center">
-      <div className={cn("w-full max-w-xl space-y-4", className)}>
-        <Breadcrumb className="mx-1">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/settings">{m.user_menu_settings()}</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
+    <div className="container flex flex-col gap-2">
+      <div className="relative flex h-14 flex-row items-center justify-center">
+        {backTo && (
+          <Button
+            variant="ghost"
+            className="absolute left-0 rounded-full bg-gray-500/10 backdrop-blur-md"
+            size="icon-lg"
+          >
+            <Link to={backTo}>
+              <ChevronLeft />
+            </Link>
+          </Button>
+        )}
 
-            {Breadcrumbs}
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        {children}
+        <h1 className="text-2xl">{title}</h1>
       </div>
+
+      <div className="flex w-full flex-col gap-2">{children}</div>
+
+      <MobileBottomNav />
     </div>
   );
 };

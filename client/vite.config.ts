@@ -57,18 +57,6 @@ export default defineConfig({
             type: "image/png",
           },
           {
-            src: "/assets/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/assets/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
             src: "/assets/pwa-maskable-192x192.png",
             sizes: "192x192",
             type: "image/png",

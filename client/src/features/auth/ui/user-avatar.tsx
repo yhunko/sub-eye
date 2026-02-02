@@ -6,8 +6,10 @@ import {
 } from "@/shared/components";
 import { useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { UserIcon } from "lucide-react";
+import { FC, ComponentProps } from "react";
 
-export const UserAvatar = () => {
+type UserAvatarProps = ComponentProps<typeof Avatar>;
+export const UserAvatar: FC<UserAvatarProps> = (props) => {
   const { user, isLoaded } = useUser();
 
   const Fallback = (
@@ -18,7 +20,7 @@ export const UserAvatar = () => {
 
   if (!isLoaded)
     return (
-      <Avatar>
+      <Avatar {...props}>
         <AvatarFallback>
           <Spinner />
         </AvatarFallback>
@@ -28,13 +30,13 @@ export const UserAvatar = () => {
   return (
     <>
       <SignedIn treatPendingAsSignedOut>
-        <Avatar>
+        <Avatar {...props}>
           <AvatarImage src={user?.imageUrl} />
           {Fallback}
         </Avatar>
       </SignedIn>
       <SignedOut>
-        <Avatar>{Fallback}</Avatar>
+        <Avatar {...props}>{Fallback}</Avatar>
       </SignedOut>
     </>
   );
