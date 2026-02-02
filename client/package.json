@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "paraglide-js compile --project project.inlang && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "type-check": "tsc -b --pretty",
+    "type-check": "bun run prepare && tsc -b --pretty",
     "preview": "vite preview",
-    "machine-translate": "inlang machine translate --project project.inlang"
+    "machine-translate": "inlang machine translate --project project.inlang",
+    "prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/shared/lib/i18n --emit-ts-declarations"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.60.0",
