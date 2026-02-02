@@ -49,6 +49,7 @@
   "settings_pages_notifications": "Сповіщення",
   "settings_pages_account": "Обліковий запис",
   "settings_general_title": "Загальні налаштування",
+  "settings_general_form_title": "Налаштування застосунку",
   "settings_general_subtitle": "Налаштуйте мову, тему, валюту та часовий пояс.",
   "settings_general_locale_label": "Мова",
   "settings_general_theme_label": "Тема",
