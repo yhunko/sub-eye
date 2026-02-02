@@ -4,7 +4,7 @@
   "main": "./server/src/index.ts",
   "compatibility_date": "2025-05-25",
   "route": {
-    "pattern": "dev.subeye.cc/*",
+    "pattern": "dev.subeye.cc",
     "custom_domain": true
   },
   "assets": {
