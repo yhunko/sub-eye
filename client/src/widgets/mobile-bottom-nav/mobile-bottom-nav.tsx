@@ -32,7 +32,7 @@ export const MobileBottomNav: FC = () => {
   ];
 
   return (
-    <nav className="bg-background/80 supports-backdrop-filter:bg-background/60 pb-safe fixed right-0 bottom-0 left-0 z-50 block border-t backdrop-blur md:hidden">
+    <nav className="bg-background/80 supports-backdrop-filter:bg-background/40 pb-safe fixed right-2 bottom-4 left-2 z-50 block rounded-full border border-t backdrop-blur-xs sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 md:hidden">
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map((item) => {
           const Icon = item.icon;

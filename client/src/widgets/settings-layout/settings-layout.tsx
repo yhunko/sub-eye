@@ -53,7 +53,13 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
           <h1 className="text-2xl">{title}</h1>
         </div>
 
-        <div className="flex w-full grow flex-col gap-2">{children}</div>
+        <div className="flex w-full grow flex-col gap-2">
+          {children}
+
+          <div className="mt-2 self-center text-sm">
+            v{import.meta.env.APP_VERSION}
+          </div>
+        </div>
       </div>
 
       <MobileBottomNav />
