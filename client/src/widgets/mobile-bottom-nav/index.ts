@@ -1,1 +1,1 @@
-export { MobileBottomNav } from "./mobile-bottom-nav.tsx";
+export { default } from "./mobile-bottom-nav.tsx";

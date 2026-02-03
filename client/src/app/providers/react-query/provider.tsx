@@ -21,6 +21,10 @@ const asyncPersister = createAsyncStoragePersister({
 });
 
 export const ReactQueryProvider: FC<PropsWithChildren> = ({ children }) => {
+  const handleSuccess = async () => {
+    await queryClient.resumePausedMutations();
+  };
+
   return (
     <PersistQueryClientProvider
       client={queryClient}
@@ -29,9 +33,7 @@ export const ReactQueryProvider: FC<PropsWithChildren> = ({ children }) => {
         buster: import.meta.env.APP_VERSION,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       }}
-      onSuccess={async () => {
-        await queryClient.resumePausedMutations();
-      }}
+      onSuccess={handleSuccess}
     >
       {children}
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />

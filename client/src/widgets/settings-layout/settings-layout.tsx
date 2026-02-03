@@ -4,11 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 
-const MobileBottomNav = lazy(() =>
-  import("../mobile-bottom-nav").then((module) => ({
-    default: module.MobileBottomNav,
-  })),
-);
+const MobileBottomNav = lazy(() => import("../mobile-bottom-nav"));
 const DesktopNavbar = lazy(() =>
   import("../dashboard-layout/navbar/desktop-navbar").then((module) => ({
     default: module.DesktopNavbar,
@@ -30,7 +26,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
   return (
     <div className="flex min-h-svh w-full flex-col gap-2">
       {isDesktop && (
-        <Suspense fallback={<div className="h-14 w-full" />}>
+        <Suspense>
           <DesktopNavbar />
         </Suspense>
       )}
@@ -62,7 +58,9 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
         </div>
       </div>
 
-      <MobileBottomNav />
+      <Suspense>
+        <MobileBottomNav />
+      </Suspense>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { AddSubscriptionForm } from "@/features/subscription/add-subscription";
+import { EditSubscriptionForm } from "@/features/subscription/edit-subscription";
 import { Card, CardContent } from "@/shared/components";
 import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
 import { createFileRoute } from "@tanstack/react-router";
@@ -14,7 +14,7 @@ function EditSubscriptionPage() {
     <DashboardLayout Navbar={<DashboardNavbar />}>
       <Card className="mx-auto max-w-screen-sm">
         <CardContent>
-          <AddSubscriptionForm subscriptionId={id} />
+          <EditSubscriptionForm subscriptionId={id} />
         </CardContent>
       </Card>
     </DashboardLayout>

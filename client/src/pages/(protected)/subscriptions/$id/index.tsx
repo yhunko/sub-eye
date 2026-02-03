@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SubscriptionOverview } from "@/features/subscription/subscription-overview";
 import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
+import { Suspense } from "react";
+import {
+  SubscriptionOverview,
+  SubscriptionOverviewSkeleton,
+} from "@/features/subscription/subscription-overview";
 
 export const Route = createFileRoute("/(protected)/subscriptions/$id/")({
   component: SubscriptionPage,
@@ -12,7 +16,9 @@ function SubscriptionPage() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
       <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
-        <SubscriptionOverview subscriptionId={id} />
+        <Suspense fallback={<SubscriptionOverviewSkeleton />}>
+          <SubscriptionOverview subscriptionId={id} />
+        </Suspense>
       </div>
     </DashboardLayout>
   );
