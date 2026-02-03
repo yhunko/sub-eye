@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
-import { SubscriptionDeleteButton } from "./subscription-delete-button";
+import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
 import { SubscriptionPeriod } from "@shared/types";
 import { cn } from "@/shared/lib/classes-utils";
 import {

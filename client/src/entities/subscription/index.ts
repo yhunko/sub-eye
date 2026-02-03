@@ -1,5 +1,6 @@
 export { useCreateSubscription } from "./api/use-create-subscription";
 export { useDeleteSubscription } from "./api/use-delete-subscription";
+export { subscriptionQuery } from "./api/subscription-query";
 export { subscriptionsQuery } from "./api/subscriptions-query";
 export { useUpdateSubscription } from "./api/use-update-subscription";
 export { subscriptionsQueryKeys } from "./model/query-keys";
