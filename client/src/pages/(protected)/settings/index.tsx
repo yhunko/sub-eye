@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Card,
-  CardContent,
   Item,
   ItemMedia,
   ItemContent,
@@ -9,10 +7,9 @@ import {
   ItemActions,
   ItemGroup,
 } from "@/shared/components";
-import { Cog, ChevronRight } from "lucide-react";
+import { Cog, ChevronRight, BellRing } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { SettingsLayout } from "@/widgets/settings-layout";
-import { UserProfileCard } from "../../../features/settings";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { object, optional, string } from "valibot";
 
@@ -32,6 +29,11 @@ const pages = [
   //   path: "/settings/notifications",
   //   Icon: BellRing,
   // },
+  {
+    key: m.settings_pages_account,
+    path: "/settings/account",
+    Icon: BellRing,
+  },
 ] as const;
 
 function SettingsPage() {
@@ -39,28 +41,23 @@ function SettingsPage() {
 
   return (
     <SettingsLayout title={m.settings_title()} backTo={from}>
-      <UserProfileCard />
-      <Card className="mx-auto w-full max-w-xl gap-2 py-1">
-        <CardContent className="px-2">
-          <ItemGroup>
-            {pages.map(({ key, path, Icon }) => (
-              <Item key={path} size="default" asChild>
-                <Link to={path}>
-                  <ItemMedia variant="icon">
-                    <Icon />
-                  </ItemMedia>
-                  <ItemContent>
-                    <ItemTitle>{key()}</ItemTitle>
-                  </ItemContent>
-                  <ItemActions>
-                    <ChevronRight className="size-4" />
-                  </ItemActions>
-                </Link>
-              </Item>
-            ))}
-          </ItemGroup>
-        </CardContent>
-      </Card>
+      <ItemGroup className="gap-3">
+        {pages.map(({ key, path, Icon }) => (
+          <Item key={path} variant="outline" size="default" asChild>
+            <Link to={path}>
+              <ItemMedia variant="icon">
+                <Icon />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>{key()}</ItemTitle>
+              </ItemContent>
+              <ItemActions>
+                <ChevronRight className="size-4" />
+              </ItemActions>
+            </Link>
+          </Item>
+        ))}
+      </ItemGroup>
     </SettingsLayout>
   );
 }
