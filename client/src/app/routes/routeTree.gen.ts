@@ -16,10 +16,10 @@ import { Route as AuthSignInRouteImport } from "./../../pages/auth/sign-in"
 import { Route as protectedSubscriptionsIndexRouteImport } from "./../../pages/(protected)/subscriptions/index"
 import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(protected)/settings/index"
 import { Route as protectedSubscriptionsAddRouteImport } from "./../../pages/(protected)/subscriptions/add"
-import { Route as protectedSubscriptionsIdRouteImport } from "./../../pages/(protected)/subscriptions/$id"
 import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(protected)/settings/general"
 import { Route as protectedSettingsAccountRouteImport } from "./../../pages/(protected)/settings/account"
-import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id.edit"
+import { Route as protectedSubscriptionsIdRouteRouteImport } from "./../../pages/(protected)/subscriptions/$id/route"
+import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
 
 const protectedRouteRoute = protectedRouteRouteImport.update({
   id: "/(protected)",
@@ -57,12 +57,6 @@ const protectedSubscriptionsAddRoute =
     path: "/subscriptions/add",
     getParentRoute: () => protectedRouteRoute,
   } as any)
-const protectedSubscriptionsIdRoute =
-  protectedSubscriptionsIdRouteImport.update({
-    id: "/subscriptions/$id",
-    path: "/subscriptions/$id",
-    getParentRoute: () => protectedRouteRoute,
-  } as any)
 const protectedSettingsGeneralRoute =
   protectedSettingsGeneralRouteImport.update({
     id: "/settings/general",
@@ -75,20 +69,26 @@ const protectedSettingsAccountRoute =
     path: "/settings/account",
     getParentRoute: () => protectedRouteRoute,
   } as any)
+const protectedSubscriptionsIdRouteRoute =
+  protectedSubscriptionsIdRouteRouteImport.update({
+    id: "/subscriptions/$id",
+    path: "/subscriptions/$id",
+    getParentRoute: () => protectedRouteRoute,
+  } as any)
 const protectedSubscriptionsIdEditRoute =
   protectedSubscriptionsIdEditRouteImport.update({
     id: "/edit",
     path: "/edit",
-    getParentRoute: () => protectedSubscriptionsIdRoute,
+    getParentRoute: () => protectedSubscriptionsIdRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   "/auth/sign-in": typeof AuthSignInRoute
   "/auth/sign-up": typeof AuthSignUpRoute
   "/": typeof protectedIndexRoute
+  "/subscriptions/$id": typeof protectedSubscriptionsIdRouteRouteWithChildren
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
-  "/subscriptions/$id": typeof protectedSubscriptionsIdRouteWithChildren
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
   "/settings/": typeof protectedSettingsIndexRoute
   "/subscriptions/": typeof protectedSubscriptionsIndexRoute
@@ -98,9 +98,9 @@ export interface FileRoutesByTo {
   "/auth/sign-in": typeof AuthSignInRoute
   "/auth/sign-up": typeof AuthSignUpRoute
   "/": typeof protectedIndexRoute
+  "/subscriptions/$id": typeof protectedSubscriptionsIdRouteRouteWithChildren
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
-  "/subscriptions/$id": typeof protectedSubscriptionsIdRouteWithChildren
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
   "/settings": typeof protectedSettingsIndexRoute
   "/subscriptions": typeof protectedSubscriptionsIndexRoute
@@ -112,9 +112,9 @@ export interface FileRoutesById {
   "/auth/sign-in": typeof AuthSignInRoute
   "/auth/sign-up": typeof AuthSignUpRoute
   "/(protected)/": typeof protectedIndexRoute
+  "/(protected)/subscriptions/$id": typeof protectedSubscriptionsIdRouteRouteWithChildren
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/general": typeof protectedSettingsGeneralRoute
-  "/(protected)/subscriptions/$id": typeof protectedSubscriptionsIdRouteWithChildren
   "/(protected)/subscriptions/add": typeof protectedSubscriptionsAddRoute
   "/(protected)/settings/": typeof protectedSettingsIndexRoute
   "/(protected)/subscriptions/": typeof protectedSubscriptionsIndexRoute
@@ -126,9 +126,9 @@ export interface FileRouteTypes {
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/"
+    | "/subscriptions/$id"
     | "/settings/account"
     | "/settings/general"
-    | "/subscriptions/$id"
     | "/subscriptions/add"
     | "/settings/"
     | "/subscriptions/"
@@ -138,9 +138,9 @@ export interface FileRouteTypes {
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/"
+    | "/subscriptions/$id"
     | "/settings/account"
     | "/settings/general"
-    | "/subscriptions/$id"
     | "/subscriptions/add"
     | "/settings"
     | "/subscriptions"
@@ -151,9 +151,9 @@ export interface FileRouteTypes {
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/(protected)/"
+    | "/(protected)/subscriptions/$id"
     | "/(protected)/settings/account"
     | "/(protected)/settings/general"
-    | "/(protected)/subscriptions/$id"
     | "/(protected)/subscriptions/add"
     | "/(protected)/settings/"
     | "/(protected)/subscriptions/"
@@ -217,13 +217,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSubscriptionsAddRouteImport
       parentRoute: typeof protectedRouteRoute
     }
-    "/(protected)/subscriptions/$id": {
-      id: "/(protected)/subscriptions/$id"
-      path: "/subscriptions/$id"
-      fullPath: "/subscriptions/$id"
-      preLoaderRoute: typeof protectedSubscriptionsIdRouteImport
-      parentRoute: typeof protectedRouteRoute
-    }
     "/(protected)/settings/general": {
       id: "/(protected)/settings/general"
       path: "/settings/general"
@@ -238,35 +231,42 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSettingsAccountRouteImport
       parentRoute: typeof protectedRouteRoute
     }
+    "/(protected)/subscriptions/$id": {
+      id: "/(protected)/subscriptions/$id"
+      path: "/subscriptions/$id"
+      fullPath: "/subscriptions/$id"
+      preLoaderRoute: typeof protectedSubscriptionsIdRouteRouteImport
+      parentRoute: typeof protectedRouteRoute
+    }
     "/(protected)/subscriptions/$id/edit": {
       id: "/(protected)/subscriptions/$id/edit"
       path: "/edit"
       fullPath: "/subscriptions/$id/edit"
       preLoaderRoute: typeof protectedSubscriptionsIdEditRouteImport
-      parentRoute: typeof protectedSubscriptionsIdRoute
+      parentRoute: typeof protectedSubscriptionsIdRouteRoute
     }
   }
 }
 
-interface protectedSubscriptionsIdRouteChildren {
+interface protectedSubscriptionsIdRouteRouteChildren {
   protectedSubscriptionsIdEditRoute: typeof protectedSubscriptionsIdEditRoute
 }
 
-const protectedSubscriptionsIdRouteChildren: protectedSubscriptionsIdRouteChildren =
+const protectedSubscriptionsIdRouteRouteChildren: protectedSubscriptionsIdRouteRouteChildren =
   {
     protectedSubscriptionsIdEditRoute: protectedSubscriptionsIdEditRoute,
   }
 
-const protectedSubscriptionsIdRouteWithChildren =
-  protectedSubscriptionsIdRoute._addFileChildren(
-    protectedSubscriptionsIdRouteChildren,
+const protectedSubscriptionsIdRouteRouteWithChildren =
+  protectedSubscriptionsIdRouteRoute._addFileChildren(
+    protectedSubscriptionsIdRouteRouteChildren,
   )
 
 interface protectedRouteRouteChildren {
   protectedIndexRoute: typeof protectedIndexRoute
+  protectedSubscriptionsIdRouteRoute: typeof protectedSubscriptionsIdRouteRouteWithChildren
   protectedSettingsAccountRoute: typeof protectedSettingsAccountRoute
   protectedSettingsGeneralRoute: typeof protectedSettingsGeneralRoute
-  protectedSubscriptionsIdRoute: typeof protectedSubscriptionsIdRouteWithChildren
   protectedSubscriptionsAddRoute: typeof protectedSubscriptionsAddRoute
   protectedSettingsIndexRoute: typeof protectedSettingsIndexRoute
   protectedSubscriptionsIndexRoute: typeof protectedSubscriptionsIndexRoute
@@ -274,9 +274,10 @@ interface protectedRouteRouteChildren {
 
 const protectedRouteRouteChildren: protectedRouteRouteChildren = {
   protectedIndexRoute: protectedIndexRoute,
+  protectedSubscriptionsIdRouteRoute:
+    protectedSubscriptionsIdRouteRouteWithChildren,
   protectedSettingsAccountRoute: protectedSettingsAccountRoute,
   protectedSettingsGeneralRoute: protectedSettingsGeneralRoute,
-  protectedSubscriptionsIdRoute: protectedSubscriptionsIdRouteWithChildren,
   protectedSubscriptionsAddRoute: protectedSubscriptionsAddRoute,
   protectedSettingsIndexRoute: protectedSettingsIndexRoute,
   protectedSubscriptionsIndexRoute: protectedSubscriptionsIndexRoute,
