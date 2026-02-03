@@ -4,12 +4,12 @@ import { SubscriptionTableHead } from "../ui/subscriptions-table-head";
 import { Type, Calendar1, CreditCard, CalendarSync } from "lucide-react";
 import { ButtonGroup } from "@/shared/components";
 import { SubscriptionDto } from "@shared/domains/subscription";
-import { SubscriptionDeleteButton } from "../../add-subscription/ui/subscription-delete-button";
 import { SubscriptionNextBill } from "../../billing";
 import { CurrencyBadge } from "@/entities/currency";
 import { PeriodBadge } from "../../period";
 
 import * as m from "@/i18n/messages";
+import { SubscriptionDeleteButton } from "../../delete-subscription";
 
 export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
   return [
