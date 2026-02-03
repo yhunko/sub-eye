@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { Link } from "@tanstack/react-router";
 import { Repeat } from "lucide-react";
 import { BrandfetchImage } from "../../../brandfetch";
 import {
@@ -26,7 +27,11 @@ export const SubscriptionListItem = memo(
         size="sm"
         className="hover:bg-accent/50 rounded-lg"
       >
-        <a href={`/subscriptions/${subscription.id}`} className="w-full">
+        <Link
+          to="/subscriptions/$id"
+          params={{ id: subscription.id }}
+          className="w-full"
+        >
           <ItemMedia variant="image" className="size-12 rounded-full">
             <BrandfetchImage
               domain={subscription.brandDomain}
@@ -62,7 +67,7 @@ export const SubscriptionListItem = memo(
               <Repeat className="size-3.5" />
             </div>
           </div>
-        </a>
+        </Link>
       </Item>
     );
   },

@@ -4,6 +4,8 @@ import { routeTree } from "./app/routes/routeTree.gen";
 import { queryClient } from "./app/providers/react-query";
 import { Toaster } from "@/shared/components";
 import { useMemo } from "react";
+import { useIsRestoring } from "@tanstack/react-query";
+import { SplashScreen } from "./shared/ui";
 
 const router = createRouter({
   routeTree,
@@ -25,6 +27,7 @@ declare module "@tanstack/react-router" {
 
 export function App() {
   const auth = useAuth();
+  const isRestoring = useIsRestoring();
 
   const routerContext = useMemo(
     () => ({
@@ -33,6 +36,10 @@ export function App() {
     }),
     [auth],
   );
+
+  if (!auth.isLoaded || isRestoring) {
+    return <SplashScreen />;
+  }
 
   return (
     <>

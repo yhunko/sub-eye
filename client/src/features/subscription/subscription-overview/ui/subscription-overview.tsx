@@ -1,5 +1,3 @@
-"use client";
-
 import { FC, useMemo } from "react";
 import { Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";

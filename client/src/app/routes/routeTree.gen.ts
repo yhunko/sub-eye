@@ -18,7 +18,7 @@ import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(prote
 import { Route as protectedSubscriptionsAddRouteImport } from "./../../pages/(protected)/subscriptions/add"
 import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(protected)/settings/general"
 import { Route as protectedSettingsAccountRouteImport } from "./../../pages/(protected)/settings/account"
-import { Route as protectedSubscriptionsIdRouteRouteImport } from "./../../pages/(protected)/subscriptions/$id/route"
+import { Route as protectedSubscriptionsIdIndexRouteImport } from "./../../pages/(protected)/subscriptions/$id/index"
 import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
 
 const protectedRouteRoute = protectedRouteRouteImport.update({
@@ -69,42 +69,42 @@ const protectedSettingsAccountRoute =
     path: "/settings/account",
     getParentRoute: () => protectedRouteRoute,
   } as any)
-const protectedSubscriptionsIdRouteRoute =
-  protectedSubscriptionsIdRouteRouteImport.update({
-    id: "/subscriptions/$id",
-    path: "/subscriptions/$id",
+const protectedSubscriptionsIdIndexRoute =
+  protectedSubscriptionsIdIndexRouteImport.update({
+    id: "/subscriptions/$id/",
+    path: "/subscriptions/$id/",
     getParentRoute: () => protectedRouteRoute,
   } as any)
 const protectedSubscriptionsIdEditRoute =
   protectedSubscriptionsIdEditRouteImport.update({
-    id: "/edit",
-    path: "/edit",
-    getParentRoute: () => protectedSubscriptionsIdRouteRoute,
+    id: "/subscriptions/$id/edit",
+    path: "/subscriptions/$id/edit",
+    getParentRoute: () => protectedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   "/auth/sign-in": typeof AuthSignInRoute
   "/auth/sign-up": typeof AuthSignUpRoute
   "/": typeof protectedIndexRoute
-  "/subscriptions/$id": typeof protectedSubscriptionsIdRouteRouteWithChildren
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
   "/settings/": typeof protectedSettingsIndexRoute
   "/subscriptions/": typeof protectedSubscriptionsIndexRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
+  "/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
 export interface FileRoutesByTo {
   "/auth/sign-in": typeof AuthSignInRoute
   "/auth/sign-up": typeof AuthSignUpRoute
   "/": typeof protectedIndexRoute
-  "/subscriptions/$id": typeof protectedSubscriptionsIdRouteRouteWithChildren
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
   "/settings": typeof protectedSettingsIndexRoute
   "/subscriptions": typeof protectedSubscriptionsIndexRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
+  "/subscriptions/$id": typeof protectedSubscriptionsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,13 +112,13 @@ export interface FileRoutesById {
   "/auth/sign-in": typeof AuthSignInRoute
   "/auth/sign-up": typeof AuthSignUpRoute
   "/(protected)/": typeof protectedIndexRoute
-  "/(protected)/subscriptions/$id": typeof protectedSubscriptionsIdRouteRouteWithChildren
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/general": typeof protectedSettingsGeneralRoute
   "/(protected)/subscriptions/add": typeof protectedSubscriptionsAddRoute
   "/(protected)/settings/": typeof protectedSettingsIndexRoute
   "/(protected)/subscriptions/": typeof protectedSubscriptionsIndexRoute
   "/(protected)/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
+  "/(protected)/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -126,38 +126,38 @@ export interface FileRouteTypes {
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/"
-    | "/subscriptions/$id"
     | "/settings/account"
     | "/settings/general"
     | "/subscriptions/add"
     | "/settings/"
     | "/subscriptions/"
     | "/subscriptions/$id/edit"
+    | "/subscriptions/$id/"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/"
-    | "/subscriptions/$id"
     | "/settings/account"
     | "/settings/general"
     | "/subscriptions/add"
     | "/settings"
     | "/subscriptions"
     | "/subscriptions/$id/edit"
+    | "/subscriptions/$id"
   id:
     | "__root__"
     | "/(protected)"
     | "/auth/sign-in"
     | "/auth/sign-up"
     | "/(protected)/"
-    | "/(protected)/subscriptions/$id"
     | "/(protected)/settings/account"
     | "/(protected)/settings/general"
     | "/(protected)/subscriptions/add"
     | "/(protected)/settings/"
     | "/(protected)/subscriptions/"
     | "/(protected)/subscriptions/$id/edit"
+    | "/(protected)/subscriptions/$id/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -231,56 +231,43 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSettingsAccountRouteImport
       parentRoute: typeof protectedRouteRoute
     }
-    "/(protected)/subscriptions/$id": {
-      id: "/(protected)/subscriptions/$id"
+    "/(protected)/subscriptions/$id/": {
+      id: "/(protected)/subscriptions/$id/"
       path: "/subscriptions/$id"
-      fullPath: "/subscriptions/$id"
-      preLoaderRoute: typeof protectedSubscriptionsIdRouteRouteImport
+      fullPath: "/subscriptions/$id/"
+      preLoaderRoute: typeof protectedSubscriptionsIdIndexRouteImport
       parentRoute: typeof protectedRouteRoute
     }
     "/(protected)/subscriptions/$id/edit": {
       id: "/(protected)/subscriptions/$id/edit"
-      path: "/edit"
+      path: "/subscriptions/$id/edit"
       fullPath: "/subscriptions/$id/edit"
       preLoaderRoute: typeof protectedSubscriptionsIdEditRouteImport
-      parentRoute: typeof protectedSubscriptionsIdRouteRoute
+      parentRoute: typeof protectedRouteRoute
     }
   }
 }
 
-interface protectedSubscriptionsIdRouteRouteChildren {
-  protectedSubscriptionsIdEditRoute: typeof protectedSubscriptionsIdEditRoute
-}
-
-const protectedSubscriptionsIdRouteRouteChildren: protectedSubscriptionsIdRouteRouteChildren =
-  {
-    protectedSubscriptionsIdEditRoute: protectedSubscriptionsIdEditRoute,
-  }
-
-const protectedSubscriptionsIdRouteRouteWithChildren =
-  protectedSubscriptionsIdRouteRoute._addFileChildren(
-    protectedSubscriptionsIdRouteRouteChildren,
-  )
-
 interface protectedRouteRouteChildren {
   protectedIndexRoute: typeof protectedIndexRoute
-  protectedSubscriptionsIdRouteRoute: typeof protectedSubscriptionsIdRouteRouteWithChildren
   protectedSettingsAccountRoute: typeof protectedSettingsAccountRoute
   protectedSettingsGeneralRoute: typeof protectedSettingsGeneralRoute
   protectedSubscriptionsAddRoute: typeof protectedSubscriptionsAddRoute
   protectedSettingsIndexRoute: typeof protectedSettingsIndexRoute
   protectedSubscriptionsIndexRoute: typeof protectedSubscriptionsIndexRoute
+  protectedSubscriptionsIdEditRoute: typeof protectedSubscriptionsIdEditRoute
+  protectedSubscriptionsIdIndexRoute: typeof protectedSubscriptionsIdIndexRoute
 }
 
 const protectedRouteRouteChildren: protectedRouteRouteChildren = {
   protectedIndexRoute: protectedIndexRoute,
-  protectedSubscriptionsIdRouteRoute:
-    protectedSubscriptionsIdRouteRouteWithChildren,
   protectedSettingsAccountRoute: protectedSettingsAccountRoute,
   protectedSettingsGeneralRoute: protectedSettingsGeneralRoute,
   protectedSubscriptionsAddRoute: protectedSubscriptionsAddRoute,
   protectedSettingsIndexRoute: protectedSettingsIndexRoute,
   protectedSubscriptionsIndexRoute: protectedSubscriptionsIndexRoute,
+  protectedSubscriptionsIdEditRoute: protectedSubscriptionsIdEditRoute,
+  protectedSubscriptionsIdIndexRoute: protectedSubscriptionsIdIndexRoute,
 }
 
 const protectedRouteRouteWithChildren = protectedRouteRoute._addFileChildren(
