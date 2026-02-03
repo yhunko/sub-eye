@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SubscriptionOverview } from "@/features/subscription/subscription-overview";
 import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
 
-export const Route = createFileRoute("/(protected)/subscriptions/$id")({
+export const Route = createFileRoute("/(protected)/subscriptions/$id/")({
   component: SubscriptionPage,
 });
 
