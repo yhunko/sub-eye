@@ -1,2 +1,2 @@
-export * from "./ui/subscription-overview";
-export * from "./ui/subscription-overview-stats";
+export { SubscriptionOverview } from "./ui/subscription-overview";
+export { SubscriptionOverviewSkeleton } from "./ui/subscription-overview-skeleton";
