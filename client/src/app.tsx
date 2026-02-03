@@ -1,8 +1,9 @@
 import { useAuth } from "@clerk/clerk-react";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./app/routes/routeTree.gen";
-import { queryClient, ReactQueryProvider } from "./app/providers/react-query";
+import { queryClient } from "./app/providers/react-query";
 import { Toaster } from "@/shared/components";
+import { useMemo } from "react";
 
 const router = createRouter({
   routeTree,
@@ -12,6 +13,8 @@ const router = createRouter({
   },
   defaultPreload: "intent",
   scrollRestoration: true,
+  defaultStructuralSharing: true,
+  defaultPreloadStaleTime: 1000,
 });
 
 declare module "@tanstack/react-router" {
@@ -23,10 +26,18 @@ declare module "@tanstack/react-router" {
 export function App() {
   const auth = useAuth();
 
+  const routerContext = useMemo(
+    () => ({
+      auth,
+      queryClient,
+    }),
+    [auth],
+  );
+
   return (
-    <ReactQueryProvider>
-      <RouterProvider router={router} context={{ auth, queryClient }} />
+    <>
+      <RouterProvider router={router} context={routerContext} />
       <Toaster richColors />
-    </ReactQueryProvider>
+    </>
   );
 }

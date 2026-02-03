@@ -1,7 +1,6 @@
 import { PropsWithChildren } from "react";
-import { ClerkProvider, ClerkLoading, ClerkLoaded } from "@clerk/clerk-react";
+import { ClerkProvider } from "@clerk/clerk-react";
 import { shadcn } from "@clerk/themes";
-import { SplashScreen } from "@/shared/ui";
 import { getLocale } from "@/i18n/runtime";
 import { enUS, ukUA } from "@clerk/localizations";
 
@@ -29,10 +28,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }}
       localization={localization}
     >
-      <ClerkLoading>
-        <SplashScreen />
-      </ClerkLoading>
-      <ClerkLoaded>{children}</ClerkLoaded>
+      {children}
     </ClerkProvider>
   );
 }

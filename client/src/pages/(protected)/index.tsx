@@ -7,7 +7,7 @@ import {
   StatCards,
   UpcomingRenewals,
 } from "@/features/analytics";
-import { SplashScreen } from "../../shared/ui";
+import { SplashScreen } from "@/shared/ui";
 
 export const Route = createFileRoute("/(protected)/")({
   component: Dashboard,
