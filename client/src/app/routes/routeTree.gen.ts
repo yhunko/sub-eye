@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from "./../../pages/__root"
 import { Route as protectedRouteRouteImport } from "./../../pages/(protected)/route"
 import { Route as protectedIndexRouteImport } from "./../../pages/(protected)/index"
-import { Route as AuthSignUpRouteImport } from "./../../pages/auth/sign-up"
-import { Route as AuthSignInRouteImport } from "./../../pages/auth/sign-in"
 import { Route as protectedSubscriptionsIndexRouteImport } from "./../../pages/(protected)/subscriptions/index"
 import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(protected)/settings/index"
+import { Route as AuthSignUpSplatRouteImport } from "./../../pages/auth/sign-up/$"
+import { Route as AuthSignInSplatRouteImport } from "./../../pages/auth/sign-in/$"
 import { Route as protectedSubscriptionsAddRouteImport } from "./../../pages/(protected)/subscriptions/add"
 import { Route as protectedSettingsNotificationsRouteImport } from "./../../pages/(protected)/settings/notifications"
 import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(protected)/settings/general"
@@ -31,16 +31,6 @@ const protectedIndexRoute = protectedIndexRouteImport.update({
   path: "/",
   getParentRoute: () => protectedRouteRoute,
 } as any)
-const AuthSignUpRoute = AuthSignUpRouteImport.update({
-  id: "/auth/sign-up",
-  path: "/auth/sign-up",
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSignInRoute = AuthSignInRouteImport.update({
-  id: "/auth/sign-in",
-  path: "/auth/sign-in",
-  getParentRoute: () => rootRouteImport,
-} as any)
 const protectedSubscriptionsIndexRoute =
   protectedSubscriptionsIndexRouteImport.update({
     id: "/subscriptions/",
@@ -51,6 +41,16 @@ const protectedSettingsIndexRoute = protectedSettingsIndexRouteImport.update({
   id: "/settings/",
   path: "/settings/",
   getParentRoute: () => protectedRouteRoute,
+} as any)
+const AuthSignUpSplatRoute = AuthSignUpSplatRouteImport.update({
+  id: "/auth/sign-up/$",
+  path: "/auth/sign-up/$",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInSplatRoute = AuthSignInSplatRouteImport.update({
+  id: "/auth/sign-in/$",
+  path: "/auth/sign-in/$",
+  getParentRoute: () => rootRouteImport,
 } as any)
 const protectedSubscriptionsAddRoute =
   protectedSubscriptionsAddRouteImport.update({
@@ -90,26 +90,26 @@ const protectedSubscriptionsIdEditRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  "/auth/sign-in": typeof AuthSignInRoute
-  "/auth/sign-up": typeof AuthSignUpRoute
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
+  "/auth/sign-in/$": typeof AuthSignInSplatRoute
+  "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/settings/": typeof protectedSettingsIndexRoute
   "/subscriptions/": typeof protectedSubscriptionsIndexRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
 export interface FileRoutesByTo {
-  "/auth/sign-in": typeof AuthSignInRoute
-  "/auth/sign-up": typeof AuthSignUpRoute
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
+  "/auth/sign-in/$": typeof AuthSignInSplatRoute
+  "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/settings": typeof protectedSettingsIndexRoute
   "/subscriptions": typeof protectedSubscriptionsIndexRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
@@ -118,13 +118,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/(protected)": typeof protectedRouteRouteWithChildren
-  "/auth/sign-in": typeof AuthSignInRoute
-  "/auth/sign-up": typeof AuthSignUpRoute
   "/(protected)/": typeof protectedIndexRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/general": typeof protectedSettingsGeneralRoute
   "/(protected)/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/(protected)/subscriptions/add": typeof protectedSubscriptionsAddRoute
+  "/auth/sign-in/$": typeof AuthSignInSplatRoute
+  "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/(protected)/settings/": typeof protectedSettingsIndexRoute
   "/(protected)/subscriptions/": typeof protectedSubscriptionsIndexRoute
   "/(protected)/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
@@ -133,26 +133,26 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/auth/sign-in"
-    | "/auth/sign-up"
     | "/"
     | "/settings/account"
     | "/settings/general"
     | "/settings/notifications"
     | "/subscriptions/add"
+    | "/auth/sign-in/$"
+    | "/auth/sign-up/$"
     | "/settings/"
     | "/subscriptions/"
     | "/subscriptions/$id/edit"
     | "/subscriptions/$id/"
   fileRoutesByTo: FileRoutesByTo
   to:
-    | "/auth/sign-in"
-    | "/auth/sign-up"
     | "/"
     | "/settings/account"
     | "/settings/general"
     | "/settings/notifications"
     | "/subscriptions/add"
+    | "/auth/sign-in/$"
+    | "/auth/sign-up/$"
     | "/settings"
     | "/subscriptions"
     | "/subscriptions/$id/edit"
@@ -160,13 +160,13 @@ export interface FileRouteTypes {
   id:
     | "__root__"
     | "/(protected)"
-    | "/auth/sign-in"
-    | "/auth/sign-up"
     | "/(protected)/"
     | "/(protected)/settings/account"
     | "/(protected)/settings/general"
     | "/(protected)/settings/notifications"
     | "/(protected)/subscriptions/add"
+    | "/auth/sign-in/$"
+    | "/auth/sign-up/$"
     | "/(protected)/settings/"
     | "/(protected)/subscriptions/"
     | "/(protected)/subscriptions/$id/edit"
@@ -175,8 +175,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   protectedRouteRoute: typeof protectedRouteRouteWithChildren
-  AuthSignInRoute: typeof AuthSignInRoute
-  AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthSignInSplatRoute: typeof AuthSignInSplatRoute
+  AuthSignUpSplatRoute: typeof AuthSignUpSplatRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -195,20 +195,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedIndexRouteImport
       parentRoute: typeof protectedRouteRoute
     }
-    "/auth/sign-up": {
-      id: "/auth/sign-up"
-      path: "/auth/sign-up"
-      fullPath: "/auth/sign-up"
-      preLoaderRoute: typeof AuthSignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    "/auth/sign-in": {
-      id: "/auth/sign-in"
-      path: "/auth/sign-in"
-      fullPath: "/auth/sign-in"
-      preLoaderRoute: typeof AuthSignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     "/(protected)/subscriptions/": {
       id: "/(protected)/subscriptions/"
       path: "/subscriptions"
@@ -222,6 +208,20 @@ declare module "@tanstack/react-router" {
       fullPath: "/settings/"
       preLoaderRoute: typeof protectedSettingsIndexRouteImport
       parentRoute: typeof protectedRouteRoute
+    }
+    "/auth/sign-up/$": {
+      id: "/auth/sign-up/$"
+      path: "/auth/sign-up/$"
+      fullPath: "/auth/sign-up/$"
+      preLoaderRoute: typeof AuthSignUpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/auth/sign-in/$": {
+      id: "/auth/sign-in/$"
+      path: "/auth/sign-in/$"
+      fullPath: "/auth/sign-in/$"
+      preLoaderRoute: typeof AuthSignInSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     "/(protected)/subscriptions/add": {
       id: "/(protected)/subscriptions/add"
@@ -298,8 +298,8 @@ const protectedRouteRouteWithChildren = protectedRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   protectedRouteRoute: protectedRouteRouteWithChildren,
-  AuthSignInRoute: AuthSignInRoute,
-  AuthSignUpRoute: AuthSignUpRoute,
+  AuthSignInSplatRoute: AuthSignInSplatRoute,
+  AuthSignUpSplatRoute: AuthSignUpSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

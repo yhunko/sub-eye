@@ -75,6 +75,7 @@ export class SubscriptionNotificationsWorkflow {
   );
 
   static async schedule(payload: SubscriptionWorkflowPayload): Promise<string> {
+    // TODO: Enforce on build / start
     const baseUrl = process.env.BASE_URL;
     if (!baseUrl) {
       throw new Error("Base URL is not set");

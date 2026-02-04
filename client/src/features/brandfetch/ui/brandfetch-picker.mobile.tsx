@@ -23,16 +23,23 @@ const BrandfetchPickerMobile = ({
   content,
 }: BrandfetchPickerMobileProps) => {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      shouldScaleBackground={false}
+      dismissible={true}
+    >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent className="p-0">
+      <DrawerContent className="max-h-[95vh] p-0">
         <VisuallyHidden.Root>
           <DrawerHeader>
             <DrawerTitle>Search Brand</DrawerTitle>
             <DrawerDescription>Select a brand from the list</DrawerDescription>
           </DrawerHeader>
         </VisuallyHidden.Root>
-        <div className="mt-4 border-t">{content}</div>
+        <div className="mt-4 flex flex-col overflow-hidden border-t">
+          {content}
+        </div>
       </DrawerContent>
     </Drawer>
   );

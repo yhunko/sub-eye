@@ -28,6 +28,69 @@ const BrandfetchPickerDesktop = lazy(
 );
 const BrandfetchPickerMobile = lazy(() => import("./brandfetch-picker.mobile"));
 
+const DEFAULT_BRANDS: BrandfetchSearchDto[] = [
+  {
+    brandId: "netflix.com",
+    name: "Netflix",
+    domain: "netflix.com",
+    icon: "https://asset.brandfetch.io/netflix.com",
+  },
+  {
+    brandId: "spotify.com",
+    name: "Spotify",
+    domain: "spotify.com",
+    icon: "https://asset.brandfetch.io/spotify.com",
+  },
+  {
+    brandId: "youtube.com",
+    name: "YouTube",
+    domain: "youtube.com",
+    icon: "https://asset.brandfetch.io/youtube.com",
+  },
+  {
+    brandId: "apple.com",
+    name: "Apple",
+    domain: "apple.com",
+    icon: "https://asset.brandfetch.io/apple.com",
+  },
+  {
+    brandId: "google.com",
+    name: "Google",
+    domain: "google.com",
+    icon: "https://asset.brandfetch.io/google.com",
+  },
+  {
+    brandId: "amazon.com",
+    name: "Amazon",
+    domain: "amazon.com",
+    icon: "https://asset.brandfetch.io/amazon.com",
+  },
+  {
+    brandId: "facebook.com",
+    name: "Facebook",
+    domain: "facebook.com",
+    icon: "https://asset.brandfetch.io/facebook.com",
+  },
+  {
+    brandId: "instagram.com",
+    name: "Instagram",
+    domain: "instagram.com",
+    icon: "https://asset.brandfetch.io/instagram.com",
+  },
+  {
+    brandId: "twitter.com",
+    name: "Twitter",
+    domain: "twitter.com",
+    icon: "https://asset.brandfetch.io/twitter.com",
+  },
+  {
+    brandId: "linkedin.com",
+    name: "LinkedIn",
+    domain: "linkedin.com",
+    icon: "https://asset.brandfetch.io/linkedin.com",
+  },
+];
+
 interface BrandPickerProps {
   value?: BrandfetchSearchDto;
   onChange?: (brand: BrandfetchSearchDto) => void;
@@ -39,20 +102,30 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useDebouncedState("", 500);
 
-  const { data, isLoading } = useBrandfetchSearch({
+  const { data = [], isLoading } = useBrandfetchSearch({
     params: { name: query },
     options: {
+      initialData: DEFAULT_BRANDS,
       placeholderData: keepPreviousData,
+      enabled: !!query,
     },
   });
 
   const Content = (
     <PickerContent
-      data={data ?? []}
+      data={data}
       isLoading={isLoading}
       onSelect={(brand) => {
         setSelected(brand);
-        setOpen(false);
+        if (!isDesktop) {
+          // Sync with keyboard animation
+          // 1. dismiss keyboard immediately
+          (document.activeElement as HTMLElement)?.blur();
+          // 2. wait for keyboard to start hiding before closing drawer
+          setTimeout(() => setOpen(false), 300);
+        } else {
+          setOpen(false);
+        }
       }}
       setQuery={setQuery}
       selectedDomain={selected?.domain}
@@ -124,13 +197,13 @@ function PickerContent({
   selectedDomain,
 }: PickerContentProps) {
   return (
-    <Command shouldFilter={false} className="h-[60vh] lg:h-auto">
+    <Command shouldFilter={false} className="flex h-[80vh] flex-col lg:h-auto">
       <CommandInput
         placeholder={m.features_brandfetch_picker_searchPlaceholder()}
         onValueChange={setQuery}
         autoFocus
       />
-      <CommandList>
+      <CommandList className="flex-1 overflow-y-auto overscroll-contain">
         <CommandEmpty className="flex flex-col items-center gap-4 py-5">
           {isLoading ? (
             <Spinner className="size-12 md:size-8" />
@@ -144,6 +217,7 @@ function PickerContent({
               key={brand.domain}
               value={brand.domain}
               onSelect={() => onSelect(brand)}
+              className="touch-manipulation"
             >
               <Avatar className="mr-2 h-6 w-6">
                 <AvatarImage src={brand.icon} alt={brand.name} />
