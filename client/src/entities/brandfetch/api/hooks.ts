@@ -9,7 +9,7 @@ const brandfetchRepository = new BrandfetchRepository();
 
 export const useBrandfetchSearch = ({
   params,
-}: QueryHook<BrandfetchSearchDto, BrandfetchSearchParams>) => {
+}: QueryHook<BrandfetchSearchDto[], BrandfetchSearchParams>) => {
   return useQuery({
     queryKey: brandfetchQueryKeys.search(params).queryKey,
     queryFn: async () => {
