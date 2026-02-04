@@ -17,7 +17,7 @@ export class UserService {
         metadata?.preferredCurrency &&
         typeof metadata.preferredCurrency === "string"
           ? CurrencyUtils.normalizeCode(metadata.preferredCurrency)
-          : CurrencyUtils.normalizeCode("usd"),
+          : CurrencyUtils.normalizeCode(CurrencyUtils.DEFAULT_CURRENCY_CODE),
       preferredTimezone:
         metadata?.preferredTimezone &&
         typeof metadata.preferredTimezone === "string"
