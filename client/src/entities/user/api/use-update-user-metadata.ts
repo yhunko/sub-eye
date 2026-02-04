@@ -4,6 +4,7 @@ import type { UserPreferences } from "@shared/types";
 import type { UpdateUserPublicMetadata } from "@shared/schemas/userSchemas";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../../subscription";
+import { analyticsQueryKeys } from "../../analytics";
 import { useUser } from "@clerk/clerk-react";
 
 export const useUpdateUserMetadata = ({
@@ -27,6 +28,9 @@ export const useUpdateUserMetadata = ({
       await user?.reload();
       await queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys._def,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: analyticsQueryKeys._def,
       });
     },
   });

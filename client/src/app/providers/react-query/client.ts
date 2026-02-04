@@ -4,11 +4,11 @@ import { toast } from "sonner";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10 * 60 * 1000,
-      gcTime: 24 * 60 * 60 * 1000,
+      staleTime: 0,
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours
       retry: 1,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
     },
     mutations: {
       onError(error) {

@@ -1,7 +1,7 @@
 import { SubscriptionPeriod } from "../types";
 
 export class CurrencyUtils {
-  public static readonly DEFAULT_CURRENCY_CODE = "UAH";
+  public static readonly DEFAULT_CURRENCY_CODE = "uah";
 
   /**
    * Calculates the monthly cost based on the amount, interval, and period.
@@ -29,8 +29,8 @@ export class CurrencyUtils {
   }
 
   static normalizeCode(code: string | undefined | null): string {
-    if (!code) return this.DEFAULT_CURRENCY_CODE;
-    return code.trim().toUpperCase();
+    if (!code) return this.DEFAULT_CURRENCY_CODE.toLowerCase();
+    return code.trim().toLowerCase();
   }
 
   static convert(
