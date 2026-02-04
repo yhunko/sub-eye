@@ -42,9 +42,17 @@ export class SubscriptionNotificationsWorkflow {
       await context.sleepUntil("wait-for-notification", notifyAt);
 
       await context.run("send-notification", async () => {
-        console.log("Stubbed notification", {
-          userId: subscription.userId,
-          subscriptionId: subscription.id,
+        const { PushNotificationService } =
+          await import("../../domains/push-notification/pushNotificationService");
+
+        await PushNotificationService.sendNotification(subscription.userId, {
+          title: "Subscription Renewal",
+          body: `Your subscription for ${subscription.name} is renewing soon.`,
+          icon: `/assets/pwa/web-app-manifest-192x192.png`, // Default icon, can be customized
+          data: {
+            url: `/subscriptions/${subscription.id}`,
+            subscriptionId: subscription.id,
+          },
         });
       });
 
@@ -67,11 +75,14 @@ export class SubscriptionNotificationsWorkflow {
   );
 
   static async schedule(payload: SubscriptionWorkflowPayload): Promise<string> {
-    const workflowUrl = process.env.UPSTASH_WORKFLOW_URL;
-    if (!workflowUrl) {
-      throw new Error("UPSTASH_WORKFLOW_URL is not set");
+    const baseUrl = process.env.BASE_URL;
+    if (!baseUrl) {
+      throw new Error("Base URL is not set");
     }
 
+    console.log("Running schedule");
+
+    const workflowUrl = `${baseUrl}/api/subscriptions/notifications/workflow`;
     const client = this.createClient();
     const result = await client.trigger({
       url: workflowUrl,

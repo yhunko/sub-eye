@@ -1,11 +1,12 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
-import { VitePWA } from "vite-plugin-pwa";
+import { serwist } from "@serwist/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import mkcert from "vite-plugin-mkcert";
 
 import { version } from "../package.json";
 
@@ -14,6 +15,7 @@ export default defineConfig({
     "import.meta.env.APP_VERSION": JSON.stringify(version),
   },
   plugins: [
+    mkcert(),
     paraglideVitePlugin({
       project: "./project.inlang",
       outdir: "./src/shared/lib/i18n",
@@ -22,44 +24,12 @@ export default defineConfig({
       emitPrettierIgnore: true,
       includeEslintDisableComment: true,
     }),
-    VitePWA({
-      registerType: "autoUpdate",
-      devOptions: {
-        enabled: true,
-      },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        maximumFileSizeToCacheInBytes: 3000000,
-      },
-      includeAssets: [
-        "assets/favicon.ico",
-        "assets/apple-touch-icon.png",
-        "assets/*.{png,svg,ico}",
-      ],
-      manifest: {
-        name: "SubEye",
-        short_name: "SubEye",
-        description: "Minimalist subscriptions tracker app",
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
-        display: "standalone",
-        start_url: "/",
-        orientation: "portrait",
-        icons: [
-          {
-            src: "/assets/pwa/web-app-manifest-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "maskable",
-          },
-          {
-            src: "/assets/pwa/web-app-manifest-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
+    serwist({
+      swSrc: "src/sw.ts",
+      swDest: "sw.js",
+      globDirectory: "dist",
+      injectionPoint: "self.__SW_MANIFEST",
+      rollupFormat: "iife",
     }),
     // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
     tanstackRouter({

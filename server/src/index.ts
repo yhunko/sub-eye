@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
+import { pushNotificationRouter } from "./routes/push-notifications";
 import { userRouter } from "./routes/user";
 
 type Bindings = {
@@ -15,7 +16,7 @@ type Bindings = {
   QSTASH_NEXT_SIGNING_KEY: string;
 };
 
-const corsOrigins = [process.env.CLIENT_ORIGIN ?? "http://localhost:5173"];
+const corsOrigins = [process.env.CLIENT_ORIGIN];
 
 export const app = new Hono<{ Bindings: Bindings }>()
   .basePath("/api")
@@ -33,6 +34,7 @@ export const app = new Hono<{ Bindings: Bindings }>()
   // For per-route protection: .get("/api/private", protect, handler)
   .route("/analytics", analyticsRouter)
   .route("/subscriptions", subscriptionRouter)
+  .route("/push-notifications", pushNotificationRouter)
   .route("/user", userRouter);
 
 export default app;

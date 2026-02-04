@@ -24,11 +24,11 @@ export const Route = createFileRoute("/(protected)/settings/")({
 
 const pages = [
   { key: m.settings_pages_general, path: "/settings/general", Icon: Cog },
-  // {
-  //   key: m.settings_pages_notifications,
-  //   path: "/settings/notifications",
-  //   Icon: BellRing,
-  // },
+  {
+    key: m.settings_pages_notifications,
+    path: "/settings/notifications",
+    Icon: BellRing,
+  },
   {
     key: m.settings_pages_account,
     path: "/settings/account",

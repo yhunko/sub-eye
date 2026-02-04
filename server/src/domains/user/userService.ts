@@ -1,7 +1,7 @@
 import { CurrencyUtils } from "@shared/utils/currencyUtils";
 import type { UserPreferences } from "@shared/types";
 import type { UpdateUserPublicMetadata } from "@shared/schemas/userSchemas";
-import { clerkClient } from "@clerk/clerk-sdk-node";
+import { clerkClient } from "@clerk/express";
 
 export class UserService {
   /**
