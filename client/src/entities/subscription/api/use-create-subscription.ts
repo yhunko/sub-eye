@@ -6,6 +6,7 @@ import type {
 } from "@shared/domains/subscription";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../model/query-keys";
+import { analyticsQueryKeys } from "../../analytics";
 
 export const useCreateSubscription = ({
   options,
@@ -23,9 +24,12 @@ export const useCreateSubscription = ({
       }
       return res.json();
     },
-    async onSuccess() {
-      await queryClient.refetchQueries({
+    onSuccess() {
+      void queryClient.refetchQueries({
         queryKey: subscriptionsQueryKeys.list._def,
+      });
+      void queryClient.refetchQueries({
+        queryKey: analyticsQueryKeys._def,
       });
     },
   });
