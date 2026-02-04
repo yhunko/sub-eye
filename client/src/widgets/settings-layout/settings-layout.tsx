@@ -1,15 +1,10 @@
-import { FC, PropsWithChildren, Suspense, lazy } from "react";
+import { FC, PropsWithChildren } from "react";
 import { Button } from "../../shared/components";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-
-const MobileBottomNav = lazy(() => import("../mobile-bottom-nav"));
-const DesktopNavbar = lazy(() =>
-  import("../dashboard-layout/navbar/desktop-navbar").then((module) => ({
-    default: module.DesktopNavbar,
-  })),
-);
+import MobileBottomNav from "../mobile-bottom-nav";
+import { DesktopNavbar } from "../dashboard-layout/navbar/desktop-navbar";
 
 type SettingsLayoutProps = {
   title?: string;
@@ -25,11 +20,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
 
   return (
     <div className="flex min-h-svh w-full flex-col gap-2">
-      {isDesktop && (
-        <Suspense>
-          <DesktopNavbar />
-        </Suspense>
-      )}
+      {isDesktop && <DesktopNavbar />}
 
       <div className="container mx-auto flex w-full max-w-xl grow flex-col gap-2">
         <div className="relative flex h-14 flex-row items-center justify-center">
@@ -58,9 +49,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
         </div>
       </div>
 
-      <Suspense>
-        <MobileBottomNav />
-      </Suspense>
+      <MobileBottomNav />
     </div>
   );
 };
