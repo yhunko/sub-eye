@@ -1,21 +1,25 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/shared/components";
-import { FC, useId } from "react";
+import {
+  forwardRef,
+  useId,
+  ComponentRef,
+  ComponentPropsWithoutRef,
+} from "react";
 import { Image as ImageIcon } from "lucide-react";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
 
-type BrandfetchImageProps = {
+type BrandfetchImageProps = ComponentPropsWithoutRef<typeof Avatar> & {
   domain?: string | null;
-  className?: string;
 };
 
-export const BrandfetchImage: FC<BrandfetchImageProps> = ({
-  domain,
-  className,
-}) => {
+export const BrandfetchImage = forwardRef<
+  ComponentRef<typeof Avatar>,
+  BrandfetchImageProps
+>(({ domain, className, ...props }, ref) => {
   const id = useId();
 
   return (
-    <Avatar className={className}>
+    <Avatar ref={ref} className={className} {...props}>
       <AvatarImage
         src={domain ? BrandfetchUtils.getImageUrl(domain) : undefined}
         alt={`brand-logo-${id}`}
@@ -25,4 +29,6 @@ export const BrandfetchImage: FC<BrandfetchImageProps> = ({
       </AvatarFallback>
     </Avatar>
   );
-};
+});
+
+BrandfetchImage.displayName = "BrandfetchImage";

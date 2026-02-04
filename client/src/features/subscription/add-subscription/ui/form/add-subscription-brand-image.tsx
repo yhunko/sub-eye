@@ -31,6 +31,7 @@ export const AddSubscriptionBrandImage = () => {
                 href="https://brandfetch.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="underline"
               >
                 Brandfetch
               </a>

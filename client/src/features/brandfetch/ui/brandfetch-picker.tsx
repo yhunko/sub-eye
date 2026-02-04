@@ -76,7 +76,10 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   );
 
   const Trigger = selected ? (
-    <BrandfetchImage domain={selected.domain} />
+    <BrandfetchImage
+      domain={selected.domain}
+      className="cursor-pointer transition-opacity hover:opacity-75"
+    />
   ) : (
     SelectButton
   );
