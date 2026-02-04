@@ -28,7 +28,7 @@
   "form_basicInfo_name_placeholder": "e.g. Netflix",
   "form_basicInfo_cost_label": "Cost",
   "form_basicInfo_brand_title": "Brand",
-  "form_basicInfo_brand_description": "We will try to find the brand for you.",
+  "form_basicInfo_brand_description": "Powered by",
   "form_buttons_add": "Add Subscription",
   "form_buttons_update": "Update Subscription",
   "form_buttons_delete": "Delete",
