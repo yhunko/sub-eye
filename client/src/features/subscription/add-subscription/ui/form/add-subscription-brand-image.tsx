@@ -26,7 +26,7 @@ export const AddSubscriptionBrandImage = () => {
           <ItemContent>
             <ItemTitle>{m.form_basicInfo_brand_title()}</ItemTitle>
             <ItemDescription className="text-xs">
-              {m.form_basicInfo_brand_description()}{" "}
+              {m.form_basicInfo_brand_description()}&nbsp;
               <a
                 href="https://brandfetch.com"
                 target="_blank"
