@@ -28,66 +28,56 @@ const BrandfetchPickerDesktop = lazy(
 );
 const BrandfetchPickerMobile = lazy(() => import("./brandfetch-picker.mobile"));
 
-const DEFAULT_BRANDS: BrandfetchSearchDto[] = [
+const DEFAULT_BRANDS: Omit<BrandfetchSearchDto, "icon">[] = [
   {
     brandId: "netflix.com",
     name: "Netflix",
     domain: "netflix.com",
-    icon: "https://asset.brandfetch.io/netflix.com",
   },
   {
     brandId: "spotify.com",
     name: "Spotify",
     domain: "spotify.com",
-    icon: "https://asset.brandfetch.io/spotify.com",
   },
   {
     brandId: "youtube.com",
     name: "YouTube",
     domain: "youtube.com",
-    icon: "https://asset.brandfetch.io/youtube.com",
   },
   {
     brandId: "apple.com",
     name: "Apple",
     domain: "apple.com",
-    icon: "https://asset.brandfetch.io/apple.com",
   },
   {
     brandId: "google.com",
     name: "Google",
     domain: "google.com",
-    icon: "https://asset.brandfetch.io/google.com",
   },
   {
     brandId: "amazon.com",
     name: "Amazon",
     domain: "amazon.com",
-    icon: "https://asset.brandfetch.io/amazon.com",
   },
   {
     brandId: "facebook.com",
     name: "Facebook",
     domain: "facebook.com",
-    icon: "https://asset.brandfetch.io/facebook.com",
   },
   {
     brandId: "instagram.com",
     name: "Instagram",
     domain: "instagram.com",
-    icon: "https://asset.brandfetch.io/instagram.com",
   },
   {
     brandId: "twitter.com",
     name: "Twitter",
     domain: "twitter.com",
-    icon: "https://asset.brandfetch.io/twitter.com",
   },
   {
     brandId: "linkedin.com",
     name: "LinkedIn",
     domain: "linkedin.com",
-    icon: "https://asset.brandfetch.io/linkedin.com",
   },
 ];
 
@@ -105,11 +95,15 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   const { data = [], isLoading } = useBrandfetchSearch({
     params: { name: query },
     options: {
-      initialData: DEFAULT_BRANDS,
+      initialData: DEFAULT_BRANDS.map((item) => ({
+        ...item,
+        icon: `https://cdn.brandfetch.io/${item.domain}/w/80/h/80/fallback/lettermark/type/icon?c=${import.meta.env.VITE_BRANDFETCH_CLIENT_ID}`,
+      })),
       placeholderData: keepPreviousData,
-      enabled: !!query,
+      enabled: !!query?.length,
     },
   });
+  console.log(data);
 
   const Content = (
     <PickerContent
@@ -203,7 +197,7 @@ function PickerContent({
         onValueChange={setQuery}
         autoFocus
       />
-      <CommandList className="flex-1 overflow-y-auto overscroll-contain">
+      <CommandList className="max-h-full flex-1 overflow-y-auto overscroll-contain">
         <CommandEmpty className="flex flex-col items-center gap-4 py-5">
           {isLoading ? (
             <Spinner className="size-12 md:size-8" />

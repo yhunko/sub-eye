@@ -28,9 +28,10 @@ const BrandfetchPickerMobile = ({
       onOpenChange={onOpenChange}
       shouldScaleBackground={false}
       dismissible={true}
+      repositionInputs={false}
     >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent className="max-h-[95vh] p-0">
+      <DrawerContent className="max-h-[82vh] p-0">
         <VisuallyHidden.Root>
           <DrawerHeader>
             <DrawerTitle>Search Brand</DrawerTitle>
