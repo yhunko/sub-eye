@@ -1,7 +1,7 @@
 import { SubscriptionPeriod } from "../types";
 
 export class CurrencyUtils {
-  public static readonly DEFAULT_CURRENCY_CODE = "uah";
+  public static readonly DEFAULT_CURRENCY_CODE = "UAH";
 
   /**
    * Calculates the monthly cost based on the amount, interval, and period.
@@ -28,29 +28,15 @@ export class CurrencyUtils {
     }
   }
 
-  static normalizeCode(code: string | number | unknown): string {
+  static normalizeCode(code: string | undefined | null): string {
     if (!code) return this.DEFAULT_CURRENCY_CODE;
-
-    const numCode = Number(code);
-    if (!Number.isNaN(numCode) && typeof code !== "boolean") {
-      if (numCode === 840) return "usd";
-      if (numCode === 980) return "uah";
-      if (numCode === 978) return "eur";
-      if (numCode === 985) return "pln";
-      if (numCode === 826) return "gbp";
-    }
-
-    if (typeof code === "string") {
-      return code.toLowerCase();
-    }
-
-    return String(code).toLowerCase();
+    return code.trim().toUpperCase();
   }
 
   static convert(
     amount: number,
-    fromCode: string | number | unknown,
-    toCode: string | number | unknown,
+    fromCode: string,
+    toCode: string,
     rates: Record<string, number>,
   ): number {
     const from = this.normalizeCode(fromCode);

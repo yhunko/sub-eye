@@ -19,7 +19,7 @@ export const addSubscriptionFormSchema = v.object({
     v.transform((value) => Number(value)),
   ),
   period: v.enum_(SubscriptionPeriod),
-  currency: v.string(),
+  currency: v.pipe(v.string(), v.minLength(1, "Currency is required")),
   brandDomain: v.optional(
     v.pipe(
       v.custom<BrandfetchSearchDto>((val) => {

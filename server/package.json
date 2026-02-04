@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "type-check": "tsc --noEmit --pretty",

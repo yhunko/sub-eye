@@ -20,7 +20,7 @@ export class CurrencyRepository {
       return cachedData;
     }
 
-    const endpoint = `/currencies/${base}.json`;
+    const endpoint = `/currencies/${base.toLowerCase()}.json`;
 
     try {
       const data = await CurrencyRepository.fetchRates(

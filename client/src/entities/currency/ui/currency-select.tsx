@@ -26,12 +26,21 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
 }) => {
   const currencies = useMemo(() => Array.from(CurrenciesMap.entries()), []);
 
-  const selectedCurrency = useMemo(() => {
-    return CurrenciesMap.get(CurrencyUtils.normalizeCode(value));
+  const selectedCurrencyKey = useMemo(() => {
+    const normalized = CurrencyUtils.normalizeCode(value);
+    return CurrenciesMap.has(normalized)
+      ? normalized
+      : CurrencyUtils.DEFAULT_CURRENCY_CODE;
   }, [value]);
+
+  const selectedCurrency = useMemo(() => {
+    return CurrenciesMap.get(selectedCurrencyKey);
+  }, [selectedCurrencyKey]);
 
   const handleSelect = useCallback(
     (newValue: string) => {
+      if (!newValue) return;
+
       onChange?.(newValue);
     },
     [onChange],
@@ -39,7 +48,7 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
 
   return (
     <Select
-      value={selectedCurrency?.code}
+      value={selectedCurrencyKey}
       onValueChange={handleSelect}
       disabled={disabled}
     >
@@ -47,7 +56,7 @@ export const CurrencySelect: FC<CurrencySelectProps> = ({
         id={id}
         className="flex items-center font-mono"
         aria-label={m.components_currencySelect_ariaLabel({
-          code: selectedCurrency?.code ?? "usd",
+          code: selectedCurrency?.code ?? "USD",
         })}
       >
         <span className="flex items-center gap-2">
