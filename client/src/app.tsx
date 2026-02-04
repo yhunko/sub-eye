@@ -46,7 +46,7 @@ export function App() {
     <>
       <RouterProvider router={router} context={routerContext} />
       <SwUpdateManager />
-      <Toaster richColors />
+      <Toaster position="top-center" richColors />
     </>
   );
 }
