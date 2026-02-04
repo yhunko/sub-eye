@@ -22,6 +22,7 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 type UpcomingRenewalsProps = {
   className?: string;
@@ -94,7 +95,11 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
             variant="outline"
             asChild
           >
-            <a href={`/subscriptions/${item.id}`} className="w-full">
+            <Link
+              to="/subscriptions/$id"
+              params={{ id: item.id }}
+              className="w-full"
+            >
               <ItemMedia>
                 <BrandfetchImage domain={item.brandDomain} />
               </ItemMedia>
@@ -116,7 +121,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
                 />
                 <ChevronRight className="size-4" />
               </ItemActions>
-            </a>
+            </Link>
           </Item>
         ))}
       </CardContent>

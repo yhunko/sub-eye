@@ -7,7 +7,7 @@ import {
   ItemActions,
   ItemGroup,
 } from "@/shared/components";
-import { Cog, ChevronRight, BellRing } from "lucide-react";
+import { Cog, ChevronRight, BellRing, User } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { SettingsLayout } from "@/widgets/settings-layout";
 import { valibotValidator } from "@tanstack/valibot-adapter";
@@ -32,7 +32,7 @@ const pages = [
   {
     key: m.settings_pages_account,
     path: "/settings/account",
-    Icon: BellRing,
+    Icon: User,
   },
 ] as const;
 
