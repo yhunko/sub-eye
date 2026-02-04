@@ -1,8 +1,15 @@
 import { BrandfetchImage } from "@/features/brandfetch";
 import { ColumnDef } from "@tanstack/react-table";
 import { SubscriptionTableHead } from "../ui/subscriptions-table-head";
-import { Type, Calendar1, CreditCard, CalendarSync } from "lucide-react";
-import { ButtonGroup } from "@/shared/components";
+import {
+  Type,
+  Calendar1,
+  CreditCard,
+  CalendarSync,
+  EyeIcon,
+  Edit,
+} from "lucide-react";
+import { Button, ButtonGroup } from "@/shared/components";
 import { SubscriptionDto } from "@shared/domains/subscription";
 import { SubscriptionNextBill } from "../../billing";
 import { CurrencyBadge } from "@/entities/currency";
@@ -10,6 +17,7 @@ import { PeriodBadge } from "../../period";
 
 import * as m from "@/i18n/messages";
 import { SubscriptionDeleteButton } from "../../delete-subscription";
+import { Link } from "@tanstack/react-router";
 
 export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
   return [
@@ -121,9 +129,32 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
 
         return (
           <ButtonGroup
+            orientation="horizontal"
             aria-label={m.subscription_table_actionsAriaLabel()}
             className="h-fit"
           >
+            <Button
+              variant="outline"
+              size="icon"
+              asChild
+              aria-label={`View ${subscription.name}`}
+            >
+              <Link to="/subscriptions/$id" params={{ id }}>
+                <EyeIcon />
+                <span className="sr-only">View {subscription.name}</span>
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              asChild
+              aria-label={`Edit ${subscription.name}`}
+            >
+              <Link to="/subscriptions/$id/edit" params={{ id }}>
+                <Edit className="size-4 transition-all" />
+                <span className="sr-only">Edit {subscription.name}</span>
+              </Link>
+            </Button>
             <SubscriptionDeleteButton
               subscriptionId={id}
               subscriptionName={subscription.name}

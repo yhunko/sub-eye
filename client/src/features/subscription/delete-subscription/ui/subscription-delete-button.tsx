@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
-import { TrashIcon } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useDeleteSubscription } from "@/entities/subscription/api/use-delete-subscription";
 import { useState } from "react";
 import * as m from "@/i18n/messages";
@@ -57,8 +57,9 @@ export const SubscriptionDeleteButton = ({
           size={fullWidth ? "lg" : "icon"}
           className={cn(className, buttonClassName, fullWidth && "w-full")}
           aria-label={m.form_buttons_delete()}
+          data-slot="button"
         >
-          <TrashIcon className={cn("size-4", fullWidth && "mr-2")} />
+          <Trash2 className={cn("size-4", fullWidth && "mr-2")} />
           {fullWidth && m.form_buttons_delete()}
         </Button>
       </DialogTrigger>
