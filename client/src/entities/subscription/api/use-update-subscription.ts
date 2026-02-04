@@ -7,6 +7,7 @@ import type {
 } from "@shared/domains/subscription";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../model/query-keys";
+import { analyticsQueryKeys } from "../../analytics";
 
 export type UpdateSubscriptionParams = {
   id: string;
@@ -35,6 +36,10 @@ export const useUpdateSubscription = ({
       const { id } = variables;
 
       if (userId) {
+        void queryClient.refetchQueries({
+          queryKey: analyticsQueryKeys._def,
+        });
+
         queryClient.setQueryData(
           subscriptionsQueryKeys.detail({ userId, subscriptionId: id })
             .queryKey,

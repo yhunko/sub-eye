@@ -5,6 +5,7 @@ import { IdParam, SubscriptionDto } from "@shared/domains/subscription";
 import { apiClient } from "@/shared/api/client";
 import { ApiVoidReturn } from "@shared/types";
 import { subscriptionsQueryKeys } from "../model/query-keys";
+import { analyticsQueryKeys } from "../../analytics";
 
 export const useDeleteSubscription = ({
   options,
@@ -25,6 +26,10 @@ export const useDeleteSubscription = ({
       const { id } = variables;
 
       if (userId) {
+        void queryClient.refetchQueries({
+          queryKey: analyticsQueryKeys._def,
+        });
+
         queryClient.removeQueries({
           queryKey: subscriptionsQueryKeys.detail({
             userId,
