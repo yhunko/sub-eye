@@ -31,7 +31,7 @@ const BrandfetchPickerMobile = ({
       repositionInputs={false}
     >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent className="max-h-[82vh] p-0">
+      <DrawerContent>
         <VisuallyHidden.Root>
           <DrawerHeader>
             <DrawerTitle>Search Brand</DrawerTitle>

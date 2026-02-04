@@ -16,7 +16,6 @@ import {
 import { useDebouncedState, useUncontrolled } from "@mantine/hooks";
 import { useBrandfetchSearch } from "@/entities/brandfetch/api/hooks";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
-import { keepPreviousData } from "@tanstack/react-query";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import { BrandfetchImage } from "./brandfetch-image";
 import { cn } from "@/shared/lib/classes-utils";
@@ -95,18 +94,17 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useDebouncedState("", 500);
 
-  const { data = [], isLoading } = useBrandfetchSearch({
+  const { data, isLoading } = useBrandfetchSearch({
     params: { name: query },
     options: {
-      initialData: DEFAULT_BRANDS,
-      placeholderData: keepPreviousData,
+      placeholderData: DEFAULT_BRANDS,
       enabled: !!query?.length,
     },
   });
 
   const Content = (
     <PickerContent
-      data={data}
+      data={data ?? []}
       isLoading={isLoading}
       onSelect={(brand) => {
         setSelected(brand);
@@ -141,14 +139,18 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
     [],
   );
 
-  const Trigger = selected ? (
-    <BrandfetchImage
-      domain={selected.domain}
-      className="cursor-pointer transition-opacity hover:opacity-75"
-    />
-  ) : (
-    SelectButton
-  );
+  const Trigger = useMemo(() => {
+    if (selected) {
+      return (
+        <BrandfetchImage
+          domain={selected.domain}
+          className="cursor-pointer transition-opacity hover:opacity-75"
+        />
+      );
+    }
+
+    return SelectButton;
+  }, [SelectButton, selected]);
 
   if (isDesktop) {
     return (
