@@ -19,7 +19,7 @@ import { SubscriptionPeriod } from "../../types";
 
 const currencyCodeSchema = pipe(
   string(),
-  transform((value) => value.trim().toUpperCase()),
+  transform((value) => value.trim().toLowerCase()),
   minLength(3),
 );
 

@@ -2,7 +2,7 @@ import type { Currency } from "./types";
 
 export const CurrenciesMap = new Map<string, Currency>([
   [
-    "USD",
+    "usd",
     {
       code: "USD",
       symbol: "$",
@@ -11,7 +11,7 @@ export const CurrenciesMap = new Map<string, Currency>([
     },
   ],
   [
-    "EUR",
+    "eur",
     {
       code: "EUR",
       symbol: "€",
@@ -20,7 +20,7 @@ export const CurrenciesMap = new Map<string, Currency>([
     },
   ],
   [
-    "UAH",
+    "uah",
     {
       code: "UAH",
       symbol: "₴",
@@ -29,7 +29,7 @@ export const CurrenciesMap = new Map<string, Currency>([
     },
   ],
   [
-    "GBP",
+    "gbp",
     {
       code: "GBP",
       symbol: "£",
@@ -38,7 +38,7 @@ export const CurrenciesMap = new Map<string, Currency>([
     },
   ],
   [
-    "PLN",
+    "pln",
     {
       code: "PLN",
       symbol: "zł",
