@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -8,6 +9,11 @@ export const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
+    },
+    mutations: {
+      onError(error) {
+        toast.error(error?.message);
+      },
     },
   },
 });

@@ -45,9 +45,6 @@ export const SubscriptionDeleteButton = ({
           setOpen(false);
           toast.success(m.messages_deleted());
         },
-        onError: () => {
-          toast.error(m.messages_error());
-        },
       },
     );
   };
@@ -65,7 +62,7 @@ export const SubscriptionDeleteButton = ({
           {fullWidth && m.form_buttons_delete()}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{m.form_buttons_delete()}</DialogTitle>
           <DialogDescription>
