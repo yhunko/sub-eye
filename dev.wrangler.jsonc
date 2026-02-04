@@ -12,5 +12,11 @@
     "not_found_handling": "single-page-application"
   },
   "tsconfig": "./tsconfig.json",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true
+    }
+  }
 }
