@@ -24,7 +24,7 @@ export const useCreateSubscription = ({
       return res.json();
     },
     async onSuccess() {
-      await queryClient.invalidateQueries({
+      await queryClient.refetchQueries({
         queryKey: subscriptionsQueryKeys.list._def,
       });
     },
