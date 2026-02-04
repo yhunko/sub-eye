@@ -12,7 +12,7 @@
     "qstash:dev": "npx @upstash/qstash-cli dev"
   },
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^5.1.6",
+    "@clerk/express": "^1.7.68",
     "@hono/clerk-auth": "^3.1.0",
     "@hono/valibot-validator": "^0.6.1",
     "@neondatabase/serverless": "^1.0.2",
@@ -21,10 +21,12 @@
     "drizzle-orm": "^0.45.1",
     "hono": "^4.10.8",
     "shared": "workspace:*",
-    "valibot": "^1.2.0"
+    "valibot": "^1.2.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/web-push": "^3.6.4",
     "drizzle-kit": "^0.31.8"
   }
 }

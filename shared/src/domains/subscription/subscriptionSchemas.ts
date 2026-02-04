@@ -165,3 +165,20 @@ export type SubscriptionBillingDetails = InferOutput<
   typeof subscriptionBillingDetailsSchema
 >;
 export type SubscriptionDto = InferOutput<typeof SubscriptionDtoSchema>;
+
+export const PushSubscriptionSchema = strictObject({
+  endpoint: string(),
+  keys: strictObject({
+    p256dh: string(),
+    auth: string(),
+  }),
+});
+
+export type PushSubscriptionInput = InferOutput<typeof PushSubscriptionSchema>;
+
+export type PushNotificationPayload = {
+  title: string;
+  body: string;
+  icon?: string;
+  data?: Record<string, unknown>;
+};

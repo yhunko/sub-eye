@@ -113,5 +113,19 @@
   "analytics_charts_monthlySpending_labels_totalSpending": "Total spending",
   "analytics_charts_monthlySpending_labels_total": "Total",
   "analytics_upcomingRenewals_title": "Upcoming renewals",
-  "analytics_upcomingRenewals_noUpcoming": "No upcoming renewals"
+  "analytics_upcomingRenewals_noUpcoming": "No upcoming renewals",
+  "settings_notifications_title": "Push Notifications",
+  "settings_notifications_description": "Receive alerts about upcoming renewals",
+  "settings_notifications_status_checking": "Checking...",
+  "settings_notifications_status_supported": "Supported",
+  "settings_notifications_status_notSupported": "Not supported",
+  "settings_notifications_status_subscribed": "Subscribed",
+  "settings_notifications_status_notSubscribed": "Not subscribed",
+  "settings_notifications_appleInstall_title": "Install App",
+  "settings_notifications_appleInstall_description": "To enable push notifications on iOS, you need to install this app to your home screen.",
+  "settings_notifications_appleInstall_howToInstall": "How to install:",
+  "settings_notifications_appleInstall_step1": "Tap the share button",
+  "settings_notifications_appleInstall_step2": "Scroll down and tap 'Add to Home Screen'",
+  "settings_notifications_appleInstall_step3": "Tap 'Add' in the top right corner",
+  "settings_notifications_appleInstall_step4": "Open the app from your home screen"
 }

@@ -112,6 +112,20 @@
   "analytics_charts_monthlySpending_subtitle": "Витрати по місяцях (наступні 12 міс)",
   "analytics_charts_monthlySpending_labels_totalSpending": "Всього витрат",
   "analytics_charts_monthlySpending_labels_total": "Всього",
-  "analytics_upcomingRenewals_title": "Найближчі поновлення",
-  "analytics_upcomingRenewals_noUpcoming": "Немає найближчих поновлень"
+  "analytics_upcomingRenewals_title": "Майбутні поновлення",
+  "analytics_upcomingRenewals_noUpcoming": "Немає майбутніх поновлень",
+  "settings_notifications_title": "Push-сповіщення",
+  "settings_notifications_description": "Отримуйте сповіщення про майбутні поновлення",
+  "settings_notifications_status_checking": "Перевірка...",
+  "settings_notifications_status_supported": "Підтримується",
+  "settings_notifications_status_notSupported": "Не підтримується",
+  "settings_notifications_status_subscribed": "Підписано",
+  "settings_notifications_status_notSubscribed": "Не підписано",
+  "settings_notifications_appleInstall_title": "Встановити додаток",
+  "settings_notifications_appleInstall_description": "Щоб увімкнути push-сповіщення на iOS, вам потрібно додати цей додаток на головний екран.",
+  "settings_notifications_appleInstall_howToInstall": "Як встановити:",
+  "settings_notifications_appleInstall_step1": "Натисніть кнопку 'Поділитися'",
+  "settings_notifications_appleInstall_step2": "Прокрутіть вниз і натисніть 'На екран «Додому»'",
+  "settings_notifications_appleInstall_step3": "Натисніть 'Додати' у верхньому правому куті",
+  "settings_notifications_appleInstall_step4": "Відкрийте додаток з головного екрану"
 }

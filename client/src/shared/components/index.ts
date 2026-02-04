@@ -1,4 +1,6 @@
+export * from "./ui/alert";
 export * from "./ui/avatar";
+export * from "./ui/badge";
 export * from "./ui/breadcrumb";
 export * from "./ui/button";
 export * from "./ui/button-group";
@@ -25,6 +27,7 @@ export * from "./ui/skeleton";
 export * from "./ui/sonner";
 export * from "./ui/spinner";
 export * from "./ui/table";
+export * from "./ui/switch";
 export * from "./ui/textarea";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";

@@ -125,4 +125,4 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
-  .post("/workflow", SubscriptionNotificationsWorkflow.handler);
+  .post("/notifications/workflow", SubscriptionNotificationsWorkflow.handler);

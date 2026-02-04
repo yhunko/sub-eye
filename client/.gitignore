@@ -24,3 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Serwist
+public/sw*
+public/swe-worker*

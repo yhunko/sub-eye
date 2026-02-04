@@ -6,6 +6,7 @@ import { Toaster } from "@/shared/components";
 import { useMemo } from "react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { SplashScreen } from "./shared/ui";
+import { SwUpdateManager } from "./features/pwa/sw-update-manager";
 
 const router = createRouter({
   routeTree,
@@ -44,6 +45,7 @@ export function App() {
   return (
     <>
       <RouterProvider router={router} context={routerContext} />
+      <SwUpdateManager />
       <Toaster richColors />
     </>
   );
