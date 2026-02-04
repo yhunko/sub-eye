@@ -28,7 +28,7 @@ const BrandfetchPickerDesktop = lazy(
 );
 const BrandfetchPickerMobile = lazy(() => import("./brandfetch-picker.mobile"));
 
-const DEFAULT_BRANDS: Omit<BrandfetchSearchDto, "icon">[] = [
+const DEFAULT_BRANDS: BrandfetchSearchDto[] = [
   {
     brandId: "netflix.com",
     name: "Netflix",
@@ -79,7 +79,10 @@ const DEFAULT_BRANDS: Omit<BrandfetchSearchDto, "icon">[] = [
     name: "LinkedIn",
     domain: "linkedin.com",
   },
-];
+].map((item) => ({
+  ...item,
+  icon: `https://cdn.brandfetch.io/${item.domain}/w/80/h/80/fallback/lettermark/type/icon?c=${import.meta.env.VITE_BRANDFETCH_CLIENT_ID}`,
+}));
 
 interface BrandPickerProps {
   value?: BrandfetchSearchDto;
@@ -95,15 +98,11 @@ export const BrandfetchPicker: FC<BrandPickerProps> = ({ value, onChange }) => {
   const { data = [], isLoading } = useBrandfetchSearch({
     params: { name: query },
     options: {
-      initialData: DEFAULT_BRANDS.map((item) => ({
-        ...item,
-        icon: `https://cdn.brandfetch.io/${item.domain}/w/80/h/80/fallback/lettermark/type/icon?c=${import.meta.env.VITE_BRANDFETCH_CLIENT_ID}`,
-      })),
+      initialData: DEFAULT_BRANDS,
       placeholderData: keepPreviousData,
       enabled: !!query?.length,
     },
   });
-  console.log(data);
 
   const Content = (
     <PickerContent
@@ -195,7 +194,6 @@ function PickerContent({
       <CommandInput
         placeholder={m.features_brandfetch_picker_searchPlaceholder()}
         onValueChange={setQuery}
-        autoFocus
       />
       <CommandList className="max-h-full flex-1 overflow-y-auto overscroll-contain">
         <CommandEmpty className="flex flex-col items-center gap-4 py-5">
