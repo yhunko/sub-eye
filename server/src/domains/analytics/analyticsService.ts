@@ -209,7 +209,7 @@ export class AnalyticsService {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
       await this.getAnalyticsContext(userId, deps);
 
-    const monthOffsets = [-4, -3, -2, -1, 0, 1];
+    const monthOffsets = [-1, 0, 1, 2, 3, 4, 5, 6];
 
     const trend: MonthlySpendTrendPoint[] = monthOffsets.map((offset) => {
       const monthStart = startOfMonth(addMonths(now, offset));
@@ -362,7 +362,7 @@ export class AnalyticsService {
       timezone,
     );
 
-    let occurrence = RecurrenceUtils.getNextOccurrence(
+    let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
       startDateZoned,
       subscription.every,
       subscription.period as SubscriptionPeriod,

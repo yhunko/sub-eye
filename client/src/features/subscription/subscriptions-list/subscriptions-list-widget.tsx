@@ -8,6 +8,7 @@ import {
 import { SubscriptionsList } from "./ui/subscriptions-list";
 import { SubscriptionsListToolbar } from "./ui/subscriptions-list-toolbar";
 import { useAuth } from "@clerk/clerk-react";
+import { SubscriptionsMonthlySpendCard } from "../../analytics";
 
 const SubscriptionsListWidget = () => {
   const [filters, setFilters] = useQueryStates(subscriptionsQueryParsers, {
@@ -47,6 +48,10 @@ const SubscriptionsListWidget = () => {
 
   return (
     <div className="flex min-h-full flex-col gap-4 pb-6">
+      <div className="flex flex-col gap-1">
+        <SubscriptionsMonthlySpendCard />
+      </div>
+
       <SubscriptionsListToolbar
         loading={isLoading}
         sortBy={sortBy}
