@@ -155,6 +155,22 @@ export class SubscriptionService {
     await deps.repository.deleteByUserId(db, userId);
   }
 
+  static async rescheduleUserNotifications(
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<void> {
+    const subscriptions = await deps.repository.findByUserId(db, userId);
+
+    await Promise.all(
+      subscriptions.map(async (subscription) => {
+        if (subscription.qstashMessageId) {
+          await deps.workflow.cancel(subscription.qstashMessageId);
+        }
+        await this.scheduleWorkflow(subscription, deps);
+      }),
+    );
+  }
+
   private static mapToDto(
     subscription: SubscriptionRecord,
     preferences: UserPreferences,
