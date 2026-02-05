@@ -9,11 +9,13 @@ import { DesktopNavbar } from "../dashboard-layout/navbar/desktop-navbar";
 type SettingsLayoutProps = {
   title?: string;
   backTo?: string;
+  backToSearch?: Record<string, unknown>;
 };
 
 export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
   title = " ",
   backTo,
+  backToSearch,
   children,
 }) => {
   const isDesktop = useBreakpoint("md");
@@ -31,7 +33,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
               size="icon-lg"
               asChild
             >
-              <Link to={backTo}>
+              <Link to={backTo} search={backToSearch}>
                 <ChevronLeft />
               </Link>
             </Button>
