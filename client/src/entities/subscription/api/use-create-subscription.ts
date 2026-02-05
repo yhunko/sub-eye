@@ -25,10 +25,10 @@ export const useCreateSubscription = ({
       return res.json();
     },
     onSuccess() {
-      void queryClient.refetchQueries({
+      void queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
       });
-      void queryClient.refetchQueries({
+      void queryClient.invalidateQueries({
         queryKey: analyticsQueryKeys._def,
       });
     },

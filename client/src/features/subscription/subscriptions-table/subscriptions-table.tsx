@@ -28,6 +28,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { SubscriptionSortField } from "@shared/domains/subscription";
 import * as m from "@/i18n/messages";
 import { TableBodyLoader } from "@/shared/ui";
+import { SubscriptionsMonthlySpendCard } from "../../analytics";
 
 const SubscriptionsTable: FC = () => {
   const [filters, setFilters] = useQueryStates(subscriptionsQueryParsers, {
@@ -96,6 +97,10 @@ const SubscriptionsTable: FC = () => {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-2">
+        <SubscriptionsMonthlySpendCard />
+      </div>
+
       <div className="flex items-center gap-2">
         <SubscriptionsSearch
           placeholder={m.common_placeholders_search()}

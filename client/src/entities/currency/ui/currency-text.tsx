@@ -5,11 +5,13 @@ import { CurrencyUtils } from "@shared/utils/currencyUtils";
 type CurrencyTextProps = {
   currencyCode?: string;
   amount: number;
+  className?: string;
 };
 
 export const CurrencyText: FC<CurrencyTextProps> = ({
   currencyCode,
   amount,
+  className,
 }) => {
   const currencyMetadata = useMemo(() => {
     return CurrenciesMap.get(CurrencyUtils.normalizeCode(currencyCode));
@@ -25,7 +27,7 @@ export const CurrencyText: FC<CurrencyTextProps> = ({
   }).format(amount);
 
   return (
-    <div>
+    <div className={className}>
       <span className="font-bold text-slate-600 dark:text-slate-300">
         {symbol}
       </span>

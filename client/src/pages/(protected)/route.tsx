@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { LocalizedDateFnsProvider } from "../../app/providers/localized-date-fns-provider";
 
 export const Route = createFileRoute("/(protected)")({
   beforeLoad: ({ context, location }) => {
@@ -11,5 +12,11 @@ export const Route = createFileRoute("/(protected)")({
       });
     }
   },
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <Outlet />
+
+      <LocalizedDateFnsProvider />
+    </>
+  ),
 });

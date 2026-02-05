@@ -3,3 +3,5 @@ export { CashFlowChart } from "./ui/cash-flow-chart";
 export { MonthlySpendingTrendChart } from "./ui/monthly-spending-trend-chart";
 export { StatCards } from "./ui/stat-cards";
 export { UpcomingRenewals } from "./ui/upcoming-renewals";
+export { StatSummaryCard } from "./ui/stat-summary-card";
+export { SubscriptionsMonthlySpendCard } from "./ui/subscriptions-monthly-spend-card";

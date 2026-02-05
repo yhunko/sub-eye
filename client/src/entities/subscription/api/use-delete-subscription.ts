@@ -26,7 +26,7 @@ export const useDeleteSubscription = ({
       const { id } = variables;
 
       if (userId) {
-        void queryClient.refetchQueries({
+        void queryClient.invalidateQueries({
           queryKey: analyticsQueryKeys._def,
         });
 
