@@ -11,11 +11,7 @@ import { Cog, ChevronRight, BellRing, User } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { SettingsLayout } from "@/widgets/settings-layout";
 import { valibotValidator } from "@tanstack/valibot-adapter";
-import { object, optional, string } from "valibot";
-
-const settingsSearchSchema = object({
-  from: optional(string()),
-});
+import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
 
 export const Route = createFileRoute("/(protected)/settings/")({
   component: SettingsPage,
@@ -44,7 +40,7 @@ function SettingsPage() {
       <ItemGroup className="gap-3">
         {pages.map(({ key, path, Icon }) => (
           <Item key={path} variant="outline" size="default" asChild>
-            <Link to={path}>
+            <Link to={path} search={{ from }}>
               <ItemMedia variant="icon">
                 <Icon />
               </ItemMedia>
