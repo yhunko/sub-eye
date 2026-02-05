@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
 import { UpdateUserPublicMetadataSchema } from "@shared/schemas/userSchemas";
 import { UserService } from "../domains/user/userService";
+import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 
@@ -36,6 +37,11 @@ export const userRouter = new Hono().patch(
         userId,
         payload,
       );
+
+      // Reschedule notifications if relevant preferences changed
+      // For now, we reschedule on any update to be safe
+      await SubscriptionService.rescheduleUserNotifications(userId);
+
       return context.json(preferences);
     } catch (error) {
       return handleServiceError(context, error);

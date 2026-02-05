@@ -1,6 +1,6 @@
 import { Client, type WorkflowContext } from "@upstash/workflow";
 import { serve } from "@upstash/workflow/hono";
-import { isSameDay, subDays } from "date-fns";
+import { subDays } from "date-fns";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
 import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
 import type { UserPreferences } from "@shared/types";
@@ -124,7 +124,7 @@ export class SubscriptionNotificationsWorkflow {
       notificationTime,
     );
 
-    if (isSameDay(notifyAt, now)) {
+    if (notifyAt.getTime() <= now.getTime()) {
       const nextPaymentAfter = RecurrenceUtils.addPeriod(
         nextPayment,
         subscription.every,

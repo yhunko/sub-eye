@@ -1,5 +1,3 @@
-"use client";
-
 import { Bell, BellOff, CheckCircle2, XCircle } from "lucide-react";
 import { Badge, Spinner } from "@/shared/components";
 import { usePushNotificationsSubscription } from "../api/hooks";
