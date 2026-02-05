@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from "react";
-import { isValid, isSameDay, addYears, format, parse } from "date-fns";
+import { isValid, isSameDay, addYears, format, parse, isDate } from "date-fns";
 import { Calendar, Input, Label } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
@@ -64,7 +64,11 @@ export const SubscriptionDatePickerContent: FC<
   };
 
   const handleMaskComplete = () => {
-    setSelectedMonth(new Date(parse(inputValue, "dd/MM/yyyy", new Date())));
+    const parsedDate = parse(inputValue, "dd/MM/yyyy", new Date());
+
+    if (isDate(parsedDate)) {
+      setSelectedMonth(parsedDate);
+    }
   };
 
   return (
