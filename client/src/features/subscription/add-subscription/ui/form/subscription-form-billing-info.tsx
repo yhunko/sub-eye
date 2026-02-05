@@ -14,7 +14,7 @@ import {
 } from "@/shared/components";
 import { useFormContext, useWatch } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
-import { SubscriptionDateSelect } from "../subscription-date-select";
+import { SubscriptionDatePicker } from "../subscription-date-picker/subscription-date-picker";
 import { SubscriptionPeriod } from "@shared/types";
 import * as m from "@/i18n/messages";
 
@@ -40,7 +40,7 @@ export const SubscriptionFormBillingInfo = () => {
                 {m.form_billingInfo_nextPaymentDate_label()}
               </FormLabel>
               <FormControl>
-                <SubscriptionDateSelect
+                <SubscriptionDatePicker
                   value={field.value}
                   onChange={field.onChange}
                 />
