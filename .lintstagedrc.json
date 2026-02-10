@@ -1,7 +1,7 @@
 {
   "client/**/*.{js,jsx,ts,tsx}": [
     "bun x eslint --config client/eslint.config.js --fix",
-    "prettier --config client/.prettierrc.json --plugin-search-dir=client --write"
+    "prettier --config client/.prettierrc.json --write"
   ],
   "server/**/*.{js,jsx,ts,tsx}": ["prettier --write"],
   "shared/**/*.{js,jsx,ts,tsx}": ["prettier --write"],
