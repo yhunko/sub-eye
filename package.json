@@ -45,6 +45,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "semantic-release": "^25.0.3",
     "turbo": "^2.8.1",
     "wrangler": "^4.61.1"
@@ -54,5 +55,8 @@
   },
   "volta": {
     "node": "24.13.0"
+  },
+  "dependencies": {
+    "eslint": "9.39.2"
   }
 }
