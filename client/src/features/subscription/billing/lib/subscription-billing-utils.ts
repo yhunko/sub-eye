@@ -19,7 +19,7 @@ export class SubscriptionBillingUtils {
     const daysUntil = differenceInCalendarDays(targetDate, now);
 
     return {
-      formattedDate: format(targetDate, "MMM d, yyyy"),
+      formattedDate: format(targetDate, "d MMMM, yyyy"),
       ...this.getUrgencyStyles(targetDate, daysUntil),
     };
   }
