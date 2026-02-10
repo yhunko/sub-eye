@@ -103,7 +103,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
                 axisLine={false}
                 tickMargin={10}
                 tickFormatter={(val: string) =>
-                  format(parseISO(val), "MMM yyyy")
+                  format(parseISO(val), "LLL yyyy")
                 }
                 className="text-muted-foreground text-xs"
               />
@@ -130,7 +130,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
                     return (
                       <div className="bg-background/95 border-border rounded-lg border p-3 shadow-md backdrop-blur-sm">
                         <p className="text-muted-foreground mb-2 text-xs font-medium">
-                          {format(parseISO(item.date), "MMMM yyyy")}
+                          {format(parseISO(item.date), "LLLL yyyy")}
                         </p>
                         <div className="flex items-center justify-between gap-4">
                           <span className="text-foreground text-sm font-bold">

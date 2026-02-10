@@ -6,6 +6,7 @@ export const UpdateUserPublicMetadataSchema = v.object({
   notificationTime: v.optional(v.string()),
   notificationOffset: v.optional(v.number()),
   locale: v.optional(v.string()),
+  preferredDateFormat: v.optional(v.string()),
 });
 
 export type UpdateUserPublicMetadata = v.InferInput<

@@ -4,6 +4,7 @@ import { ItemGroup } from "@/shared/components";
 import { LocaleSelect } from "../locale-select";
 import { PreferredCurrencySelect } from "../preferred-currency-select";
 import { PreferredTimezoneSelect } from "../preferred-timezone-select";
+import { PreferredDateFormatSelect } from "../preferred-date-format-select";
 
 export const SettingsGeneralForm = () => {
   return (
@@ -12,6 +13,7 @@ export const SettingsGeneralForm = () => {
         <LocaleSelect />
         <ThemeSelect />
         <PreferredCurrencySelect />
+        <PreferredDateFormatSelect />
         <PreferredTimezoneSelect />
       </ItemGroup>
     </SettingsFormLayout>

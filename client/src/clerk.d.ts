@@ -17,6 +17,7 @@ declare global {
     notificationTime?: string;
     notificationOffset?: number;
     locale?: string;
+    preferredDateFormat?: string;
   }
 
   interface CustomJwtSessionClaims {

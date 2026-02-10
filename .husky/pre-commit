@@ -1,5 +1,8 @@
 set -e
 
+echo "📦 Checking dependencies..."
+syncpack lint
+
 echo "🌎 Compiling i18n..."
 bun run prepare
 

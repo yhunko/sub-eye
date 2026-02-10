@@ -12,6 +12,7 @@ import {
 } from "@/shared/components";
 import { useState, ChangeEventHandler, KeyboardEventHandler } from "react";
 import { NotificationOffsetSelect } from "./notification-offset-select";
+import { Clock } from "lucide-react";
 
 export const NotificationTimeSelect = () => {
   const { user } = useUser();
@@ -47,6 +48,9 @@ export const NotificationTimeSelect = () => {
         {isPending && <Spinner />}
       </FieldLabel>
       <InputGroup>
+        <InputGroupAddon>
+          <Clock />
+        </InputGroupAddon>
         <InputGroupInput
           id="time-picker"
           value={time}
@@ -56,6 +60,7 @@ export const NotificationTimeSelect = () => {
           type="time"
           step="900"
           disabled={isPending}
+          className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
         />
         <InputGroupAddon align="inline-end" className="overflow-hidden pr-2">
           <NotificationOffsetSelect />

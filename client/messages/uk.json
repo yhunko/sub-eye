@@ -55,6 +55,7 @@
   "settings_general_theme_label": "Тема",
   "settings_general_currency_label": "Бажана валюта",
   "settings_general_timezone_label": "Бажаний часовий пояс",
+  "settings_general_dateFormat_label": "Формат дати",
   "components_timezoneSelect_search": "Пошук часового поясу...",
   "components_timezoneSelect_empty": "Часовий пояс не знайдено",
   "billing_today": "Сьогодні",
