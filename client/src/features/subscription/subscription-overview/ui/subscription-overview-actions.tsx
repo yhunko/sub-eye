@@ -20,19 +20,13 @@ export const SubscriptionOverviewActions: FC<
   onDeleteSuccess,
 }) => {
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:gap-4">
-      <Button
-        className="grow"
-        size="lg"
-        variant="outline"
-        onClick={onMarkAsCanceled}
-      >
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+      <Button size="lg" variant="outline" onClick={onMarkAsCanceled}>
         <XCircle className="mr-2 size-4" />
         {m.subscription_overview_markAsCanceled()}
       </Button>
       <SubscriptionDeleteButton
         subscriptionId={subscriptionId}
-        buttonClassName="grow"
         fullWidth
         onSuccess={onDeleteSuccess}
         subscriptionName={subscriptionName}

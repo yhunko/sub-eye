@@ -13,14 +13,12 @@ import { Trash2 } from "lucide-react";
 import { useDeleteSubscription } from "@/entities/subscription/api/use-delete-subscription";
 import { useState } from "react";
 import * as m from "@/i18n/messages";
-import { cn } from "@/shared/lib/classes-utils";
 import { toast } from "sonner";
 
 type SubscriptionDeleteButtonProps = {
   subscriptionId: string;
   subscriptionName?: string;
-  className?: string; // Wrapper class
-  buttonClassName?: string;
+  className?: string;
   fullWidth?: boolean;
   onSuccess?: () => Promise<void> | void;
 };
@@ -29,7 +27,6 @@ export const SubscriptionDeleteButton = ({
   subscriptionId,
   subscriptionName,
   className,
-  buttonClassName,
   fullWidth,
   onSuccess,
 }: SubscriptionDeleteButtonProps) => {
@@ -55,11 +52,11 @@ export const SubscriptionDeleteButton = ({
         <Button
           variant="destructive"
           size={fullWidth ? "lg" : "icon"}
-          className={cn(className, buttonClassName, fullWidth && "w-full")}
+          className={className}
           aria-label={m.form_buttons_delete()}
           data-slot="button"
         >
-          <Trash2 className={cn("size-4", fullWidth && "mr-2")} />
+          <Trash2 className="size-4" />
           {fullWidth && m.form_buttons_delete()}
         </Button>
       </DialogTrigger>

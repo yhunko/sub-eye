@@ -5,6 +5,7 @@ import {
   ItemTitle,
   FormField,
   ItemDescription,
+  FormMessage,
 } from "@/shared/components";
 import { useFormContext } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
@@ -19,26 +20,32 @@ export const AddSubscriptionBrandImage = () => {
       control={control}
       name="brandDomain"
       render={({ field }) => (
-        <Item size="sm" variant="outline">
-          <ItemMedia>
-            <BrandfetchPicker value={field.value} onChange={field.onChange} />
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>{m.form_basicInfo_brand_title()}</ItemTitle>
-            <ItemDescription className="text-xs">
-              {m.form_basicInfo_brand_description()}&nbsp;
-              <a
-                href="https://brandfetch.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Brandfetch
-              </a>
-              .
-            </ItemDescription>
-          </ItemContent>
-        </Item>
+        <div className="space-y-2">
+          <Item size="sm" variant="outline">
+            <ItemMedia>
+              <BrandfetchPicker
+                value={field.value ?? undefined}
+                onChange={field.onChange}
+              />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>{m.form_basicInfo_brand_title()}</ItemTitle>
+              <ItemDescription className="text-xs">
+                {m.form_basicInfo_brand_description()}&nbsp;
+                <a
+                  href="https://brandfetch.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  Brandfetch
+                </a>
+                .
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+          <FormMessage />
+        </div>
       )}
     />
   );

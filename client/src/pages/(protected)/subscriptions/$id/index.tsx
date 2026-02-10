@@ -15,7 +15,7 @@ function SubscriptionPage() {
 
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
-      <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
+      <div className="container max-w-3xl">
         <Suspense fallback={<SubscriptionOverviewSkeleton />}>
           <SubscriptionOverview subscriptionId={id} />
         </Suspense>
