@@ -1,40 +1,49 @@
 import * as v from "valibot";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { SubscriptionPeriod } from "@shared/types";
+import * as m from "@/i18n/messages";
 
-export const addSubscriptionFormSchema = v.object({
-  name: v.pipe(v.string(), v.minLength(1, "Name is required")),
-  cost: v.pipe(
-    v.string(),
-    v.minLength(1, "Cost is required"),
-    v.transform((value) => Number(value)),
-  ),
-  paymentDate: v.pipe(
-    v.date(),
-    v.transform((value) => value.getTime()),
-  ),
-  every: v.pipe(
-    v.string(),
-    v.minLength(1, "Billing cycle is required"),
-    v.transform((value) => Number(value)),
-  ),
-  period: v.enum_(SubscriptionPeriod),
-  currency: v.pipe(v.string(), v.minLength(1, "Currency is required")),
-  brandDomain: v.optional(
-    v.pipe(
-      v.custom<BrandfetchSearchDto>((val) => {
-        return typeof val === "object" && val !== null && "domain" in val;
-      }, "Please select a valid brand"),
-      v.transform((brand) => brand.domain),
+export const createAddSubscriptionFormSchema = () =>
+  v.object({
+    name: v.pipe(
+      v.string(m.validation_required()),
+      v.nonEmpty(m.validation_required()),
+      v.transform((value) => value.trim()),
     ),
-  ),
-});
+    cost: v.pipe(
+      v.string(),
+      v.check(
+        (input) => !isNaN(parseFloat(input)),
+        m.validation_invalid_number(),
+      ),
+      v.check((input) => parseFloat(input) > 0, m.validation_positive_number()),
+      v.transform((input) => parseFloat(input)),
+    ),
+    paymentDate: v.pipe(v.date(m.validation_invalid_date())),
+    every: v.pipe(
+      v.string(),
+      v.check((input) => /^\d+$/.test(input), m.validation_whole_number()),
+      v.transform((i) => parseInt(i, 10)),
+      v.minValue(1, m.validation_min_value({ min: 1 })),
+    ),
+    period: v.enum(SubscriptionPeriod),
+    currency: v.pipe(v.string(), v.minLength(1, m.validation_required())),
+    brandDomain: v.nullish(
+      v.pipe(
+        v.custom<BrandfetchSearchDto>((val) => {
+          return typeof val === "object" && val !== null && "domain" in val;
+        }, m.validation_brand_invalid()),
+        v.transform((brand) => brand.domain),
+      ),
+    ),
+  });
 
-export type AddSubscriptionInput = v.InferInput<
-  typeof addSubscriptionFormSchema
->;
-export type AddSubscriptionOutput = v.InferOutput<
-  typeof addSubscriptionFormSchema
+export type AddSubscriptionFormSchema = ReturnType<
+  typeof createAddSubscriptionFormSchema
 >;
 
-export const useAddSubscriptionFormSchema = () => addSubscriptionFormSchema;
+export type AddSubscriptionInput = v.InferInput<AddSubscriptionFormSchema>;
+export type AddSubscriptionOutput = v.InferOutput<AddSubscriptionFormSchema>;
+
+export const useAddSubscriptionFormSchema = () =>
+  createAddSubscriptionFormSchema();

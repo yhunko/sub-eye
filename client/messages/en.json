@@ -142,5 +142,12 @@
   "settings_notifications_appleInstall_step1": "Tap the share button",
   "settings_notifications_appleInstall_step2": "Scroll down and tap 'Add to Home Screen'",
   "settings_notifications_appleInstall_step3": "Tap 'Add' in the top right corner",
-  "settings_notifications_appleInstall_step4": "Open the app from your home screen"
+  "settings_notifications_appleInstall_step4": "Open the app from your home screen",
+  "validation_required": "This field is required",
+  "validation_invalid_number": "Must be a valid number",
+  "validation_positive_number": "Must be greater than 0",
+  "validation_whole_number": "Must be a whole number",
+  "validation_min_value": "Must be at least {min}",
+  "validation_invalid_date": "Invalid date",
+  "validation_brand_invalid": "Please select a valid brand"
 }

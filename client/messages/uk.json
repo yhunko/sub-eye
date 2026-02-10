@@ -142,5 +142,12 @@
   "settings_notifications_appleInstall_step1": "Натисніть кнопку 'Поділитися'",
   "settings_notifications_appleInstall_step2": "Прокрутіть вниз і натисніть 'На екран «Додому»'",
   "settings_notifications_appleInstall_step3": "Натисніть 'Додати' у верхньому правому куті",
-  "settings_notifications_appleInstall_step4": "Відкрийте додаток з головного екрану"
+  "settings_notifications_appleInstall_step4": "Відкрийте додаток з головного екрану",
+  "validation_required": "Це поле обов'язкове",
+  "validation_invalid_number": "Має бути числом",
+  "validation_positive_number": "Має бути більше 0",
+  "validation_whole_number": "Має бути цілим числом",
+  "validation_min_value": "Має бути не менше {min}",
+  "validation_invalid_date": "Некоректна дата",
+  "validation_brand_invalid": "Будь ласка, оберіть дійсний бренд"
 }

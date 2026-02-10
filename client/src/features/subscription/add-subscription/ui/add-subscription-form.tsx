@@ -62,6 +62,10 @@ export const AddSubscriptionForm = ({
     const payload = {
       ...data,
       paymentDate: new Date(data.paymentDate).toISOString(),
+      autoPaid: false,
+      category: null,
+      notes: null,
+      brandDomain: data.brandDomain ?? null,
     };
 
     if (isEditMode && subscriptionId) {
@@ -75,7 +79,6 @@ export const AddSubscriptionForm = ({
         },
       );
     } else {
-      // @ts-expect-error TODO: Normalize payload types
       addSubscription(payload, {
         async onSuccess() {
           await navigate({ to: "/subscriptions" });
