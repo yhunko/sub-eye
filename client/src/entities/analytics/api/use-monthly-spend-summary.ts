@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
 import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { MonthlySpendSummaryDto } from "@shared/domains/analytics";
@@ -17,9 +16,3 @@ export const monthlySpendSummaryQuery = (
   },
   ...options,
 });
-
-export const useMonthlySpendSummary = (
-  options?: QueryHook<MonthlySpendSummaryDto>,
-) => {
-  return useQuery(monthlySpendSummaryQuery(options));
-};
