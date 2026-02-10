@@ -85,7 +85,7 @@ We use **Paraglide (Inlang)**.
 
 ```json
 {
-  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "$schema": "[https://inlang.com/schema/inlang-message-format](https://inlang.com/schema/inlang-message-format)",
   "form_billingInfo_title": "Billing Info",
   "messages_confirmDelete": "Are you sure you want to delete {name}?"
 }
@@ -153,32 +153,64 @@ export default defineConfig({
 ### Data Fetching
 
 Use **TanStack Query** wrapping **Hono RPC**.
+We export **`queryOptions`** factories instead of hooks for flexibility (usage in `useQuery`, `useSuspenseQuery`, or loaders).
+
+**1. RPC Client Setup**
 
 ```typescript
 // client/src/shared/api/client.ts
 import { honoClient } from "@server/client";
 
-export const client = honoClient(import.meta.env.VITE_API_URL, {
+export const apiClient = honoClient(import.meta.env.VITE_API_URL, {
   fetch: (input, init) => fetch(input, { ...init, credentials: "include" }),
 });
 ```
 
-```typescript
-// client/src/entities/user/api/use-user.ts
-import { useQuery } from "@tanstack/react-query";
-import { client } from "@/shared/api/client";
-import type { QueryHook } from "@/shared/lib/react-query/types";
+**2. Query Factory Example**
 
-export function useUser({ params, options }: QueryHook<ReturnType, Params>) {
-  return useQuery({
-    queryKey: ["user", "me"],
+```typescript
+// client/src/entities/analytics/api/dashboard-analytics-query.ts
+import { queryOptions } from "@tanstack/react-query";
+import type { DashboardAnalyticsDto } from "shared";
+import type { QueryHook } from "@/shared/lib/react-query/types";
+import { analyticsQueryKeys } from "../model/query-keys";
+import { apiClient } from "@/shared/api/client";
+
+type DashboardAnalyticsParams = { userId: string };
+
+export function dashboardAnalyticsQuery({
+  params,
+  options,
+}: QueryHook<DashboardAnalyticsDto, DashboardAnalyticsParams>) {
+  const { userId } = params;
+
+  return queryOptions({
+    queryKey: analyticsQueryKeys.dashboard({ userId }).queryKey,
     queryFn: async () => {
-      const res = await client.api.users.me.$get();
-      if (!res.ok) throw new Error("Failed to fetch");
-      return await res.json();
+      const res = await apiClient.api.analytics.dashboard.$get();
+      if (!res.ok) {
+        throw new Error("Failed to fetch dashboard analytics");
+      }
+      return res.json();
     },
+    ...options,
+    enabled: options?.enabled ?? Boolean(userId),
   });
 }
+```
+
+**3. Usage in Component**
+
+```typescript
+// Standard
+const { data } = useQuery(
+  dashboardAnalyticsQuery({ params: { userId: "123" } }),
+);
+
+// Suspense
+const { data } = useSuspenseQuery(
+  dashboardAnalyticsQuery({ params: { userId: "123" } }),
+);
 ```
 
 ---
