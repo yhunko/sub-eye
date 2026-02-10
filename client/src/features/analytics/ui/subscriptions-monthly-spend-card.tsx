@@ -1,11 +1,12 @@
-import { useMonthlySpendSummary } from "@/entities/analytics";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { CurrencyText } from "@/entities/currency";
 import { StatSummaryCard } from "./stat-summary-card";
+import { monthlySpendSummaryQuery } from "@/entities/analytics";
+import { useQuery } from "@tanstack/react-query";
 
 export const SubscriptionsMonthlySpendCard = () => {
-  const { data, isLoading, isSuccess } = useMonthlySpendSummary();
+  const { data, isLoading, isSuccess } = useQuery(monthlySpendSummaryQuery());
 
   if (!isSuccess && !isLoading && !data) return null;
 
