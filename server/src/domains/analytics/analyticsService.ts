@@ -10,7 +10,6 @@ import {
   isAfter,
   isBefore,
   isSameDay,
-  isSameMonth,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -154,16 +153,49 @@ export class AnalyticsService {
     let cumulative = 0;
     let remainingThisMonth = 0;
 
-    for (let i = 0; i < 30; i++) {
-      const targetDate = addDays(today, i);
-      const dueToday = allUpcomingPayments.filter((payment) =>
-        isSameDay(new Date(payment.nextPaymentDate), targetDate),
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+    const monthPayments: Array<{
+      date: Date;
+      amount: number;
+      subscription: SubscriptionDto;
+    }> = [];
+
+    for (const subscription of subscriptions) {
+      let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
+        subscription.paymentDate,
+        subscription.every,
+        subscription.period as SubscriptionPeriod,
+        monthStart,
+      );
+
+      while (!isAfter(occurrence, monthEnd)) {
+        monthPayments.push({
+          date: occurrence,
+          amount: subscription.billing.preferred.amount,
+          subscription,
+        });
+        occurrence = RecurrenceUtils.addPeriod(
+          occurrence,
+          subscription.every,
+          subscription.period as SubscriptionPeriod,
+        );
+      }
+    }
+
+    for (const targetDate of daysInMonth) {
+      const dueToday = monthPayments.filter((payment) =>
+        isSameDay(payment.date, targetDate),
       );
       const dailyAmount = dueToday.reduce((sum, p) => sum + p.amount, 0);
       cumulative += dailyAmount;
-      if (isSameMonth(targetDate, today)) {
+
+      if (!isBefore(targetDate, today)) {
         remainingThisMonth += dailyAmount;
       }
+
       cashFlowForecast.push({
         date: targetDate.toISOString(),
         amount: Number(dailyAmount.toFixed(2)),
