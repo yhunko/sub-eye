@@ -2,6 +2,7 @@ import { FC, useState, useEffect } from "react";
 import { isValid, isSameDay, addYears, format, parse, isDate } from "date-fns";
 import { Calendar, Input, Label } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
 import * as m from "@/i18n/messages";
 import { withMask } from "use-mask-input";
 
@@ -17,37 +18,38 @@ interface SubscriptionDatePickerContentProps {
 export const SubscriptionDatePickerContent: FC<
   SubscriptionDatePickerContentProps
 > = ({ value, onChange, onClose, className }) => {
-  // Determine the user's locale format for the placeholder
-  // This is a simple approximation. For strict locale format, we might need more complex logic
-  // but usually users understand their system format.
+  const dateFormatConfig = useDateFormat();
   const [inputValue, setInputValue] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(value);
 
   // Sync input value when external value changes
   useEffect(() => {
     if (value && isValid(value)) {
-      setInputValue(format(value, "dd/MM/yyyy"));
+      setInputValue(format(value, dateFormatConfig.dateFnsFormat));
       setSelectedMonth(value);
     } else {
       setInputValue("");
     }
-  }, [value]);
+  }, [value, dateFormatConfig.dateFnsFormat]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVal = e.target.value;
     setInputValue(newVal);
 
-    // Attempt to parse the date
-    // We try to let the Date constructor handle the parsing first as it covers many cases based on browser locale
-    const parsedDate = new Date(newVal);
+    // Only attempt to parse if the input is complete (matches the mask length)
+    const expectedLength = dateFormatConfig.mask.length;
+    if (newVal.length !== expectedLength) {
+      return;
+    }
 
-    if (isValid(parsedDate) && newVal.length >= 8) {
-      // Basic length check to avoid premature parsing of "1" or "12"
-      // Check if the year is reasonable (e.g. not 0001) if needed, but Date constructor usually handles it.
-      // However, user might type "12/25", defaulting to 2001 or current year depending on browser.
-      // Let's rely on valid date.
+    // Parse the date using the current format
+    const parsedDate = parse(
+      newVal,
+      dateFormatConfig.dateFnsFormat,
+      new Date(),
+    );
 
-      // We only update if it's a valid date and different from current
+    if (isValid(parsedDate)) {
       if (!value || !isSameDay(parsedDate, value)) {
         onChange(parsedDate);
         setSelectedMonth(parsedDate);
@@ -58,15 +60,19 @@ export const SubscriptionDatePickerContent: FC<
   const handleCalendarSelect = (date: Date | undefined) => {
     if (date) {
       onChange(date);
-      setInputValue(date.toLocaleDateString());
+      setInputValue(format(date, dateFormatConfig.dateFnsFormat));
       onClose();
     }
   };
 
   const handleMaskComplete = () => {
-    const parsedDate = parse(inputValue, "dd/MM/yyyy", new Date());
+    const parsedDate = parse(
+      inputValue,
+      dateFormatConfig.dateFnsFormat,
+      new Date(),
+    );
 
-    if (isDate(parsedDate)) {
+    if (isDate(parsedDate) && isValid(parsedDate)) {
       setSelectedMonth(parsedDate);
     }
   };
@@ -78,11 +84,11 @@ export const SubscriptionDatePickerContent: FC<
           {m.date_selectDate()}
         </Label>
         <Input
-          ref={withMask("99/99/9999", {
+          ref={withMask(dateFormatConfig.mask, {
             oncomplete: handleMaskComplete,
           })}
           id="date-input"
-          placeholder={new Date().toLocaleDateString()} // Example format placeholder
+          placeholder={dateFormatConfig.placeholder}
           value={inputValue}
           onChange={handleInputChange}
           className="w-full"

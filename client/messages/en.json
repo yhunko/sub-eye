@@ -55,6 +55,7 @@
   "settings_general_theme_label": "Theme",
   "settings_general_currency_label": "Preferred currency",
   "settings_general_timezone_label": "Preferred timezone",
+  "settings_general_dateFormat_label": "Date format",
   "components_timezoneSelect_search": "Search timezone...",
   "components_timezoneSelect_empty": "No timezone found",
   "billing_today": "Today",

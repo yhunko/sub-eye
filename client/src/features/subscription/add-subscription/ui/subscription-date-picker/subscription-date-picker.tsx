@@ -1,10 +1,12 @@
 import { FC, useState, lazy, Suspense } from "react";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
 import { Button } from "@/shared/components";
 import { ChevronDownIcon, CalendarIcon } from "lucide-react";
 import { SubscriptionDatePickerContent } from "./subscription-date-picker-content";
 import * as m from "@/i18n/messages";
 import { cn } from "@/shared/lib/classes-utils";
+import { format } from "date-fns";
 
 const DesktopPicker = lazy(() => import("./subscription-date-picker.desktop"));
 const MobilePicker = lazy(() => import("./subscription-date-picker.mobile"));
@@ -24,6 +26,7 @@ export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const isDesktop = useBreakpoint("md");
+  const dateFormatConfig = useDateFormat();
 
   const Trigger = (
     <Button
@@ -38,7 +41,9 @@ export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
     >
       <span className="flex items-center gap-2">
         <CalendarIcon className="h-4 w-4" />
-        {value ? value.toLocaleDateString() : m.date_selectDate()}
+        {value
+          ? format(value, dateFormatConfig.dateFnsFormat)
+          : m.date_selectDate()}
       </span>
       <ChevronDownIcon className="h-4 w-4 opacity-50" />
     </Button>

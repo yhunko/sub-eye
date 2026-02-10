@@ -13,10 +13,8 @@ export const Route = createFileRoute("/(protected)")({
     }
   },
   component: () => (
-    <>
+    <LocalizedDateFnsProvider>
       <Outlet />
-
-      <LocalizedDateFnsProvider />
-    </>
+    </LocalizedDateFnsProvider>
   ),
 });
