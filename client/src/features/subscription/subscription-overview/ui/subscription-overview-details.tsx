@@ -30,8 +30,13 @@ export const SubscriptionOverviewDetails: FC<
         </ItemMedia>
         <ItemContent>
           <ItemTitle>{m.subscription_overview_nextPayment()}</ItemTitle>
-          <ItemDescription className={displayState?.colorClass}>
-            {displayState?.relativeText}
+          <ItemDescription>
+            <span>{displayState?.formattedDate}</span>
+            &nbsp;(
+            <span className={displayState?.colorClass}>
+              {displayState?.relativeText}
+            </span>
+            )
           </ItemDescription>
         </ItemContent>
       </Item>
