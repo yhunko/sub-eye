@@ -1,33 +1,24 @@
 import { SubscriptionService } from "../subscription/subscriptionService";
 import { UserService } from "../user/userService";
 import {
-  addDays,
   addMonths,
   endOfDay,
   endOfMonth,
   endOfWeek,
-  format,
-  isAfter,
-  isBefore,
-  isSameDay,
   startOfDay,
   startOfMonth,
   startOfWeek,
   eachDayOfInterval,
 } from "date-fns";
-import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
 import { CurrencyUtils } from "@shared/utils/currencyUtils";
-import type { SubscriptionDto } from "@shared/domains/subscription";
-import type { SubscriptionPeriod } from "@shared/types";
 import type {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
-  MostExpensiveSubscriptionDto,
-  UpcomingRenewalDto,
   WeeklyRenewalsSummaryDto,
 } from "@shared/domains/analytics";
+import { AnalyticsCalculator } from "./analyticsCalculator";
 
 type AnalyticsServiceDeps = {
   subscriptionService: typeof SubscriptionService;
@@ -39,185 +30,66 @@ const defaultDeps: AnalyticsServiceDeps = {
   userService: UserService,
 };
 
+/**
+ * Orchestrates analytics data retrieval.
+ * Fetches data via dependencies, then delegates all calculations to AnalyticsCalculator.
+ */
 export class AnalyticsService {
   static async getDashboardStats(
     userId: string,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<DashboardAnalyticsDto> {
-    const { subscriptions, preferredCurrencyCode, now } =
+    const { subscriptions, preferredCurrencyCode, now, timezone } =
       await this.getAnalyticsContext(userId, deps);
 
     const today = startOfDay(now);
-    const monthTrendStart = startOfMonth(today);
-    const trendEnd = addMonths(monthTrendStart, 12);
     const oneYearFromNow = addMonths(today, 12);
 
+    // Aggregate subscription stats
     let monthlyBurnRate = 0;
     let activeSubscriptionsAuto = 0;
     let activeSubscriptionsManual = 0;
-    let mostExpensiveSubscription: MostExpensiveSubscriptionDto = {
-      name: "N/A",
-      yearlyAmount: 0,
-      brandDomain: null,
-    };
 
-    const trendMap = new Map<string, number>();
-    for (let i = 0; i < 12; i++) {
-      const monthKey = format(
-        startOfMonth(addMonths(monthTrendStart, i)),
-        "yyyy-MM-dd",
-      );
-      trendMap.set(monthKey, 0);
-    }
-
-    const allUpcomingPayments: UpcomingRenewalDto[] = [];
-
-    for (const subscription of subscriptions) {
-      monthlyBurnRate += subscription.billing.preferred.monthly;
-
-      if (subscription.autoPaid) {
+    for (const sub of subscriptions) {
+      monthlyBurnRate += sub.billing.preferred.monthly;
+      if (sub.autoPaid) {
         activeSubscriptionsAuto += 1;
       } else {
         activeSubscriptionsManual += 1;
       }
-
-      const yearlyCost = subscription.billing.preferred.monthly * 12;
-      if (yearlyCost > mostExpensiveSubscription.yearlyAmount) {
-        mostExpensiveSubscription = {
-          name: subscription.name,
-          yearlyAmount: yearlyCost,
-          brandDomain: subscription.brandDomain,
-        };
-      }
-
-      let projectionDate = RecurrenceUtils.getNextOccurrence(
-        subscription.paymentDate,
-        subscription.every,
-        subscription.period as SubscriptionPeriod,
-        today,
-      );
-
-      while (isBefore(projectionDate, oneYearFromNow)) {
-        const daysUntil = Math.round(
-          (projectionDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
-        );
-        allUpcomingPayments.push({
-          id: subscription.id,
-          name: subscription.name,
-          brandDomain: subscription.brandDomain,
-          provider: subscription.category ?? "Subscription",
-          amount: subscription.billing.preferred.amount,
-          currencyCode: preferredCurrencyCode,
-          nextPaymentDate: projectionDate.toISOString(),
-          daysUntil,
-        });
-
-        projectionDate = RecurrenceUtils.getNextOccurrence(
-          projectionDate,
-          subscription.every,
-          subscription.period as SubscriptionPeriod,
-          addDays(projectionDate, 1),
-        );
-      }
-
-      let trendProjection = RecurrenceUtils.getNextOccurrence(
-        subscription.paymentDate,
-        subscription.every,
-        subscription.period as SubscriptionPeriod,
-        monthTrendStart,
-      );
-
-      while (isBefore(trendProjection, trendEnd)) {
-        const monthKey = format(startOfMonth(trendProjection), "yyyy-MM-dd");
-        if (trendMap.has(monthKey)) {
-          const currentTotal = trendMap.get(monthKey) ?? 0;
-          trendMap.set(
-            monthKey,
-            currentTotal + subscription.billing.preferred.amount,
-          );
-        }
-        trendProjection = RecurrenceUtils.getNextOccurrence(
-          trendProjection,
-          subscription.every,
-          subscription.period as SubscriptionPeriod,
-          addDays(trendProjection, 1),
-        );
-      }
     }
+
+    // Delegate all projections to calculator
+    const mostExpensiveSubscription =
+      AnalyticsCalculator.findMostExpensive(subscriptions);
+
+    const allUpcomingPayments = AnalyticsCalculator.projectUpcomingPayments(
+      subscriptions,
+      today,
+      oneYearFromNow,
+      preferredCurrencyCode,
+      timezone,
+    );
 
     const upcomingRenewals = [...allUpcomingPayments]
       .sort((a, b) => a.daysUntil - b.daysUntil)
       .slice(0, 5);
 
-    const cashFlowForecast: DashboardAnalyticsDto["cashFlowForecast"] = [];
-    let cumulative = 0;
-    let remainingThisMonth = 0;
-
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
-    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-    const monthPayments: Array<{
-      date: Date;
-      amount: number;
-      subscription: SubscriptionDto;
-    }> = [];
-
-    for (const subscription of subscriptions) {
-      let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
-        subscription.paymentDate,
-        subscription.every,
-        subscription.period as SubscriptionPeriod,
-        monthStart,
-      );
-
-      while (!isAfter(occurrence, monthEnd)) {
-        monthPayments.push({
-          date: occurrence,
-          amount: subscription.billing.preferred.amount,
-          subscription,
-        });
-        occurrence = RecurrenceUtils.addPeriod(
-          occurrence,
-          subscription.every,
-          subscription.period as SubscriptionPeriod,
-        );
-      }
-    }
-
-    for (const targetDate of daysInMonth) {
-      const dueToday = monthPayments.filter((payment) =>
-        isSameDay(payment.date, targetDate),
-      );
-      const dailyAmount = dueToday.reduce((sum, p) => sum + p.amount, 0);
-      cumulative += dailyAmount;
-
-      if (!isBefore(targetDate, today)) {
-        remainingThisMonth += dailyAmount;
-      }
-
-      cashFlowForecast.push({
-        date: targetDate.toISOString(),
-        amount: Number(dailyAmount.toFixed(2)),
-        cumulative: Number(cumulative.toFixed(2)),
-        subscriptions: dueToday.map((p) => ({
-          name: p.subscription.name,
-          brandDomain: p.subscription.brandDomain,
-          amount: Number(p.amount.toFixed(2)),
-        })),
-      });
-    }
-
-    const totalUpcomingMonth = cashFlowForecast.reduce(
-      (acc, point) => acc + point.amount,
-      0,
+    const {
+      forecast: cashFlowForecast,
+      remainingThisMonth,
+      totalUpcomingMonth,
+    } = AnalyticsCalculator.buildCashFlowForecast(
+      subscriptions,
+      today,
+      timezone,
     );
 
-    const monthlyTrend = Array.from(trendMap.entries()).map(
-      ([date, amount]) => ({
-        date,
-        amount: Number(amount.toFixed(2)),
-      }),
+    const monthlyTrend = AnalyticsCalculator.buildMonthlyTrend(
+      subscriptions,
+      today,
+      12,
+      timezone,
     );
 
     return {
@@ -228,10 +100,7 @@ export class AnalyticsService {
       activeSubscriptionsTotal: subscriptions.length,
       activeSubscriptionsAuto,
       activeSubscriptionsManual,
-      mostExpensiveSubscription:
-        mostExpensiveSubscription.yearlyAmount > 0
-          ? mostExpensiveSubscription
-          : null,
+      mostExpensiveSubscription,
       cashFlowForecast,
       upcomingRenewals,
       totalUpcomingMonth,
@@ -251,17 +120,11 @@ export class AnalyticsService {
     const trend: MonthlySpendTrendPoint[] = monthOffsets.map((offset) => {
       const monthStart = startOfMonth(addMonths(now, offset));
       const monthEnd = endOfMonth(addMonths(now, offset));
-      const total = subscriptions.reduce(
-        (sum, subscription) =>
-          sum +
-          this.calculateSpendForRange(
-            subscription,
-            subscription.billing.preferred.amount,
-            monthStart,
-            monthEnd,
-            timezone,
-          ),
-        0,
+      const total = AnalyticsCalculator.sumSpendInRange(
+        subscriptions,
+        monthStart,
+        monthEnd,
+        timezone,
       );
       return {
         date: monthStart.toISOString(),
@@ -302,30 +165,18 @@ export class AnalyticsService {
     const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
     const endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 1 });
 
-    const totalThisWeek = subscriptions.reduce(
-      (sum, subscription) =>
-        sum +
-        this.calculateSpendForRange(
-          subscription,
-          subscription.billing.preferred.amount,
-          startOfCurrentWeek,
-          endOfCurrentWeek,
-          timezone,
-        ),
-      0,
+    const totalThisWeek = AnalyticsCalculator.sumSpendInRange(
+      subscriptions,
+      startOfCurrentWeek,
+      endOfCurrentWeek,
+      timezone,
     );
 
-    const totalUpcomingWeek = subscriptions.reduce(
-      (sum, subscription) =>
-        sum +
-        this.calculateSpendForRange(
-          subscription,
-          subscription.billing.preferred.amount,
-          startOfDay(now),
-          endOfCurrentWeek,
-          timezone,
-        ),
-      0,
+    const totalUpcomingWeek = AnalyticsCalculator.sumSpendInRange(
+      subscriptions,
+      startOfDay(now),
+      endOfCurrentWeek,
+      timezone,
     );
 
     const daysInWeek = eachDayOfInterval({
@@ -335,17 +186,11 @@ export class AnalyticsService {
 
     const trend = daysInWeek.map((day) => {
       const dayStart = startOfDay(day);
-      const dailyTotal = subscriptions.reduce(
-        (sum, subscription) =>
-          sum +
-          this.calculateSpendForRange(
-            subscription,
-            subscription.billing.preferred.amount,
-            dayStart,
-            endOfDay(dayStart),
-            timezone,
-          ),
-        0,
+      const dailyTotal = AnalyticsCalculator.sumSpendInRange(
+        subscriptions,
+        dayStart,
+        endOfDay(dayStart),
+        timezone,
       );
       return {
         date: dayStart.toISOString(),
@@ -385,38 +230,5 @@ export class AnalyticsService {
       timezone: metadata.preferredTimezone,
       now,
     };
-  }
-
-  private static calculateSpendForRange(
-    subscription: SubscriptionDto,
-    perPaymentAmount: number,
-    rangeStart: Date,
-    rangeEnd: Date,
-    timezone?: string,
-  ): number {
-    const startDateZoned = DateTimezoneUtils.toZoned(
-      subscription.paymentDate,
-      timezone,
-    );
-
-    let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
-      startDateZoned,
-      subscription.every,
-      subscription.period as SubscriptionPeriod,
-      rangeStart,
-    );
-
-    let total = 0;
-
-    while (!isAfter(occurrence, rangeEnd)) {
-      total += perPaymentAmount;
-      occurrence = RecurrenceUtils.addPeriod(
-        occurrence,
-        subscription.every,
-        subscription.period as SubscriptionPeriod,
-      );
-    }
-
-    return total;
   }
 }
