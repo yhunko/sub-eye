@@ -3,10 +3,17 @@
  * Used for dashboard analytics, monthly spend summary, and weekly renewals.
  */
 
+export interface CashFlowSubscription {
+  name: string;
+  brandDomain: string | null;
+  amount: number;
+}
+
 export interface CashFlowPoint {
   date: string;
   amount: number;
   cumulative: number;
+  subscriptions: CashFlowSubscription[];
 }
 
 export interface UpcomingRenewalDto {
