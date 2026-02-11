@@ -32,7 +32,7 @@ export const useUpdateSubscription = ({
       }
       return res.json();
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       const { id } = variables;
 
       if (userId) {
@@ -61,8 +61,11 @@ export const useUpdateSubscription = ({
             return oldData.map((sub) => (sub.id === id ? data : sub));
           },
         );
+      } else {
+        await queryClient.invalidateQueries({
+          queryKey: subscriptionsQueryKeys.list._def,
+        });
       }
-      // options?.onSuccess?.(data, variables, context);
     },
   });
 };
