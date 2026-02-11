@@ -110,6 +110,7 @@
   "analytics_charts_cashFlow_labels_dailyAmount": "За день",
   "analytics_charts_cashFlow_labels_totalNeededLabel": "Накопичено",
   "analytics_charts_cashFlow_todayLabel": "Сьогодні",
+  "analytics_charts_cashFlow_labels_subscriptions": "Підписки",
   "analytics_charts_monthlySpending_title": "Місячний тренд витрат",
   "analytics_charts_monthlySpending_subtitle": "Ваші загальні витрати за останні 6 місяців",
   "analytics_monthlySpend_title": "Місячні витрати",

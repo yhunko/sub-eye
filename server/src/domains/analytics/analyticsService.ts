@@ -200,6 +200,11 @@ export class AnalyticsService {
         date: targetDate.toISOString(),
         amount: Number(dailyAmount.toFixed(2)),
         cumulative: Number(cumulative.toFixed(2)),
+        subscriptions: dueToday.map((p) => ({
+          name: p.subscription.name,
+          brandDomain: p.subscription.brandDomain,
+          amount: Number(p.amount.toFixed(2)),
+        })),
       });
     }
 

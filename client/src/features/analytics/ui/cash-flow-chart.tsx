@@ -11,7 +11,7 @@ import {
 import { format, parseISO, startOfDay } from "date-fns";
 import { useUser } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
-import { CurrencyBadge } from "@/entities/currency";
+import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import { CurrenciesMap } from "@shared/domains/currency";
 import {
   Card,
@@ -21,10 +21,12 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import type { CashFlowSubscription } from "@shared/domains/analytics";
 
 type CashFlowChartProps = {
   className?: string;
@@ -136,25 +138,58 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
                     date: string;
                     amount: number;
                     cumulative: number;
+                    subscriptions: CashFlowSubscription[];
                   };
                   return (
-                    <div className="bg-background/95 rounded-lg border p-3 shadow-md backdrop-blur-sm">
+                    <div className="bg-background/95 w-52 rounded-lg border p-3 shadow-md backdrop-blur-sm">
                       <p className="text-muted-foreground mb-2 text-xs font-medium">
                         {format(parseISO(item.date), "MMM dd, yyyy", {
                           locale,
                         })}
                       </p>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-xs">
-                            {m.analytics_charts_cashFlow_labels_dailyAmount()}
-                          </span>
-                          <CurrencyBadge
-                            amount={item.amount}
-                            currencyCode={data.preferredCurrencyCode}
-                          />
+                      {item.subscriptions.length > 0 && (
+                        <div className="mb-2 space-y-1.5">
+                          {item.subscriptions.map((sub, idx) => (
+                            <div
+                              key={`${sub.name}-${idx}`}
+                              className="flex items-center gap-2"
+                            >
+                              <BrandfetchImage
+                                domain={sub.brandDomain}
+                                className="size-5 text-[8px]"
+                              />
+                              <span className="flex-1 truncate text-xs">
+                                {sub.name}
+                              </span>
+                              <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                                <CurrencyText
+                                  amount={sub.amount}
+                                  currencyCode={data.preferredCurrencyCode}
+                                />
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                        <div className="mt-2 flex items-center justify-between gap-4 border-t pt-2">
+                      )}
+                      <div className="space-y-1 border-t pt-2">
+                        {item.subscriptions.length > 1 && (
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-xs font-medium">
+                              {m.analytics_charts_cashFlow_labels_dailyAmount()}
+                            </span>
+                            <CurrencyBadge
+                              amount={item.amount}
+                              currencyCode={data.preferredCurrencyCode}
+                            />
+                          </div>
+                        )}
+                        <div
+                          className={`flex items-center justify-between gap-4 ${
+                            item.subscriptions.length > 1
+                              ? "mt-1 border-t pt-2"
+                              : ""
+                          }`}
+                        >
                           <span className="text-xs font-bold">
                             {m.analytics_charts_cashFlow_labels_totalNeededLabel()}
                           </span>

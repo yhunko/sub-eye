@@ -110,6 +110,7 @@
   "analytics_charts_cashFlow_labels_dailyAmount": "Daily amount",
   "analytics_charts_cashFlow_labels_totalNeededLabel": "Cumulative",
   "analytics_charts_cashFlow_todayLabel": "Today",
+  "analytics_charts_cashFlow_labels_subscriptions": "Subscriptions",
   "analytics_charts_monthlySpending_title": "Monthly spending trend",
   "analytics_charts_monthlySpending_subtitle": "Your total spending over the last 6 months",
   "analytics_monthlySpend_title": "Monthly Spend",
