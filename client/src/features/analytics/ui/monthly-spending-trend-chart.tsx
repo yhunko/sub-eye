@@ -12,10 +12,13 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import { CurrencyBadge } from "@/entities/currency";
+import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { BrandfetchImage } from "@/features/brandfetch";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
+import type { MonthlyTrendSubscription } from "@shared/domains/analytics";
 
 type MonthlySpendingTrendChartProps = {
   className?: string;
@@ -25,6 +28,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
   className,
 }) => {
   const { userId } = useAuth();
+  const { locale } = useDateFnsLocale();
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
@@ -94,7 +98,9 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
               tickLine={false}
               axisLine={false}
               tickMargin={10}
-              tickFormatter={(val: string) => format(parseISO(val), "LLL yyyy")}
+              tickFormatter={(val: string) =>
+                format(parseISO(val), "LLL yyyy", { locale })
+              }
               className="text-muted-foreground text-xs"
             />
             <YAxis
@@ -103,7 +109,12 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
               tickMargin={8}
               width={45}
               className="text-muted-foreground font-mono text-[10px] font-medium"
-              tickFormatter={(value: number) => `${currencySymbol}${value}`}
+              tickFormatter={(value: number) =>
+                `${currencySymbol}${value.toLocaleString(undefined, {
+                  notation: "compact",
+                  maximumFractionDigits: 1,
+                })}`
+              }
             />
             <ChartTooltip
               cursor={{
@@ -116,13 +127,45 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
                   const item = payload[0].payload as {
                     date: string;
                     amount: number;
+                    subscriptions: MonthlyTrendSubscription[];
                   };
                   return (
-                    <div className="bg-background/95 border-border rounded-lg border p-3 shadow-md backdrop-blur-sm">
+                    <div className="bg-background/95 border-border max-h-75 w-52 overflow-y-auto rounded-lg border p-3 shadow-md backdrop-blur-sm">
                       <p className="text-muted-foreground mb-2 text-xs font-medium">
-                        {format(parseISO(item.date), "LLLL yyyy")}
+                        {format(parseISO(item.date), "LLLL yyyy", { locale })}
                       </p>
-                      <div className="flex items-center justify-between gap-4">
+                      {item.subscriptions && item.subscriptions.length > 0 && (
+                        <div className="mb-2 space-y-1.5">
+                          {item.subscriptions.map((sub, idx) => (
+                            <div
+                              key={`${sub.name}-${idx}`}
+                              className="flex items-center gap-2"
+                            >
+                              <BrandfetchImage
+                                domain={sub.brandDomain}
+                                className="size-5 text-[8px]"
+                              />
+                              <span className="flex-1 truncate text-xs">
+                                {sub.name}
+                              </span>
+                              <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                                <CurrencyText
+                                  amount={sub.amount}
+                                  currencyCode={sub.currencyCode}
+                                />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          "flex items-center justify-between gap-4",
+                          item.subscriptions &&
+                            item.subscriptions.length > 0 &&
+                            "border-t pt-2",
+                        )}
+                      >
                         <span className="text-foreground text-sm font-bold">
                           {m.analytics_charts_monthlySpending_labels_total()}
                         </span>

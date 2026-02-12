@@ -15,7 +15,7 @@ import type { SubscriptionDto } from "@shared/domains/subscription";
 import type { SubscriptionPeriod } from "@shared/types";
 import type {
   DashboardAnalyticsDto,
-  MonthlySpendTrendPoint,
+  MonthlyTrendPoint,
   MostExpensiveSubscriptionDto,
   UpcomingRenewalDto,
 } from "@shared/domains/analytics";
@@ -83,14 +83,54 @@ export class AnalyticsCalculator {
     baseDate: Date,
     monthCount: number,
     timezone?: string,
-  ): MonthlySpendTrendPoint[] {
+  ): MonthlyTrendPoint[] {
     return Array.from({ length: monthCount }, (_, i) => {
       const mStart = startOfMonth(addMonths(baseDate, i));
       const mEnd = endOfMonth(addMonths(baseDate, i));
-      const total = this.sumSpendInRange(subscriptions, mStart, mEnd, timezone);
+
+      const payments = this.collectPaymentsInRange(
+        subscriptions,
+        mStart,
+        mEnd,
+        timezone,
+      );
+
+      const total = payments.reduce((sum, p) => sum + p.amount, 0);
+
+      // Group by subscription to handle multiple payments in one month (e.g. weekly)
+      const subMap = new Map<
+        string,
+        {
+          name: string;
+          brandDomain: string | null;
+          amount: number;
+          currencyCode: string;
+        }
+      >();
+
+      for (const payment of payments) {
+        const existing = subMap.get(payment.subscription.id);
+        if (existing) {
+          existing.amount += payment.amount;
+        } else {
+          subMap.set(payment.subscription.id, {
+            name: payment.subscription.name,
+            brandDomain: payment.subscription.brandDomain,
+            amount: payment.subscription.billing.preferred.amount, // Base amount, but we sum payment.amount for multiple occurrences
+            currencyCode: payment.subscription.billing.preferred.currencyCode,
+          });
+          // Fix initial amount to be this payment's amount (which is same as preferred usually, but logical correctness)
+          subMap.get(payment.subscription.id)!.amount = payment.amount;
+        }
+      }
+
       return {
         date: format(mStart, "yyyy-MM-dd"),
         amount: Number(total.toFixed(2)),
+        subscriptions: Array.from(subMap.values()).map((s) => ({
+          ...s,
+          amount: Number(s.amount.toFixed(2)),
+        })),
       };
     });
   }
