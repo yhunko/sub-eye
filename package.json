@@ -1,6 +1,6 @@
 {
   "name": "sub-eye",
-  "version": "3.0.0-beta.27",
+  "version": "3.0.0-beta.28",
   "author": "Yehor Hunko",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260131.0",
