@@ -33,22 +33,37 @@ export class PushNotificationService {
 
     const sendPromises = subscriptions.map(async (sub) => {
       try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: {
-              p256dh: sub.p256dh,
-              auth: sub.auth,
-            },
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
           },
+        };
+
+        const details = webpush.generateRequestDetails(
+          pushSubscription,
           payloadString,
         );
+
+        const response = await fetch(details.endpoint, {
+          method: "POST",
+          headers: details.headers,
+          body: details.body as any,
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Web Push Error: ${response.status} ${response.statusText}`,
+          );
+        }
       } catch (error) {
         // If the subscription is invalid/expired (410 or 404), remove it.
-        if (
-          error instanceof webpush.WebPushError &&
-          (error.statusCode === 410 || error.statusCode === 404)
-        ) {
+        const isGone =
+          error instanceof Error &&
+          (error.message.includes("410") || error.message.includes("404"));
+
+        if (isGone) {
           console.log(`Removing invalid subscription for user ${userId}`);
           await PushNotificationRepository.deleteByEndpoint(sub.endpoint);
         } else {
