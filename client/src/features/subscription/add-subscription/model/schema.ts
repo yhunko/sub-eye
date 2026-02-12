@@ -36,6 +36,7 @@ export const createAddSubscriptionFormSchema = () =>
         v.transform((brand) => brand.domain),
       ),
     ),
+    isCancelled: v.optional(v.boolean(), false),
   });
 
 export type AddSubscriptionFormSchema = ReturnType<

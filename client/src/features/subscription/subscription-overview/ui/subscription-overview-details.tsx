@@ -1,4 +1,5 @@
 import { FC } from "react";
+import { cn } from "@/shared/lib/classes-utils";
 import { CalendarClock, CalendarSync, RotateCw } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -22,21 +23,37 @@ type SubscriptionOverviewDetailsProps = {
 export const SubscriptionOverviewDetails: FC<
   SubscriptionOverviewDetailsProps
 > = ({ subscription, displayState }) => {
+  const isCancelled = !!subscription.cancelledAt;
+
   return (
     <ItemGroup className="flex flex-col gap-2 md:gap-5">
       <Item variant="muted" size="sm">
         <ItemMedia variant="icon">
-          <CalendarSync />
+          <CalendarSync
+            className={cn(isCancelled && "text-muted-foreground")}
+          />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>{m.subscription_overview_nextPayment()}</ItemTitle>
+          <ItemTitle>
+            {isCancelled
+              ? m.subscription_details_endsOn()
+              : m.subscription_overview_nextPayment()}
+          </ItemTitle>
           <ItemDescription>
-            <span>{displayState?.formattedDate}</span>
-            &nbsp;(
-            <span className={displayState?.colorClass}>
-              {displayState?.relativeText}
-            </span>
-            )
+            {isCancelled ? (
+              <span className="text-muted-foreground">
+                {displayState?.formattedDate}
+              </span>
+            ) : (
+              <>
+                <span>{displayState?.formattedDate}</span>
+                &nbsp;(
+                <span className={displayState?.colorClass}>
+                  {displayState?.relativeText}
+                </span>
+                )
+              </>
+            )}
           </ItemDescription>
         </ItemContent>
       </Item>

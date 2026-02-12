@@ -5,7 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "db:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate --custom",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "dev": "bun --watch run src/index.ts & tsc --watch",

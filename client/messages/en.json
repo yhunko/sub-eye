@@ -152,5 +152,21 @@
   "validation_whole_number": "Must be a whole number",
   "validation_min_value": "Must be at least {min}",
   "validation_invalid_date": "Invalid date",
-  "validation_brand_invalid": "Please select a valid brand"
+  "validation_brand_invalid": "Please select a valid brand",
+  "subscription_cancel_title": "Cancel {name}?",
+  "subscription_cancel_description": "Are you sure you want to cancel this subscription?",
+  "subscription_cancel_activeUntil": "It will remain active until {date}.",
+  "common_actions_cancel": "Cancel",
+  "common_actions_confirm": "Confirm",
+  "common_actions_apply": "Apply",
+  "subscription_status_cancelled": "Cancelled",
+  "subscription_details_endsOn": "Ends on",
+  "subscription_filter_description": "Filter and sort your subscriptions",
+  "subscription_filter_status_label": "Status",
+  "subscription_filter_status_active": "Active",
+  "subscription_filter_status_all": "All",
+  "form_basicInfo_isCancelled_label": "Already cancelled?",
+  "form_basicInfo_isCancelled_description": "Mark as cancelled from the start",
+  "subscription_filter_sort_asc": "Ascending",
+  "subscription_filter_sort_desc": "Descending"
 }

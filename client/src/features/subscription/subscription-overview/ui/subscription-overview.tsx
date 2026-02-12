@@ -1,11 +1,14 @@
-import { FC, useMemo } from "react";
+import { FC, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import { subscriptionQuery } from "@/entities/subscription";
+import {
+  subscriptionQuery,
+  useCancelSubscription,
+} from "@/entities/subscription";
 import * as m from "@/i18n/messages";
 
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
@@ -13,6 +16,7 @@ import { SubscriptionOverviewStats } from "./subscription-overview-stats";
 import { SubscriptionOverviewHeader } from "./subscription-overview-header";
 import { SubscriptionOverviewDetails } from "./subscription-overview-details";
 import { SubscriptionOverviewActions } from "./subscription-overview-actions";
+import { SubscriptionCancelDialog } from "../../subscription-cancel-dialog";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -46,12 +50,23 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     return SubscriptionBillingUtils.toDisplayState(zonedDate, timezone);
   }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
 
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const { mutate: cancelSubscription } = useCancelSubscription();
+
   const handleDeleteSuccess = async () => {
     await navigate({ to: "/subscriptions" });
   };
 
-  const handleMarkAsCanceled = () => {
-    toast.info(m.subscription_overview_markAsCanceledComingSoon());
+  const handleConfirmCancel = () => {
+    cancelSubscription(
+      { id: subscriptionId },
+      {
+        onSuccess: () => {
+          setIsCancelDialogOpen(false);
+          toast.success(m.messages_updated());
+        },
+      },
+    );
   };
 
   return (
@@ -68,8 +83,17 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       <SubscriptionOverviewActions
         subscriptionId={subscriptionId}
         subscriptionName={subscription.name}
-        onMarkAsCanceled={handleMarkAsCanceled}
+        onMarkAsCanceled={() => setIsCancelDialogOpen(true)}
         onDeleteSuccess={handleDeleteSuccess}
+        isCancelled={!!subscription.cancelledAt}
+      />
+
+      <SubscriptionCancelDialog
+        open={isCancelDialogOpen}
+        onOpenChange={setIsCancelDialogOpen}
+        onConfirm={handleConfirmCancel}
+        subscriptionName={subscription.name}
+        nextPaymentDate={subscription.nextPaymentDate}
       />
     </div>
   );

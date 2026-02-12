@@ -30,6 +30,9 @@ export class SubscriptionMapper {
       billing,
       nextPaymentDate,
       lastPaymentDate,
+      cancelledAt: subscription.cancelledAt
+        ? this.normalizeDate(subscription.cancelledAt)
+        : null,
     };
   }
 

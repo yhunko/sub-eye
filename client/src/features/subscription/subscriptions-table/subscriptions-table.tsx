@@ -20,6 +20,7 @@ import {
   subscriptionsQueryParsers,
   SubscriptionsSearch,
   subscriptionsQuery,
+  SubscriptionsFilter,
 } from "@/entities/subscription";
 import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
@@ -43,9 +44,10 @@ const SubscriptionsTable: FC = () => {
     return {
       sortBy,
       direction,
+      status: filters.status,
       ...(trimmedSearch ? { search: trimmedSearch } : {}),
     };
-  }, [direction, search, sortBy]);
+  }, [direction, search, sortBy, filters.status]);
 
   const { userId } = useAuth();
   const { data: subscriptions, isLoading } = useQuery(
@@ -107,6 +109,12 @@ const SubscriptionsTable: FC = () => {
           className="max-w-sm"
           loading={isTableLoading}
         />
+        <div className="ml-auto flex items-center gap-2">
+          <SubscriptionsFilter
+            status={filters.status}
+            onStatusChange={(nextStatus) => setFilters({ status: nextStatus })}
+          />
+        </div>
       </div>
       <div className="relative overflow-hidden rounded-md border">
         <Table className={cn(isTableLoading && "pointer-events-none")}>
@@ -135,21 +143,26 @@ const SubscriptionsTable: FC = () => {
               loading={isTableLoading}
             />
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const isCancelled = !!row.original.cancelledAt;
+
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={cn(isCancelled && "bg-muted/30 opacity-75")}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <SubscriptionsTableNoResults
                 loading={isTableLoading}

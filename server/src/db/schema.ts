@@ -53,4 +53,5 @@ export const subscriptionsTable = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   qstashMessageId: text("qstash_message_id"),
   brandDomain: text("brand_domain"),
+  cancelledAt: timestamp("cancelled_at"),
 });

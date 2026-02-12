@@ -15,7 +15,7 @@ const SubscriptionsListWidget = () => {
     history: "replace",
   });
 
-  const { search, sortBy, direction } = filters;
+  const { search, sortBy, direction, status } = filters;
 
   const queryParams = useMemo(() => {
     const trimmedSearch = search.trim();
@@ -23,9 +23,10 @@ const SubscriptionsListWidget = () => {
     return {
       sortBy,
       direction,
+      status,
       ...(trimmedSearch ? { search: trimmedSearch } : {}),
     };
-  }, [direction, search, sortBy]);
+  }, [direction, search, sortBy, status]);
 
   const { userId } = useAuth();
   const {
@@ -55,8 +56,13 @@ const SubscriptionsListWidget = () => {
       <SubscriptionsListToolbar
         loading={isLoading}
         sortBy={sortBy}
+        direction={direction}
+        status={status}
         onSortChange={(newSortBy, newDirection) => {
           void setFilters({ sortBy: newSortBy, direction: newDirection });
+        }}
+        onStatusChange={(newStatus) => {
+          void setFilters({ status: newStatus });
         }}
       />
       <SubscriptionsList subscriptions={subscriptions ?? []} empty={isEmpty} />

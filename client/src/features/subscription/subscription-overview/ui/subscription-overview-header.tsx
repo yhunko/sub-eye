@@ -2,9 +2,10 @@ import { FC } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { ChevronLeft, PencilIcon } from "lucide-react";
 import { BrandfetchImage } from "@/features/brandfetch";
-import { Button } from "@/shared/components";
+import { Badge, Button } from "@/shared/components";
 import * as m from "@/i18n/messages";
 import { SubscriptionDto } from "@shared/domains/subscription";
+import { cn } from "@/shared/lib/classes-utils";
 
 type SubscriptionOverviewHeaderProps = {
   subscription: SubscriptionDto;
@@ -14,6 +15,7 @@ export const SubscriptionOverviewHeader: FC<
   SubscriptionOverviewHeaderProps
 > = ({ subscription }) => {
   const router = useRouter();
+  const isCancelled = !!subscription.cancelledAt;
 
   return (
     <div className="flex items-start justify-between text-center md:items-center">
@@ -30,12 +32,19 @@ export const SubscriptionOverviewHeader: FC<
       <div className="flex flex-1 flex-col items-center gap-4 md:flex-row md:justify-center">
         <BrandfetchImage
           domain={subscription.brandDomain}
-          className="size-16 md:size-20"
+          className={cn("size-16 md:size-20", isCancelled && "grayscale")}
         />
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold md:text-3xl">
-            {subscription.name}
-          </h1>
+        <div className="flex flex-col items-center gap-2 md:items-start">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold md:text-3xl">
+              {subscription.name}
+            </h1>
+            {isCancelled && (
+              <Badge variant="destructive">
+                {m.subscription_status_cancelled()}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
       <Button

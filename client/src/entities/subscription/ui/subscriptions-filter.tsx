@@ -1,3 +1,4 @@
+import { FC } from "react";
 import { Check, ListFilter } from "lucide-react";
 import {
   Button,
@@ -6,79 +7,58 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import {
-  SubscriptionSortField,
-  SortDirection,
-} from "@shared/domains/subscription";
+import { StatusFilter } from "@shared/domains/subscription";
 import * as m from "@/i18n/messages";
 
-const sortDirectionMap: Record<SubscriptionSortField, SortDirection> = {
-  nextPaymentDate: "asc",
-  name: "asc",
-  cost: "desc",
-};
-
-const sortLabelMap: Record<SubscriptionSortField, () => string> = {
-  nextPaymentDate: m.subscription_filter_sort_renewal,
-  name: m.subscription_filter_sort_name,
-  cost: m.subscription_filter_sort_cost,
-};
-
-const sortOptions: SubscriptionSortField[] = [
-  "nextPaymentDate",
-  "name",
-  "cost",
-];
-
 interface SubscriptionsFilterProps {
-  sortBy: SubscriptionSortField;
-  onSortChange: (
-    sortBy: SubscriptionSortField,
-    direction: SortDirection,
-  ) => void;
+  status: StatusFilter;
+  onStatusChange: (status: StatusFilter) => void;
 }
 
-export const SubscriptionsFilter = ({
-  sortBy,
-  onSortChange,
-}: SubscriptionsFilterProps) => {
-  const handleSortChange = (nextSortBy: SubscriptionSortField) => {
-    onSortChange(nextSortBy, sortDirectionMap[nextSortBy]);
-  };
+export const SubscriptionsFilter: FC<SubscriptionsFilterProps> = ({
+  status,
+  onStatusChange,
+}) => {
+  const statusOptions: { label: () => string; value: StatusFilter }[] = [
+    { label: m.subscription_filter_status_active, value: "active" },
+    { label: m.subscription_status_cancelled, value: "cancelled" },
+    { label: m.subscription_filter_status_all, value: "all" },
+  ];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="size-10 shrink-0 rounded-xl"
-        >
-          <ListFilter className="size-5" />
-          <span className="sr-only">{m.common_actions_filter()}</span>
+        <Button variant="outline" size="sm" className="h-8 gap-2">
+          <ListFilter className="size-4" />
+          <span className="hidden sm:inline">
+            {statusOptions.find((o) => o.value === status)?.label()}
+          </span>
+          <span className="sm:hidden">{m.common_actions_filter()}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-          {m.subscription_filter_sortBy()}
+      <DropdownMenuContent align="end" className="w-[150px]">
+        <DropdownMenuLabel>
+          {m.subscription_filter_status_label()}
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {sortOptions.map((option) => (
+          {statusOptions.map((option) => (
             <DropdownMenuItem
-              key={option}
-              onClick={() => handleSortChange(option)}
+              key={option.value}
+              onClick={() => onStatusChange(option.value)}
               className="cursor-pointer"
             >
               <Check
                 className={cn(
                   "mr-2 size-4",
-                  sortBy === option ? "opacity-100" : "opacity-0",
+                  status === option.value ? "opacity-100" : "opacity-0",
                 )}
               />
-              {sortLabelMap[option]()}
+              {option.label()}
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>

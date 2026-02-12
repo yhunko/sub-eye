@@ -152,5 +152,21 @@
   "validation_whole_number": "Має бути цілим числом",
   "validation_min_value": "Має бути не менше {min}",
   "validation_invalid_date": "Некоректна дата",
-  "validation_brand_invalid": "Будь ласка, оберіть дійсний бренд"
+  "validation_brand_invalid": "Будь ласка, оберіть дійсний бренд",
+  "subscription_cancel_title": "Скасувати {name}?",
+  "subscription_cancel_description": "Ви впевнені, що хочете скасувати цю підписку?",
+  "subscription_cancel_activeUntil": "Вона залишатиметься активною до {date}.",
+  "common_actions_cancel": "Скасувати",
+  "common_actions_confirm": "Підтвердити",
+  "common_actions_apply": "Застосувати",
+  "subscription_status_cancelled": "Скасовано",
+  "subscription_details_endsOn": "Закінчується",
+  "subscription_filter_description": "Фільтрувати та сортувати підписки",
+  "subscription_filter_status_label": "Статус",
+  "subscription_filter_status_active": "Активні",
+  "subscription_filter_status_all": "Всі",
+  "form_basicInfo_isCancelled_label": "Вже скасовано?",
+  "form_basicInfo_isCancelled_description": "Позначити як скасоване від початку",
+  "subscription_filter_sort_asc": "За зростанням",
+  "subscription_filter_sort_desc": "За спаданням"
 }

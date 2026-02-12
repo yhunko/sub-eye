@@ -99,6 +99,25 @@ export const subscriptionRouter = new Hono()
       }
     },
   )
+  .post(
+    "/:id/cancel",
+    protect,
+    vValidator("param", idQuerySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const subscription = await SubscriptionService.cancelSubscription(
+          id,
+          userId,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .delete(
     "/:id",
     protect,

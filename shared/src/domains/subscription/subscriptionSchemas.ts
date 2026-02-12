@@ -80,6 +80,7 @@ export const AddSubscriptionSchema = strictObject({
     ),
     null,
   ),
+  isCancelled: optional(boolean(), false),
 });
 
 export const UpdateSubscriptionSchema = strictObject({
@@ -155,6 +156,7 @@ export const SubscriptionDtoSchema = strictObject({
   billing: subscriptionBillingDetailsSchema,
   nextPaymentDate: string(),
   lastPaymentDate: nullable(string()),
+  cancelledAt: nullable(string()),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;
