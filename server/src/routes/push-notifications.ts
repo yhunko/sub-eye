@@ -34,4 +34,20 @@ export const pushNotificationRouter = new Hono()
       await PushNotificationRepository.deleteByEndpoint(endpoint);
       return context.json({ success: true });
     },
-  );
+  )
+  .post("/test", protect, async (context) => {
+    const userId = requireUserId(context);
+    const { PushNotificationService } =
+      await import("../domains/push-notification/pushNotificationService");
+
+    await PushNotificationService.sendNotification(userId, {
+      title: "Test Notification",
+      body: "If you see this, push notifications are working!",
+      icon: "/assets/pwa/web-app-manifest-192x192.png",
+      data: {
+        url: "/settings/notifications",
+      },
+    });
+
+    return context.json({ success: true });
+  });
