@@ -121,6 +121,7 @@ export const UpdateSubscriptionSchema = strictObject({
       ),
     ),
   ),
+  isCancelled: optional(boolean()),
 });
 
 const subscriptionBillingDetailsSchema = strictObject({
