@@ -247,7 +247,14 @@ export class SubscriptionService {
   private static toUpdatePayload(
     payload: UpdateSubscriptionInput,
   ): Partial<SubscriptionInsert> {
-    return this.stripUndefined(this.toDbPayload(payload));
+    const { isCancelled, ...restPayload } = payload;
+    const dbPayload = this.toDbPayload(restPayload);
+
+    if (isCancelled !== undefined) {
+      dbPayload.cancelledAt = isCancelled ? new Date() : null;
+    }
+
+    return this.stripUndefined(dbPayload);
   }
 
   private static toDbPayload(
