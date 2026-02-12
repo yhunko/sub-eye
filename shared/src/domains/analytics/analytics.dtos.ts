@@ -33,9 +33,17 @@ export interface MostExpensiveSubscriptionDto {
   brandDomain: string | null;
 }
 
+export interface MonthlyTrendSubscription {
+  name: string;
+  brandDomain: string | null;
+  amount: number;
+  currencyCode: string;
+}
+
 export interface MonthlyTrendPoint {
   date: string;
   amount: number;
+  subscriptions: MonthlyTrendSubscription[];
 }
 
 export interface MonthlySpendTrendPoint {
