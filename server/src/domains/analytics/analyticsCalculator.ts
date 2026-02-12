@@ -57,6 +57,13 @@ export class AnalyticsCalculator {
     const amount = subscription.billing.preferred.amount;
 
     while (!isAfter(occurrence, rangeEnd)) {
+      if (
+        subscription.cancelledAt &&
+        !isBefore(occurrence, new Date(subscription.nextPaymentDate))
+      ) {
+        break;
+      }
+
       total += amount;
       occurrence = RecurrenceUtils.addPeriod(
         occurrence,
@@ -114,6 +121,13 @@ export class AnalyticsCalculator {
       );
 
       while (isBefore(projectionDate, horizon)) {
+        if (
+          subscription.cancelledAt &&
+          !isBefore(projectionDate, new Date(subscription.nextPaymentDate))
+        ) {
+          break;
+        }
+
         const daysUntil = Math.round(
           (projectionDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
         );
@@ -263,6 +277,13 @@ export class AnalyticsCalculator {
       );
 
       while (!isAfter(occurrence, rangeEnd)) {
+        if (
+          subscription.cancelledAt &&
+          !isBefore(occurrence, new Date(subscription.nextPaymentDate))
+        ) {
+          break;
+        }
+
         payments.push({
           date: occurrence,
           amount: subscription.billing.preferred.amount,

@@ -10,6 +10,7 @@ import {
   Input,
   FieldLegend,
   FieldDescription,
+  Switch,
 } from "@/shared/components";
 import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { AddSubscriptionInput } from "../../model/schema";
@@ -65,6 +66,27 @@ export const SubscriptionFormBasicInfo = () => {
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="isCancelled"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>{m.form_basicInfo_isCancelled_label()}</FormLabel>
+                <FieldDescription>
+                  {m.form_basicInfo_isCancelled_description()}
+                </FieldDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />

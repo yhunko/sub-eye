@@ -9,6 +9,7 @@ type SubscriptionOverviewActionsProps = {
   subscriptionName?: string;
   onMarkAsCanceled: () => void;
   onDeleteSuccess: () => void;
+  isCancelled?: boolean;
 };
 
 export const SubscriptionOverviewActions: FC<
@@ -18,13 +19,16 @@ export const SubscriptionOverviewActions: FC<
   subscriptionName,
   onMarkAsCanceled,
   onDeleteSuccess,
+  isCancelled,
 }) => {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
-      <Button size="lg" variant="outline" onClick={onMarkAsCanceled}>
-        <XCircle className="mr-2 size-4" />
-        {m.subscription_overview_markAsCanceled()}
-      </Button>
+      {!isCancelled && (
+        <Button size="lg" variant="outline" onClick={onMarkAsCanceled}>
+          <XCircle className="mr-2 size-4" />
+          {m.subscription_overview_markAsCanceled()}
+        </Button>
+      )}
       <SubscriptionDeleteButton
         subscriptionId={subscriptionId}
         fullWidth

@@ -18,6 +18,7 @@ import { PeriodBadge } from "../../period";
 import * as m from "@/i18n/messages";
 import { SubscriptionDeleteButton } from "../../delete-subscription";
 import { Link } from "@tanstack/react-router";
+import { cn } from "@/shared/lib/classes-utils";
 
 export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
   return [
@@ -26,10 +27,17 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       accessorKey: "brandDomain",
       header: "",
       size: 40,
-      cell: ({ getValue }) => {
+      cell: ({ getValue, row }) => {
         const brandDomain = getValue<SubscriptionDto["brandDomain"]>();
 
-        return <BrandfetchImage domain={brandDomain} />;
+        const isCancelled = !!row.original.cancelledAt;
+
+        return (
+          <BrandfetchImage
+            domain={brandDomain}
+            className={cn(isCancelled && "grayscale")}
+          />
+        );
       },
     },
     {
@@ -112,6 +120,14 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       },
       cell: ({ row }) => {
         const subscription = row.original;
+
+        if (subscription.cancelledAt) {
+          return (
+            <span className="text-muted-foreground line-through opacity-75">
+              {m.subscription_status_cancelled()}
+            </span>
+          );
+        }
 
         return (
           <SubscriptionNextBill nextBillDate={subscription.nextPaymentDate} />

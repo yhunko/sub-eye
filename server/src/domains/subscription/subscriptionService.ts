@@ -81,6 +81,16 @@ export class SubscriptionService {
       db,
       this.toInsertPayload(userId, payload),
     );
+
+    // If created as cancelled, we still schedule workflow?
+    // User said: "I will want to set it as cancelled automatically during adding".
+    // If it's cancelled, it shouldn't renew. But maybe we track it until nextPaymentDate?
+    // Let's assume we schedule it, and then if it's cancelled, the workflow might check status?
+    // Or we just don't schedule if it's already cancelled AND nextPaymentDate is past?
+    // Simpler: Schedule it. The workflow/analytics will handle logic.
+    // ACTUALLY: If cancelled, we might not want push notifications for renewal?
+    // Let's keep it simple: Add functionality, then handle side effects.
+
     const scheduled = await this.scheduleWorkflow(created, deps);
     const { preferences, rates } = await this.getPreferencesAndRates(
       userId,
@@ -136,6 +146,34 @@ export class SubscriptionService {
     }
 
     await deps.repository.delete(db, id);
+  }
+
+  static async cancelSubscription(
+    id: string,
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(db, id);
+
+    if (!existing || existing.userId !== userId) {
+      throw new Error("Subscription not found");
+    }
+
+    const updated = await deps.repository.update(db, id, {
+      cancelledAt: new Date(),
+      qstashMessageId: null,
+    });
+
+    if (existing.qstashMessageId) {
+      await deps.workflow.cancel(existing.qstashMessageId);
+    }
+
+    const { preferences, rates } = await this.getPreferencesAndRates(
+      userId,
+      deps,
+    );
+
+    return this.mapToDto(updated, preferences, rates);
   }
 
   static async deleteAllForUser(
@@ -202,6 +240,7 @@ export class SubscriptionService {
     return {
       userId,
       ...this.toDbPayload(payload),
+      cancelledAt: payload.isCancelled ? new Date() : undefined,
     } as SubscriptionInsert;
   }
 
@@ -267,10 +306,24 @@ export class SubscriptionService {
     const search = params?.search?.trim().toLowerCase();
     const sortBy = params?.sortBy ?? "nextPaymentDate";
     const direction = params?.direction ?? "asc";
+    const status = params?.status ?? "active"; // Default to active
 
-    const filtered = search
-      ? dtos.filter((dto) => dto.name.toLowerCase().includes(search))
-      : dtos;
+    let filtered = dtos;
+
+    if (status !== "all") {
+      filtered = filtered.filter((dto) => {
+        const isCancelled = !!dto.cancelledAt;
+        if (status === "active") return !isCancelled;
+        if (status === "cancelled") return isCancelled;
+        return true;
+      });
+    }
+
+    if (search) {
+      filtered = filtered.filter((dto) =>
+        dto.name.toLowerCase().includes(search),
+      );
+    }
 
     return [...filtered].sort((a, b) => {
       const multiplier = direction === "asc" ? 1 : -1;

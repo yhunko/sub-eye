@@ -5,9 +5,14 @@ import * as m from "@/i18n/messages";
 type PeriodBadgeProps = {
   every: number;
   period: SubscriptionPeriod;
+  className?: string;
 };
 
-export const PeriodBadge: FC<PeriodBadgeProps> = ({ every, period }) => {
+export const PeriodBadge: FC<PeriodBadgeProps> = ({
+  every,
+  period,
+  className,
+}) => {
   const formatPeriod = useMemo(() => {
     const periodMap: Record<SubscriptionPeriod, string> = {
       [SubscriptionPeriod.DAY]: m.periods_daily(),
@@ -30,5 +35,5 @@ export const PeriodBadge: FC<PeriodBadgeProps> = ({ every, period }) => {
     return `${every} ${pluralMap[period]}`;
   }, [every, period]);
 
-  return <span>{formatPeriod}</span>;
+  return <span className={className}>{formatPeriod}</span>;
 };
