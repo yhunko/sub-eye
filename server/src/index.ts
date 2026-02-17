@@ -6,9 +6,12 @@ import { subscriptionRouter } from "./routes/subscriptions";
 import { pushNotificationRouter } from "./routes/push-notifications";
 import { userRouter } from "./routes/user";
 
+import { webhookRouter } from "./routes/webhooks";
+
 type Bindings = {
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
+  CLERK_WEBHOOK_SECRET: string;
   DATABASE_URL: string;
   QSTASH_URL: string;
   QSTASH_TOKEN: string;
@@ -29,6 +32,7 @@ export const app = new Hono<{ Bindings: Bindings }>()
       credentials: true,
     }),
   )
+  .route("/webhooks", webhookRouter)
   .use("*", clerkAuth)
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)

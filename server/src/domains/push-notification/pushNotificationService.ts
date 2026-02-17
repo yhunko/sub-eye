@@ -77,4 +77,8 @@ export class PushNotificationService {
 
     await Promise.allSettled(sendPromises);
   }
+
+  static async deleteAllForUser(userId: string): Promise<void> {
+    await PushNotificationRepository.deleteByUserId(userId);
+  }
 }
