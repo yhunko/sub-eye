@@ -40,6 +40,12 @@ export class PushNotificationRepository {
       .where(eq(pushNotificationsTable.userId, userId));
   }
 
+  static async deleteByUserId(userId: string): Promise<void> {
+    await db
+      .delete(pushNotificationsTable)
+      .where(eq(pushNotificationsTable.userId, userId));
+  }
+
   static async deleteByEndpoint(endpoint: string): Promise<void> {
     await db
       .delete(pushNotificationsTable)

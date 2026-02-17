@@ -13,6 +13,9 @@
   },
   "tsconfig": "./tsconfig.json",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "BASE_URL": "https://app.subeye.cc"
+  },
   "observability": {
     "enabled": false,
     "head_sampling_rate": 1,
