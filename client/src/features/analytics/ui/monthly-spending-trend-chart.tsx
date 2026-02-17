@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { format, parseISO } from "date-fns";
 import { useAuth } from "@clerk/clerk-react";
@@ -37,6 +37,22 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
     }),
   );
 
+  const currencySymbol =
+    CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+
+  const yAxisWidth = useMemo(() => {
+    const maxAmount = Math.max(0, ...data.monthlyTrend.map((d) => d.amount));
+
+    const formatted = `${currencySymbol}${maxAmount.toLocaleString(undefined, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })}`;
+
+    const charWidth = 7;
+    const padding = 12;
+    return Math.max(45, formatted.length * charWidth + padding);
+  }, [data.monthlyTrend, currencySymbol]);
+
   if (!userId) {
     return (
       <div
@@ -47,9 +63,6 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
       />
     );
   }
-
-  const currencySymbol =
-    CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
 
   return (
     <Card className={cn("w-full", className)}>
@@ -107,7 +120,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              width={45}
+              width={yAxisWidth}
               className="text-muted-foreground font-mono text-[10px] font-medium"
               tickFormatter={(value: number) =>
                 `${currencySymbol}${value.toLocaleString(undefined, {
