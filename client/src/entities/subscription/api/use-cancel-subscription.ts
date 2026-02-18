@@ -5,6 +5,7 @@ import type { SubscriptionDto } from "@shared/domains/subscription";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";
+import { billingQueryKeys } from "@/entities/billing";
 
 export type CancelSubscriptionParams = {
   id: string;
@@ -61,6 +62,10 @@ export const useCancelSubscription = ({
           queryKey: subscriptionsQueryKeys.list._def,
         });
       }
+
+      await queryClient.invalidateQueries({
+        queryKey: billingQueryKeys.usage._def,
+      });
     },
   });
 };

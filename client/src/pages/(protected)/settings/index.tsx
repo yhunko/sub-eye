@@ -7,7 +7,7 @@ import {
   ItemActions,
   ItemGroup,
 } from "@/shared/components";
-import { Cog, ChevronRight, BellRing, User } from "lucide-react";
+import { Cog, ChevronRight, BellRing, User, CreditCard } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { SettingsLayout } from "@/widgets/settings-layout";
 import { valibotValidator } from "@tanstack/valibot-adapter";
@@ -24,6 +24,11 @@ const pages = [
     key: m.settings_pages_notifications,
     path: "/settings/notifications",
     Icon: BellRing,
+  },
+  {
+    key: m.settings_pages_billing,
+    path: "/settings/billing",
+    Icon: CreditCard,
   },
   {
     key: m.settings_pages_account,

@@ -13,9 +13,10 @@ import type {
   AddSubscriptionInput,
   SubscriptionDto,
   UpdateSubscriptionInput,
-} from "@shared/domains/subscription/subscriptionSchemas";
-import type { GetSubscriptionsParams } from "@shared/domains/subscription";
+  GetSubscriptionsParams,
+} from "@shared/domains/subscription";
 import type { UserPreferences } from "@shared/types";
+import { FREE_PLAN } from "@shared/domains/billing";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
@@ -77,27 +78,26 @@ export class SubscriptionService {
     payload: AddSubscriptionInput,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
+    const currentCount = await deps.repository.countByUserId(db, userId);
+    if (currentCount >= FREE_PLAN.limits.maxSubscriptions) {
+      throw new Error("Subscription limit reached");
+    }
+
     const created = await deps.repository.create(
       db,
       this.toInsertPayload(userId, payload),
     );
 
-    // If created as cancelled, we still schedule workflow?
-    // User said: "I will want to set it as cancelled automatically during adding".
-    // If it's cancelled, it shouldn't renew. But maybe we track it until nextPaymentDate?
-    // Let's assume we schedule it, and then if it's cancelled, the workflow might check status?
-    // Or we just don't schedule if it's already cancelled AND nextPaymentDate is past?
-    // Simpler: Schedule it. The workflow/analytics will handle logic.
-    // ACTUALLY: If cancelled, we might not want push notifications for renewal?
-    // Let's keep it simple: Add functionality, then handle side effects.
+    const result = created.cancelledAt
+      ? created
+      : await this.scheduleWorkflow(created, deps);
 
-    const scheduled = await this.scheduleWorkflow(created, deps);
     const { preferences, rates } = await this.getPreferencesAndRates(
       userId,
       deps,
     );
 
-    return this.mapToDto(scheduled, preferences, rates);
+    return this.mapToDto(result, preferences, rates);
   }
 
   static async updateSubscription(
@@ -121,13 +121,17 @@ export class SubscriptionService {
       id,
       this.toUpdatePayload(payload),
     );
-    const scheduled = await this.scheduleWorkflow(updated, deps);
+
+    const result = updated.cancelledAt
+      ? updated
+      : await this.scheduleWorkflow(updated, deps);
+
     const { preferences, rates } = await this.getPreferencesAndRates(
       userId,
       deps,
     );
 
-    return this.mapToDto(scheduled, preferences, rates);
+    return this.mapToDto(result, preferences, rates);
   }
 
   static async deleteSubscription(
@@ -204,7 +208,9 @@ export class SubscriptionService {
         if (subscription.qstashMessageId) {
           await deps.workflow.cancel(subscription.qstashMessageId);
         }
-        await this.scheduleWorkflow(subscription, deps);
+        if (!subscription.cancelledAt) {
+          await this.scheduleWorkflow(subscription, deps);
+        }
       }),
     );
   }

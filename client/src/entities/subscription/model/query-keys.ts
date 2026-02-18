@@ -10,4 +10,5 @@ export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
     filters.userId,
     filters.subscriptionId,
   ],
+  usage: (filters: { userId: string }) => [filters.userId],
 });

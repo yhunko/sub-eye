@@ -7,6 +7,7 @@ import type {
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";
+import { billingQueryKeys } from "@/entities/billing";
 
 export const useCreateSubscription = ({
   options,
@@ -27,6 +28,9 @@ export const useCreateSubscription = ({
     onSuccess() {
       void queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: billingQueryKeys.usage._def,
       });
       void queryClient.invalidateQueries({
         queryKey: analyticsQueryKeys._def,

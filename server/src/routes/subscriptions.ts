@@ -17,6 +17,9 @@ const handleServiceError = (context: Context, error: unknown) => {
     if (error.message === "Subscription not found") {
       return context.json({ error: error.message }, 404);
     }
+    if (error.message === "Subscription limit reached") {
+      return context.json({ error: error.message }, 403);
+    }
   }
 
   if (error instanceof Error) {
