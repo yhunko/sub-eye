@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
 import type { QueryHook } from "@/shared/lib/react-query/types";
-import type { PlanUsage } from "@shared/domains/billing";
+import type { PlanUsage } from "shared";
 import { billingQueryKeys } from "../model/query-keys";
 
 export type PlanUsageParams = { userId: string };

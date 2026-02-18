@@ -8,7 +8,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "../../../../shared/components";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import { CurrencyText } from "../../../../entities/currency";
 import { PeriodBadge } from "../../period";
 import { cn } from "@/shared/lib/classes-utils";

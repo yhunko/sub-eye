@@ -4,7 +4,7 @@ import { ChevronLeft, PencilIcon } from "lucide-react";
 import { BrandfetchImage } from "@/features/brandfetch";
 import { Badge, Button } from "@/shared/components";
 import * as m from "@/i18n/messages";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 
 type SubscriptionOverviewHeaderProps = {

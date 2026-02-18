@@ -8,7 +8,7 @@ import {
   EmptyMedia,
 } from "../../../../shared/components";
 import { ListX } from "lucide-react";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
 
 interface SubscriptionsListSectionProps {

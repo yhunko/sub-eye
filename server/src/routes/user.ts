@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
-import { UpdateUserPublicMetadataSchema } from "@shared/schemas/userSchemas";
+import { UpdateUserPublicMetadataSchema } from "shared";
 import { UserService } from "../domains/user/userService";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { requireUserId } from "../utils/authUtils";

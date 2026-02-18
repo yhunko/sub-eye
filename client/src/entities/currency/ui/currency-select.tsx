@@ -5,8 +5,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/shared/components";
-import { CurrenciesMap } from "@shared/domains/currency";
-import { CurrencyUtils } from "@shared/utils/currencyUtils";
+import { CurrenciesMap, CurrencyUtils } from "shared";
 
 import * as m from "@/i18n/messages";
 

@@ -13,7 +13,7 @@ import {
 import { PeriodBadge } from "@/features/subscription/period";
 import * as m from "@/i18n/messages";
 import type { BillDisplayState } from "../../billing/lib/subscription-billing-utils";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 
 type SubscriptionOverviewDetailsProps = {
   subscription: SubscriptionDto;

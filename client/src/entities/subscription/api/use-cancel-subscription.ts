@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 import { MutationHook } from "@/shared/lib/react-query/types";
-import type { SubscriptionDto } from "@shared/domains/subscription";
+import type { SubscriptionDto } from "shared";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";

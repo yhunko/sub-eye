@@ -1,8 +1,5 @@
-import type {
-  SubscriptionBillingDetails,
-  SubscriptionDto,
-} from "@shared/domains/subscription/subscriptionSchemas";
-import { getSubscriptionLifecycleStatus } from "@shared/domains/subscription";
+import type { SubscriptionBillingDetails, SubscriptionDto } from "shared";
+import { getSubscriptionLifecycleStatus } from "shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionMapper {

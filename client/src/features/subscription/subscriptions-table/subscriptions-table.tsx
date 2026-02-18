@@ -26,7 +26,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
 import { useQueryStates } from "nuqs";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { SubscriptionSortField } from "@shared/domains/subscription";
+import { SubscriptionSortField } from "shared";
 import * as m from "@/i18n/messages";
 import { TableBodyLoader } from "@/shared/ui";
 import { SubscriptionsMonthlySpendCard } from "../../analytics";

@@ -10,7 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { SubscriptionPeriod } from "@shared/types";
+import { SubscriptionPeriod } from "shared";
 
 export const subscriptionPeriodEnum = pgEnum("period", [
   SubscriptionPeriod.DAY,

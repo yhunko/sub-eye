@@ -12,7 +12,7 @@ import {
   SubscriptionUsageCard,
   planUsageQuery,
 } from "@/entities/billing";
-import { FREE_PLAN } from "@shared/domains/billing";
+import { FREE_PLAN } from "shared";
 import * as m from "@/i18n/messages";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";

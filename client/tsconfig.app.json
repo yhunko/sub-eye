@@ -23,7 +23,6 @@
       "@/*": ["./src/*"],
       "@/i18n/messages": ["./src/shared/lib/i18n/messages/_index"],
       "@/i18n/runtime": ["./src/shared/lib/i18n/runtime"],
-      "@shared/*": ["../shared/src/*"],
       "@server/client": ["../server/src/client"]
     }
   },

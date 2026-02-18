@@ -19,6 +19,9 @@ This project uses a Monorepo structure (`bhvr` template) with strict separation 
    - **Backend:** strictly `camelCase` (e.g., `userService.ts`).
 3. **DEPENDENCY MANAGEMENT:**
    - Libraries used in both environments (e.g., `valibot`, `date-fns`) MUST be installed in the `shared` workspace.
+4. **SHARED IMPORT STYLE:**
+   - Import shared contracts/utilities from the `shared` package root (e.g., `import { SubscriptionDto } from "shared"`).
+   - Do not use `@shared/*` aliases or deep `shared/*` paths in app code.
 
 ---
 
@@ -102,7 +105,6 @@ We use **Paraglide (Inlang)**.
       "@/*": ["./src/*"],
       "@/i18n/messages": ["./src/shared/lib/i18n/messages/_index"],
       "@/i18n/runtime": ["./src/shared/lib/i18n/runtime"],
-      "@shared/*": ["../shared/src/*"],
       "@server/client": ["../server/src/client"]
     }
   }
@@ -143,7 +145,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@shared": path.resolve(__dirname, "../shared/src"),
       "@server/client": path.resolve(__dirname, "../server/src/client"),
     },
   },

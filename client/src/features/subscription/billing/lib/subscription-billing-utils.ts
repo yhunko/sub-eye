@@ -4,7 +4,7 @@ import {
   isToday,
   isTomorrow,
 } from "date-fns";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import { DateTimezoneUtils } from "shared";
 import * as m from "@/i18n/messages";
 
 export interface BillDisplayState {

@@ -1,10 +1,10 @@
 import { Client, type WorkflowContext } from "@upstash/workflow";
 import { serve } from "@upstash/workflow/hono";
 import { subDays } from "date-fns";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
-import { shouldIncludeOccurrence } from "@shared/domains/subscription";
-import type { UserPreferences } from "@shared/types";
+import { DateTimezoneUtils } from "shared";
+import { RecurrenceUtils } from "shared";
+import { shouldIncludeOccurrence } from "shared";
+import type { UserPreferences } from "shared";
 import { db } from "../../db";
 import {
   SubscriptionRepository,

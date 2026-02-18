@@ -7,7 +7,7 @@ import {
   Progress,
 } from "@/shared/components";
 import * as m from "@/i18n/messages";
-import type { PlanUsage } from "@shared/domains/billing";
+import type { PlanUsage } from "shared";
 
 type SubscriptionUsageCardProps = {
   usage: PlanUsage;

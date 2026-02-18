@@ -17,7 +17,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
-import { SubscriptionPeriod } from "@shared/types";
+import { SubscriptionPeriod } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import {
   useCreateSubscription,
@@ -27,7 +27,7 @@ import { SubscriptionLimitAlert, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import * as m from "@/i18n/messages";
-import type { SubscriptionLifecycleStatus } from "@shared/domains/subscription";
+import type { SubscriptionLifecycleStatus } from "shared";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;

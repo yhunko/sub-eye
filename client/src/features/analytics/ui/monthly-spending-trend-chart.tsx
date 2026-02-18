@@ -3,7 +3,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { format, parseISO } from "date-fns";
 import { useAuth } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
-import { CurrenciesMap } from "@shared/domains/currency";
+import { CurrenciesMap } from "shared";
 import {
   Card,
   CardContent,
@@ -18,7 +18,7 @@ import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { BrandfetchImage } from "@/features/brandfetch";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import type { MonthlyTrendSubscription } from "@shared/domains/analytics";
+import type { MonthlyTrendSubscription } from "shared";
 
 type MonthlySpendingTrendChartProps = {
   className?: string;

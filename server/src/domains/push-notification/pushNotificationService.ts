@@ -1,6 +1,6 @@
 import webpush from "web-push";
 import { PushNotificationRepository } from "./pushNotificationRepository";
-import type { PushNotificationPayload } from "@shared/domains/subscription/subscriptionSchemas";
+import type { PushNotificationPayload } from "shared";
 
 if (
   process.env.VAPID_PUBLIC_KEY &&

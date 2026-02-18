@@ -1,6 +1,6 @@
-import { CurrencyUtils } from "@shared/utils/currencyUtils";
-import type { UserPreferences } from "@shared/types";
-import type { UpdateUserPublicMetadata } from "@shared/schemas/userSchemas";
+import { CurrencyUtils } from "shared";
+import type { UserPreferences } from "shared";
+import type { UpdateUserPublicMetadata } from "shared";
 import { clerkClient } from "@clerk/express";
 
 export class UserService {

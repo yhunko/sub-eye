@@ -6,7 +6,7 @@ import {
   UpdateSubscriptionSchema,
   idQuerySchema,
   listQuerySchema,
-} from "@shared/domains/subscription";
+} from "shared";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
 import { requireUserId } from "../utils/authUtils";

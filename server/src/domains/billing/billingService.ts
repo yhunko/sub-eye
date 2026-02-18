@@ -1,7 +1,7 @@
 import { db } from "../../db";
 import { SubscriptionRepository } from "../subscription/subscriptionRepository";
-import type { PlanUsage } from "@shared/domains/billing";
-import { FREE_PLAN } from "@shared/domains/billing";
+import type { PlanUsage } from "shared";
+import { FREE_PLAN } from "shared";
 
 type BillingServiceDeps = {
   subscriptionRepository: typeof SubscriptionRepository;

@@ -2,7 +2,7 @@ import { FC } from "react";
 import { RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/shared/components";
 import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
 
 type SubscriptionOverviewActionsProps = {

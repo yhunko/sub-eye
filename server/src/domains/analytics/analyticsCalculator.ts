@@ -9,17 +9,17 @@ import {
   startOfMonth,
   eachDayOfInterval,
 } from "date-fns";
-import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import type { SubscriptionDto } from "@shared/domains/subscription";
-import { shouldIncludeOccurrence } from "@shared/domains/subscription";
-import type { SubscriptionPeriod } from "@shared/types";
+import { RecurrenceUtils } from "shared";
+import { DateTimezoneUtils } from "shared";
+import type { SubscriptionDto } from "shared";
+import { shouldIncludeOccurrence } from "shared";
+import type { SubscriptionPeriod } from "shared";
 import type {
   DashboardAnalyticsDto,
   MonthlyTrendPoint,
   MostExpensiveSubscriptionDto,
   UpcomingRenewalDto,
-} from "@shared/domains/analytics";
+} from "shared";
 
 type PaymentOccurrence = {
   date: Date;

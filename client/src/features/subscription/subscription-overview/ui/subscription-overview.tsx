@@ -4,7 +4,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
 
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
 
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";

@@ -2,11 +2,7 @@ import { FC } from "react";
 import { Button } from "@/shared/components";
 import { ListFilter } from "lucide-react";
 import NiceModal from "@ebay/nice-modal-react";
-import {
-  SubscriptionSortField,
-  SortDirection,
-  StatusFilter,
-} from "@shared/domains/subscription";
+import { SubscriptionSortField, SortDirection, StatusFilter } from "shared";
 import * as m from "@/i18n/messages";
 
 interface SubscriptionsFilterDrawerProps {

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
-import { PushSubscriptionSchema } from "@shared/domains/subscription/subscriptionSchemas";
+import { PushSubscriptionSchema } from "shared";
 import { PushNotificationRepository } from "../domains/push-notification/pushNotificationRepository";
 import { object, string } from "valibot";
 

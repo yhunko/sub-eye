@@ -11,11 +11,7 @@ import {
   Separator,
 } from "@/shared/components";
 import * as m from "@/i18n/messages";
-import {
-  SubscriptionSortField,
-  SortDirection,
-  StatusFilter,
-} from "@shared/domains/subscription";
+import { SubscriptionSortField, SortDirection, StatusFilter } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 
 interface SubscriptionsFilterDialogProps {

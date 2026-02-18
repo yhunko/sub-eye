@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { SubscriptionNextBill } from "../../billing";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
 
 type SubscriptionListStatusProps = {

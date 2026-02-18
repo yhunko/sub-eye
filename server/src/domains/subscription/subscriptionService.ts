@@ -15,10 +15,10 @@ import type {
   UpdateSubscriptionInput,
   GetSubscriptionsParams,
   SubscriptionLifecycleStatus,
-} from "@shared/domains/subscription";
-import { getSubscriptionLifecycleStatus } from "@shared/domains/subscription";
-import type { UserPreferences } from "@shared/types";
-import { FREE_PLAN } from "@shared/domains/billing";
+} from "shared";
+import { getSubscriptionLifecycleStatus } from "shared";
+import type { UserPreferences } from "shared";
+import { FREE_PLAN } from "shared";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;

@@ -1,5 +1,5 @@
 import { FC, useMemo } from "react";
-import { SubscriptionPeriod } from "@shared/types";
+import { SubscriptionPeriod } from "shared";
 import * as m from "@/i18n/messages";
 
 type PeriodBadgeProps = {

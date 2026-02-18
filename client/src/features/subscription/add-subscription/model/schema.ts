@@ -1,6 +1,6 @@
 import * as v from "valibot";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
-import { SubscriptionPeriod } from "@shared/types";
+import { SubscriptionPeriod } from "shared";
 import * as m from "@/i18n/messages";
 
 export const createAddSubscriptionFormSchema = () =>

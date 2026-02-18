@@ -7,7 +7,7 @@ import type {
   SubscriptionSortField,
   SortDirection,
   StatusFilter,
-} from "@shared/domains/subscription";
+} from "shared";
 import * as m from "@/i18n/messages";
 
 interface SubscriptionsListToolbarProps {

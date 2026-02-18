@@ -15,7 +15,7 @@ import {
 import { useFormContext, useWatch } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
 import { SubscriptionDatePicker } from "../subscription-date-picker/subscription-date-picker";
-import { SubscriptionPeriod } from "@shared/types";
+import { SubscriptionPeriod } from "shared";
 import * as m from "@/i18n/messages";
 
 type SubscriptionFormBillingInfoProps = {

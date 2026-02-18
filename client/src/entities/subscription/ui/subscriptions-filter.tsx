@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { StatusFilter } from "@shared/domains/subscription";
+import { StatusFilter } from "shared";
 import * as m from "@/i18n/messages";
 
 interface SubscriptionsFilterProps {

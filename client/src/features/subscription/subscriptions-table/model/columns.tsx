@@ -10,7 +10,7 @@ import {
   Edit,
 } from "lucide-react";
 import { Button, ButtonGroup } from "@/shared/components";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import { SubscriptionNextBill } from "../../billing";
 import { CurrencyBadge } from "@/entities/currency";
 import { PeriodBadge } from "../../period";

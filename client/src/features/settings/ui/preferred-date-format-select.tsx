@@ -15,7 +15,7 @@ import {
 import { useUpdateUserMetadata } from "@/entities/user";
 import { Calendar } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
-import { DateFormatUtils } from "@shared/utils/dateFormatUtils";
+import { DateFormatUtils } from "shared";
 import * as m from "@/i18n/messages";
 import { format } from "date-fns";
 

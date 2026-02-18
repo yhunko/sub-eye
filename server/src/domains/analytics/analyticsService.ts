@@ -10,15 +10,15 @@ import {
   startOfWeek,
   eachDayOfInterval,
 } from "date-fns";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import { CurrencyUtils } from "@shared/utils/currencyUtils";
-import { isCurrentlyActiveSubscription } from "@shared/domains/subscription";
+import { DateTimezoneUtils } from "shared";
+import { CurrencyUtils } from "shared";
+import { isCurrentlyActiveSubscription } from "shared";
 import type {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
   WeeklyRenewalsSummaryDto,
-} from "@shared/domains/analytics";
+} from "shared";
 import { AnalyticsCalculator } from "./analyticsCalculator";
 
 type AnalyticsServiceDeps = {
