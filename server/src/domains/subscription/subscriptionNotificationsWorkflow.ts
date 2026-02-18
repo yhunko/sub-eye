@@ -3,6 +3,7 @@ import { serve } from "@upstash/workflow/hono";
 import { subDays } from "date-fns";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
 import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
+import { shouldIncludeOccurrence } from "@shared/domains/subscription";
 import type { UserPreferences } from "@shared/types";
 import { db } from "../../db";
 import {
@@ -26,6 +27,23 @@ export class SubscriptionNotificationsWorkflow {
       );
 
       if (!subscription) {
+        return;
+      }
+
+      const occurrenceDate = new Date(paymentDate);
+      const shouldSendNotification = shouldIncludeOccurrence(
+        {
+          willBeCancelledAt: this.normalizeTimestamp(
+            subscription.willBeCancelledAt,
+          ),
+        },
+        occurrenceDate,
+      );
+
+      if (!shouldSendNotification) {
+        await SubscriptionRepository.update(db, subscription.id, {
+          qstashMessageId: null,
+        });
         return;
       }
 
@@ -63,6 +81,22 @@ export class SubscriptionNotificationsWorkflow {
       );
 
       await context.run("schedule-next-cycle", async () => {
+        if (
+          !shouldIncludeOccurrence(
+            {
+              willBeCancelledAt: this.normalizeTimestamp(
+                subscription.willBeCancelledAt,
+              ),
+            },
+            nextPayment,
+          )
+        ) {
+          await SubscriptionRepository.update(db, subscription.id, {
+            qstashMessageId: null,
+          });
+          return;
+        }
+
         const workflowRunId = await SubscriptionNotificationsWorkflow.schedule({
           subscriptionId: subscription.id,
           paymentDate: nextPayment.toISOString(),
@@ -170,5 +204,15 @@ export class SubscriptionNotificationsWorkflow {
     }
 
     return new Client({ token });
+  }
+
+  private static normalizeTimestamp(
+    value?: string | Date | null,
+  ): string | null {
+    if (!value) {
+      return null;
+    }
+
+    return value instanceof Date ? value.toISOString() : value;
   }
 }

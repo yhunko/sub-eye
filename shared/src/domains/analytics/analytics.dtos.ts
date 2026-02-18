@@ -76,6 +76,7 @@ export interface DashboardAnalyticsDto {
   monthlyBurnRate: number;
   yearlyForecast: number;
   remainingThisMonth: number;
+  nextMonthForecast: number;
   activeSubscriptionsTotal: number;
   activeSubscriptionsAuto: number;
   activeSubscriptionsManual: number;

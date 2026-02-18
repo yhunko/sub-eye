@@ -16,6 +16,7 @@ import {
   object,
 } from "valibot";
 import { SubscriptionPeriod } from "../../types";
+import { subscriptionLifecycleStatuses } from "./subscriptionLifecycle";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -80,7 +81,7 @@ export const AddSubscriptionSchema = strictObject({
     ),
     null,
   ),
-  isCancelled: optional(boolean(), false),
+  willBeCancelledAt: optional(nullable(isoDateSchema), null),
 });
 
 export const UpdateSubscriptionSchema = strictObject({
@@ -121,7 +122,7 @@ export const UpdateSubscriptionSchema = strictObject({
       ),
     ),
   ),
-  isCancelled: optional(boolean()),
+  willBeCancelledAt: optional(nullable(isoDateSchema)),
 });
 
 const subscriptionBillingDetailsSchema = strictObject({
@@ -157,7 +158,8 @@ export const SubscriptionDtoSchema = strictObject({
   billing: subscriptionBillingDetailsSchema,
   nextPaymentDate: string(),
   lastPaymentDate: nullable(string()),
-  cancelledAt: nullable(string()),
+  willBeCancelledAt: nullable(string()),
+  status: picklist(subscriptionLifecycleStatuses),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;

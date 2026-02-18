@@ -23,7 +23,8 @@ type SubscriptionOverviewDetailsProps = {
 export const SubscriptionOverviewDetails: FC<
   SubscriptionOverviewDetailsProps
 > = ({ subscription, displayState }) => {
-  const isCancelled = !!subscription.cancelledAt;
+  const isCancelled = subscription.status === "cancelled";
+  const isCancelledButActive = subscription.status === "cancelledButActive";
 
   return (
     <ItemGroup className="flex flex-col gap-2 md:gap-5">
@@ -37,7 +38,9 @@ export const SubscriptionOverviewDetails: FC<
           <ItemTitle>
             {isCancelled
               ? m.subscription_details_endsOn()
-              : m.subscription_overview_nextPayment()}
+              : isCancelledButActive
+                ? m.subscription_details_cancelsOn()
+                : m.subscription_overview_nextPayment()}
           </ItemTitle>
           <ItemDescription>
             {isCancelled ? (
@@ -48,7 +51,12 @@ export const SubscriptionOverviewDetails: FC<
               <>
                 <span>{displayState?.formattedDate}</span>
                 &nbsp;(
-                <span className={displayState?.colorClass}>
+                <span
+                  className={cn(
+                    displayState?.colorClass,
+                    isCancelledButActive && "text-amber-600",
+                  )}
+                >
                   {displayState?.relativeText}
                 </span>
                 )

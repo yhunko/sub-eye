@@ -15,7 +15,8 @@ export const SubscriptionOverviewHeader: FC<
   SubscriptionOverviewHeaderProps
 > = ({ subscription }) => {
   const router = useRouter();
-  const isCancelled = !!subscription.cancelledAt;
+  const isCancelled = subscription.status === "cancelled";
+  const isCancelledButActive = subscription.status === "cancelledButActive";
 
   return (
     <div className="flex items-start justify-between text-center md:items-center">
@@ -42,6 +43,11 @@ export const SubscriptionOverviewHeader: FC<
             {isCancelled && (
               <Badge variant="destructive">
                 {m.subscription_status_cancelled()}
+              </Badge>
+            )}
+            {isCancelledButActive && (
+              <Badge className="bg-amber-500 text-white">
+                {m.subscription_status_cancelledButActive()}
               </Badge>
             )}
           </div>

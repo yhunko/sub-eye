@@ -9,11 +9,10 @@ import {
   ItemTitle,
 } from "../../../../shared/components";
 import { SubscriptionDto } from "@shared/domains/subscription";
-import { SubscriptionNextBill } from "../../billing";
 import { CurrencyText } from "../../../../entities/currency";
 import { PeriodBadge } from "../../period";
-import * as m from "@/i18n/messages";
 import { cn } from "@/shared/lib/classes-utils";
+import { SubscriptionListStatus } from "./subscription-list-status";
 
 interface SubscriptionListItemProps {
   subscription: SubscriptionDto;
@@ -21,7 +20,8 @@ interface SubscriptionListItemProps {
 
 export const SubscriptionListItem = memo(
   ({ subscription }: SubscriptionListItemProps) => {
-    const isCancelled = !!subscription.cancelledAt;
+    const isCancelled = subscription.status === "cancelled";
+    const isCancelledButActive = subscription.status === "cancelledButActive";
 
     return (
       <Item
@@ -31,6 +31,7 @@ export const SubscriptionListItem = memo(
         className={cn(
           "hover:bg-accent/50 rounded-lg",
           isCancelled && "bg-muted/30 opacity-75",
+          isCancelledButActive && "border-amber-500/40 bg-amber-500/5",
         )}
       >
         <Link
@@ -58,21 +59,7 @@ export const SubscriptionListItem = memo(
             >
               {subscription.name}
             </ItemTitle>
-            <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              {isCancelled ? (
-                <span className="text-destructive font-medium">
-                  {m.subscription_status_cancelled()}
-                </span>
-              ) : (
-                <>
-                  <span>{m.subscription_date_renewal()}</span>
-                  <SubscriptionNextBill
-                    nextBillDate={subscription.nextPaymentDate}
-                    format="short"
-                  />
-                </>
-              )}
-            </div>
+            <SubscriptionListStatus subscription={subscription} />
           </ItemContent>
 
           <div className="flex shrink-0 flex-col items-end gap-1">

@@ -2,6 +2,7 @@ import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
 } from "@shared/domains/subscription/subscriptionSchemas";
+import { getSubscriptionLifecycleStatus } from "@shared/domains/subscription";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionMapper {
@@ -11,6 +12,11 @@ export class SubscriptionMapper {
     nextPaymentDate: string,
     lastPaymentDate: string | null,
   ): SubscriptionDto {
+    const paymentDate = this.normalizeDate(subscription.paymentDate);
+    const willBeCancelledAt = subscription.willBeCancelledAt
+      ? this.normalizeDate(subscription.willBeCancelledAt)
+      : null;
+
     return {
       id: subscription.id,
       userId: subscription.userId,
@@ -19,7 +25,7 @@ export class SubscriptionMapper {
       currency: subscription.currency,
       every: subscription.every,
       period: subscription.period,
-      paymentDate: this.normalizeDate(subscription.paymentDate),
+      paymentDate,
       autoPaid: subscription.autoPaid,
       category: subscription.category ?? null,
       notes: subscription.notes ?? null,
@@ -30,9 +36,10 @@ export class SubscriptionMapper {
       billing,
       nextPaymentDate,
       lastPaymentDate,
-      cancelledAt: subscription.cancelledAt
-        ? this.normalizeDate(subscription.cancelledAt)
-        : null,
+      willBeCancelledAt,
+      status: getSubscriptionLifecycleStatus({
+        willBeCancelledAt,
+      }),
     };
   }
 

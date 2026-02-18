@@ -12,6 +12,7 @@ import {
 } from "date-fns";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
 import { CurrencyUtils } from "@shared/utils/currencyUtils";
+import { isCurrentlyActiveSubscription } from "@shared/domains/subscription";
 import type {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
@@ -44,13 +45,16 @@ export class AnalyticsService {
 
     const today = startOfDay(now);
     const oneYearFromNow = addMonths(today, 12);
+    const currentlyActiveSubscriptions = subscriptions.filter((subscription) =>
+      isCurrentlyActiveSubscription(subscription.status),
+    );
 
     // Aggregate subscription stats
     let monthlyBurnRate = 0;
     let activeSubscriptionsAuto = 0;
     let activeSubscriptionsManual = 0;
 
-    for (const sub of subscriptions) {
+    for (const sub of currentlyActiveSubscriptions) {
       monthlyBurnRate += sub.billing.preferred.monthly;
       if (sub.autoPaid) {
         activeSubscriptionsAuto += 1;
@@ -60,8 +64,9 @@ export class AnalyticsService {
     }
 
     // Delegate all projections to calculator
-    const mostExpensiveSubscription =
-      AnalyticsCalculator.findMostExpensive(subscriptions);
+    const mostExpensiveSubscription = AnalyticsCalculator.findMostExpensive(
+      currentlyActiveSubscriptions,
+    );
 
     const allUpcomingPayments = AnalyticsCalculator.projectUpcomingPayments(
       subscriptions,
@@ -91,13 +96,15 @@ export class AnalyticsService {
       12,
       timezone,
     );
+    const nextMonthForecast = monthlyTrend[1]?.amount ?? 0;
 
     return {
       preferredCurrencyCode,
       monthlyBurnRate,
       yearlyForecast: monthlyBurnRate * 12,
       remainingThisMonth,
-      activeSubscriptionsTotal: subscriptions.length,
+      nextMonthForecast,
+      activeSubscriptionsTotal: currentlyActiveSubscriptions.length,
       activeSubscriptionsAuto,
       activeSubscriptionsManual,
       mostExpensiveSubscription,
@@ -212,7 +219,7 @@ export class AnalyticsService {
   ) {
     const subscriptions = await deps.subscriptionService.getSubscriptions(
       userId,
-      {},
+      { status: "all" },
     );
     const metadata = await deps.userService.getUserPreferences(userId);
 

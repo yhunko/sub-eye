@@ -32,40 +32,24 @@ export const useCancelSubscription = ({
       const { id } = variables;
 
       if (userId) {
-        void queryClient.invalidateQueries({
-          queryKey: analyticsQueryKeys._def,
-        });
-
         queryClient.setQueryData(
           subscriptionsQueryKeys.detail({ userId, subscriptionId: id })
             .queryKey,
           data,
         );
-
-        queryClient.setQueriesData<SubscriptionDto[]>(
-          {
-            queryKey: subscriptionsQueryKeys
-              .list({
-                userId,
-                queryParams: {},
-              })
-              .queryKey.slice(0, 3),
-          },
-          (oldData) => {
-            if (!oldData) return oldData;
-
-            return oldData.map((sub) => (sub.id === id ? data : sub));
-          },
-        );
-      } else {
-        await queryClient.invalidateQueries({
-          queryKey: subscriptionsQueryKeys.list._def,
-        });
       }
 
-      await queryClient.invalidateQueries({
-        queryKey: billingQueryKeys.usage._def,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: subscriptionsQueryKeys.list._def,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: analyticsQueryKeys._def,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: billingQueryKeys.usage._def,
+        }),
+      ]);
     },
   });
 };

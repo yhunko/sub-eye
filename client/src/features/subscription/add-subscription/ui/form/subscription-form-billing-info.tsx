@@ -18,7 +18,13 @@ import { SubscriptionDatePicker } from "../subscription-date-picker/subscription
 import { SubscriptionPeriod } from "@shared/types";
 import * as m from "@/i18n/messages";
 
-export const SubscriptionFormBillingInfo = () => {
+type SubscriptionFormBillingInfoProps = {
+  showRenewalMode?: boolean;
+};
+
+export const SubscriptionFormBillingInfo = ({
+  showRenewalMode = false,
+}: SubscriptionFormBillingInfoProps) => {
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const period = useWatch({
     control,
@@ -37,7 +43,9 @@ export const SubscriptionFormBillingInfo = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {m.form_billingInfo_nextPaymentDate_label()}
+                {showRenewalMode
+                  ? m.form_billingInfo_renewalDate_label()
+                  : m.form_billingInfo_nextPaymentDate_label()}
               </FormLabel>
               <FormControl>
                 <SubscriptionDatePicker
@@ -49,6 +57,33 @@ export const SubscriptionFormBillingInfo = () => {
             </FormItem>
           )}
         />
+        {!showRenewalMode && (
+          <FormField
+            control={control}
+            name="willBeCancelledAt"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {m.form_billingInfo_willBeCancelledAt_label()}
+                </FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-2">
+                    <SubscriptionDatePicker
+                      value={field.value ?? undefined}
+                      onChange={field.onChange}
+                      clearable={!!field.value}
+                      onClear={() => setValue("willBeCancelledAt", null)}
+                    />
+                  </div>
+                </FormControl>
+                <FieldDescription>
+                  {m.form_billingInfo_willBeCancelledAt_description()}
+                </FieldDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={control}
           name="every"

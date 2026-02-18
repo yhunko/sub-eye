@@ -1,10 +1,19 @@
 import { FC, useState, useEffect } from "react";
 import { isValid, isSameDay, addYears, format, parse, isDate } from "date-fns";
-import { Calendar, Input, Label } from "@/shared/components";
+import {
+  Calendar,
+  Field,
+  FieldLabel,
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+  InputGroupButton,
+} from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
 import * as m from "@/i18n/messages";
 import { withMask } from "use-mask-input";
+import { XIcon } from "lucide-react";
 
 const endMonth = addYears(new Date(), 10);
 
@@ -13,11 +22,13 @@ interface SubscriptionDatePickerContentProps {
   onChange: (date: Date) => void;
   onClose: () => void;
   className?: string;
+  clearable?: boolean;
+  onClear?: () => void;
 }
 
 export const SubscriptionDatePickerContent: FC<
   SubscriptionDatePickerContentProps
-> = ({ value, onChange, onClose, className }) => {
+> = ({ value, onChange, onClose, className, clearable, onClear }) => {
   const dateFormatConfig = useDateFormat();
   const [inputValue, setInputValue] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(value);
@@ -79,21 +90,31 @@ export const SubscriptionDatePickerContent: FC<
 
   return (
     <div className={cn("flex flex-col gap-3 p-3", className)}>
-      <div className="grid gap-2">
-        <Label htmlFor="date-input" className="sr-only">
+      <Field>
+        <FieldLabel htmlFor="date-input" className="sr-only">
           {m.date_selectDate()}
-        </Label>
-        <Input
-          ref={withMask(dateFormatConfig.mask, {
-            oncomplete: handleMaskComplete,
-          })}
-          id="date-input"
-          placeholder={dateFormatConfig.placeholder}
-          value={inputValue}
-          onChange={handleInputChange}
-          className="w-full"
-        />
-      </div>
+        </FieldLabel>
+        <InputGroup>
+          <InputGroupInput
+            ref={withMask(dateFormatConfig.mask, {
+              oncomplete: handleMaskComplete,
+            })}
+            id="date-input"
+            placeholder={dateFormatConfig.placeholder}
+            value={inputValue}
+            onChange={handleInputChange}
+            className="w-full"
+          />
+          {clearable && (
+            <InputGroupAddon onClick={onClear} align="inline-end">
+              <InputGroupButton size="icon-xs" className="ml-auto">
+                <XIcon />
+                <span className="sr-only">{m.common_actions_clear()}</span>
+              </InputGroupButton>
+            </InputGroupAddon>
+          )}
+        </InputGroup>
+      </Field>
       <Calendar
         mode="single"
         selected={value}

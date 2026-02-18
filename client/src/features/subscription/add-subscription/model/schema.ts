@@ -36,7 +36,10 @@ export const createAddSubscriptionFormSchema = () =>
         v.transform((brand) => brand.domain),
       ),
     ),
-    isCancelled: v.optional(v.boolean(), false),
+    willBeCancelledAt: v.optional(
+      v.nullish(v.date(m.validation_invalid_date())),
+      null,
+    ),
   });
 
 export type AddSubscriptionFormSchema = ReturnType<

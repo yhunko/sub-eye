@@ -10,7 +10,12 @@ export type SubscriptionSortField = (typeof subscriptionSortFields)[number];
 export const sortDirections = ["asc", "desc"] as const;
 export type SortDirection = (typeof sortDirections)[number];
 
-export const statusFilters = ["active", "cancelled", "all"] as const;
+export const statusFilters = [
+  "active",
+  "cancelledButActive",
+  "cancelled",
+  "all",
+] as const;
 export type StatusFilter = (typeof statusFilters)[number];
 
 export type GetSubscriptionsParams = {

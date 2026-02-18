@@ -75,6 +75,10 @@ export const SubscriptionsFilterDrawer: FC<SubscriptionsFilterDrawerProps> = ({
 
   const statusOptions: { label: () => string; value: StatusFilter }[] = [
     { label: m.subscription_filter_status_active, value: "active" },
+    {
+      label: m.subscription_status_cancelledButActive,
+      value: "cancelledButActive",
+    },
     { label: m.subscription_status_cancelled, value: "cancelled" },
     { label: m.subscription_filter_status_all, value: "all" },
   ];

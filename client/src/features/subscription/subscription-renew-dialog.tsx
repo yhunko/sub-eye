@@ -1,5 +1,6 @@
 import { FC, useEffect, useState } from "react";
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -7,37 +8,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Button,
   Label,
   Spinner,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
-import { useDateFnsLocale } from "../../shared/lib/date-fns-context";
-import { useDateFormat } from "../../shared/hooks/use-date-format";
 import { SubscriptionDatePicker } from "./add-subscription/ui/subscription-date-picker/subscription-date-picker";
 import { cn } from "@/shared/lib/classes-utils";
+import { startOfDay } from "date-fns";
+import { useDateFnsLocale } from "../../shared/lib/date-fns-context";
+import { useDateFormat } from "../../shared/hooks/use-date-format";
+import * as m from "@/i18n/messages";
 import { useConfirmableSubscriptionDate } from "./lib/use-confirmable-subscription-date";
 
-interface SubscriptionCancelDialogProps {
+interface SubscriptionRenewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (cancelledAtIso: string) => void;
+  onConfirm: (renewalDateIso: string) => void;
   subscriptionName: string;
-  defaultCancelledAt: string;
   pending?: boolean;
 }
 
-const toValidDate = (value: string): Date | undefined => {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-};
-
-export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
+export const SubscriptionRenewDialog: FC<SubscriptionRenewDialogProps> = ({
   open,
   onOpenChange,
   onConfirm,
   subscriptionName,
-  defaultCancelledAt,
   pending = false,
 }) => {
   const { dateFnsFormat } = useDateFormat();
@@ -47,10 +41,10 @@ export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
 
   useEffect(() => {
     if (open) {
-      setSelectedDate(toValidDate(defaultCancelledAt) ?? new Date());
+      setSelectedDate(startOfDay(new Date()));
       setValidationError(null);
     }
-  }, [defaultCancelledAt, open]);
+  }, [open]);
 
   const { formattedDate, handleConfirm } = useConfirmableSubscriptionDate({
     selectedDate,
@@ -63,20 +57,20 @@ export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-130">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>
-            {m.subscription_cancel_title({ name: subscriptionName })}
+            {m.subscription_renew_title({ name: subscriptionName })}
           </DialogTitle>
           <DialogDescription>
-            {m.subscription_cancel_description()}
+            {m.subscription_renew_description()}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              {m.form_billingInfo_willBeCancelledAt_label()}
+              {m.form_billingInfo_renewalDate_label()}
             </Label>
             <SubscriptionDatePicker
               value={selectedDate}
@@ -87,9 +81,6 @@ export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
                 }
               }}
             />
-            <p className="text-muted-foreground text-xs">
-              {m.form_billingInfo_willBeCancelledAt_description()}
-            </p>
             {validationError && (
               <p className="text-destructive text-xs">{validationError}</p>
             )}
@@ -102,7 +93,7 @@ export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
             )}
           >
             <p className="text-foreground text-sm font-medium">
-              {m.subscription_cancel_activeUntil({ date: formattedDate })}
+              {m.subscription_renew_activeFrom({ date: formattedDate })}
             </p>
           </div>
         </div>
@@ -113,11 +104,7 @@ export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
               {m.common_actions_cancel()}
             </Button>
           </DialogClose>
-          <Button
-            variant="destructive"
-            onClick={handleConfirm}
-            disabled={pending}
-          >
+          <Button onClick={handleConfirm} disabled={pending}>
             {pending && <Spinner />}
             {m.common_actions_confirm()}
           </Button>

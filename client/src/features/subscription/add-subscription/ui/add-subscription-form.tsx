@@ -27,15 +27,18 @@ import { SubscriptionLimitAlert, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import * as m from "@/i18n/messages";
+import type { SubscriptionLifecycleStatus } from "@shared/domains/subscription";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
   subscriptionId?: string;
+  subscriptionStatus?: SubscriptionLifecycleStatus;
 };
 
 export const AddSubscriptionForm = ({
   defaultValues,
   subscriptionId,
+  subscriptionStatus,
 }: SubscriptionFormProps) => {
   const schema = useAddSubscriptionFormSchema();
   const formMethods = useForm({
@@ -47,6 +50,7 @@ export const AddSubscriptionForm = ({
       every: "1",
       period: SubscriptionPeriod.MONTH,
       currency: "usd",
+      willBeCancelledAt: null,
       ...defaultValues,
     },
   });
@@ -64,39 +68,49 @@ export const AddSubscriptionForm = ({
 
   const isPending = isAddPending || isEditPending;
   const isEditMode = !!subscriptionId;
+  const showRenewalMode = isEditMode && subscriptionStatus === "cancelled";
   const isLimitReached =
     !isEditMode &&
     !!usage &&
     usage.subscriptions.current >= usage.subscriptions.limit;
 
   const onSubmit: SubmitHandler<AddSubscriptionOutput> = (data) => {
-    const payload = {
-      ...data,
-      paymentDate: new Date(data.paymentDate).toISOString(),
+    const { willBeCancelledAt, ...rest } = data;
+
+    const toISO = (value?: string | Date | null) =>
+      value ? new Date(value).toISOString() : null;
+
+    const basePayload = {
+      ...rest,
+      paymentDate: toISO(rest.paymentDate)!,
       autoPaid: false,
       category: null,
       notes: null,
-      brandDomain: data.brandDomain ?? null,
+      brandDomain: rest.brandDomain ?? null,
+    };
+
+    const payload = {
+      ...basePayload,
+      willBeCancelledAt:
+        isEditMode && showRenewalMode ? null : toISO(willBeCancelledAt),
+    };
+
+    const onSuccess = async (message: string) => {
+      await navigate({ to: "/subscriptions" });
+      toast.success(message);
     };
 
     if (isEditMode && subscriptionId) {
       updateSubscription(
         { id: subscriptionId, payload },
-        {
-          async onSuccess() {
-            await navigate({ to: "/subscriptions" });
-            toast.success(m.messages_updated());
-          },
-        },
+        { onSuccess: () => onSuccess(m.messages_updated()) },
       );
-    } else {
-      addSubscription(payload, {
-        async onSuccess() {
-          await navigate({ to: "/subscriptions" });
-          toast.success(m.messages_added());
-        },
-      });
+      return;
     }
+
+    addSubscription(payload, {
+      onSuccess: () => onSuccess(m.messages_added()),
+    });
   };
 
   return (
@@ -115,7 +129,7 @@ export const AddSubscriptionForm = ({
         <FieldGroup className="md:grid-cols-1">
           <SubscriptionFormBasicInfo />
           <FieldSeparator />
-          <SubscriptionFormBillingInfo />
+          <SubscriptionFormBillingInfo showRenewalMode={showRenewalMode} />
         </FieldGroup>
 
         <div className="col-span-full flex justify-between">

@@ -14,7 +14,9 @@ import type {
   SubscriptionDto,
   UpdateSubscriptionInput,
   GetSubscriptionsParams,
+  SubscriptionLifecycleStatus,
 } from "@shared/domains/subscription";
+import { getSubscriptionLifecycleStatus } from "@shared/domains/subscription";
 import type { UserPreferences } from "@shared/types";
 import { FREE_PLAN } from "@shared/domains/billing";
 
@@ -88,9 +90,9 @@ export class SubscriptionService {
       this.toInsertPayload(userId, payload),
     );
 
-    const result = created.cancelledAt
-      ? created
-      : await this.scheduleWorkflow(created, deps);
+    const result = this.shouldScheduleWorkflow(created)
+      ? await this.tryScheduleWorkflow(created, deps)
+      : created;
 
     const { preferences, rates } = await this.getPreferencesAndRates(
       userId,
@@ -113,18 +115,17 @@ export class SubscriptionService {
     }
 
     if (existing.qstashMessageId) {
-      await deps.workflow.cancel(existing.qstashMessageId);
+      await this.tryCancelWorkflow(existing.qstashMessageId, deps);
     }
 
-    const updated = await deps.repository.update(
-      db,
-      id,
-      this.toUpdatePayload(payload),
-    );
+    const updated = await deps.repository.update(db, id, {
+      ...this.toUpdatePayload(payload),
+      qstashMessageId: null,
+    });
 
-    const result = updated.cancelledAt
-      ? updated
-      : await this.scheduleWorkflow(updated, deps);
+    const result = this.shouldScheduleWorkflow(updated)
+      ? await this.tryScheduleWorkflow(updated, deps)
+      : updated;
 
     const { preferences, rates } = await this.getPreferencesAndRates(
       userId,
@@ -146,7 +147,7 @@ export class SubscriptionService {
     }
 
     if (existing.qstashMessageId) {
-      await deps.workflow.cancel(existing.qstashMessageId);
+      await this.tryCancelWorkflow(existing.qstashMessageId, deps);
     }
 
     await deps.repository.delete(db, id);
@@ -163,13 +164,19 @@ export class SubscriptionService {
       throw new Error("Subscription not found");
     }
 
+    const userPreferences = await deps.userService.getUserPreferences(userId);
+    const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
+      existing,
+      userPreferences.preferredTimezone,
+    );
+
     const updated = await deps.repository.update(db, id, {
-      cancelledAt: new Date(),
+      willBeCancelledAt: new Date(nextPaymentDate),
       qstashMessageId: null,
     });
 
     if (existing.qstashMessageId) {
-      await deps.workflow.cancel(existing.qstashMessageId);
+      await this.tryCancelWorkflow(existing.qstashMessageId, deps);
     }
 
     const { preferences, rates } = await this.getPreferencesAndRates(
@@ -189,7 +196,7 @@ export class SubscriptionService {
     await Promise.all(
       existing.map((subscription) =>
         subscription.qstashMessageId
-          ? deps.workflow.cancel(subscription.qstashMessageId)
+          ? this.tryCancelWorkflow(subscription.qstashMessageId, deps)
           : Promise.resolve(),
       ),
     );
@@ -206,10 +213,14 @@ export class SubscriptionService {
     await Promise.all(
       subscriptions.map(async (subscription) => {
         if (subscription.qstashMessageId) {
-          await deps.workflow.cancel(subscription.qstashMessageId);
+          await this.tryCancelWorkflow(subscription.qstashMessageId, deps);
         }
-        if (!subscription.cancelledAt) {
-          await this.scheduleWorkflow(subscription, deps);
+        if (this.shouldScheduleWorkflow(subscription)) {
+          await this.tryScheduleWorkflow(subscription, deps);
+        } else if (subscription.qstashMessageId !== null) {
+          await deps.repository.update(db, subscription.id, {
+            qstashMessageId: null,
+          });
         }
       }),
     );
@@ -243,21 +254,26 @@ export class SubscriptionService {
     userId: string,
     payload: AddSubscriptionInput,
   ): SubscriptionInsert {
+    const willBeCancelledAt = this.normalizeTimestamp(
+      payload.willBeCancelledAt,
+    );
+
     return {
       userId,
       ...this.toDbPayload(payload),
-      cancelledAt: payload.isCancelled ? new Date() : undefined,
+      willBeCancelledAt: willBeCancelledAt ?? undefined,
     } as SubscriptionInsert;
   }
 
   private static toUpdatePayload(
     payload: UpdateSubscriptionInput,
   ): Partial<SubscriptionInsert> {
-    const { isCancelled, ...restPayload } = payload;
+    const { willBeCancelledAt, ...restPayload } = payload;
     const dbPayload = this.toDbPayload(restPayload);
+    const normalizedCancellation = this.normalizeTimestamp(willBeCancelledAt);
 
-    if (isCancelled !== undefined) {
-      dbPayload.cancelledAt = isCancelled ? new Date() : null;
+    if (willBeCancelledAt !== undefined) {
+      dbPayload.willBeCancelledAt = normalizedCancellation;
     }
 
     return this.stripUndefined(dbPayload);
@@ -266,12 +282,14 @@ export class SubscriptionService {
   private static toDbPayload(
     payload: AddSubscriptionInput | UpdateSubscriptionInput,
   ): Partial<SubscriptionInsert> {
+    const { willBeCancelledAt: _willBeCancelledAt, ...rest } = payload;
+
     return {
-      ...payload,
-      cost: payload.cost !== undefined ? payload.cost.toString() : undefined,
+      ...rest,
+      cost: rest.cost !== undefined ? rest.cost.toString() : undefined,
       paymentDate:
-        payload.paymentDate !== undefined
-          ? new Date(payload.paymentDate).toISOString()
+        rest.paymentDate !== undefined
+          ? new Date(rest.paymentDate).toISOString()
           : undefined,
     };
   }
@@ -300,6 +318,51 @@ export class SubscriptionService {
     });
   }
 
+  private static async tryScheduleWorkflow(
+    subscription: SubscriptionRecord,
+    deps: SubscriptionServiceDeps,
+  ): Promise<SubscriptionRecord> {
+    try {
+      return await this.scheduleWorkflow(subscription, deps);
+    } catch (error) {
+      console.error("Failed to schedule subscription notifications", {
+        subscriptionId: subscription.id,
+        error,
+      });
+
+      return subscription;
+    }
+  }
+
+  private static async tryCancelWorkflow(
+    workflowRunId: string,
+    deps: SubscriptionServiceDeps,
+  ): Promise<void> {
+    try {
+      await deps.workflow.cancel(workflowRunId);
+    } catch (error) {
+      console.error("Failed to cancel subscription notifications", {
+        workflowRunId,
+        error,
+      });
+    }
+  }
+
+  private static shouldScheduleWorkflow(
+    subscription: SubscriptionRecord,
+  ): boolean {
+    const paymentDate = this.normalizeDate(subscription.paymentDate);
+    if (!paymentDate) {
+      return false;
+    }
+
+    const status = getSubscriptionLifecycleStatus({
+      willBeCancelledAt: this.normalizeDate(subscription.willBeCancelledAt),
+    });
+
+    return status !== "cancelled";
+  }
+
   private static async getPreferencesAndRates(
     userId: string,
     deps: SubscriptionServiceDeps,
@@ -325,9 +388,13 @@ export class SubscriptionService {
 
     if (status !== "all") {
       filtered = filtered.filter((dto) => {
-        const isCancelled = !!dto.cancelledAt;
-        if (status === "active") return !isCancelled;
-        if (status === "cancelled") return isCancelled;
+        if (status === "active") return dto.status === "active";
+        if (status === "cancelledButActive") {
+          return dto.status === "cancelledButActive";
+        }
+        if (status === "cancelled") {
+          return this.isCancelledFilterMatch(dto.status);
+        }
         return true;
       });
     }
@@ -356,5 +423,32 @@ export class SubscriptionService {
       const bTime = Date.parse(b.nextPaymentDate);
       return (aTime - bTime) * multiplier;
     });
+  }
+
+  private static isCancelledFilterMatch(
+    status: SubscriptionLifecycleStatus,
+  ): boolean {
+    return status === "cancelled";
+  }
+
+  private static normalizeTimestamp(
+    value?: string | null,
+  ): Date | null | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    if (!value) {
+      return null;
+    }
+
+    return new Date(value);
+  }
+
+  private static normalizeDate(value?: string | Date | null): string | null {
+    if (!value) return null;
+    return value instanceof Date
+      ? value.toISOString()
+      : new Date(value).toISOString();
   }
 }

@@ -12,6 +12,7 @@ import {
 import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
 import type { SubscriptionDto } from "@shared/domains/subscription";
+import { shouldIncludeOccurrence } from "@shared/domains/subscription";
 import type { SubscriptionPeriod } from "@shared/types";
 import type {
   DashboardAnalyticsDto,
@@ -58,8 +59,12 @@ export class AnalyticsCalculator {
 
     while (!isAfter(occurrence, rangeEnd)) {
       if (
-        subscription.cancelledAt &&
-        !isBefore(occurrence, new Date(subscription.nextPaymentDate))
+        !shouldIncludeOccurrence(
+          {
+            willBeCancelledAt: subscription.willBeCancelledAt,
+          },
+          occurrence,
+        )
       ) {
         break;
       }
@@ -162,8 +167,12 @@ export class AnalyticsCalculator {
 
       while (isBefore(projectionDate, horizon)) {
         if (
-          subscription.cancelledAt &&
-          !isBefore(projectionDate, new Date(subscription.nextPaymentDate))
+          !shouldIncludeOccurrence(
+            {
+              willBeCancelledAt: subscription.willBeCancelledAt,
+            },
+            projectionDate,
+          )
         ) {
           break;
         }
@@ -317,18 +326,19 @@ export class AnalyticsCalculator {
       );
 
       while (!isAfter(occurrence, rangeEnd)) {
-        if (
-          subscription.cancelledAt &&
-          !isBefore(occurrence, new Date(subscription.nextPaymentDate))
-        ) {
-          break;
-        }
+        const include = shouldIncludeOccurrence(
+          { willBeCancelledAt: subscription.willBeCancelledAt },
+          occurrence,
+        );
+
+        if (!include) break;
 
         payments.push({
           date: occurrence,
           amount: subscription.billing.preferred.amount,
           subscription,
         });
+
         occurrence = RecurrenceUtils.addPeriod(
           occurrence,
           subscription.every,

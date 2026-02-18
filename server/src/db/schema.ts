@@ -42,10 +42,6 @@ export const subscriptionsTable = pgTable("subscriptions", {
   period: subscriptionPeriodEnum("period")
     .notNull()
     .default(SubscriptionPeriod.MONTH),
-  paymentDate: timestamp("payment_date", {
-    withTimezone: true,
-    mode: "string",
-  }).notNull(),
   autoPaid: boolean("auto_paid").notNull().default(false),
   category: text("category"),
   notes: text("notes"),
@@ -53,5 +49,9 @@ export const subscriptionsTable = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   qstashMessageId: text("qstash_message_id"),
   brandDomain: text("brand_domain"),
-  cancelledAt: timestamp("cancelled_at"),
+  paymentDate: timestamp("payment_date", {
+    withTimezone: true,
+    mode: "string",
+  }).notNull(),
+  willBeCancelledAt: timestamp("cancelled_at"),
 });

@@ -16,6 +16,8 @@ type SubscriptionDatePickerProps = {
   onChange: (newDate: Date) => void;
   className?: string;
   error?: boolean;
+  clearable?: boolean;
+  onClear?: () => void;
 };
 
 export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
@@ -23,6 +25,8 @@ export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
   onChange,
   className,
   error,
+  clearable = false,
+  onClear,
 }) => {
   const [open, setOpen] = useState(false);
   const isDesktop = useBreakpoint("md");
@@ -54,6 +58,8 @@ export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
       value={value}
       onChange={onChange}
       onClose={() => setOpen(false)}
+      clearable={clearable}
+      onClear={onClear}
     />
   );
 

@@ -144,13 +144,18 @@ const SubscriptionsTable: FC = () => {
             />
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const isCancelled = !!row.original.cancelledAt;
+                const isCancelled = row.original.status === "cancelled";
+                const isCancelledButActive =
+                  row.original.status === "cancelledButActive";
 
                 return (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={cn(isCancelled && "bg-muted/30 opacity-75")}
+                    className={cn(
+                      isCancelled && "bg-muted/30 opacity-75",
+                      isCancelledButActive && "bg-amber-500/5",
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
