@@ -61,7 +61,10 @@ export const SubscriptionFormBasicInfo = () => {
                       onChange={(value) => setValue("currency", value)}
                     />
                   }
-                  InputProps={field}
+                  InputProps={{
+                    ...field,
+                    maxLength: 6,
+                  }}
                 />
               </FormControl>
               <FormMessage />

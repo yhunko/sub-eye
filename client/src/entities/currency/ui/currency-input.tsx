@@ -14,7 +14,7 @@ export function CurrencyInput({
   return (
     <ButtonGroup className="w-full">
       {CurrencySelect}
-      <Input type="number" {...InputProps} />
+      <Input type="text" inputMode="decimal" {...InputProps} />
     </ButtonGroup>
   );
 }
