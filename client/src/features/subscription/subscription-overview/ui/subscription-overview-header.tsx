@@ -6,6 +6,7 @@ import { Badge, Button } from "@/shared/components";
 import * as m from "@/i18n/messages";
 import { SubscriptionDto } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
+import { MiddleTruncate } from "@re-dev/react-truncate";
 
 type SubscriptionOverviewHeaderProps = {
   subscription: SubscriptionDto;
@@ -19,7 +20,7 @@ export const SubscriptionOverviewHeader: FC<
   const isCancelledButActive = subscription.status === "cancelledButActive";
 
   return (
-    <div className="flex items-start justify-between text-center md:items-center">
+    <div className="flex items-start justify-between text-center">
       <Button
         variant="ghost"
         size="icon"
@@ -30,15 +31,17 @@ export const SubscriptionOverviewHeader: FC<
         <ChevronLeft className="size-5" />
         <span className="sr-only">{m.subscription_overview_back()}</span>
       </Button>
-      <div className="flex flex-1 flex-col items-center gap-4 md:flex-row md:justify-center">
+      <div className="flex flex-grow flex-col items-center gap-4">
         <BrandfetchImage
           domain={subscription.brandDomain}
           className={cn("size-16 md:size-20", isCancelled && "grayscale")}
         />
-        <div className="flex flex-col items-center gap-2 md:items-start">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold md:text-3xl">
-              {subscription.name}
+        <div className="flex w-full flex-col items-center gap-2 md:items-start">
+          <div className="flex w-full flex-col items-center gap-2">
+            <h1 className="w-full text-2xl font-semibold md:text-3xl">
+              <MiddleTruncate className="" end={5}>
+                {subscription.name}
+              </MiddleTruncate>
             </h1>
             {isCancelled && (
               <Badge variant="destructive">

@@ -13,6 +13,7 @@ import { CurrencyText } from "../../../../entities/currency";
 import { PeriodBadge } from "../../period";
 import { cn } from "@/shared/lib/classes-utils";
 import { SubscriptionListStatus } from "./subscription-list-status";
+import { MiddleTruncate } from "@re-dev/react-truncate";
 
 interface SubscriptionListItemProps {
   subscription: SubscriptionDto;
@@ -52,12 +53,12 @@ export const SubscriptionListItem = memo(
           <ItemContent className="min-w-0 gap-1">
             <ItemTitle
               className={cn(
-                "truncate text-base font-semibold",
+                "w-full max-w-xs truncate text-base font-semibold",
                 isCancelled &&
                   "text-muted-foreground decoration-border line-through",
               )}
             >
-              {subscription.name}
+              <MiddleTruncate>{subscription.name}</MiddleTruncate>
             </ItemTitle>
             <SubscriptionListStatus subscription={subscription} />
           </ItemContent>

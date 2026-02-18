@@ -3,7 +3,7 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import {
   AddSubscriptionInput,
   AddSubscriptionOutput,
-  useAddSubscriptionFormSchema,
+  createAddSubscriptionFormSchema,
 } from "../model/schema";
 import {
   Form,
@@ -17,6 +17,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
+import type { SubscriptionLifecycleStatus } from "shared";
 import { SubscriptionPeriod } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import {
@@ -27,7 +28,6 @@ import { SubscriptionLimitAlert, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import * as m from "@/i18n/messages";
-import type { SubscriptionLifecycleStatus } from "shared";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -40,9 +40,8 @@ export const AddSubscriptionForm = ({
   subscriptionId,
   subscriptionStatus,
 }: SubscriptionFormProps) => {
-  const schema = useAddSubscriptionFormSchema();
   const formMethods = useForm({
-    resolver: valibotResolver(schema),
+    resolver: valibotResolver(createAddSubscriptionFormSchema()),
     defaultValues: {
       name: "",
       cost: "",

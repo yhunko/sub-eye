@@ -32,13 +32,10 @@ export const SubscriptionListStatus: FC<SubscriptionListStatusProps> = ({
           )}
         </>
       ) : (
-        <>
-          <span>{m.subscription_date_renewal()}</span>
-          <SubscriptionNextBill
-            nextBillDate={subscription.nextPaymentDate}
-            format="short"
-          />
-        </>
+        <SubscriptionNextBill
+          nextBillDate={subscription.nextPaymentDate}
+          format="short"
+        />
       )}
     </div>
   );

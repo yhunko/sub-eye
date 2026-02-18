@@ -48,6 +48,3 @@ export type AddSubscriptionFormSchema = ReturnType<
 
 export type AddSubscriptionInput = v.InferInput<AddSubscriptionFormSchema>;
 export type AddSubscriptionOutput = v.InferOutput<AddSubscriptionFormSchema>;
-
-export const useAddSubscriptionFormSchema = () =>
-  createAddSubscriptionFormSchema();
