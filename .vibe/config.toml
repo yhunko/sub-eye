@@ -5,7 +5,7 @@ command = "npx"
 args = ["-y", "mcp-remote", "https://mcp.clerk.com/mcp"]
 
 [[mcp_servers]]
-name = "shadcn"
+name = "Shadcn"
 transport = "stdio"
 command = "npx"
 args = ["shadcn@latest", "mcp"]

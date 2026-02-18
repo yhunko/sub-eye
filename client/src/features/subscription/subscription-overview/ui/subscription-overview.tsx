@@ -1,23 +1,17 @@
-import { FC, useMemo, useState } from "react";
+import { FC, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { toast } from "sonner";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import NiceModal from "@ebay/nice-modal-react";
 
 import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import {
-  subscriptionQuery,
-  useUpdateSubscription,
-} from "@/entities/subscription";
-import * as m from "@/i18n/messages";
+import { subscriptionQuery } from "@/entities/subscription";
 
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { SubscriptionOverviewStats } from "./subscription-overview-stats";
 import { SubscriptionOverviewHeader } from "./subscription-overview-header";
 import { SubscriptionOverviewDetails } from "./subscription-overview-details";
 import { SubscriptionOverviewActions } from "./subscription-overview-actions";
-import { SubscriptionCancelDialog } from "../../subscription-cancel-dialog";
-import { SubscriptionRenewDialog } from "../../subscription-renew-dialog";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -56,48 +50,29 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     return SubscriptionBillingUtils.toDisplayState(zonedDate, timezone);
   }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
 
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
-  const { mutate: updateSubscription, isPending: isUpdatePending } =
-    useUpdateSubscription();
-
   const handleDeleteSuccess = async () => {
     await navigate({ to: "/subscriptions" });
   };
 
-  const handleConfirmCancel = (cancelledAtIso: string) => {
-    updateSubscription(
-      {
-        id: subscriptionId,
-        payload: {
-          willBeCancelledAt: cancelledAtIso,
-        },
-      },
-      {
-        onSuccess: () => {
-          setIsCancelDialogOpen(false);
-          toast.success(m.messages_updated());
-        },
-      },
-    );
+  const handleOpenCancelDialog = async () => {
+    const { SubscriptionCancelDialog } =
+      await import("../../subscription-cancel-dialog");
+
+    await NiceModal.show(SubscriptionCancelDialog, {
+      subscriptionId,
+      subscriptionName: subscription.name,
+      defaultCancelledAt: subscription.nextPaymentDate,
+    });
   };
 
-  const handleConfirmRenew = (renewalDateIso: string) => {
-    updateSubscription(
-      {
-        id: subscriptionId,
-        payload: {
-          paymentDate: renewalDateIso,
-          willBeCancelledAt: null,
-        },
-      },
-      {
-        onSuccess: () => {
-          setIsRenewDialogOpen(false);
-          toast.success(m.messages_updated());
-        },
-      },
-    );
+  const handleOpenRenewDialog = async () => {
+    const { SubscriptionRenewDialog } =
+      await import("../../subscription-renew-dialog");
+
+    await NiceModal.show(SubscriptionRenewDialog, {
+      subscriptionId,
+      subscriptionName: subscription.name,
+    });
   };
 
   return (
@@ -114,27 +89,14 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       <SubscriptionOverviewActions
         subscriptionId={subscriptionId}
         subscriptionName={subscription.name}
-        onMarkAsCanceled={() => setIsCancelDialogOpen(true)}
-        onRenew={() => setIsRenewDialogOpen(true)}
+        onMarkAsCanceled={() => {
+          void handleOpenCancelDialog();
+        }}
+        onRenew={() => {
+          void handleOpenRenewDialog();
+        }}
         onDeleteSuccess={handleDeleteSuccess}
         status={subscription.status}
-      />
-
-      <SubscriptionCancelDialog
-        open={isCancelDialogOpen}
-        onOpenChange={setIsCancelDialogOpen}
-        onConfirm={handleConfirmCancel}
-        subscriptionName={subscription.name}
-        defaultCancelledAt={subscription.nextPaymentDate}
-        pending={isUpdatePending}
-      />
-
-      <SubscriptionRenewDialog
-        open={isRenewDialogOpen}
-        onOpenChange={setIsRenewDialogOpen}
-        onConfirm={handleConfirmRenew}
-        subscriptionName={subscription.name}
-        pending={isUpdatePending}
       />
     </div>
   );

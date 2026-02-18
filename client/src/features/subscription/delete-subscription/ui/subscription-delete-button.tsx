@@ -1,19 +1,7 @@
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { useDeleteSubscription } from "@/entities/subscription/api/use-delete-subscription";
-import { useState } from "react";
 import * as m from "@/i18n/messages";
-import { toast } from "sonner";
+import NiceModal from "@ebay/nice-modal-react";
 
 type SubscriptionDeleteButtonProps = {
   subscriptionId: string;
@@ -30,60 +18,30 @@ export const SubscriptionDeleteButton = ({
   fullWidth,
   onSuccess,
 }: SubscriptionDeleteButtonProps) => {
-  const [open, setOpen] = useState(false);
-  const { mutate: deleteSubscription, isPending } = useDeleteSubscription();
+  const openDeleteDialog = async () => {
+    const { SubscriptionDeleteDialog } =
+      await import("./subscription-delete-dialog");
 
-  const handleDelete = () => {
-    deleteSubscription(
-      { id: subscriptionId },
-      {
-        onSuccess: async () => {
-          await onSuccess?.();
-          setOpen(false);
-          toast.success(m.messages_deleted());
-        },
-      },
-    );
+    await NiceModal.show(SubscriptionDeleteDialog, {
+      subscriptionId,
+      subscriptionName,
+      onSuccess,
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="destructive"
-          size={fullWidth ? "lg" : "icon"}
-          className={className}
-          aria-label={m.form_buttons_delete()}
-          data-slot="button"
-        >
-          <Trash2 className="size-4" />
-          {fullWidth && m.form_buttons_delete()}
-        </Button>
-      </DialogTrigger>
-      <DialogContent onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>{m.form_buttons_delete()}</DialogTitle>
-          <DialogDescription>
-            {m.messages_confirmDelete({
-              name: subscriptionName ?? "this subscription",
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isPending}>
-              {m.subscription_overview_back()}
-            </Button>
-          </DialogClose>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            {m.form_buttons_delete()}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Button
+      variant="destructive"
+      size={fullWidth ? "lg" : "icon"}
+      className={className}
+      aria-label={m.form_buttons_delete()}
+      data-slot="button"
+      onClick={() => {
+        void openDeleteDialog();
+      }}
+    >
+      <Trash2 className="size-4" />
+      {fullWidth && m.form_buttons_delete()}
+    </Button>
   );
 };

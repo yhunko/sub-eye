@@ -13,6 +13,7 @@
     "prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/shared/lib/i18n --emit-ts-declarations"
   },
   "dependencies": {
+    "@ebay/nice-modal-react": "^1.2.13",
     "@clerk/clerk-react": "^5.60.0",
     "@clerk/localizations": "^3.35.3",
     "@clerk/themes": "^2.4.51",
