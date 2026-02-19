@@ -12,7 +12,6 @@ import {
   Spinner,
 } from "@/shared/components";
 import { SubscriptionDatePicker } from "./add-subscription/ui/subscription-date-picker/subscription-date-picker";
-import { cn } from "@/shared/lib/classes-utils";
 import { startOfDay } from "date-fns";
 import * as m from "@/i18n/messages";
 import { useConfirmableSubscriptionDate } from "./lib/use-confirmable-subscription-date";
@@ -48,7 +47,7 @@ export const SubscriptionRenewDialog =
         }
       }, [modal.visible, setSelectedDate, setValidationError]);
 
-      const { formattedDate, handleConfirm } = useConfirmableSubscriptionDate({
+      const { handleConfirm } = useConfirmableSubscriptionDate({
         selectedDate,
         dateFnsFormat,
         locale,
@@ -85,7 +84,7 @@ export const SubscriptionRenewDialog =
             }
           }}
         >
-          <DialogContent className="sm:max-w-[520px]">
+          <DialogContent className="sm:max-w-130">
             <DialogHeader>
               <DialogTitle>
                 {m.subscription_renew_title({ name: subscriptionName })}
@@ -107,17 +106,6 @@ export const SubscriptionRenewDialog =
                 {validationError && (
                   <p className="text-destructive text-xs">{validationError}</p>
                 )}
-              </div>
-
-              <div
-                className={cn(
-                  "rounded-lg border p-3",
-                  selectedDate ? "bg-muted/50" : "bg-background",
-                )}
-              >
-                <p className="text-foreground text-sm font-medium">
-                  {m.subscription_renew_activeFrom({ date: formattedDate })}
-                </p>
               </div>
             </div>
 

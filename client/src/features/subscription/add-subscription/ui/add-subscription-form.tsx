@@ -79,9 +79,16 @@ export const AddSubscriptionForm = ({
     const toISO = (value?: string | Date | null) =>
       value ? new Date(value).toISOString() : null;
 
+    const cancellationDateIso =
+      isEditMode && showRenewalMode ? null : toISO(willBeCancelledAt);
+    const paymentDateIso =
+      isEditMode && cancellationDateIso
+        ? cancellationDateIso
+        : toISO(rest.paymentDate)!;
+
     const basePayload = {
       ...rest,
-      paymentDate: toISO(rest.paymentDate)!,
+      paymentDate: paymentDateIso,
       autoPaid: false,
       category: null,
       notes: null,
@@ -90,8 +97,7 @@ export const AddSubscriptionForm = ({
 
     const payload = {
       ...basePayload,
-      willBeCancelledAt:
-        isEditMode && showRenewalMode ? null : toISO(willBeCancelledAt),
+      willBeCancelledAt: cancellationDateIso,
     };
 
     const onSuccess = async (message: string) => {

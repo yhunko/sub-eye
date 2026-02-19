@@ -13,7 +13,6 @@ import {
 } from "@/shared/components";
 import * as m from "@/i18n/messages";
 import { SubscriptionDatePicker } from "./add-subscription/ui/subscription-date-picker/subscription-date-picker";
-import { cn } from "@/shared/lib/classes-utils";
 import { useConfirmableSubscriptionDate } from "./lib/use-confirmable-subscription-date";
 import { useSubscriptionUpdateDialog } from "./lib/use-subscription-update-dialog";
 import { toast } from "sonner";
@@ -58,7 +57,7 @@ export const SubscriptionCancelDialog =
         setValidationError,
       ]);
 
-      const { formattedDate, handleConfirm } = useConfirmableSubscriptionDate({
+      const { handleConfirm } = useConfirmableSubscriptionDate({
         selectedDate,
         dateFnsFormat,
         locale,
@@ -68,7 +67,10 @@ export const SubscriptionCancelDialog =
           updateSubscription(
             {
               id: subscriptionId,
-              payload: { willBeCancelledAt: cancelledAtIso },
+              payload: {
+                paymentDate: cancelledAtIso,
+                willBeCancelledAt: cancelledAtIso,
+              },
             },
             {
               onSuccess: async () => {
@@ -112,22 +114,11 @@ export const SubscriptionCancelDialog =
                   onChange={handleDateChange}
                 />
                 <p className="text-muted-foreground text-xs">
-                  {m.form_billingInfo_willBeCancelledAt_description()}
+                  {m.subscription_cancel_paymentDateReset()}
                 </p>
                 {validationError && (
                   <p className="text-destructive text-xs">{validationError}</p>
                 )}
-              </div>
-
-              <div
-                className={cn(
-                  "rounded-lg border p-3",
-                  selectedDate ? "bg-muted/50" : "bg-background",
-                )}
-              >
-                <p className="text-foreground text-sm font-medium">
-                  {m.subscription_cancel_activeUntil({ date: formattedDate })}
-                </p>
               </div>
             </div>
 

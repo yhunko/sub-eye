@@ -172,6 +172,7 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(db, id, {
       willBeCancelledAt: new Date(nextPaymentDate),
+      paymentDate: nextPaymentDate,
       qstashMessageId: null,
     });
 
@@ -274,6 +275,11 @@ export class SubscriptionService {
 
     if (willBeCancelledAt !== undefined) {
       dbPayload.willBeCancelledAt = normalizedCancellation;
+
+      // Cancellation resets the billing anchor so recurring projections stay consistent.
+      if (normalizedCancellation) {
+        dbPayload.paymentDate = normalizedCancellation.toISOString();
+      }
     }
 
     return this.stripUndefined(dbPayload);
@@ -356,8 +362,16 @@ export class SubscriptionService {
       return false;
     }
 
+    const cancellationDate = this.normalizeDate(subscription.willBeCancelledAt);
+    if (
+      cancellationDate &&
+      new Date(paymentDate).getTime() >= new Date(cancellationDate).getTime()
+    ) {
+      return false;
+    }
+
     const status = getSubscriptionLifecycleStatus({
-      willBeCancelledAt: this.normalizeDate(subscription.willBeCancelledAt),
+      willBeCancelledAt: cancellationDate,
     });
 
     return status !== "cancelled";

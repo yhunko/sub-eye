@@ -31,7 +31,10 @@ export const ReactQueryProvider: FC<PropsWithChildren> = ({ children }) => {
       persistOptions={{
         persister: asyncPersister,
         buster: import.meta.env.APP_VERSION,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => query.state.status === "success",
+        },
       }}
       onSuccess={handleSuccess}
     >

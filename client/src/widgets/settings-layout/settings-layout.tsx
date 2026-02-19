@@ -24,7 +24,9 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
     <div className="flex min-h-svh w-full flex-col gap-2">
       {isDesktop && <DesktopNavbar />}
 
-      <div className="container mx-auto flex w-full max-w-xl grow flex-col gap-2">
+      {/* pb-20: Adds ~112px of padding to the bottom on mobile. This accounts for the navbar height (64px) + floating button offset + safe area. */}
+      {/* md:pb-4: Resets this padding on desktop, and reserves space for version. */}
+      <div className="container mx-auto flex w-full max-w-xl grow flex-col gap-2 pb-28 md:pb-4">
         <div className="relative flex h-14 flex-row items-center justify-center">
           {backTo && (
             <Button
