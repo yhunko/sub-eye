@@ -240,3 +240,38 @@ const { data } = useSuspenseQuery(
 | **Classes**        | `PascalCase`  | `UserService`            | OOP Standard            |
 | **Methods**        | `camelCase`   | `getById`                | JS Standard             |
 | **RPC Import**     | -             | `@server/client`         | Strict layer separation |
+
+---
+
+## 8. Push Notifications Best Practices
+
+### Server Delivery Rules
+
+- Do not rely on one-time module initialization for VAPID setup.
+  - Resolve and validate `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, and `VAPID_PRIVATE_KEY` per send operation.
+  - `VAPID_SUBJECT` must start with `mailto:` or `https://`.
+- Send methods must return a delivery report (`attempted`, `delivered`, `failed`, `removed`, `failures`) instead of swallowing per-device failures.
+- Parse non-2xx push responses and log provider reason text (when available). Silent errors make scheduled workflow failures hard to diagnose.
+
+### Subscription Hygiene
+
+- Remove stale subscriptions automatically on:
+  - `404 Not Found`
+  - `410 Gone`
+  - Known stale-token `403` reasons (provider-specific invalid token/device-token errors)
+- Keep delivery logs structured with `userId`, `subscriptionId` (if applicable), and failure details.
+
+### Endpoint Behavior
+
+- Test endpoint (`POST /api/push-notifications/test`) must return an error status when no subscriptions receive the notification (even if send attempts were made).
+- Scheduled workflow notifications must record/report delivery failures so scheduler issues are visible in logs and observability.
+
+### Fix Applied (2026-02-23)
+
+- `PushNotificationService.sendNotification` now:
+  - Validates VAPID config per request.
+  - Returns a structured delivery report.
+  - Extracts provider error reason from response bodies.
+  - Cleans stale subscriptions for 404/410 and known stale 403 cases.
+- `POST /api/push-notifications/test` now returns `502` when all delivery attempts fail.
+- `SubscriptionNotificationsWorkflow` now logs delivery reports for scheduled sends when failures occur.

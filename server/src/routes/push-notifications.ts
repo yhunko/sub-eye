@@ -40,7 +40,7 @@ export const pushNotificationRouter = new Hono()
     const { PushNotificationService } =
       await import("../domains/push-notification/pushNotificationService");
 
-    await PushNotificationService.sendNotification(userId, {
+    const report = await PushNotificationService.sendNotification(userId, {
       title: "Test Notification",
       body: "If you see this, push notifications are working!",
       icon: "/assets/pwa/web-app-manifest-192x192.png",
@@ -49,5 +49,16 @@ export const pushNotificationRouter = new Hono()
       },
     });
 
-    return context.json({ success: true });
+    if (report.attempted > 0 && report.delivered === 0) {
+      return context.json(
+        {
+          success: false,
+          error: "Failed to deliver test notification to any subscription",
+          report,
+        },
+        502,
+      );
+    }
+
+    return context.json({ success: true, report });
   });

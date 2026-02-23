@@ -63,15 +63,26 @@ export class SubscriptionNotificationsWorkflow {
         const { PushNotificationService } =
           await import("../../domains/push-notification/pushNotificationService");
 
-        await PushNotificationService.sendNotification(subscription.userId, {
-          title: "Subscription Renewal",
-          body: `Your subscription for ${subscription.name} is renewing soon.`,
-          icon: `/assets/pwa/web-app-manifest-192x192.png`, // Default icon, can be customized
-          data: {
-            url: `/subscriptions/${subscription.id}`,
-            subscriptionId: subscription.id,
+        const report = await PushNotificationService.sendNotification(
+          subscription.userId,
+          {
+            title: "Subscription Renewal",
+            body: `Your subscription for ${subscription.name} is renewing soon.`,
+            icon: `/assets/pwa/web-app-manifest-192x192.png`, // Default icon, can be customized
+            data: {
+              url: `/subscriptions/${subscription.id}`,
+              subscriptionId: subscription.id,
+            },
           },
-        });
+        );
+
+        if (report.failed > 0) {
+          console.error("Scheduled push delivery had failures", {
+            subscriptionId: subscription.id,
+            userId: subscription.userId,
+            report,
+          });
+        }
       });
 
       const nextPayment = RecurrenceUtils.addPeriod(
