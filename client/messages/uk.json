@@ -138,6 +138,9 @@
   "settings_notifications_offset_2days": "За 2 дні до",
   "settings_notifications_time_label": "Час доби",
   "settings_notifications_time_desc": "Оберіть час, коли надсилатимуться сповіщення.",
+  "settings_notifications_schedule_lockedDescription": "Налаштування розкладу доступне у Pro. На безкоштовному плані використовується фіксований розклад: за 1 день до о 10:00 у вашому часовому поясі.",
+  "settings_notifications_schedule_lockTitle": "Відкрийте власний розклад сповіщень",
+  "settings_notifications_schedule_lockDescription": "Оберіть точний час та зсув за днями для нагадувань про поновлення у Pro.",
   "settings_notifications_time_placeholder": "Оберіть час",
   "settings_notifications_status_checking": "Перевірка...",
   "settings_notifications_status_supported": "Підтримується",
@@ -193,6 +196,13 @@
   "settings_billing_plans_free_features_analytics": "Базова аналітика",
   "settings_billing_plans_free_features_notifications": "Push-сповіщення",
   "settings_billing_plans_free_features_currency": "Підтримка різних валют",
+  "settings_billing_plans_pro_name": "Pro",
+  "settings_billing_plans_pro_description": "Для користувачів, яким потрібен глибший контроль та автоматизація.",
+  "settings_billing_plans_pro_price": "$8",
+  "settings_billing_plans_pro_period": "місяць",
+  "settings_billing_plans_pro_badge": "Preview",
+  "settings_billing_plans_pro_features_subscriptionLimitIncrease": "Вищий ліміт підписок ({free} -> {pro})",
+  "settings_billing_plans_pro_features_notificationSchedule": "Власний розклад сповіщень",
   "settings_billing_plans_comingSoon": "Більше планів незабаром",
   "settings_billing_usage_title": "Використання",
   "settings_billing_usage_subscriptions": "Підписки",
@@ -200,5 +210,7 @@
   "billing_limitReached_title": "Досягнуто ліміт підписок",
   "billing_limitReached_description": "Ви використали {current} з {limit} підписок на безкоштовному плані.",
   "billing_limitReached_action": "Переглянути плани",
-  "billing_usage_badge": "{current}/{limit}"
+  "billing_usage_badge": "{current}/{limit}",
+  "billing_proFeature_badge": "Pro-функція",
+  "billing_proFeature_viewPlans": "Переглянути плани"
 }

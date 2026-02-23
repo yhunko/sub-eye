@@ -1,5 +1,5 @@
 export type PlanFeature = {
-  key: string;
+  key: BillingFeatureKey;
   included: boolean;
 };
 
@@ -15,10 +15,22 @@ export type Plan = {
 };
 
 export type PlanUsage = {
+  planId: PlanId;
+  features: Record<BillingFeatureKey, boolean>;
   subscriptions: { current: number; limit: number };
 };
 
 export type PlanId = (typeof PLAN_IDS)[number];
+export type BillingFeatureKey = (typeof BILLING_FEATURE_KEYS)[number];
 
-const PLAN_IDS = ["free"] as const;
+const BILLING_FEATURE_KEYS = [
+  "subscriptions",
+  "analytics",
+  "notifications",
+  "notificationSchedule",
+  "currency",
+] as const;
+
+const PLAN_IDS = ["free", "pro"] as const;
 export { PLAN_IDS };
+export { BILLING_FEATURE_KEYS };

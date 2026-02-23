@@ -1,6 +1,7 @@
 import * as m from "@/i18n/messages";
 import { useUser } from "@clerk/clerk-react";
 import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
+import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
 import {
   Field,
   FieldLabel,
@@ -10,18 +11,40 @@ import {
   Spinner,
   InputGroupAddon,
 } from "@/shared/components";
-import { useState, ChangeEventHandler, KeyboardEventHandler } from "react";
+import {
+  useState,
+  useEffect,
+  type ChangeEventHandler,
+  type KeyboardEventHandler,
+} from "react";
 import { NotificationOffsetSelect } from "./notification-offset-select";
-import { Clock } from "lucide-react";
+import { Clock, Lock } from "lucide-react";
 
-export const NotificationTimeSelect = () => {
+type NotificationTimeSelectProps = {
+  scheduleLocked?: boolean;
+};
+
+export const NotificationTimeSelect = ({
+  scheduleLocked = false,
+}: NotificationTimeSelectProps) => {
   const { user } = useUser();
   const { mutate, isPending } = useUpdateUserMetadata();
 
-  const currentTime = user?.publicMetadata?.notificationTime ?? "10:00";
+  const currentTime = scheduleLocked
+    ? NOTIFICATION_SCHEDULE_DEFAULTS.notificationTime
+    : (user?.publicMetadata?.notificationTime ??
+      NOTIFICATION_SCHEDULE_DEFAULTS.notificationTime);
   const [time, setTime] = useState(currentTime);
 
+  useEffect(() => {
+    setTime(currentTime);
+  }, [currentTime]);
+
   const handleTimeChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    if (scheduleLocked) {
+      return;
+    }
+
     const val = event.target.value;
 
     if (val) {
@@ -30,6 +53,10 @@ export const NotificationTimeSelect = () => {
   };
 
   const handleBlur = () => {
+    if (scheduleLocked) {
+      return;
+    }
+
     if (currentTime === time) return;
 
     mutate({ notificationTime: time });
@@ -49,7 +76,7 @@ export const NotificationTimeSelect = () => {
       </FieldLabel>
       <InputGroup>
         <InputGroupAddon>
-          <Clock />
+          {scheduleLocked ? <Lock /> : <Clock />}
         </InputGroupAddon>
         <InputGroupInput
           id="time-picker"
@@ -59,15 +86,20 @@ export const NotificationTimeSelect = () => {
           onKeyDown={handleKeyDown}
           type="time"
           step="900"
-          disabled={isPending}
+          disabled={isPending || scheduleLocked}
           className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
         />
         <InputGroupAddon align="inline-end" className="overflow-hidden pr-2">
-          <NotificationOffsetSelect />
+          <NotificationOffsetSelect
+            disabled={isPending || scheduleLocked}
+            lockToDefault={scheduleLocked}
+          />
         </InputGroupAddon>
       </InputGroup>
       <FieldDescription>
-        {m.settings_notifications_time_desc()}
+        {scheduleLocked
+          ? m.settings_notifications_schedule_lockedDescription()
+          : m.settings_notifications_time_desc()}
       </FieldDescription>
     </Field>
   );

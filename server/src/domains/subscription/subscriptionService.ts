@@ -18,7 +18,7 @@ import type {
 } from "shared";
 import { getSubscriptionLifecycleStatus } from "shared";
 import type { UserPreferences } from "shared";
-import { FREE_PLAN } from "shared";
+import { getPlanById } from "shared";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
@@ -80,8 +80,13 @@ export class SubscriptionService {
     payload: AddSubscriptionInput,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    const currentCount = await deps.repository.countByUserId(db, userId);
-    if (currentCount >= FREE_PLAN.limits.maxSubscriptions) {
+    const [currentCount, planId] = await Promise.all([
+      deps.repository.countByUserId(db, userId),
+      deps.userService.getPlanId(userId),
+    ]);
+    const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
+
+    if (currentCount >= maxSubscriptions) {
       throw new Error("Subscription limit reached");
     }
 

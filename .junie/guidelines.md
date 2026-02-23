@@ -22,6 +22,9 @@ This project uses a Monorepo structure (`bhvr` template) with strict separation 
 4. **SHARED IMPORT STYLE:**
    - Import shared contracts/utilities from the `shared` package root (e.g., `import { SubscriptionDto } from "shared"`).
    - Do not use `@shared/*` aliases or deep `shared/*` paths in app code.
+5. **DRY (DON'T REPEAT YOURSELF):**
+   - If the same logic appears in more than one place, extract a shared helper/module and reuse it.
+   - Prefer one authoritative implementation for each workflow to reduce drift and regression risk.
 
 ---
 
@@ -275,3 +278,27 @@ const { data } = useSuspenseQuery(
   - Cleans stale subscriptions for 404/410 and known stale 403 cases.
 - `POST /api/push-notifications/test` now returns `502` when all delivery attempts fail.
 - `SubscriptionNotificationsWorkflow` now logs delivery reports for scheduled sends when failures occur.
+
+---
+
+## 9. Plan Gating (Free vs Pro)
+
+### Notification Schedule Entitlement
+
+- Treat notification scheduling customization as a **Pro-only** capability.
+- Free plan still supports push notifications, but schedule is fixed and must be enforced server-side:
+  - `notificationOffset = 1` (one day before)
+  - `notificationTime = "10:00"`
+  - Time should be interpreted in the user's `preferredTimezone`.
+
+### Enforcement Rules
+
+- Never rely only on UI for gating; enforce on server metadata writes and reads.
+- If a free user already has custom schedule metadata (legacy dev/prod users), normalize/reset metadata to free defaults automatically.
+- Scheduled workflow logic must consume normalized preferences so free users cannot bypass with stale metadata.
+
+### Contracts for Agents
+
+- `PlanUsage` should include plan and feature flags (not only limits), so UI can lock features predictably.
+- Use shared billing feature keys and helpers (`notificationSchedule`) instead of ad-hoc string checks.
+- Billing page should show that custom notification schedule is unavailable on Free and included in Pro preview.

@@ -138,6 +138,9 @@
   "settings_notifications_offset_2days": "2 days before",
   "settings_notifications_time_label": "Time of Day",
   "settings_notifications_time_desc": "Choose the time when notifications will be sent.",
+  "settings_notifications_schedule_lockedDescription": "Schedule customization is a Pro feature. Free plan uses a fixed schedule: 1 day before at 10:00 in your timezone.",
+  "settings_notifications_schedule_lockTitle": "Unlock custom notification schedule",
+  "settings_notifications_schedule_lockDescription": "Choose exact time and day offset for renewal reminders with Pro.",
   "settings_notifications_time_placeholder": "Select time",
   "settings_notifications_status_checking": "Checking...",
   "settings_notifications_status_supported": "Supported",
@@ -193,6 +196,13 @@
   "settings_billing_plans_free_features_analytics": "Basic analytics",
   "settings_billing_plans_free_features_notifications": "Push notifications",
   "settings_billing_plans_free_features_currency": "Multi-currency support",
+  "settings_billing_plans_pro_name": "Pro",
+  "settings_billing_plans_pro_description": "For power users who want deeper control and automation.",
+  "settings_billing_plans_pro_price": "$8",
+  "settings_billing_plans_pro_period": "month",
+  "settings_billing_plans_pro_badge": "Preview",
+  "settings_billing_plans_pro_features_subscriptionLimitIncrease": "Higher subscription limit ({free} -> {pro})",
+  "settings_billing_plans_pro_features_notificationSchedule": "Custom notification schedule",
   "settings_billing_plans_comingSoon": "More plans coming soon",
   "settings_billing_usage_title": "Usage",
   "settings_billing_usage_subscriptions": "Subscriptions",
@@ -200,5 +210,7 @@
   "billing_limitReached_title": "Subscription limit reached",
   "billing_limitReached_description": "You've used {current} of {limit} subscriptions on the Free plan.",
   "billing_limitReached_action": "View plans",
-  "billing_usage_badge": "{current}/{limit}"
+  "billing_usage_badge": "{current}/{limit}",
+  "billing_proFeature_badge": "Pro Feature",
+  "billing_proFeature_viewPlans": "View plans"
 }

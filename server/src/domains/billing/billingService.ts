@@ -1,14 +1,17 @@
 import { db } from "../../db";
 import { SubscriptionRepository } from "../subscription/subscriptionRepository";
 import type { PlanUsage } from "shared";
-import { FREE_PLAN } from "shared";
+import { getPlanById, getPlanFeaturesMap } from "shared";
+import { UserService } from "../user/userService";
 
 type BillingServiceDeps = {
   subscriptionRepository: typeof SubscriptionRepository;
+  userService: typeof UserService;
 };
 
 const defaultDeps: BillingServiceDeps = {
   subscriptionRepository: SubscriptionRepository,
+  userService: UserService,
 };
 
 export class BillingService {
@@ -19,17 +22,19 @@ export class BillingService {
     userId: string,
     deps: BillingServiceDeps = defaultDeps,
   ): Promise<PlanUsage> {
-    const subscriptionsCount = await deps.subscriptionRepository.countByUserId(
-      db,
-      userId,
-    );
+    const [subscriptionsCount, planId] = await Promise.all([
+      deps.subscriptionRepository.countByUserId(db, userId),
+      deps.userService.getPlanId(userId),
+    ]);
+    const plan = getPlanById(planId);
 
     return {
+      planId,
+      features: getPlanFeaturesMap(planId),
       subscriptions: {
         current: subscriptionsCount,
-        limit: FREE_PLAN.limits.maxSubscriptions,
+        limit: plan.limits.maxSubscriptions,
       },
-      // Future usage metrics can be added here (e.g., push notifications, analytics)
     };
   }
 }

@@ -5,10 +5,22 @@ import { Button } from "@/shared/components/ui/button";
 import { usePushNotificationsSubscription } from "../api/hooks";
 import { toast } from "sonner";
 import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiClient as client } from "../../../shared/api/client";
+import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
+import { useAuth } from "@clerk/clerk-react";
+import * as m from "@/i18n/messages";
 
 export const SettingsNotificationsForm = () => {
+  const { userId } = useAuth();
+  const { data: usage } = useQuery(
+    planUsageQuery({
+      params: { userId: userId! },
+      options: { enabled: Boolean(userId) },
+    }),
+  );
+  const canEditSchedule = usage?.features.notificationSchedule === true;
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -17,7 +29,13 @@ export const SettingsNotificationsForm = () => {
       </div>
 
       <div className="flex flex-col gap-4">
-        <NotificationTimeSelect />
+        {!canEditSchedule && (
+          <PlanFeatureLockCard
+            title={m.settings_notifications_schedule_lockTitle()}
+            description={m.settings_notifications_schedule_lockDescription()}
+          />
+        )}
+        <NotificationTimeSelect scheduleLocked={!canEditSchedule} />
         <TestNotificationButton />
       </div>
     </div>
@@ -29,7 +47,10 @@ const TestNotificationButton = () => {
   const { data: subscription } = usePushNotificationsSubscription();
   const { mutate: sendTest, isPending } = useMutation({
     mutationFn: async () => {
-      await client.api["push-notifications"].test.$post();
+      const res = await client.api["push-notifications"].test.$post();
+      if (!res.ok) {
+        throw new Error("Failed to send test push notification");
+      }
     },
   });
 
