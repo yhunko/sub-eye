@@ -11,7 +11,6 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/shared/components/ui/drawer";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import { cn } from "@/shared/lib/classes-utils";
@@ -31,12 +30,14 @@ type SelectedMonthSummaryProps = {
   selectedMonth: MonthlyTrendPoint;
   preferredCurrencyCode: string;
   locale: MonthlySpendingTrendVariantProps["locale"];
+  onOpenDetails: () => void;
 };
 
 const SelectedMonthSummary: FC<SelectedMonthSummaryProps> = ({
   selectedMonth,
   preferredCurrencyCode,
   locale,
+  onOpenDetails,
 }) => {
   return (
     <div className="bg-muted/25 border-border mb-3 flex items-center justify-between gap-2 rounded-xl border p-2.5">
@@ -51,20 +52,19 @@ const SelectedMonthSummary: FC<SelectedMonthSummaryProps> = ({
           />
         </div>
       </div>
-      <DrawerTrigger asChild>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="rounded-full px-3"
-        >
-          <List className="size-4" />
-          <span>{m.common_subscriptions()}</span>
-          <Badge variant="outline" className="rounded-full px-1.5">
-            {selectedMonth.subscriptions?.length ?? 0}
-          </Badge>
-        </Button>
-      </DrawerTrigger>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="rounded-full px-3"
+        onClick={onOpenDetails}
+      >
+        <List className="size-4" />
+        <span>{m.common_subscriptions()}</span>
+        <Badge variant="outline" className="rounded-full px-1.5">
+          {selectedMonth.subscriptions?.length ?? 0}
+        </Badge>
+      </Button>
     </div>
   );
 };
@@ -393,6 +393,10 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
   };
 
   const handleActiveMonthChange = (payload: { date?: string } | undefined) => {
+    if (isDetailsOpen) {
+      return;
+    }
+
     const nextDate = payload?.date;
     if (nextDate) {
       setSelectedMonthDate((currentDate) =>
@@ -420,12 +424,19 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
   }, [isDetailsOpen, selectedMonthIndex]);
 
   return (
-    <Drawer open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+    <Drawer
+      open={isDetailsOpen}
+      onOpenChange={setIsDetailsOpen}
+      shouldScaleBackground={false}
+      dismissible={true}
+      repositionInputs={false}
+    >
       {selectedMonth && (
         <SelectedMonthSummary
           selectedMonth={selectedMonth}
           preferredCurrencyCode={preferredCurrencyCode}
           locale={locale}
+          onOpenDetails={() => setIsDetailsOpen(true)}
         />
       )}
 
