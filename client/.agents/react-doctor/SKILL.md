@@ -11,7 +11,7 @@ Scans your React codebase for security, performance, correctness, and architectu
 ## Usage
 
 ```bash
-bun x react-doctor@latest . --verbose --diff --no-ami
+bun x react-doctor@latest . --yes --diff --no-ami --offline --fail-on warning
 ```
 
 ## Workflow

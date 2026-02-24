@@ -1,0 +1,457 @@
+import { FC, useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
+import { format, parseISO } from "date-fns";
+import { ChevronLeft, ChevronRight, List } from "lucide-react";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/shared/components/ui/drawer";
+import { CurrencyBadge, CurrencyText } from "@/entities/currency";
+import { cn } from "@/shared/lib/classes-utils";
+import * as m from "@/i18n/messages";
+import { BrandfetchImage } from "@/features/brandfetch";
+import type { MonthlyTrendPoint } from "shared";
+import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
+import { useRechartsModule } from "./use-recharts-module";
+
+type RechartsInteractionState = {
+  activePayload?: Array<{
+    payload?: { date?: string };
+  }>;
+};
+
+type SelectedMonthSummaryProps = {
+  selectedMonth: MonthlyTrendPoint;
+  preferredCurrencyCode: string;
+  locale: MonthlySpendingTrendVariantProps["locale"];
+};
+
+const SelectedMonthSummary: FC<SelectedMonthSummaryProps> = ({
+  selectedMonth,
+  preferredCurrencyCode,
+  locale,
+}) => {
+  return (
+    <div className="bg-muted/25 border-border mb-3 flex items-center justify-between gap-2 rounded-xl border p-2.5">
+      <div className="min-w-0">
+        <p className="text-muted-foreground text-[11px]">
+          {format(parseISO(selectedMonth.date), "LLLL yyyy", { locale })}
+        </p>
+        <div className="text-foreground text-sm font-semibold tabular-nums">
+          <CurrencyText
+            amount={selectedMonth.amount}
+            currencyCode={preferredCurrencyCode}
+          />
+        </div>
+      </div>
+      <DrawerTrigger asChild>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="rounded-full px-3"
+        >
+          <List className="size-4" />
+          <span>{m.common_subscriptions()}</span>
+          <Badge variant="outline" className="rounded-full px-1.5">
+            {selectedMonth.subscriptions?.length ?? 0}
+          </Badge>
+        </Button>
+      </DrawerTrigger>
+    </div>
+  );
+};
+
+type TrendLineChartProps = {
+  monthlyTrend: MonthlyTrendPoint[];
+  locale: MonthlySpendingTrendVariantProps["locale"];
+  currencySymbol: string;
+  yAxisWidth: number;
+  onActiveMonthChange: (payload: { date?: string } | undefined) => void;
+};
+
+const TrendLineChart: FC<TrendLineChartProps> = ({
+  monthlyTrend,
+  locale,
+  currencySymbol,
+  yAxisWidth,
+  onActiveMonthChange,
+}) => {
+  const Recharts = useRechartsModule();
+
+  return (
+    <ChartContainer
+      config={{
+        amount: {
+          label: m.analytics_charts_monthlySpending_labels_totalSpending(),
+          color: "var(--chart-1)",
+        },
+      }}
+      className="aspect-auto h-64 w-full sm:h-72"
+    >
+      {Recharts ? (
+        <Recharts.AreaChart
+          data={monthlyTrend}
+          margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+          onMouseMove={(state: RechartsInteractionState) =>
+            onActiveMonthChange(
+              state.activePayload?.[0]?.payload as
+                | { date?: string }
+                | undefined,
+            )
+          }
+          onClick={(state: RechartsInteractionState) =>
+            onActiveMonthChange(
+              state.activePayload?.[0]?.payload as
+                | { date?: string }
+                | undefined,
+            )
+          }
+        >
+          <defs>
+            <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="5%"
+                stopColor="var(--color-amount)"
+                stopOpacity={0.8}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--color-amount)"
+                stopOpacity={0.1}
+              />
+            </linearGradient>
+          </defs>
+          <Recharts.CartesianGrid
+            vertical
+            horizontal
+            strokeDasharray="4 4"
+            stroke="var(--border)"
+          />
+          <Recharts.XAxis
+            dataKey="date"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            tickFormatter={(val: string) =>
+              format(parseISO(val), "LLL yyyy", { locale })
+            }
+            className="text-muted-foreground text-xs"
+          />
+          <Recharts.YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            width={yAxisWidth}
+            className="text-muted-foreground font-mono text-[10px] font-medium"
+            tickFormatter={(value: number) =>
+              `${currencySymbol}${value.toLocaleString(undefined, {
+                notation: "compact",
+                maximumFractionDigits: 1,
+              })}`
+            }
+          />
+          <ChartTooltip
+            cursor={{
+              stroke: "var(--border)",
+              strokeWidth: 1,
+              strokeDasharray: "0",
+            }}
+            content={() => null}
+          />
+          <Recharts.Area
+            type="monotone"
+            dataKey="amount"
+            stroke="var(--color-amount)"
+            strokeWidth={2}
+            fill="url(#fillAmount)"
+            fillOpacity={0.7}
+            dot={false}
+            activeDot={{
+              r: 6,
+              fill: "var(--background)",
+              stroke: "var(--color-amount)",
+              strokeWidth: 2,
+            }}
+          />
+        </Recharts.AreaChart>
+      ) : (
+        <div className="h-full w-full" />
+      )}
+    </ChartContainer>
+  );
+};
+
+type DrawerMonthNavigatorProps = {
+  monthlyTrend: MonthlyTrendPoint[];
+  selectedMonth: MonthlyTrendPoint;
+  selectedMonthIndex: number;
+  canGoPreviousMonth: boolean;
+  canGoNextMonth: boolean;
+  onSelectMonthByIndex: (index: number) => void;
+  monthChipRefs: RefObject<Array<HTMLButtonElement | null>>;
+  locale: MonthlySpendingTrendVariantProps["locale"];
+};
+
+const DrawerMonthNavigator: FC<DrawerMonthNavigatorProps> = ({
+  monthlyTrend,
+  selectedMonth,
+  selectedMonthIndex,
+  canGoPreviousMonth,
+  canGoNextMonth,
+  onSelectMonthByIndex,
+  monthChipRefs,
+  locale,
+}) => {
+  return (
+    <div className="bg-muted/30 border-border rounded-xl border p-2">
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="outline"
+          className="shrink-0 rounded-full"
+          disabled={!canGoPreviousMonth}
+          onClick={() => onSelectMonthByIndex(selectedMonthIndex - 1)}
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <div className="min-w-0 text-center">
+          <p className="truncate text-sm font-semibold">
+            {format(parseISO(selectedMonth.date), "LLLL yyyy", { locale })}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {selectedMonthIndex + 1} / {monthlyTrend.length}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="outline"
+          className="shrink-0 rounded-full"
+          disabled={!canGoNextMonth}
+          onClick={() => onSelectMonthByIndex(selectedMonthIndex + 1)}
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+        {monthlyTrend.map((month, index) => (
+          <button
+            key={month.date}
+            type="button"
+            ref={(node) => {
+              monthChipRefs.current[index] = node;
+            }}
+            className={cn(
+              "border-border bg-background shrink-0 rounded-full border px-2 py-1 text-xs",
+              index === selectedMonthIndex &&
+                "bg-primary text-primary-foreground border-primary",
+            )}
+            onClick={() => onSelectMonthByIndex(index)}
+          >
+            {format(parseISO(month.date), "LLL", { locale })}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+type DrawerSubscriptionsContentProps = {
+  selectedMonth: MonthlyTrendPoint;
+  preferredCurrencyCode: string;
+  selectedMonthIndex: number;
+  monthlyTrend: MonthlyTrendPoint[];
+  canGoPreviousMonth: boolean;
+  canGoNextMonth: boolean;
+  onSelectMonthByIndex: (index: number) => void;
+  monthChipRefs: RefObject<Array<HTMLButtonElement | null>>;
+  locale: MonthlySpendingTrendVariantProps["locale"];
+};
+
+const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
+  selectedMonth,
+  preferredCurrencyCode,
+  selectedMonthIndex,
+  monthlyTrend,
+  canGoPreviousMonth,
+  canGoNextMonth,
+  onSelectMonthByIndex,
+  monthChipRefs,
+  locale,
+}) => {
+  return (
+    <DrawerContent className="z-[70]">
+      <DrawerHeader className="text-left">
+        <DrawerTitle>{m.common_subscriptions()}</DrawerTitle>
+        <DrawerDescription>
+          {m.analytics_charts_monthlySpending_labels_totalSpending()}
+        </DrawerDescription>
+      </DrawerHeader>
+      <div className="space-y-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+        <DrawerMonthNavigator
+          monthlyTrend={monthlyTrend}
+          selectedMonth={selectedMonth}
+          selectedMonthIndex={selectedMonthIndex}
+          canGoPreviousMonth={canGoPreviousMonth}
+          canGoNextMonth={canGoNextMonth}
+          onSelectMonthByIndex={onSelectMonthByIndex}
+          monthChipRefs={monthChipRefs}
+          locale={locale}
+        />
+
+        <div className="border-border flex items-center justify-between border-b pb-3">
+          <span className="text-sm font-semibold">
+            {m.analytics_charts_monthlySpending_labels_total()}
+          </span>
+          <CurrencyBadge
+            amount={selectedMonth.amount}
+            currencyCode={preferredCurrencyCode}
+          />
+        </div>
+
+        {selectedMonth.subscriptions &&
+        selectedMonth.subscriptions.length > 0 ? (
+          <div className="space-y-2">
+            {selectedMonth.subscriptions.map((sub) => (
+              <div
+                key={`${sub.name}-${sub.brandDomain}-${sub.currencyCode}-${sub.amount}`}
+                className="bg-muted/30 flex items-center gap-2 rounded-md p-2"
+              >
+                <BrandfetchImage
+                  domain={sub.brandDomain}
+                  className="size-6 text-[8px]"
+                />
+                <span className="flex-1 truncate text-sm">{sub.name}</span>
+                <div className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                  <CurrencyText
+                    amount={sub.amount}
+                    currencyCode={sub.currencyCode}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground py-2 text-sm">
+            {m.analytics_monthlySpend_noData()}
+          </p>
+        )}
+      </div>
+    </DrawerContent>
+  );
+};
+
+const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
+  monthlyTrend,
+  preferredCurrencyCode,
+  currencySymbol,
+  yAxisWidth,
+  locale,
+}) => {
+  const [selectedMonthDate, setSelectedMonthDate] = useState<string | null>(
+    null,
+  );
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const monthChipRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const selectedMonthIndex = useMemo(() => {
+    if (!monthlyTrend.length) {
+      return -1;
+    }
+
+    if (!selectedMonthDate) {
+      return monthlyTrend.length - 1;
+    }
+
+    const monthIndex = monthlyTrend.findIndex(
+      (month) => month.date === selectedMonthDate,
+    );
+
+    return monthIndex >= 0 ? monthIndex : monthlyTrend.length - 1;
+  }, [monthlyTrend, selectedMonthDate]);
+
+  const selectedMonth =
+    selectedMonthIndex >= 0 ? monthlyTrend[selectedMonthIndex] : null;
+  const canGoPreviousMonth = selectedMonthIndex > 0;
+  const canGoNextMonth =
+    selectedMonthIndex >= 0 && selectedMonthIndex < monthlyTrend.length - 1;
+
+  const selectMonthByIndex = (index: number) => {
+    const month = monthlyTrend[index];
+    if (month) {
+      setSelectedMonthDate(month.date);
+    }
+  };
+
+  const handleActiveMonthChange = (payload: { date?: string } | undefined) => {
+    const nextDate = payload?.date;
+    if (nextDate) {
+      setSelectedMonthDate((currentDate) =>
+        currentDate === nextDate ? currentDate : nextDate,
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (!isDetailsOpen || selectedMonthIndex < 0) {
+      return;
+    }
+
+    const frameId = requestAnimationFrame(() => {
+      monthChipRefs.current[selectedMonthIndex]?.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [isDetailsOpen, selectedMonthIndex]);
+
+  return (
+    <Drawer open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+      {selectedMonth && (
+        <SelectedMonthSummary
+          selectedMonth={selectedMonth}
+          preferredCurrencyCode={preferredCurrencyCode}
+          locale={locale}
+        />
+      )}
+
+      <TrendLineChart
+        monthlyTrend={monthlyTrend}
+        locale={locale}
+        currencySymbol={currencySymbol}
+        yAxisWidth={yAxisWidth}
+        onActiveMonthChange={handleActiveMonthChange}
+      />
+
+      {selectedMonth && (
+        <DrawerSubscriptionsContent
+          selectedMonth={selectedMonth}
+          preferredCurrencyCode={preferredCurrencyCode}
+          selectedMonthIndex={selectedMonthIndex}
+          monthlyTrend={monthlyTrend}
+          canGoPreviousMonth={canGoPreviousMonth}
+          canGoNextMonth={canGoNextMonth}
+          onSelectMonthByIndex={selectMonthByIndex}
+          monthChipRefs={monthChipRefs}
+          locale={locale}
+        />
+      )}
+    </Drawer>
+  );
+};
+
+export default MonthlySpendingTrendChartMobile;
