@@ -35,7 +35,10 @@ export const SettingsNotificationsForm = () => {
             description={m.settings_notifications_schedule_lockDescription()}
           />
         )}
-        <NotificationTimeSelect scheduleLocked={!canEditSchedule} />
+        <NotificationTimeSelect
+          key={String(canEditSchedule)}
+          scheduleLocked={!canEditSchedule}
+        />
         <TestNotificationButton />
       </div>
     </div>

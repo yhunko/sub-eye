@@ -16,12 +16,14 @@ import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 
 interface TimezoneListProps extends SharedProps {
+  id?: string;
   options: TimezoneOption[];
   value: string;
   onSelect: (value: string) => void;
 }
 
 export const TimezoneList: FC<TimezoneListProps> = ({
+  id,
   options,
   value,
   onSelect,
@@ -72,11 +74,11 @@ export const TimezoneList: FC<TimezoneListProps> = ({
       <CommandInput
         value={search}
         onValueChange={setSearch}
-        autoFocus
         disabled={disabled}
         placeholder={placeholder}
       />
       <CommandList
+        id={id}
         ref={parentRef}
         className="h-[60vh] max-h-[60vh] overflow-x-hidden overflow-y-auto md:max-h-72"
       >

@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { useEffect, useState } from "react";
 import { Spinner } from "@/shared/components";
 
 type NotificationOffsetSelectProps = {
@@ -28,24 +27,18 @@ export const NotificationOffsetSelect = ({
     ? defaultOffset.toString()
     : (user?.publicMetadata?.notificationOffset?.toString() ??
       defaultOffset.toString());
-  const [offset, setOffset] = useState<string>(currentOffset);
-
-  useEffect(() => {
-    setOffset(currentOffset);
-  }, [currentOffset]);
 
   const handleOffsetChange = (value: string) => {
     if (disabled || lockToDefault) {
       return;
     }
 
-    setOffset(() => value);
     mutate({ notificationOffset: Number(value) });
   };
 
   return (
     <Select
-      value={offset}
+      value={currentOffset}
       onValueChange={handleOffsetChange}
       disabled={isPending || disabled}
     >

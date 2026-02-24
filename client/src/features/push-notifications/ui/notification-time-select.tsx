@@ -13,7 +13,6 @@ import {
 } from "@/shared/components";
 import {
   useState,
-  useEffect,
   type ChangeEventHandler,
   type KeyboardEventHandler,
 } from "react";
@@ -35,10 +34,6 @@ export const NotificationTimeSelect = ({
     : (user?.publicMetadata?.notificationTime ??
       NOTIFICATION_SCHEDULE_DEFAULTS.notificationTime);
   const [time, setTime] = useState(currentTime);
-
-  useEffect(() => {
-    setTime(currentTime);
-  }, [currentTime]);
 
   const handleTimeChange: ChangeEventHandler<HTMLInputElement> = (event) => {
     if (scheduleLocked) {

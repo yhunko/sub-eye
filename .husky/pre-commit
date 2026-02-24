@@ -9,6 +9,9 @@ bun run prepare
 echo "🎨 Running lint-staged (ESLint + Prettier)..."
 bunx lint-staged
 
+echo "🩺 Running react-doctor on changed React files..."
+bun run react-doctor
+
 echo "🔎 Running lint across the repo..."
 bun run lint
 

@@ -44,6 +44,7 @@
     "build:client": "turbo build --filter=client",
     "build:server": "turbo build --filter=server",
     "lint": "turbo lint",
+    "react-doctor": "bun x react-doctor@latest . --yes --project client --diff --no-ami --offline --fail-on warning",
     "type-check": "turbo type-check",
     "test": "turbo test",
     "postinstall": "turbo build --filter=shared --filter=server",

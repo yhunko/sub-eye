@@ -1,4 +1,4 @@
-import { FC, ComponentProps, useState, lazy, Suspense } from "react";
+import { FC, ComponentProps, useState, lazy, Suspense, useId } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { Button } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
@@ -21,6 +21,7 @@ function Trigger({
   selectedOption,
   disabled,
   className,
+  "aria-controls": ariaControls,
   ...props
 }: TimezoneSelectTriggerProps) {
   return (
@@ -28,6 +29,7 @@ function Trigger({
       variant="outline"
       role="combobox"
       aria-expanded={open}
+      aria-controls={ariaControls}
       className={cn("w-full justify-between", className)}
       disabled={disabled}
       {...props}
@@ -59,6 +61,7 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
   const [open, setOpen] = useState(false);
   const isDesktop = useBreakpoint("md");
   const options = useTimezoneOptions();
+  const listId = useId();
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -66,6 +69,7 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
 
   const content = (
     <TimezoneList
+      id={listId}
       options={options}
       value={value}
       onSelect={(val) => {
@@ -77,7 +81,12 @@ export const TimezoneSelect: FC<TimezoneSelectProps> = ({
   );
 
   const _Trigger = (
-    <Trigger selectedOption={selectedOption} open={open} disabled={disabled} />
+    <Trigger
+      selectedOption={selectedOption}
+      open={open}
+      disabled={disabled}
+      aria-controls={listId}
+    />
   );
 
   if (isDesktop) {
