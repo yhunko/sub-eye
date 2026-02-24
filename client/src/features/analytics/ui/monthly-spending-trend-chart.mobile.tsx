@@ -1,5 +1,5 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight, List } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
@@ -288,63 +288,78 @@ const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
   monthChipRefs,
   locale,
 }) => {
+  const subscriptionsListRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (subscriptionsListRef.current) {
+      subscriptionsListRef.current.scrollTop = 0;
+    }
+  }, [selectedMonth.date]);
+
   return (
-    <DrawerContent className="z-[70]">
+    <DrawerContent className="z-70 h-[80vh]">
       <DrawerHeader className="text-left">
         <DrawerTitle>{m.common_subscriptions()}</DrawerTitle>
         <DrawerDescription>
           {m.analytics_charts_monthlySpending_labels_totalSpending()}
         </DrawerDescription>
       </DrawerHeader>
-      <div className="space-y-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
-        <DrawerMonthNavigator
-          monthlyTrend={monthlyTrend}
-          selectedMonth={selectedMonth}
-          selectedMonthIndex={selectedMonthIndex}
-          canGoPreviousMonth={canGoPreviousMonth}
-          canGoNextMonth={canGoNextMonth}
-          onSelectMonthByIndex={onSelectMonthByIndex}
-          monthChipRefs={monthChipRefs}
-          locale={locale}
-        />
-
-        <div className="border-border flex items-center justify-between border-b pb-3">
-          <span className="text-sm font-semibold">
-            {m.analytics_charts_monthlySpending_labels_total()}
-          </span>
-          <CurrencyBadge
-            amount={selectedMonth.amount}
-            currencyCode={preferredCurrencyCode}
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+        <div className="space-y-3 pb-3">
+          <DrawerMonthNavigator
+            monthlyTrend={monthlyTrend}
+            selectedMonth={selectedMonth}
+            selectedMonthIndex={selectedMonthIndex}
+            canGoPreviousMonth={canGoPreviousMonth}
+            canGoNextMonth={canGoNextMonth}
+            onSelectMonthByIndex={onSelectMonthByIndex}
+            monthChipRefs={monthChipRefs}
+            locale={locale}
           />
+
+          <div className="border-border flex items-center justify-between border-b pb-3">
+            <span className="text-sm font-semibold">
+              {m.analytics_charts_monthlySpending_labels_total()}
+            </span>
+            <CurrencyBadge
+              amount={selectedMonth.amount}
+              currencyCode={preferredCurrencyCode}
+            />
+          </div>
         </div>
 
-        {selectedMonth.subscriptions &&
-        selectedMonth.subscriptions.length > 0 ? (
-          <div className="space-y-2">
-            {selectedMonth.subscriptions.map((sub) => (
-              <div
-                key={`${sub.name}-${sub.brandDomain}-${sub.currencyCode}-${sub.amount}`}
-                className="bg-muted/30 flex items-center gap-2 rounded-md p-2"
-              >
-                <BrandfetchImage
-                  domain={sub.brandDomain}
-                  className="size-6 text-[8px]"
-                />
-                <span className="flex-1 truncate text-sm">{sub.name}</span>
-                <div className="text-muted-foreground shrink-0 text-sm tabular-nums">
-                  <CurrencyText
-                    amount={sub.amount}
-                    currencyCode={sub.currencyCode}
+        <div
+          ref={subscriptionsListRef}
+          className="min-h-0 flex-1 overflow-y-auto"
+        >
+          {selectedMonth.subscriptions &&
+          selectedMonth.subscriptions.length > 0 ? (
+            <div className="space-y-2 pb-1">
+              {selectedMonth.subscriptions.map((sub) => (
+                <div
+                  key={`${sub.name}-${sub.brandDomain}-${sub.currencyCode}-${sub.amount}`}
+                  className="bg-muted/30 flex items-center gap-2 rounded-md p-2"
+                >
+                  <BrandfetchImage
+                    domain={sub.brandDomain}
+                    className="size-6 text-[8px]"
                   />
+                  <span className="flex-1 truncate text-sm">{sub.name}</span>
+                  <div className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                    <CurrencyText
+                      amount={sub.amount}
+                      currencyCode={sub.currencyCode}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground py-2 text-sm">
-            {m.analytics_monthlySpend_noData()}
-          </p>
-        )}
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground py-2 text-sm">
+              {m.analytics_monthlySpend_noData()}
+            </p>
+          )}
+        </div>
       </div>
     </DrawerContent>
   );
