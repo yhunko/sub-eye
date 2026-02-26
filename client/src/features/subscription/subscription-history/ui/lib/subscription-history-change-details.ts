@@ -1,5 +1,6 @@
 import * as m from "@/i18n/messages";
 import { format, type Locale } from "date-fns";
+import { SubscriptionPeriod } from "shared";
 import { HistoryEventInsight } from "../../model/history-insights";
 import {
   formatAmount,
@@ -7,6 +8,34 @@ import {
   formatHistoryDateLabel,
   parseHistoryDate,
 } from "./subscription-history-formatters";
+
+const formatRecurringPrice = (snapshot: {
+  cost?: number;
+  currency?: string;
+  every?: number;
+  period?: SubscriptionPeriod;
+}): string | null => {
+  if (snapshot.cost === undefined || !snapshot.currency) {
+    return null;
+  }
+
+  const amount = formatAmount(snapshot.cost, snapshot.currency);
+  const cycle = formatHistoryCycle(snapshot.every, snapshot.period);
+
+  if (!cycle) {
+    return amount;
+  }
+
+  if (snapshot.every === 1 && snapshot.period === SubscriptionPeriod.MONTH) {
+    return `${amount}${m.common_perMonth()}`;
+  }
+
+  if (snapshot.every === 1 && snapshot.period === SubscriptionPeriod.YEAR) {
+    return `${amount}${m.common_perYear()}`;
+  }
+
+  return `${amount}/${cycle}`;
+};
 
 export const getHistoryChangeDetails = (
   event: HistoryEventInsight,
@@ -16,10 +45,11 @@ export const getHistoryChangeDetails = (
   const details: string[] = [];
 
   if (record.action === "created") {
-    if (current.cost !== undefined && current.currency) {
+    const currentPriceWithCycle = formatRecurringPrice(current);
+    if (currentPriceWithCycle) {
       details.push(
         m.subscription_history_priceSet({
-          cost: formatAmount(current.cost, current.currency),
+          cost: currentPriceWithCycle,
         }),
       );
     }
@@ -40,17 +70,18 @@ export const getHistoryChangeDetails = (
   }
 
   if (record.action === "updated") {
+    const currentPriceWithCycle = formatRecurringPrice(current);
+    const previousPriceWithCycle = formatRecurringPrice(previous);
+
     if (
-      current.cost !== undefined &&
-      current.currency &&
-      previous.cost !== undefined &&
-      previous.currency &&
+      currentPriceWithCycle &&
+      previousPriceWithCycle &&
       (current.cost !== previous.cost || current.currency !== previous.currency)
     ) {
       details.push(
         m.subscription_history_priceChanged({
-          old: formatAmount(previous.cost, previous.currency),
-          new: formatAmount(current.cost, current.currency),
+          old: previousPriceWithCycle,
+          new: currentPriceWithCycle,
         }),
       );
     }

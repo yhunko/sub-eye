@@ -187,12 +187,28 @@ export class SubscriptionService {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
     }
 
+    let historySnapshot: unknown = existing;
+
+    try {
+      const { preferences, rates } = await this.getPreferencesAndRates(
+        userId,
+        deps,
+      );
+      historySnapshot = this.mapToDto(existing, preferences, rates);
+    } catch (error) {
+      console.error("Failed to prepare delete history snapshot", {
+        subscriptionId: id,
+        userId,
+        error,
+      });
+    }
+
     await this.logHistoryAction(
       {
         subscriptionId: id,
         userId,
         action: "deleted",
-        snapshot: existing,
+        snapshot: historySnapshot,
       },
       deps,
     );

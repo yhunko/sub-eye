@@ -10,6 +10,16 @@ import { CurrenciesMap, CurrencyUtils, SubscriptionPeriod } from "shared";
 
 export const formatAmount = (amount: number, code: string): string => {
   const normalizedCode = CurrencyUtils.normalizeCode(code);
+  const metadata = CurrenciesMap.get(normalizedCode);
+
+  if (metadata) {
+    const formattedAmount = new Intl.NumberFormat(metadata.format, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+
+    return `${metadata.symbol}${formattedAmount}`;
+  }
 
   try {
     return new Intl.NumberFormat(undefined, {
@@ -19,18 +29,7 @@ export const formatAmount = (amount: number, code: string): string => {
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    const metadata = CurrenciesMap.get(normalizedCode);
-
-    if (!metadata) {
-      return `${amount.toFixed(2)} ${normalizedCode}`;
-    }
-
-    const formattedAmount = new Intl.NumberFormat(metadata.format, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-
-    return `${metadata.symbol}${formattedAmount}`;
+    return `${amount.toFixed(2)} ${normalizedCode.toUpperCase()}`;
   }
 };
 

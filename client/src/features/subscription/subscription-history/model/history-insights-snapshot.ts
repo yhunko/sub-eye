@@ -36,6 +36,25 @@ const getStringValue = (value: unknown): string | undefined =>
 const getBooleanValue = (value: unknown): boolean | undefined =>
   typeof value === "boolean" ? value : undefined;
 
+const getPreferredBillingSnapshot = (
+  snapshot: Record<string, unknown>,
+): { cost?: number; currency?: string } => {
+  const billingRaw = snapshot.billing;
+  if (!isObject(billingRaw)) {
+    return {};
+  }
+
+  const preferredRaw = billingRaw.preferred;
+  if (!isObject(preferredRaw)) {
+    return {};
+  }
+
+  return {
+    cost: getNumberValue(preferredRaw.amount),
+    currency: getStringValue(preferredRaw.currencyCode),
+  };
+};
+
 export const normalizeSnapshot = (snapshot: unknown): HistorySnapshot => {
   if (!isObject(snapshot)) {
     return {};
@@ -44,10 +63,13 @@ export const normalizeSnapshot = (snapshot: unknown): HistorySnapshot => {
   const everyRaw = getNumberValue(snapshot.every);
   const periodRaw = getStringValue(snapshot.period);
   const cancellationRaw = snapshot.willBeCancelledAt;
+  const preferredBilling = getPreferredBillingSnapshot(snapshot);
+  const rawCost = getNumberValue(snapshot.cost);
+  const rawCurrency = getStringValue(snapshot.currency);
 
   return {
-    cost: getNumberValue(snapshot.cost),
-    currency: getStringValue(snapshot.currency),
+    cost: preferredBilling.cost ?? rawCost,
+    currency: preferredBilling.currency ?? rawCurrency,
     every:
       everyRaw !== undefined && Number.isInteger(everyRaw) && everyRaw > 0
         ? everyRaw
