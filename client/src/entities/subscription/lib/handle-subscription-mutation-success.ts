@@ -13,15 +13,7 @@ export const handleSubscriptionMutationSuccess = async ({
   subscriptionId,
   userId,
 }: HandleSubscriptionMutationSuccessParams) => {
-  if (userId) {
-    await queryClient.invalidateQueries({
-      queryKey: subscriptionsQueryKeys.detail({ userId, subscriptionId })
-        .queryKey,
-      refetchType: "active",
-    });
-  }
-
-  await Promise.all([
+  const invalidations = [
     queryClient.invalidateQueries({
       queryKey: subscriptionsQueryKeys.list._def,
       refetchType: "active",
@@ -30,5 +22,29 @@ export const handleSubscriptionMutationSuccess = async ({
       queryKey: analyticsQueryKeys._def,
       refetchType: "active",
     }),
-  ]);
+  ];
+
+  if (userId) {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: subscriptionsQueryKeys.detail({ userId, subscriptionId })
+          .queryKey,
+        refetchType: "active",
+      }),
+      queryClient.invalidateQueries({
+        queryKey: subscriptionsQueryKeys.history({ userId, subscriptionId })
+          .queryKey,
+        refetchType: "active",
+      }),
+    );
+  } else {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: subscriptionsQueryKeys.history._def,
+        refetchType: "active",
+      }),
+    );
+  }
+
+  await Promise.all(invalidations);
 };

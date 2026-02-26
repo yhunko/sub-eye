@@ -63,9 +63,42 @@
   "components_timezoneSelect_empty": "Часовий пояс не знайдено",
   "billing_today": "Сьогодні",
   "billing_tomorrow": "Завтра",
-  "billing_inDays": "через {count} дні",
-  "billing_ago": "{count} днів тому",
-  "billing_overdue": "Прострочено на {count} дн.",
+  "billing_inDays": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "через {count} день",
+        "countPlural=few": "через {count} дні",
+        "countPlural=many": "через {count} днів",
+        "countPlural=other": "через {count} днів"
+      }
+    }
+  ],
+  "billing_ago": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} день тому",
+        "countPlural=few": "{count} дні тому",
+        "countPlural=many": "{count} днів тому",
+        "countPlural=other": "{count} днів тому"
+      }
+    }
+  ],
+  "billing_overdue": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Прострочено на {count} день",
+        "countPlural=few": "Прострочено на {count} дні",
+        "countPlural=many": "Прострочено на {count} днів",
+        "countPlural=other": "Прострочено на {count} днів"
+      }
+    }
+  ],
   "subscription_overview_markAsCanceledComingSoon": "Функціонал скасування скоро з'явиться",
   "subscription_overview_back": "Назад",
   "subscription_overview_edit": "Редагувати {name}",
@@ -212,5 +245,92 @@
   "billing_limitReached_action": "Переглянути плани",
   "billing_usage_badge": "{current}/{limit}",
   "billing_proFeature_badge": "Pro-функція",
-  "billing_proFeature_viewPlans": "Переглянути плани"
+  "billing_proFeature_viewPlans": "Переглянути плани",
+  "subscription_history_title": "Історія",
+  "subscription_history_description": "Розумійте, що саме змінилося і коли.",
+  "subscription_history_empty": "Історії ще немає",
+  "subscription_history_loading": "Завантаження останніх змін...",
+  "subscription_history_error": "Зараз не вдалося завантажити історію.",
+  "subscription_history_retry": "Спробувати ще раз",
+  "subscription_history_justNow": "щойно",
+  "subscription_history_unknownDate": "Невідома дата",
+  "subscription_history_changesLabel": "Що змінилося",
+  "subscription_history_action_created": "Створено",
+  "subscription_history_action_updated": "Оновлено",
+  "subscription_history_action_cancelled": "Скасовано",
+  "subscription_history_action_renewed": "Поновлено",
+  "subscription_history_action_deleted": "Видалено",
+  "subscription_history_action_uncancelled": "Скасування відмінено",
+  "subscription_history_priceChanged": "Ціна змінилася з {old} на {new}",
+  "subscription_history_priceSet": "Встановлено ціну {cost}",
+  "subscription_history_createdCycle": "Платіжний цикл встановлено як {cycle}",
+  "subscription_history_createdPaymentDate": "Наступну дату платежу встановлено на {date}",
+  "subscription_history_updatedGeneral": "Дані підписки було оновлено.",
+  "subscription_history_cycleChanged": "Платіжний цикл змінено з {old} на {new}",
+  "subscription_history_paymentDateChanged": "Дату платежу змінено з {old} на {new}",
+  "subscription_history_cancelDateSet": "Дату скасування встановлено на {date}",
+  "subscription_history_cancelDateCleared": "Дату скасування прибрано",
+  "subscription_history_cancelDateChanged": "Дату скасування змінено з {old} на {new}",
+  "subscription_history_autopayEnabled": "Автооплату увімкнено",
+  "subscription_history_autopayDisabled": "Автооплату вимкнено",
+  "subscription_history_cancelledOn": "Підписка завершиться {date}",
+  "subscription_history_cancelled_generic": "Підписку позначено як скасовану",
+  "subscription_history_renewedOn": "Поновлено, наступна дата платежу: {date}",
+  "subscription_history_renewed_generic": "Підписку поновлено",
+  "subscription_history_uncancelled_detail": "Скасування прибрано, підписка залишається активною",
+  "subscription_history_deleted_detail": "Підписку остаточно видалено",
+  "subscription_history_showingRecent": [
+    {
+      "declarations": ["input limit", "local limitPlural = limit: plural"],
+      "selectors": ["limitPlural"],
+      "match": {
+        "limitPlural=one": "На Free показано останню {limit} подію",
+        "limitPlural=few": "На Free показано останні {limit} події",
+        "limitPlural=many": "На Free показано останні {limit} подій",
+        "limitPlural=other": "На Free показано останні {limit} подій"
+      }
+    }
+  ],
+  "subscription_history_hiddenEvents": "Оновіть до Pro, щоб відкрити повну хронологію та глибший контекст змін.",
+  "subscription_history_premium_title": "Відкрийте повну історію",
+  "subscription_history_premium_description": "Переглядайте повну хронологію змін ваших підписок з планом Pro.",
+  "subscription_history_premium_action": "Оновити до Pro",
+  "subscription_history_insights_title": "Інсайти історії",
+  "subscription_history_insights_description": "Зрозумійте, як кожна зміна впливає на бюджет.",
+  "subscription_history_empty_compact_hint": "Ще немає змін. Після першого оновлення тут з’явиться вплив на бюджет.",
+  "subscription_history_openTimeline": "Відкрити хронологію",
+  "subscription_history_metric_currentSpend": "Поточні витрати",
+  "subscription_history_metric_netChange": "Чиста зміна бюджету",
+  "subscription_history_metric_latestImpact": "Вплив останньої зміни",
+  "subscription_history_metric_unavailable": "Недостатньо даних",
+  "subscription_history_metric_needsMoreHistory": "Потрібно щонайменше 2 події історії",
+  "subscription_history_metric_priceOnly": "Показується лише для змін ціни",
+  "subscription_history_metric_lastNotPrice": "Остання подія не пов’язана зі зміною ціни",
+  "subscription_history_metric_netChange_caption": "Порівняно з першим зафіксованим станом",
+  "subscription_history_metric_latestImpact_caption": "Вплив останньої події",
+  "subscription_history_insights_strongestImpact": "{action}: {impact} — найсильніший зафіксований вплив на бюджет.",
+  "subscription_history_totalEvents": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Проаналізовано {count} подію",
+        "countPlural=few": "Проаналізовано {count} події",
+        "countPlural=many": "Проаналізовано {count} подій",
+        "countPlural=other": "Проаналізовано {count} подій"
+      }
+    }
+  ],
+  "subscription_history_insights_lastChange": "Остання зміна: {date} ({relative})",
+  "subscription_history_panel_title": "Хронологія змін",
+  "subscription_history_panel_description": "Детальний журнал змін з впливом на бюджет для кожної події.",
+  "subscription_history_impact_label": "Вплив на бюджет",
+  "subscription_history_impact_mixedCurrency": "Різні валюти",
+  "subscription_history_impact_noPreviousState": "Немає попереднього стану для порівняння",
+  "subscription_history_impact_missingData": "Недостатньо даних",
+  "subscription_history_impact_noChange": "Без змін у бюджеті",
+  "subscription_history_impact_startsAfter": "набуває чинності після {date}",
+  "subscription_history_mixedCurrency_hint": "Частина подій містить різні валюти, тому точні дельти показуються лише для порівнюваних змін.",
+  "subscription_history_delete_action_aria": "Видалити подію історії",
+  "subscription_history_delete_confirm": "Видалити цю подію історії? Інсайти буде перераховано."
 }

@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   numeric,
   pgEnum,
@@ -9,6 +10,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { SubscriptionPeriod } from "shared";
 
@@ -17,6 +19,15 @@ export const subscriptionPeriodEnum = pgEnum("period", [
   SubscriptionPeriod.WEEK,
   SubscriptionPeriod.MONTH,
   SubscriptionPeriod.YEAR,
+]);
+
+export const subscriptionActionEnum = pgEnum("subscription_action", [
+  "created",
+  "updated",
+  "cancelled",
+  "renewed",
+  "deleted",
+  "uncancelled",
 ]);
 
 export const pushNotificationsTable = pgTable(
@@ -55,3 +66,25 @@ export const subscriptionsTable = pgTable("subscriptions", {
   }).notNull(),
   willBeCancelledAt: timestamp("cancelled_at"),
 });
+
+export const subscriptionHistoryTable = pgTable(
+  "subscription_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    subscriptionId: uuid("subscription_id").references(
+      () => subscriptionsTable.id,
+      { onDelete: "set null" },
+    ),
+    userId: text("user_id").notNull(),
+    action: subscriptionActionEnum("action").notNull(),
+    snapshot: jsonb("snapshot").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("subscription_history_subscription_user_created_at_idx").on(
+      table.subscriptionId,
+      table.userId,
+      table.createdAt,
+    ),
+  ],
+);

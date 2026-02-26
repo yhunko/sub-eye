@@ -15,6 +15,13 @@
       "when": 1771416847560,
       "tag": "0001_skinny_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772040994225,
+      "tag": "0002_remarkable_speedball",
+      "breakpoints": true
     }
   ]
 }

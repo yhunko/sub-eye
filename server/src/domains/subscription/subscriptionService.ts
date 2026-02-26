@@ -9,9 +9,11 @@ import { SubscriptionMapper } from "./subscriptionMapper";
 import { CurrencyService } from "../currency/currencyService";
 import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
 import { UserService } from "../user/userService";
+import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import type {
   AddSubscriptionInput,
   SubscriptionDto,
+  SubscriptionAction,
   UpdateSubscriptionInput,
   GetSubscriptionsParams,
   SubscriptionLifecycleStatus,
@@ -25,6 +27,7 @@ type SubscriptionServiceDeps = {
   currencyService: typeof CurrencyService;
   workflow: typeof SubscriptionNotificationsWorkflow;
   userService: typeof UserService;
+  historyService: typeof SubscriptionHistoryService;
 };
 
 const defaultDeps: SubscriptionServiceDeps = {
@@ -32,6 +35,7 @@ const defaultDeps: SubscriptionServiceDeps = {
   currencyService: CurrencyService,
   workflow: SubscriptionNotificationsWorkflow,
   userService: UserService,
+  historyService: SubscriptionHistoryService,
 };
 
 export class SubscriptionService {
@@ -104,7 +108,19 @@ export class SubscriptionService {
       deps,
     );
 
-    return this.mapToDto(result, preferences, rates);
+    const dto = this.mapToDto(result, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        action: "created",
+        snapshot: dto,
+      },
+      deps,
+    );
+
+    return dto;
   }
 
   static async updateSubscription(
@@ -137,7 +153,23 @@ export class SubscriptionService {
       deps,
     );
 
-    return this.mapToDto(result, preferences, rates);
+    const previousDto = this.mapToDto(existing, preferences, rates);
+    const dto = this.mapToDto(result, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        action: "updated",
+        snapshot: {
+          before: previousDto,
+          after: dto,
+        },
+      },
+      deps,
+    );
+
+    return dto;
   }
 
   static async deleteSubscription(
@@ -154,6 +186,16 @@ export class SubscriptionService {
     if (existing.qstashMessageId) {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
     }
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: id,
+        userId,
+        action: "deleted",
+        snapshot: existing,
+      },
+      deps,
+    );
 
     await deps.repository.delete(db, id);
   }
@@ -190,7 +232,19 @@ export class SubscriptionService {
       deps,
     );
 
-    return this.mapToDto(updated, preferences, rates);
+    const dto = this.mapToDto(updated, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        action: "cancelled",
+        snapshot: dto,
+      },
+      deps,
+    );
+
+    return dto;
   }
 
   static async deleteAllForUser(
@@ -394,6 +448,46 @@ export class SubscriptionService {
     return { preferences, rates };
   }
 
+  private static async logHistoryAction(
+    {
+      subscriptionId,
+      userId,
+      action,
+      snapshot,
+    }: {
+      subscriptionId: string | null;
+      userId: string;
+      action: SubscriptionAction;
+      snapshot: unknown;
+    },
+    deps: SubscriptionServiceDeps,
+  ): Promise<void> {
+    try {
+      const preparedSnapshot =
+        action === "updated" && !this.isUpdateDiffSnapshot(snapshot)
+          ? { before: null, after: snapshot }
+          : snapshot;
+
+      await deps.historyService.logAction(
+        subscriptionId,
+        userId,
+        action,
+        preparedSnapshot,
+      );
+    } catch (error) {
+      console.error("Failed to log subscription history", {
+        subscriptionId,
+        userId,
+        action,
+        error,
+      });
+
+      if (process.env.NODE_ENV !== "production") {
+        throw error;
+      }
+    }
+  }
+
   private static applyFilters(
     dtos: SubscriptionDto[],
     params?: GetSubscriptionsParams,
@@ -469,5 +563,15 @@ export class SubscriptionService {
     return value instanceof Date
       ? value.toISOString()
       : new Date(value).toISOString();
+  }
+
+  private static isUpdateDiffSnapshot(
+    snapshot: unknown,
+  ): snapshot is { before: unknown; after: unknown } {
+    if (!snapshot || typeof snapshot !== "object") {
+      return false;
+    }
+
+    return "before" in snapshot && "after" in snapshot;
   }
 }

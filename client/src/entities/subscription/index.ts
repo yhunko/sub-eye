@@ -1,9 +1,12 @@
 export { useCreateSubscription } from "./api/use-create-subscription";
 export { useDeleteSubscription } from "./api/use-delete-subscription";
 export { subscriptionQuery } from "./api/subscription-query";
+export { subscriptionHistoryQuery } from "./api/subscription-history-query";
 export { subscriptionsQuery } from "./api/subscriptions-query";
 export { useUpdateSubscription } from "./api/use-update-subscription";
 export { useCancelSubscription } from "./api/use-cancel-subscription";
+export { useDeleteSubscriptionHistoryItem } from "./api/use-delete-subscription-history-item";
+export { formatSubscriptionCycle } from "./lib/format-subscription-cycle";
 export { subscriptionsQueryKeys } from "./model/query-keys";
 export { subscriptionsQueryParsers } from "./model/query-parsers";
 export { SubscriptionsSearch } from "./ui/subscriptions-search";

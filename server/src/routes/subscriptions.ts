@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
+import { object, string } from "valibot";
 import {
   AddSubscriptionSchema,
   UpdateSubscriptionSchema,
@@ -11,10 +12,14 @@ import { SubscriptionService } from "../domains/subscription/subscriptionService
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
+import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
 
 const handleServiceError = (context: Context, error: unknown) => {
   if (error instanceof Error) {
     if (error.message === "Subscription not found") {
+      return context.json({ error: error.message }, 404);
+    }
+    if (error.message === "Subscription history item not found") {
       return context.json({ error: error.message }, 404);
     }
     if (error.message === "Subscription limit reached") {
@@ -31,6 +36,11 @@ const handleServiceError = (context: Context, error: unknown) => {
 
   return context.json({ error: "Internal Server Error" }, 500);
 };
+
+const historyIdParamSchema = object({
+  id: string(),
+  historyId: string(),
+});
 
 export const subscriptionRouter = new Hono()
   .get("/", protect, vValidator("query", listQuerySchema), async (context) => {
@@ -61,6 +71,47 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
+  .get(
+    "/:id/history",
+    protect,
+    vValidator("param", idQuerySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const historyData =
+          await SubscriptionHistoryService.getHistoryForSubscription(
+            id,
+            userId,
+          );
+        return context.json(historyData);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .delete(
+    "/:id/history/:historyId",
+    protect,
+    vValidator("param", historyIdParamSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id, historyId } = context.req.valid("param");
+        await SubscriptionHistoryService.deleteHistoryItem({
+          subscriptionId: id,
+          historyId,
+          userId,
+        });
+
+        return context.json({ success: true });
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .post(
     "/",
     protect,

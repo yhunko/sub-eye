@@ -12,6 +12,7 @@ import { SubscriptionOverviewStats } from "./subscription-overview-stats";
 import { SubscriptionOverviewHeader } from "./subscription-overview-header";
 import { SubscriptionOverviewDetails } from "./subscription-overview-details";
 import { SubscriptionOverviewActions } from "./subscription-overview-actions";
+import { SubscriptionHistoryList } from "../../subscription-history";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -76,7 +77,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <SubscriptionOverviewHeader subscription={subscription} />
 
       <SubscriptionOverviewStats subscriptionId={subscriptionId} />
@@ -85,6 +86,10 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
         subscription={subscription}
         displayState={displayState}
       />
+
+      <div className="w-full">
+        <SubscriptionHistoryList subscriptionId={subscriptionId} />
+      </div>
 
       <SubscriptionOverviewActions
         subscriptionId={subscriptionId}

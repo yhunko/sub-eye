@@ -2,213 +2,111 @@
 trigger: always_on
 ---
 
-# SubEye Project Guidelines (Vite + Hono + Drizzle)
+# SubEye Engineering Guidelines
 
-## 1. Architecture Overview
+## 1) Monorepo boundaries
 
-This project uses a Monorepo structure (`bhvr` template) with strict separation of concerns.
+- Workspaces:
+  - `client/`: React + Vite PWA, Feature-Sliced Design (FSD)
+  - `server/`: Hono API with layered architecture (route/controller -> service -> repository)
+  - `shared/`: cross-workspace contracts, schemas, and pure utilities
+- Allowed imports:
+  - `client` -> `shared`
+  - `server` -> `shared`
+  - `client` -> server only through `@server/client` RPC alias
+- Never import `server/src/*` directly from client code.
 
-- **Client (`client/src/`)**: Strictly follows **Feature-Sliced Design (FSD)**.
-- **Server (`server/src/`)**: Follows **Java-style Layered Architecture** (Controller, Service, Repository).
-- **Shared (`shared/src/`)**: Contains DTO schemas (Valibot), Types, and Shared Utils.
+## 2) Naming and file layout
 
-**CRITICAL RULES:**
+- Frontend files: `kebab-case`.
+- Backend files: `camelCase`.
+- DB tables/columns: `snake_case`.
+- TS identifiers: `camelCase`; types/classes/components: `PascalCase`.
+- Keep files focused. If a file grows large or mixes concerns, split it by responsibility (view/components, domain logic, formatting, constants, types).
 
-1. **NO LEAKAGE:**
-   - `client` can import `shared`.
-   - `server` can import `shared`.
-   - **RPC INTERFACE:** The `client` MUST NEVER import from `server/src` directly. The ONLY allowed import from the server workspace is via the `@server/client` alias.
-2. **NAMING CONVENTION:**
-   - **Frontend:** strictly `kebab-case` (e.g., `user-profile.tsx`).
-   - **Backend:** strictly `camelCase` (e.g., `userService.ts`).
-3. **DEPENDENCY MANAGEMENT:**
-   - Libraries used in both environments (e.g., `valibot`, `date-fns`) MUST be installed in the `shared` workspace.
-4. **SHARED IMPORT STYLE:**
-   - Import shared contracts/utilities from the `shared` package root (e.g., `import { SubscriptionDto } from "shared"`).
-   - Do not use `@shared/*` aliases or deep `shared/*` paths in app code.
+## 3) Shared contracts and schemas
 
----
+- Define request/response DTOs and domain schemas in `shared`.
+- Import shared contracts from package root (`import { X } from "shared"`).
+- Avoid deep shared imports and duplicate schema definitions across workspaces.
+- Avoid any shared logic / utils etc. duplication
 
-## 2. Monorepo Structure
+## 4) Frontend architecture (FSD)
 
-```text
-.
-├── client/
-│   ├── messages/         # i18n source files (en.json, etc.)
-│   ├── project.inlang/   # i18n project config
-│   └── src/              # React + Vite (PWA)
-├── server/               # Hono (Bun/Node)
-│   ├── src/
-│   │   ├── index.ts      # Exports 'app' type
-│   │   └── client.ts     # RPC Entry Point
-├── shared/               # Shared logic & deps
-```
+- Respect FSD boundaries: pages compose features; features compose entities/shared.
+- Keep business logic out of JSX-heavy components.
+- Extract repeated logic into reusable modules/hooks/components.
+- Favor composition over large monolithic components.
 
----
+## 5) React and performance defaults
 
-## 3. Backend Guidelines (`server/src/`)
+- Keep render functions lightweight; memoize expensive derivations with `useMemo`.
+- Use stable callbacks only when needed (`useCallback` for memoized child boundaries).
+- Avoid unnecessary re-renders: colocate state, split components by update frequency.
+- Lazy-load heavy/secondary UI (dialogs, panels, routes).
+- Virtualize long lists when item count can grow.
+- Prefer lightweight dependencies and tree-shakeable imports.
 
-### Architecture: Java-Style Layers
+## 6) PWA performance and resilience
 
-(Controller, Service, Repository, Mapper layers).
+- Keep initial bundle small: route-level code splitting and async component loading.
+- Cache static assets aggressively; network/cache strategy should prioritize fast repeat visits.
+- Version service worker updates safely; avoid stale UI/data traps.
+- Handle offline/poor network states gracefully (skeletons, retries, fallback copy).
+- Keep critical flows usable under flaky connectivity.
 
-### RPC Export (`server/src/client.ts`)
+## 7) Data fetching and state
 
-To maintain type safety without leaking implementation details:
+- Use TanStack Query for server state.
+- Use deterministic query keys from centralized key factories.
+- Keep query functions side-effect free; mutations own invalidation/update rules.
+- Prefer optimistic updates only when rollback path is defined.
+- Set sensible stale/cache times for perceived performance.
 
-```typescript
-import { hc } from "hono/client";
-import type { app } from "./index";
+## 8) DRY and maintainability
 
-export type ServerRpcType = typeof app;
-export type Client = ReturnType<typeof hc<ServerRpcType>>;
+- If logic appears in more than one place, extract one authoritative implementation.
+- Keep formatter/date/currency/action-label logic centralized.
+- Prefer small pure functions for domain transformations.
+- Delete dead code and unused branches while refactoring.
 
-export const honoClient = (...args: Parameters<typeof hc>): Client =>
-  hc<ServerRpcType>(...args);
-```
+## 9) Backend and database
 
----
+- Enforce layering: routes/controllers are thin; services hold business rules; repositories handle persistence.
+- Validate inputs at boundaries; never trust client payloads.
+- Keep migrations forward-only, reviewed, and reproducible.
+- Index for real query patterns; avoid N+1 and unbounded queries.
 
-## 4. Frontend Guidelines (`client/src/`)
+## 10) i18n and formatting
 
-### Architecture: Feature-Sliced Design (FSD)
+- Source messages in `client/messages/{locale}.json`.
+- Use stable, descriptive keys and keep translations semantically aligned.
+- Do not hardcode user-facing strings in components.
+- Centralize locale-aware formatting (dates, currency, relative time).
 
-Files in `client/src/` MUST use **`kebab-case`**.
+## 11) Accessibility and UX quality
 
-### Internationalization (i18n)
+- Preserve semantic HTML and keyboard navigation.
+- Ensure interactive controls have labels/aria text.
+- Keep color contrast and focus states accessible.
+- Provide loading, empty, and error states for async UI.
 
-We use **Paraglide (Inlang)**.
+## 12) Security and privacy
 
-- **Source:** `client/messages/{locale}.json`.
-- **Output:** `client/src/shared/lib/i18n` (Managed by Vite plugin).
-- **Format:** Flat JSON.
-- **Key Convention:** `context_component_label` (snake_case grouping + camelCase identifiers).
-  - Example: `form_billingInfo_title`, `messages_confirmDelete`.
-- **Imports:**
-  - Messages: `import * as m from "@/i18n/messages"`
-  - Runtime: `import { ... } from "@/i18n/runtime"`
+- Validate and sanitize all external input.
+- Keep auth/session checks server-side.
+- Never leak secrets to client bundles.
+- Avoid logging sensitive user data.
 
-**Example `en.json`:**
+## 13) Testing and review bar
 
-```json
-{
-  "$schema": "https://inlang.com/schema/inlang-message-format",
-  "form_billingInfo_title": "Billing Info",
-  "messages_confirmDelete": "Are you sure you want to delete {name}?"
-}
-```
+- Add/update tests for non-trivial logic and regressions.
+- Refactors must preserve behavior and reduce complexity.
+- Run relevant checks before finishing (types, tests, lint, project quality tools).
+- Review for readability first: clear naming, small functions, explicit boundaries.
 
-### Configuration & Aliases
+## 14) Agent rules
 
-**`client/tsconfig.app.json` Paths:**
-
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"],
-      "@/i18n/messages": ["./src/shared/lib/i18n/messages/_index"],
-      "@/i18n/runtime": ["./src/shared/lib/i18n/runtime"],
-      "@server/client": ["../server/src/client"]
-    }
-  }
-}
-```
-
-**`client/vite.config.ts`:**
-Ensures Paraglide and TanStack Router generation.
-
-```typescript
-import { paraglideVitePlugin } from "@inlang/paraglide-js";
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import path from "node:path";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-
-export default defineConfig({
-  plugins: [
-    paraglideVitePlugin({
-      project: "./project.inlang",
-      outdir: "./src/shared/lib/i18n",
-      emitTsDeclarations: true,
-      cleanOutdir: true,
-    }),
-    tanstackRouter({
-      target: "react",
-      autoCodeSplitting: true,
-      routesDirectory: "./src/pages",
-      generatedRouteTree: "./src/app/routes/routeTree.gen.ts",
-      routeFileIgnorePrefix: "-",
-      quoteStyle: "double",
-    }),
-    react(),
-    tailwindcss(),
-    tsconfigPaths(),
-  ],
-  resolve: {
-    alias: {
-      "@server/client": path.resolve(__dirname, "../server/src/client"),
-    },
-  },
-});
-```
-
-### Data Fetching
-
-Use **TanStack Query** wrapping **Hono RPC**.
-
-```typescript
-// client/src/shared/api/client.ts
-import { honoClient } from "@server/client";
-
-export const client = honoClient(import.meta.env.VITE_API_URL, {
-  fetch: (input, init) => fetch(input, { ...init, credentials: "include" }),
-});
-```
-
-```typescript
-// client/src/entities/user/api/use-user.ts
-import { useQuery } from "@tanstack/react-query";
-import { client } from "@/shared/api/client";
-import type { QueryHook } from "@/shared/lib/react-query/types";
-
-export function useUser({ params, options }: QueryHook<ReturnType, Params>) {
-  return useQuery({
-    queryKey: ["user", "me"],
-    queryFn: async () => {
-      const res = await client.api.users.me.$get();
-      if (!res.ok) throw new Error("Failed to fetch");
-      return await res.json();
-    },
-  });
-}
-```
-
----
-
-## 5. Shared Workspace (`shared/src/`)
-
-**Purpose:** Unified DTOs (`valibot`) and utils to prevent client/server schema mismatch.
-
----
-
-## 6. Database & Schema
-
-- **File:** `server/src/db/schema.ts`
-- **Naming:** Tables/Columns: `snake_case`. TypeScript objects: `camelCase`.
-
----
-
-## 7. Summary of Naming Conventions
-
-| Context            | Case Style    | Example                  | Reason                  |
-| :----------------- | :------------ | :----------------------- | :---------------------- |
-| **Frontend Files** | `kebab-case`  | `user-card.tsx`          | FSD / React standard    |
-| **Backend Files**  | `camelCase`   | `userService.ts`         | Node/JS Standard        |
-| **DB Tables/Cols** | `snake_case`  | `is_active`              | PostgreSQL Standard     |
-| **i18n Keys**      | `snake+camel` | `form_billingInfo_label` | Context grouping        |
-| **Classes**        | `PascalCase`  | `UserService`            | OOP Standard            |
-| **Methods**        | `camelCase`   | `getById`                | JS Standard             |
-| **RPC Import**     | -             | `@server/client`         | Strict layer separation |
+- Prefer minimal, high-signal changes.
+- Keep guidelines and duplicated policy files in sync when both exist.
+- When introducing new patterns, document them briefly in-place or in project docs.
