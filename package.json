@@ -51,9 +51,6 @@
     "prepare": "husky",
     "deploy:dev": "turbo build && wrangler -c dev.wrangler.jsonc deploy --minify"
   },
-  "volta": {
-    "node": "24.13.1"
-  },
   "workspaces": [
     "./server",
     "./client",

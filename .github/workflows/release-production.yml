@@ -34,13 +34,8 @@ jobs:
       - name: Fetch Tags
         run: git fetch --force --tags
 
-      - name: Setup Node via Volta
-        uses: volta-cli/action@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
 
       - name: Install Dependencies
         run: bun install
