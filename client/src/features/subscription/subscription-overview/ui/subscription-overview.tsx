@@ -80,6 +80,14 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     });
   };
 
+  const handleMarkAsCanceled = () => {
+    void handleOpenCancelDialog();
+  };
+
+  const handleRenew = () => {
+    void handleOpenRenewDialog();
+  };
+
   const handleBack = async () => {
     if (window.history.length > 1) {
       router.history.back();
@@ -97,20 +105,14 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
             <SubscriptionOverviewHeaderActions
               subscriptionId={subscription.id}
               subscriptionName={subscription.name}
-              status={subscription.status}
-              onMarkAsCanceled={() => {
-                void handleOpenCancelDialog();
-              }}
-              onRenew={() => {
-                void handleOpenRenewDialog();
-              }}
               onDeleteSuccess={handleDeleteSuccess}
               onBack={handleBack}
             />
 
             <SubscriptionOverviewSummaryCard
               subscription={subscription}
-              statusPill={viewModel.statusPill}
+              onMarkAsCanceled={handleMarkAsCanceled}
+              onRenew={handleRenew}
             />
 
             <SubscriptionOverviewMetaList rows={viewModel.metaRows} />

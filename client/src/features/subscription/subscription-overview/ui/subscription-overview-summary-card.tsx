@@ -2,35 +2,27 @@ import { FC } from "react";
 import { CurrencyText } from "@/entities/currency";
 import { BrandfetchImage } from "@/features/brandfetch";
 import { PeriodBadge } from "@/features/subscription/period";
-import { Badge } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import type { SubscriptionDto } from "shared";
-import type { SubscriptionOverviewStatusPill } from "../model/subscription-overview-view-model";
+import { SubscriptionOverviewStatusSelector } from "./subscription-overview-status-selector";
 
 type SubscriptionOverviewSummaryCardProps = {
   subscription: SubscriptionDto;
-  statusPill: SubscriptionOverviewStatusPill;
+  onMarkAsCanceled: () => void;
+  onRenew: () => void;
 };
 
 export const SubscriptionOverviewSummaryCard: FC<
   SubscriptionOverviewSummaryCardProps
-> = ({ subscription, statusPill }) => {
+> = ({ subscription, onMarkAsCanceled, onRenew }) => {
   return (
     <div className="space-y-4">
-      <Badge
-        variant="outline"
-        className={cn("w-fit rounded-full px-3 py-1", statusPill.className)}
-      >
-        <span
-          className={cn(
-            "mr-2 inline-block size-2 rounded-full",
-            statusPill.dotClassName,
-          )}
-          aria-hidden
-        />
-        {statusPill.label}
-      </Badge>
+      <SubscriptionOverviewStatusSelector
+        status={subscription.status}
+        onMarkAsCanceled={onMarkAsCanceled}
+        onRenew={onRenew}
+      />
 
       <div className="flex flex-col items-center gap-3 text-center">
         <BrandfetchImage

@@ -1,14 +1,6 @@
 import { FC } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  Ellipsis,
-  HistoryIcon,
-  PencilIcon,
-  RotateCcw,
-  Trash2,
-  XCircle,
-} from "lucide-react";
-import { SubscriptionDto } from "shared";
+import { Ellipsis, HistoryIcon, PencilIcon, Trash2 } from "lucide-react";
 import {
   Button,
   DropdownMenu,
@@ -24,9 +16,6 @@ import * as m from "@/i18n/messages";
 type SubscriptionOverviewActionsDropdownProps = {
   subscriptionId: string;
   subscriptionName: string;
-  status: SubscriptionDto["status"];
-  onMarkAsCanceled: () => void;
-  onRenew: () => void;
   onDeleteSuccess: () => Promise<void> | void;
 };
 
@@ -41,44 +30,9 @@ const HistoryMenuItem: FC<MenuActionProps> = ({ onSelect }) => (
   </DropdownMenuItem>
 );
 
-const LifecycleMenuItem: FC<
-  MenuActionProps & {
-    status: SubscriptionDto["status"];
-  }
-> = ({ onSelect, status }) => {
-  if (status === "active") {
-    return (
-      <DropdownMenuItem className="cursor-pointer" onSelect={onSelect}>
-        <XCircle className="size-4" aria-hidden />
-        {m.subscription_overview_markAsCanceled()}
-      </DropdownMenuItem>
-    );
-  }
-
-  if (status === "cancelled") {
-    return (
-      <DropdownMenuItem className="cursor-pointer" onSelect={onSelect}>
-        <RotateCcw className="size-4" aria-hidden />
-        {m.subscription_overview_markAsRenewed()}
-      </DropdownMenuItem>
-    );
-  }
-
-  return null;
-};
-
 export const SubscriptionOverviewActionsDropdown: FC<
   SubscriptionOverviewActionsDropdownProps
-> = ({
-  subscriptionId,
-  subscriptionName,
-  status,
-  onMarkAsCanceled,
-  onRenew,
-  onDeleteSuccess,
-}) => {
-  const showLifecycleAction = status === "active" || status === "cancelled";
-
+> = ({ subscriptionId, subscriptionName, onDeleteSuccess }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -110,16 +64,6 @@ export const SubscriptionOverviewActionsDropdown: FC<
             void openSubscriptionHistoryPanel({ subscriptionId });
           }}
         />
-
-        {showLifecycleAction && (
-          <>
-            <DropdownMenuSeparator />
-            <LifecycleMenuItem
-              status={status}
-              onSelect={status === "active" ? onMarkAsCanceled : onRenew}
-            />
-          </>
-        )}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -1,6 +1,5 @@
 import { FC } from "react";
 import { ChevronLeft } from "lucide-react";
-import { SubscriptionDto } from "shared";
 import { Button } from "@/shared/components";
 import { SubscriptionOverviewActionsDropdown } from "./subscription-overview-actions-dropdown";
 import * as m from "@/i18n/messages";
@@ -8,24 +7,13 @@ import * as m from "@/i18n/messages";
 type SubscriptionOverviewHeaderActionsProps = {
   subscriptionId: string;
   subscriptionName: string;
-  status: SubscriptionDto["status"];
-  onMarkAsCanceled: () => void;
-  onRenew: () => void;
   onDeleteSuccess: () => Promise<void> | void;
   onBack: () => Promise<void> | void;
 };
 
 export const SubscriptionOverviewHeaderActions: FC<
   SubscriptionOverviewHeaderActionsProps
-> = ({
-  subscriptionId,
-  subscriptionName,
-  status,
-  onMarkAsCanceled,
-  onRenew,
-  onDeleteSuccess,
-  onBack,
-}) => {
+> = ({ subscriptionId, subscriptionName, onDeleteSuccess, onBack }) => {
   return (
     <div className="flex items-center justify-between gap-3">
       <Button
@@ -43,9 +31,6 @@ export const SubscriptionOverviewHeaderActions: FC<
       <SubscriptionOverviewActionsDropdown
         subscriptionId={subscriptionId}
         subscriptionName={subscriptionName}
-        status={status}
-        onMarkAsCanceled={onMarkAsCanceled}
-        onRenew={onRenew}
         onDeleteSuccess={onDeleteSuccess}
       />
     </div>

@@ -51,7 +51,7 @@ export const SubscriptionOverviewMetaList: FC<
   SubscriptionOverviewMetaListProps
 > = ({ rows }) => {
   return (
-    <div className="bg-card rounded-2xl border p-2">
+    <div className="bg-card rounded-2xl border px-2 py-1">
       {rows.map((row, index) => (
         <div key={row.key}>
           <div className="flex items-center gap-3 px-2 py-2.5">
