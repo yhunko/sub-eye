@@ -37,6 +37,9 @@ trigger: always_on
 - Keep business logic out of JSX-heavy components.
 - Extract repeated logic into reusable modules/hooks/components.
 - Favor composition over large monolithic components.
+- Avoid excessive nesting and use `useMemo` for expensive computations.
+- Avoid using complex, custom tailwind classes. Prefer clean, shadcn/ui native components design. Overwrite shadcn/ui components with custom styles sparingly, and ONLY when absolutely necessary.
+- Avoid nested ternary expressions in JSX/TSX render blocks. Prefer explicit render helpers (`renderX`) or a typed strategy map for readability and maintainability.
 
 ## 5) React and performance defaults
 
@@ -44,6 +47,7 @@ trigger: always_on
 - Use stable callbacks only when needed (`useCallback` for memoized child boundaries).
 - Avoid unnecessary re-renders: colocate state, split components by update frequency.
 - Lazy-load heavy/secondary UI (dialogs, panels, routes).
+- All dialogs must be lazy-loaded and opened via `nice-modal-react` (`NiceModal.show`) rather than mounted inline in page components.
 - Virtualize long lists when item count can grow.
 - Prefer lightweight dependencies and tree-shakeable imports.
 

@@ -49,7 +49,10 @@ Treat all uncommitted changes as one feature-in-progress and raise quality to pr
 - Memoize expensive derivations.
 - Avoid unnecessary state and avoid broad re-renders.
 - Prefer lazy-loading for secondary/heavy UI (dialogs, panels, route-level blocks).
+- All dialogs must be lazy-loaded and opened via `nice-modal-react` (`NiceModal.show`); avoid mounting dialog trees inline in page-level components.
 - Keep async states explicit (loading, empty, error).
+- Avoid using complex, custom tailwind classes. Prefer clean, shadcn/ui native components design. Overwrite shadcn/ui components with custom styles sparingly, and ONLY when absolutely necessary.
+- Avoid nested ternary expressions in JSX/TSX render blocks. Prefer explicit render helpers or a typed strategy map instead.
 
 ### Request caching (TanStack Query)
 

@@ -1,6 +1,5 @@
 import {
   FieldSet,
-  FieldGroup,
   FormField,
   FormItem,
   FormLabel,
@@ -9,8 +8,8 @@ import {
   Input,
   ToggleGroup,
   ToggleGroupItem,
-  FieldLegend,
   FieldDescription,
+  Separator,
 } from "@/shared/components";
 import { useFormContext, useWatch } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
@@ -32,113 +31,119 @@ export const SubscriptionFormBillingInfo = ({
   });
 
   return (
-    <FieldSet>
-      <FieldLegend>{m.form_billingInfo_title()}</FieldLegend>
-      <FieldDescription>{m.form_billingInfo_description()}</FieldDescription>
+    <FieldSet className="bg-card gap-3 rounded-2xl border p-4 shadow-sm">
+      <FormField
+        control={control}
+        name="paymentDate"
+        render={({ field }) => (
+          <FormItem className="gap-1.5">
+            <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+              {showRenewalMode
+                ? m.form_billingInfo_renewalDate_label()
+                : m.form_billingInfo_nextPaymentDate_label()}
+            </FormLabel>
+            <FormControl>
+              <SubscriptionDatePicker
+                value={field.value}
+                onChange={field.onChange}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-      <FieldGroup>
-        <FormField
-          control={control}
-          name="paymentDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {showRenewalMode
-                  ? m.form_billingInfo_renewalDate_label()
-                  : m.form_billingInfo_nextPaymentDate_label()}
-              </FormLabel>
-              <FormControl>
-                <SubscriptionDatePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {!showRenewalMode && (
+      {!showRenewalMode && (
+        <>
+          <Separator />
           <FormField
             control={control}
             name="willBeCancelledAt"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>
+              <FormItem className="gap-1.5">
+                <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
                   {m.form_billingInfo_willBeCancelledAt_label()}
                 </FormLabel>
                 <FormControl>
-                  <div className="flex items-center gap-2">
-                    <SubscriptionDatePicker
-                      value={field.value ?? undefined}
-                      onChange={field.onChange}
-                      clearable={!!field.value}
-                      onClear={() => setValue("willBeCancelledAt", null)}
-                    />
-                  </div>
+                  <SubscriptionDatePicker
+                    value={field.value ?? undefined}
+                    onChange={field.onChange}
+                    clearable={!!field.value}
+                    onClear={() => setValue("willBeCancelledAt", null)}
+                  />
                 </FormControl>
-                <FieldDescription>
+                <FieldDescription className="text-xs">
                   {m.form_billingInfo_willBeCancelledAt_description()}
                 </FieldDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
-        <FormField
-          control={control}
-          name="every"
-          render={({ field }) => (
-            <>
-              <div className="flex flex-col gap-2 md:col-span-1 md:flex-row md:items-end">
-                <FormItem>
-                  <FormLabel>
-                    {m.form_billingInfo_billingCycle_label()}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder={m.form_billingInfo_billingCycle_placeholder()}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-                <ToggleGroup
-                  value={period}
-                  type="single"
-                  variant="outline"
-                  spacing={0}
+        </>
+      )}
+
+      <Separator />
+
+      <FormField
+        control={control}
+        name="every"
+        render={({ field }) => (
+          <FormItem className="gap-2">
+            <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+              {m.form_billingInfo_billingCycle_label()}
+            </FormLabel>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <FormControl>
+                <Input
+                  type="number"
+                  autoComplete="off"
+                  className="md:max-w-28"
+                  placeholder={m.form_billingInfo_billingCycle_placeholder()}
+                  {...field}
+                />
+              </FormControl>
+
+              <ToggleGroup
+                value={period}
+                type="single"
+                variant="outline"
+                spacing={0}
+                className="w-full md:w-auto"
+              >
+                <ToggleGroupItem
+                  value={SubscriptionPeriod.WEEK}
+                  aria-label={m.periods_weeks_ariaLabel()}
+                  className="flex-1 md:flex-none"
+                  onClick={() => setValue("period", SubscriptionPeriod.WEEK)}
                 >
-                  <ToggleGroupItem
-                    value={SubscriptionPeriod.WEEK}
-                    aria-label={m.periods_weeks_ariaLabel()}
-                    onClick={() => setValue("period", SubscriptionPeriod.WEEK)}
-                  >
-                    {m.periods_weeks()}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value={SubscriptionPeriod.MONTH}
-                    aria-label={m.periods_months_ariaLabel()}
-                    onClick={() => setValue("period", SubscriptionPeriod.MONTH)}
-                  >
-                    {m.periods_months()}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value={SubscriptionPeriod.YEAR}
-                    aria-label={m.periods_years_ariaLabel()}
-                    onClick={() => setValue("period", SubscriptionPeriod.YEAR)}
-                  >
-                    {m.periods_years()}
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-              <span className="text-muted-foreground text-sm">
-                {m.form_billingInfo_billingCycle_example()}
-              </span>
-            </>
-          )}
-        />
-      </FieldGroup>
+                  {m.periods_weeks()}
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value={SubscriptionPeriod.MONTH}
+                  aria-label={m.periods_months_ariaLabel()}
+                  className="flex-1 md:flex-none"
+                  onClick={() => setValue("period", SubscriptionPeriod.MONTH)}
+                >
+                  {m.periods_months()}
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value={SubscriptionPeriod.YEAR}
+                  aria-label={m.periods_years_ariaLabel()}
+                  className="flex-1 md:flex-none"
+                  onClick={() => setValue("period", SubscriptionPeriod.YEAR)}
+                >
+                  {m.periods_years()}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <FieldDescription className="text-xs">
+              {m.form_billingInfo_billingCycle_example()}
+            </FieldDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </FieldSet>
   );
 };

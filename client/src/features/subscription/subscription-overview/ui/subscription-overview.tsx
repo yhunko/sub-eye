@@ -1,18 +1,17 @@
 import { FC, useMemo } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
 
 import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
-
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
-import { SubscriptionOverviewStats } from "./subscription-overview-stats";
-import { SubscriptionOverviewHeader } from "./subscription-overview-header";
-import { SubscriptionOverviewDetails } from "./subscription-overview-details";
 import { SubscriptionOverviewActions } from "./subscription-overview-actions";
-import { SubscriptionHistoryList } from "../../subscription-history";
+import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
+import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
+import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
+import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -22,6 +21,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   subscriptionId,
 }) => {
   const navigate = useNavigate();
+  const router = useRouter();
   const { user, isLoaded } = useUser();
   const { userId } = useAuth();
 
@@ -51,6 +51,11 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     return SubscriptionBillingUtils.toDisplayState(zonedDate, timezone);
   }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
 
+  const viewModel = useMemo(
+    () => buildSubscriptionOverviewViewModel(subscription, displayState),
+    [displayState, subscription],
+  );
+
   const handleDeleteSuccess = async () => {
     await navigate({ to: "/subscriptions" });
   };
@@ -76,33 +81,50 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     });
   };
 
+  const handleBack = async () => {
+    if (window.history.length > 1) {
+      router.history.back();
+      return;
+    }
+
+    await navigate({ to: "/subscriptions" });
+  };
+
   return (
-    <div className="flex w-full flex-col gap-6">
-      <SubscriptionOverviewHeader subscription={subscription} />
+    <div className="flex h-full w-full flex-col p-3 md:p-6">
+      <div className="flex flex-1 flex-col gap-4">
+        <section className="rounded-[1.75rem] border p-4 shadow-sm md:p-6">
+          <div className="flex flex-col gap-6">
+            <SubscriptionOverviewHeaderActions
+              subscriptionId={subscription.id}
+              subscriptionName={subscription.name}
+              onBack={handleBack}
+            />
 
-      <SubscriptionOverviewStats subscriptionId={subscriptionId} />
+            <SubscriptionOverviewSummaryCard
+              subscription={subscription}
+              statusPill={viewModel.statusPill}
+            />
 
-      <SubscriptionOverviewDetails
-        subscription={subscription}
-        displayState={displayState}
-      />
-
-      <div className="w-full">
-        <SubscriptionHistoryList subscriptionId={subscriptionId} />
+            <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
+          </div>
+        </section>
       </div>
 
-      <SubscriptionOverviewActions
-        subscriptionId={subscriptionId}
-        subscriptionName={subscription.name}
-        onMarkAsCanceled={() => {
-          void handleOpenCancelDialog();
-        }}
-        onRenew={() => {
-          void handleOpenRenewDialog();
-        }}
-        onDeleteSuccess={handleDeleteSuccess}
-        status={subscription.status}
-      />
+      <section className="mt-4">
+        <SubscriptionOverviewActions
+          subscriptionId={subscriptionId}
+          subscriptionName={subscription.name}
+          onMarkAsCanceled={() => {
+            void handleOpenCancelDialog();
+          }}
+          onRenew={() => {
+            void handleOpenRenewDialog();
+          }}
+          onDeleteSuccess={handleDeleteSuccess}
+          status={subscription.status}
+        />
+      </section>
     </div>
   );
 };

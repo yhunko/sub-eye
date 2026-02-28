@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import {
@@ -5,15 +6,9 @@ import {
   AddSubscriptionOutput,
   createAddSubscriptionFormSchema,
 } from "../model/schema";
-import {
-  Form,
-  Button,
-  FieldSeparator,
-  FieldGroup,
-  Spinner,
-} from "@/shared/components";
+import { Form, Button, Spinner } from "@/shared/components";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
+import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
@@ -27,6 +22,7 @@ import {
 import { SubscriptionLimitAlert, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
+import NiceModal from "@ebay/nice-modal-react";
 import * as m from "@/i18n/messages";
 
 type SubscriptionFormProps = {
@@ -53,9 +49,10 @@ export const AddSubscriptionForm = ({
       ...defaultValues,
     },
   });
-  const { handleSubmit } = formMethods;
+  const { handleSubmit, formState, reset, getValues } = formMethods;
 
   const navigate = useNavigate();
+  const router = useRouter();
   const { userId } = useAuth();
   const { data: usage } = useQuery(
     planUsageQuery({ params: { userId: userId! } }),
@@ -72,6 +69,40 @@ export const AddSubscriptionForm = ({
     !isEditMode &&
     !!usage &&
     usage.subscriptions.current >= usage.subscriptions.limit;
+  const shouldBlockNavigation = useMemo(
+    () => formState.isDirty && !isPending,
+    [formState.isDirty, isPending],
+  );
+
+  const showLeaveDialog = useCallback(async () => {
+    const { SubscriptionFormLeaveDialog } =
+      await import("./subscription-form-leave-dialog");
+
+    const shouldDiscard = await NiceModal.show(SubscriptionFormLeaveDialog);
+
+    return Boolean(shouldDiscard);
+  }, []);
+
+  useBlocker({
+    shouldBlockFn: async () => {
+      if (!shouldBlockNavigation) {
+        return false;
+      }
+
+      const shouldDiscard = await showLeaveDialog();
+      return !shouldDiscard;
+    },
+    enableBeforeUnload: () => shouldBlockNavigation,
+  });
+
+  const navigateBack = async () => {
+    if (window.history.length > 1) {
+      router.history.back();
+      return;
+    }
+
+    await navigate({ to: "/subscriptions" });
+  };
 
   const onSubmit: SubmitHandler<AddSubscriptionOutput> = (data) => {
     const { willBeCancelledAt, ...rest } = data;
@@ -101,6 +132,7 @@ export const AddSubscriptionForm = ({
     };
 
     const onSuccess = async (message: string) => {
+      reset(getValues());
       await navigate({ to: "/subscriptions" });
       toast.success(message);
     };
@@ -121,34 +153,60 @@ export const AddSubscriptionForm = ({
   return (
     <Form {...formMethods}>
       <form
-        className="space-y-2 md:space-y-4"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
         onSubmit={handleSubmit(onSubmit)}
       >
-        {isLimitReached && (
-          <SubscriptionLimitAlert
-            current={usage.subscriptions.current}
-            limit={usage.subscriptions.limit}
-          />
-        )}
+        <div className="border-border/70 bg-background/80 supports-backdrop-filter:bg-background/60 sticky top-0 z-20 shrink-0 border-b px-3 py-3 md:px-6 md:py-4">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 rounded-full px-4"
+              onClick={() => {
+                void navigateBack();
+              }}
+            >
+              {m.common_actions_cancel()}
+            </Button>
 
-        <FieldGroup className="md:grid-cols-1">
-          <SubscriptionFormBasicInfo />
-          <FieldSeparator />
-          <SubscriptionFormBillingInfo showRenewalMode={showRenewalMode} />
-        </FieldGroup>
+            <h1 className="text-center text-lg font-semibold tracking-tight md:text-2xl">
+              {isEditMode
+                ? m.subscription_form_title_edit()
+                : m.subscription_form_title_add()}
+            </h1>
 
-        <div className="col-span-full flex justify-between">
-          {isEditMode && (
-            <SubscriptionDeleteButton
-              subscriptionId={subscriptionId}
-              subscriptionName={defaultValues?.name}
-            />
-          )}
+            {isEditMode ? (
+              <SubscriptionDeleteButton
+                subscriptionId={subscriptionId}
+                subscriptionName={defaultValues?.name}
+                className="size-11 rounded-full"
+              />
+            ) : (
+              <span className="size-11" aria-hidden />
+            )}
+          </div>
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-4 md:px-6 md:pt-6 md:pb-28">
+          <div className="mx-auto w-full max-w-xl space-y-4">
+            {isLimitReached && (
+              <SubscriptionLimitAlert
+                current={usage.subscriptions.current}
+                limit={usage.subscriptions.limit}
+              />
+            )}
+
+            <SubscriptionFormBasicInfo />
+            <SubscriptionFormBillingInfo showRenewalMode={showRenewalMode} />
+          </div>
+        </div>
+
+        <div className="border-border/70 bg-background/90 supports-backdrop-filter:bg-background/70 mx-auto w-full max-w-xl border-t px-4 py-3 backdrop-blur-md">
           <Button
             type="submit"
+            size="lg"
             disabled={isLimitReached}
-            className={cn(isEditMode && "justify-self-end")}
+            className={cn("h-12 w-full rounded-2xl text-base")}
           >
             {isPending && <Spinner />}
             {isEditMode ? m.form_buttons_update() : m.form_buttons_add()}

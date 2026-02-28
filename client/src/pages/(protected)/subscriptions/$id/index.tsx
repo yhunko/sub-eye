@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
+import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
 import { Suspense } from "react";
 import {
   SubscriptionOverview,
@@ -14,12 +14,12 @@ function SubscriptionPage() {
   const { id } = Route.useParams();
 
   return (
-    <DashboardLayout Navbar={<DashboardNavbar />}>
-      <div className="container max-w-3xl">
+    <SubscriptionNativeLayout>
+      <div className="flex w-full flex-1 flex-col">
         <Suspense fallback={<SubscriptionOverviewSkeleton />}>
           <SubscriptionOverview subscriptionId={id} />
         </Suspense>
       </div>
-    </DashboardLayout>
+    </SubscriptionNativeLayout>
   );
 }

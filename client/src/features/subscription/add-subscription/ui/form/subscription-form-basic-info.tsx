@@ -1,6 +1,5 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import {
-  FieldGroup,
   FieldSet,
   FormField,
   FormItem,
@@ -8,8 +7,7 @@ import {
   FormControl,
   FormMessage,
   Input,
-  FieldLegend,
-  FieldDescription,
+  Separator,
 } from "@/shared/components";
 import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { AddSubscriptionInput } from "../../model/schema";
@@ -24,21 +22,21 @@ export const SubscriptionFormBasicInfo = () => {
   });
 
   return (
-    <FieldSet>
-      <FieldLegend>{m.form_basicInfo_title()}</FieldLegend>
-      <FieldDescription>{m.form_basicInfo_description()}</FieldDescription>
-
+    <FieldSet className="gap-4">
       <AddSubscriptionBrandImage />
 
-      <FieldGroup>
+      <div className="bg-card space-y-3 rounded-2xl border p-4 shadow-sm">
         <FormField
           control={control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{m.form_basicInfo_name_label()}</FormLabel>
+            <FormItem className="gap-1.5">
+              <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+                {m.form_basicInfo_name_label()}
+              </FormLabel>
               <FormControl>
                 <Input
+                  autoComplete="off"
                   placeholder={m.form_basicInfo_name_placeholder()}
                   {...field}
                 />
@@ -47,12 +45,17 @@ export const SubscriptionFormBasicInfo = () => {
             </FormItem>
           )}
         />
+
+        <Separator />
+
         <FormField
           control={control}
           name="cost"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{m.form_basicInfo_cost_label()}</FormLabel>
+            <FormItem className="gap-1.5">
+              <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+                {m.form_basicInfo_cost_label()}
+              </FormLabel>
               <FormControl>
                 <CurrencyInput
                   CurrencySelect={
@@ -64,6 +67,7 @@ export const SubscriptionFormBasicInfo = () => {
                   InputProps={{
                     ...field,
                     maxLength: 6,
+                    autoComplete: "off",
                   }}
                 />
               </FormControl>
@@ -71,7 +75,7 @@ export const SubscriptionFormBasicInfo = () => {
             </FormItem>
           )}
         />
-      </FieldGroup>
+      </div>
     </FieldSet>
   );
 };
