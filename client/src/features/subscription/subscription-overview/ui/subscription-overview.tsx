@@ -10,9 +10,14 @@ import { subscriptionQuery } from "@/entities/subscription";
 import { Button } from "@/shared/components";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
-import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
 import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
+import { SubscriptionOverviewActionsDropdown } from "./subscription-overview-actions-dropdown";
+import { SubscriptionOverviewStatusSelector } from "./subscription-overview-status-selector";
+import {
+  subscriptionOverviewFloatingCardClassName,
+  subscriptionOverviewTopSectionClassName,
+} from "./subscription-overview-layout-classnames";
 import * as m from "@/i18n/messages";
 
 type SubscriptionOverviewProps = {
@@ -101,35 +106,39 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   };
 
   return (
-    <div className="flex h-full w-full flex-col p-3 md:p-6">
-      <div className="flex flex-1 flex-col gap-4">
+    <div className="flex flex-1 flex-col">
+      <section className={subscriptionOverviewTopSectionClassName}>
         <Button
           variant="outline"
-          className="h-11 w-fit rounded-full px-4"
+          size="icon"
+          className="size-11 rounded-full shadow-sm"
           onClick={handleBack}
           aria-label={m.subscription_overview_back()}
         >
           <ChevronLeft className="size-4" aria-hidden />
-          {m.subscription_overview_back()}
+          <span className="sr-only">{m.subscription_overview_back()}</span>
         </Button>
+      </section>
 
-        <section className="rounded-[1.75rem] border p-4 shadow-sm md:p-6">
-          <div className="flex flex-col gap-6">
-            <SubscriptionOverviewHeaderActions
-              subscriptionId={subscription.id}
-              subscriptionName={subscription.name}
-              onDeleteSuccess={handleDeleteSuccess}
-              status={subscription.status}
-              onMarkAsCanceled={handleMarkAsCanceled}
-              onRenew={handleRenew}
-            />
+      <section className={subscriptionOverviewFloatingCardClassName}>
+        <div className="flex items-center justify-between gap-3">
+          <SubscriptionOverviewStatusSelector
+            status={subscription.status}
+            onMarkAsCanceled={handleMarkAsCanceled}
+            onRenew={handleRenew}
+          />
 
-            <SubscriptionOverviewSummaryCard subscription={subscription} />
+          <SubscriptionOverviewActionsDropdown
+            subscriptionId={subscription.id}
+            subscriptionName={subscription.name}
+            onDeleteSuccess={handleDeleteSuccess}
+          />
+        </div>
 
-            <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
-          </div>
-        </section>
-      </div>
+        <SubscriptionOverviewSummaryCard subscription={subscription} />
+
+        <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
+      </section>
     </div>
   );
 };

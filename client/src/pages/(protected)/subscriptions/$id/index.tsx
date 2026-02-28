@@ -14,7 +14,7 @@ function SubscriptionPage() {
   const { id } = Route.useParams();
 
   return (
-    <SubscriptionNativeLayout>
+    <SubscriptionNativeLayout surface="plain">
       <div className="flex w-full flex-1 flex-col">
         <Suspense fallback={<SubscriptionOverviewSkeleton />}>
           <SubscriptionOverview subscriptionId={id} />

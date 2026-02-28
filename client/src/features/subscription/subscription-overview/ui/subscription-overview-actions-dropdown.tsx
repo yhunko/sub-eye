@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components";
+import { cn } from "@/shared/lib/classes-utils";
 import { openSubscriptionHistoryPanel } from "../../subscription-history";
 import { openSubscriptionDeleteDialog } from "../../delete-subscription";
 import * as m from "@/i18n/messages";
@@ -17,6 +18,7 @@ type SubscriptionOverviewActionsDropdownProps = {
   subscriptionId: string;
   subscriptionName: string;
   onDeleteSuccess: () => Promise<void> | void;
+  triggerClassName?: string;
 };
 
 type MenuActionProps = {
@@ -32,14 +34,19 @@ const HistoryMenuItem: FC<MenuActionProps> = ({ onSelect }) => (
 
 export const SubscriptionOverviewActionsDropdown: FC<
   SubscriptionOverviewActionsDropdownProps
-> = ({ subscriptionId, subscriptionName, onDeleteSuccess }) => {
+> = ({
+  subscriptionId,
+  subscriptionName,
+  onDeleteSuccess,
+  triggerClassName,
+}) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
           size="icon"
-          className="h-11 w-11 rounded-full"
+          className={cn("size-11 rounded-full", triggerClassName)}
           aria-label={m.subscription_overview_actionsTrigger({
             name: subscriptionName,
           })}
