@@ -40,3 +40,6 @@ pnpm-debug.log*
 # Bun
 bun.lockb
 .turbo
+
+# AI
+.output.txt
