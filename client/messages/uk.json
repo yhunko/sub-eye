@@ -231,7 +231,7 @@
   "settings_billing_plans_free_features_currency": "Підтримка різних валют",
   "settings_billing_plans_pro_name": "Pro",
   "settings_billing_plans_pro_description": "Для користувачів, яким потрібен глибший контроль та автоматизація.",
-  "settings_billing_plans_pro_price": "$8",
+  "settings_billing_plans_pro_price": "₴99",
   "settings_billing_plans_pro_period": "місяць",
   "settings_billing_plans_pro_badge": "Preview",
   "settings_billing_plans_pro_features_subscriptionLimitIncrease": "Вищий ліміт підписок ({free} -> {pro})",

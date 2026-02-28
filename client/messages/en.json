@@ -198,7 +198,7 @@
   "settings_billing_plans_free_features_currency": "Multi-currency support",
   "settings_billing_plans_pro_name": "Pro",
   "settings_billing_plans_pro_description": "For power users who want deeper control and automation.",
-  "settings_billing_plans_pro_price": "$8",
+  "settings_billing_plans_pro_price": "$2.50",
   "settings_billing_plans_pro_period": "month",
   "settings_billing_plans_pro_badge": "Preview",
   "settings_billing_plans_pro_features_subscriptionLimitIncrease": "Higher subscription limit ({free} -> {pro})",

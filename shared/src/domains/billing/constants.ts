@@ -32,7 +32,7 @@ export const PRO_PLAN: Plan = {
   id: "pro",
   paddleProductId: null,
   limits: {
-    maxSubscriptions: 200,
+    maxSubscriptions: 50,
   },
   features: [
     { key: "subscriptions", included: true },
