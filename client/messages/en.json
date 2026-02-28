@@ -69,6 +69,8 @@
   "subscription_overview_markAsCanceledComingSoon": "Mark as canceled functionality coming soon",
   "subscription_overview_back": "Back",
   "subscription_overview_edit": "Edit {name}",
+  "subscription_overview_actionsTrigger": "Open actions for {name}",
+  "subscription_overview_openActions": "Open actions",
   "subscription_overview_nextPayment": "Next payment",
   "subscription_overview_previousPayment": "Previous payment",
   "subscription_overview_markAsCanceled": "Mark as canceled",

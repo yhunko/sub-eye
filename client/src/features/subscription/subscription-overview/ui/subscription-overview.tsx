@@ -7,7 +7,6 @@ import NiceModal from "@ebay/nice-modal-react";
 import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
-import { SubscriptionOverviewActions } from "./subscription-overview-actions";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
@@ -98,6 +97,14 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
             <SubscriptionOverviewHeaderActions
               subscriptionId={subscription.id}
               subscriptionName={subscription.name}
+              status={subscription.status}
+              onMarkAsCanceled={() => {
+                void handleOpenCancelDialog();
+              }}
+              onRenew={() => {
+                void handleOpenRenewDialog();
+              }}
+              onDeleteSuccess={handleDeleteSuccess}
               onBack={handleBack}
             />
 
@@ -110,21 +117,6 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
           </div>
         </section>
       </div>
-
-      <section className="mt-4">
-        <SubscriptionOverviewActions
-          subscriptionId={subscriptionId}
-          subscriptionName={subscription.name}
-          onMarkAsCanceled={() => {
-            void handleOpenCancelDialog();
-          }}
-          onRenew={() => {
-            void handleOpenRenewDialog();
-          }}
-          onDeleteSuccess={handleDeleteSuccess}
-          status={subscription.status}
-        />
-      </section>
     </div>
   );
 };

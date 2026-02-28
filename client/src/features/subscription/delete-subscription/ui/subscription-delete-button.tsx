@@ -1,7 +1,7 @@
 import { Button } from "@/shared/components/ui/button";
 import { Trash2 } from "lucide-react";
 import * as m from "@/i18n/messages";
-import NiceModal from "@ebay/nice-modal-react";
+import { openSubscriptionDeleteDialog } from "../model/open-subscription-delete-dialog";
 
 type SubscriptionDeleteButtonProps = {
   subscriptionId: string;
@@ -18,17 +18,6 @@ export const SubscriptionDeleteButton = ({
   fullWidth,
   onSuccess,
 }: SubscriptionDeleteButtonProps) => {
-  const openDeleteDialog = async () => {
-    const { SubscriptionDeleteDialog } =
-      await import("./subscription-delete-dialog");
-
-    await NiceModal.show(SubscriptionDeleteDialog, {
-      subscriptionId,
-      subscriptionName,
-      onSuccess,
-    });
-  };
-
   return (
     <Button
       variant="destructive"
@@ -37,10 +26,14 @@ export const SubscriptionDeleteButton = ({
       aria-label={m.form_buttons_delete()}
       data-slot="button"
       onClick={() => {
-        void openDeleteDialog();
+        void openSubscriptionDeleteDialog({
+          subscriptionId,
+          subscriptionName,
+          onSuccess,
+        });
       }}
     >
-      <Trash2 className="size-4" />
+      <Trash2 className="size-4" aria-hidden />
       {fullWidth && m.form_buttons_delete()}
     </Button>
   );

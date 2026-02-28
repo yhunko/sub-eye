@@ -12,7 +12,6 @@ import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
-import type { SubscriptionLifecycleStatus } from "shared";
 import { SubscriptionPeriod } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import {
@@ -28,13 +27,11 @@ import * as m from "@/i18n/messages";
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
   subscriptionId?: string;
-  subscriptionStatus?: SubscriptionLifecycleStatus;
 };
 
 export const AddSubscriptionForm = ({
   defaultValues,
   subscriptionId,
-  subscriptionStatus,
 }: SubscriptionFormProps) => {
   const formMethods = useForm({
     resolver: valibotResolver(createAddSubscriptionFormSchema()),
@@ -45,7 +42,6 @@ export const AddSubscriptionForm = ({
       every: "1",
       period: SubscriptionPeriod.MONTH,
       currency: "usd",
-      willBeCancelledAt: null,
       ...defaultValues,
     },
   });
@@ -64,7 +60,6 @@ export const AddSubscriptionForm = ({
 
   const isPending = isAddPending || isEditPending;
   const isEditMode = !!subscriptionId;
-  const showRenewalMode = isEditMode && subscriptionStatus === "cancelled";
   const isLimitReached =
     !isEditMode &&
     !!usage &&
@@ -105,30 +100,18 @@ export const AddSubscriptionForm = ({
   };
 
   const onSubmit: SubmitHandler<AddSubscriptionOutput> = (data) => {
-    const { willBeCancelledAt, ...rest } = data;
-
     const toISO = (value?: string | Date | null) =>
       value ? new Date(value).toISOString() : null;
 
-    const cancellationDateIso =
-      isEditMode && showRenewalMode ? null : toISO(willBeCancelledAt);
-    const paymentDateIso =
-      isEditMode && cancellationDateIso
-        ? cancellationDateIso
-        : toISO(rest.paymentDate)!;
+    const paymentDateIso = toISO(data.paymentDate)!;
 
     const basePayload = {
-      ...rest,
+      ...data,
       paymentDate: paymentDateIso,
       autoPaid: false,
       category: null,
       notes: null,
-      brandDomain: rest.brandDomain ?? null,
-    };
-
-    const payload = {
-      ...basePayload,
-      willBeCancelledAt: cancellationDateIso,
+      brandDomain: data.brandDomain ?? null,
     };
 
     const onSuccess = async (message: string) => {
@@ -139,15 +122,21 @@ export const AddSubscriptionForm = ({
 
     if (isEditMode && subscriptionId) {
       updateSubscription(
-        { id: subscriptionId, payload },
+        { id: subscriptionId, payload: basePayload },
         { onSuccess: () => onSuccess(m.messages_updated()) },
       );
       return;
     }
 
-    addSubscription(payload, {
-      onSuccess: () => onSuccess(m.messages_added()),
-    });
+    addSubscription(
+      {
+        ...basePayload,
+        willBeCancelledAt: null,
+      },
+      {
+        onSuccess: () => onSuccess(m.messages_added()),
+      },
+    );
   };
 
   return (
@@ -197,7 +186,7 @@ export const AddSubscriptionForm = ({
             )}
 
             <SubscriptionFormBasicInfo />
-            <SubscriptionFormBillingInfo showRenewalMode={showRenewalMode} />
+            <SubscriptionFormBillingInfo />
           </div>
         </div>
 

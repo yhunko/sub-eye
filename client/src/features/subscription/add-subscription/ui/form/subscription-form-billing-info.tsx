@@ -9,7 +9,6 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   FieldDescription,
-  Separator,
 } from "@/shared/components";
 import { useFormContext, useWatch } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
@@ -17,13 +16,7 @@ import { SubscriptionDatePicker } from "../subscription-date-picker/subscription
 import { SubscriptionPeriod } from "shared";
 import * as m from "@/i18n/messages";
 
-type SubscriptionFormBillingInfoProps = {
-  showRenewalMode?: boolean;
-};
-
-export const SubscriptionFormBillingInfo = ({
-  showRenewalMode = false,
-}: SubscriptionFormBillingInfoProps) => {
+export const SubscriptionFormBillingInfo = () => {
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const period = useWatch({
     control,
@@ -38,9 +31,7 @@ export const SubscriptionFormBillingInfo = ({
         render={({ field }) => (
           <FormItem className="gap-1.5">
             <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
-              {showRenewalMode
-                ? m.form_billingInfo_renewalDate_label()
-                : m.form_billingInfo_nextPaymentDate_label()}
+              {m.form_billingInfo_nextPaymentDate_label()}
             </FormLabel>
             <FormControl>
               <SubscriptionDatePicker
@@ -52,37 +43,6 @@ export const SubscriptionFormBillingInfo = ({
           </FormItem>
         )}
       />
-
-      {!showRenewalMode && (
-        <>
-          <Separator />
-          <FormField
-            control={control}
-            name="willBeCancelledAt"
-            render={({ field }) => (
-              <FormItem className="gap-1.5">
-                <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
-                  {m.form_billingInfo_willBeCancelledAt_label()}
-                </FormLabel>
-                <FormControl>
-                  <SubscriptionDatePicker
-                    value={field.value ?? undefined}
-                    onChange={field.onChange}
-                    clearable={!!field.value}
-                    onClear={() => setValue("willBeCancelledAt", null)}
-                  />
-                </FormControl>
-                <FieldDescription className="text-xs">
-                  {m.form_billingInfo_willBeCancelledAt_description()}
-                </FieldDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
-
-      <Separator />
 
       <FormField
         control={control}

@@ -1,4 +1,5 @@
-import { FC } from "react";
+import NiceModal, { useModal } from "@ebay/nice-modal-react";
+import { FC, useCallback, useMemo } from "react";
 import * as m from "@/i18n/messages";
 import {
   Dialog,
@@ -13,21 +14,13 @@ import {
   DrawerTitle,
 } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { type Locale } from "date-fns";
-import { HistoryInsights } from "../model/history-insights";
+import { buildHistoryInsights } from "../model/history-insights";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
+import { useSubscriptionHistory } from "@/entities/subscription/api/use-subscription-history";
 import { SubscriptionHistoryTimelineBody } from "./components/subscription-history-timeline-body";
 
 type SubscriptionHistoryPanelProps = {
   subscriptionId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  insights: HistoryInsights;
-  hasMore: boolean;
-  isPending: boolean;
-  isError: boolean;
-  isFetching: boolean;
-  onRetry: () => void;
-  locale: Locale;
 };
 
 const SubscriptionHistoryPanelHeader: FC = () => (
@@ -52,32 +45,71 @@ const SubscriptionHistoryDrawerHeader: FC = () => (
   </DrawerHeader>
 );
 
-const SubscriptionHistoryPanel: FC<SubscriptionHistoryPanelProps> = ({
-  open,
-  onOpenChange,
-  ...props
-}) => {
-  const isDesktop = useBreakpoint("md");
+export const SubscriptionHistoryPanel =
+  NiceModal.create<SubscriptionHistoryPanelProps>(({ subscriptionId }) => {
+    const modal = useModal();
+    const isDesktop = useBreakpoint("md");
+    const { locale } = useDateFnsLocale();
 
-  if (isDesktop) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[85vh] max-h-[85vh] w-[min(920px,calc(100%-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-none">
-          <SubscriptionHistoryPanelHeader />
-          <SubscriptionHistoryTimelineBody {...props} compact={false} />
-        </DialogContent>
-      </Dialog>
+    const { data, isPending, isError, isFetching, refetch } =
+      useSubscriptionHistory({
+        params: { id: subscriptionId },
+        options: {
+          enabled: modal.visible,
+        },
+      });
+
+    const history = data?.history;
+    const hasMore = data?.hasMore ?? false;
+    const insights = useMemo(
+      () => buildHistoryInsights(history ?? []),
+      [history],
     );
-  }
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[80vh]">
-        <SubscriptionHistoryDrawerHeader />
-        <SubscriptionHistoryTimelineBody {...props} compact />
-      </DrawerContent>
-    </Drawer>
-  );
-};
+    const closePanel = useCallback(async () => {
+      await modal.hide();
+      modal.remove();
+    }, [modal]);
 
-export default SubscriptionHistoryPanel;
+    const handleOpenChange = (open: boolean) => {
+      if (!open) {
+        void closePanel();
+      }
+    };
+
+    const timelineProps = {
+      subscriptionId,
+      insights,
+      hasMore,
+      isPending,
+      isError,
+      isFetching,
+      onRetry: () => {
+        void refetch();
+      },
+      locale,
+    };
+
+    if (isDesktop) {
+      return (
+        <Dialog open={modal.visible} onOpenChange={handleOpenChange}>
+          <DialogContent className="flex h-[85vh] max-h-[85vh] w-[min(920px,calc(100%-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-none">
+            <SubscriptionHistoryPanelHeader />
+            <SubscriptionHistoryTimelineBody
+              {...timelineProps}
+              compact={false}
+            />
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    return (
+      <Drawer open={modal.visible} onOpenChange={handleOpenChange}>
+        <DrawerContent className="h-[80vh]">
+          <SubscriptionHistoryDrawerHeader />
+          <SubscriptionHistoryTimelineBody {...timelineProps} compact />
+        </DrawerContent>
+      </Drawer>
+    );
+  });

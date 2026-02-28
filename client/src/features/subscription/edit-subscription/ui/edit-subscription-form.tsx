@@ -74,18 +74,12 @@ export const EditSubscriptionForm = ({
           domain: subscription.brandDomain,
         } as BrandfetchSearchDto)
       : undefined,
-    willBeCancelledAt:
-      subscription.status === "cancelledButActive" &&
-      subscription.willBeCancelledAt
-        ? new Date(subscription.willBeCancelledAt)
-        : null,
   };
 
   return (
     <SubscriptionForm
       defaultValues={defaultValues}
       subscriptionId={subscriptionId}
-      subscriptionStatus={subscription.status}
     />
   );
 };

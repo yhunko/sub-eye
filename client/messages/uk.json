@@ -102,6 +102,8 @@
   "subscription_overview_markAsCanceledComingSoon": "Функціонал скасування скоро з'явиться",
   "subscription_overview_back": "Назад",
   "subscription_overview_edit": "Редагувати {name}",
+  "subscription_overview_actionsTrigger": "Відкрити дії для {name}",
+  "subscription_overview_openActions": "Відкрити дії",
   "subscription_overview_nextPayment": "Наступна оплата",
   "subscription_overview_previousPayment": "Попередня оплата",
   "subscription_overview_markAsCanceled": "Позначити як скасоване",
