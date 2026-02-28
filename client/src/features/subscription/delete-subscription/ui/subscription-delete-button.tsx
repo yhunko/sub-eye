@@ -20,6 +20,7 @@ export const SubscriptionDeleteButton = ({
 }: SubscriptionDeleteButtonProps) => {
   return (
     <Button
+      type="button"
       variant="destructive"
       size={fullWidth ? "lg" : "icon"}
       className={className}

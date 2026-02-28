@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
-import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
+import { SubscriptionFormHeaderAction } from "./form/subscription-form-header-action";
 import { SubscriptionPeriod } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import {
@@ -51,7 +51,10 @@ export const AddSubscriptionForm = ({
   const router = useRouter();
   const { userId } = useAuth();
   const { data: usage } = useQuery(
-    planUsageQuery({ params: { userId: userId! } }),
+    planUsageQuery({
+      params: { userId: userId ?? "" },
+      options: { enabled: !!userId },
+    }),
   );
   const { mutate: addSubscription, isPending: isAddPending } =
     useCreateSubscription();
@@ -145,7 +148,7 @@ export const AddSubscriptionForm = ({
         className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <div className="border-border/70 bg-background/80 supports-backdrop-filter:bg-background/60 sticky top-0 z-20 shrink-0 border-b px-3 py-3 md:px-6 md:py-4">
+        <div className="shrink-0 px-3 py-3 md:px-6 md:py-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
               type="button"
@@ -164,19 +167,21 @@ export const AddSubscriptionForm = ({
                 : m.subscription_form_title_add()}
             </h1>
 
-            {isEditMode ? (
-              <SubscriptionDeleteButton
-                subscriptionId={subscriptionId}
-                subscriptionName={defaultValues?.name}
-                className="size-11 rounded-full"
-              />
-            ) : (
-              <span className="size-11" aria-hidden />
-            )}
+            <SubscriptionFormHeaderAction
+              isDirty={formState.isDirty}
+              isPending={isPending}
+              subscriptionId={subscriptionId}
+              subscriptionName={defaultValues?.name}
+            />
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-4 md:px-6 md:pt-6 md:pb-28">
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto px-3 pt-4 md:px-6 md:pt-6",
+            isEditMode ? "pb-6 md:pb-8" : "md:pb-28",
+          )}
+        >
           <div className="mx-auto w-full max-w-xl space-y-4">
             {isLimitReached && (
               <SubscriptionLimitAlert
@@ -190,17 +195,19 @@ export const AddSubscriptionForm = ({
           </div>
         </div>
 
-        <div className="border-border/70 bg-background/90 supports-backdrop-filter:bg-background/70 mx-auto w-full max-w-xl border-t px-4 py-3 backdrop-blur-md">
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isLimitReached}
-            className={cn("h-12 w-full rounded-2xl text-base")}
-          >
-            {isPending && <Spinner />}
-            {isEditMode ? m.form_buttons_update() : m.form_buttons_add()}
-          </Button>
-        </div>
+        {!isEditMode && (
+          <div className="border-border/70 bg-background/90 supports-[backdrop-filter]:bg-background/70 mx-auto w-full max-w-xl border-t px-4 py-3 backdrop-blur-md">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isLimitReached}
+              className={cn("h-12 w-full rounded-2xl text-base")}
+            >
+              {isPending && <Spinner />}
+              {m.form_buttons_add()}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

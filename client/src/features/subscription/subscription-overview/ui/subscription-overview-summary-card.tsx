@@ -5,25 +5,16 @@ import { PeriodBadge } from "@/features/subscription/period";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import type { SubscriptionDto } from "shared";
-import { SubscriptionOverviewStatusSelector } from "./subscription-overview-status-selector";
 
 type SubscriptionOverviewSummaryCardProps = {
   subscription: SubscriptionDto;
-  onMarkAsCanceled: () => void;
-  onRenew: () => void;
 };
 
 export const SubscriptionOverviewSummaryCard: FC<
   SubscriptionOverviewSummaryCardProps
-> = ({ subscription, onMarkAsCanceled, onRenew }) => {
+> = ({ subscription }) => {
   return (
     <div className="space-y-4">
-      <SubscriptionOverviewStatusSelector
-        status={subscription.status}
-        onMarkAsCanceled={onMarkAsCanceled}
-        onRenew={onRenew}
-      />
-
       <div className="flex flex-col items-center gap-3 text-center">
         <BrandfetchImage
           domain={subscription.brandDomain}

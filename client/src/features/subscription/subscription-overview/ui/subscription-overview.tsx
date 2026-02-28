@@ -3,14 +3,17 @@ import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
+import { ChevronLeft } from "lucide-react";
 
 import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
+import { Button } from "@/shared/components";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
 import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
+import * as m from "@/i18n/messages";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -100,20 +103,28 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   return (
     <div className="flex h-full w-full flex-col p-3 md:p-6">
       <div className="flex flex-1 flex-col gap-4">
+        <Button
+          variant="outline"
+          className="h-11 w-fit rounded-full px-4"
+          onClick={handleBack}
+          aria-label={m.subscription_overview_back()}
+        >
+          <ChevronLeft className="size-4" aria-hidden />
+          {m.subscription_overview_back()}
+        </Button>
+
         <section className="rounded-[1.75rem] border p-4 shadow-sm md:p-6">
           <div className="flex flex-col gap-6">
             <SubscriptionOverviewHeaderActions
               subscriptionId={subscription.id}
               subscriptionName={subscription.name}
               onDeleteSuccess={handleDeleteSuccess}
-              onBack={handleBack}
-            />
-
-            <SubscriptionOverviewSummaryCard
-              subscription={subscription}
+              status={subscription.status}
               onMarkAsCanceled={handleMarkAsCanceled}
               onRenew={handleRenew}
             />
+
+            <SubscriptionOverviewSummaryCard subscription={subscription} />
 
             <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
           </div>

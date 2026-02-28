@@ -66,6 +66,7 @@ export const SubscriptionDeleteDialog =
             </DialogHeader>
             <DialogFooter>
               <Button
+                type="button"
                 variant="outline"
                 disabled={isPending}
                 onClick={() => {
@@ -75,6 +76,7 @@ export const SubscriptionDeleteDialog =
                 {m.subscription_overview_back()}
               </Button>
               <Button
+                type="button"
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={isPending}
