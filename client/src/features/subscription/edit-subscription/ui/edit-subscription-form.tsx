@@ -78,8 +78,10 @@ export const EditSubscriptionForm = ({
 
   return (
     <SubscriptionForm
+      key={`${subscription.updatedAt}-${subscription.scheduledPriceChange?.effectiveAt ?? "none"}`}
       defaultValues={defaultValues}
       subscriptionId={subscriptionId}
+      existingSubscription={subscription}
     />
   );
 };

@@ -8,6 +8,7 @@ import { SubscriptionCalculator } from "./subscriptionCalculator";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { CurrencyService } from "../currency/currencyService";
 import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
+import { SubscriptionPriceChangeWorkflow } from "./subscriptionPriceChangeWorkflow";
 import { UserService } from "../user/userService";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import type {
@@ -17,15 +18,21 @@ import type {
   UpdateSubscriptionInput,
   GetSubscriptionsParams,
   SubscriptionLifecycleStatus,
+  SchedulePriceChangeInput,
 } from "shared";
-import { getSubscriptionLifecycleStatus } from "shared";
+import {
+  DateTimezoneUtils,
+  RecurrenceUtils,
+  getPlanById,
+  getSubscriptionLifecycleStatus,
+} from "shared";
 import type { UserPreferences } from "shared";
-import { getPlanById } from "shared";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
   currencyService: typeof CurrencyService;
   workflow: typeof SubscriptionNotificationsWorkflow;
+  priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
   userService: typeof UserService;
   historyService: typeof SubscriptionHistoryService;
 };
@@ -34,6 +41,7 @@ const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
   currencyService: CurrencyService,
   workflow: SubscriptionNotificationsWorkflow,
+  priceChangeWorkflow: SubscriptionPriceChangeWorkflow,
   userService: UserService,
   historyService: SubscriptionHistoryService,
 };
@@ -48,12 +56,16 @@ export class SubscriptionService {
       deps.repository.findByUserId(db, userId),
       deps.userService.getUserPreferences(userId),
     ]);
+    const reconciledSubscriptions = await this.reconcileScheduledPriceChanges(
+      subscriptions,
+      deps,
+    );
 
     const rates = await deps.currencyService.getRates(
       preferences.preferredCurrency,
     );
 
-    const dtos = subscriptions.map((subscription) =>
+    const dtos = reconciledSubscriptions.map((subscription) =>
       this.mapToDto(subscription, preferences, rates),
     );
 
@@ -70,13 +82,21 @@ export class SubscriptionService {
     if (!subscription || subscription.userId !== userId) {
       throw new Error("Subscription not found");
     }
+    const [reconciledSubscription] = await this.reconcileScheduledPriceChanges(
+      [subscription],
+      deps,
+    );
 
     const preferences = await deps.userService.getUserPreferences(userId);
     const rates = await deps.currencyService.getRates(
       preferences.preferredCurrency,
     );
 
-    return this.mapToDto(subscription, preferences, rates);
+    return this.mapToDto(
+      reconciledSubscription ?? subscription,
+      preferences,
+      rates,
+    );
   }
 
   static async addSubscription(
@@ -139,9 +159,30 @@ export class SubscriptionService {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
     }
 
+    const shouldClearScheduledPriceChange =
+      this.shouldClearScheduledPriceChange(existing, payload);
+
+    if (
+      shouldClearScheduledPriceChange &&
+      existing.priceChangeQstashMessageId
+    ) {
+      await this.tryCancelPriceChangeWorkflow(
+        existing.priceChangeQstashMessageId,
+        deps,
+      );
+    }
+
     const updated = await deps.repository.update(db, id, {
       ...this.toUpdatePayload(payload),
       qstashMessageId: null,
+      ...(shouldClearScheduledPriceChange
+        ? {
+            scheduledCost: null,
+            scheduledCurrency: null,
+            scheduledEffectiveAt: null,
+            priceChangeQstashMessageId: null,
+          }
+        : undefined),
     });
 
     const result = this.shouldScheduleWorkflow(updated)
@@ -172,6 +213,245 @@ export class SubscriptionService {
     return dto;
   }
 
+  static async schedulePriceChange(
+    id: string,
+    userId: string,
+    payload: SchedulePriceChangeInput,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(db, id);
+
+    if (!existing || existing.userId !== userId) {
+      throw new Error("Subscription not found");
+    }
+
+    const { preferences, rates } = await this.getPreferencesAndRates(
+      userId,
+      deps,
+    );
+    const previousDto = this.mapToDto(existing, preferences, rates);
+
+    const effectiveAt = this.resolveScheduledEffectiveAt(
+      existing,
+      payload,
+      preferences.preferredTimezone,
+    );
+
+    this.assertCanSchedulePriceChange(existing, effectiveAt);
+
+    if (existing.priceChangeQstashMessageId) {
+      await this.tryCancelPriceChangeWorkflow(
+        existing.priceChangeQstashMessageId,
+        deps,
+      );
+    }
+
+    const scheduledCurrency = existing.currency;
+
+    const workflowPayload = {
+      subscriptionId: existing.id,
+      effectiveAt,
+      scheduledCost: payload.scheduledCost,
+      scheduledCurrency,
+    };
+    const workflowRunId = await this.trySchedulePriceChangeWorkflow(
+      workflowPayload,
+      deps,
+    );
+
+    let updated: SubscriptionRecord;
+
+    try {
+      updated = await deps.repository.update(db, id, {
+        scheduledCost: payload.scheduledCost.toString(),
+        scheduledCurrency,
+        scheduledEffectiveAt: effectiveAt,
+        priceChangeQstashMessageId: workflowRunId,
+      });
+    } catch (error) {
+      if (workflowRunId) {
+        await this.tryCancelPriceChangeWorkflow(workflowRunId, deps);
+      }
+      throw error;
+    }
+
+    const dto = this.mapToDto(updated, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        action: "updated",
+        snapshot: {
+          before: previousDto,
+          after: dto,
+        },
+      },
+      deps,
+    );
+
+    return dto;
+  }
+
+  static async cancelScheduledPriceChange(
+    id: string,
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(db, id);
+
+    if (!existing || existing.userId !== userId) {
+      throw new Error("Subscription not found");
+    }
+
+    if (!this.hasScheduledPriceChange(existing)) {
+      throw new Error("No scheduled price change");
+    }
+
+    const { preferences, rates } = await this.getPreferencesAndRates(
+      userId,
+      deps,
+    );
+    const previousDto = this.mapToDto(existing, preferences, rates);
+
+    if (existing.priceChangeQstashMessageId) {
+      await this.tryCancelPriceChangeWorkflow(
+        existing.priceChangeQstashMessageId,
+        deps,
+      );
+    }
+
+    const updated = await deps.repository.update(db, id, {
+      scheduledCost: null,
+      scheduledCurrency: null,
+      scheduledEffectiveAt: null,
+      priceChangeQstashMessageId: null,
+    });
+
+    const dto = this.mapToDto(updated, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        action: "updated",
+        snapshot: {
+          before: previousDto,
+          after: dto,
+        },
+      },
+      deps,
+    );
+
+    return dto;
+  }
+
+  static async applyScheduledPriceChangeNow(
+    id: string,
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(db, id);
+
+    if (!existing || existing.userId !== userId) {
+      throw new Error("Subscription not found");
+    }
+
+    if (!this.hasScheduledPriceChange(existing)) {
+      throw new Error("No scheduled price change");
+    }
+
+    if (existing.priceChangeQstashMessageId) {
+      await this.tryCancelPriceChangeWorkflow(
+        existing.priceChangeQstashMessageId,
+        deps,
+      );
+    }
+
+    const { preferences, rates } = await this.getPreferencesAndRates(
+      userId,
+      deps,
+    );
+
+    const previousDto = this.mapToDto(existing, preferences, rates);
+
+    const updated = await deps.repository.update(db, id, {
+      cost: existing.scheduledCost ?? existing.cost,
+      currency: existing.scheduledCurrency ?? existing.currency,
+      scheduledCost: null,
+      scheduledCurrency: null,
+      scheduledEffectiveAt: null,
+      priceChangeQstashMessageId: null,
+    });
+
+    const dto = this.mapToDto(updated, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        action: "updated",
+        snapshot: {
+          before: previousDto,
+          after: dto,
+        },
+      },
+      deps,
+    );
+
+    return dto;
+  }
+
+  static async applyScheduledPriceChangeByWorkflow(
+    payload: {
+      subscriptionId: string;
+      effectiveAt: string;
+      scheduledCost: number;
+      scheduledCurrency: string;
+    },
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<void> {
+    const existing = await deps.repository.findById(db, payload.subscriptionId);
+
+    if (!existing) {
+      return;
+    }
+
+    if (!this.valuesMatchScheduledPriceChange(existing, payload)) {
+      return;
+    }
+
+    const { preferences, rates } = await this.getPreferencesAndRates(
+      existing.userId,
+      deps,
+    );
+    const previousDto = this.mapToDto(existing, preferences, rates);
+
+    const updated = await deps.repository.update(db, existing.id, {
+      cost: existing.scheduledCost ?? existing.cost,
+      currency: existing.scheduledCurrency ?? existing.currency,
+      scheduledCost: null,
+      scheduledCurrency: null,
+      scheduledEffectiveAt: null,
+      priceChangeQstashMessageId: null,
+    });
+
+    const dto = this.mapToDto(updated, preferences, rates);
+
+    await this.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId: existing.userId,
+        action: "updated",
+        snapshot: {
+          before: previousDto,
+          after: dto,
+        },
+      },
+      deps,
+    );
+  }
+
   static async deleteSubscription(
     id: string,
     userId: string,
@@ -185,6 +465,13 @@ export class SubscriptionService {
 
     if (existing.qstashMessageId) {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
+    }
+
+    if (existing.priceChangeQstashMessageId) {
+      await this.tryCancelPriceChangeWorkflow(
+        existing.priceChangeQstashMessageId,
+        deps,
+      );
     }
 
     let historySnapshot: unknown = existing;
@@ -237,10 +524,21 @@ export class SubscriptionService {
       willBeCancelledAt: new Date(nextPaymentDate),
       paymentDate: nextPaymentDate,
       qstashMessageId: null,
+      scheduledCost: null,
+      scheduledCurrency: null,
+      scheduledEffectiveAt: null,
+      priceChangeQstashMessageId: null,
     });
 
     if (existing.qstashMessageId) {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
+    }
+
+    if (existing.priceChangeQstashMessageId) {
+      await this.tryCancelPriceChangeWorkflow(
+        existing.priceChangeQstashMessageId,
+        deps,
+      );
     }
 
     const { preferences, rates } = await this.getPreferencesAndRates(
@@ -270,11 +568,18 @@ export class SubscriptionService {
     const existing = await deps.repository.findByUserId(db, userId);
 
     await Promise.all(
-      existing.map((subscription) =>
-        subscription.qstashMessageId
-          ? this.tryCancelWorkflow(subscription.qstashMessageId, deps)
-          : Promise.resolve(),
-      ),
+      existing.map(async (subscription) => {
+        if (subscription.qstashMessageId) {
+          await this.tryCancelWorkflow(subscription.qstashMessageId, deps);
+        }
+
+        if (subscription.priceChangeQstashMessageId) {
+          await this.tryCancelPriceChangeWorkflow(
+            subscription.priceChangeQstashMessageId,
+            deps,
+          );
+        }
+      }),
     );
 
     await deps.repository.deleteByUserId(db, userId);
@@ -318,12 +623,57 @@ export class SubscriptionService {
         preferences.preferredTimezone,
       );
 
+    const scheduledPriceChange = this.toScheduledPriceChange(
+      subscription,
+      preferences,
+      rates,
+    );
+
     return SubscriptionMapper.toDto(
       subscription,
       billing,
       nextPaymentDate,
       lastPaymentDate,
+      scheduledPriceChange,
     );
+  }
+
+  private static toScheduledPriceChange(
+    subscription: SubscriptionRecord,
+    preferences: UserPreferences,
+    rates: Record<string, number>,
+  ): SubscriptionDto["scheduledPriceChange"] {
+    if (
+      !subscription.scheduledCost ||
+      !subscription.scheduledCurrency ||
+      !subscription.scheduledEffectiveAt
+    ) {
+      return null;
+    }
+
+    const amount = Number(subscription.scheduledCost);
+
+    if (!Number.isFinite(amount)) {
+      return null;
+    }
+
+    const billing = SubscriptionCalculator.calculateBillingDetailsForPricing(
+      {
+        amount,
+        currency: subscription.scheduledCurrency,
+        every: subscription.every,
+        period: subscription.period,
+      },
+      preferences.preferredCurrency,
+      rates,
+    );
+
+    return {
+      cost: amount,
+      currency: subscription.scheduledCurrency,
+      effectiveAt: this.normalizeDate(subscription.scheduledEffectiveAt)!,
+      billing,
+    };
   }
 
   private static toInsertPayload(
@@ -426,6 +776,42 @@ export class SubscriptionService {
         workflowRunId,
         error,
       });
+    }
+  }
+
+  private static async tryCancelPriceChangeWorkflow(
+    workflowRunId: string,
+    deps: SubscriptionServiceDeps,
+  ): Promise<void> {
+    try {
+      await deps.priceChangeWorkflow.cancel(workflowRunId);
+    } catch (error) {
+      console.error("Failed to cancel scheduled price-change workflow", {
+        workflowRunId,
+        error,
+      });
+    }
+  }
+
+  private static async trySchedulePriceChangeWorkflow(
+    payload: {
+      subscriptionId: string;
+      effectiveAt: string;
+      scheduledCost: number;
+      scheduledCurrency: string;
+    },
+    deps: SubscriptionServiceDeps,
+  ): Promise<string | null> {
+    try {
+      return await deps.priceChangeWorkflow.schedule(payload);
+    } catch (error) {
+      console.error("Failed to schedule price-change workflow", {
+        subscriptionId: payload.subscriptionId,
+        effectiveAt: payload.effectiveAt,
+        error,
+      });
+
+      return null;
     }
   }
 
@@ -589,5 +975,210 @@ export class SubscriptionService {
     }
 
     return "before" in snapshot && "after" in snapshot;
+  }
+
+  private static shouldClearScheduledPriceChange(
+    subscription: SubscriptionRecord,
+    payload: UpdateSubscriptionInput,
+  ): boolean {
+    if (!subscription.scheduledCost || !subscription.scheduledEffectiveAt) {
+      return false;
+    }
+
+    if (payload.cost === undefined && payload.currency === undefined) {
+      return false;
+    }
+
+    const existingCost = Number(subscription.cost);
+    const nextCost = payload.cost ?? existingCost;
+
+    const existingCurrency = subscription.currency;
+    const nextCurrency = payload.currency ?? existingCurrency;
+
+    return (
+      this.normalizeAmount(nextCost) !== this.normalizeAmount(existingCost) ||
+      nextCurrency !== existingCurrency
+    );
+  }
+
+  private static resolveScheduledEffectiveAt(
+    subscription: SubscriptionRecord,
+    payload: SchedulePriceChangeInput,
+    timezone?: string,
+  ): string {
+    if (payload.mode === "nextOccurrence") {
+      const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
+        subscription,
+        timezone,
+      );
+
+      if (Date.parse(nextPaymentDate) > Date.now()) {
+        return nextPaymentDate;
+      }
+
+      const nextOccurrence = RecurrenceUtils.addPeriod(
+        DateTimezoneUtils.toZoned(nextPaymentDate, timezone),
+        subscription.every,
+        subscription.period,
+      );
+
+      return nextOccurrence.toISOString();
+    }
+
+    if (!payload.customDate) {
+      throw new Error("Custom date is required for custom-date mode");
+    }
+
+    return this.toStartOfDayInTimezone(payload.customDate, timezone);
+  }
+
+  private static toStartOfDayInTimezone(
+    date: string,
+    timezone?: string,
+  ): string {
+    const zoned = DateTimezoneUtils.toZoned(date, timezone);
+    zoned.setHours(0, 0, 0, 0);
+
+    return zoned.toISOString();
+  }
+
+  private static assertCanSchedulePriceChange(
+    subscription: SubscriptionRecord,
+    effectiveAt: string,
+  ): void {
+    const status = getSubscriptionLifecycleStatus({
+      willBeCancelledAt: this.normalizeDate(subscription.willBeCancelledAt),
+    });
+
+    if (status === "cancelled") {
+      throw new Error(
+        "Cannot schedule a price change for a cancelled subscription",
+      );
+    }
+
+    const effectiveAtTime = Date.parse(effectiveAt);
+    if (Number.isNaN(effectiveAtTime)) {
+      throw new Error("Invalid scheduled effective date");
+    }
+
+    if (effectiveAtTime <= Date.now()) {
+      throw new Error("Scheduled effective date must be in the future");
+    }
+
+    const cancellationTime = subscription.willBeCancelledAt
+      ? Date.parse(this.normalizeDate(subscription.willBeCancelledAt) ?? "")
+      : Number.NaN;
+
+    if (
+      !Number.isNaN(cancellationTime) &&
+      effectiveAtTime >= cancellationTime
+    ) {
+      throw new Error(
+        "Scheduled effective date must be before the cancellation date",
+      );
+    }
+  }
+
+  private static hasScheduledPriceChange(
+    subscription: SubscriptionRecord,
+  ): boolean {
+    return Boolean(
+      subscription.scheduledCost &&
+      subscription.scheduledCurrency &&
+      subscription.scheduledEffectiveAt,
+    );
+  }
+
+  private static valuesMatchScheduledPriceChange(
+    subscription: SubscriptionRecord,
+    payload: {
+      effectiveAt: string;
+      scheduledCost: number;
+      scheduledCurrency: string;
+    },
+  ): boolean {
+    if (!this.hasScheduledPriceChange(subscription)) {
+      return false;
+    }
+
+    const storedEffectiveAt = this.normalizeDate(
+      subscription.scheduledEffectiveAt,
+    );
+
+    return (
+      storedEffectiveAt === this.normalizeDate(payload.effectiveAt) &&
+      this.normalizeAmount(Number(subscription.scheduledCost)) ===
+        this.normalizeAmount(payload.scheduledCost) &&
+      subscription.scheduledCurrency === payload.scheduledCurrency
+    );
+  }
+
+  private static normalizeAmount(value: number): string {
+    return value.toFixed(2);
+  }
+
+  private static async reconcileScheduledPriceChanges(
+    subscriptions: SubscriptionRecord[],
+    deps: SubscriptionServiceDeps,
+  ): Promise<SubscriptionRecord[]> {
+    return await Promise.all(
+      subscriptions.map(async (subscription) => {
+        if (!this.hasScheduledPriceChange(subscription)) {
+          return subscription;
+        }
+
+        const effectiveAt = this.normalizeDate(
+          subscription.scheduledEffectiveAt,
+        );
+        const scheduledCurrency = subscription.scheduledCurrency;
+        const scheduledCostRaw = subscription.scheduledCost;
+
+        if (!effectiveAt || !scheduledCurrency || !scheduledCostRaw) {
+          return subscription;
+        }
+
+        const scheduledCost = Number(scheduledCostRaw);
+        if (!Number.isFinite(scheduledCost)) {
+          return subscription;
+        }
+
+        const due = Date.parse(effectiveAt) <= Date.now();
+
+        if (due) {
+          await this.applyScheduledPriceChangeByWorkflow(
+            {
+              subscriptionId: subscription.id,
+              effectiveAt,
+              scheduledCost,
+              scheduledCurrency,
+            },
+            deps,
+          );
+
+          const refreshed = await deps.repository.findById(db, subscription.id);
+          return refreshed ?? subscription;
+        }
+
+        if (!subscription.priceChangeQstashMessageId) {
+          const workflowRunId = await this.trySchedulePriceChangeWorkflow(
+            {
+              subscriptionId: subscription.id,
+              effectiveAt,
+              scheduledCost,
+              scheduledCurrency,
+            },
+            deps,
+          );
+
+          if (workflowRunId) {
+            return await deps.repository.update(db, subscription.id, {
+              priceChangeQstashMessageId: workflowRunId,
+            });
+          }
+        }
+
+        return subscription;
+      }),
+    );
   }
 }

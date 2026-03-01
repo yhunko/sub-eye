@@ -12,7 +12,7 @@ import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionFormHeaderAction } from "./form/subscription-form-header-action";
-import { SubscriptionPeriod } from "shared";
+import { SubscriptionPeriod, type SubscriptionDto } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import {
   useCreateSubscription,
@@ -27,11 +27,13 @@ import * as m from "@/i18n/messages";
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
   subscriptionId?: string;
+  existingSubscription?: SubscriptionDto;
 };
 
 export const AddSubscriptionForm = ({
   defaultValues,
   subscriptionId,
+  existingSubscription,
 }: SubscriptionFormProps) => {
   const formMethods = useForm({
     resolver: valibotResolver(createAddSubscriptionFormSchema()),
@@ -124,6 +126,22 @@ export const AddSubscriptionForm = ({
     };
 
     if (isEditMode && subscriptionId) {
+      const hasScheduledPriceChange = Boolean(
+        existingSubscription?.scheduledPriceChange,
+      );
+      const isImmediatePriceChanged =
+        existingSubscription !== undefined &&
+        (data.cost !== existingSubscription.cost ||
+          data.currency !== existingSubscription.currency);
+
+      if (
+        hasScheduledPriceChange &&
+        isImmediatePriceChanged &&
+        !window.confirm(m.subscription_priceChange_immediateClearConfirm())
+      ) {
+        return;
+      }
+
       updateSubscription(
         { id: subscriptionId, payload: basePayload },
         { onSuccess: () => onSuccess(m.messages_updated()) },
@@ -190,7 +208,9 @@ export const AddSubscriptionForm = ({
               />
             )}
 
-            <SubscriptionFormBasicInfo />
+            <SubscriptionFormBasicInfo
+              existingSubscription={existingSubscription}
+            />
             <SubscriptionFormBillingInfo />
           </div>
         </div>

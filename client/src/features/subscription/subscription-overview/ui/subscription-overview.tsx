@@ -10,10 +10,10 @@ import { subscriptionQuery } from "@/entities/subscription";
 import { Button } from "@/shared/components";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
+import { useScheduledPriceChangeActions } from "../../schedule-price-change";
 import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
 import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
-import { SubscriptionOverviewActionsDropdown } from "./subscription-overview-actions-dropdown";
-import { SubscriptionOverviewStatusSelector } from "./subscription-overview-status-selector";
+import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import {
   subscriptionOverviewFloatingCardClassName,
   subscriptionOverviewTopSectionClassName,
@@ -37,6 +37,9 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       params: { id: subscriptionId, userId: userId ?? "" },
     }),
   );
+  const { openScheduleDialog } = useScheduledPriceChangeActions({
+    subscription,
+  });
 
   const displayState = useMemo(() => {
     if (!subscription || !isLoaded) return null;
@@ -121,19 +124,16 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       </section>
 
       <section className={subscriptionOverviewFloatingCardClassName}>
-        <div className="flex items-center justify-between gap-3">
-          <SubscriptionOverviewStatusSelector
-            status={subscription.status}
-            onMarkAsCanceled={handleMarkAsCanceled}
-            onRenew={handleRenew}
-          />
-
-          <SubscriptionOverviewActionsDropdown
-            subscriptionId={subscription.id}
-            subscriptionName={subscription.name}
-            onDeleteSuccess={handleDeleteSuccess}
-          />
-        </div>
+        <SubscriptionOverviewHeaderActions
+          subscriptionId={subscription.id}
+          subscriptionName={subscription.name}
+          hasScheduledPriceChange={Boolean(subscription.scheduledPriceChange)}
+          onSchedulePriceChange={openScheduleDialog}
+          onDeleteSuccess={handleDeleteSuccess}
+          status={subscription.status}
+          onMarkAsCanceled={handleMarkAsCanceled}
+          onRenew={handleRenew}
+        />
 
         <SubscriptionOverviewSummaryCard subscription={subscription} />
 

@@ -48,7 +48,9 @@ export const subscriptionsTable = pgTable("subscriptions", {
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
   cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
+  scheduledCost: numeric("scheduled_cost", { precision: 10, scale: 2 }),
   currency: text("currency").notNull(),
+  scheduledCurrency: text("scheduled_currency"),
   every: integer("every").notNull().default(1),
   period: subscriptionPeriodEnum("period")
     .notNull()
@@ -59,11 +61,16 @@ export const subscriptionsTable = pgTable("subscriptions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   qstashMessageId: text("qstash_message_id"),
+  priceChangeQstashMessageId: text("price_change_qstash_message_id"),
   brandDomain: text("brand_domain"),
   paymentDate: timestamp("payment_date", {
     withTimezone: true,
     mode: "string",
   }).notNull(),
+  scheduledEffectiveAt: timestamp("scheduled_effective_at", {
+    withTimezone: true,
+    mode: "string",
+  }),
   willBeCancelledAt: timestamp("cancelled_at"),
 });
 

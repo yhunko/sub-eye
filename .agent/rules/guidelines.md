@@ -37,6 +37,8 @@ trigger: always_on
 - Keep business logic out of JSX-heavy components.
 - Extract repeated logic into reusable modules/hooks/components.
 - Favor composition over large monolithic components.
+- Avoid passing large action-object props through multiple layers; prefer local orchestration hooks and minimal domain props unless profiling shows a meaningful performance regression.
+- For conditional UI blocks, extract them into dedicated components and prefer early `return null` guards instead of large inline `&&` trees inside parent render functions.
 - Avoid excessive nesting and use `useMemo` for expensive computations.
 - Avoid using complex, custom tailwind classes. Prefer clean, shadcn/ui native components design. Overwrite shadcn/ui components with custom styles sparingly, and ONLY when absolutely necessary.
 - Avoid nested ternary expressions in JSX/TSX render blocks. Prefer explicit render helpers (`renderX`) or a typed strategy map for readability and maintainability.

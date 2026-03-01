@@ -8,6 +8,7 @@ export class SubscriptionMapper {
     billing: SubscriptionBillingDetails,
     nextPaymentDate: string,
     lastPaymentDate: string | null,
+    scheduledPriceChange: SubscriptionDto["scheduledPriceChange"],
   ): SubscriptionDto {
     const paymentDate = this.normalizeDate(subscription.paymentDate);
     const willBeCancelledAt = subscription.willBeCancelledAt
@@ -34,6 +35,7 @@ export class SubscriptionMapper {
       nextPaymentDate,
       lastPaymentDate,
       willBeCancelledAt,
+      scheduledPriceChange,
       status: getSubscriptionLifecycleStatus({
         willBeCancelledAt,
       }),

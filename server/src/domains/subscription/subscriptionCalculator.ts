@@ -2,6 +2,7 @@ import { CurrencyUtils } from "shared";
 import { DateTimezoneUtils } from "shared";
 import { RecurrenceUtils } from "shared";
 import type { SubscriptionBillingDetails } from "shared";
+import type { SubscriptionPeriod } from "shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionCalculator {
@@ -10,43 +11,39 @@ export class SubscriptionCalculator {
     preferredCurrency: string,
     rates: Record<string, number>,
   ): SubscriptionBillingDetails {
-    const amount = Number(subscription.cost);
-    const every = subscription.every;
-    const period = subscription.period;
-
-    const originalCurrency = subscription.currency;
-    const preferredCurrencyCode = preferredCurrency;
-
-    const originalMonthly = CurrencyUtils.toMonthly(amount, every, period);
-    const preferredAmount = CurrencyUtils.convert(
-      amount,
-      originalCurrency,
-      preferredCurrencyCode,
+    return this.computeBillingDetails(
+      Number(subscription.cost),
+      subscription.currency,
+      subscription.every,
+      subscription.period,
+      preferredCurrency,
       rates,
     );
-    const preferredMonthly = CurrencyUtils.toMonthly(
-      preferredAmount,
+  }
+
+  static calculateBillingDetailsForPricing(
+    {
+      amount,
+      currency,
       every,
       period,
+    }: {
+      amount: number;
+      currency: string;
+      every: number;
+      period: SubscriptionPeriod;
+    },
+    preferredCurrency: string,
+    rates: Record<string, number>,
+  ): SubscriptionBillingDetails {
+    return this.computeBillingDetails(
+      amount,
+      currency,
+      every,
+      period,
+      preferredCurrency,
+      rates,
     );
-
-    return {
-      original: {
-        currencyCode: originalCurrency,
-        monthly: originalMonthly,
-      },
-      preferred: {
-        currencyCode: preferredCurrencyCode,
-        amount: preferredAmount,
-        monthly: preferredMonthly,
-        yearly: preferredMonthly * 12,
-        exchangeRate: this.getExchangeRate(
-          originalCurrency,
-          preferredCurrencyCode,
-          rates,
-        ),
-      },
-    };
   }
 
   static calculatePaymentDates(
@@ -88,5 +85,45 @@ export class SubscriptionCalculator {
     const rate = rates[from];
     if (!rate) return 1;
     return 1 / rate;
+  }
+
+  private static computeBillingDetails(
+    amount: number,
+    originalCurrency: string,
+    every: number,
+    period: SubscriptionPeriod,
+    preferredCurrencyCode: string,
+    rates: Record<string, number>,
+  ): SubscriptionBillingDetails {
+    const originalMonthly = CurrencyUtils.toMonthly(amount, every, period);
+    const preferredAmount = CurrencyUtils.convert(
+      amount,
+      originalCurrency,
+      preferredCurrencyCode,
+      rates,
+    );
+    const preferredMonthly = CurrencyUtils.toMonthly(
+      preferredAmount,
+      every,
+      period,
+    );
+
+    return {
+      original: {
+        currencyCode: originalCurrency,
+        monthly: originalMonthly,
+      },
+      preferred: {
+        currencyCode: preferredCurrencyCode,
+        amount: preferredAmount,
+        monthly: preferredMonthly,
+        yearly: preferredMonthly * 12,
+        exchangeRate: this.getExchangeRate(
+          originalCurrency,
+          preferredCurrencyCode,
+          rates,
+        ),
+      },
+    };
   }
 }

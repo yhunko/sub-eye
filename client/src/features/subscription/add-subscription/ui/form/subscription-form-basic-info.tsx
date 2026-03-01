@@ -12,9 +12,17 @@ import {
 import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { AddSubscriptionInput } from "../../model/schema";
 import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
+import type { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
+import { SubscriptionFormScheduledPriceChangeCard } from "./subscription-form-scheduled-price-change-card";
 
-export const SubscriptionFormBasicInfo = () => {
+type SubscriptionFormBasicInfoProps = {
+  existingSubscription?: SubscriptionDto;
+};
+
+export const SubscriptionFormBasicInfo = ({
+  existingSubscription,
+}: SubscriptionFormBasicInfoProps) => {
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const currency = useWatch({
     control,
@@ -74,6 +82,10 @@ export const SubscriptionFormBasicInfo = () => {
               <FormMessage />
             </FormItem>
           )}
+        />
+
+        <SubscriptionFormScheduledPriceChangeCard
+          subscription={existingSubscription}
         />
       </div>
     </FieldSet>

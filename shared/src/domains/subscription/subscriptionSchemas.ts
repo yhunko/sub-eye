@@ -125,6 +125,22 @@ export const UpdateSubscriptionSchema = strictObject({
   willBeCancelledAt: optional(nullable(isoDateSchema)),
 });
 
+export const scheduledPriceChangeModes = [
+  "nextOccurrence",
+  "customDate",
+] as const;
+export type ScheduledPriceChangeMode =
+  (typeof scheduledPriceChangeModes)[number];
+
+export const SchedulePriceChangeSchema = strictObject({
+  mode: picklist(scheduledPriceChangeModes),
+  scheduledCost: pipe(
+    number(),
+    check((value) => value > 0, "Cost must be greater than zero"),
+  ),
+  customDate: optional(nullable(isoDateSchema)),
+});
+
 const subscriptionBillingDetailsSchema = strictObject({
   original: strictObject({
     currencyCode: string(),
@@ -137,6 +153,13 @@ const subscriptionBillingDetailsSchema = strictObject({
     yearly: number(),
     exchangeRate: number(),
   }),
+});
+
+const scheduledPriceChangeSchema = strictObject({
+  cost: number(),
+  currency: string(),
+  effectiveAt: string(),
+  billing: subscriptionBillingDetailsSchema,
 });
 
 export const SubscriptionDtoSchema = strictObject({
@@ -159,12 +182,16 @@ export const SubscriptionDtoSchema = strictObject({
   nextPaymentDate: string(),
   lastPaymentDate: nullable(string()),
   willBeCancelledAt: nullable(string()),
+  scheduledPriceChange: nullable(scheduledPriceChangeSchema),
   status: picklist(subscriptionLifecycleStatuses),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;
 export type UpdateSubscriptionInput = InferOutput<
   typeof UpdateSubscriptionSchema
+>;
+export type SchedulePriceChangeInput = InferOutput<
+  typeof SchedulePriceChangeSchema
 >;
 export type SubscriptionBillingDetails = InferOutput<
   typeof subscriptionBillingDetailsSchema

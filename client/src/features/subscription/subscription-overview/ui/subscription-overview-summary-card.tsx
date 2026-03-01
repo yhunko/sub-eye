@@ -1,10 +1,14 @@
 import { FC } from "react";
+import { format } from "date-fns";
 import { CurrencyText } from "@/entities/currency";
 import { BrandfetchImage } from "@/features/brandfetch";
 import { PeriodBadge } from "@/features/subscription/period";
 import { cn } from "@/shared/lib/classes-utils";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import * as m from "@/i18n/messages";
 import type { SubscriptionDto } from "shared";
+import { SubscriptionOverviewScheduledPriceChangeAlert } from "./subscription-overview-scheduled-price-change-alert";
 
 type SubscriptionOverviewSummaryCardProps = {
   subscription: SubscriptionDto;
@@ -13,6 +17,17 @@ type SubscriptionOverviewSummaryCardProps = {
 export const SubscriptionOverviewSummaryCard: FC<
   SubscriptionOverviewSummaryCardProps
 > = ({ subscription }) => {
+  const { dateFnsFormat } = useDateFormat();
+  const { locale } = useDateFnsLocale();
+
+  const scheduledDateLabel = subscription.scheduledPriceChange
+    ? format(
+        new Date(subscription.scheduledPriceChange.effectiveAt),
+        dateFnsFormat,
+        { locale },
+      )
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center gap-3 text-center">
@@ -43,19 +58,40 @@ export const SubscriptionOverviewSummaryCard: FC<
       </div>
 
       <div className="bg-card rounded-2xl border p-4">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground text-sm">
-            {m.form_basicInfo_cost_label()}
-          </span>
-          <div className="inline-flex items-center text-right text-lg">
-            <CurrencyText
-              currencyCode={subscription.billing.preferred.currencyCode}
-              amount={subscription.billing.preferred.monthly}
-            />
-            &nbsp;
-            <span className="text-sm">{m.common_perMonth()}</span>
+        <div className="grid gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground text-sm">
+              {m.subscription_price_monthly()}
+            </span>
+            <div className="inline-flex items-center text-right text-base font-semibold">
+              <CurrencyText
+                currencyCode={subscription.billing.preferred.currencyCode}
+                amount={subscription.billing.preferred.monthly}
+              />
+              &nbsp;
+              <span className="text-xs">{m.common_perMonth()}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground text-sm">
+              {m.subscription_price_yearly()}
+            </span>
+            <div className="inline-flex items-center text-right text-base font-semibold">
+              <CurrencyText
+                currencyCode={subscription.billing.preferred.currencyCode}
+                amount={subscription.billing.preferred.yearly}
+              />
+              &nbsp;
+              <span className="text-xs">{m.common_perYear()}</span>
+            </div>
           </div>
         </div>
+
+        <SubscriptionOverviewScheduledPriceChangeAlert
+          subscription={subscription}
+          scheduledDateLabel={scheduledDateLabel}
+        />
       </div>
     </div>
   );

@@ -55,7 +55,6 @@ export class AnalyticsCalculator {
     );
 
     let total = 0;
-    const amount = subscription.billing.preferred.amount;
 
     while (!isAfter(occurrence, rangeEnd)) {
       if (
@@ -69,7 +68,7 @@ export class AnalyticsCalculator {
         break;
       }
 
-      total += amount;
+      total += this.resolveOccurrenceAmount(subscription, occurrence);
       occurrence = RecurrenceUtils.addPeriod(
         occurrence,
         subscription.every,
@@ -185,7 +184,7 @@ export class AnalyticsCalculator {
           name: subscription.name,
           brandDomain: subscription.brandDomain,
           provider: subscription.category ?? "Subscription",
-          amount: subscription.billing.preferred.amount,
+          amount: this.resolveOccurrenceAmount(subscription, projectionDate),
           currencyCode: preferredCurrencyCode,
           nextPaymentDate: projectionDate.toISOString(),
           daysUntil,
@@ -335,7 +334,7 @@ export class AnalyticsCalculator {
 
         payments.push({
           date: occurrence,
-          amount: subscription.billing.preferred.amount,
+          amount: this.resolveOccurrenceAmount(subscription, occurrence),
           subscription,
         });
 
@@ -348,5 +347,25 @@ export class AnalyticsCalculator {
     }
 
     return payments;
+  }
+
+  private static resolveOccurrenceAmount(
+    subscription: SubscriptionDto,
+    occurrence: Date,
+  ): number {
+    const scheduled = subscription.scheduledPriceChange;
+
+    if (!scheduled) {
+      return subscription.billing.preferred.amount;
+    }
+
+    const effectiveAt = Date.parse(scheduled.effectiveAt);
+    if (Number.isNaN(effectiveAt)) {
+      return subscription.billing.preferred.amount;
+    }
+
+    return occurrence.getTime() >= effectiveAt
+      ? scheduled.billing.preferred.amount
+      : subscription.billing.preferred.amount;
   }
 }

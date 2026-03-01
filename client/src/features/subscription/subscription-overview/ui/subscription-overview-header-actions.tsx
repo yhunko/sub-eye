@@ -6,6 +6,8 @@ import { SubscriptionOverviewStatusSelector } from "./subscription-overview-stat
 type SubscriptionOverviewHeaderActionsProps = {
   subscriptionId: string;
   subscriptionName: string;
+  hasScheduledPriceChange: boolean;
+  onSchedulePriceChange: () => void;
   onDeleteSuccess: () => Promise<void> | void;
   status: SubscriptionDto["status"];
   onMarkAsCanceled: () => void;
@@ -17,6 +19,8 @@ export const SubscriptionOverviewHeaderActions: FC<
 > = ({
   subscriptionId,
   subscriptionName,
+  hasScheduledPriceChange,
+  onSchedulePriceChange,
   onDeleteSuccess,
   status,
   onMarkAsCanceled,
@@ -33,6 +37,8 @@ export const SubscriptionOverviewHeaderActions: FC<
       <SubscriptionOverviewActionsDropdown
         subscriptionId={subscriptionId}
         subscriptionName={subscriptionName}
+        hasScheduledPriceChange={hasScheduledPriceChange}
+        onSchedulePriceChange={onSchedulePriceChange}
         onDeleteSuccess={onDeleteSuccess}
       />
     </div>

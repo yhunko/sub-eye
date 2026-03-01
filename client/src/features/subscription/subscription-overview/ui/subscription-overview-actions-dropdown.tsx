@@ -1,6 +1,12 @@
 import { FC } from "react";
 import { Link } from "@tanstack/react-router";
-import { Ellipsis, HistoryIcon, PencilIcon, Trash2 } from "lucide-react";
+import {
+  CalendarArrowUp,
+  Ellipsis,
+  HistoryIcon,
+  PencilIcon,
+  Trash2,
+} from "lucide-react";
 import {
   Button,
   DropdownMenu,
@@ -17,6 +23,8 @@ import * as m from "@/i18n/messages";
 type SubscriptionOverviewActionsDropdownProps = {
   subscriptionId: string;
   subscriptionName: string;
+  hasScheduledPriceChange: boolean;
+  onSchedulePriceChange: () => void;
   onDeleteSuccess: () => Promise<void> | void;
   triggerClassName?: string;
 };
@@ -37,6 +45,8 @@ export const SubscriptionOverviewActionsDropdown: FC<
 > = ({
   subscriptionId,
   subscriptionName,
+  hasScheduledPriceChange,
+  onSchedulePriceChange,
   onDeleteSuccess,
   triggerClassName,
 }) => {
@@ -71,6 +81,16 @@ export const SubscriptionOverviewActionsDropdown: FC<
             void openSubscriptionHistoryPanel({ subscriptionId });
           }}
         />
+
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onSelect={onSchedulePriceChange}
+        >
+          <CalendarArrowUp className="size-4" aria-hidden />
+          {hasScheduledPriceChange
+            ? m.subscription_priceChange_action_edit()
+            : m.subscription_priceChange_action_schedule()}
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
