@@ -90,13 +90,15 @@ export class AnalyticsService {
       timezone,
     );
 
+    const monthlyTrendStartOffset = -1;
     const monthlyTrend = AnalyticsCalculator.buildMonthlyTrend(
       subscriptions,
-      today,
+      addMonths(today, monthlyTrendStartOffset),
       12,
       timezone,
     );
-    const nextMonthForecast = monthlyTrend[1]?.amount ?? 0;
+    const currentMonthIndex = Math.abs(monthlyTrendStartOffset);
+    const nextMonthForecast = monthlyTrend[currentMonthIndex + 1]?.amount ?? 0;
 
     return {
       preferredCurrencyCode,

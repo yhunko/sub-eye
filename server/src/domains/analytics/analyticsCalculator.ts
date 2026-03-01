@@ -47,7 +47,7 @@ export class AnalyticsCalculator {
       timezone,
     );
 
-    let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
+    let occurrence = RecurrenceUtils.getNextOccurrence(
       startDateZoned,
       subscription.every,
       subscription.period as SubscriptionPeriod,
@@ -318,7 +318,7 @@ export class AnalyticsCalculator {
         subscription.paymentDate,
         timezone,
       );
-      let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
+      let occurrence = RecurrenceUtils.getNextOccurrence(
         paymentDateZoned,
         subscription.every,
         subscription.period as SubscriptionPeriod,

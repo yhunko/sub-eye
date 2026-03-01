@@ -4,8 +4,8 @@ import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { CurrenciesMap } from "shared";
 import {
   Card,
-  CardContent,
   CardDescription,
+  CardContent,
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
@@ -15,6 +15,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
+import { addMonths, isSameMonth, parseISO } from "date-fns";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 const MonthlySpendingTrendChartDesktop = lazy(
   () => import("./monthly-spending-trend-chart.desktop"),
@@ -57,6 +59,49 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
     return Math.max(45, formatted.length * charWidth + padding);
   }, [data.monthlyTrend, currencySymbol]);
 
+  const monthComparisonBadge = useMemo(() => {
+    const now = new Date();
+    const currentMonth = data.monthlyTrend.find((point) =>
+      isSameMonth(parseISO(point.date), now),
+    );
+    const previousMonthDate = addMonths(now, -1);
+    const previousMonth = data.monthlyTrend.find((point) =>
+      isSameMonth(parseISO(point.date), previousMonthDate),
+    );
+
+    if (!currentMonth || !previousMonth) {
+      return null;
+    }
+
+    const amountDelta = currentMonth.amount - previousMonth.amount;
+    const deltaPercentage =
+      previousMonth.amount > 0
+        ? (amountDelta / previousMonth.amount) * 100
+        : null;
+
+    if (deltaPercentage === null) {
+      return {
+        label: m.analytics_monthlySpend_noData(),
+        shortLabel: m.analytics_monthlySpend_noData(),
+        tone: "bg-muted text-muted-foreground",
+        Icon: Minus,
+      } as const;
+    }
+
+    return {
+      label: `${amountDelta > 0 ? "+" : ""}${deltaPercentage.toFixed(1)}% ${m.analytics_monthlySpend_vsLastMonth()}`,
+      shortLabel: `${amountDelta > 0 ? "+" : ""}${deltaPercentage.toFixed(1)}%`,
+      tone:
+        amountDelta === 0
+          ? "bg-muted text-muted-foreground"
+          : amountDelta > 0
+            ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+            : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+      Icon:
+        amountDelta === 0 ? Minus : amountDelta > 0 ? TrendingUp : TrendingDown,
+    };
+  }, [data.monthlyTrend]);
+
   if (!userId) {
     return (
       <div
@@ -77,10 +122,30 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
   };
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn("relative w-full", className)}>
+      {monthComparisonBadge && (
+        <span
+          className={cn(
+            "absolute top-6 right-4 inline-flex max-w-xs items-center gap-1 overflow-hidden rounded-full px-2 py-0.5 text-[11px] font-medium sm:max-w-lg",
+            monthComparisonBadge.tone,
+          )}
+          title={monthComparisonBadge.label}
+        >
+          <monthComparisonBadge.Icon className="size-3 shrink-0" />
+          <span className="truncate sm:hidden">
+            {monthComparisonBadge.shortLabel}
+          </span>
+          <span className="hidden truncate sm:inline">
+            {monthComparisonBadge.label}
+          </span>
+        </span>
+      )}
+
       <CardHeader>
-        <CardTitle>{m.analytics_charts_monthlySpending_title()}</CardTitle>
-        <CardDescription>
+        <CardTitle className="leading-tight text-pretty">
+          {m.analytics_charts_monthlySpending_title()}
+        </CardTitle>
+        <CardDescription className="mt-1 leading-snug wrap-break-word whitespace-normal">
           {m.analytics_charts_monthlySpending_subtitle()}
         </CardDescription>
       </CardHeader>

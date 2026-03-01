@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { FC, useEffect, useMemo, useRef, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { format, isSameMonth, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight, List } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -384,7 +384,12 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
     }
 
     if (!selectedMonthDate) {
-      return monthlyTrend.length - 1;
+      const currentMonthIndex = monthlyTrend.findIndex((month) =>
+        isSameMonth(parseISO(month.date), new Date()),
+      );
+      return currentMonthIndex >= 0
+        ? currentMonthIndex
+        : monthlyTrend.length - 1;
     }
 
     const monthIndex = monthlyTrend.findIndex(
