@@ -11,7 +11,7 @@ export const Route = createFileRoute("/(protected)")({
       throw redirect({
         to: "/auth/sign-in/$",
         search: {
-          redirect: location.href,
+          redirect_url: location.href,
         },
       });
     }
