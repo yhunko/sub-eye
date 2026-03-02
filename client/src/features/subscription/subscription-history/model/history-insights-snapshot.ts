@@ -55,6 +55,30 @@ const getPreferredBillingSnapshot = (
   };
 };
 
+const getScheduledPriceChangeSnapshot = (
+  snapshot: Record<string, unknown>,
+): {
+  scheduledCost?: number;
+  scheduledCurrency?: string;
+  scheduledEffectiveAt?: string | null;
+} => {
+  const scheduledRaw = snapshot.scheduledPriceChange;
+
+  if (scheduledRaw === null) {
+    return { scheduledEffectiveAt: null };
+  }
+
+  if (!isObject(scheduledRaw)) {
+    return {};
+  }
+
+  return {
+    scheduledCost: getNumberValue(scheduledRaw.cost),
+    scheduledCurrency: getStringValue(scheduledRaw.currency),
+    scheduledEffectiveAt: getStringValue(scheduledRaw.effectiveAt),
+  };
+};
+
 export const normalizeSnapshot = (snapshot: unknown): HistorySnapshot => {
   if (!isObject(snapshot)) {
     return {};
@@ -64,6 +88,7 @@ export const normalizeSnapshot = (snapshot: unknown): HistorySnapshot => {
   const periodRaw = getStringValue(snapshot.period);
   const cancellationRaw = snapshot.willBeCancelledAt;
   const preferredBilling = getPreferredBillingSnapshot(snapshot);
+  const scheduledPriceChange = getScheduledPriceChangeSnapshot(snapshot);
   const rawCost = getNumberValue(snapshot.cost);
   const rawCurrency = getStringValue(snapshot.currency);
 
@@ -84,6 +109,9 @@ export const normalizeSnapshot = (snapshot: unknown): HistorySnapshot => {
         ? cancellationRaw
         : undefined,
     autoPaid: getBooleanValue(snapshot.autoPaid),
+    scheduledCost: scheduledPriceChange.scheduledCost,
+    scheduledCurrency: scheduledPriceChange.scheduledCurrency,
+    scheduledEffectiveAt: scheduledPriceChange.scheduledEffectiveAt,
   };
 };
 

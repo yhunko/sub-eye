@@ -5,14 +5,17 @@ import type { UpdateSubscriptionInput, SubscriptionDto } from "shared";
 import { apiClient } from "@/shared/api/client";
 import { handleSubscriptionMutationSuccess } from "../lib/handle-subscription-mutation-success";
 
-export type UpdateSubscriptionParams = {
+export type UpdateSubscriptionWithoutHistoryParams = {
   id: string;
   payload: UpdateSubscriptionInput;
 };
 
-export const useUpdateSubscription = ({
+export const useUpdateSubscriptionWithoutHistory = ({
   options,
-}: MutationHook<SubscriptionDto, UpdateSubscriptionParams> = {}) => {
+}: MutationHook<
+  SubscriptionDto,
+  UpdateSubscriptionWithoutHistoryParams
+> = {}) => {
   const queryClient = useQueryClient();
   const { userId } = useAuth();
 
@@ -21,7 +24,9 @@ export const useUpdateSubscription = ({
     mutationFn: async ({ id, payload }) => {
       const res = await apiClient.api.subscriptions[":id"].$patch({
         param: { id },
-        query: {},
+        query: {
+          trackHistory: "false",
+        },
         json: payload,
       });
       if (!res.ok) {

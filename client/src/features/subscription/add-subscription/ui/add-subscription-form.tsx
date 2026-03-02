@@ -16,13 +16,14 @@ import { SubscriptionPeriod, type SubscriptionDto } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import {
   useCreateSubscription,
-  useUpdateSubscription,
+  useUpdateSubscriptionWithoutHistory,
 } from "@/entities/subscription";
 import { SubscriptionLimitAlert, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
 import * as m from "@/i18n/messages";
+import { ChevronLeft } from "lucide-react";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -60,10 +61,12 @@ export const AddSubscriptionForm = ({
   );
   const { mutate: addSubscription, isPending: isAddPending } =
     useCreateSubscription();
-  const { mutate: updateSubscription, isPending: isEditPending } =
-    useUpdateSubscription();
+  const {
+    mutate: updateSubscriptionWithoutHistory,
+    isPending: isEditWithoutHistoryPending,
+  } = useUpdateSubscriptionWithoutHistory();
 
-  const isPending = isAddPending || isEditPending;
+  const isPending = isAddPending || isEditWithoutHistoryPending;
   const isEditMode = !!subscriptionId;
   const isLimitReached =
     !isEditMode &&
@@ -126,23 +129,7 @@ export const AddSubscriptionForm = ({
     };
 
     if (isEditMode && subscriptionId) {
-      const hasScheduledPriceChange = Boolean(
-        existingSubscription?.scheduledPriceChange,
-      );
-      const isImmediatePriceChanged =
-        existingSubscription !== undefined &&
-        (data.cost !== existingSubscription.cost ||
-          data.currency !== existingSubscription.currency);
-
-      if (
-        hasScheduledPriceChange &&
-        isImmediatePriceChanged &&
-        !window.confirm(m.subscription_priceChange_immediateClearConfirm())
-      ) {
-        return;
-      }
-
-      updateSubscription(
+      updateSubscriptionWithoutHistory(
         { id: subscriptionId, payload: basePayload },
         { onSuccess: () => onSuccess(m.messages_updated()) },
       );
@@ -169,14 +156,14 @@ export const AddSubscriptionForm = ({
         <div className="shrink-0 px-3 py-3 md:px-6 md:py-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
-              type="button"
               variant="outline"
-              className="h-11 rounded-full px-4"
-              onClick={() => {
-                void navigateBack();
-              }}
+              size="icon"
+              className="size-11 rounded-full shadow-sm"
+              onClick={navigateBack}
+              aria-label={m.common_actions_cancel()}
             >
-              {m.common_actions_cancel()}
+              <ChevronLeft className="size-4" aria-hidden />
+              <span className="sr-only">{m.common_actions_cancel()}</span>
             </Button>
 
             <h1 className="text-center text-lg font-semibold tracking-tight md:text-2xl">

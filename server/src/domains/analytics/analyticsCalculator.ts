@@ -1,14 +1,4 @@
-import {
-  addDays,
-  addMonths,
-  endOfMonth,
-  format,
-  isAfter,
-  isBefore,
-  isSameDay,
-  startOfMonth,
-  eachDayOfInterval,
-} from "date-fns";
+import { format, isAfter, isBefore, eachDayOfInterval } from "date-fns";
 import { RecurrenceUtils } from "shared";
 import { DateTimezoneUtils } from "shared";
 import type { SubscriptionDto } from "shared";
@@ -73,6 +63,7 @@ export class AnalyticsCalculator {
         occurrence,
         subscription.every,
         subscription.period as SubscriptionPeriod,
+        { anchorDate: startDateZoned },
       );
     }
 
@@ -89,8 +80,9 @@ export class AnalyticsCalculator {
     timezone?: string,
   ): MonthlyTrendPoint[] {
     return Array.from({ length: monthCount }, (_, i) => {
-      const mStart = startOfMonth(addMonths(baseDate, i));
-      const mEnd = endOfMonth(addMonths(baseDate, i));
+      const monthRef = DateTimezoneUtils.shiftMonths(baseDate, i, timezone);
+      const mStart = DateTimezoneUtils.startOfMonth(monthRef, timezone);
+      const mEnd = DateTimezoneUtils.endOfMonth(monthRef, timezone);
 
       const payments = this.collectPaymentsInRange(
         subscriptions,
@@ -177,7 +169,9 @@ export class AnalyticsCalculator {
         }
 
         const daysUntil = Math.round(
-          (projectionDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+          (DateTimezoneUtils.startOfDay(projectionDate, timezone).getTime() -
+            DateTimezoneUtils.startOfDay(today, timezone).getTime()) /
+            (24 * 60 * 60 * 1000),
         );
         payments.push({
           id: subscription.id,
@@ -190,11 +184,11 @@ export class AnalyticsCalculator {
           daysUntil,
         });
 
-        projectionDate = RecurrenceUtils.getNextOccurrence(
+        projectionDate = RecurrenceUtils.addPeriod(
           projectionDate,
           subscription.every,
           subscription.period as SubscriptionPeriod,
-          addDays(projectionDate, 1),
+          { anchorDate: paymentDateZoned },
         );
       }
     }
@@ -216,8 +210,8 @@ export class AnalyticsCalculator {
     remainingThisMonth: number;
     totalUpcomingMonth: number;
   } {
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
+    const monthStart = DateTimezoneUtils.startOfMonth(today, timezone);
+    const monthEnd = DateTimezoneUtils.endOfMonth(today, timezone);
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     // Collect all payment occurrences in the month
@@ -234,7 +228,7 @@ export class AnalyticsCalculator {
 
     for (const targetDate of daysInMonth) {
       const dueToday = monthPayments.filter((payment) =>
-        isSameDay(payment.date, targetDate),
+        DateTimezoneUtils.isSameDay(payment.date, targetDate, timezone),
       );
       const dailyAmount = dueToday.reduce((sum, p) => sum + p.amount, 0);
       cumulative += dailyAmount;
@@ -301,6 +295,28 @@ export class AnalyticsCalculator {
     );
   }
 
+  static hasUpcomingOccurrence(
+    subscription: SubscriptionDto,
+    fromDate: Date,
+    timezone?: string,
+  ): boolean {
+    const paymentDateZoned = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
+    const nextOccurrence = RecurrenceUtils.getNextOccurrence(
+      paymentDateZoned,
+      subscription.every,
+      subscription.period as SubscriptionPeriod,
+      fromDate,
+    );
+
+    return shouldIncludeOccurrence(
+      { willBeCancelledAt: subscription.willBeCancelledAt },
+      nextOccurrence,
+    );
+  }
+
   /**
    * Collects individual payment occurrences for all subscriptions in a range.
    */
@@ -342,6 +358,7 @@ export class AnalyticsCalculator {
           occurrence,
           subscription.every,
           subscription.period as SubscriptionPeriod,
+          { anchorDate: paymentDateZoned },
         );
       }
     }

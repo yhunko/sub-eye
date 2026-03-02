@@ -76,12 +76,6 @@ export const SubscriptionOverviewActionsDropdown: FC<
           </Link>
         </DropdownMenuItem>
 
-        <HistoryMenuItem
-          onSelect={() => {
-            void openSubscriptionHistoryPanel({ subscriptionId });
-          }}
-        />
-
         <DropdownMenuItem
           className="cursor-pointer"
           onSelect={onSchedulePriceChange}
@@ -93,6 +87,15 @@ export const SubscriptionOverviewActionsDropdown: FC<
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
+
+        <HistoryMenuItem
+          onSelect={() => {
+            void openSubscriptionHistoryPanel({ subscriptionId });
+          }}
+        />
+
+        <DropdownMenuSeparator />
+
         <DropdownMenuItem
           variant="destructive"
           className="cursor-pointer"

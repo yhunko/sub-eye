@@ -20,6 +20,7 @@ type SubscriptionHistoryTimelineBodyProps = {
   isError: boolean;
   isFetching: boolean;
   onRetry: () => void;
+  onUpgrade: () => Promise<void> | void;
   locale: Locale;
   compact?: boolean;
 };
@@ -34,6 +35,7 @@ export const SubscriptionHistoryTimelineBody: FC<
   isError,
   isFetching,
   onRetry,
+  onUpgrade,
   locale,
   compact = false,
 }) => {
@@ -176,6 +178,7 @@ export const SubscriptionHistoryTimelineBody: FC<
             description={m.subscription_history_premium_description()}
             ctaLabel={m.subscription_history_premium_action()}
             className="p-4"
+            onCtaClick={onUpgrade}
           />
         </div>
       )}

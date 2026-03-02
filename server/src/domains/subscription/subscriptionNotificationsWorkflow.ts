@@ -89,6 +89,12 @@ export class SubscriptionNotificationsWorkflow {
         DateTimezoneUtils.toZoned(paymentDate, preferences.preferredTimezone),
         subscription.every,
         subscription.period,
+        {
+          anchorDate: DateTimezoneUtils.toZoned(
+            subscription.paymentDate,
+            preferences.preferredTimezone,
+          ),
+        },
       );
 
       await context.run("schedule-next-cycle", async () => {
@@ -174,6 +180,12 @@ export class SubscriptionNotificationsWorkflow {
         nextPayment,
         subscription.every,
         subscription.period,
+        {
+          anchorDate: DateTimezoneUtils.toZoned(
+            subscription.paymentDate,
+            timezone,
+          ),
+        },
       );
       notifyDate = subDays(nextPaymentAfter, notificationOffset);
       notifyAt = this.applyNotificationTime(

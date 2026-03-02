@@ -1,15 +1,6 @@
 import { SubscriptionService } from "../subscription/subscriptionService";
 import { UserService } from "../user/userService";
-import {
-  addMonths,
-  endOfDay,
-  endOfMonth,
-  endOfWeek,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  eachDayOfInterval,
-} from "date-fns";
+import { endOfWeek, startOfWeek, eachDayOfInterval } from "date-fns";
 import { DateTimezoneUtils } from "shared";
 import { CurrencyUtils } from "shared";
 import { isCurrentlyActiveSubscription } from "shared";
@@ -43,10 +34,18 @@ export class AnalyticsService {
     const { subscriptions, preferredCurrencyCode, now, timezone } =
       await this.getAnalyticsContext(userId, deps);
 
-    const today = startOfDay(now);
-    const oneYearFromNow = addMonths(today, 12);
-    const currentlyActiveSubscriptions = subscriptions.filter((subscription) =>
-      isCurrentlyActiveSubscription(subscription.status),
+    const today = DateTimezoneUtils.startOfDay(now, timezone);
+    const oneYearFromNow = DateTimezoneUtils.shiftMonths(today, 12, timezone);
+    const analyticsEligibleSubscriptions = subscriptions.filter(
+      (subscription) =>
+        AnalyticsCalculator.hasUpcomingOccurrence(
+          subscription,
+          today,
+          timezone,
+        ),
+    );
+    const currentlyActiveSubscriptions = analyticsEligibleSubscriptions.filter(
+      (subscription) => isCurrentlyActiveSubscription(subscription.status),
     );
 
     // Aggregate subscription stats
@@ -93,7 +92,7 @@ export class AnalyticsService {
     const monthlyTrendStartOffset = -1;
     const monthlyTrend = AnalyticsCalculator.buildMonthlyTrend(
       subscriptions,
-      addMonths(today, monthlyTrendStartOffset),
+      DateTimezoneUtils.shiftMonths(today, monthlyTrendStartOffset, timezone),
       12,
       timezone,
     );
@@ -127,8 +126,9 @@ export class AnalyticsService {
     const monthOffsets = [-1, 0, 1, 2, 3, 4, 5, 6];
 
     const trend: MonthlySpendTrendPoint[] = monthOffsets.map((offset) => {
-      const monthStart = startOfMonth(addMonths(now, offset));
-      const monthEnd = endOfMonth(addMonths(now, offset));
+      const monthRef = DateTimezoneUtils.shiftMonths(now, offset, timezone);
+      const monthStart = DateTimezoneUtils.startOfMonth(monthRef, timezone);
+      const monthEnd = DateTimezoneUtils.endOfMonth(monthRef, timezone);
       const total = AnalyticsCalculator.sumSpendInRange(
         subscriptions,
         monthStart,
@@ -171,8 +171,15 @@ export class AnalyticsService {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
       await this.getAnalyticsContext(userId, deps);
 
-    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 1 });
+    const nowZoned = DateTimezoneUtils.toZoned(now, timezone);
+    const startOfCurrentWeek = DateTimezoneUtils.startOfDay(
+      startOfWeek(nowZoned, { weekStartsOn: 1 }),
+      timezone,
+    );
+    const endOfCurrentWeek = DateTimezoneUtils.endOfDay(
+      endOfWeek(nowZoned, { weekStartsOn: 1 }),
+      timezone,
+    );
 
     const totalThisWeek = AnalyticsCalculator.sumSpendInRange(
       subscriptions,
@@ -183,7 +190,7 @@ export class AnalyticsService {
 
     const totalUpcomingWeek = AnalyticsCalculator.sumSpendInRange(
       subscriptions,
-      startOfDay(now),
+      DateTimezoneUtils.startOfDay(now, timezone),
       endOfCurrentWeek,
       timezone,
     );
@@ -194,11 +201,11 @@ export class AnalyticsService {
     });
 
     const trend = daysInWeek.map((day) => {
-      const dayStart = startOfDay(day);
+      const dayStart = DateTimezoneUtils.startOfDay(day, timezone);
       const dailyTotal = AnalyticsCalculator.sumSpendInRange(
         subscriptions,
         dayStart,
-        endOfDay(dayStart),
+        DateTimezoneUtils.endOfDay(dayStart, timezone),
         timezone,
       );
       return {

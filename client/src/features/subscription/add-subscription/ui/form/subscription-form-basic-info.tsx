@@ -15,6 +15,7 @@ import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
 import type { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
 import { SubscriptionFormScheduledPriceChangeCard } from "./subscription-form-scheduled-price-change-card";
+import { sanitizePriceInput } from "@/shared/lib/price-input";
 
 type SubscriptionFormBasicInfoProps = {
   existingSubscription?: SubscriptionDto;
@@ -69,11 +70,25 @@ export const SubscriptionFormBasicInfo = ({
                   CurrencySelect={
                     <CurrencySelect
                       value={currency}
-                      onChange={(value) => setValue("currency", value)}
+                      onChange={(value) =>
+                        setValue("currency", value, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        })
+                      }
                     />
                   }
+                  sanitizeValue={sanitizePriceInput}
                   InputProps={{
                     ...field,
+                    value:
+                      typeof field.value === "string"
+                        ? field.value
+                        : String(field.value ?? ""),
+                    onChange: (event) => {
+                      field.onChange(sanitizePriceInput(event.target.value));
+                    },
                     maxLength: 6,
                     autoComplete: "off",
                   }}

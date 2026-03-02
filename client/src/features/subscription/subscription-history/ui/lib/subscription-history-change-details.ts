@@ -37,6 +37,74 @@ const formatRecurringPrice = (snapshot: {
   return `${amount}/${cycle}`;
 };
 
+const getScheduledPriceChangeDetail = (
+  event: HistoryEventInsight,
+  locale: Locale,
+): string | null => {
+  const { current, previous } = event;
+
+  const scheduleKnown =
+    current.scheduledEffectiveAt !== undefined ||
+    previous.scheduledEffectiveAt !== undefined;
+
+  if (!scheduleKnown || !current.scheduledEffectiveAt) {
+    return null;
+  }
+
+  const scheduleChanged =
+    current.scheduledCost !== previous.scheduledCost ||
+    current.scheduledCurrency !== previous.scheduledCurrency ||
+    current.scheduledEffectiveAt !== previous.scheduledEffectiveAt;
+
+  if (!scheduleChanged) {
+    return null;
+  }
+
+  const immediatePriceChanged =
+    current.cost !== previous.cost || current.currency !== previous.currency;
+
+  if (immediatePriceChanged) {
+    return null;
+  }
+
+  const nextPrice = formatRecurringPrice({
+    cost: current.scheduledCost,
+    currency: current.scheduledCurrency,
+    every: current.every,
+    period: current.period,
+  });
+
+  if (!nextPrice) {
+    return null;
+  }
+
+  const basePrice = formatRecurringPrice(
+    previous.scheduledEffectiveAt
+      ? {
+          cost: previous.scheduledCost,
+          currency: previous.scheduledCurrency,
+          every: previous.every ?? current.every,
+          period: previous.period ?? current.period,
+        }
+      : current,
+  );
+
+  if (!basePrice) {
+    return null;
+  }
+
+  const effectiveAfter = m.subscription_history_impact_startsAfter({
+    date:
+      formatHistoryDateLabel(current.scheduledEffectiveAt, locale) ??
+      m.subscription_history_unknownDate(),
+  });
+
+  return `${m.subscription_history_priceChanged({
+    old: basePrice,
+    new: nextPrice,
+  })} (${effectiveAfter})`;
+};
+
 export const getHistoryChangeDetails = (
   event: HistoryEventInsight,
   locale: Locale,
@@ -70,6 +138,14 @@ export const getHistoryChangeDetails = (
   }
 
   if (record.action === "updated") {
+    const scheduledPriceChangeDetail = getScheduledPriceChangeDetail(
+      event,
+      locale,
+    );
+    if (scheduledPriceChangeDetail) {
+      details.push(scheduledPriceChangeDetail);
+    }
+
     const currentPriceWithCycle = formatRecurringPrice(current);
     const previousPriceWithCycle = formatRecurringPrice(previous);
 

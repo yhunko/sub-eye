@@ -42,6 +42,13 @@ export const idQuerySchema = object({
 });
 export type IdParam = InferOutput<typeof idQuerySchema>;
 
+export const updateSubscriptionQuerySchema = object({
+  trackHistory: optional(picklist(["true", "false"])),
+});
+export type UpdateSubscriptionQuery = InferOutput<
+  typeof updateSubscriptionQuerySchema
+>;
+
 export const AddSubscriptionSchema = strictObject({
   name: pipe(
     string(),
@@ -138,6 +145,7 @@ export const SchedulePriceChangeSchema = strictObject({
     number(),
     check((value) => value > 0, "Cost must be greater than zero"),
   ),
+  scheduledCurrency: optional(currencyCodeSchema),
   customDate: optional(nullable(isoDateSchema)),
 });
 

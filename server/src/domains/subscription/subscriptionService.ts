@@ -27,6 +27,7 @@ import {
   getSubscriptionLifecycleStatus,
 } from "shared";
 import type { UserPreferences } from "shared";
+import { isSameDay } from "date-fns";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
@@ -35,6 +36,10 @@ type SubscriptionServiceDeps = {
   priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
   userService: typeof UserService;
   historyService: typeof SubscriptionHistoryService;
+};
+
+type UpdateSubscriptionOptions = {
+  trackHistory?: boolean;
 };
 
 const defaultDeps: SubscriptionServiceDeps = {
@@ -147,6 +152,7 @@ export class SubscriptionService {
     id: string,
     userId: string,
     payload: UpdateSubscriptionInput,
+    options: UpdateSubscriptionOptions = {},
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
     const existing = await deps.repository.findById(db, id);
@@ -197,18 +203,20 @@ export class SubscriptionService {
     const previousDto = this.mapToDto(existing, preferences, rates);
     const dto = this.mapToDto(result, preferences, rates);
 
-    await this.logHistoryAction(
-      {
-        subscriptionId: dto.id,
-        userId,
-        action: "updated",
-        snapshot: {
-          before: previousDto,
-          after: dto,
+    if (options.trackHistory !== false) {
+      await this.logHistoryAction(
+        {
+          subscriptionId: dto.id,
+          userId,
+          action: "updated",
+          snapshot: {
+            before: previousDto,
+            after: dto,
+          },
         },
-      },
-      deps,
-    );
+        deps,
+      );
+    }
 
     return dto;
   }
@@ -246,7 +254,7 @@ export class SubscriptionService {
       );
     }
 
-    const scheduledCurrency = existing.currency;
+    const scheduledCurrency = payload.scheduledCurrency ?? existing.currency;
 
     const workflowPayload = {
       subscriptionId: existing.id,
@@ -1007,29 +1015,61 @@ export class SubscriptionService {
     timezone?: string,
   ): string {
     if (payload.mode === "nextOccurrence") {
-      const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
-        subscription,
-        timezone,
-      );
-
-      if (Date.parse(nextPaymentDate) > Date.now()) {
-        return nextPaymentDate;
-      }
-
-      const nextOccurrence = RecurrenceUtils.addPeriod(
-        DateTimezoneUtils.toZoned(nextPaymentDate, timezone),
-        subscription.every,
-        subscription.period,
-      );
-
-      return nextOccurrence.toISOString();
+      return this.resolveNextOccurrenceEffectiveAt(subscription, timezone);
     }
 
     if (!payload.customDate) {
       throw new Error("Custom date is required for custom-date mode");
     }
 
-    return this.toStartOfDayInTimezone(payload.customDate, timezone);
+    const customEffectiveAt = this.toStartOfDayInTimezone(
+      payload.customDate,
+      timezone,
+    );
+    const nextOccurrenceEffectiveAt = this.resolveNextOccurrenceEffectiveAt(
+      subscription,
+      timezone,
+    );
+
+    if (
+      this.isSameCalendarDayInTimezone(
+        customEffectiveAt,
+        nextOccurrenceEffectiveAt,
+        timezone,
+      )
+    ) {
+      return nextOccurrenceEffectiveAt;
+    }
+
+    return customEffectiveAt;
+  }
+
+  private static resolveNextOccurrenceEffectiveAt(
+    subscription: SubscriptionRecord,
+    timezone?: string,
+  ): string {
+    const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
+      subscription,
+      timezone,
+    );
+
+    if (Date.parse(nextPaymentDate) > Date.now()) {
+      return nextPaymentDate;
+    }
+
+    const nextOccurrence = RecurrenceUtils.addPeriod(
+      DateTimezoneUtils.toZoned(nextPaymentDate, timezone),
+      subscription.every,
+      subscription.period,
+      {
+        anchorDate: DateTimezoneUtils.toZoned(
+          subscription.paymentDate,
+          timezone,
+        ),
+      },
+    );
+
+    return nextOccurrence.toISOString();
   }
 
   private static toStartOfDayInTimezone(
@@ -1040,6 +1080,17 @@ export class SubscriptionService {
     zoned.setHours(0, 0, 0, 0);
 
     return zoned.toISOString();
+  }
+
+  private static isSameCalendarDayInTimezone(
+    left: string | Date,
+    right: string | Date,
+    timezone?: string,
+  ): boolean {
+    return isSameDay(
+      DateTimezoneUtils.toZoned(left, timezone),
+      DateTimezoneUtils.toZoned(right, timezone),
+    );
   }
 
   private static assertCanSchedulePriceChange(

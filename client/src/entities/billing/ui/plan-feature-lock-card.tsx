@@ -13,6 +13,7 @@ type PlanFeatureLockCardProps = {
   ctaLabel?: string;
   icon?: ReactNode;
   className?: string;
+  onCtaClick?: () => void | Promise<void>;
 };
 
 export const PlanFeatureLockCard: FC<PlanFeatureLockCardProps> = ({
@@ -23,6 +24,7 @@ export const PlanFeatureLockCard: FC<PlanFeatureLockCardProps> = ({
   ctaLabel,
   icon,
   className,
+  onCtaClick,
 }) => {
   return (
     <div
@@ -45,12 +47,27 @@ export const PlanFeatureLockCard: FC<PlanFeatureLockCardProps> = ({
           <p className="text-muted-foreground text-sm">{description}</p>
         </div>
 
-        <Button asChild size="sm" className="gap-1.5 self-start sm:self-center">
-          <Link to={to}>
+        {onCtaClick ? (
+          <Button
+            size="sm"
+            className="gap-1.5 self-start sm:self-center"
+            onClick={onCtaClick}
+          >
             {ctaLabel ?? m.billing_proFeature_viewPlans()}
             <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+          </Button>
+        ) : (
+          <Button
+            asChild
+            size="sm"
+            className="gap-1.5 self-start sm:self-center"
+          >
+            <Link to={to}>
+              {ctaLabel ?? m.billing_proFeature_viewPlans()}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );

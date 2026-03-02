@@ -120,7 +120,7 @@
   "subscription_priceChange_dialog_setupDescription": "Вкажіть нову ціну та дату набуття чинності.",
   "subscription_priceChange_dialog_reviewDescription": "Перевірте заплановану зміну перед підтвердженням.",
   "subscription_priceChange_newPrice_label": "Нова ціна",
-  "subscription_priceChange_newPrice_currencyHint": "Валюта для запланованої зміни залишається {currency}.",
+  "subscription_priceChange_newPrice_currencyHint": "Для цієї запланованої зміни можна змінити і ціну, і валюту.",
   "subscription_priceChange_effectiveDate_label": "Дата набуття чинності",
   "subscription_priceChange_mode_nextOccurrence": "Наступне поновлення",
   "subscription_priceChange_mode_customDate": "Власна дата",

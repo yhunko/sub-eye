@@ -1,5 +1,6 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { FC, useCallback, useMemo } from "react";
+import { useRouter } from "@tanstack/react-router";
 import * as m from "@/i18n/messages";
 import {
   Dialog,
@@ -48,6 +49,7 @@ const SubscriptionHistoryDrawerHeader: FC = () => (
 export const SubscriptionHistoryPanel =
   NiceModal.create<SubscriptionHistoryPanelProps>(({ subscriptionId }) => {
     const modal = useModal();
+    const router = useRouter();
     const isDesktop = useBreakpoint("md");
     const { locale } = useDateFnsLocale();
 
@@ -77,6 +79,13 @@ export const SubscriptionHistoryPanel =
       }
     };
 
+    const handleUpgrade = useCallback(() => {
+      void closePanel();
+      void router.navigate({ to: "/settings/billing" }).catch(() => {
+        window.location.assign("/settings/billing");
+      });
+    }, [closePanel, router]);
+
     const timelineProps = {
       subscriptionId,
       insights,
@@ -87,6 +96,7 @@ export const SubscriptionHistoryPanel =
       onRetry: () => {
         void refetch();
       },
+      onUpgrade: handleUpgrade,
       locale,
     };
 

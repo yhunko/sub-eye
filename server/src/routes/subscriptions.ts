@@ -8,6 +8,7 @@ import {
   UpdateSubscriptionSchema,
   idQuerySchema,
   listQuerySchema,
+  updateSubscriptionQuerySchema,
 } from "shared";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
@@ -150,17 +151,22 @@ export const subscriptionRouter = new Hono()
     "/:id",
     protect,
     vValidator("param", idQuerySchema),
+    vValidator("query", updateSubscriptionQuerySchema),
     vValidator("json", UpdateSubscriptionSchema),
     async (context) => {
       const userId = requireUserId(context);
 
       try {
         const { id } = context.req.valid("param");
+        const query = context.req.valid("query");
         const payload = context.req.valid("json");
         const subscription = await SubscriptionService.updateSubscription(
           id,
           userId,
           payload,
+          {
+            trackHistory: query.trackHistory !== "false",
+          },
         );
         return context.json(subscription);
       } catch (error) {

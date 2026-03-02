@@ -12,7 +12,6 @@ import {
   DialogTitle,
   FieldSet,
   Label,
-  Input,
   Spinner,
   ToggleGroup,
   ToggleGroupItem,
@@ -23,16 +22,25 @@ import {
 import { SubscriptionDatePicker } from "../../add-subscription/ui/subscription-date-picker/subscription-date-picker";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import { CurrencyText } from "@/entities/currency";
-import { useScheduleSubscriptionPriceChange } from "@/entities/subscription";
+import {
+  CurrencyInput,
+  CurrencySelect,
+  CurrencyText,
+} from "@/entities/currency";
+import {
+  useCancelScheduledSubscriptionPriceChange,
+  useScheduleSubscriptionPriceChange,
+} from "@/entities/subscription";
 import { toast } from "sonner";
 import * as m from "@/i18n/messages";
+import { parsePriceInput, sanitizePriceInput } from "@/shared/lib/price-input";
 
 type PriceChangeMode = "nextOccurrence" | "customDate";
 
 type PriceChangeDialogState = {
   mode: PriceChangeMode;
   scheduledCostInput: string;
+  scheduledCurrency: string;
   customDate: Date | undefined;
   isReviewStep: boolean;
   error: string | null;
@@ -42,13 +50,19 @@ const getPriceChangeValidationError = ({
   parsedCost,
   mode,
   customDate,
+  scheduledCurrency,
 }: {
   parsedCost: number;
   mode: PriceChangeMode;
   customDate: Date | undefined;
+  scheduledCurrency: string;
 }): string | null => {
   if (!Number.isFinite(parsedCost) || parsedCost <= 0) {
     return m.validation_positive_number();
+  }
+
+  if (!scheduledCurrency.trim()) {
+    return m.validation_required();
   }
 
   if (mode === "customDate" && !customDate) {
@@ -67,11 +81,6 @@ interface SubscriptionSchedulePriceChangeDialogProps {
   scheduledPriceChange: SubscriptionDto["scheduledPriceChange"];
 }
 
-const toNumber = (value: string): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-};
-
 export const SubscriptionSchedulePriceChangeDialog =
   NiceModal.create<SubscriptionSchedulePriceChangeDialogProps>(
     ({
@@ -89,13 +98,17 @@ export const SubscriptionSchedulePriceChangeDialog =
       const [state, setState] = useState<PriceChangeDialogState>({
         mode: "nextOccurrence",
         scheduledCostInput: "",
+        scheduledCurrency: currentCurrency,
         customDate: undefined,
         isReviewStep: false,
         error: null,
       });
 
-      const { mutate: schedulePriceChange, isPending } =
+      const { mutate: schedulePriceChange, isPending: isSchedulePending } =
         useScheduleSubscriptionPriceChange();
+      const { mutate: cancelScheduledPriceChange, isPending: isCancelPending } =
+        useCancelScheduledSubscriptionPriceChange();
+      const isPending = isSchedulePending || isCancelPending;
 
       const nextOccurrenceDate = useMemo(
         () => new Date(nextPaymentDate),
@@ -124,6 +137,7 @@ export const SubscriptionSchedulePriceChangeDialog =
           scheduledCostInput: String(
             scheduledPriceChange?.cost ?? currentCost.toFixed(2),
           ),
+          scheduledCurrency: scheduledPriceChange?.currency ?? currentCurrency,
           customDate: existingEffectiveAt ?? nextOccurrenceDate,
           isReviewStep: false,
           error: null,
@@ -132,6 +146,7 @@ export const SubscriptionSchedulePriceChangeDialog =
         modal.visible,
         scheduledPriceChange,
         currentCost,
+        currentCurrency,
         nextOccurrenceDate,
       ]);
 
@@ -140,10 +155,10 @@ export const SubscriptionSchedulePriceChangeDialog =
         modal.remove();
       };
 
-      const parsedCost = useMemo(
-        () => toNumber(state.scheduledCostInput),
-        [state.scheduledCostInput],
-      );
+      const parsedCost = useMemo(() => {
+        const parsed = parsePriceInput(state.scheduledCostInput);
+        return parsed ?? Number.NaN;
+      }, [state.scheduledCostInput]);
 
       const effectiveDate =
         state.mode === "nextOccurrence" ? nextOccurrenceDate : state.customDate;
@@ -157,6 +172,7 @@ export const SubscriptionSchedulePriceChangeDialog =
           parsedCost,
           mode: state.mode,
           customDate: state.customDate,
+          scheduledCurrency: state.scheduledCurrency,
         });
 
         if (validationError) {
@@ -176,6 +192,7 @@ export const SubscriptionSchedulePriceChangeDialog =
           parsedCost,
           mode: state.mode,
           customDate: state.customDate,
+          scheduledCurrency: state.scheduledCurrency,
         });
 
         if (validationError) {
@@ -183,11 +200,18 @@ export const SubscriptionSchedulePriceChangeDialog =
           return;
         }
 
+        const shouldUseNextOccurrenceMode =
+          state.mode === "customDate" &&
+          state.customDate &&
+          isSameDay(state.customDate, nextOccurrenceDate);
+
         const payload: SchedulePriceChangeInput = {
-          mode: state.mode,
+          mode: shouldUseNextOccurrenceMode ? "nextOccurrence" : state.mode,
           scheduledCost: parsedCost,
-          customDate:
-            state.mode === "customDate"
+          scheduledCurrency: state.scheduledCurrency,
+          customDate: shouldUseNextOccurrenceMode
+            ? null
+            : state.mode === "customDate"
               ? state.customDate!.toISOString()
               : null,
         };
@@ -209,6 +233,25 @@ export const SubscriptionSchedulePriceChangeDialog =
         );
       };
 
+      const handleCancelScheduled = () => {
+        if (!scheduledPriceChange) {
+          return;
+        }
+
+        cancelScheduledPriceChange(
+          { id: subscriptionId },
+          {
+            onSuccess: async () => {
+              toast.success(m.messages_updated());
+              await closeModal();
+            },
+            onError: () => {
+              toast.error(m.messages_error());
+            },
+          },
+        );
+      };
+
       return (
         <Dialog
           open={modal.visible}
@@ -218,9 +261,9 @@ export const SubscriptionSchedulePriceChangeDialog =
             }
           }}
         >
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-[36rem] overflow-x-hidden overflow-y-auto p-4 sm:w-full sm:max-w-lg sm:p-6">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="pr-8 leading-tight break-words">
                 {scheduledPriceChange
                   ? m.subscription_priceChange_dialog_title_edit({
                       name: subscriptionName,
@@ -243,23 +286,38 @@ export const SubscriptionSchedulePriceChangeDialog =
                     <Label className="text-xs tracking-wide uppercase">
                       {m.subscription_priceChange_newPrice_label()}
                     </Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={state.scheduledCostInput}
-                      onChange={(event) => {
-                        setState((prev) => ({
-                          ...prev,
-                          scheduledCostInput: event.target.value,
-                          error: null,
-                        }));
+                    <CurrencyInput
+                      CurrencySelect={
+                        <CurrencySelect
+                          value={state.scheduledCurrency}
+                          disabled={isPending}
+                          onChange={(value) => {
+                            setState((prev) => ({
+                              ...prev,
+                              scheduledCurrency: value,
+                              error: null,
+                            }));
+                          }}
+                        />
+                      }
+                      sanitizeValue={sanitizePriceInput}
+                      InputProps={{
+                        value: state.scheduledCostInput,
+                        onChange: (event) => {
+                          setState((prev) => ({
+                            ...prev,
+                            scheduledCostInput: sanitizePriceInput(
+                              event.target.value,
+                            ),
+                            error: null,
+                          }));
+                        },
+                        placeholder: "0.00",
+                        disabled: isPending,
                       }}
-                      placeholder="0.00"
                     />
                     <p className="text-muted-foreground text-xs">
-                      {m.subscription_priceChange_newPrice_currencyHint({
-                        currency: currentCurrency.toUpperCase(),
-                      })}
+                      {m.subscription_priceChange_newPrice_currencyHint()}
                     </p>
                   </div>
 
@@ -289,14 +347,14 @@ export const SubscriptionSchedulePriceChangeDialog =
                     >
                       <ToggleGroupItem
                         value="nextOccurrence"
-                        className="flex-1"
+                        className="min-w-0 flex-1 text-xs sm:text-sm"
                         aria-label={m.subscription_priceChange_mode_nextOccurrence()}
                       >
                         {m.subscription_priceChange_mode_nextOccurrence()}
                       </ToggleGroupItem>
                       <ToggleGroupItem
                         value="customDate"
-                        className="flex-1"
+                        className="min-w-0 flex-1 text-xs sm:text-sm"
                         aria-label={m.subscription_priceChange_mode_customDate()}
                       >
                         {m.subscription_priceChange_mode_customDate()}
@@ -350,7 +408,7 @@ export const SubscriptionSchedulePriceChangeDialog =
                       {m.subscription_priceChange_review_newPrice()}
                     </span>
                     <CurrencyText
-                      currencyCode={currentCurrency}
+                      currencyCode={state.scheduledCurrency}
                       amount={parsedCost}
                     />
                   </div>
@@ -369,7 +427,16 @@ export const SubscriptionSchedulePriceChangeDialog =
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="mt-2 gap-2 [&>button]:w-full sm:[&>button]:w-auto">
+              {scheduledPriceChange && (
+                <Button
+                  variant="destructive"
+                  disabled={isPending}
+                  onClick={handleCancelScheduled}
+                >
+                  {m.subscription_priceChange_pendingCard_cancel()}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 disabled={isPending}

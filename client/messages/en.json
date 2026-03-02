@@ -87,7 +87,7 @@
   "subscription_priceChange_dialog_setupDescription": "Set the new price and when it should take effect.",
   "subscription_priceChange_dialog_reviewDescription": "Review the upcoming pricing update before confirming.",
   "subscription_priceChange_newPrice_label": "New price",
-  "subscription_priceChange_newPrice_currencyHint": "Currency stays {currency} for this scheduled change.",
+  "subscription_priceChange_newPrice_currencyHint": "You can change both price and currency for this schedule.",
   "subscription_priceChange_effectiveDate_label": "Effective date",
   "subscription_priceChange_mode_nextOccurrence": "Next renewal",
   "subscription_priceChange_mode_customDate": "Custom date",

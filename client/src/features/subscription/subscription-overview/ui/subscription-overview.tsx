@@ -3,22 +3,16 @@ import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
-import { ChevronLeft } from "lucide-react";
 
 import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
-import { Button } from "@/shared/components";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { useScheduledPriceChangeActions } from "../../schedule-price-change";
 import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
 import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
-import {
-  subscriptionOverviewFloatingCardClassName,
-  subscriptionOverviewTopSectionClassName,
-} from "./subscription-overview-layout-classnames";
-import * as m from "@/i18n/messages";
+import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -110,19 +104,6 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
 
   return (
     <div className="flex flex-1 flex-col">
-      <section className={subscriptionOverviewTopSectionClassName}>
-        <Button
-          variant="outline"
-          size="icon"
-          className="size-11 rounded-full shadow-sm"
-          onClick={handleBack}
-          aria-label={m.subscription_overview_back()}
-        >
-          <ChevronLeft className="size-4" aria-hidden />
-          <span className="sr-only">{m.subscription_overview_back()}</span>
-        </Button>
-      </section>
-
       <section className={subscriptionOverviewFloatingCardClassName}>
         <SubscriptionOverviewHeaderActions
           subscriptionId={subscription.id}
@@ -133,6 +114,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
           status={subscription.status}
           onMarkAsCanceled={handleMarkAsCanceled}
           onRenew={handleRenew}
+          onBack={handleBack}
         />
 
         <SubscriptionOverviewSummaryCard subscription={subscription} />

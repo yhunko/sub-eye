@@ -2,6 +2,7 @@ import * as v from "valibot";
 import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { SubscriptionPeriod } from "shared";
 import * as m from "@/i18n/messages";
+import { parsePriceInput } from "@/shared/lib/price-input";
 
 export const createAddSubscriptionFormSchema = () =>
   v.object({
@@ -13,11 +14,12 @@ export const createAddSubscriptionFormSchema = () =>
     cost: v.pipe(
       v.string(),
       v.check(
-        (input) => !isNaN(parseFloat(input)),
+        (input) => parsePriceInput(input) !== null,
         m.validation_invalid_number(),
       ),
-      v.check((input) => parseFloat(input) > 0, m.validation_positive_number()),
-      v.transform((input) => parseFloat(input)),
+      v.transform((input) => parsePriceInput(input) ?? Number.NaN),
+      v.check((input) => Number.isFinite(input), m.validation_invalid_number()),
+      v.check((input) => input > 0, m.validation_positive_number()),
     ),
     paymentDate: v.pipe(v.date(m.validation_invalid_date())),
     every: v.pipe(

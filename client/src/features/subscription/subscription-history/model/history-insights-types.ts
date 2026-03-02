@@ -14,6 +14,9 @@ export type HistorySnapshot = {
   paymentDate?: string;
   willBeCancelledAt?: string | null;
   autoPaid?: boolean;
+  scheduledCost?: number;
+  scheduledCurrency?: string;
+  scheduledEffectiveAt?: string | null;
 };
 
 export type RecurringAmount = {

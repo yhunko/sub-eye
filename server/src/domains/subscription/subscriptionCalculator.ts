@@ -56,18 +56,19 @@ export class SubscriptionCalculator {
       subscription.paymentDate,
       timezone,
     );
+    const comparisonDate = DateTimezoneUtils.startOfDay(relativeTo, timezone);
 
     const nextPayment = RecurrenceUtils.getNextOccurrence(
       startDate,
       every,
       subscription.period,
-      relativeTo,
+      comparisonDate,
     );
     const lastPayment = RecurrenceUtils.getPreviousOccurrence(
       startDate,
       every,
       subscription.period,
-      relativeTo,
+      comparisonDate,
     );
 
     return {

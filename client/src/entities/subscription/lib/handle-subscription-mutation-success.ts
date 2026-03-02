@@ -47,4 +47,8 @@ export const handleSubscriptionMutationSuccess = async ({
   }
 
   await Promise.all(invalidations);
+  await queryClient.refetchQueries({
+    queryKey: analyticsQueryKeys._def,
+    type: "active",
+  });
 };

@@ -1,4 +1,4 @@
-import { SubscriptionAction } from "shared";
+import { CurrencyUtils, SubscriptionAction } from "shared";
 import {
   BudgetImpact,
   BudgetImpactReason,
@@ -26,6 +26,8 @@ export const unknownImpact = (reason: BudgetImpactReason): BudgetImpact => ({
 });
 
 const resolveUpdatedImpact = (
+  current: HistorySnapshot,
+  previous: HistorySnapshot,
   currentRecurring: RecurringAmount | null,
   previousRecurring: RecurringAmount | null,
   hasPreviousState: boolean,
@@ -38,14 +40,89 @@ const resolveUpdatedImpact = (
     return unknownImpact("missingData");
   }
 
-  if (currentRecurring.currency !== previousRecurring.currency) {
+  if (currentRecurring.currency === previousRecurring.currency) {
+    const immediateImpact = toImpactFromDelta(
+      currentRecurring.monthly - previousRecurring.monthly,
+      currentRecurring.currency,
+    );
+
+    if (Math.abs(immediateImpact.monthlyDelta ?? 0) > 0.0001) {
+      return immediateImpact;
+    }
+  } else {
     return unknownImpact("mixedCurrency");
   }
 
-  return toImpactFromDelta(
-    currentRecurring.monthly - previousRecurring.monthly,
-    currentRecurring.currency,
-  );
+  const scheduleWasKnown =
+    current.scheduledEffectiveAt !== undefined ||
+    previous.scheduledEffectiveAt !== undefined;
+  const scheduleChanged =
+    scheduleWasKnown &&
+    (current.scheduledCost !== previous.scheduledCost ||
+      current.scheduledCurrency !== previous.scheduledCurrency ||
+      current.scheduledEffectiveAt !== previous.scheduledEffectiveAt);
+
+  if (!scheduleChanged) {
+    return toImpactFromDelta(0, currentRecurring.currency);
+  }
+
+  const currentBaseCycle = current.every ?? previous.every;
+  const currentBasePeriod = current.period ?? previous.period;
+
+  if (!currentBaseCycle || !currentBasePeriod) {
+    return unknownImpact("missingData");
+  }
+
+  if (current.scheduledEffectiveAt) {
+    if (
+      current.scheduledCost === undefined ||
+      !current.scheduledCurrency ||
+      current.scheduledCurrency !== currentRecurring.currency
+    ) {
+      return unknownImpact(
+        current.scheduledCurrency &&
+          current.scheduledCurrency !== currentRecurring.currency
+          ? "mixedCurrency"
+          : "missingData",
+      );
+    }
+
+    const scheduledMonthly = CurrencyUtils.toMonthly(
+      current.scheduledCost,
+      currentBaseCycle,
+      currentBasePeriod,
+    );
+
+    return toImpactFromDelta(
+      scheduledMonthly - currentRecurring.monthly,
+      currentRecurring.currency,
+      current.scheduledEffectiveAt,
+    );
+  }
+
+  if (
+    previous.scheduledEffectiveAt &&
+    previous.scheduledCost !== undefined &&
+    previous.scheduledCurrency
+  ) {
+    if (previous.scheduledCurrency !== currentRecurring.currency) {
+      return unknownImpact("mixedCurrency");
+    }
+
+    const scheduledMonthly = CurrencyUtils.toMonthly(
+      previous.scheduledCost,
+      currentBaseCycle,
+      currentBasePeriod,
+    );
+
+    return toImpactFromDelta(
+      currentRecurring.monthly - scheduledMonthly,
+      currentRecurring.currency,
+      previous.scheduledEffectiveAt,
+    );
+  }
+
+  return toImpactFromDelta(0, currentRecurring.currency);
 };
 
 export const resolveHistoryImpact = (
@@ -80,6 +157,8 @@ export const resolveHistoryImpact = (
     }
     case "updated":
       return resolveUpdatedImpact(
+        current,
+        previous,
         currentRecurring,
         previousRecurring,
         hasPreviousState,
@@ -151,14 +230,29 @@ export const isPriceChangeEvent = (event: HistoryEventInsight): boolean => {
   const currentCurrency = event.current.currency;
   const previousCurrency = event.previous.currency;
 
-  if (
+  const immediateChange =
     currentCost === undefined ||
     previousCost === undefined ||
     !currentCurrency ||
     !previousCurrency
-  ) {
+      ? false
+      : currentCost !== previousCost || currentCurrency !== previousCurrency;
+
+  if (immediateChange) {
+    return true;
+  }
+
+  const scheduleKnown =
+    event.current.scheduledEffectiveAt !== undefined ||
+    event.previous.scheduledEffectiveAt !== undefined;
+
+  if (!scheduleKnown) {
     return false;
   }
 
-  return currentCost !== previousCost || currentCurrency !== previousCurrency;
+  return (
+    event.current.scheduledCost !== event.previous.scheduledCost ||
+    event.current.scheduledCurrency !== event.previous.scheduledCurrency ||
+    event.current.scheduledEffectiveAt !== event.previous.scheduledEffectiveAt
+  );
 };
