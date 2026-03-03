@@ -142,6 +142,25 @@ export class UserService {
     }
   }
 
+  static async setPlanId(userId: string, planId: PlanId): Promise<void> {
+    const user = await clerkClient.users.getUser(userId);
+    const metadata = (user.publicMetadata ?? {}) as Record<string, unknown>;
+    const currentPlanId = this.getPlanIdFromMetadata(metadata);
+
+    if (currentPlanId === planId) {
+      return;
+    }
+
+    const updatedMetadata = this.normalizeMetadataByPlan(
+      { ...metadata, planId },
+      planId,
+    );
+
+    await clerkClient.users.updateUserMetadata(userId, {
+      publicMetadata: updatedMetadata,
+    });
+  }
+
   static async updateUserPublicMetadata(
     userId: string,
     metadata: UpdateUserPublicMetadata,

@@ -28,8 +28,8 @@ export const FREE_PLAN: Plan = {
   ],
 };
 
-export const PRO_PLAN: Plan = {
-  id: "pro",
+export const PLUS_PLAN: Plan = {
+  id: "plus",
   paddleProductId: null,
   limits: {
     maxSubscriptions: 50,
@@ -43,19 +43,19 @@ export const PRO_PLAN: Plan = {
   ],
 };
 
-export const PLANS: Plan[] = [FREE_PLAN, PRO_PLAN];
+export const PLANS: Plan[] = [FREE_PLAN, PLUS_PLAN];
 
 export const DEFAULT_PLAN_ID: PlanId = "free";
 
 const PLAN_BY_ID: Record<PlanId, Plan> = {
   free: FREE_PLAN,
-  pro: PRO_PLAN,
+  plus: PLUS_PLAN,
 };
 
 export const getPlanById = (planId: PlanId): Plan => PLAN_BY_ID[planId];
 
 export const resolvePlanId = (value: unknown): PlanId =>
-  value === "pro" ? "pro" : DEFAULT_PLAN_ID;
+  value === "plus" ? "plus" : DEFAULT_PLAN_ID;
 
 export const hasPlanFeature = (
   planId: PlanId,

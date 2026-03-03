@@ -10,6 +10,7 @@
     "db:push": "drizzle-kit push",
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "type-check": "tsc --noEmit --pretty",
+    "test": "bun test ./test",
     "qstash:dev": "npx @upstash/qstash-cli dev"
   },
   "dependencies": {

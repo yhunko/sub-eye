@@ -12,7 +12,7 @@ declare global {
   }
 
   interface UserPublicMetadata {
-    planId?: "free" | "pro";
+    planId?: "free" | "plus";
     preferredCurrency?: string;
     preferredTimezone?: string;
     notificationTime?: string;

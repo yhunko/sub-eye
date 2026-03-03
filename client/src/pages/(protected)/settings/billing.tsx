@@ -13,14 +13,21 @@ import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
 import {
   PlanCard,
   SubscriptionUsageCard,
+  billingQueryKeys,
+  getPaddle,
   planUsageQuery,
+  subscribeToPaddleEvents,
+  useCreateBillingCheckout,
+  useCreateBillingPortal,
 } from "@/entities/billing";
-import { FREE_PLAN, PRO_PLAN, type BillingFeatureKey } from "shared";
+import { FREE_PLAN, PLUS_PLAN, type BillingFeatureKey } from "shared";
 import * as m from "@/i18n/messages";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
 import { useAuth } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/(protected)/settings/billing")({
   component: SettingsBillingPage,
@@ -34,7 +41,7 @@ const FEATURE_LABELS: Record<string, () => string> = {
   currency: m.settings_billing_plans_free_features_currency,
 };
 
-const PRO_ADDITIONAL_FEATURE_LABELS: Partial<
+const PLUS_ADDITIONAL_FEATURE_LABELS: Partial<
   Record<BillingFeatureKey, () => string>
 > = {
   notificationSchedule:
@@ -44,16 +51,38 @@ const PRO_ADDITIONAL_FEATURE_LABELS: Partial<
 function SettingsBillingPage() {
   const { from } = Route.useSearch();
   const { userId } = useAuth();
+  const queryClient = useQueryClient();
   const { data: usage } = useQuery(
-    planUsageQuery({ params: { userId: userId! } }),
+    planUsageQuery({
+      params: { userId: userId! },
+      options: { enabled: Boolean(userId) },
+    }),
   );
+  const createCheckout = useCreateBillingCheckout();
+  const createPortal = useCreateBillingPortal();
+
+  useEffect(() => {
+    return subscribeToPaddleEvents((event) => {
+      if (
+        event.name !== "checkout.completed" &&
+        event.name !== "checkout.closed"
+      ) {
+        return;
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: billingQueryKeys.usage._def,
+      });
+    });
+  }, [queryClient]);
+
   const freeFeatures = FREE_PLAN.features
     .filter((feature) => feature.included)
     .map((feature) => ({
       label: FEATURE_LABELS[feature.key]?.() ?? feature.key,
       included: true,
     }));
-  const proCapabilityFeatures = PRO_PLAN.features
+  const plusCapabilityFeatures = PLUS_PLAN.features
     .filter((feature) => {
       if (!feature.included) {
         return false;
@@ -64,21 +93,44 @@ function SettingsBillingPage() {
     })
     .map((feature) => ({
       label:
-        PRO_ADDITIONAL_FEATURE_LABELS[feature.key]?.() ??
+        PLUS_ADDITIONAL_FEATURE_LABELS[feature.key]?.() ??
         FEATURE_LABELS[feature.key]?.() ??
         feature.key,
       included: true,
     }));
-  const proAdditionalFeatures = [
+  const plusAdditionalFeatures = [
     {
       label: m.settings_billing_plans_pro_features_subscriptionLimitIncrease({
         free: String(FREE_PLAN.limits.maxSubscriptions),
-        pro: String(PRO_PLAN.limits.maxSubscriptions),
+        plus: String(PLUS_PLAN.limits.maxSubscriptions),
       }),
       included: true,
     },
-    ...proCapabilityFeatures,
+    ...plusCapabilityFeatures,
   ];
+
+  const isPlusPlan = usage?.planId === PLUS_PLAN.id;
+  const isActionPending = createCheckout.isPending || createPortal.isPending;
+
+  const handlePlanAction = async () => {
+    try {
+      if (isPlusPlan) {
+        const portal = await createPortal.mutateAsync();
+        window.location.assign(portal.url);
+        return;
+      }
+
+      const checkout = await createCheckout.mutateAsync();
+      const paddle = await getPaddle();
+
+      paddle.Checkout.open({
+        transactionId: checkout.transactionId,
+      });
+    } catch (error) {
+      console.error("Failed to process billing action", error);
+      toast.error(m.messages_error());
+    }
+  };
 
   return (
     <SettingsLayout
@@ -125,11 +177,20 @@ function SettingsBillingPage() {
                     price={m.settings_billing_plans_pro_price()}
                     period={m.settings_billing_plans_pro_period()}
                     badge={m.settings_billing_plans_pro_badge()}
-                    active={usage?.planId === PRO_PLAN.id}
-                    features={proAdditionalFeatures}
+                    active={isPlusPlan}
+                    features={plusAdditionalFeatures}
                     actions={
-                      <Button variant="outline" disabled className="w-full">
-                        {m.settings_billing_plans_comingSoon()}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          void handlePlanAction();
+                        }}
+                        disabled={isActionPending}
+                        className="w-full"
+                      >
+                        {isPlusPlan
+                          ? m.settings_billing_plans_manageBilling()
+                          : m.settings_billing_plans_upgradePlus()}
                       </Button>
                     }
                   />

@@ -13,6 +13,10 @@ type Bindings = {
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
   CLERK_WEBHOOK_SECRET: string;
+  PADDLE_WEBHOOK_SECRET: string;
+  PADDLE_API_KEY: string;
+  PADDLE_PLUS_PRODUCT_ID: string;
+  PADDLE_ENV: "sandbox" | "live";
   DATABASE_URL: string;
   QSTASH_URL: string;
   QSTASH_TOKEN: string;

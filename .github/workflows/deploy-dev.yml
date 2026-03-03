@@ -44,6 +44,8 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           VITE_BRANDFETCH_CLIENT_ID: ${{ secrets.VITE_BRANDFETCH_CLIENT_ID }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VITE_PADDLE_CLIENT_TOKEN: ${{ secrets.VITE_PADDLE_CLIENT_TOKEN }}
+          VITE_PADDLE_ENV: ${{ vars.VITE_PADDLE_ENV }}
         run: bun run build
 
       - name: Deploy to Cloudflare

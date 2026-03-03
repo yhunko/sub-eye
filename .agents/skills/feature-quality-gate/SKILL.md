@@ -151,3 +151,4 @@ Useful skills:
 - [$tailwind-design-system](../tailwind-design-system/SKILL.md)
 - [$vercel-react-best-practices](../vercel-react-best-practices/SKILL.md)
 - [$web-design-guidelines](../web-design-guidelines/SKILL.md)
+- [$security-best-practices](../security-best-practices/SKILL.md)

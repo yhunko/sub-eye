@@ -14,7 +14,9 @@
   "tsconfig": "./tsconfig.json",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "BASE_URL": "https://dev.subeye.cc"
+    "BASE_URL": "https://dev.subeye.cc",
+    "PADDLE_ENV": "sandbox",
+    "PADDLE_PLUS_PRODUCT_ID": "pro_01kjswgsdyhh4eff9f46dgn3tq"
   },
   "observability": {
     "enabled": false,

@@ -43,6 +43,46 @@ export const pushNotificationsTable = pgTable(
   (t) => [uniqueIndex("unique_endpoint_idx").on(t.userId, t.endpoint)],
 );
 
+export const billingAccountsTable = pgTable(
+  "billing_accounts",
+  {
+    userId: text("user_id").primaryKey(),
+    paddleCustomerId: text("paddle_customer_id"),
+    paddleSubscriptionId: text("paddle_subscription_id"),
+    paddleSubscriptionStatus: text("paddle_subscription_status"),
+    paddlePriceId: text("paddle_price_id"),
+    paddleCurrentPeriodEnd: timestamp("paddle_current_period_end", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    lastEventOccurredAt: timestamp("last_event_occurred_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("billing_accounts_paddle_customer_id_idx").on(
+      table.paddleCustomerId,
+    ),
+    uniqueIndex("billing_accounts_paddle_subscription_id_idx").on(
+      table.paddleSubscriptionId,
+    ),
+  ],
+);
+
+export const billingWebhookEventsTable = pgTable("billing_webhook_events", {
+  eventId: text("event_id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  occurredAt: timestamp("occurred_at", {
+    withTimezone: true,
+    mode: "string",
+  }).notNull(),
+  payload: jsonb("payload").notNull(),
+  processedAt: timestamp("processed_at").notNull().defaultNow(),
+});
+
 export const subscriptionsTable = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),

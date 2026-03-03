@@ -52,7 +52,7 @@ export class SubscriptionHistoryService {
 
     const planId = await deps.userService.getPlanId(userId);
     const limit =
-      planId === "pro" ? undefined : FREE_SUBSCRIPTION_HISTORY_LIMIT;
+      planId === "plus" ? undefined : FREE_SUBSCRIPTION_HISTORY_LIMIT;
 
     const records = await deps.repository.findBySubscriptionId(
       db,

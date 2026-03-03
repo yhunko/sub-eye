@@ -3,4 +3,7 @@ export { PlanFeatureLockCard } from "./ui/plan-feature-lock-card";
 export { SubscriptionUsageCard } from "./ui/subscription-usage-card";
 export { SubscriptionLimitAlert } from "./ui/subscription-limit-alert";
 export { planUsageQuery } from "./api/plan-usage-query";
+export { useCreateBillingCheckout } from "./api/use-create-billing-checkout";
+export { useCreateBillingPortal } from "./api/use-create-billing-portal";
+export { getPaddle, subscribeToPaddleEvents } from "./lib/paddle";
 export { billingQueryKeys } from "./model/query-keys";
