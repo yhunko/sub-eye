@@ -9,6 +9,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   FieldDescription,
+  AnimatedBackground,
 } from "@/shared/components";
 import { useFormContext, useWatch } from "react-hook-form";
 import { AddSubscriptionInput } from "../../model/schema";
@@ -69,31 +70,46 @@ export const SubscriptionFormBillingInfo = () => {
                 variant="outline"
                 spacing={0}
                 className="w-full md:w-auto"
+                onValueChange={(val) => {
+                  if (val) {
+                    setValue("period", val as SubscriptionPeriod);
+                  }
+                }}
               >
-                <ToggleGroupItem
-                  value={SubscriptionPeriod.WEEK}
-                  aria-label={m.periods_weeks_ariaLabel()}
-                  className="flex-1 md:flex-none"
-                  onClick={() => setValue("period", SubscriptionPeriod.WEEK)}
+                <AnimatedBackground
+                  defaultValue={period}
+                  className="bg-accent rounded-md"
+                  transition={{
+                    type: "spring",
+                    bounce: 0.2,
+                    duration: 0.6,
+                  }}
                 >
-                  {m.periods_weeks()}
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value={SubscriptionPeriod.MONTH}
-                  aria-label={m.periods_months_ariaLabel()}
-                  className="flex-1 md:flex-none"
-                  onClick={() => setValue("period", SubscriptionPeriod.MONTH)}
-                >
-                  {m.periods_months()}
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value={SubscriptionPeriod.YEAR}
-                  aria-label={m.periods_years_ariaLabel()}
-                  className="flex-1 md:flex-none"
-                  onClick={() => setValue("period", SubscriptionPeriod.YEAR)}
-                >
-                  {m.periods_years()}
-                </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value={SubscriptionPeriod.WEEK}
+                    data-id={SubscriptionPeriod.WEEK}
+                    aria-label={m.periods_weeks_ariaLabel()}
+                    className="flex-1 hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
+                  >
+                    {m.periods_weeks()}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value={SubscriptionPeriod.MONTH}
+                    data-id={SubscriptionPeriod.MONTH}
+                    aria-label={m.periods_months_ariaLabel()}
+                    className="flex-1 hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
+                  >
+                    {m.periods_months()}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value={SubscriptionPeriod.YEAR}
+                    data-id={SubscriptionPeriod.YEAR}
+                    aria-label={m.periods_years_ariaLabel()}
+                    className="flex-1 hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
+                  >
+                    {m.periods_years()}
+                  </ToggleGroupItem>
+                </AnimatedBackground>
               </ToggleGroup>
             </div>
 

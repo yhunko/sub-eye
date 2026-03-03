@@ -132,3 +132,22 @@ Return results in this order:
 4. Residual risks/gaps (if any).
 
 Do not stop at analysis if fixes are feasible in the current turn.
+
+## Additional tools available
+
+MCPs:
+
+- jetbrains - IDE realted functionality. Review files, files issues, etc.
+- context7 - Up to date developer documentations. Always use Context7 when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+- shadcn - shadcn/ui UI component library. Use shadcn when I need UI components or customizations.
+- Clerk - Authentication and authorization provider in the app.
+
+Useful skills:
+
+- [$frontend-design](../frontend-design/SKILL.md)
+- [$find-skills](../find-skills/SKILL.md)
+- [$clerk](../clerk/SKILL.md)
+- [$clerk-setup](../clerk-setup/SKILL.md)
+- [$tailwind-design-system](../tailwind-design-system/SKILL.md)
+- [$vercel-react-best-practices](../vercel-react-best-practices/SKILL.md)
+- [$web-design-guidelines](../web-design-guidelines/SKILL.md)

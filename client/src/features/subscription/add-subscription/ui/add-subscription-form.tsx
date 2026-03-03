@@ -203,7 +203,7 @@ export const AddSubscriptionForm = ({
         </div>
 
         {!isEditMode && (
-          <div className="border-border/70 bg-background/90 supports-[backdrop-filter]:bg-background/70 mx-auto w-full max-w-xl border-t px-4 py-3 backdrop-blur-md">
+          <div className="mx-auto w-full max-w-xl px-4 py-3">
             <Button
               type="submit"
               size="lg"

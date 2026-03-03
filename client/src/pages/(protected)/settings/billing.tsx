@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
+  GlowEffect,
   CardHeader,
   CardTitle,
+  Tilt,
 } from "@/shared/components";
 import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
 import {
@@ -18,7 +21,6 @@ import { valibotValidator } from "@tanstack/valibot-adapter";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/shared/components/ui/button";
 
 export const Route = createFileRoute("/(protected)/settings/billing")({
   component: SettingsBillingPage,
@@ -108,20 +110,31 @@ function SettingsBillingPage() {
                 features={freeFeatures}
               />
 
-              <PlanCard
-                name={m.settings_billing_plans_pro_name()}
-                description={m.settings_billing_plans_pro_description()}
-                price={m.settings_billing_plans_pro_price()}
-                period={m.settings_billing_plans_pro_period()}
-                badge={m.settings_billing_plans_pro_badge()}
-                active={usage?.planId === PRO_PLAN.id}
-                features={proAdditionalFeatures}
-                actions={
-                  <Button variant="outline" disabled className="w-full">
-                    {m.settings_billing_plans_comingSoon()}
-                  </Button>
-                }
-              />
+              <div className="relative rounded-2xl">
+                <GlowEffect
+                  colors={["#33A453", "#2E9B4D", "#5CCB77", "#1F6D35"]}
+                  mode="colorShift"
+                  blur="soft"
+                  duration={6}
+                />
+
+                <Tilt rotationFactor={8} isReverse>
+                  <PlanCard
+                    name={m.settings_billing_plans_pro_name()}
+                    description={m.settings_billing_plans_pro_description()}
+                    price={m.settings_billing_plans_pro_price()}
+                    period={m.settings_billing_plans_pro_period()}
+                    badge={m.settings_billing_plans_pro_badge()}
+                    active={usage?.planId === PRO_PLAN.id}
+                    features={proAdditionalFeatures}
+                    actions={
+                      <Button variant="outline" disabled className="w-full">
+                        {m.settings_billing_plans_comingSoon()}
+                      </Button>
+                    }
+                  />
+                </Tilt>
+              </div>
             </CardContent>
           </Card>
         </div>
