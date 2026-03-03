@@ -31,6 +31,11 @@
       "sourceType": "github",
       "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
     },
+    "paddle-webhooks": {
+      "source": "hookdeck/webhook-skills",
+      "sourceType": "github",
+      "computedHash": "0addf7b7ee807fb712cedad6859bf5f341b4c41d36644d5d2d8e725e3838b6d5"
+    },
     "tailwind-design-system": {
       "source": "wshobson/agents",
       "sourceType": "github",
