@@ -17,14 +17,9 @@ import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { BrandfetchImage } from "@/features/brandfetch";
 import type { MonthlyTrendPoint } from "shared";
+import type { MouseHandlerDataParam } from "recharts";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { useRechartsModule } from "./use-recharts-module";
-
-type RechartsInteractionState = {
-  activePayload?: Array<{
-    payload?: { date?: string };
-  }>;
-};
 
 type SelectedMonthSummaryProps = {
   selectedMonth: MonthlyTrendPoint;
@@ -85,6 +80,16 @@ const TrendLineChart: FC<TrendLineChartProps> = ({
   onActiveMonthChange,
 }) => {
   const Recharts = useRechartsModule();
+  const handleInteraction = (state: MouseHandlerDataParam) => {
+    const activeIndex = state.activeTooltipIndex;
+
+    if (typeof activeIndex !== "number") {
+      onActiveMonthChange(undefined);
+      return;
+    }
+
+    onActiveMonthChange(monthlyTrend[activeIndex]);
+  };
 
   return (
     <ChartContainer
@@ -100,20 +105,8 @@ const TrendLineChart: FC<TrendLineChartProps> = ({
         <Recharts.AreaChart
           data={monthlyTrend}
           margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-          onMouseMove={(state: RechartsInteractionState) =>
-            onActiveMonthChange(
-              state.activePayload?.[0]?.payload as
-                | { date?: string }
-                | undefined,
-            )
-          }
-          onClick={(state: RechartsInteractionState) =>
-            onActiveMonthChange(
-              state.activePayload?.[0]?.payload as
-                | { date?: string }
-                | undefined,
-            )
-          }
+          onMouseMove={handleInteraction}
+          onClick={handleInteraction}
         >
           <defs>
             <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">

@@ -13,7 +13,6 @@ import {
   isValidElement,
   ReactElement,
   ReactNode,
-  useEffect,
   useState,
   useId,
 } from "react";
@@ -47,7 +46,7 @@ export function AnimatedBackground({
   transition,
   enableHover = false,
 }: AnimatedBackgroundProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(defaultValue ?? null);
   const uniqueId = useId();
 
   const handleSetActiveId = (id: string | null) => {
@@ -57,12 +56,6 @@ export function AnimatedBackground({
       onValueChange(id);
     }
   };
-
-  useEffect(() => {
-    if (defaultValue !== undefined) {
-      setActiveId(defaultValue);
-    }
-  }, [defaultValue]);
 
   return Children.map(children, (child, index) => {
     if (!isValidElement<AnimatedBackgroundChildProps>(child)) {

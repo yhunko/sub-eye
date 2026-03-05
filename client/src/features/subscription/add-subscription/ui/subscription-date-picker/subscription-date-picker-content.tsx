@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useMemo, useState } from "react";
 import { isValid, isSameDay, addYears, format, parse, isDate } from "date-fns";
 import {
   Calendar,
@@ -30,18 +30,16 @@ export const SubscriptionDatePickerContent: FC<
   SubscriptionDatePickerContentProps
 > = ({ value, onChange, onClose, className, clearable, onClear }) => {
   const dateFormatConfig = useDateFormat();
-  const [inputValue, setInputValue] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(value);
-
-  // Sync input value when external value changes
-  useEffect(() => {
+  const [inputValue, setInputValue] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>();
+  const formattedValue = useMemo(() => {
     if (value && isValid(value)) {
-      setInputValue(format(value, dateFormatConfig.dateFnsFormat));
-      setSelectedMonth(value);
-    } else {
-      setInputValue("");
+      return format(value, dateFormatConfig.dateFnsFormat);
     }
+
+    return "";
   }, [value, dateFormatConfig.dateFnsFormat]);
+  const inputDisplayValue = inputValue ?? formattedValue;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVal = e.target.value;
@@ -65,20 +63,23 @@ export const SubscriptionDatePickerContent: FC<
         onChange(parsedDate);
         setSelectedMonth(parsedDate);
       }
+
+      setInputValue(null);
     }
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
     if (date) {
       onChange(date);
-      setInputValue(format(date, dateFormatConfig.dateFnsFormat));
+      setInputValue(null);
+      setSelectedMonth(date);
       onClose();
     }
   };
 
   const handleMaskComplete = () => {
     const parsedDate = parse(
-      inputValue,
+      inputDisplayValue,
       dateFormatConfig.dateFnsFormat,
       new Date(),
     );
@@ -86,6 +87,11 @@ export const SubscriptionDatePickerContent: FC<
     if (isDate(parsedDate) && isValid(parsedDate)) {
       setSelectedMonth(parsedDate);
     }
+  };
+
+  const handleClear = () => {
+    setInputValue(null);
+    onClear?.();
   };
 
   return (
@@ -101,12 +107,12 @@ export const SubscriptionDatePickerContent: FC<
             })}
             id="date-input"
             placeholder={dateFormatConfig.placeholder}
-            value={inputValue}
+            value={inputDisplayValue}
             onChange={handleInputChange}
             className="w-full"
           />
           {clearable && (
-            <InputGroupAddon onClick={onClear} align="inline-end">
+            <InputGroupAddon onClick={handleClear} align="inline-end">
               <InputGroupButton size="icon-xs" className="ml-auto">
                 <XIcon />
                 <span className="sr-only">{m.common_actions_clear()}</span>
@@ -119,7 +125,7 @@ export const SubscriptionDatePickerContent: FC<
         mode="single"
         selected={value}
         onSelect={handleCalendarSelect}
-        month={selectedMonth}
+        month={selectedMonth ?? value}
         onMonthChange={setSelectedMonth}
         captionLayout="dropdown"
         endMonth={endMonth}
