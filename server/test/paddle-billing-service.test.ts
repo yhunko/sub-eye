@@ -1,6 +1,9 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { PaddleBillingService } from "../src/domains/billing/paddle/paddleBillingService";
-import type { PaddleWebhookEvent } from "../src/domains/billing/paddle/paddleTypes";
+import type {
+  PaddlePrice,
+  PaddleWebhookEvent,
+} from "../src/domains/billing/paddle/paddleTypes";
 
 const createWebhookEvent = (
   overrides: Partial<PaddleWebhookEvent> = {},
@@ -15,6 +18,123 @@ const createWebhookEvent = (
     custom_data: { userId: "user_01" },
   },
   ...overrides,
+});
+
+const originalPlusProductId = process.env.PADDLE_PLUS_PRODUCT_ID;
+
+const resetPlusPriceCache = () => {
+  (
+    PaddleBillingService as unknown as { plusPriceCache: unknown }
+  ).plusPriceCache = null;
+};
+
+const createCheckoutDeps = (prices: PaddlePrice[]) => {
+  let capturedPriceId: string | null = null;
+
+  return {
+    deps: {
+      apiClient: {
+        listActivePrices: async () => prices,
+        createTransaction: async (input: { priceId: string }) => {
+          capturedPriceId = input.priceId;
+          return { id: "txn_01" };
+        },
+      },
+      billingWebhookEventRepository: {} as never,
+      billingAccountRepository: {
+        findByUserId: async () => ({
+          userId: "user_01",
+          paddleCustomerId: "ctm_01",
+          paddleSubscriptionId: null,
+          paddleSubscriptionStatus: null,
+          paddlePriceId: null,
+          paddleCurrentPeriodEnd: null,
+          lastEventOccurredAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        upsertByUserId: async () => ({
+          userId: "user_01",
+          paddleCustomerId: "ctm_01",
+          paddleSubscriptionId: null,
+          paddleSubscriptionStatus: null,
+          paddlePriceId: capturedPriceId,
+          paddleCurrentPeriodEnd: null,
+          lastEventOccurredAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      },
+      userService: {} as never,
+    } as never,
+    getCapturedPriceId: () => capturedPriceId,
+  };
+};
+
+describe("PaddleBillingService.createCheckoutTransaction", () => {
+  beforeEach(() => {
+    delete process.env.PADDLE_PLUS_PRODUCT_ID;
+    resetPlusPriceCache();
+  });
+
+  afterEach(() => {
+    if (originalPlusProductId) {
+      process.env.PADDLE_PLUS_PRODUCT_ID = originalPlusProductId;
+      return;
+    }
+
+    delete process.env.PADDLE_PLUS_PRODUCT_ID;
+  });
+
+  it("throws when PADDLE_PLUS_PRODUCT_ID is missing", async () => {
+    const { deps } = createCheckoutDeps([]);
+
+    await expect(
+      PaddleBillingService.createCheckoutTransaction("user_01", deps),
+    ).rejects.toThrow("PADDLE_PLUS_PRODUCT_ID is required");
+  });
+
+  it("uses configured product ID to select an active recurring price", async () => {
+    process.env.PADDLE_PLUS_PRODUCT_ID = "pro_plus";
+
+    const { deps, getCapturedPriceId } = createCheckoutDeps([
+      {
+        id: "pri_other_month",
+        productId: "pro_other",
+        billingCycle: { interval: "month" },
+      },
+      {
+        id: "pri_plus_year",
+        productId: "pro_plus",
+        billingCycle: { interval: "year" },
+      },
+    ]);
+
+    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+
+    expect(getCapturedPriceId()).toBe("pri_plus_year");
+  });
+
+  it("prefers monthly recurring price when multiple recurring prices exist", async () => {
+    process.env.PADDLE_PLUS_PRODUCT_ID = "pro_plus";
+
+    const { deps, getCapturedPriceId } = createCheckoutDeps([
+      {
+        id: "pri_plus_year",
+        productId: "pro_plus",
+        billingCycle: { interval: "year" },
+      },
+      {
+        id: "pri_plus_month",
+        productId: "pro_plus",
+        billingCycle: { interval: "month" },
+      },
+    ]);
+
+    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+
+    expect(getCapturedPriceId()).toBe("pri_plus_month");
+  });
 });
 
 describe("PaddleBillingService.processWebhookEvent", () => {

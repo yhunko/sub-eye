@@ -15,7 +15,6 @@ export const NOTIFICATION_SCHEDULE_DEFAULTS = {
 
 export const FREE_PLAN: Plan = {
   id: "free",
-  paddleProductId: null,
   limits: {
     maxSubscriptions: 20,
   },
@@ -30,7 +29,6 @@ export const FREE_PLAN: Plan = {
 
 export const PLUS_PLAN: Plan = {
   id: "plus",
-  paddleProductId: null,
   limits: {
     maxSubscriptions: 50,
   },

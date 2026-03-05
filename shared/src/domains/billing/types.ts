@@ -9,7 +9,6 @@ export type PlanLimits = {
 
 export type Plan = {
   id: PlanId;
-  paddleProductId: string | null;
   limits: PlanLimits;
   features: PlanFeature[];
 };

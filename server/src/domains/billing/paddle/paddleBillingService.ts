@@ -15,7 +15,6 @@ import type {
   PlanId,
 } from "shared";
 
-const DEFAULT_SANDBOX_PLUS_PRODUCT_ID = "pro_01kjswgsdyhh4eff9f46dgn3tq";
 const PAID_PLUS_STATUSES = new Set<PaddleSubscriptionStatus>([
   "trialing",
   "active",
@@ -470,17 +469,17 @@ export class PaddleBillingService {
   }
 
   private static getPlusProductId(): string {
-    const value = process.env.PADDLE_PLUS_PRODUCT_ID;
+    const value = process.env.PADDLE_PLUS_PRODUCT_ID?.trim();
 
-    if (value) {
-      return value;
+    if (!value) {
+      throw new Error("PADDLE_PLUS_PRODUCT_ID is required");
     }
 
-    if (PaddleApiClient.isSandbox()) {
-      return DEFAULT_SANDBOX_PLUS_PRODUCT_ID;
+    if (!value.startsWith("pro_")) {
+      throw new Error("PADDLE_PLUS_PRODUCT_ID must be a Paddle product ID");
     }
 
-    throw new Error("PADDLE_PLUS_PRODUCT_ID is required outside sandbox");
+    return value;
   }
 
   private static isEventOlderThanLatest(

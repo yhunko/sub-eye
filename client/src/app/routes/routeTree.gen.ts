@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from "./../../pages/__root"
 import { Route as protectedRouteRouteImport } from "./../../pages/(protected)/route"
 import { Route as protectedIndexRouteImport } from "./../../pages/(protected)/index"
-import { Route as BillingCheckoutRouteImport } from "./../../pages/billing/checkout"
 import { Route as protectedSubscriptionsIndexRouteImport } from "./../../pages/(protected)/subscriptions/index"
 import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(protected)/settings/index"
 import { Route as AuthSignUpSplatRouteImport } from "./../../pages/auth/sign-up/$"
@@ -32,11 +31,6 @@ const protectedIndexRoute = protectedIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => protectedRouteRoute,
-} as any)
-const BillingCheckoutRoute = BillingCheckoutRouteImport.update({
-  id: "/billing/checkout",
-  path: "/billing/checkout",
-  getParentRoute: () => rootRouteImport,
 } as any)
 const protectedSubscriptionsIndexRoute =
   protectedSubscriptionsIndexRouteImport.update({
@@ -103,7 +97,6 @@ const protectedSubscriptionsIdEditRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  "/billing/checkout": typeof BillingCheckoutRoute
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
@@ -118,7 +111,6 @@ export interface FileRoutesByFullPath {
   "/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
 export interface FileRoutesByTo {
-  "/billing/checkout": typeof BillingCheckoutRoute
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
@@ -135,7 +127,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/(protected)": typeof protectedRouteRouteWithChildren
-  "/billing/checkout": typeof BillingCheckoutRoute
   "/(protected)/": typeof protectedIndexRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/billing": typeof protectedSettingsBillingRoute
@@ -152,7 +143,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/billing/checkout"
     | "/"
     | "/settings/account"
     | "/settings/billing"
@@ -167,7 +157,6 @@ export interface FileRouteTypes {
     | "/subscriptions/$id/"
   fileRoutesByTo: FileRoutesByTo
   to:
-    | "/billing/checkout"
     | "/"
     | "/settings/account"
     | "/settings/billing"
@@ -183,7 +172,6 @@ export interface FileRouteTypes {
   id:
     | "__root__"
     | "/(protected)"
-    | "/billing/checkout"
     | "/(protected)/"
     | "/(protected)/settings/account"
     | "/(protected)/settings/billing"
@@ -200,7 +188,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   protectedRouteRoute: typeof protectedRouteRouteWithChildren
-  BillingCheckoutRoute: typeof BillingCheckoutRoute
   AuthSignInSplatRoute: typeof AuthSignInSplatRoute
   AuthSignUpSplatRoute: typeof AuthSignUpSplatRoute
 }
@@ -220,13 +207,6 @@ declare module "@tanstack/react-router" {
       fullPath: "/"
       preLoaderRoute: typeof protectedIndexRouteImport
       parentRoute: typeof protectedRouteRoute
-    }
-    "/billing/checkout": {
-      id: "/billing/checkout"
-      path: "/billing/checkout"
-      fullPath: "/billing/checkout"
-      preLoaderRoute: typeof BillingCheckoutRouteImport
-      parentRoute: typeof rootRouteImport
     }
     "/(protected)/subscriptions/": {
       id: "/(protected)/subscriptions/"
@@ -340,7 +320,6 @@ const protectedRouteRouteWithChildren = protectedRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   protectedRouteRoute: protectedRouteRouteWithChildren,
-  BillingCheckoutRoute: BillingCheckoutRoute,
   AuthSignInSplatRoute: AuthSignInSplatRoute,
   AuthSignUpSplatRoute: AuthSignUpSplatRoute,
 }

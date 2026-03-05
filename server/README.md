@@ -46,6 +46,5 @@ Recommended Paddle API key permissions:
 
 Notes:
 
-- In non-production sandbox environments, `PADDLE_PLUS_PRODUCT_ID` falls back to
-  `pro_01keh6xkw0jw7e744f5he2t69s` if not set.
-- In production, `PADDLE_PLUS_PRODUCT_ID` must be set explicitly.
+- `PADDLE_PLUS_PRODUCT_ID` is required in all environments.
+- Configure `PADDLE_PLUS_PRODUCT_ID` in your Cloudflare environment.
