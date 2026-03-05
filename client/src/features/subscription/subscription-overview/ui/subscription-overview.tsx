@@ -13,13 +13,16 @@ import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary
 import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
+import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
+  returnSearch?: SubscriptionOverviewSearch;
 };
 
 export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   subscriptionId,
+  returnSearch,
 }) => {
   const navigate = useNavigate();
   const router = useRouter();
@@ -94,6 +97,19 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   };
 
   const handleBack = async () => {
+    if (returnSearch?.from === "/") {
+      await navigate({
+        to: "/",
+        search: (previousSearch) => ({
+          ...previousSearch,
+          monthlyTrendOpen: returnSearch.monthlyTrendOpen ? true : undefined,
+          monthlyTrendMonth: returnSearch.monthlyTrendMonth,
+        }),
+        replace: true,
+      });
+      return;
+    }
+
     if (window.history.length > 1) {
       router.history.back();
       return;

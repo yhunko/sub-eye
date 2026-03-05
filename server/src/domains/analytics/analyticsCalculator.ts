@@ -97,6 +97,7 @@ export class AnalyticsCalculator {
       const subMap = new Map<
         string,
         {
+          id: string;
           name: string;
           brandDomain: string | null;
           amount: number;
@@ -110,6 +111,7 @@ export class AnalyticsCalculator {
           existing.amount += payment.amount;
         } else {
           subMap.set(payment.subscription.id, {
+            id: payment.subscription.id,
             name: payment.subscription.name,
             brandDomain: payment.subscription.brandDomain,
             amount: payment.subscription.billing.preferred.amount, // Base amount, but we sum payment.amount for multiple occurrences

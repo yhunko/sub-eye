@@ -34,6 +34,7 @@ export interface MostExpensiveSubscriptionDto {
 }
 
 export interface MonthlyTrendSubscription {
+  id: string;
   name: string;
   brandDomain: string | null;
   amount: number;
