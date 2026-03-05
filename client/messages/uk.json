@@ -222,6 +222,7 @@
   "validation_whole_number": "Має бути цілим числом",
   "validation_min_value": "Має бути не менше {min}",
   "validation_invalid_date": "Некоректна дата",
+  "validation_future_date": "Дата має бути в майбутньому",
   "validation_brand_invalid": "Будь ласка, оберіть дійсний бренд",
   "subscription_cancel_title": "Скасувати {name}?",
   "subscription_cancel_description": "Ви впевнені, що хочете скасувати цю підписку?",

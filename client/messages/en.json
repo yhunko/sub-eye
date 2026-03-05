@@ -189,6 +189,7 @@
   "validation_whole_number": "Must be a whole number",
   "validation_min_value": "Must be at least {min}",
   "validation_invalid_date": "Invalid date",
+  "validation_future_date": "Date must be in the future",
   "validation_brand_invalid": "Please select a valid brand",
   "subscription_cancel_title": "Cancel {name}?",
   "subscription_cancel_description": "Are you sure you want to cancel this subscription?",

@@ -72,7 +72,11 @@ export const SubscriptionFormBillingInfo = () => {
                 className="w-full md:w-auto"
                 onValueChange={(val) => {
                   if (val) {
-                    setValue("period", val as SubscriptionPeriod);
+                    setValue("period", val as SubscriptionPeriod, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
                   }
                 }}
               >

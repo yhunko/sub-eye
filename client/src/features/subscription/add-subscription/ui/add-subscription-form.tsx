@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import {
@@ -72,10 +72,7 @@ export const AddSubscriptionForm = ({
     !isEditMode &&
     !!usage &&
     usage.subscriptions.current >= usage.subscriptions.limit;
-  const shouldBlockNavigation = useMemo(
-    () => formState.isDirty && !isPending,
-    [formState.isDirty, isPending],
-  );
+  const shouldBlockNavigation = formState.isDirty || isPending;
 
   const showLeaveDialog = useCallback(async () => {
     const { SubscriptionFormLeaveDialog } =
@@ -88,7 +85,11 @@ export const AddSubscriptionForm = ({
 
   useBlocker({
     shouldBlockFn: async () => {
-      if (!shouldBlockNavigation) {
+      if (isPending) {
+        return true;
+      }
+
+      if (!formState.isDirty) {
         return false;
       }
 
@@ -99,6 +100,10 @@ export const AddSubscriptionForm = ({
   });
 
   const navigateBack = async () => {
+    if (isPending) {
+      return;
+    }
+
     if (window.history.length > 1) {
       router.history.back();
       return;
@@ -156,10 +161,12 @@ export const AddSubscriptionForm = ({
         <div className="shrink-0 px-3 py-3 md:px-6 md:py-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
+              type="button"
               variant="outline"
               size="icon"
               className="size-11 rounded-full shadow-sm"
               onClick={navigateBack}
+              disabled={isPending}
               aria-label={m.common_actions_cancel()}
             >
               <ChevronLeft className="size-4" aria-hidden />
@@ -188,17 +195,22 @@ export const AddSubscriptionForm = ({
           )}
         >
           <div className="mx-auto w-full max-w-xl space-y-4">
-            {isLimitReached && (
-              <SubscriptionLimitAlert
-                current={usage.subscriptions.current}
-                limit={usage.subscriptions.limit}
-              />
-            )}
+            <fieldset
+              disabled={isPending}
+              className={cn("space-y-4", isPending && "pointer-events-none")}
+            >
+              {isLimitReached && (
+                <SubscriptionLimitAlert
+                  current={usage.subscriptions.current}
+                  limit={usage.subscriptions.limit}
+                />
+              )}
 
-            <SubscriptionFormBasicInfo
-              existingSubscription={existingSubscription}
-            />
-            <SubscriptionFormBillingInfo />
+              <SubscriptionFormBasicInfo
+                existingSubscription={existingSubscription}
+              />
+              <SubscriptionFormBillingInfo />
+            </fieldset>
           </div>
         </div>
 
@@ -207,7 +219,7 @@ export const AddSubscriptionForm = ({
             <Button
               type="submit"
               size="lg"
-              disabled={isLimitReached}
+              disabled={isLimitReached || isPending}
               className={cn("h-12 w-full rounded-2xl text-base")}
             >
               {isPending && <Spinner />}

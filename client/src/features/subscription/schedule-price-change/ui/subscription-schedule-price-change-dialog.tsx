@@ -1,6 +1,6 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useEffect, useMemo, useState } from "react";
-import { format, isSameDay } from "date-fns";
+import { addDays, format, isBefore, isSameDay, startOfDay } from "date-fns";
 import type { SchedulePriceChangeInput, SubscriptionDto } from "shared";
 import {
   Button,
@@ -69,6 +69,14 @@ const getPriceChangeValidationError = ({
     return m.validation_required();
   }
 
+  if (
+    mode === "customDate" &&
+    customDate &&
+    isBefore(startOfDay(customDate), addDays(startOfDay(new Date()), 1))
+  ) {
+    return m.validation_future_date();
+  }
+
   return null;
 };
 
@@ -113,6 +121,10 @@ export const SubscriptionSchedulePriceChangeDialog =
       const nextOccurrenceDate = useMemo(
         () => new Date(nextPaymentDate),
         [nextPaymentDate],
+      );
+      const minCustomDate = useMemo(
+        () => addDays(startOfDay(new Date()), 1),
+        [],
       );
 
       useEffect(() => {
@@ -372,6 +384,7 @@ export const SubscriptionSchedulePriceChangeDialog =
                     ) : (
                       <SubscriptionDatePicker
                         value={state.customDate}
+                        minDate={minCustomDate}
                         onChange={(value) => {
                           setState((prev) => ({
                             ...prev,

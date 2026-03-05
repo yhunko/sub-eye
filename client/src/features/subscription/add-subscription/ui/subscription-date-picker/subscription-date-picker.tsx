@@ -14,6 +14,7 @@ const MobilePicker = lazy(() => import("./subscription-date-picker.mobile"));
 type SubscriptionDatePickerProps = {
   value?: Date;
   onChange: (newDate: Date) => void;
+  minDate?: Date;
   className?: string;
   error?: boolean;
   clearable?: boolean;
@@ -23,6 +24,7 @@ type SubscriptionDatePickerProps = {
 export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
   value,
   onChange,
+  minDate,
   className,
   error,
   clearable = false,
@@ -57,6 +59,7 @@ export const SubscriptionDatePicker: FC<SubscriptionDatePickerProps> = ({
     <SubscriptionDatePickerContent
       value={value}
       onChange={onChange}
+      minDate={minDate}
       onClose={() => setOpen(false)}
       clearable={clearable}
       onClear={onClear}

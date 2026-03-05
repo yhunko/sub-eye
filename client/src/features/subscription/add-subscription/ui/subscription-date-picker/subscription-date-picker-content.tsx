@@ -1,5 +1,14 @@
 import { FC, useMemo, useState } from "react";
-import { isValid, isSameDay, addYears, format, parse, isDate } from "date-fns";
+import {
+  isValid,
+  isSameDay,
+  addYears,
+  format,
+  parse,
+  isDate,
+  isBefore,
+  startOfDay,
+} from "date-fns";
 import {
   Calendar,
   Field,
@@ -20,6 +29,7 @@ const endMonth = addYears(new Date(), 10);
 interface SubscriptionDatePickerContentProps {
   value?: Date;
   onChange: (date: Date) => void;
+  minDate?: Date;
   onClose: () => void;
   className?: string;
   clearable?: boolean;
@@ -28,10 +38,16 @@ interface SubscriptionDatePickerContentProps {
 
 export const SubscriptionDatePickerContent: FC<
   SubscriptionDatePickerContentProps
-> = ({ value, onChange, onClose, className, clearable, onClear }) => {
+> = ({ value, onChange, minDate, onClose, className, clearable, onClear }) => {
   const dateFormatConfig = useDateFormat();
   const [inputValue, setInputValue] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>();
+  const normalizedMinDate = useMemo(
+    () => (minDate ? startOfDay(minDate) : undefined),
+    [minDate],
+  );
+  const isBeforeMinDate = (date: Date) =>
+    normalizedMinDate ? isBefore(startOfDay(date), normalizedMinDate) : false;
   const formattedValue = useMemo(() => {
     if (value && isValid(value)) {
       return format(value, dateFormatConfig.dateFnsFormat);
@@ -58,7 +74,7 @@ export const SubscriptionDatePickerContent: FC<
       new Date(),
     );
 
-    if (isValid(parsedDate)) {
+    if (isValid(parsedDate) && !isBeforeMinDate(parsedDate)) {
       if (!value || !isSameDay(parsedDate, value)) {
         onChange(parsedDate);
         setSelectedMonth(parsedDate);
@@ -69,7 +85,7 @@ export const SubscriptionDatePickerContent: FC<
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
-    if (date) {
+    if (date && !isBeforeMinDate(date)) {
       onChange(date);
       setInputValue(null);
       setSelectedMonth(date);
@@ -125,6 +141,7 @@ export const SubscriptionDatePickerContent: FC<
         mode="single"
         selected={value}
         onSelect={handleCalendarSelect}
+        disabled={normalizedMinDate ? { before: normalizedMinDate } : undefined}
         month={selectedMonth ?? value}
         onMonthChange={setSelectedMonth}
         captionLayout="dropdown"
