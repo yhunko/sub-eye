@@ -2,6 +2,7 @@ import { differenceInCalendarDays } from "date-fns";
 import { DateTimezoneUtils, type PushNotificationPayload } from "shared";
 
 const APP_NOTIFICATION_ICON = "/assets/pwa/web-app-manifest-192x192.png";
+const BRANDFETCH_CDN_HOSTNAME = "cdn.brandfetch.io";
 
 type StaticNotificationCopy = {
   renewalTitle: string;
@@ -104,43 +105,22 @@ export class PushNotificationContent {
   }
 
   private static resolveSubscriptionIcon(brandDomain?: string | null): string {
-    const normalizedDomain = this.normalizeDomain(brandDomain);
-    if (!normalizedDomain) {
+    const domain = brandDomain?.trim();
+    if (!domain) {
       return APP_NOTIFICATION_ICON;
     }
 
-    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(normalizedDomain)}&sz=128`;
-  }
+    const iconUrl = new URL(
+      `https://${BRANDFETCH_CDN_HOSTNAME}/${encodeURIComponent(domain)}/w/128/h/128/fallback/lettermark/type/icon`,
+    );
+    const clientId =
+      process.env.BRANDFETCH_CLIENT_ID ?? process.env.VITE_BRANDFETCH_CLIENT_ID;
 
-  private static normalizeDomain(input?: string | null): string | null {
-    if (!input) {
-      return null;
+    if (clientId?.trim()) {
+      iconUrl.searchParams.set("c", clientId.trim());
     }
 
-    const trimmed = input.trim().toLowerCase();
-    if (!trimmed) {
-      return null;
-    }
-
-    const withoutScheme = trimmed.replace(/^https?:\/\//, "");
-    const hostCandidate = withoutScheme.split("/")[0]?.replace(/\.$/, "");
-
-    if (!hostCandidate) {
-      return null;
-    }
-
-    const labels = hostCandidate.split(".");
-
-    if (labels.length < 2) {
-      return null;
-    }
-
-    const isValid = labels.every((label) => /^[a-z0-9-]+$/i.test(label));
-    if (!isValid) {
-      return null;
-    }
-
-    return hostCandidate;
+    return iconUrl.toString();
   }
 
   private static getCopy(locale: string): StaticNotificationCopy {
