@@ -9,6 +9,10 @@ import {
 import { SubscriptionPeriod } from "../types";
 
 export class RecurrenceUtils {
+  private static normalizeDateInput(value: Date | string): Date {
+    return typeof value === "string" ? new Date(value) : value;
+  }
+
   private static getDaysInMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate();
   }
@@ -22,10 +26,9 @@ export class RecurrenceUtils {
     const year = shifted.getFullYear();
     const month = shifted.getMonth();
     const day = Math.min(anchorDay, this.getDaysInMonth(year, month));
-    const result = new Date(shifted);
 
-    result.setDate(day);
-    return result;
+    shifted.setDate(day);
+    return shifted;
   }
 
   private static addYearsWithAnchor(
@@ -37,10 +40,9 @@ export class RecurrenceUtils {
     const shifted = addYears(date, amount);
     const year = shifted.getFullYear();
     const day = Math.min(anchorDay, this.getDaysInMonth(year, anchorMonth));
-    const result = new Date(shifted);
 
-    result.setMonth(anchorMonth, day);
-    return result;
+    shifted.setMonth(anchorMonth, day);
+    return shifted;
   }
 
   /**
@@ -55,8 +57,8 @@ export class RecurrenceUtils {
     },
   ): Date {
     const anchor = options?.anchorDate
-      ? new Date(options.anchorDate)
-      : new Date(date);
+      ? this.normalizeDateInput(options.anchorDate)
+      : date;
 
     switch (period) {
       case SubscriptionPeriod.DAY:
@@ -87,9 +89,9 @@ export class RecurrenceUtils {
     period: SubscriptionPeriod,
     relativeTo: Date = new Date(),
   ): Date {
-    let current = new Date(startDate);
-    const anchorDate = new Date(startDate);
-    const target = new Date(relativeTo);
+    let current = this.normalizeDateInput(startDate);
+    const anchorDate = this.normalizeDateInput(startDate);
+    const target = this.normalizeDateInput(relativeTo);
 
     if (isBefore(target, current)) {
       return current;
@@ -108,9 +110,9 @@ export class RecurrenceUtils {
     period: SubscriptionPeriod,
     relativeTo: Date = new Date(),
   ): Date | null {
-    const start = new Date(startDate);
-    const anchorDate = new Date(startDate);
-    const target = new Date(relativeTo);
+    const start = this.normalizeDateInput(startDate);
+    const anchorDate = this.normalizeDateInput(startDate);
+    const target = this.normalizeDateInput(relativeTo);
 
     if (isBefore(target, start) || isSameDay(target, start)) {
       return null;

@@ -1,5 +1,5 @@
 import { TZDate } from "@date-fns/tz";
-import { isSameDay, parseISO } from "date-fns";
+import { addMonths, isSameDay, parseISO } from "date-fns";
 
 export class DateTimezoneUtils {
   /**
@@ -14,7 +14,11 @@ export class DateTimezoneUtils {
    */
   static toZoned(date: string | Date, timezone?: string): Date {
     if (!timezone) {
-      return date instanceof Date ? date : parseISO(date);
+      if (date instanceof Date) {
+        return new Date(date.getTime());
+      }
+
+      return parseISO(date);
     }
 
     if (typeof date === "string") {
@@ -71,8 +75,7 @@ export class DateTimezoneUtils {
     timezone?: string,
   ): Date {
     const zoned = this.toZoned(date, timezone);
-    zoned.setMonth(zoned.getMonth() + months);
-    return zoned;
+    return addMonths(zoned, months);
   }
 
   /**
