@@ -11,6 +11,7 @@ import {
   type SubscriptionRecord,
 } from "./subscriptionRepository";
 import { UserService } from "../user/userService";
+import { PushNotificationContent } from "../push-notification/pushNotificationContent";
 
 export type SubscriptionWorkflowPayload = {
   subscriptionId: string;
@@ -62,18 +63,23 @@ export class SubscriptionNotificationsWorkflow {
       await context.run("send-notification", async () => {
         const { PushNotificationService } =
           await import("../../domains/push-notification/pushNotificationService");
+        const notificationPayload = PushNotificationContent.buildRenewalPayload(
+          {
+            locale: preferences.locale,
+            timezone: preferences.preferredTimezone,
+            paymentDate,
+            notificationDate: DateTimezoneUtils.now(
+              preferences.preferredTimezone,
+            ),
+            subscriptionId: subscription.id,
+            subscriptionName: subscription.name,
+            brandDomain: subscription.brandDomain,
+          },
+        );
 
         const report = await PushNotificationService.sendNotification(
           subscription.userId,
-          {
-            title: "Subscription Renewal",
-            body: `Your subscription for ${subscription.name} is renewing soon.`,
-            icon: `/assets/pwa/web-app-manifest-192x192.png`, // Default icon, can be customized
-            data: {
-              url: `/subscriptions/${subscription.id}`,
-              subscriptionId: subscription.id,
-            },
-          },
+          notificationPayload,
         );
 
         if (report.failed > 0) {

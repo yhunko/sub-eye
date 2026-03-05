@@ -98,7 +98,7 @@ export const useSubscribeToPushNotifications = (
         throw new Error("Failed to get subscription keys");
       }
 
-      await client.api["push-notifications"].subscribe.$post({
+      const response = await client.api["push-notifications"].subscribe.$post({
         json: {
           endpoint: sub.endpoint,
           keys: {
@@ -107,6 +107,10 @@ export const useSubscribeToPushNotifications = (
           },
         },
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to persist push subscription");
+      }
     },
     onSuccess: async () => {
       await queryClient.refetchQueries({
@@ -131,9 +135,15 @@ export const useUnsubscribeFromPushNotifications = (
 
       if (subscription) {
         await subscription.unsubscribe();
-        await client.api["push-notifications"].unsubscribe.$post({
+        const response = await client.api[
+          "push-notifications"
+        ].unsubscribe.$post({
           json: { endpoint: subscription.endpoint },
         });
+
+        if (!response.ok) {
+          throw new Error("Failed to remove push subscription");
+        }
       }
     },
     onSuccess: () => {
@@ -141,6 +151,11 @@ export const useUnsubscribeFromPushNotifications = (
         pushNotificationsQueryKeys.subscription.queryKey,
         null,
       );
+    },
+    onError: async () => {
+      await queryClient.refetchQueries({
+        queryKey: pushNotificationsQueryKeys.subscription.queryKey,
+      });
     },
     ...options,
   });

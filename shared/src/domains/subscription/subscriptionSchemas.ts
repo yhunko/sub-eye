@@ -207,10 +207,17 @@ export type SubscriptionBillingDetails = InferOutput<
 export type SubscriptionDto = InferOutput<typeof SubscriptionDtoSchema>;
 
 export const PushSubscriptionSchema = strictObject({
-  endpoint: string(),
+  endpoint: pipe(
+    string(),
+    minLength(1),
+    check(
+      (value) => value.startsWith("https://"),
+      "Push endpoint must use HTTPS",
+    ),
+  ),
   keys: strictObject({
-    p256dh: string(),
-    auth: string(),
+    p256dh: pipe(string(), minLength(16)),
+    auth: pipe(string(), minLength(8)),
   }),
 });
 
@@ -220,5 +227,8 @@ export type PushNotificationPayload = {
   title: string;
   body: string;
   icon?: string;
+  badge?: string;
+  tag?: string;
+  requireInteraction?: boolean;
   data?: Record<string, unknown>;
 };

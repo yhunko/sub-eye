@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../db";
 import { pushNotificationsTable } from "../../db/schema";
 
@@ -50,5 +50,19 @@ export class PushNotificationRepository {
     await db
       .delete(pushNotificationsTable)
       .where(eq(pushNotificationsTable.endpoint, endpoint));
+  }
+
+  static async deleteByUserAndEndpoint(
+    userId: string,
+    endpoint: string,
+  ): Promise<void> {
+    await db
+      .delete(pushNotificationsTable)
+      .where(
+        and(
+          eq(pushNotificationsTable.userId, userId),
+          eq(pushNotificationsTable.endpoint, endpoint),
+        ),
+      );
   }
 }
