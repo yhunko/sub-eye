@@ -1,17 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
-  GlowEffect,
   CardHeader,
   CardTitle,
-  Tilt,
 } from "@/shared/components";
 import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
 import {
   PlanCard,
+  PlusPlanCard,
   SubscriptionUsageCard,
   billingQueryKeys,
   getPaddle,
@@ -20,13 +18,13 @@ import {
   useCreateBillingCheckout,
   useCreateBillingPortal,
 } from "@/entities/billing";
-import { FREE_PLAN, PLUS_PLAN, type BillingFeatureKey } from "shared";
+import { FREE_PLAN, PLUS_PLAN } from "shared";
 import * as m from "@/i18n/messages";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/(protected)/settings/billing")({
@@ -39,13 +37,6 @@ const FEATURE_LABELS: Record<string, () => string> = {
   analytics: m.settings_billing_plans_free_features_analytics,
   notifications: m.settings_billing_plans_free_features_notifications,
   currency: m.settings_billing_plans_free_features_currency,
-};
-
-const PLUS_ADDITIONAL_FEATURE_LABELS: Partial<
-  Record<BillingFeatureKey, () => string>
-> = {
-  notificationSchedule:
-    m.settings_billing_plans_pro_features_notificationSchedule,
 };
 
 function SettingsBillingPage() {
@@ -82,37 +73,10 @@ function SettingsBillingPage() {
       label: FEATURE_LABELS[feature.key]?.() ?? feature.key,
       included: true,
     }));
-  const plusCapabilityFeatures = PLUS_PLAN.features
-    .filter((feature) => {
-      if (!feature.included) {
-        return false;
-      }
-
-      const freeFeature = FREE_PLAN.features.find((f) => f.key === feature.key);
-      return !freeFeature?.included;
-    })
-    .map((feature) => ({
-      label:
-        PLUS_ADDITIONAL_FEATURE_LABELS[feature.key]?.() ??
-        FEATURE_LABELS[feature.key]?.() ??
-        feature.key,
-      included: true,
-    }));
-  const plusAdditionalFeatures = [
-    {
-      label: m.settings_billing_plans_pro_features_subscriptionLimitIncrease({
-        free: String(FREE_PLAN.limits.maxSubscriptions),
-        plus: String(PLUS_PLAN.limits.maxSubscriptions),
-      }),
-      included: true,
-    },
-    ...plusCapabilityFeatures,
-  ];
-
   const isPlusPlan = usage?.planId === PLUS_PLAN.id;
   const isActionPending = createCheckout.isPending || createPortal.isPending;
 
-  const handlePlanAction = async () => {
+  const handlePlanAction = useCallback(async () => {
     try {
       if (isPlusPlan) {
         const portal = await createPortal.mutateAsync();
@@ -130,7 +94,7 @@ function SettingsBillingPage() {
       console.error("Failed to process billing action", error);
       toast.error(m.messages_error());
     }
-  };
+  }, [createCheckout, createPortal, isPlusPlan]);
 
   return (
     <SettingsLayout
@@ -162,40 +126,11 @@ function SettingsBillingPage() {
                 features={freeFeatures}
               />
 
-              <div className="relative rounded-2xl">
-                <GlowEffect
-                  colors={["#33A453", "#2E9B4D", "#5CCB77", "#1F6D35"]}
-                  mode="colorShift"
-                  blur="soft"
-                  duration={6}
-                />
-
-                <Tilt rotationFactor={8} isReverse>
-                  <PlanCard
-                    name={m.settings_billing_plans_pro_name()}
-                    description={m.settings_billing_plans_pro_description()}
-                    price={m.settings_billing_plans_pro_price()}
-                    period={m.settings_billing_plans_pro_period()}
-                    badge={m.settings_billing_plans_pro_badge()}
-                    active={isPlusPlan}
-                    features={plusAdditionalFeatures}
-                    actions={
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          void handlePlanAction();
-                        }}
-                        disabled={isActionPending}
-                        className="w-full"
-                      >
-                        {isPlusPlan
-                          ? m.settings_billing_plans_manageBilling()
-                          : m.settings_billing_plans_upgradePlus()}
-                      </Button>
-                    }
-                  />
-                </Tilt>
-              </div>
+              <PlusPlanCard
+                active={isPlusPlan}
+                isActionPending={isActionPending}
+                onAction={handlePlanAction}
+              />
             </CardContent>
           </Card>
         </div>

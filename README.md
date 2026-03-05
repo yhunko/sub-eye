@@ -255,6 +255,16 @@ Types are automatically shared between the client and server thanks to the share
 import { ApiResponse } from "shared";
 ```
 
+## Agent Guidelines
+
+- Canonical agent guidance lives in `AGENTS.md` at the repository root.
+- Tool-specific guideline files are generated mirrors:
+  - `.agent/rules/guidelines.md`
+  - `.junie/guidelines.md`
+  - `CLAUDE.md`
+- Sync mirrors with `bun run guidelines:sync`.
+- Verify mirrors are in sync with `bun run guidelines:check`.
+
 ## Learn More
 
 - [Bun Documentation](https://bun.sh/docs)

@@ -1,4 +1,5 @@
 export { PlanCard } from "./ui/plan-card";
+export { PlusPlanCard } from "./ui/plus-plan-card";
 export { PlanFeatureLockCard } from "./ui/plan-feature-lock-card";
 export { SubscriptionUsageCard } from "./ui/subscription-usage-card";
 export { SubscriptionLimitAlert } from "./ui/subscription-limit-alert";

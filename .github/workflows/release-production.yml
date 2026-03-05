@@ -37,6 +37,9 @@ jobs:
       - name: Setup Mise
         uses: jdx/mise-action@v3
 
+      - name: Check Agent Guidelines Mirrors
+        run: bun run guidelines:check
+
       - name: Install Dependencies
         run: bun install
 
