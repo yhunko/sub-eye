@@ -50,6 +50,11 @@
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    },
+    "web-haptics": {
+      "source": "lochie/web-haptics",
+      "sourceType": "github",
+      "computedHash": "0f54a56bc7981d49f3447160f7e440c8963c0fdecacf05c45ddc8d58da26704e"
     }
   }
 }

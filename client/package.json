@@ -61,6 +61,7 @@
     "use-mask-input": "^3.7.4",
     "valibot": "^1.2.0",
     "vaul": "^1.1.2",
+    "web-haptics": "^0.0.6",
     "workbox-window": "^7.4.0"
   },
   "devDependencies": {

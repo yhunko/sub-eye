@@ -1,7 +1,15 @@
-import type { RefObject } from "react";
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject, TouchEvent } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameMonth, parseISO } from "date-fns";
-import { ChevronLeft, ChevronRight, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, MoveHorizontal } from "lucide-react";
+import {
+  AnimatePresence,
+  LazyMotion,
+  domAnimation,
+  m as motion,
+  useReducedMotion,
+} from "motion/react";
+import { useWebHaptics } from "web-haptics/react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
@@ -17,9 +25,18 @@ import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { BrandfetchImage } from "@/features/brandfetch";
 import type { MonthlyTrendPoint } from "shared";
-import type { MouseHandlerDataParam } from "recharts";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { useRechartsModule } from "./use-recharts-module";
+
+type TrendChartInteractionState = {
+  activeTooltipIndex?: number | string | null;
+  activeIndex?: number | string | null;
+  activeLabel?: string | number;
+};
+
+const HORIZONTAL_SWIPE_MIN_DISTANCE = 44;
+const HORIZONTAL_SWIPE_DOMINANCE_RATIO = 1.2;
+const SWIPE_HINT_VISIBLE_MS = 3800;
 
 type SelectedMonthSummaryProps = {
   selectedMonth: MonthlyTrendPoint;
@@ -80,15 +97,40 @@ const TrendLineChart: FC<TrendLineChartProps> = ({
   onActiveMonthChange,
 }) => {
   const Recharts = useRechartsModule();
-  const handleInteraction = (state: MouseHandlerDataParam) => {
-    const activeIndex = state.activeTooltipIndex;
 
-    if (typeof activeIndex !== "number") {
+  const resolveActiveMonth = (state: TrendChartInteractionState) => {
+    const activeIndexValue = state.activeTooltipIndex ?? state.activeIndex;
+    const numericIndex =
+      typeof activeIndexValue === "number"
+        ? activeIndexValue
+        : typeof activeIndexValue === "string"
+          ? Number(activeIndexValue)
+          : Number.NaN;
+
+    if (
+      Number.isInteger(numericIndex) &&
+      numericIndex >= 0 &&
+      numericIndex < monthlyTrend.length
+    ) {
+      return monthlyTrend[numericIndex];
+    }
+
+    if (typeof state.activeLabel === "string") {
+      return monthlyTrend.find((month) => month.date === state.activeLabel);
+    }
+
+    return undefined;
+  };
+
+  const handleInteraction = (state: TrendChartInteractionState) => {
+    const activeMonth = resolveActiveMonth(state);
+
+    if (!activeMonth) {
       onActiveMonthChange(undefined);
       return;
     }
 
-    onActiveMonthChange(monthlyTrend[activeIndex]);
+    onActiveMonthChange(activeMonth);
   };
 
   return (
@@ -211,6 +253,7 @@ const DrawerMonthNavigator: FC<DrawerMonthNavigatorProps> = ({
           size="icon-sm"
           variant="outline"
           className="shrink-0 rounded-full"
+          aria-label={m.analytics_charts_monthlySpending_actions_previousMonth()}
           disabled={!canGoPreviousMonth}
           onClick={() => onSelectMonthByIndex(selectedMonthIndex - 1)}
         >
@@ -229,13 +272,14 @@ const DrawerMonthNavigator: FC<DrawerMonthNavigatorProps> = ({
           size="icon-sm"
           variant="outline"
           className="shrink-0 rounded-full"
+          aria-label={m.analytics_charts_monthlySpending_actions_nextMonth()}
           disabled={!canGoNextMonth}
           onClick={() => onSelectMonthByIndex(selectedMonthIndex + 1)}
         >
           <ChevronRight className="size-4" />
         </Button>
       </div>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-3">
         {monthlyTrend.map((month, index) => (
           <button
             key={month.date}
@@ -259,6 +303,8 @@ const DrawerMonthNavigator: FC<DrawerMonthNavigatorProps> = ({
 };
 
 type DrawerSubscriptionsContentProps = {
+  isOpen: boolean;
+  swipeHintSession: number;
   selectedMonth: MonthlyTrendPoint;
   preferredCurrencyCode: string;
   selectedMonthIndex: number;
@@ -270,7 +316,29 @@ type DrawerSubscriptionsContentProps = {
   locale: MonthlySpendingTrendVariantProps["locale"];
 };
 
+type MonthTransitionDirection = 1 | -1;
+
+const monthDeckVariants = {
+  enter: (direction: MonthTransitionDirection = 1) => ({
+    opacity: 0,
+    x: direction > 0 ? 26 : -26,
+    filter: "blur(7px)",
+  }),
+  center: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+  },
+  exit: (direction: MonthTransitionDirection = 1) => ({
+    opacity: 0,
+    x: direction > 0 ? -26 : 26,
+    filter: "blur(8px)",
+  }),
+};
+
 const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
+  isOpen,
+  swipeHintSession,
   selectedMonth,
   preferredCurrencyCode,
   selectedMonthIndex,
@@ -281,13 +349,118 @@ const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
   monthChipRefs,
   locale,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
   const subscriptionsListRef = useRef<HTMLDivElement | null>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    skipSwipe: boolean;
+  } | null>(null);
+  const [dismissedSwipeHintSession, setDismissedSwipeHintSession] = useState<
+    number | null
+  >(null);
+  const [monthTransitionDirection, setMonthTransitionDirection] =
+    useState<MonthTransitionDirection>(1);
+  const isSwipeHintVisible =
+    isOpen &&
+    monthlyTrend.length > 1 &&
+    dismissedSwipeHintSession !== swipeHintSession;
+  const dismissSwipeHintForCurrentSession = useCallback(() => {
+    setDismissedSwipeHintSession((currentSession) =>
+      currentSession === swipeHintSession ? currentSession : swipeHintSession,
+    );
+  }, [swipeHintSession]);
 
   useEffect(() => {
     if (subscriptionsListRef.current) {
       subscriptionsListRef.current.scrollTop = 0;
     }
   }, [selectedMonth.date]);
+
+  useEffect(() => {
+    if (!isSwipeHintVisible) {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      dismissSwipeHintForCurrentSession();
+    }, SWIPE_HINT_VISIBLE_MS);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [dismissSwipeHintForCurrentSession, isSwipeHintVisible, swipeHintSession]);
+
+  const shouldSkipSwipe = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    return Boolean(
+      target.closest("button, a, input, textarea, select, [role='button']"),
+    );
+  };
+
+  const handleDrawerBodyTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      return;
+    }
+
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      skipSwipe: shouldSkipSwipe(event.target),
+    };
+  };
+
+  const handleDrawerBodyTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    if (!start || start.skipSwipe) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const isHorizontalSwipe =
+      Math.abs(deltaX) >= HORIZONTAL_SWIPE_MIN_DISTANCE &&
+      Math.abs(deltaX) > Math.abs(deltaY) * HORIZONTAL_SWIPE_DOMINANCE_RATIO;
+
+    if (!isHorizontalSwipe) {
+      return;
+    }
+
+    dismissSwipeHintForCurrentSession();
+
+    if (deltaX < 0 && canGoNextMonth) {
+      selectMonthWithTransition(selectedMonthIndex + 1);
+      return;
+    }
+
+    if (deltaX > 0 && canGoPreviousMonth) {
+      selectMonthWithTransition(selectedMonthIndex - 1);
+    }
+  };
+
+  const handleDrawerBodyTouchCancel = () => {
+    touchStartRef.current = null;
+  };
+
+  const selectMonthWithTransition = (index: number) => {
+    if (index === selectedMonthIndex) {
+      return;
+    }
+
+    setMonthTransitionDirection(index > selectedMonthIndex ? 1 : -1);
+    onSelectMonthByIndex(index);
+  };
 
   return (
     <DrawerContent className="z-70 h-[80vh]">
@@ -297,7 +470,12 @@ const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
           {m.analytics_charts_monthlySpending_labels_totalSpending()}
         </DrawerDescription>
       </DrawerHeader>
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+      <div
+        className="flex min-h-0 flex-1 touch-pan-y flex-col overflow-x-hidden overscroll-contain px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
+        onTouchStart={handleDrawerBodyTouchStart}
+        onTouchEnd={handleDrawerBodyTouchEnd}
+        onTouchCancel={handleDrawerBodyTouchCancel}
+      >
         <div className="space-y-3 pb-3">
           <DrawerMonthNavigator
             monthlyTrend={monthlyTrend}
@@ -305,10 +483,29 @@ const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
             selectedMonthIndex={selectedMonthIndex}
             canGoPreviousMonth={canGoPreviousMonth}
             canGoNextMonth={canGoNextMonth}
-            onSelectMonthByIndex={onSelectMonthByIndex}
+            onSelectMonthByIndex={selectMonthWithTransition}
             monthChipRefs={monthChipRefs}
             locale={locale}
           />
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence initial={false}>
+              {isSwipeHintVisible ? (
+                <motion.div
+                  key="swipe-hint"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="border-primary/15 from-primary/8 to-primary/4 text-muted-foreground flex items-center justify-center gap-1.5 rounded-full border bg-linear-to-r px-3 py-1.5 text-[11px]"
+                >
+                  <span className="inline-flex items-center">
+                    <MoveHorizontal className="size-3.5" aria-hidden="true" />
+                  </span>
+                  <span>{m.analytics_charts_monthlySpending_swipeHint()}</span>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </LazyMotion>
 
           <div className="border-border flex items-center justify-between border-b pb-3">
             <span className="text-sm font-semibold">
@@ -323,35 +520,56 @@ const DrawerSubscriptionsContent: FC<DrawerSubscriptionsContentProps> = ({
 
         <div
           ref={subscriptionsListRef}
-          className="min-h-0 flex-1 overflow-y-auto"
+          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain"
         >
-          {selectedMonth.subscriptions &&
-          selectedMonth.subscriptions.length > 0 ? (
-            <div className="space-y-2 pb-1">
-              {selectedMonth.subscriptions.map((sub) => (
-                <div
-                  key={`${sub.name}-${sub.brandDomain}-${sub.currencyCode}-${sub.amount}`}
-                  className="bg-muted/30 flex items-center gap-2 rounded-md p-2"
-                >
-                  <BrandfetchImage
-                    domain={sub.brandDomain}
-                    className="size-6 text-[8px]"
-                  />
-                  <span className="flex-1 truncate text-sm">{sub.name}</span>
-                  <div className="text-muted-foreground shrink-0 text-sm tabular-nums">
-                    <CurrencyText
-                      amount={sub.amount}
-                      currencyCode={sub.currencyCode}
-                    />
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence
+              mode="wait"
+              initial={false}
+              custom={monthTransitionDirection}
+            >
+              <motion.div
+                key={selectedMonth.date}
+                custom={monthTransitionDirection}
+                variants={monthDeckVariants}
+                initial={shouldReduceMotion ? false : "enter"}
+                animate="center"
+                exit={shouldReduceMotion ? undefined : "exit"}
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                className="pb-1"
+              >
+                {selectedMonth.subscriptions &&
+                selectedMonth.subscriptions.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedMonth.subscriptions.map((sub) => (
+                      <div
+                        key={`${sub.name}-${sub.brandDomain}-${sub.currencyCode}-${sub.amount}`}
+                        className="bg-muted/30 flex items-center gap-2 rounded-md p-2"
+                      >
+                        <BrandfetchImage
+                          domain={sub.brandDomain}
+                          className="size-6 text-[8px]"
+                        />
+                        <span className="flex-1 truncate text-sm">
+                          {sub.name}
+                        </span>
+                        <div className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                          <CurrencyText
+                            amount={sub.amount}
+                            currencyCode={sub.currencyCode}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground py-2 text-sm">
-              {m.analytics_monthlySpend_noData()}
-            </p>
-          )}
+                ) : (
+                  <p className="text-muted-foreground py-2 text-sm">
+                    {m.analytics_monthlySpend_noData()}
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </LazyMotion>
         </div>
       </div>
     </DrawerContent>
@@ -365,10 +583,12 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
   yAxisWidth,
   locale,
 }) => {
+  const haptics = useWebHaptics();
   const [selectedMonthDate, setSelectedMonthDate] = useState<string | null>(
     null,
   );
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [swipeHintSession, setSwipeHintSession] = useState(0);
   const monthChipRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const selectedMonthIndex = useMemo(() => {
@@ -400,7 +620,8 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
 
   const selectMonthByIndex = (index: number) => {
     const month = monthlyTrend[index];
-    if (month) {
+    if (month && month.date !== selectedMonthDate) {
+      haptics.trigger("selection");
       setSelectedMonthDate(month.date);
     }
   };
@@ -436,10 +657,25 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
     };
   }, [isDetailsOpen, selectedMonthIndex]);
 
+  const handleOpenDetails = () => {
+    setSwipeHintSession((value) => value + 1);
+    setIsDetailsOpen(true);
+  };
+
+  const handleDetailsOpenChange = (open: boolean) => {
+    setIsDetailsOpen((currentOpen) => {
+      if (!currentOpen && open) {
+        haptics.trigger("medium");
+        setSwipeHintSession((value) => value + 1);
+      }
+      return open;
+    });
+  };
+
   return (
     <Drawer
       open={isDetailsOpen}
-      onOpenChange={setIsDetailsOpen}
+      onOpenChange={handleDetailsOpenChange}
       shouldScaleBackground={false}
       dismissible={true}
       repositionInputs={false}
@@ -449,7 +685,7 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
           selectedMonth={selectedMonth}
           preferredCurrencyCode={preferredCurrencyCode}
           locale={locale}
-          onOpenDetails={() => setIsDetailsOpen(true)}
+          onOpenDetails={handleOpenDetails}
         />
       )}
 
@@ -463,6 +699,8 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
 
       {selectedMonth && (
         <DrawerSubscriptionsContent
+          isOpen={isDetailsOpen}
+          swipeHintSession={swipeHintSession}
           selectedMonth={selectedMonth}
           preferredCurrencyCode={preferredCurrencyCode}
           selectedMonthIndex={selectedMonthIndex}
