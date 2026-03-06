@@ -110,17 +110,23 @@ export class PushNotificationContent {
       return APP_NOTIFICATION_ICON;
     }
 
+    const clientId = this.getBrandfetchClientId();
+    if (!clientId) {
+      return APP_NOTIFICATION_ICON;
+    }
+
     const iconUrl = new URL(
       `https://${BRANDFETCH_CDN_HOSTNAME}/${encodeURIComponent(domain)}/w/128/h/128/fallback/lettermark/type/icon`,
     );
-    const clientId =
-      process.env.BRANDFETCH_CLIENT_ID ?? process.env.VITE_BRANDFETCH_CLIENT_ID;
-
-    if (clientId?.trim()) {
-      iconUrl.searchParams.set("c", clientId.trim());
-    }
+    iconUrl.searchParams.set("c", clientId);
 
     return iconUrl.toString();
+  }
+
+  private static getBrandfetchClientId(): string | null {
+    const clientId = process.env.BRANDFETCH_CLIENT_ID;
+
+    return clientId?.trim() || null;
   }
 
   private static getCopy(locale: string): StaticNotificationCopy {
