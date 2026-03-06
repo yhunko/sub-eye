@@ -43,6 +43,25 @@ On each push to `dev`:
 
 No `CHANGELOG.md` file is generated or committed by release automation.
 
+## Manual Release PR Sync
+
+Workflow: `.github/workflows/sync-release-pr-manual.yml`
+
+Use this when you want to manually create/update the `release/vX.Y.Z` PR without waiting for a new beta release event.
+
+From GitHub UI:
+
+1. Open **Actions** -> **Sync Release PR (Manual)**.
+2. Click **Run workflow**.
+3. Set inputs:
+   - `source_branch` (default: `dev`)
+   - `target_branch` (default: `main`)
+   - `release_version` (optional override; if empty, read from `package.json` on source branch)
+   - `include_latest_beta_notes` (default: `true`)
+4. Run.
+
+The workflow creates/updates one open `source_branch -> target_branch` PR with the same grouped emoji changelist format.
+
 ## Required GitHub Secrets
 
 - `GH_TOKEN`
