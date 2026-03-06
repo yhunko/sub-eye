@@ -77,4 +77,23 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
 
     expect(payload.icon).toBe(PushNotificationContent.defaultIcon);
   });
+
+  it("normalizes brand domains from URL-like values", () => {
+    process.env.BRANDFETCH_CLIENT_ID = "server_client_id";
+    delete process.env.VITE_BRANDFETCH_CLIENT_ID;
+
+    const payload = PushNotificationContent.buildRenewalPayload({
+      locale: "en",
+      timezone: "Europe/Kiev",
+      paymentDate: "2026-03-08T10:00:00.000Z",
+      notificationDate: new Date("2026-03-07T10:00:00.000Z"),
+      subscriptionId: "sub_01",
+      subscriptionName: "Netflix",
+      brandDomain: "https://Netflix.com/path?foo=1",
+    });
+
+    expect(payload.icon).toBe(
+      "https://cdn.brandfetch.io/netflix.com/w/128/h/128/fallback/lettermark/type/icon?c=server_client_id",
+    );
+  });
 });

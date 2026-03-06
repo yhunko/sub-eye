@@ -105,7 +105,7 @@ export class PushNotificationContent {
   }
 
   private static resolveSubscriptionIcon(brandDomain?: string | null): string {
-    const domain = brandDomain?.trim();
+    const domain = this.normalizeBrandDomain(brandDomain);
     if (!domain) {
       return APP_NOTIFICATION_ICON;
     }
@@ -127,6 +127,31 @@ export class PushNotificationContent {
     const clientId = process.env.BRANDFETCH_CLIENT_ID;
 
     return clientId?.trim() || null;
+  }
+
+  private static normalizeBrandDomain(input?: string | null): string | null {
+    const trimmed = input?.trim().toLowerCase();
+    if (!trimmed) {
+      return null;
+    }
+
+    const withoutScheme = trimmed.replace(/^https?:\/\//, "");
+    const hostCandidate = withoutScheme.split("/")[0]?.replace(/\.$/, "");
+    if (!hostCandidate) {
+      return null;
+    }
+
+    const labels = hostCandidate.split(".");
+    if (labels.length < 2) {
+      return null;
+    }
+
+    const isValid = labels.every((label) => /^[a-z0-9-]+$/i.test(label));
+    if (!isValid) {
+      return null;
+    }
+
+    return hostCandidate;
   }
 
   private static getCopy(locale: string): StaticNotificationCopy {
