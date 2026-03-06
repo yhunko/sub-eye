@@ -20,7 +20,6 @@ export const useUpdateSubscriptionWithoutHistory = ({
   const { userId } = useAuth();
 
   return useMutation({
-    ...options,
     mutationFn: async ({ id, payload }) => {
       const res = await apiClient.api.subscriptions[":id"].$patch({
         param: { id },
@@ -41,5 +40,6 @@ export const useUpdateSubscriptionWithoutHistory = ({
         subscriptionId: variables.id,
       });
     },
+    ...options,
   });
 };

@@ -12,7 +12,6 @@ export const useCreateSubscription = ({
   const queryClient = useQueryClient();
 
   return useMutation({
-    ...options,
     mutationFn: async (payload) => {
       const res = await apiClient.api.subscriptions.$post({
         json: payload,
@@ -33,5 +32,6 @@ export const useCreateSubscription = ({
         queryKey: analyticsQueryKeys._def,
       });
     },
+    ...options,
   });
 };

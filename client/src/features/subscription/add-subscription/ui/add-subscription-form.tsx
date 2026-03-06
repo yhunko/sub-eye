@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import {
@@ -49,6 +49,7 @@ export const AddSubscriptionForm = ({
     },
   });
   const { handleSubmit, formState, reset, getValues } = formMethods;
+  const allowSubmitRedirectRef = useRef(false);
 
   const navigate = useNavigate();
   const router = useRouter();
@@ -85,6 +86,10 @@ export const AddSubscriptionForm = ({
 
   useBlocker({
     shouldBlockFn: async () => {
+      if (allowSubmitRedirectRef.current) {
+        return false;
+      }
+
       if (isPending) {
         return true;
       }
@@ -96,7 +101,8 @@ export const AddSubscriptionForm = ({
       const shouldDiscard = await showLeaveDialog();
       return !shouldDiscard;
     },
-    enableBeforeUnload: () => shouldBlockNavigation,
+    enableBeforeUnload: () =>
+      shouldBlockNavigation && !allowSubmitRedirectRef.current,
   });
 
   const navigateBack = async () => {
@@ -127,16 +133,26 @@ export const AddSubscriptionForm = ({
       brandDomain: data.brandDomain ?? null,
     };
 
-    const onSuccess = async (message: string) => {
+    const onSuccess = (message: string) => {
       reset(getValues());
-      await navigate({ to: "/subscriptions" });
       toast.success(message);
+      allowSubmitRedirectRef.current = true;
+      void navigate({ to: "/subscriptions", replace: true }).catch(() => {
+        allowSubmitRedirectRef.current = false;
+      });
     };
 
     if (isEditMode && subscriptionId) {
       updateSubscriptionWithoutHistory(
-        { id: subscriptionId, payload: basePayload },
-        { onSuccess: () => onSuccess(m.messages_updated()) },
+        {
+          id: subscriptionId,
+          payload: basePayload,
+        },
+        {
+          onSuccess() {
+            onSuccess(m.messages_updated());
+          },
+        },
       );
       return;
     }
@@ -147,7 +163,9 @@ export const AddSubscriptionForm = ({
         willBeCancelledAt: null,
       },
       {
-        onSuccess: () => onSuccess(m.messages_added()),
+        onSuccess() {
+          onSuccess(m.messages_added());
+        },
       },
     );
   };
