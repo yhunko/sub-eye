@@ -10,6 +10,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
 permissions:
   contents: write
   issues: write
@@ -42,6 +46,17 @@ jobs:
 
       - name: Install Dependencies
         run: bun install
+
+      - name: Apply Production DB Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Missing database URL. Configure DATABASE_URL in GitHub secrets."
+            exit 1
+          fi
+
+          bun --cwd server run db:migrate
 
       - name: Run Semantic Release
         env:
