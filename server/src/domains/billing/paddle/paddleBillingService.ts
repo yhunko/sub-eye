@@ -53,11 +53,15 @@ export class PaddleBillingService {
     userId: string,
     deps: PaddleBillingDeps = defaultDeps,
   ): Promise<BillingCheckoutResponse> {
-    const customerId = await this.getOrCreateCustomerId(userId, deps);
+    const billingAccount = await deps.billingAccountRepository.findByUserId(
+      db,
+      userId,
+    );
     const priceId = await this.getPlusPriceId(deps);
+    const paddleCustomerId = billingAccount?.paddleCustomerId ?? undefined;
 
     const transaction = await deps.apiClient.createTransaction({
-      customerId,
+      customerId: paddleCustomerId,
       priceId,
       customData: {
         userId,
@@ -65,11 +69,20 @@ export class PaddleBillingService {
       },
     });
 
-    await deps.billingAccountRepository.upsertByUserId(db, {
+    const billingAccountPatch: {
+      userId: string;
+      paddlePriceId: string;
+      paddleCustomerId?: string;
+    } = {
       userId,
-      paddleCustomerId: customerId,
       paddlePriceId: priceId,
-    });
+    };
+
+    if (paddleCustomerId) {
+      billingAccountPatch.paddleCustomerId = paddleCustomerId;
+    }
+
+    await deps.billingAccountRepository.upsertByUserId(db, billingAccountPatch);
 
     return { transactionId: transaction.id };
   }

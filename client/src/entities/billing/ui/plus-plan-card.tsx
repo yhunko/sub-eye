@@ -9,6 +9,7 @@ type PlusPlanCardProps = {
   active: boolean;
   isActionPending: boolean;
   onAction: () => void | Promise<void>;
+  checkoutNote?: string;
 };
 
 const GLOW_COLORS = ["#33A453", "#2E9B4D", "#5CCB77", "#1F6D35"];
@@ -24,6 +25,7 @@ export const PlusPlanCard: FC<PlusPlanCardProps> = ({
   active,
   isActionPending,
   onAction,
+  checkoutNote,
 }) => {
   const plusCapabilityFeatures = PLUS_PLAN.features
     .filter((feature) => {
@@ -73,16 +75,24 @@ export const PlusPlanCard: FC<PlusPlanCardProps> = ({
           active={active}
           features={features}
           actions={
-            <Button
-              variant="outline"
-              onClick={handleActionClick}
-              disabled={isActionPending}
-              className="w-full"
-            >
-              {active
-                ? m.settings_billing_plans_manageBilling()
-                : m.settings_billing_plans_upgradePlus()}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={handleActionClick}
+                disabled={isActionPending}
+                className="w-full"
+              >
+                {active
+                  ? m.settings_billing_plans_manageBilling()
+                  : m.settings_billing_plans_upgradePlus()}
+              </Button>
+
+              {!active && checkoutNote ? (
+                <p className="text-muted-foreground text-center text-xs leading-relaxed">
+                  {checkoutNote}
+                </p>
+              ) : null}
+            </div>
           }
         />
       </Tilt>

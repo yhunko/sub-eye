@@ -281,6 +281,7 @@
   "settings_billing_plans_upgradePlus": "Оновити до Plus",
   "settings_billing_plans_manageBilling": "Керувати оплатою",
   "settings_billing_plans_comingSoon": "Більше планів незабаром",
+  "settings_billing_checkout_emailMissingHint": "Ви можете продовжити навіть без email у профілі. Захищений checkout сам попросить email для оплати.",
   "settings_billing_usage_title": "Використання",
   "settings_billing_usage_subscriptions": "Підписки",
   "settings_billing_usage_subscriptionsOf": "{current} з {limit}",

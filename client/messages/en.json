@@ -248,6 +248,7 @@
   "settings_billing_plans_upgradePlus": "Upgrade to Plus",
   "settings_billing_plans_manageBilling": "Manage billing",
   "settings_billing_plans_comingSoon": "More plans coming soon",
+  "settings_billing_checkout_emailMissingHint": "You can continue without an account email. Secure checkout will ask for the billing email it needs.",
   "settings_billing_usage_title": "Usage",
   "settings_billing_usage_subscriptions": "Subscriptions",
   "settings_billing_usage_subscriptionsOf": "{current} of {limit}",
