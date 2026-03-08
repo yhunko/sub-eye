@@ -18,6 +18,7 @@ import { Route as AuthSignInSplatRouteImport } from "./../../pages/auth/sign-in/
 import { Route as protectedSubscriptionsAddRouteImport } from "./../../pages/(protected)/subscriptions/add"
 import { Route as protectedSettingsNotificationsRouteImport } from "./../../pages/(protected)/settings/notifications"
 import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(protected)/settings/general"
+import { Route as protectedSettingsBillingRouteImport } from "./../../pages/(protected)/settings/billing"
 import { Route as protectedSettingsAccountRouteImport } from "./../../pages/(protected)/settings/account"
 import { Route as protectedSubscriptionsIdIndexRouteImport } from "./../../pages/(protected)/subscriptions/$id/index"
 import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
@@ -70,6 +71,12 @@ const protectedSettingsGeneralRoute =
     path: "/settings/general",
     getParentRoute: () => protectedRouteRoute,
   } as any)
+const protectedSettingsBillingRoute =
+  protectedSettingsBillingRouteImport.update({
+    id: "/settings/billing",
+    path: "/settings/billing",
+    getParentRoute: () => protectedRouteRoute,
+  } as any)
 const protectedSettingsAccountRoute =
   protectedSettingsAccountRouteImport.update({
     id: "/settings/account",
@@ -92,6 +99,7 @@ const protectedSubscriptionsIdEditRoute =
 export interface FileRoutesByFullPath {
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
+  "/settings/billing": typeof protectedSettingsBillingRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
@@ -105,6 +113,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
+  "/settings/billing": typeof protectedSettingsBillingRoute
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
@@ -120,6 +129,7 @@ export interface FileRoutesById {
   "/(protected)": typeof protectedRouteRouteWithChildren
   "/(protected)/": typeof protectedIndexRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
+  "/(protected)/settings/billing": typeof protectedSettingsBillingRoute
   "/(protected)/settings/general": typeof protectedSettingsGeneralRoute
   "/(protected)/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/(protected)/subscriptions/add": typeof protectedSubscriptionsAddRoute
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/settings/account"
+    | "/settings/billing"
     | "/settings/general"
     | "/settings/notifications"
     | "/subscriptions/add"
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/settings/account"
+    | "/settings/billing"
     | "/settings/general"
     | "/settings/notifications"
     | "/subscriptions/add"
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
     | "/(protected)"
     | "/(protected)/"
     | "/(protected)/settings/account"
+    | "/(protected)/settings/billing"
     | "/(protected)/settings/general"
     | "/(protected)/settings/notifications"
     | "/(protected)/subscriptions/add"
@@ -244,6 +257,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSettingsGeneralRouteImport
       parentRoute: typeof protectedRouteRoute
     }
+    "/(protected)/settings/billing": {
+      id: "/(protected)/settings/billing"
+      path: "/settings/billing"
+      fullPath: "/settings/billing"
+      preLoaderRoute: typeof protectedSettingsBillingRouteImport
+      parentRoute: typeof protectedRouteRoute
+    }
     "/(protected)/settings/account": {
       id: "/(protected)/settings/account"
       path: "/settings/account"
@@ -271,6 +291,7 @@ declare module "@tanstack/react-router" {
 interface protectedRouteRouteChildren {
   protectedIndexRoute: typeof protectedIndexRoute
   protectedSettingsAccountRoute: typeof protectedSettingsAccountRoute
+  protectedSettingsBillingRoute: typeof protectedSettingsBillingRoute
   protectedSettingsGeneralRoute: typeof protectedSettingsGeneralRoute
   protectedSettingsNotificationsRoute: typeof protectedSettingsNotificationsRoute
   protectedSubscriptionsAddRoute: typeof protectedSubscriptionsAddRoute
@@ -283,6 +304,7 @@ interface protectedRouteRouteChildren {
 const protectedRouteRouteChildren: protectedRouteRouteChildren = {
   protectedIndexRoute: protectedIndexRoute,
   protectedSettingsAccountRoute: protectedSettingsAccountRoute,
+  protectedSettingsBillingRoute: protectedSettingsBillingRoute,
   protectedSettingsGeneralRoute: protectedSettingsGeneralRoute,
   protectedSettingsNotificationsRoute: protectedSettingsNotificationsRoute,
   protectedSubscriptionsAddRoute: protectedSubscriptionsAddRoute,

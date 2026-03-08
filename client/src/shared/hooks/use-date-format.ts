@@ -1,8 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
-import {
-  DateFormatUtils,
-  type DateFormatConfig,
-} from "@shared/utils/dateFormatUtils";
+import { DateFormatUtils, type DateFormatConfig } from "shared";
 
 /**
  * Hook to get the user's preferred date format with graceful fallback

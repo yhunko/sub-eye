@@ -1,7 +1,6 @@
 import { AddSubscriptionForm } from "@/features/subscription/add-subscription";
-import { Card, CardContent } from "@/shared/components";
-import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
 import { createFileRoute } from "@tanstack/react-router";
+import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
 
 export const Route = createFileRoute("/(protected)/subscriptions/add")({
   component: AddSubscriptionPage,
@@ -9,12 +8,8 @@ export const Route = createFileRoute("/(protected)/subscriptions/add")({
 
 function AddSubscriptionPage() {
   return (
-    <DashboardLayout Navbar={<DashboardNavbar />}>
-      <Card className="mx-auto max-w-screen-sm">
-        <CardContent>
-          <AddSubscriptionForm />
-        </CardContent>
-      </Card>
-    </DashboardLayout>
+    <SubscriptionNativeLayout>
+      <AddSubscriptionForm />
+    </SubscriptionNativeLayout>
   );
 }

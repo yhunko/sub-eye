@@ -1,6 +1,5 @@
 import { FC, useMemo } from "react";
-import { CurrenciesMap } from "@shared/domains/currency";
-import { CurrencyUtils } from "@shared/utils/currencyUtils";
+import { CurrenciesMap, CurrencyUtils } from "shared";
 
 type CurrencyTextProps = {
   currencyCode?: string;

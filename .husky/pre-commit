@@ -9,6 +9,10 @@ bun run prepare
 echo "🎨 Running lint-staged (ESLint + Prettier)..."
 bunx lint-staged
 
+# TODO: Somehow fix to run only on React related files. Currently throws some strange errors.
+# echo "🩺 Running react-doctor on changed React files..."
+# bun run react-doctor
+
 echo "🔎 Running lint across the repo..."
 bun run lint
 

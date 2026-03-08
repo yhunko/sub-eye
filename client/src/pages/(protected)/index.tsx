@@ -8,13 +8,17 @@ import {
   UpcomingRenewals,
 } from "@/features/analytics";
 import { SplashScreen } from "@/shared/ui";
+import { valibotValidator } from "@tanstack/valibot-adapter";
+import { dashboardSearchSchema } from "@/shared/lib/router/dashboard-search";
 
 export const Route = createFileRoute("/(protected)/")({
   component: Dashboard,
   pendingComponent: () => <SplashScreen />,
   wrapInSuspense: true,
+  validateSearch: valibotValidator(dashboardSearchSchema),
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 function Dashboard() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>

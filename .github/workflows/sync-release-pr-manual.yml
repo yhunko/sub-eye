@@ -1,0 +1,51 @@
+name: Sync Release PR (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: Source branch to release from
+        required: true
+        default: dev
+        type: string
+      target_branch:
+        description: Target production branch
+        required: true
+        default: main
+        type: string
+      release_version:
+        description: Optional release version override (e.g. 3.2.0-beta.20)
+        required: false
+        default: ""
+        type: string
+      include_latest_beta_notes:
+        description: Include latest beta GitHub release notes in PR body
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: manual-release-pr-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-release-pr:
+    name: Sync Release PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync Release PR Body and Title
+        uses: ./.github/actions/sync-release-pr
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          source-branch: ${{ inputs.source_branch }}
+          target-branch: ${{ inputs.target_branch }}
+          release-version: ${{ inputs.release_version }}
+          include-latest-beta-notes: ${{ inputs.include_latest_beta_notes }}

@@ -1,6 +1,7 @@
 import * as m from "@/i18n/messages";
 import { useUser } from "@clerk/clerk-react";
 import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
+import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
 import {
   Select,
   SelectContent,
@@ -8,26 +9,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { useState } from "react";
 import { Spinner } from "@/shared/components";
 
-export const NotificationOffsetSelect = () => {
+type NotificationOffsetSelectProps = {
+  disabled?: boolean;
+  lockToDefault?: boolean;
+};
+
+export const NotificationOffsetSelect = ({
+  disabled = false,
+  lockToDefault = false,
+}: NotificationOffsetSelectProps) => {
   const { user } = useUser();
   const { mutate, isPending } = useUpdateUserMetadata();
-  const currentOffset =
-    user?.publicMetadata?.notificationOffset?.toString() ?? "0";
-  const [offset, setOffset] = useState<string>(currentOffset);
+  const defaultOffset = NOTIFICATION_SCHEDULE_DEFAULTS.notificationOffset;
+  const currentOffset = lockToDefault
+    ? defaultOffset.toString()
+    : (user?.publicMetadata?.notificationOffset?.toString() ??
+      defaultOffset.toString());
 
   const handleOffsetChange = (value: string) => {
-    setOffset(() => value);
+    if (disabled || lockToDefault) {
+      return;
+    }
+
     mutate({ notificationOffset: Number(value) });
   };
 
   return (
     <Select
-      value={offset}
+      value={currentOffset}
       onValueChange={handleOffsetChange}
-      disabled={isPending}
+      disabled={isPending || disabled}
     >
       <SelectTrigger
         id="offset-picker"
@@ -38,7 +51,7 @@ export const NotificationOffsetSelect = () => {
           placeholder={m.settings_notifications_offset_placeholder()}
           className="text-xs"
         />
-        {isPending && <Spinner />}
+        {isPending && !disabled && <Spinner />}
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="0">

@@ -1,63 +1,146 @@
-import { FC } from "react";
+import NiceModal from "@ebay/nice-modal-react";
+import { useEffect } from "react";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Button,
+  Label,
+  Spinner,
 } from "@/shared/components";
 import * as m from "@/i18n/messages";
-import { useDateFnsLocale } from "../../shared/lib/date-fns-context";
-import { useDateFormat } from "../../shared/hooks/use-date-format";
-import { format } from "date-fns";
+import { SubscriptionDatePicker } from "./add-subscription/ui/subscription-date-picker/subscription-date-picker";
+import { useConfirmableSubscriptionDate } from "./lib/use-confirmable-subscription-date";
+import { useSubscriptionUpdateDialog } from "./lib/use-subscription-update-dialog";
+import { toast } from "sonner";
 
 interface SubscriptionCancelDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  subscriptionId: string;
   subscriptionName: string;
-  nextPaymentDate: string;
+  defaultCancelledAt: string;
 }
 
-export const SubscriptionCancelDialog: FC<SubscriptionCancelDialogProps> = ({
-  open,
-  onOpenChange,
-  onConfirm,
-  subscriptionName,
-  nextPaymentDate,
-}) => {
-  const { dateFnsFormat } = useDateFormat();
-  const { locale } = useDateFnsLocale();
-  const formattedDate = format(new Date(nextPaymentDate), dateFnsFormat, {
-    locale,
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {m.subscription_cancel_title({ name: subscriptionName })}
-          </DialogTitle>
-          <DialogDescription className="space-y-2">
-            <p>{m.subscription_cancel_description()}</p>
-            <p className="text-foreground font-medium">
-              {m.subscription_cancel_activeUntil({ date: formattedDate })}
-            </p>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">{m.common_actions_cancel()}</Button>
-          </DialogClose>
-          <Button variant="destructive" onClick={onConfirm}>
-            {m.common_actions_confirm()}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+const toValidDate = (value: string): Date | undefined => {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
+
+export const SubscriptionCancelDialog =
+  NiceModal.create<SubscriptionCancelDialogProps>(
+    ({ subscriptionId, subscriptionName, defaultCancelledAt }) => {
+      const {
+        modal,
+        dateFnsFormat,
+        locale,
+        selectedDate,
+        setSelectedDate,
+        validationError,
+        setValidationError,
+        updateSubscription,
+        isPending,
+        closeModal,
+        handleDateChange,
+      } = useSubscriptionUpdateDialog();
+
+      useEffect(() => {
+        if (modal.visible) {
+          setSelectedDate(toValidDate(defaultCancelledAt) ?? new Date());
+          setValidationError(null);
+        }
+      }, [
+        defaultCancelledAt,
+        modal.visible,
+        setSelectedDate,
+        setValidationError,
+      ]);
+
+      const { handleConfirm } = useConfirmableSubscriptionDate({
+        selectedDate,
+        dateFnsFormat,
+        locale,
+        requiredMessage: m.validation_required(),
+        setValidationError,
+        onConfirm: (cancelledAtIso) => {
+          updateSubscription(
+            {
+              id: subscriptionId,
+              payload: {
+                paymentDate: cancelledAtIso,
+                willBeCancelledAt: cancelledAtIso,
+              },
+            },
+            {
+              onSuccess: async () => {
+                toast.success(m.messages_updated());
+                await closeModal();
+              },
+              onError: () => {
+                toast.error(m.messages_error());
+              },
+            },
+          );
+        },
+      });
+
+      return (
+        <Dialog
+          open={modal.visible}
+          onOpenChange={(open) => {
+            if (!open) {
+              void closeModal();
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-130">
+            <DialogHeader>
+              <DialogTitle>
+                {m.subscription_cancel_title({ name: subscriptionName })}
+              </DialogTitle>
+              <DialogDescription>
+                {m.subscription_cancel_description()}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  {m.form_billingInfo_willBeCancelledAt_label()}
+                </Label>
+                <SubscriptionDatePicker
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                />
+                <p className="text-muted-foreground text-xs">
+                  {m.subscription_cancel_paymentDateReset()}
+                </p>
+                {validationError && (
+                  <p className="text-destructive text-xs">{validationError}</p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                disabled={isPending}
+                onClick={closeModal}
+              >
+                {m.common_actions_cancel()}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirm}
+                disabled={isPending}
+              >
+                {isPending && <Spinner />}
+                {m.common_actions_confirm()}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    },
+  );

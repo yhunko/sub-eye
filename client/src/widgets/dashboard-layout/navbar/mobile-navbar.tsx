@@ -14,7 +14,7 @@ export const MobileNavbar = () => {
         onAnimationComplete={() => {
           hasAnimated = true;
         }}
-        className="bg-background/80 supports-backdrop-filter:bg-background/60 sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b px-4 backdrop-blur md:hidden"
+        className="bg-background/80 supports-backdrop-filter:bg-background/60 sticky top-1 z-40 mx-auto flex h-14 w-[95vw] items-center justify-between rounded-full border-b px-4 backdrop-blur md:hidden"
       >
         <DashboardLogo />
         <UserDropdownMenu triggerId="navbar-user-trigger-mobile" />

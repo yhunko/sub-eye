@@ -30,7 +30,7 @@ export const DesktopNavbar = () => {
         onAnimationComplete={() => {
           hasAnimated = true;
         }}
-        className="bg-background/60 supports-backdrop-filter:bg-background/60 sticky top-0 z-40 hidden w-full border-b backdrop-blur md:block"
+        className="bg-background/60 supports-backdrop-filter:bg-background/60 sticky top-1 z-40 mx-auto hidden w-[95vw] rounded-full border-b backdrop-blur md:block"
       >
         <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-4 md:gap-6 md:px-6">
           <div className="flex items-center gap-2">

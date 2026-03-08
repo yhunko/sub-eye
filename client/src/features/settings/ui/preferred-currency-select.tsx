@@ -11,7 +11,7 @@ import { useUpdateUserMetadata } from "@/entities/user";
 import { CurrencySelect } from "@/entities/currency";
 import { DollarSign } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
-import { CurrencyUtils } from "@shared/utils/currencyUtils";
+import { CurrencyUtils } from "shared";
 import * as m from "@/i18n/messages";
 
 export const PreferredCurrencySelect: FC = () => {

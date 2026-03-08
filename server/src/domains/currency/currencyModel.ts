@@ -1,4 +1,4 @@
-import { CurrenciesMap } from "@shared/domains/currency";
+import { CurrenciesMap } from "shared";
 import { pipe, string, transform, check } from "valibot";
 
 export const currencyBaseSchema = pipe(

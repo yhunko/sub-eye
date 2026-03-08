@@ -24,11 +24,11 @@ export const NotificationsButton = () => {
 
   const isSubscribed = !!subscription;
 
-  const handleToggleNotifications = () => {
-    if (isSubscribed) {
-      unsubscribe();
-    } else {
+  const handleToggleNotifications = (nextChecked: boolean) => {
+    if (nextChecked) {
       subscribe();
+    } else {
+      unsubscribe();
     }
   };
 

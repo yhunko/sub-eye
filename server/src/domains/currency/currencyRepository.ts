@@ -1,4 +1,4 @@
-import type { CurrencyRatesDto } from "@shared/domains/currency";
+import type { CurrencyRatesDto } from "shared";
 
 export class CurrencyRepository {
   private static cache = new Map<string, CurrencyRatesDto>();

@@ -1,25 +1,49 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
+import { object, string } from "valibot";
 import {
   AddSubscriptionSchema,
+  SchedulePriceChangeSchema,
   UpdateSubscriptionSchema,
   idQuerySchema,
   listQuerySchema,
-} from "@shared/domains/subscription";
+  updateSubscriptionQuerySchema,
+} from "shared";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
+import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscriptionPriceChangeWorkflow";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
+import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
+
+const knownServiceErrorStatuses: Record<string, 403 | 404> = {
+  "Subscription not found": 404,
+  "Subscription history item not found": 404,
+  "Subscription limit reached": 403,
+};
+
+const badRequestServiceErrors = new Set<string>([
+  "Custom date is required for custom-date mode",
+  "Cannot schedule a price change for a cancelled subscription",
+  "Invalid scheduled effective date",
+  "Scheduled effective date must be in the future",
+  "Scheduled effective date must be before the cancellation date",
+  "No scheduled price change",
+]);
 
 const handleServiceError = (context: Context, error: unknown) => {
   if (error instanceof Error) {
-    if (error.message === "Subscription not found") {
-      return context.json({ error: error.message }, 404);
+    const mappedStatus = knownServiceErrorStatuses[error.message];
+    if (mappedStatus) {
+      return context.json({ error: error.message }, mappedStatus);
     }
-  }
-
-  if (error instanceof Error) {
+    if (badRequestServiceErrors.has(error.message)) {
+      return context.json(
+        { error: "Database Error", message: error.message },
+        400,
+      );
+    }
     return context.json(
       { error: "Database Error", message: error.message },
       500,
@@ -28,6 +52,11 @@ const handleServiceError = (context: Context, error: unknown) => {
 
   return context.json({ error: "Internal Server Error" }, 500);
 };
+
+const historyIdParamSchema = object({
+  id: string(),
+  historyId: string(),
+});
 
 export const subscriptionRouter = new Hono()
   .get("/", protect, vValidator("query", listQuerySchema), async (context) => {
@@ -58,6 +87,47 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
+  .get(
+    "/:id/history",
+    protect,
+    vValidator("param", idQuerySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const historyData =
+          await SubscriptionHistoryService.getHistoryForSubscription(
+            id,
+            userId,
+          );
+        return context.json(historyData);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .delete(
+    "/:id/history/:historyId",
+    protect,
+    vValidator("param", historyIdParamSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id, historyId } = context.req.valid("param");
+        await SubscriptionHistoryService.deleteHistoryItem({
+          subscriptionId: id,
+          historyId,
+          userId,
+        });
+
+        return context.json({ success: true });
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .post(
     "/",
     protect,
@@ -81,18 +151,79 @@ export const subscriptionRouter = new Hono()
     "/:id",
     protect,
     vValidator("param", idQuerySchema),
+    vValidator("query", updateSubscriptionQuerySchema),
     vValidator("json", UpdateSubscriptionSchema),
     async (context) => {
       const userId = requireUserId(context);
 
       try {
         const { id } = context.req.valid("param");
+        const query = context.req.valid("query");
         const payload = context.req.valid("json");
         const subscription = await SubscriptionService.updateSubscription(
           id,
           userId,
           payload,
+          {
+            trackHistory: query.trackHistory !== "false",
+          },
         );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/price-change/schedule",
+    protect,
+    vValidator("param", idQuerySchema),
+    vValidator("json", SchedulePriceChangeSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const payload = context.req.valid("json");
+        const subscription = await SubscriptionService.schedulePriceChange(
+          id,
+          userId,
+          payload,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .delete(
+    "/:id/price-change/schedule",
+    protect,
+    vValidator("param", idQuerySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const subscription =
+          await SubscriptionService.cancelScheduledPriceChange(id, userId);
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/price-change/apply-now",
+    protect,
+    vValidator("param", idQuerySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const subscription =
+          await SubscriptionService.applyScheduledPriceChangeNow(id, userId);
         return context.json(subscription);
       } catch (error) {
         return handleServiceError(context, error);
@@ -144,4 +275,5 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
-  .post("/notifications/workflow", SubscriptionNotificationsWorkflow.handler);
+  .post("/notifications/workflow", SubscriptionNotificationsWorkflow.handler)
+  .post("/price-change/workflow", SubscriptionPriceChangeWorkflow.handler);

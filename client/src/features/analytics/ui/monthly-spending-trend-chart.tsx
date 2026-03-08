@@ -1,24 +1,29 @@
-import { FC } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { format, parseISO } from "date-fns";
+import { FC, Suspense, lazy, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
-import { CurrenciesMap } from "@shared/domains/currency";
+import { CurrenciesMap } from "shared";
 import {
   Card,
-  CardContent,
   CardDescription,
+  CardContent,
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BrandfetchImage } from "@/features/brandfetch";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import type { MonthlyTrendSubscription } from "@shared/domains/analytics";
+import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
+import { addMonths, isSameMonth, parseISO } from "date-fns";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+
+const MonthlySpendingTrendChartDesktop = lazy(
+  () => import("./monthly-spending-trend-chart.desktop"),
+);
+const MonthlySpendingTrendChartMobile = lazy(
+  () => import("./monthly-spending-trend-chart.mobile"),
+);
 
 type MonthlySpendingTrendChartProps = {
   className?: string;
@@ -29,6 +34,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
 }) => {
   const { userId } = useAuth();
   const { locale } = useDateFnsLocale();
+  const isDesktop = useBreakpoint("md");
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
@@ -36,6 +42,65 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
       options: { enabled: true },
     }),
   );
+
+  const currencySymbol =
+    CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+
+  const yAxisWidth = useMemo(() => {
+    const maxAmount = Math.max(0, ...data.monthlyTrend.map((d) => d.amount));
+
+    const formatted = `${currencySymbol}${maxAmount.toLocaleString(undefined, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })}`;
+
+    const charWidth = 7;
+    const padding = 12;
+    return Math.max(45, formatted.length * charWidth + padding);
+  }, [data.monthlyTrend, currencySymbol]);
+
+  const monthComparisonBadge = useMemo(() => {
+    const now = new Date();
+    const currentMonth = data.monthlyTrend.find((point) =>
+      isSameMonth(parseISO(point.date), now),
+    );
+    const previousMonthDate = addMonths(now, -1);
+    const previousMonth = data.monthlyTrend.find((point) =>
+      isSameMonth(parseISO(point.date), previousMonthDate),
+    );
+
+    if (!currentMonth || !previousMonth) {
+      return null;
+    }
+
+    const amountDelta = currentMonth.amount - previousMonth.amount;
+    const deltaPercentage =
+      previousMonth.amount > 0
+        ? (amountDelta / previousMonth.amount) * 100
+        : null;
+
+    if (deltaPercentage === null) {
+      return {
+        label: m.analytics_monthlySpend_noData(),
+        shortLabel: m.analytics_monthlySpend_noData(),
+        tone: "bg-muted text-muted-foreground",
+        Icon: Minus,
+      } as const;
+    }
+
+    return {
+      label: `${amountDelta > 0 ? "+" : ""}${deltaPercentage.toFixed(1)}% ${m.analytics_monthlySpend_vsLastMonth()}`,
+      shortLabel: `${amountDelta > 0 ? "+" : ""}${deltaPercentage.toFixed(1)}%`,
+      tone:
+        amountDelta === 0
+          ? "bg-muted text-muted-foreground"
+          : amountDelta > 0
+            ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+            : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+      Icon:
+        amountDelta === 0 ? Minus : amountDelta > 0 ? TrendingUp : TrendingDown,
+    };
+  }, [data.monthlyTrend]);
 
   if (!userId) {
     return (
@@ -48,155 +113,52 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
     );
   }
 
-  const currencySymbol =
-    CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+  const variantProps: MonthlySpendingTrendVariantProps = {
+    monthlyTrend: data.monthlyTrend,
+    preferredCurrencyCode: data.preferredCurrencyCode,
+    currencySymbol,
+    yAxisWidth,
+    locale,
+  };
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn("relative w-full", className)}>
+      {monthComparisonBadge && (
+        <span
+          className={cn(
+            "absolute top-6 right-4 inline-flex max-w-xs items-center gap-1 overflow-hidden rounded-full px-2 py-0.5 text-[11px] font-medium sm:max-w-lg",
+            monthComparisonBadge.tone,
+          )}
+          title={monthComparisonBadge.label}
+        >
+          <monthComparisonBadge.Icon className="size-3 shrink-0" />
+          <span className="truncate sm:hidden">
+            {monthComparisonBadge.shortLabel}
+          </span>
+          <span className="hidden truncate sm:inline">
+            {monthComparisonBadge.label}
+          </span>
+        </span>
+      )}
+
       <CardHeader>
-        <CardTitle>{m.analytics_charts_monthlySpending_title()}</CardTitle>
-        <CardDescription>
+        <CardTitle className="leading-tight text-pretty">
+          {m.analytics_charts_monthlySpending_title()}
+        </CardTitle>
+        <CardDescription className="mt-1 leading-snug wrap-break-word whitespace-normal">
           {m.analytics_charts_monthlySpending_subtitle()}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          config={{
-            amount: {
-              label: m.analytics_charts_monthlySpending_labels_totalSpending(),
-              color: "var(--chart-1)",
-            },
-          }}
-          className="h-full w-full md:max-h-72"
+        <Suspense
+          fallback={<div className="bg-muted h-75 w-full rounded-xl" />}
         >
-          <AreaChart
-            data={data.monthlyTrend}
-            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-amount)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-amount)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              vertical
-              horizontal
-              strokeDasharray="4 4"
-              stroke="var(--border)"
-            />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={10}
-              tickFormatter={(val: string) =>
-                format(parseISO(val), "LLL yyyy", { locale })
-              }
-              className="text-muted-foreground text-xs"
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              width={45}
-              className="text-muted-foreground font-mono text-[10px] font-medium"
-              tickFormatter={(value: number) =>
-                `${currencySymbol}${value.toLocaleString(undefined, {
-                  notation: "compact",
-                  maximumFractionDigits: 1,
-                })}`
-              }
-            />
-            <ChartTooltip
-              cursor={{
-                stroke: "var(--border)",
-                strokeWidth: 1,
-                strokeDasharray: "0",
-              }}
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const item = payload[0].payload as {
-                    date: string;
-                    amount: number;
-                    subscriptions: MonthlyTrendSubscription[];
-                  };
-                  return (
-                    <div className="bg-background/95 border-border max-h-75 w-52 overflow-y-auto rounded-lg border p-3 shadow-md backdrop-blur-sm">
-                      <p className="text-muted-foreground mb-2 text-xs font-medium">
-                        {format(parseISO(item.date), "LLLL yyyy", { locale })}
-                      </p>
-                      {item.subscriptions && item.subscriptions.length > 0 && (
-                        <div className="mb-2 space-y-1.5">
-                          {item.subscriptions.map((sub, idx) => (
-                            <div
-                              key={`${sub.name}-${idx}`}
-                              className="flex items-center gap-2"
-                            >
-                              <BrandfetchImage
-                                domain={sub.brandDomain}
-                                className="size-5 text-[8px]"
-                              />
-                              <span className="flex-1 truncate text-xs">
-                                {sub.name}
-                              </span>
-                              <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                                <CurrencyText
-                                  amount={sub.amount}
-                                  currencyCode={sub.currencyCode}
-                                />
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div
-                        className={cn(
-                          "flex items-center justify-between gap-4",
-                          item.subscriptions &&
-                            item.subscriptions.length > 0 &&
-                            "border-t pt-2",
-                        )}
-                      >
-                        <span className="text-foreground text-sm font-bold">
-                          {m.analytics_charts_monthlySpending_labels_total()}
-                        </span>
-                        <CurrencyBadge
-                          amount={item.amount}
-                          currencyCode={data.preferredCurrencyCode}
-                        />
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="amount"
-              stroke="var(--color-amount)"
-              strokeWidth={2}
-              fill="url(#fillAmount)"
-              fillOpacity={0.7}
-              dot={false}
-              activeDot={{
-                r: 6,
-                fill: "var(--background)",
-                stroke: "var(--color-amount)",
-                strokeWidth: 2,
-              }}
-            />
-          </AreaChart>
-        </ChartContainer>
+          {isDesktop ? (
+            <MonthlySpendingTrendChartDesktop {...variantProps} />
+          ) : (
+            <MonthlySpendingTrendChartMobile {...variantProps} />
+          )}
+        </Suspense>
       </CardContent>
     </Card>
   );

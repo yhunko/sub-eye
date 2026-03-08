@@ -1,7 +1,8 @@
-import { CurrencyUtils } from "@shared/utils/currencyUtils";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
-import type { SubscriptionBillingDetails } from "@shared/domains/subscription/subscriptionSchemas";
+import { CurrencyUtils } from "shared";
+import { DateTimezoneUtils } from "shared";
+import { RecurrenceUtils } from "shared";
+import type { SubscriptionBillingDetails } from "shared";
+import type { SubscriptionPeriod } from "shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionCalculator {
@@ -10,13 +11,91 @@ export class SubscriptionCalculator {
     preferredCurrency: string,
     rates: Record<string, number>,
   ): SubscriptionBillingDetails {
-    const amount = Number(subscription.cost);
+    return this.computeBillingDetails(
+      Number(subscription.cost),
+      subscription.currency,
+      subscription.every,
+      subscription.period,
+      preferredCurrency,
+      rates,
+    );
+  }
+
+  static calculateBillingDetailsForPricing(
+    {
+      amount,
+      currency,
+      every,
+      period,
+    }: {
+      amount: number;
+      currency: string;
+      every: number;
+      period: SubscriptionPeriod;
+    },
+    preferredCurrency: string,
+    rates: Record<string, number>,
+  ): SubscriptionBillingDetails {
+    return this.computeBillingDetails(
+      amount,
+      currency,
+      every,
+      period,
+      preferredCurrency,
+      rates,
+    );
+  }
+
+  static calculatePaymentDates(
+    subscription: SubscriptionRecord,
+    timezone?: string,
+    relativeTo: Date = DateTimezoneUtils.now(timezone),
+  ): { nextPaymentDate: string; lastPaymentDate: string | null } {
     const every = subscription.every;
-    const period = subscription.period;
+    const startDate = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
+    const comparisonDate = DateTimezoneUtils.startOfDay(relativeTo, timezone);
 
-    const originalCurrency = subscription.currency;
-    const preferredCurrencyCode = preferredCurrency;
+    const nextPayment = RecurrenceUtils.getNextOccurrence(
+      startDate,
+      every,
+      subscription.period,
+      comparisonDate,
+    );
+    const lastPayment = RecurrenceUtils.getPreviousOccurrence(
+      startDate,
+      every,
+      subscription.period,
+      comparisonDate,
+    );
 
+    return {
+      nextPaymentDate: nextPayment.toISOString(),
+      lastPaymentDate: lastPayment ? lastPayment.toISOString() : null,
+    };
+  }
+
+  private static getExchangeRate(
+    from: string,
+    to: string,
+    rates: Record<string, number>,
+  ): number {
+    if (from === to) return 1;
+    const rate = rates[from];
+    if (!rate) return 1;
+    return 1 / rate;
+  }
+
+  private static computeBillingDetails(
+    amount: number,
+    originalCurrency: string,
+    every: number,
+    period: SubscriptionPeriod,
+    preferredCurrencyCode: string,
+    rates: Record<string, number>,
+  ): SubscriptionBillingDetails {
     const originalMonthly = CurrencyUtils.toMonthly(amount, every, period);
     const preferredAmount = CurrencyUtils.convert(
       amount,
@@ -47,46 +126,5 @@ export class SubscriptionCalculator {
         ),
       },
     };
-  }
-
-  static calculatePaymentDates(
-    subscription: SubscriptionRecord,
-    timezone?: string,
-    relativeTo: Date = DateTimezoneUtils.now(timezone),
-  ): { nextPaymentDate: string; lastPaymentDate: string | null } {
-    const every = subscription.every;
-    const startDate = DateTimezoneUtils.toZoned(
-      subscription.paymentDate,
-      timezone,
-    );
-
-    const nextPayment = RecurrenceUtils.getNextOccurrence(
-      startDate,
-      every,
-      subscription.period,
-      relativeTo,
-    );
-    const lastPayment = RecurrenceUtils.getPreviousOccurrence(
-      startDate,
-      every,
-      subscription.period,
-      relativeTo,
-    );
-
-    return {
-      nextPaymentDate: nextPayment.toISOString(),
-      lastPaymentDate: lastPayment ? lastPayment.toISOString() : null,
-    };
-  }
-
-  private static getExchangeRate(
-    from: string,
-    to: string,
-    rates: Record<string, number>,
-  ): number {
-    if (from === to) return 1;
-    const rate = rates[from];
-    if (!rate) return 1;
-    return 1 / rate;
   }
 }

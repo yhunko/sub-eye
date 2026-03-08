@@ -1,24 +1,15 @@
-import {
-  addDays,
-  addMonths,
-  endOfMonth,
-  format,
-  isAfter,
-  isBefore,
-  isSameDay,
-  startOfMonth,
-  eachDayOfInterval,
-} from "date-fns";
-import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import type { SubscriptionDto } from "@shared/domains/subscription";
-import type { SubscriptionPeriod } from "@shared/types";
+import { format, isAfter, isBefore, eachDayOfInterval } from "date-fns";
+import { RecurrenceUtils } from "shared";
+import { DateTimezoneUtils } from "shared";
+import type { SubscriptionDto } from "shared";
+import { shouldIncludeOccurrence } from "shared";
+import type { SubscriptionPeriod } from "shared";
 import type {
   DashboardAnalyticsDto,
   MonthlyTrendPoint,
   MostExpensiveSubscriptionDto,
   UpcomingRenewalDto,
-} from "@shared/domains/analytics";
+} from "shared";
 
 type PaymentOccurrence = {
   date: Date;
@@ -46,7 +37,7 @@ export class AnalyticsCalculator {
       timezone,
     );
 
-    let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
+    let occurrence = RecurrenceUtils.getNextOccurrence(
       startDateZoned,
       subscription.every,
       subscription.period as SubscriptionPeriod,
@@ -54,21 +45,25 @@ export class AnalyticsCalculator {
     );
 
     let total = 0;
-    const amount = subscription.billing.preferred.amount;
 
     while (!isAfter(occurrence, rangeEnd)) {
       if (
-        subscription.cancelledAt &&
-        !isBefore(occurrence, new Date(subscription.nextPaymentDate))
+        !shouldIncludeOccurrence(
+          {
+            willBeCancelledAt: subscription.willBeCancelledAt,
+          },
+          occurrence,
+        )
       ) {
         break;
       }
 
-      total += amount;
+      total += this.resolveOccurrenceAmount(subscription, occurrence);
       occurrence = RecurrenceUtils.addPeriod(
         occurrence,
         subscription.every,
         subscription.period as SubscriptionPeriod,
+        { anchorDate: startDateZoned },
       );
     }
 
@@ -85,8 +80,9 @@ export class AnalyticsCalculator {
     timezone?: string,
   ): MonthlyTrendPoint[] {
     return Array.from({ length: monthCount }, (_, i) => {
-      const mStart = startOfMonth(addMonths(baseDate, i));
-      const mEnd = endOfMonth(addMonths(baseDate, i));
+      const monthRef = DateTimezoneUtils.shiftMonths(baseDate, i, timezone);
+      const mStart = DateTimezoneUtils.startOfMonth(monthRef, timezone);
+      const mEnd = DateTimezoneUtils.endOfMonth(monthRef, timezone);
 
       const payments = this.collectPaymentsInRange(
         subscriptions,
@@ -101,6 +97,7 @@ export class AnalyticsCalculator {
       const subMap = new Map<
         string,
         {
+          id: string;
           name: string;
           brandDomain: string | null;
           amount: number;
@@ -114,6 +111,7 @@ export class AnalyticsCalculator {
           existing.amount += payment.amount;
         } else {
           subMap.set(payment.subscription.id, {
+            id: payment.subscription.id,
             name: payment.subscription.name,
             brandDomain: payment.subscription.brandDomain,
             amount: payment.subscription.billing.preferred.amount, // Base amount, but we sum payment.amount for multiple occurrences
@@ -162,31 +160,37 @@ export class AnalyticsCalculator {
 
       while (isBefore(projectionDate, horizon)) {
         if (
-          subscription.cancelledAt &&
-          !isBefore(projectionDate, new Date(subscription.nextPaymentDate))
+          !shouldIncludeOccurrence(
+            {
+              willBeCancelledAt: subscription.willBeCancelledAt,
+            },
+            projectionDate,
+          )
         ) {
           break;
         }
 
         const daysUntil = Math.round(
-          (projectionDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+          (DateTimezoneUtils.startOfDay(projectionDate, timezone).getTime() -
+            DateTimezoneUtils.startOfDay(today, timezone).getTime()) /
+            (24 * 60 * 60 * 1000),
         );
         payments.push({
           id: subscription.id,
           name: subscription.name,
           brandDomain: subscription.brandDomain,
           provider: subscription.category ?? "Subscription",
-          amount: subscription.billing.preferred.amount,
+          amount: this.resolveOccurrenceAmount(subscription, projectionDate),
           currencyCode: preferredCurrencyCode,
           nextPaymentDate: projectionDate.toISOString(),
           daysUntil,
         });
 
-        projectionDate = RecurrenceUtils.getNextOccurrence(
+        projectionDate = RecurrenceUtils.addPeriod(
           projectionDate,
           subscription.every,
           subscription.period as SubscriptionPeriod,
-          addDays(projectionDate, 1),
+          { anchorDate: paymentDateZoned },
         );
       }
     }
@@ -208,8 +212,8 @@ export class AnalyticsCalculator {
     remainingThisMonth: number;
     totalUpcomingMonth: number;
   } {
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
+    const monthStart = DateTimezoneUtils.startOfMonth(today, timezone);
+    const monthEnd = DateTimezoneUtils.endOfMonth(today, timezone);
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     // Collect all payment occurrences in the month
@@ -226,7 +230,7 @@ export class AnalyticsCalculator {
 
     for (const targetDate of daysInMonth) {
       const dueToday = monthPayments.filter((payment) =>
-        isSameDay(payment.date, targetDate),
+        DateTimezoneUtils.isSameDay(payment.date, targetDate, timezone),
       );
       const dailyAmount = dueToday.reduce((sum, p) => sum + p.amount, 0);
       cumulative += dailyAmount;
@@ -293,6 +297,28 @@ export class AnalyticsCalculator {
     );
   }
 
+  static hasUpcomingOccurrence(
+    subscription: SubscriptionDto,
+    fromDate: Date,
+    timezone?: string,
+  ): boolean {
+    const paymentDateZoned = DateTimezoneUtils.toZoned(
+      subscription.paymentDate,
+      timezone,
+    );
+    const nextOccurrence = RecurrenceUtils.getNextOccurrence(
+      paymentDateZoned,
+      subscription.every,
+      subscription.period as SubscriptionPeriod,
+      fromDate,
+    );
+
+    return shouldIncludeOccurrence(
+      { willBeCancelledAt: subscription.willBeCancelledAt },
+      nextOccurrence,
+    );
+  }
+
   /**
    * Collects individual payment occurrences for all subscriptions in a range.
    */
@@ -309,7 +335,7 @@ export class AnalyticsCalculator {
         subscription.paymentDate,
         timezone,
       );
-      let occurrence = RecurrenceUtils.getFirstOccurrenceOnOrAfter(
+      let occurrence = RecurrenceUtils.getNextOccurrence(
         paymentDateZoned,
         subscription.every,
         subscription.period as SubscriptionPeriod,
@@ -317,26 +343,48 @@ export class AnalyticsCalculator {
       );
 
       while (!isAfter(occurrence, rangeEnd)) {
-        if (
-          subscription.cancelledAt &&
-          !isBefore(occurrence, new Date(subscription.nextPaymentDate))
-        ) {
-          break;
-        }
+        const include = shouldIncludeOccurrence(
+          { willBeCancelledAt: subscription.willBeCancelledAt },
+          occurrence,
+        );
+
+        if (!include) break;
 
         payments.push({
           date: occurrence,
-          amount: subscription.billing.preferred.amount,
+          amount: this.resolveOccurrenceAmount(subscription, occurrence),
           subscription,
         });
+
         occurrence = RecurrenceUtils.addPeriod(
           occurrence,
           subscription.every,
           subscription.period as SubscriptionPeriod,
+          { anchorDate: paymentDateZoned },
         );
       }
     }
 
     return payments;
+  }
+
+  private static resolveOccurrenceAmount(
+    subscription: SubscriptionDto,
+    occurrence: Date,
+  ): number {
+    const scheduled = subscription.scheduledPriceChange;
+
+    if (!scheduled) {
+      return subscription.billing.preferred.amount;
+    }
+
+    const effectiveAt = Date.parse(scheduled.effectiveAt);
+    if (Number.isNaN(effectiveAt)) {
+      return subscription.billing.preferred.amount;
+    }
+
+    return occurrence.getTime() >= effectiveAt
+      ? scheduled.billing.preferred.amount
+      : subscription.billing.preferred.amount;
   }
 }

@@ -4,7 +4,7 @@ import {
   isToday,
   isTomorrow,
 } from "date-fns";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import { DateTimezoneUtils } from "shared";
 import * as m from "@/i18n/messages";
 
 export interface BillDisplayState {
@@ -39,6 +39,13 @@ export class SubscriptionBillingUtils {
       };
     }
 
+    if (daysUntil < 0) {
+      return {
+        relativeText: m.billing_ago({ count: Math.abs(daysUntil) }),
+        colorClass: "text-muted-foreground",
+      };
+    }
+
     const relativeText = m.billing_inDays({ count: daysUntil });
 
     if (daysUntil <= 3) {
@@ -51,6 +58,6 @@ export class SubscriptionBillingUtils {
       return { relativeText, colorClass: "text-yellow-600" };
     }
 
-    return { relativeText, colorClass: "text-gray-500" };
+    return { relativeText, colorClass: "text-muted-foreground" };
   }
 }

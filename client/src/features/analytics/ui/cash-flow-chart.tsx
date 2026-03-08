@@ -12,7 +12,7 @@ import { format, parseISO, startOfDay } from "date-fns";
 import { useUser } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { CurrenciesMap } from "@shared/domains/currency";
+import { CurrenciesMap } from "shared";
 import {
   Card,
   CardContent,
@@ -25,8 +25,8 @@ import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import type { CashFlowSubscription } from "@shared/domains/analytics";
+import { DateTimezoneUtils } from "shared";
+import type { CashFlowSubscription } from "shared";
 
 type CashFlowChartProps = {
   className?: string;

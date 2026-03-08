@@ -10,6 +10,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
 permissions:
   contents: write
   issues: write
@@ -34,16 +38,25 @@ jobs:
       - name: Fetch Tags
         run: git fetch --force --tags
 
-      - name: Setup Node via Volta
-        uses: volta-cli/action@v4
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+      - name: Check Agent Guidelines Mirrors
+        run: bun run guidelines:check
 
       - name: Install Dependencies
         run: bun install
+
+      - name: Apply Production DB Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Missing database URL. Configure DATABASE_URL in GitHub secrets."
+            exit 1
+          fi
+
+          bun --cwd server run db:migrate
 
       - name: Run Semantic Release
         env:
@@ -57,6 +70,8 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           VITE_BRANDFETCH_CLIENT_ID: ${{ secrets.VITE_BRANDFETCH_CLIENT_ID }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VITE_PADDLE_CLIENT_TOKEN: ${{ secrets.VITE_PADDLE_CLIENT_TOKEN }}
+          VITE_PADDLE_ENV: ${{ vars.VITE_PADDLE_ENV }}
         run: bun run build
 
       - name: Deploy to Cloudflare
@@ -64,7 +79,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config prod.wrangler.jsonc --minify
+          command: deploy --config prod.wrangler.jsonc --minify --var PADDLE_PLUS_PRODUCT_ID:${{ vars.PADDLE_PLUS_PRODUCT_ID }}
 
   back-merge:
     name: Sync Main back to Dev

@@ -5,6 +5,10 @@ on:
     branches:
       - dev
 
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
 permissions:
   contents: write
   issues: write
@@ -26,21 +30,32 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup Node via Volta
-        uses: volta-cli/action@v4
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+      - name: Check Agent Guidelines Mirrors
+        run: bun run guidelines:check
 
       - name: Install Dependencies
         run: bun install
 
       - name: Run Semantic Release
+        id: semantic_release
+        uses: cycjimmy/semantic-release-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: HUSKY=0 bunx semantic-release
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          HUSKY: 0
+
+      - name: Sync Release PR (dev -> main)
+        if: steps.semantic_release.outputs.new_release_published == 'true'
+        uses: ./.github/actions/sync-release-pr
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          source-branch: dev
+          target-branch: main
+          release-version: ${{ steps.semantic_release.outputs.new_release_version }}
+          release-notes: ${{ steps.semantic_release.outputs.new_release_notes }}
 
       # Deploy Server & Client
       - name: Build Project
@@ -49,6 +64,8 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           VITE_BRANDFETCH_CLIENT_ID: ${{ secrets.VITE_BRANDFETCH_CLIENT_ID }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VITE_PADDLE_CLIENT_TOKEN: ${{ secrets.VITE_PADDLE_CLIENT_TOKEN }}
+          VITE_PADDLE_ENV: ${{ vars.VITE_PADDLE_ENV }}
         run: bun run build
 
       - name: Deploy to Cloudflare

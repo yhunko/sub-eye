@@ -26,7 +26,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
 import { useQueryStates } from "nuqs";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { SubscriptionSortField } from "@shared/domains/subscription";
+import { SubscriptionSortField } from "shared";
 import * as m from "@/i18n/messages";
 import { TableBodyLoader } from "@/shared/ui";
 import { SubscriptionsMonthlySpendCard } from "../../analytics";
@@ -144,13 +144,18 @@ const SubscriptionsTable: FC = () => {
             />
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const isCancelled = !!row.original.cancelledAt;
+                const isCancelled = row.original.status === "cancelled";
+                const isCancelledButActive =
+                  row.original.status === "cancelledButActive";
 
                 return (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={cn(isCancelled && "bg-muted/30 opacity-75")}
+                    className={cn(
+                      isCancelled && "bg-muted/30 opacity-75",
+                      isCancelledButActive && "bg-amber-500/5",
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

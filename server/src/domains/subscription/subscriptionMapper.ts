@@ -1,7 +1,5 @@
-import type {
-  SubscriptionBillingDetails,
-  SubscriptionDto,
-} from "@shared/domains/subscription/subscriptionSchemas";
+import type { SubscriptionBillingDetails, SubscriptionDto } from "shared";
+import { getSubscriptionLifecycleStatus } from "shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionMapper {
@@ -10,7 +8,13 @@ export class SubscriptionMapper {
     billing: SubscriptionBillingDetails,
     nextPaymentDate: string,
     lastPaymentDate: string | null,
+    scheduledPriceChange: SubscriptionDto["scheduledPriceChange"],
   ): SubscriptionDto {
+    const paymentDate = this.normalizeDate(subscription.paymentDate);
+    const willBeCancelledAt = subscription.willBeCancelledAt
+      ? this.normalizeDate(subscription.willBeCancelledAt)
+      : null;
+
     return {
       id: subscription.id,
       userId: subscription.userId,
@@ -19,7 +23,7 @@ export class SubscriptionMapper {
       currency: subscription.currency,
       every: subscription.every,
       period: subscription.period,
-      paymentDate: this.normalizeDate(subscription.paymentDate),
+      paymentDate,
       autoPaid: subscription.autoPaid,
       category: subscription.category ?? null,
       notes: subscription.notes ?? null,
@@ -30,9 +34,11 @@ export class SubscriptionMapper {
       billing,
       nextPaymentDate,
       lastPaymentDate,
-      cancelledAt: subscription.cancelledAt
-        ? this.normalizeDate(subscription.cancelledAt)
-        : null,
+      willBeCancelledAt,
+      scheduledPriceChange,
+      status: getSubscriptionLifecycleStatus({
+        willBeCancelledAt,
+      }),
     };
   }
 

@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { apiClient } from "@/shared/api/client";
 import type { QueryHook } from "@/shared/lib/react-query/types";
-import type { SubscriptionDto } from "@shared/domains/subscription";
+import type { SubscriptionDto } from "shared";
 
 type UseSubscriptionParams = {
   id: string;

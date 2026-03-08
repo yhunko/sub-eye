@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";
 
@@ -64,6 +64,15 @@ export class SubscriptionRepository {
 
   static async delete(tx: typeof db, id: string): Promise<void> {
     await tx.delete(subscriptionsTable).where(eq(subscriptionsTable.id, id));
+  }
+
+  static async countByUserId(tx: typeof db, userId: string): Promise<number> {
+    const [result] = await tx
+      .select({ count: count() })
+      .from(subscriptionsTable)
+      .where(eq(subscriptionsTable.userId, userId));
+
+    return result?.count ?? 0;
   }
 
   static async deleteByUserId(tx: typeof db, userId: string): Promise<void> {

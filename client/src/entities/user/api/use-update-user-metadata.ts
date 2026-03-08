@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MutationHook } from "@/shared/lib/react-query/types";
-import type { UserPreferences } from "@shared/types";
-import type { UpdateUserPublicMetadata } from "@shared/schemas/userSchemas";
+import type { UserPreferences } from "shared";
+import type { UpdateUserPublicMetadata } from "shared";
 import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../../subscription";
 import { analyticsQueryKeys } from "../../analytics";

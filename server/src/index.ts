@@ -7,11 +7,16 @@ import { pushNotificationRouter } from "./routes/push-notifications";
 import { userRouter } from "./routes/user";
 
 import { webhookRouter } from "./routes/webhooks";
+import { billingRouter } from "./routes/billing";
 
 type Bindings = {
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
   CLERK_WEBHOOK_SECRET: string;
+  PADDLE_WEBHOOK_SECRET: string;
+  PADDLE_API_KEY: string;
+  PADDLE_PLUS_PRODUCT_ID: string;
+  PADDLE_ENV: "sandbox" | "live";
   DATABASE_URL: string;
   QSTASH_URL: string;
   QSTASH_TOKEN: string;
@@ -37,6 +42,7 @@ export const app = new Hono<{ Bindings: Bindings }>()
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)
   .route("/analytics", analyticsRouter)
+  .route("/billing", billingRouter)
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)
   .route("/user", userRouter);

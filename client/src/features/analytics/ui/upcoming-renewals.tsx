@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
+import { DateTimezoneUtils } from "shared";
 import {
   Item,
   ItemContent,

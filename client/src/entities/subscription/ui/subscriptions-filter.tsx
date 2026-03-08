@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { StatusFilter } from "@shared/domains/subscription";
+import { StatusFilter } from "shared";
 import * as m from "@/i18n/messages";
 
 interface SubscriptionsFilterProps {
@@ -25,6 +25,10 @@ export const SubscriptionsFilter: FC<SubscriptionsFilterProps> = ({
 }) => {
   const statusOptions: { label: () => string; value: StatusFilter }[] = [
     { label: m.subscription_filter_status_active, value: "active" },
+    {
+      label: m.subscription_status_cancelledButActive,
+      value: "cancelledButActive",
+    },
     { label: m.subscription_status_cancelled, value: "cancelled" },
     { label: m.subscription_filter_status_all, value: "all" },
   ];

@@ -10,7 +10,7 @@ import {
   Edit,
 } from "lucide-react";
 import { Button, ButtonGroup } from "@/shared/components";
-import { SubscriptionDto } from "@shared/domains/subscription";
+import { SubscriptionDto } from "shared";
 import { SubscriptionNextBill } from "../../billing";
 import { CurrencyBadge } from "@/entities/currency";
 import { PeriodBadge } from "../../period";
@@ -30,7 +30,7 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       cell: ({ getValue, row }) => {
         const brandDomain = getValue<SubscriptionDto["brandDomain"]>();
 
-        const isCancelled = !!row.original.cancelledAt;
+        const isCancelled = row.original.status === "cancelled";
 
         return (
           <BrandfetchImage
@@ -121,11 +121,27 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
       cell: ({ row }) => {
         const subscription = row.original;
 
-        if (subscription.cancelledAt) {
+        if (subscription.status === "cancelled") {
           return (
             <span className="text-muted-foreground line-through opacity-75">
               {m.subscription_status_cancelled()}
             </span>
+          );
+        }
+
+        if (
+          subscription.status === "cancelledButActive" &&
+          subscription.willBeCancelledAt
+        ) {
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-xs font-medium text-amber-600">
+                {m.subscription_status_cancelledButActive()}
+              </span>
+              <SubscriptionNextBill
+                nextBillDate={subscription.willBeCancelledAt}
+              />
+            </div>
           );
         }
 

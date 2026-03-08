@@ -1,15 +1,17 @@
 import { Client, type WorkflowContext } from "@upstash/workflow";
 import { serve } from "@upstash/workflow/hono";
 import { subDays } from "date-fns";
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import { RecurrenceUtils } from "@shared/utils/recurrenceUtils";
-import type { UserPreferences } from "@shared/types";
+import { DateTimezoneUtils } from "shared";
+import { RecurrenceUtils } from "shared";
+import { shouldIncludeOccurrence } from "shared";
+import type { UserPreferences } from "shared";
 import { db } from "../../db";
 import {
   SubscriptionRepository,
   type SubscriptionRecord,
 } from "./subscriptionRepository";
 import { UserService } from "../user/userService";
+import { PushNotificationContent } from "../push-notification/pushNotificationContent";
 
 export type SubscriptionWorkflowPayload = {
   subscriptionId: string;
@@ -29,6 +31,23 @@ export class SubscriptionNotificationsWorkflow {
         return;
       }
 
+      const occurrenceDate = new Date(paymentDate);
+      const shouldSendNotification = shouldIncludeOccurrence(
+        {
+          willBeCancelledAt: this.normalizeTimestamp(
+            subscription.willBeCancelledAt,
+          ),
+        },
+        occurrenceDate,
+      );
+
+      if (!shouldSendNotification) {
+        await SubscriptionRepository.update(db, subscription.id, {
+          qstashMessageId: null,
+        });
+        return;
+      }
+
       const preferences = await UserService.getUserPreferences(
         subscription.userId,
       );
@@ -44,25 +63,63 @@ export class SubscriptionNotificationsWorkflow {
       await context.run("send-notification", async () => {
         const { PushNotificationService } =
           await import("../../domains/push-notification/pushNotificationService");
-
-        await PushNotificationService.sendNotification(subscription.userId, {
-          title: "Subscription Renewal",
-          body: `Your subscription for ${subscription.name} is renewing soon.`,
-          icon: `/assets/pwa/web-app-manifest-192x192.png`, // Default icon, can be customized
-          data: {
-            url: `/subscriptions/${subscription.id}`,
+        const notificationPayload = PushNotificationContent.buildRenewalPayload(
+          {
+            locale: preferences.locale,
+            timezone: preferences.preferredTimezone,
+            paymentDate,
+            notificationDate: DateTimezoneUtils.now(
+              preferences.preferredTimezone,
+            ),
             subscriptionId: subscription.id,
+            subscriptionName: subscription.name,
+            brandDomain: subscription.brandDomain,
           },
-        });
+        );
+
+        const report = await PushNotificationService.sendNotification(
+          subscription.userId,
+          notificationPayload,
+        );
+
+        if (report.failed > 0) {
+          console.error("Scheduled push delivery had failures", {
+            subscriptionId: subscription.id,
+            userId: subscription.userId,
+            report,
+          });
+        }
       });
 
       const nextPayment = RecurrenceUtils.addPeriod(
         DateTimezoneUtils.toZoned(paymentDate, preferences.preferredTimezone),
         subscription.every,
         subscription.period,
+        {
+          anchorDate: DateTimezoneUtils.toZoned(
+            subscription.paymentDate,
+            preferences.preferredTimezone,
+          ),
+        },
       );
 
       await context.run("schedule-next-cycle", async () => {
+        if (
+          !shouldIncludeOccurrence(
+            {
+              willBeCancelledAt: this.normalizeTimestamp(
+                subscription.willBeCancelledAt,
+              ),
+            },
+            nextPayment,
+          )
+        ) {
+          await SubscriptionRepository.update(db, subscription.id, {
+            qstashMessageId: null,
+          });
+          return;
+        }
+
         const workflowRunId = await SubscriptionNotificationsWorkflow.schedule({
           subscriptionId: subscription.id,
           paymentDate: nextPayment.toISOString(),
@@ -129,6 +186,12 @@ export class SubscriptionNotificationsWorkflow {
         nextPayment,
         subscription.every,
         subscription.period,
+        {
+          anchorDate: DateTimezoneUtils.toZoned(
+            subscription.paymentDate,
+            timezone,
+          ),
+        },
       );
       notifyDate = subDays(nextPaymentAfter, notificationOffset);
       notifyAt = this.applyNotificationTime(
@@ -170,5 +233,15 @@ export class SubscriptionNotificationsWorkflow {
     }
 
     return new Client({ token });
+  }
+
+  private static normalizeTimestamp(
+    value?: string | Date | null,
+  ): string | null {
+    if (!value) {
+      return null;
+    }
+
+    return value instanceof Date ? value.toISOString() : value;
   }
 }

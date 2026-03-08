@@ -12,9 +12,11 @@ export const DashboardLayout: FC<PropsWithChildren<DashboardLayoutProps>> = ({
     <>
       {Navbar}
 
-      {/* pb-20: Adds ~80px of padding to the bottom on mobile. This accounts for the navbar height (64px) + floating button offset + safe area. */}
+      {/* pb-24: Adds ~96px of padding to the bottom on mobile. This accounts for navbar height + floating button offset + safe area. */}
       {/* md:pb-0: Resets this padding on desktop since the nav is sticky at the top. */}
-      <main className="container my-2 pb-20 md:my-4 md:pb-0">{children}</main>
+      <main className="container my-4 pb-[calc(env(safe-area-inset-bottom)+92px)] md:pb-0">
+        {children}
+      </main>
     </>
   );
 };

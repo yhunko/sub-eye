@@ -1,6 +1,5 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import {
-  FieldGroup,
   FieldSet,
   FormField,
   FormItem,
@@ -8,16 +7,23 @@ import {
   FormControl,
   FormMessage,
   Input,
-  FieldLegend,
-  FieldDescription,
-  Switch,
+  Separator,
 } from "@/shared/components";
 import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { AddSubscriptionInput } from "../../model/schema";
 import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
+import type { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
+import { SubscriptionFormScheduledPriceChangeCard } from "./subscription-form-scheduled-price-change-card";
+import { sanitizePriceInput } from "@/shared/lib/price-input";
 
-export const SubscriptionFormBasicInfo = () => {
+type SubscriptionFormBasicInfoProps = {
+  existingSubscription?: SubscriptionDto;
+};
+
+export const SubscriptionFormBasicInfo = ({
+  existingSubscription,
+}: SubscriptionFormBasicInfoProps) => {
   const { control, setValue } = useFormContext<AddSubscriptionInput>();
   const currency = useWatch({
     control,
@@ -25,21 +31,21 @@ export const SubscriptionFormBasicInfo = () => {
   });
 
   return (
-    <FieldSet>
-      <FieldLegend>{m.form_basicInfo_title()}</FieldLegend>
-      <FieldDescription>{m.form_basicInfo_description()}</FieldDescription>
-
+    <FieldSet className="gap-4">
       <AddSubscriptionBrandImage />
 
-      <FieldGroup>
+      <div className="bg-card space-y-3 rounded-2xl border p-4 shadow-sm">
         <FormField
           control={control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{m.form_basicInfo_name_label()}</FormLabel>
+            <FormItem className="gap-1.5">
+              <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+                {m.form_basicInfo_name_label()}
+              </FormLabel>
               <FormControl>
                 <Input
+                  autoComplete="off"
                   placeholder={m.form_basicInfo_name_placeholder()}
                   {...field}
                 />
@@ -48,21 +54,44 @@ export const SubscriptionFormBasicInfo = () => {
             </FormItem>
           )}
         />
+
+        <Separator />
+
         <FormField
           control={control}
           name="cost"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{m.form_basicInfo_cost_label()}</FormLabel>
+            <FormItem className="gap-1.5">
+              <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+                {m.form_basicInfo_cost_label()}
+              </FormLabel>
               <FormControl>
                 <CurrencyInput
                   CurrencySelect={
                     <CurrencySelect
                       value={currency}
-                      onChange={(value) => setValue("currency", value)}
+                      onChange={(value) =>
+                        setValue("currency", value, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        })
+                      }
                     />
                   }
-                  InputProps={field}
+                  sanitizeValue={sanitizePriceInput}
+                  InputProps={{
+                    ...field,
+                    value:
+                      typeof field.value === "string"
+                        ? field.value
+                        : String(field.value ?? ""),
+                    onChange: (event) => {
+                      field.onChange(sanitizePriceInput(event.target.value));
+                    },
+                    maxLength: 6,
+                    autoComplete: "off",
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -70,27 +99,10 @@ export const SubscriptionFormBasicInfo = () => {
           )}
         />
 
-        <FormField
-          control={control}
-          name="isCancelled"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-              <div className="space-y-0.5">
-                <FormLabel>{m.form_basicInfo_isCancelled_label()}</FormLabel>
-                <FieldDescription>
-                  {m.form_basicInfo_isCancelled_description()}
-                </FieldDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+        <SubscriptionFormScheduledPriceChangeCard
+          subscription={existingSubscription}
         />
-      </FieldGroup>
+      </div>
     </FieldSet>
   );
 };

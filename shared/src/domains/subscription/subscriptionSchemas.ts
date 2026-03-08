@@ -16,6 +16,7 @@ import {
   object,
 } from "valibot";
 import { SubscriptionPeriod } from "../../types";
+import { subscriptionLifecycleStatuses } from "./subscriptionLifecycle";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -40,6 +41,13 @@ export const idQuerySchema = object({
   id: string(),
 });
 export type IdParam = InferOutput<typeof idQuerySchema>;
+
+export const updateSubscriptionQuerySchema = object({
+  trackHistory: optional(picklist(["true", "false"])),
+});
+export type UpdateSubscriptionQuery = InferOutput<
+  typeof updateSubscriptionQuerySchema
+>;
 
 export const AddSubscriptionSchema = strictObject({
   name: pipe(
@@ -80,7 +88,7 @@ export const AddSubscriptionSchema = strictObject({
     ),
     null,
   ),
-  isCancelled: optional(boolean(), false),
+  willBeCancelledAt: optional(nullable(isoDateSchema), null),
 });
 
 export const UpdateSubscriptionSchema = strictObject({
@@ -121,7 +129,24 @@ export const UpdateSubscriptionSchema = strictObject({
       ),
     ),
   ),
-  isCancelled: optional(boolean()),
+  willBeCancelledAt: optional(nullable(isoDateSchema)),
+});
+
+export const scheduledPriceChangeModes = [
+  "nextOccurrence",
+  "customDate",
+] as const;
+export type ScheduledPriceChangeMode =
+  (typeof scheduledPriceChangeModes)[number];
+
+export const SchedulePriceChangeSchema = strictObject({
+  mode: picklist(scheduledPriceChangeModes),
+  scheduledCost: pipe(
+    number(),
+    check((value) => value > 0, "Cost must be greater than zero"),
+  ),
+  scheduledCurrency: optional(currencyCodeSchema),
+  customDate: optional(nullable(isoDateSchema)),
 });
 
 const subscriptionBillingDetailsSchema = strictObject({
@@ -136,6 +161,13 @@ const subscriptionBillingDetailsSchema = strictObject({
     yearly: number(),
     exchangeRate: number(),
   }),
+});
+
+const scheduledPriceChangeSchema = strictObject({
+  cost: number(),
+  currency: string(),
+  effectiveAt: string(),
+  billing: subscriptionBillingDetailsSchema,
 });
 
 export const SubscriptionDtoSchema = strictObject({
@@ -157,12 +189,17 @@ export const SubscriptionDtoSchema = strictObject({
   billing: subscriptionBillingDetailsSchema,
   nextPaymentDate: string(),
   lastPaymentDate: nullable(string()),
-  cancelledAt: nullable(string()),
+  willBeCancelledAt: nullable(string()),
+  scheduledPriceChange: nullable(scheduledPriceChangeSchema),
+  status: picklist(subscriptionLifecycleStatuses),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;
 export type UpdateSubscriptionInput = InferOutput<
   typeof UpdateSubscriptionSchema
+>;
+export type SchedulePriceChangeInput = InferOutput<
+  typeof SchedulePriceChangeSchema
 >;
 export type SubscriptionBillingDetails = InferOutput<
   typeof subscriptionBillingDetailsSchema
@@ -170,10 +207,17 @@ export type SubscriptionBillingDetails = InferOutput<
 export type SubscriptionDto = InferOutput<typeof SubscriptionDtoSchema>;
 
 export const PushSubscriptionSchema = strictObject({
-  endpoint: string(),
+  endpoint: pipe(
+    string(),
+    minLength(1),
+    check(
+      (value) => value.startsWith("https://"),
+      "Push endpoint must use HTTPS",
+    ),
+  ),
   keys: strictObject({
-    p256dh: string(),
-    auth: string(),
+    p256dh: pipe(string(), minLength(16)),
+    auth: pipe(string(), minLength(8)),
   }),
 });
 
@@ -183,5 +227,8 @@ export type PushNotificationPayload = {
   title: string;
   body: string;
   icon?: string;
+  badge?: string;
+  tag?: string;
+  requireInteraction?: boolean;
   data?: Record<string, unknown>;
 };

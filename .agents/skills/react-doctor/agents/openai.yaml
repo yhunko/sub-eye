@@ -1,0 +1,4 @@
+interface:
+  display_name: "React Doctor"
+  short_description: "Run React Doctor for changed React files in client"
+  default_prompt: "Use $react-doctor to run React Doctor only when changed React files exist in client, then fix warnings until clean."

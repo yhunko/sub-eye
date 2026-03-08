@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 import { MutationHook } from "@/shared/lib/react-query/types";
-import { IdParam, SubscriptionDto } from "@shared/domains/subscription";
+import { IdParam, SubscriptionDto } from "shared";
 import { apiClient } from "@/shared/api/client";
-import { ApiVoidReturn } from "@shared/types";
+import { ApiVoidReturn } from "shared";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";
+import { billingQueryKeys } from "@/entities/billing";
 
 export const useDeleteSubscription = ({
   options,
@@ -57,6 +58,9 @@ export const useDeleteSubscription = ({
     async onSettled() {
       await queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: billingQueryKeys.usage._def,
       });
     },
   });

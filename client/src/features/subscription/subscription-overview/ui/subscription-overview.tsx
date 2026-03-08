@@ -1,31 +1,31 @@
-import { FC, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { FC, useMemo } from "react";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { toast } from "sonner";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import NiceModal from "@ebay/nice-modal-react";
 
-import { DateTimezoneUtils } from "@shared/utils/dateTimezoneUtils";
-import {
-  subscriptionQuery,
-  useCancelSubscription,
-} from "@/entities/subscription";
-import * as m from "@/i18n/messages";
-
+import { DateTimezoneUtils } from "shared";
+import { subscriptionQuery } from "@/entities/subscription";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
-import { SubscriptionOverviewStats } from "./subscription-overview-stats";
-import { SubscriptionOverviewHeader } from "./subscription-overview-header";
-import { SubscriptionOverviewDetails } from "./subscription-overview-details";
-import { SubscriptionOverviewActions } from "./subscription-overview-actions";
-import { SubscriptionCancelDialog } from "../../subscription-cancel-dialog";
+import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
+import { useScheduledPriceChangeActions } from "../../schedule-price-change";
+import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
+import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
+import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
+import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
+import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
+  returnSearch?: SubscriptionOverviewSearch;
 };
 
 export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   subscriptionId,
+  returnSearch,
 }) => {
   const navigate = useNavigate();
+  const router = useRouter();
   const { user, isLoaded } = useUser();
   const { userId } = useAuth();
 
@@ -34,6 +34,9 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       params: { id: subscriptionId, userId: userId ?? "" },
     }),
   );
+  const { openScheduleDialog } = useScheduledPriceChangeActions({
+    subscription,
+  });
 
   const displayState = useMemo(() => {
     if (!subscription || !isLoaded) return null;
@@ -42,59 +45,98 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       | string
       | undefined;
 
-    const zonedDate = DateTimezoneUtils.toZoned(
-      subscription.nextPaymentDate,
-      timezone,
-    );
+    const targetDate =
+      subscription.status === "cancelledButActive" &&
+      subscription.willBeCancelledAt
+        ? subscription.willBeCancelledAt
+        : subscription.status === "cancelled" && subscription.willBeCancelledAt
+          ? subscription.willBeCancelledAt
+          : subscription.nextPaymentDate;
+
+    const zonedDate = DateTimezoneUtils.toZoned(targetDate, timezone);
 
     return SubscriptionBillingUtils.toDisplayState(zonedDate, timezone);
   }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
 
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const { mutate: cancelSubscription } = useCancelSubscription();
+  const viewModel = useMemo(
+    () => buildSubscriptionOverviewViewModel(subscription, displayState),
+    [displayState, subscription],
+  );
 
   const handleDeleteSuccess = async () => {
     await navigate({ to: "/subscriptions" });
   };
 
-  const handleConfirmCancel = () => {
-    cancelSubscription(
-      { id: subscriptionId },
-      {
-        onSuccess: () => {
-          setIsCancelDialogOpen(false);
-          toast.success(m.messages_updated());
-        },
-      },
-    );
+  const handleOpenCancelDialog = async () => {
+    const { SubscriptionCancelDialog } =
+      await import("../../subscription-cancel-dialog");
+
+    await NiceModal.show(SubscriptionCancelDialog, {
+      subscriptionId,
+      subscriptionName: subscription.name,
+      defaultCancelledAt: subscription.nextPaymentDate,
+    });
+  };
+
+  const handleOpenRenewDialog = async () => {
+    const { SubscriptionRenewDialog } =
+      await import("../../subscription-renew-dialog");
+
+    await NiceModal.show(SubscriptionRenewDialog, {
+      subscriptionId,
+      subscriptionName: subscription.name,
+    });
+  };
+
+  const handleMarkAsCanceled = () => {
+    void handleOpenCancelDialog();
+  };
+
+  const handleRenew = () => {
+    void handleOpenRenewDialog();
+  };
+
+  const handleBack = async () => {
+    if (returnSearch?.from === "/") {
+      await navigate({
+        to: "/",
+        search: (previousSearch) => ({
+          ...previousSearch,
+          monthlyTrendOpen: returnSearch.monthlyTrendOpen ? true : undefined,
+          monthlyTrendMonth: returnSearch.monthlyTrendMonth,
+        }),
+        replace: true,
+      });
+      return;
+    }
+
+    if (window.history.length > 1) {
+      router.history.back();
+      return;
+    }
+
+    await navigate({ to: "/subscriptions" });
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <SubscriptionOverviewHeader subscription={subscription} />
+    <div className="flex flex-1 flex-col">
+      <section className={subscriptionOverviewFloatingCardClassName}>
+        <SubscriptionOverviewHeaderActions
+          subscriptionId={subscription.id}
+          subscriptionName={subscription.name}
+          hasScheduledPriceChange={Boolean(subscription.scheduledPriceChange)}
+          onSchedulePriceChange={openScheduleDialog}
+          onDeleteSuccess={handleDeleteSuccess}
+          status={subscription.status}
+          onMarkAsCanceled={handleMarkAsCanceled}
+          onRenew={handleRenew}
+          onBack={handleBack}
+        />
 
-      <SubscriptionOverviewStats subscriptionId={subscriptionId} />
+        <SubscriptionOverviewSummaryCard subscription={subscription} />
 
-      <SubscriptionOverviewDetails
-        subscription={subscription}
-        displayState={displayState}
-      />
-
-      <SubscriptionOverviewActions
-        subscriptionId={subscriptionId}
-        subscriptionName={subscription.name}
-        onMarkAsCanceled={() => setIsCancelDialogOpen(true)}
-        onDeleteSuccess={handleDeleteSuccess}
-        isCancelled={!!subscription.cancelledAt}
-      />
-
-      <SubscriptionCancelDialog
-        open={isCancelDialogOpen}
-        onOpenChange={setIsCancelDialogOpen}
-        onConfirm={handleConfirmCancel}
-        subscriptionName={subscription.name}
-        nextPaymentDate={subscription.nextPaymentDate}
-      />
+        <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
+      </section>
     </div>
   );
 };

@@ -31,7 +31,7 @@ export const RemainingThisMonthCard: FC = () => {
         <div className="text-muted-foreground text-xs sm:text-sm">
           {m.analytics_statCards_remainingThisMonth_nextMonthForecast()}&nbsp;
           <CurrencyText
-            amount={data.monthlyBurnRate}
+            amount={data.nextMonthForecast}
             currencyCode={data.preferredCurrencyCode}
           />
         </div>
