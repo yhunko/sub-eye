@@ -22,7 +22,7 @@ import { FREE_PLAN, PLUS_PLAN } from "shared";
 import * as m from "@/i18n/messages";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ const FEATURE_LABELS: Record<string, () => string> = {
 function SettingsBillingPage() {
   const { from } = Route.useSearch();
   const { userId } = useAuth();
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const { data: usage } = useQuery(
     planUsageQuery({
@@ -75,6 +76,7 @@ function SettingsBillingPage() {
     }));
   const isPlusPlan = usage?.planId === PLUS_PLAN.id;
   const isActionPending = createCheckout.isPending || createPortal.isPending;
+  const checkoutEmail = user?.primaryEmailAddress?.emailAddress ?? null;
 
   const handlePlanAction = useCallback(async () => {
     try {
@@ -86,15 +88,33 @@ function SettingsBillingPage() {
 
       const checkout = await createCheckout.mutateAsync();
       const paddle = await getPaddle();
-
-      paddle.Checkout.open({
+      const checkoutOptions: {
+        transactionId: string;
+        customer?: {
+          email: string;
+        };
+        settings?: {
+          allowLogout: boolean;
+        };
+      } = {
         transactionId: checkout.transactionId,
-      });
+      };
+
+      if (checkoutEmail) {
+        checkoutOptions.customer = {
+          email: checkoutEmail,
+        };
+        checkoutOptions.settings = {
+          allowLogout: true,
+        };
+      }
+
+      paddle.Checkout.open(checkoutOptions);
     } catch (error) {
       console.error("Failed to process billing action", error);
-      toast.error(m.messages_error());
+      toast.error(error instanceof Error ? error.message : m.messages_error());
     }
-  }, [createCheckout, createPortal, isPlusPlan]);
+  }, [checkoutEmail, createCheckout, createPortal, isPlusPlan]);
 
   return (
     <SettingsLayout
@@ -130,6 +150,11 @@ function SettingsBillingPage() {
                 active={isPlusPlan}
                 isActionPending={isActionPending}
                 onAction={handlePlanAction}
+                checkoutNote={
+                  !isPlusPlan && !checkoutEmail
+                    ? m.settings_billing_checkout_emailMissingHint()
+                    : undefined
+                }
               />
             </CardContent>
           </Card>

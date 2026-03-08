@@ -11,7 +11,14 @@ export const useCreateBillingCheckout = () => {
       const res = await apiClient.api.billing.checkout.$post();
 
       if (!res.ok) {
-        throw new Error("Failed to create Paddle checkout transaction");
+        const errorResponse = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+
+        throw new Error(
+          errorResponse?.message ??
+            "Failed to create Paddle checkout transaction",
+        );
       }
 
       return res.json();

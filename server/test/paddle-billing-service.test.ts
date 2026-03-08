@@ -30,32 +30,48 @@ const resetPlusPriceCache = () => {
 
 const createCheckoutDeps = (prices: PaddlePrice[]) => {
   let capturedPriceId: string | null = null;
+  let capturedCustomerId: string | null = null;
+  let billingAccount: {
+    userId: string;
+    paddleCustomerId: string | null;
+    paddleSubscriptionId: null;
+    paddleSubscriptionStatus: null;
+    paddlePriceId: string | null;
+    paddleCurrentPeriodEnd: null;
+    lastEventOccurredAt: null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null = {
+    userId: "user_01",
+    paddleCustomerId: "ctm_01",
+    paddleSubscriptionId: null,
+    paddleSubscriptionStatus: null,
+    paddlePriceId: null,
+    paddleCurrentPeriodEnd: null,
+    lastEventOccurredAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   return {
     deps: {
       apiClient: {
         listActivePrices: async () => prices,
-        createTransaction: async (input: { priceId: string }) => {
+        createTransaction: async (input: {
+          customerId?: string;
+          priceId: string;
+        }) => {
+          capturedCustomerId = input.customerId ?? null;
           capturedPriceId = input.priceId;
           return { id: "txn_01" };
         },
       },
       billingWebhookEventRepository: {} as never,
       billingAccountRepository: {
-        findByUserId: async () => ({
-          userId: "user_01",
-          paddleCustomerId: "ctm_01",
-          paddleSubscriptionId: null,
-          paddleSubscriptionStatus: null,
-          paddlePriceId: null,
-          paddleCurrentPeriodEnd: null,
-          lastEventOccurredAt: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }),
+        findByUserId: async () => billingAccount,
         upsertByUserId: async () => ({
           userId: "user_01",
-          paddleCustomerId: "ctm_01",
+          paddleCustomerId: capturedCustomerId,
           paddleSubscriptionId: null,
           paddleSubscriptionStatus: null,
           paddlePriceId: capturedPriceId,
@@ -68,6 +84,10 @@ const createCheckoutDeps = (prices: PaddlePrice[]) => {
       userService: {} as never,
     } as never,
     getCapturedPriceId: () => capturedPriceId,
+    getCapturedCustomerId: () => capturedCustomerId,
+    setBillingAccount: (nextBillingAccount: typeof billingAccount) => {
+      billingAccount = nextBillingAccount;
+    },
   };
 };
 
@@ -134,6 +154,25 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
     await PaddleBillingService.createCheckoutTransaction("user_01", deps);
 
     expect(getCapturedPriceId()).toBe("pri_plus_month");
+  });
+
+  it("creates a checkout transaction without a Paddle customer for users without one", async () => {
+    process.env.PADDLE_PLUS_PRODUCT_ID = "pro_plus";
+
+    const { deps, getCapturedCustomerId, setBillingAccount } =
+      createCheckoutDeps([
+        {
+          id: "pri_plus_month",
+          productId: "pro_plus",
+          billingCycle: { interval: "month" },
+        },
+      ]);
+
+    setBillingAccount(null);
+
+    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+
+    expect(getCapturedCustomerId()).toBeNull();
   });
 });
 

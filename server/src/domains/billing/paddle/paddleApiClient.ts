@@ -64,25 +64,38 @@ export class PaddleApiClient {
   }
 
   static async createTransaction(input: {
-    customerId: string;
+    customerId?: string;
     priceId: string;
     customData: Record<string, unknown>;
   }): Promise<PaddleTransaction> {
+    const body: {
+      customer_id?: string;
+      collection_mode: "automatic";
+      items: Array<{
+        price_id: string;
+        quantity: number;
+      }>;
+      custom_data: Record<string, unknown>;
+    } = {
+      collection_mode: "automatic",
+      items: [
+        {
+          price_id: input.priceId,
+          quantity: 1,
+        },
+      ],
+      custom_data: input.customData,
+    };
+
+    if (input.customerId) {
+      body.customer_id = input.customerId;
+    }
+
     const res = await this.request<PaddleApiResponse<PaddleTransaction>>(
       "/transactions",
       {
         method: "POST",
-        body: JSON.stringify({
-          customer_id: input.customerId,
-          collection_mode: "automatic",
-          items: [
-            {
-              price_id: input.priceId,
-              quantity: 1,
-            },
-          ],
-          custom_data: input.customData,
-        }),
+        body: JSON.stringify(body),
       },
     );
 
