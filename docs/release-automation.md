@@ -42,6 +42,7 @@ On each push to `dev`:
      - `Other Changes (📦)`
 
 No `CHANGELOG.md` file is generated or committed by release automation.
+Shared PR sync logic lives in `.github/actions/sync-release-pr/action.yml` and is reused by both automated and manual flows.
 
 ## Manual Release PR Sync
 
