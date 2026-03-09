@@ -2,6 +2,7 @@ export * from "./domains/analytics";
 export * from "./domains/billing";
 export * from "./domains/currency";
 export * from "./domains/subscription";
+export * from "./schemas/telegramNotificationSchemas";
 export * from "./schemas/userSchemas";
 export * from "./types";
 export * from "./utils/currencyUtils";

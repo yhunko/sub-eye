@@ -1,6 +1,7 @@
 import { NotificationsButton } from "./notifications-button";
 import { NotificationsStatus } from "./notifications-status";
 import { NotificationTimeSelect } from "./notification-time-select";
+import { TelegramNotificationsCard } from "./telegram-notifications-card";
 import { Button } from "@/shared/components/ui/button";
 import { usePushNotificationsSubscription } from "../api/hooks";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ export const SettingsNotificationsForm = () => {
       <div className="space-y-4">
         <NotificationsStatus />
         <NotificationsButton />
+        <TelegramNotificationsCard />
       </div>
 
       <div className="flex flex-col gap-4">

@@ -9,6 +9,12 @@ import { pushNotificationsQueryKeys } from "../model/query-keys";
 import { PushNotificationsUtils } from "../lib/push-notifications.utils";
 import { apiClient as client } from "@/shared/api/client";
 import { getSerwist } from "virtual:serwist";
+import type {
+  TelegramLinkStartResponse,
+  TelegramNotificationStatus,
+  TelegramSendReport,
+  UpdateTelegramNotificationPreferences,
+} from "shared";
 
 export const usePushNotificationsSubscription = (
   options: Partial<UseQueryOptions<PushSubscription | null>> = {},
@@ -156,6 +162,121 @@ export const useUnsubscribeFromPushNotifications = (
       await queryClient.refetchQueries({
         queryKey: pushNotificationsQueryKeys.subscription.queryKey,
       });
+    },
+    ...options,
+  });
+};
+
+export const useTelegramNotificationStatus = (
+  options: Partial<UseQueryOptions<TelegramNotificationStatus>> = {},
+) => {
+  return useQuery({
+    queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+    queryFn: async () => {
+      const response = await client.api["telegram-notifications"].status.$get();
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch telegram notification status");
+      }
+
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+export const useStartTelegramLink = (
+  options: Partial<
+    UseMutationOptions<TelegramLinkStartResponse, Error, void>
+  > = {},
+) => {
+  return useMutation({
+    mutationFn: async () => {
+      const response =
+        await client.api["telegram-notifications"].link.start.$post();
+
+      if (!response.ok) {
+        throw new Error("Failed to start telegram linking");
+      }
+
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+export const useUpdateTelegramNotificationPreferences = (
+  options: Partial<
+    UseMutationOptions<
+      TelegramNotificationStatus,
+      Error,
+      UpdateTelegramNotificationPreferences
+    >
+  > = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload) => {
+      const response = await client.api[
+        "telegram-notifications"
+      ].preferences.$patch({
+        json: payload,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update telegram notification preferences");
+      }
+
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+      });
+    },
+    ...options,
+  });
+};
+
+export const useDisconnectTelegramNotifications = (
+  options: Partial<UseMutationOptions<void, Error, void>> = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response =
+        await client.api["telegram-notifications"].disconnect.$post();
+
+      if (!response.ok) {
+        throw new Error("Failed to disconnect telegram notifications");
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+      });
+    },
+    ...options,
+  });
+};
+
+export const useSendTelegramTestNotification = (
+  options: Partial<UseMutationOptions<TelegramSendReport, Error, void>> = {},
+) => {
+  return useMutation({
+    mutationFn: async () => {
+      const response = await client.api["telegram-notifications"].test.$post();
+      const body = await response
+        .json()
+        .catch(() => ({ report: undefined as TelegramSendReport | undefined }));
+
+      if (!response.ok) {
+        throw new Error("Failed to send telegram test notification");
+      }
+
+      return body.report as TelegramSendReport;
     },
     ...options,
   });

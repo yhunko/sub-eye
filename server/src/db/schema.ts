@@ -43,6 +43,46 @@ export const pushNotificationsTable = pgTable(
   (t) => [uniqueIndex("unique_endpoint_idx").on(t.userId, t.endpoint)],
 );
 
+export const telegramLinksTable = pgTable(
+  "telegram_links",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    chatId: text("chat_id").notNull(),
+    telegramUserId: text("telegram_user_id").notNull(),
+    telegramUsername: text("telegram_username"),
+    isEnabled: boolean("is_enabled").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("telegram_links_user_id_idx").on(table.userId),
+    uniqueIndex("telegram_links_chat_id_idx").on(table.chatId),
+  ],
+);
+
+export const telegramLinkTokensTable = pgTable(
+  "telegram_link_tokens",
+  {
+    id: serial("id").primaryKey(),
+    token: text("token").notNull(),
+    userId: text("user_id").notNull(),
+    expiresAt: timestamp("expires_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    consumedAt: timestamp("consumed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("telegram_link_tokens_token_idx").on(table.token),
+    index("telegram_link_tokens_user_id_idx").on(table.userId),
+  ],
+);
+
 export const billingAccountsTable = pgTable(
   "billing_accounts",
   {

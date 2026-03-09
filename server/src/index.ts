@@ -5,6 +5,7 @@ import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
 import { pushNotificationRouter } from "./routes/push-notifications";
 import { userRouter } from "./routes/user";
+import { telegramNotificationRouter } from "./routes/telegram-notifications";
 
 import { webhookRouter } from "./routes/webhooks";
 import { billingRouter } from "./routes/billing";
@@ -22,6 +23,9 @@ type Bindings = {
   QSTASH_TOKEN: string;
   QSTASH_CURRENT_SIGNING_KEY: string;
   QSTASH_NEXT_SIGNING_KEY: string;
+  TELEGRAM_BOT_TOKEN: string;
+  TELEGRAM_BOT_USERNAME: string;
+  TELEGRAM_WEBHOOK_SECRET_TOKEN: string;
 };
 
 const corsOrigins = [process.env.CLIENT_ORIGIN];
@@ -45,6 +49,7 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .route("/billing", billingRouter)
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)
+  .route("/telegram-notifications", telegramNotificationRouter)
   .route("/user", userRouter);
 
 export default app;

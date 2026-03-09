@@ -61,8 +61,8 @@ export class SubscriptionNotificationsWorkflow {
       await context.sleepUntil("wait-for-notification", notifyAt);
 
       await context.run("send-notification", async () => {
-        const { PushNotificationService } =
-          await import("../../domains/push-notification/pushNotificationService");
+        const { NotificationDeliveryService } =
+          await import("../../domains/notification/notificationDeliveryService");
         const notificationPayload = PushNotificationContent.buildRenewalPayload(
           {
             locale: preferences.locale,
@@ -77,9 +77,10 @@ export class SubscriptionNotificationsWorkflow {
           },
         );
 
-        const report = await PushNotificationService.sendNotification(
+        const report = await NotificationDeliveryService.sendNotification(
           subscription.userId,
           notificationPayload,
+          { locale: preferences.locale },
         );
 
         if (report.failed > 0) {

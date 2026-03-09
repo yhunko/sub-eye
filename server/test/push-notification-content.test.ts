@@ -42,7 +42,7 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
     );
   });
 
-  it("falls back to the client env Brandfetch id when the server one is missing", () => {
+  it("ignores client env Brandfetch id when the server one is missing", () => {
     delete process.env.BRANDFETCH_CLIENT_ID;
     process.env.VITE_BRANDFETCH_CLIENT_ID = "vite_client_id";
 
@@ -56,9 +56,7 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       brandDomain: "netflix.com",
     });
 
-    expect(payload.icon).toBe(
-      "https://cdn.brandfetch.io/netflix.com/w/128/h/128/fallback/lettermark/type/icon?c=vite_client_id",
-    );
+    expect(payload.icon).toBe(PushNotificationContent.defaultIcon);
   });
 
   it("falls back to the app icon when Brandfetch is not configured", () => {

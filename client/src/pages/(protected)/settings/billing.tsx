@@ -150,11 +150,6 @@ function SettingsBillingPage() {
                 active={isPlusPlan}
                 isActionPending={isActionPending}
                 onAction={handlePlanAction}
-                checkoutNote={
-                  !isPlusPlan && !checkoutEmail
-                    ? m.settings_billing_checkout_emailMissingHint()
-                    : undefined
-                }
               />
             </CardContent>
           </Card>

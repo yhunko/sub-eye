@@ -15,7 +15,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "BASE_URL": "https://app.subeye.cc",
-    "PADDLE_ENV": "live"
+    "PADDLE_ENV": "live",
+    "TELEGRAM_BOT_USERNAME": "subeye_bot"
   },
   "observability": {
     "enabled": false,
