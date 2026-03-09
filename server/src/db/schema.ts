@@ -52,6 +52,7 @@ export const telegramLinksTable = pgTable(
     telegramUserId: text("telegram_user_id").notNull(),
     telegramUsername: text("telegram_username"),
     isEnabled: boolean("is_enabled").notNull().default(true),
+    messageTemplate: jsonb("message_template"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

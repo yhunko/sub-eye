@@ -1,6 +1,7 @@
 import { Client, type WorkflowContext } from "@upstash/workflow";
 import { serve } from "@upstash/workflow/hono";
 import { subDays } from "date-fns";
+import { CurrencyUtils } from "shared";
 import { DateTimezoneUtils } from "shared";
 import { RecurrenceUtils } from "shared";
 import { shouldIncludeOccurrence } from "shared";
@@ -11,6 +12,7 @@ import {
   type SubscriptionRecord,
 } from "./subscriptionRepository";
 import { UserService } from "../user/userService";
+import { CurrencyService } from "../currency/currencyService";
 import { PushNotificationContent } from "../push-notification/pushNotificationContent";
 
 export type SubscriptionWorkflowPayload = {
@@ -63,6 +65,18 @@ export class SubscriptionNotificationsWorkflow {
       await context.run("send-notification", async () => {
         const { NotificationDeliveryService } =
           await import("../../domains/notification/notificationDeliveryService");
+        const originalPriceAmount = Number(subscription.cost);
+        const originalPriceCurrencyCode = subscription.currency;
+        const preferredPriceCurrencyCode = preferences.preferredCurrency;
+        const rates = await CurrencyService.getRates(
+          preferredPriceCurrencyCode,
+        );
+        const preferredPriceAmount = CurrencyUtils.convert(
+          originalPriceAmount,
+          originalPriceCurrencyCode,
+          preferredPriceCurrencyCode,
+          rates,
+        );
         const notificationPayload = PushNotificationContent.buildRenewalPayload(
           {
             locale: preferences.locale,
@@ -73,6 +87,10 @@ export class SubscriptionNotificationsWorkflow {
             ),
             subscriptionId: subscription.id,
             subscriptionName: subscription.name,
+            originalPriceAmount,
+            originalPriceCurrencyCode,
+            preferredPriceAmount,
+            preferredPriceCurrencyCode,
             brandDomain: subscription.brandDomain,
           },
         );

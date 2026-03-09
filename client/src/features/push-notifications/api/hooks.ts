@@ -13,6 +13,7 @@ import type {
   TelegramLinkStartResponse,
   TelegramNotificationStatus,
   TelegramSendReport,
+  UpdateTelegramMessageTemplate,
   UpdateTelegramNotificationPreferences,
 } from "shared";
 
@@ -252,6 +253,45 @@ export const useDisconnectTelegramNotifications = (
       if (!response.ok) {
         throw new Error("Failed to disconnect telegram notifications");
       }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+      });
+    },
+    ...options,
+  });
+};
+
+export const useUpdateTelegramMessageTemplate = (
+  options: Partial<
+    UseMutationOptions<
+      TelegramNotificationStatus,
+      Error,
+      UpdateTelegramMessageTemplate
+    >
+  > = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload) => {
+      const response = await client.api[
+        "telegram-notifications"
+      ].template.$patch({
+        json: payload,
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          body?.error ?? "Failed to update telegram message template",
+        );
+      }
+
+      return response.json();
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

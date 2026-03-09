@@ -35,6 +35,10 @@ type BuildRenewalNotificationPayloadInput = {
   notificationDate: Date;
   subscriptionId: string;
   subscriptionName: string;
+  originalPriceAmount: number;
+  originalPriceCurrencyCode: string;
+  preferredPriceAmount: number;
+  preferredPriceCurrencyCode: string;
   brandDomain?: string | null;
 };
 
@@ -62,6 +66,20 @@ export class PushNotificationContent {
       data: {
         url: `/subscriptions/${input.subscriptionId}`,
         subscriptionId: input.subscriptionId,
+        telegramTemplateContext: {
+          kind: "renewal",
+          subscriptionName: input.subscriptionName,
+          renewalDate: input.paymentDate,
+          timezone: input.timezone,
+          preferredPrice: {
+            amount: input.preferredPriceAmount,
+            currencyCode: input.preferredPriceCurrencyCode,
+          },
+          originalPrice: {
+            amount: input.originalPriceAmount,
+            currencyCode: input.originalPriceCurrencyCode,
+          },
+        },
       },
     };
   }

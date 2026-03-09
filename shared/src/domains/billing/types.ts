@@ -35,6 +35,7 @@ const BILLING_FEATURE_KEYS = [
   "analytics",
   "notifications",
   "notificationSchedule",
+  "telegramMessageTemplate",
   "currency",
 ] as const;
 

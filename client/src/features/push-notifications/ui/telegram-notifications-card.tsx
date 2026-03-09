@@ -21,6 +21,7 @@ import {
 import { getTelegramBotUrl } from "../lib/telegram-notifications.utils";
 import { pushNotificationsQueryKeys } from "../model/query-keys";
 import { TelegramConnectDialog } from "./telegram-connect-dialog";
+import { TelegramTemplateBuilderModal } from "./telegram-template-builder-modal";
 import * as m from "@/i18n/messages";
 
 export const TelegramNotificationsCard = () => {
@@ -195,6 +196,12 @@ export const TelegramNotificationsCard = () => {
           >
             {m.settings_notifications_telegram_disconnect()}
           </Button>
+        </div>
+      )}
+
+      {!isLoading && !isStatusError && status && (
+        <div className="flex flex-wrap gap-2">
+          <TelegramTemplateBuilderModal status={status} />
         </div>
       )}
     </Item>

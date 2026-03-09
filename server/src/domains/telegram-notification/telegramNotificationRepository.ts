@@ -1,4 +1,5 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
+import type { TelegramMessageTemplate } from "shared";
 import { db } from "../../db";
 import { telegramLinksTable, telegramLinkTokensTable } from "../../db/schema";
 
@@ -67,6 +68,19 @@ export class TelegramNotificationRepository {
     const [record] = await db
       .update(telegramLinksTable)
       .set({ isEnabled, updatedAt: new Date() })
+      .where(eq(telegramLinksTable.userId, userId))
+      .returning();
+
+    return record ?? null;
+  }
+
+  static async updateMessageTemplateByUserId(
+    userId: string,
+    messageTemplate: TelegramMessageTemplate,
+  ): Promise<TelegramLinkRecord | null> {
+    const [record] = await db
+      .update(telegramLinksTable)
+      .set({ messageTemplate, updatedAt: new Date() })
       .where(eq(telegramLinksTable.userId, userId))
       .returning();
 

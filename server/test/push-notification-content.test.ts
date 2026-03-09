@@ -34,6 +34,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "netflix.com",
     });
 
@@ -53,6 +57,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "netflix.com",
     });
 
@@ -70,6 +78,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "netflix.com",
     });
 
@@ -87,6 +99,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "https://Netflix.com/path?foo=1",
     });
 

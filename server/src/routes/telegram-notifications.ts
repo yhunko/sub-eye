@@ -1,9 +1,16 @@
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
-import { UpdateTelegramNotificationPreferencesSchema } from "shared";
+import {
+  UpdateTelegramMessageTemplateSchema,
+  UpdateTelegramNotificationPreferencesSchema,
+} from "shared";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
-import { TelegramNotificationService } from "../domains/telegram-notification/telegramNotificationService";
+import {
+  TELEGRAM_TEMPLATE_NOT_LINKED_ERROR,
+  TELEGRAM_TEMPLATE_PLUS_REQUIRED_ERROR,
+  TelegramNotificationService,
+} from "../domains/telegram-notification/telegramNotificationService";
 
 export const telegramNotificationRouter = new Hono()
   .get("/status", protect, async (context) => {
@@ -44,6 +51,49 @@ export const telegramNotificationRouter = new Hono()
       );
 
       return context.json(status);
+    },
+  )
+  .patch(
+    "/template",
+    protect,
+    vValidator("json", UpdateTelegramMessageTemplateSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+      const { messageTemplate } = context.req.valid("json");
+
+      try {
+        const status = await TelegramNotificationService.updateMessageTemplate(
+          userId,
+          messageTemplate,
+        );
+
+        return context.json(status);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === TELEGRAM_TEMPLATE_PLUS_REQUIRED_ERROR
+        ) {
+          return context.json({ error: error.message }, 403);
+        }
+
+        if (
+          error instanceof Error &&
+          (error.message === TELEGRAM_TEMPLATE_NOT_LINKED_ERROR ||
+            error.message.startsWith("Unsupported template variables:"))
+        ) {
+          return context.json({ error: error.message }, 400);
+        }
+
+        return context.json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to update telegram message template",
+          },
+          500,
+        );
+      }
     },
   )
   .post("/disconnect", protect, async (context) => {

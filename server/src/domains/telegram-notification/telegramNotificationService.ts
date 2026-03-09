@@ -1,19 +1,38 @@
-import type {
-  TelegramLinkStartResponse,
-  TelegramNotificationStatus,
-  TelegramSendReport,
+import {
+  CurrencyUtils,
+  DateTimezoneUtils,
+  hasPlanFeature,
+  type PushNotificationPayload,
+  type TelegramLinkStartResponse,
+  type TelegramMessageTemplate,
+  type TelegramNotificationStatus,
+  type TelegramSendReport,
 } from "shared";
-import type { PushNotificationPayload } from "shared";
+import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";
 import { TelegramBotService } from "./telegramBotService";
 import {
   createTelegramLinkPayload,
   extractTelegramRawToken,
 } from "./telegramLinkPayload";
+import { TelegramMessageTemplateService } from "./telegramMessageTemplateService";
+import type { TelegramTemplateRenderContext } from "./telegramMessageTemplateService";
 import { getTelegramNotificationCopy } from "./telegramNotificationCopy";
-import { TelegramNotificationRepository } from "./telegramNotificationRepository";
+import {
+  TelegramNotificationRepository,
+  type TelegramLinkRecord,
+} from "./telegramNotificationRepository";
 
 const LINK_TOKEN_EXPIRATION_MINUTES = 15;
+const SAMPLE_PRICE_AMOUNT = 9.99;
+const SAMPLE_PRICE_CURRENCY = "usd";
+
+export const TELEGRAM_TEMPLATE_PLUS_REQUIRED_ERROR =
+  "Telegram message template is available on Plus plan";
+export const TELEGRAM_TEMPLATE_NOT_LINKED_ERROR = "Telegram is not linked";
+
+const TELEGRAM_TEMPLATE_INVALID_VARIABLES_PREFIX =
+  "Unsupported template variables:";
 
 type LinkFromStartPayloadInput = {
   payload: string;
@@ -22,9 +41,33 @@ type LinkFromStartPayloadInput = {
   telegramUsername?: string | null;
 };
 
+type TelegramTemplateContextPayload = {
+  kind: "renewal";
+  subscriptionName: string;
+  renewalDate: string;
+  timezone: string;
+  preferredPrice: {
+    amount: number;
+    currencyCode: string;
+  };
+  originalPrice: {
+    amount: number;
+    currencyCode: string;
+  };
+};
+
 export class TelegramNotificationService {
   static async getStatus(userId: string): Promise<TelegramNotificationStatus> {
-    const link = await TelegramNotificationRepository.findLinkByUserId(userId);
+    const [link, preferences] = await Promise.all([
+      TelegramNotificationRepository.findLinkByUserId(userId),
+      UserService.getUserPreferences(userId),
+    ]);
+
+    const defaultMessageTemplate =
+      TelegramMessageTemplateService.getDefaultTemplate(preferences.locale);
+    const customTemplate = link
+      ? TelegramMessageTemplateService.parseStoredTemplate(link.messageTemplate)
+      : null;
 
     if (!link) {
       return {
@@ -32,6 +75,9 @@ export class TelegramNotificationService {
         enabled: false,
         botUsername: TelegramBotService.getBotUsername(),
         accountLabel: null,
+        messageTemplate: defaultMessageTemplate,
+        defaultMessageTemplate,
+        isCustomTemplate: false,
       };
     }
 
@@ -44,6 +90,9 @@ export class TelegramNotificationService {
         link.chatId,
         link.isEnabled,
       ),
+      messageTemplate: customTemplate ?? defaultMessageTemplate,
+      defaultMessageTemplate,
+      isCustomTemplate: customTemplate !== null,
     };
   }
 
@@ -127,6 +176,38 @@ export class TelegramNotificationService {
     return this.getStatus(userId);
   }
 
+  static async updateMessageTemplate(
+    userId: string,
+    messageTemplate: TelegramMessageTemplate,
+  ): Promise<TelegramNotificationStatus> {
+    const planId = await UserService.getPlanId(userId);
+
+    if (!hasPlanFeature(planId, "telegramMessageTemplate")) {
+      throw new Error(TELEGRAM_TEMPLATE_PLUS_REQUIRED_ERROR);
+    }
+
+    const validation =
+      TelegramMessageTemplateService.validateTemplate(messageTemplate);
+
+    if (!validation.valid) {
+      throw new Error(
+        `${TELEGRAM_TEMPLATE_INVALID_VARIABLES_PREFIX} ${validation.invalidVariables.join(", ")}`,
+      );
+    }
+
+    const updated =
+      await TelegramNotificationRepository.updateMessageTemplateByUserId(
+        userId,
+        messageTemplate,
+      );
+
+    if (!updated) {
+      throw new Error(TELEGRAM_TEMPLATE_NOT_LINKED_ERROR);
+    }
+
+    return this.getStatus(userId);
+  }
+
   static async disconnectByUserId(userId: string): Promise<void> {
     await Promise.all([
       TelegramNotificationRepository.deleteLinkByUserId(userId),
@@ -162,12 +243,19 @@ export class TelegramNotificationService {
   static async sendTestNotification(
     userId: string,
   ): Promise<TelegramSendReport> {
-    const locale = await this.getUserLocale(userId);
-    const copy = getTelegramNotificationCopy(locale);
+    const preferences = await UserService.getUserPreferences(userId);
+    const copy = getTelegramNotificationCopy(preferences.locale);
+    const sampleContext = await this.buildSampleTemplateContext(userId);
 
     return this.sendMessageToLinkedUser(
       userId,
-      `${copy.testTitle}\n${copy.testBody}`,
+      (link) =>
+        this.renderMessageFromActiveTemplate(
+          userId,
+          link,
+          preferences.locale,
+          sampleContext,
+        ),
       TelegramBotService.getSettingsUrl(),
       copy.openSubEyeButton,
     );
@@ -184,21 +272,163 @@ export class TelegramNotificationService {
         ? payload.data.url
         : null;
     const linkUrl = this.resolveAbsoluteUrl(dataUrl);
-    const messageText = [payload.title, payload.body]
+    const fallbackMessage = [payload.title, payload.body]
       .filter(Boolean)
       .join("\n");
 
+    const templateContext = this.extractTemplateContextFromPayload(payload);
+
     return this.sendMessageToLinkedUser(
       userId,
-      messageText,
+      (link) => {
+        if (!templateContext) {
+          return fallbackMessage;
+        }
+
+        return this.renderMessageFromActiveTemplate(userId, link, locale, {
+          subscriptionName: templateContext.subscriptionName,
+          renewalDate: templateContext.renewalDate,
+          referenceDate: DateTimezoneUtils.now(templateContext.timezone),
+          timezone: templateContext.timezone,
+          preferredPrice: {
+            amount: templateContext.preferredPrice.amount,
+            currencyCode: templateContext.preferredPrice.currencyCode,
+          },
+          originalPrice: {
+            amount: templateContext.originalPrice.amount,
+            currencyCode: templateContext.originalPrice.currencyCode,
+          },
+        });
+      },
       linkUrl,
       copy.openSubEyeButton,
     );
   }
 
+  private static async buildSampleTemplateContext(
+    userId: string,
+  ): Promise<TelegramTemplateRenderContext> {
+    const preferences = await UserService.getUserPreferences(userId);
+    const rates = await CurrencyService.getRates(preferences.preferredCurrency);
+    const preferredAmount = CurrencyUtils.convert(
+      SAMPLE_PRICE_AMOUNT,
+      SAMPLE_PRICE_CURRENCY,
+      preferences.preferredCurrency,
+      rates,
+    );
+    const now = DateTimezoneUtils.now(preferences.preferredTimezone);
+    const renewalDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    return {
+      subscriptionName: "1Password",
+      renewalDate,
+      referenceDate: now,
+      timezone: preferences.preferredTimezone,
+      preferredPrice: {
+        amount: preferredAmount,
+        currencyCode: preferences.preferredCurrency,
+      },
+      originalPrice: {
+        amount: SAMPLE_PRICE_AMOUNT,
+        currencyCode: SAMPLE_PRICE_CURRENCY,
+      },
+    };
+  }
+
+  private static async renderMessageFromActiveTemplate(
+    userId: string,
+    link: TelegramLinkRecord,
+    locale: string | undefined,
+    context: TelegramTemplateRenderContext,
+  ): Promise<string> {
+    const defaultTemplate =
+      TelegramMessageTemplateService.getDefaultTemplate(locale);
+    const storedTemplate = TelegramMessageTemplateService.parseStoredTemplate(
+      link.messageTemplate,
+    );
+    const planId = await UserService.getPlanId(userId);
+    const canUseCustomTemplate = hasPlanFeature(
+      planId,
+      "telegramMessageTemplate",
+    );
+    const activeTemplate =
+      canUseCustomTemplate && storedTemplate ? storedTemplate : defaultTemplate;
+
+    return TelegramMessageTemplateService.renderTemplate(
+      activeTemplate,
+      context,
+      locale,
+    );
+  }
+
+  private static extractTemplateContextFromPayload(
+    payload: PushNotificationPayload,
+  ): TelegramTemplateContextPayload | null {
+    const data = payload.data;
+
+    if (!data || typeof data !== "object") {
+      return null;
+    }
+
+    const raw = (data as Record<string, unknown>).telegramTemplateContext;
+
+    if (!raw || typeof raw !== "object") {
+      return null;
+    }
+
+    const value = raw as Record<string, unknown>;
+
+    if (value.kind !== "renewal") {
+      return null;
+    }
+
+    const subscriptionName = value.subscriptionName;
+    const renewalDate = value.renewalDate;
+    const timezone = value.timezone;
+    const preferredPrice = value.preferredPrice;
+    const originalPrice = value.originalPrice;
+
+    if (
+      typeof subscriptionName !== "string" ||
+      typeof renewalDate !== "string" ||
+      typeof timezone !== "string" ||
+      !this.isPriceValue(preferredPrice) ||
+      !this.isPriceValue(originalPrice)
+    ) {
+      return null;
+    }
+
+    return {
+      kind: "renewal",
+      subscriptionName,
+      renewalDate,
+      timezone,
+      preferredPrice,
+      originalPrice,
+    };
+  }
+
+  private static isPriceValue(
+    value: unknown,
+  ): value is TelegramTemplateContextPayload["preferredPrice"] {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+
+    return (
+      typeof candidate.currencyCode === "string" &&
+      typeof candidate.amount === "number" &&
+      Number.isFinite(candidate.amount)
+    );
+  }
+
   private static async sendMessageToLinkedUser(
     userId: string,
-    messageText: string,
+    messageText:
+      | string
+      | ((link: TelegramLinkRecord) => string | Promise<string>),
     buttonUrl: string | null,
     buttonText: string,
   ): Promise<TelegramSendReport> {
@@ -210,7 +440,7 @@ export class TelegramNotificationService {
         delivered: 0,
         failed: 0,
         skipped: 1,
-        reason: "Telegram is not linked",
+        reason: TELEGRAM_TEMPLATE_NOT_LINKED_ERROR,
       };
     }
 
@@ -224,9 +454,12 @@ export class TelegramNotificationService {
       };
     }
 
+    const resolvedMessage =
+      typeof messageText === "function" ? await messageText(link) : messageText;
+
     const result = await TelegramBotService.sendMessage(
       link.chatId,
-      messageText,
+      resolvedMessage,
       {
         buttons: buttonUrl ? [{ text: buttonText, url: buttonUrl }] : [],
       },

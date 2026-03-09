@@ -23,6 +23,7 @@ export const FREE_PLAN: Plan = {
     { key: "analytics", included: true },
     { key: "notifications", included: true },
     { key: "notificationSchedule", included: false },
+    { key: "telegramMessageTemplate", included: false },
     { key: "currency", included: true },
   ],
 };
@@ -37,6 +38,7 @@ export const PLUS_PLAN: Plan = {
     { key: "analytics", included: true },
     { key: "notifications", included: true },
     { key: "notificationSchedule", included: true },
+    { key: "telegramMessageTemplate", included: true },
     { key: "currency", included: true },
   ],
 };
