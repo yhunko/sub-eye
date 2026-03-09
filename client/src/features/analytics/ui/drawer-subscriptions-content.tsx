@@ -201,6 +201,7 @@ export const DrawerSubscriptionsContent: FC<
                       <Link
                         key={sub.id}
                         to="/subscriptions/$id"
+                        preload={false}
                         params={{ id: sub.id }}
                         search={{
                           from: "/",
