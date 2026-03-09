@@ -11,7 +11,7 @@
     "drizzle-orm": "^0.45.1",
     "hono": "^4.12.5",
     "shared": "workspace:*",
-    "svix": "^1.86.0",
+    "svix": "^1.87.0",
     "valibot": "^1.2.0",
     "web-push": "^3.6.7"
   },
