@@ -35,11 +35,21 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
     (patch: { monthlyTrendOpen?: boolean; monthlyTrendMonth?: string }) => {
       void navigate({
         to: DASHBOARD_PATH,
-        search: (previousSearch) => ({ ...previousSearch, ...patch }),
+        search: {
+          monthlyTrendOpen:
+            patch.monthlyTrendOpen !== undefined
+              ? patch.monthlyTrendOpen
+              : monthlyTrendOpen,
+          monthlyTrendMonth:
+            patch.monthlyTrendMonth !== undefined
+              ? patch.monthlyTrendMonth
+              : monthlyTrendMonth,
+        },
         replace: true,
+        resetScroll: false,
       });
     },
-    [navigate],
+    [monthlyTrendMonth, monthlyTrendOpen, navigate],
   );
 
   const selectMonthByIndex = useCallback(
@@ -67,7 +77,22 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
 
   const handleDetailsOpenChange = (open: boolean) => {
     if (open && monthlyTrendOpen !== true) haptics.trigger("medium");
-    updateSearch({ monthlyTrendOpen: open || undefined });
+
+    if (!open) {
+      void navigate({
+        to: DASHBOARD_PATH,
+        search: (previousSearch) => ({
+          ...previousSearch,
+          monthlyTrendOpen: undefined,
+          monthlyTrendMonth: undefined,
+        }),
+        replace: true,
+        resetScroll: false,
+      });
+      return;
+    }
+
+    updateSearch({ monthlyTrendOpen: true });
   };
 
   const handleOpenSubscriptionOverview = (
@@ -105,6 +130,7 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
       )}
       <TrendLineChart
         monthlyTrend={monthlyTrend}
+        selectedMonth={selectedMonth}
         locale={locale}
         currencySymbol={currencySymbol}
         yAxisWidth={yAxisWidth}

@@ -82,7 +82,7 @@ export const SubscriptionFormBillingInfo = () => {
               >
                 <AnimatedBackground
                   defaultValue={period}
-                  className="bg-accent rounded-md"
+                  className="bg-accent"
                   transition={{
                     type: "spring",
                     bounce: 0.2,
@@ -93,7 +93,7 @@ export const SubscriptionFormBillingInfo = () => {
                     value={SubscriptionPeriod.WEEK}
                     data-id={SubscriptionPeriod.WEEK}
                     aria-label={m.periods_weeks_ariaLabel()}
-                    className="flex-1 hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
+                    className="flex-1 overflow-hidden rounded-none first:rounded-l-md first:rounded-r-none last:rounded-l-none last:rounded-r-md hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
                   >
                     {m.periods_weeks()}
                   </ToggleGroupItem>
@@ -101,7 +101,7 @@ export const SubscriptionFormBillingInfo = () => {
                     value={SubscriptionPeriod.MONTH}
                     data-id={SubscriptionPeriod.MONTH}
                     aria-label={m.periods_months_ariaLabel()}
-                    className="flex-1 hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
+                    className="flex-1 overflow-hidden rounded-none first:rounded-l-md first:rounded-r-none last:rounded-l-none last:rounded-r-md hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
                   >
                     {m.periods_months()}
                   </ToggleGroupItem>
@@ -109,7 +109,7 @@ export const SubscriptionFormBillingInfo = () => {
                     value={SubscriptionPeriod.YEAR}
                     data-id={SubscriptionPeriod.YEAR}
                     aria-label={m.periods_years_ariaLabel()}
-                    className="flex-1 hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
+                    className="flex-1 overflow-hidden rounded-none first:rounded-l-md first:rounded-r-none last:rounded-l-none last:rounded-r-md hover:bg-transparent data-[state=on]:bg-transparent md:flex-none"
                   >
                     {m.periods_years()}
                   </ToggleGroupItem>

@@ -13,6 +13,7 @@ type TrendChartInteractionState = {
 
 type TrendLineChartProps = {
   monthlyTrend: MonthlyTrendPoint[];
+  selectedMonth: MonthlyTrendPoint | null;
   locale: Locale;
   currencySymbol: string;
   yAxisWidth: number;
@@ -41,6 +42,7 @@ export const resolveActiveMonth = (
 
 export const TrendLineChart: FC<TrendLineChartProps> = ({
   monthlyTrend,
+  selectedMonth,
   locale,
   currencySymbol,
   yAxisWidth,
@@ -60,13 +62,16 @@ export const TrendLineChart: FC<TrendLineChartProps> = ({
           color: "var(--chart-1)",
         },
       }}
-      className="aspect-auto h-64 w-full sm:h-72"
+      className="aspect-auto h-64 w-full [-webkit-tap-highlight-color:transparent] sm:h-72 [&_*:focus]:outline-none [&_*:focus-visible]:outline-none [&_.recharts-surface]:outline-none [&_.recharts-surface]:focus:outline-none [&_.recharts-surface]:focus-visible:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-wrapper]:focus:outline-none [&_.recharts-wrapper]:focus-visible:outline-none"
     >
       {Recharts ? (
         <Recharts.AreaChart
           data={monthlyTrend}
           margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+          accessibilityLayer={false}
+          style={{ outline: "none" }}
           onMouseMove={handleInteraction}
+          onTouchMove={handleInteraction}
           onClick={handleInteraction}
         >
           <defs>
@@ -112,14 +117,17 @@ export const TrendLineChart: FC<TrendLineChartProps> = ({
               })}`
             }
           />
-          <ChartTooltip
-            cursor={{
-              stroke: "var(--border)",
-              strokeWidth: 1,
-              strokeDasharray: "0",
-            }}
-            content={() => null}
-          />
+          <ChartTooltip cursor={false} content={() => null} />
+          {selectedMonth && (
+            <Recharts.ReferenceDot
+              x={selectedMonth.date}
+              y={selectedMonth.amount}
+              r={6}
+              fill="var(--background)"
+              stroke="var(--color-amount)"
+              strokeWidth={2}
+            />
+          )}
           <Recharts.Area
             type="monotone"
             dataKey="amount"
