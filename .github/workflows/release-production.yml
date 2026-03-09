@@ -79,7 +79,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config prod.wrangler.jsonc --minify --var PADDLE_PLUS_PRODUCT_ID:${{ vars.PADDLE_PLUS_PRODUCT_ID }}
+          command: deploy --config prod.wrangler.jsonc --minify
 
   back-merge:
     name: Sync Main back to Dev
