@@ -15,8 +15,8 @@ import {
   createTelegramLinkPayload,
   extractTelegramRawToken,
 } from "./telegramLinkPayload";
-import { TelegramMessageTemplateService } from "./telegramMessageTemplateService";
 import type { TelegramTemplateRenderContext } from "./telegramMessageTemplateService";
+import { TelegramMessageTemplateService } from "./telegramMessageTemplateService";
 import { getTelegramNotificationCopy } from "./telegramNotificationCopy";
 import {
   TelegramNotificationRepository,
@@ -85,11 +85,7 @@ export class TelegramNotificationService {
       linked: true,
       enabled: link.isEnabled,
       botUsername: TelegramBotService.getBotUsername(),
-      accountLabel: this.buildAccountLabel(
-        link.telegramUsername,
-        link.chatId,
-        link.isEnabled,
-      ),
+      accountLabel: this.buildAccountLabel(link.telegramUsername, link.chatId),
       messageTemplate: customTemplate ?? defaultMessageTemplate,
       defaultMessageTemplate,
       isCustomTemplate: customTemplate !== null,
@@ -509,9 +505,7 @@ export class TelegramNotificationService {
   private static buildAccountLabel(
     username: string | null,
     chatId: string,
-    isEnabled: boolean,
   ): string {
-    const suffix = isEnabled ? "enabled" : "disabled";
     const normalizedUsername = username?.trim();
 
     if (normalizedUsername) {
@@ -522,10 +516,10 @@ export class TelegramNotificationService {
         plain.length <= 4
           ? `${plain[0] ?? "*"}***`
           : `${plain.slice(0, 2)}***${plain.slice(-2)}`;
-      return `@${masked} (${suffix})`;
+      return `@${masked}`;
     }
 
     const visibleChatTail = chatId.slice(-4);
-    return `Chat •••${visibleChatTail} (${suffix})`;
+    return `Chat •••${visibleChatTail}`;
   }
 }

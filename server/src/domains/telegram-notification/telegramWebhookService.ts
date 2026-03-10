@@ -125,6 +125,7 @@ export class TelegramWebhookService {
     deps: TelegramWebhookDependencies,
   ): Promise<void> {
     let copy = fallbackCopy;
+    let linkedUserId: string | null = null;
 
     try {
       const telegramUserId = payload.message?.from?.id;
@@ -139,31 +140,53 @@ export class TelegramWebhookService {
         telegramUserId: String(telegramUserId),
         telegramUsername: payload.message?.from?.username ?? null,
       });
-
-      const locale = await deps
-        .getUserLocale(linked.userId)
-        .catch(() => undefined);
-      copy = getTelegramNotificationCopy(locale);
-      const settingsUrl = deps.getSettingsUrl();
-      const settingsButtons = settingsUrl
-        ? [{ text: copy.openSettingsButton, url: settingsUrl }]
-        : [];
-
-      await deps.sendMessage(chatId, copy.linkedSuccess, {
-        buttons: settingsButtons,
-      });
-
-      await deps.sendTestNotification(linked.userId);
+      linkedUserId = linked.userId;
     } catch (error) {
-      console.error("[Telegram Webhook] Link start failed", { error });
+      // Telegram may redeliver `/start link_*` updates after a successful link.
+      // In that case the token has already been consumed, but the chat is linked.
+      const isConsumedTokenError =
+        error instanceof Error &&
+        error.message === "Link token is invalid or expired";
 
-      const settingsUrl = deps.getSettingsUrl();
-      const settingsButtons = settingsUrl
-        ? [{ text: copy.openSettingsButton, url: settingsUrl }]
-        : [];
+      if (isConsumedTokenError) {
+        linkedUserId = await deps.getLinkedUserIdByChatId(chatId);
+      }
 
-      await deps.sendMessage(chatId, copy.connectFailed, {
-        buttons: settingsButtons,
+      if (!linkedUserId) {
+        console.error("[Telegram Webhook] Link start failed", { error });
+
+        const settingsUrl = deps.getSettingsUrl();
+        const settingsButtons = settingsUrl
+          ? [{ text: copy.openSettingsButton, url: settingsUrl }]
+          : [];
+
+        await deps.sendMessage(chatId, copy.connectFailed, {
+          buttons: settingsButtons,
+        });
+        return;
+      }
+    }
+
+    const locale = await deps
+      .getUserLocale(linkedUserId)
+      .catch(() => undefined);
+    copy = getTelegramNotificationCopy(locale);
+    const settingsUrl = deps.getSettingsUrl();
+    const settingsButtons = settingsUrl
+      ? [{ text: copy.openSettingsButton, url: settingsUrl }]
+      : [];
+
+    await deps.sendMessage(chatId, copy.linkedSuccess, {
+      buttons: settingsButtons,
+    });
+
+    try {
+      await deps.sendTestNotification(linkedUserId);
+    } catch (error) {
+      console.error("[Telegram Webhook] Post-link test notification failed", {
+        chatId,
+        linkedUserId,
+        error,
       });
     }
   }

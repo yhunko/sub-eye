@@ -17,7 +17,7 @@ const statusFixture: TelegramNotificationStatus = {
   linked: true,
   enabled: true,
   botUsername: "subeye_bot",
-  accountLabel: "@su***ot (enabled)",
+  accountLabel: "@su***ot",
   messageTemplate: {
     version: 1,
     template: "{subscription_name}",

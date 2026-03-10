@@ -70,6 +70,66 @@ Use Bot API `setWebhook` with:
 - `secret_token` = `TELEGRAM_WEBHOOK_SECRET_TOKEN`
 - `drop_pending_updates` = `true` on first setup or reconfiguration
 
+### Reconnect Telegram Webhook When ngrok URL Changes
+
+Telegram supports only one webhook URL per bot token. Every time your ngrok
+URL changes, you must call `setWebhook` again for that bot.
+
+Use the local helper script from `server/scripts/telegram-webhook.mjs`.
+
+1. Pick the bot for the current environment.
+2. Set required environment variables:
+
+```sh
+export TELEGRAM_BOT_TOKEN="<telegram-bot-token>"
+export TELEGRAM_WEBHOOK_SECRET_TOKEN="<telegram-webhook-secret-token>"
+export TELEGRAM_WEBHOOK_BASE_URL="<your-new-ngrok-https-url>"
+```
+
+3. Inspect current webhook target:
+
+```sh
+bun run --cwd server telegram:webhook:info
+```
+
+4. Re-register webhook to the new tunnel URL:
+
+```sh
+bun run --cwd server telegram:webhook:set
+```
+
+5. Verify it was applied:
+
+```sh
+bun run --cwd server telegram:webhook:info
+```
+
+Optional cleanup (if you want to remove webhook before switching flows):
+
+```sh
+bun run --cwd server telegram:webhook:delete
+```
+
+Common overrides:
+
+```sh
+# set webhook with explicit URL
+bun run --cwd server telegram:webhook:set --base-url https://abc123.ngrok-free.app
+
+# set webhook without dropping pending updates
+bun run --cwd server telegram:webhook:set --drop-pending false
+
+# inspect script help/options
+bun run --cwd server telegram:webhook --help
+```
+
+Notes:
+
+- Re-running `setWebhook` replaces the previous URL for that bot.
+- Use separate bots for dev and prod to avoid overriding production webhook.
+- The webhook URL must be public HTTPS; localhost URLs are not accepted.
+- The script also accepts `TELEGRAM_PUBLIC_BASE_URL` or `BASE_URL` when `TELEGRAM_WEBHOOK_BASE_URL` is not set.
+
 Local tunnel testing:
 
 - Keep `BASE_URL` as local app URL (`http://localhost:3000`) if needed.

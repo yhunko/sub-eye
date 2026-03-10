@@ -28,6 +28,10 @@
     "db:push": "drizzle-kit push",
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "qstash:dev": "npx @upstash/qstash-cli dev",
+    "telegram:webhook": "bun ./scripts/telegram-webhook.mjs",
+    "telegram:webhook:info": "bun ./scripts/telegram-webhook.mjs info",
+    "telegram:webhook:set": "bun ./scripts/telegram-webhook.mjs set",
+    "telegram:webhook:delete": "bun ./scripts/telegram-webhook.mjs delete",
     "test": "bun test ./test",
     "type-check": "tsc --noEmit --pretty"
   },

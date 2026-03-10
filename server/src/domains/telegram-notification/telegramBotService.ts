@@ -44,7 +44,7 @@ export class TelegramBotService {
   }
 
   static buildDeepLink(payload: string): string | null {
-    const username = this.getBotUsername();
+    const username = TelegramBotService.getBotUsername();
 
     if (!username) {
       return null;
@@ -54,7 +54,7 @@ export class TelegramBotService {
   }
 
   static getSettingsUrl(): string | null {
-    const baseUrl = this.getPublicBaseUrl();
+    const baseUrl = TelegramBotService.getPublicBaseUrl();
 
     if (!baseUrl) {
       return null;
@@ -84,7 +84,7 @@ export class TelegramBotService {
 
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const buttons = (options.buttons ?? []).filter((button) =>
-      this.isHttpsUrl(button.url),
+      TelegramBotService.isHttpsUrl(button.url),
     );
     const hasButtons = buttons.length > 0;
 

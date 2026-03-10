@@ -150,4 +150,76 @@ describe("TelegramWebhookService.processUpdate", () => {
 
     expect(sentMessages).toEqual(["Відкрийте налаштування сповіщень SubEye:"]);
   });
+
+  it("treats already-consumed /start token as success when chat is linked", async () => {
+    const sentMessages: string[] = [];
+    let sentTestToUserId: string | null = null;
+
+    await TelegramWebhookService.processUpdate(
+      {
+        message: {
+          text: "/start link_abcdef0123456789",
+          chat: { id: 777, type: "private" },
+          from: { id: 7, username: "demo_user" },
+        },
+      },
+      createDeps({
+        linkFromStartPayload: async () => {
+          throw new Error("Link token is invalid or expired");
+        },
+        getLinkedUserIdByChatId: async () => "user_99",
+        sendMessage: async (_chatId, text) => {
+          sentMessages.push(text);
+          return { ok: true };
+        },
+        sendTestNotification: async (userId) => {
+          sentTestToUserId = userId;
+          return {
+            attempted: 1,
+            delivered: 1,
+            failed: 0,
+            skipped: 0,
+          };
+        },
+      }),
+    );
+
+    expect(sentMessages).toContain(
+      "SubEye is now connected to this Telegram chat. Notifications are enabled.",
+    );
+    expect(sentMessages).not.toContain(
+      "Could not connect account. Please try again from SubEye settings.",
+    );
+    expect(sentTestToUserId).toBe("user_99");
+  });
+
+  it("does not report connect failure when post-link test send throws", async () => {
+    const sentMessages: string[] = [];
+
+    await TelegramWebhookService.processUpdate(
+      {
+        message: {
+          text: "/start link_abcdef0123456789",
+          chat: { id: 42, type: "private" },
+          from: { id: 7, username: "demo_user" },
+        },
+      },
+      createDeps({
+        sendMessage: async (_chatId, text) => {
+          sentMessages.push(text);
+          return { ok: true };
+        },
+        sendTestNotification: async () => {
+          throw new Error("temporary downstream issue");
+        },
+      }),
+    );
+
+    expect(sentMessages).toContain(
+      "SubEye is now connected to this Telegram chat. Notifications are enabled.",
+    );
+    expect(sentMessages).not.toContain(
+      "Could not connect account. Please try again from SubEye settings.",
+    );
+  });
 });
