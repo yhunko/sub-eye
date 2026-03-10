@@ -19,7 +19,16 @@ export const planUsageQuery = ({
       if (!res.ok) {
         throw new Error("Failed to fetch plan usage");
       }
-      return res.json();
+      const usage = (await res.json()) as PlanUsage;
+
+      if (!import.meta.env.DEV) {
+        return usage;
+      }
+
+      const { applyPlanUsageOverride, readLocalPlanOverride } =
+        await import("@/shared/lib/billing/local-plan-override");
+
+      return applyPlanUsageOverride(usage, readLocalPlanOverride());
     },
     ...options,
     enabled: options?.enabled ?? Boolean(userId),

@@ -33,7 +33,19 @@ export const subscriptionHistoryQuery = ({
         throw new Error("Failed to fetch subscription history");
       }
 
-      return (await res.json()) as SubscriptionHistoryResponse;
+      const historyResponse = (await res.json()) as SubscriptionHistoryResponse;
+
+      if (!import.meta.env.DEV) {
+        return historyResponse;
+      }
+
+      const { applySubscriptionHistoryOverride, readLocalPlanOverride } =
+        await import("@/shared/lib/billing/local-plan-override");
+
+      return applySubscriptionHistoryOverride(
+        historyResponse,
+        readLocalPlanOverride(),
+      );
     },
     enabled: Boolean(params.id && params.userId) && (options?.enabled ?? true),
     staleTime: options?.staleTime ?? 30_000,

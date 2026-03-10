@@ -3,10 +3,19 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./app/routes/routeTree.gen";
 import { queryClient } from "./app/providers/react-query";
 import { Toaster } from "@/shared/components";
-import { useMemo } from "react";
+import { Suspense, lazy, useMemo } from "react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { SplashScreen } from "./shared/ui";
 import { SwUpdateManager } from "./features/pwa/sw-update-manager";
+import { isLocalPlanSwitcherEnabled } from "./shared/lib/env/local-dev-runtime";
+
+const DevPlanSwitcher = import.meta.env.DEV
+  ? lazy(() =>
+      import("./features/dev-plan-switcher").then((module) => ({
+        default: module.DevPlanSwitcher,
+      })),
+    )
+  : null;
 
 const router = createRouter({
   routeTree,
@@ -29,6 +38,8 @@ declare module "@tanstack/react-router" {
 export function App() {
   const auth = useAuth();
   const isRestoring = useIsRestoring();
+  const shouldLoadDevPlanSwitcher =
+    DevPlanSwitcher && isLocalPlanSwitcherEnabled();
 
   const routerContext = useMemo(
     () => ({
@@ -47,6 +58,11 @@ export function App() {
       <RouterProvider router={router} context={routerContext} />
       <SwUpdateManager />
       <Toaster position="top-center" richColors />
+      {shouldLoadDevPlanSwitcher ? (
+        <Suspense fallback={null}>
+          <DevPlanSwitcher />
+        </Suspense>
+      ) : null}
     </>
   );
 }
