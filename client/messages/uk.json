@@ -238,7 +238,6 @@
   "settings_notifications_telegram_testSending": "Надсилання...",
   "settings_notifications_telegram_testSent": "Тестове сповіщення Telegram надіслано",
   "settings_notifications_telegram_testFailed": "Не вдалося надіслати тестове сповіщення Telegram",
-  "settings_notifications_telegram_openBot": "Відкрити бота",
   "settings_notifications_telegram_disconnect": "Відключити",
   "settings_notifications_telegram_connect_title": "Підключити Telegram",
   "settings_notifications_telegram_connect_description": "Виконайте кроки нижче, щоб підключити акаунт SubEye.",

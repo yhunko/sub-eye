@@ -52,7 +52,7 @@
     "lint": "turbo lint",
     "postinstall": "turbo build --filter=shared --filter=server",
     "prepare": "husky",
-    "react-doctor": "bun x react-doctor@latest . --yes --project client --diff --no-ami --offline --fail-on warning --verbose",
+    "react-doctor": "bun x react-doctor@latest . --yes --project client --diff --offline --fail-on warning --verbose",
     "test": "turbo test",
     "type-check": "turbo type-check"
   },

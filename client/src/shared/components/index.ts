@@ -33,6 +33,5 @@ export * from "./ui/table";
 export * from "./ui/switch";
 export * from "./ui/textarea";
 export * from "./ui/tilt";
-export * from "./ui/tooltip";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";

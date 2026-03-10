@@ -205,7 +205,6 @@
   "settings_notifications_telegram_testSending": "Sending...",
   "settings_notifications_telegram_testSent": "Telegram test notification sent",
   "settings_notifications_telegram_testFailed": "Failed to send Telegram test notification",
-  "settings_notifications_telegram_openBot": "Open Bot",
   "settings_notifications_telegram_disconnect": "Disconnect",
   "settings_notifications_telegram_connect_title": "Connect Telegram",
   "settings_notifications_telegram_connect_description": "Follow the steps below to connect your SubEye account.",
