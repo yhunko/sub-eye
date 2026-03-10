@@ -77,6 +77,21 @@ URL changes, you must call `setWebhook` again for that bot.
 
 Use the local helper script from `server/scripts/telegram-webhook.mjs`.
 
+Fastest path for a new environment (interactive):
+
+```sh
+bun run --cwd server telegram:webhook:wizard
+```
+
+Wizard flow:
+
+- asks environment label (for secret prefix)
+- asks webhook base URL
+- asks/uses bot token
+- generates a new webhook secret (or accepts manual one)
+- calls Telegram `setWebhook`
+- prints ready-to-copy env values
+
 1. Pick the bot for the current environment.
 2. Set required environment variables:
 
@@ -113,6 +128,9 @@ bun run --cwd server telegram:webhook:delete
 Common overrides:
 
 ```sh
+# generate only a secret token for an environment label
+bun run --cwd server telegram:webhook:secret --env dev
+
 # set webhook with explicit URL
 bun run --cwd server telegram:webhook:set --base-url https://abc123.ngrok-free.app
 
