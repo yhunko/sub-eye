@@ -263,8 +263,8 @@ export const TelegramTemplateBuilderCard = ({
         </p>
       )}
 
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_25rem]">
-        <div className="space-y-3">
+      <div className="grid gap-4 md:grid-cols-12 xl:grid-cols-[minmax(0,1fr)_25rem]">
+        <div className="space-y-3 md:col-span-7 xl:col-auto">
           <Field>
             <FieldLabel htmlFor="telegram-template-editor">
               {m.settings_notifications_telegram_template_editorLabel()}
@@ -351,7 +351,7 @@ export const TelegramTemplateBuilderCard = ({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-lg border p-3">
+        <div className="space-y-3 rounded-lg border p-3 md:col-span-5 xl:col-auto">
           <div>
             <p className="text-xs font-semibold tracking-wide uppercase">
               {m.settings_notifications_telegram_template_variablesTitle()}
