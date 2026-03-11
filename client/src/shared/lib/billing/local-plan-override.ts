@@ -1,5 +1,8 @@
 import {
+  FREE_COMPARATOR_AI_MONTHLY_LIMIT,
+  FREE_COMPARATOR_MONTHLY_LIMIT,
   FREE_SUBSCRIPTION_HISTORY_LIMIT,
+  PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
   getPlanById,
   getPlanFeaturesMap,
   type PlanId,
@@ -185,6 +188,12 @@ export const applyPlanUsageOverride = (
   }
 
   const plan = getPlanById(override);
+  const comparisonLimit =
+    override === "plus" ? null : FREE_COMPARATOR_MONTHLY_LIMIT;
+  const aiLimit =
+    override === "plus"
+      ? PLUS_COMPARATOR_AI_MONTHLY_LIMIT
+      : FREE_COMPARATOR_AI_MONTHLY_LIMIT;
 
   return {
     ...usage,
@@ -193,6 +202,21 @@ export const applyPlanUsageOverride = (
     subscriptions: {
       ...usage.subscriptions,
       limit: plan.limits.maxSubscriptions,
+    },
+    comparatorComparisons: {
+      ...usage.comparatorComparisons,
+      limit: comparisonLimit,
+      remaining:
+        comparisonLimit === null
+          ? null
+          : Math.max(comparisonLimit - usage.comparatorComparisons.current, 0),
+      isLimited: comparisonLimit !== null,
+    },
+    comparatorAiInsights: {
+      ...usage.comparatorAiInsights,
+      limit: aiLimit,
+      remaining: Math.max(aiLimit - usage.comparatorAiInsights.current, 0),
+      isLimited: true,
     },
   };
 };

@@ -35,3 +35,4 @@ export * from "./ui/textarea";
 export * from "./ui/tilt";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";
+export * from "./ui/tooltip";

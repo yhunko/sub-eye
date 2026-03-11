@@ -1,7 +1,12 @@
 import type { FC } from "react";
 import { useCallback } from "react";
 import { Button, GlowEffect, Tilt } from "@/shared/components";
-import { FREE_PLAN, PLUS_PLAN, type BillingFeatureKey } from "shared";
+import {
+  PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
+  FREE_PLAN,
+  PLUS_PLAN,
+  type BillingFeatureKey,
+} from "shared";
 import * as m from "@/i18n/messages";
 import { PlanCard } from "./plan-card";
 
@@ -46,6 +51,12 @@ export const PlusPlanCard: FC<PlusPlanCardProps> = ({
       label: m.settings_billing_plans_pro_features_subscriptionLimitIncrease({
         free: String(FREE_PLAN.limits.maxSubscriptions),
         plus: String(PLUS_PLAN.limits.maxSubscriptions),
+      }),
+      included: true,
+    },
+    {
+      label: m.settings_billing_plans_pro_features_aiInsightsQuota({
+        limit: String(PLUS_COMPARATOR_AI_MONTHLY_LIMIT),
       }),
       included: true,
     },

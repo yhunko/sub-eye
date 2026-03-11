@@ -18,12 +18,11 @@ export const CurrencyText: FC<CurrencyTextProps> = ({
 
   if (!currencyMetadata) return null;
 
-  const { symbol, format } = currencyMetadata;
-
-  const formattedAmount = new Intl.NumberFormat(format, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const { symbol } = currencyMetadata;
+  const formattedAmount = CurrencyUtils.formatAmount(
+    amount,
+    currencyCode,
+  ).replace(symbol, "");
 
   return (
     <div className={className}>

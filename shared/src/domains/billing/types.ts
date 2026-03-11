@@ -17,6 +17,17 @@ export type PlanUsage = {
   planId: PlanId;
   features: Record<BillingFeatureKey, boolean>;
   subscriptions: { current: number; limit: number };
+  comparatorComparisons: MonthlyUsage;
+  comparatorAiInsights: MonthlyUsage;
+};
+
+export type MonthlyUsage = {
+  current: number;
+  limit: number | null;
+  remaining: number | null;
+  periodKey: string;
+  resetsAt: string;
+  isLimited: boolean;
 };
 
 export type BillingCheckoutResponse = {
@@ -37,6 +48,8 @@ const BILLING_FEATURE_KEYS = [
   "notificationSchedule",
   "telegramMessageTemplate",
   "currency",
+  "comparator",
+  "comparatorAiInsights",
 ] as const;
 
 const PLAN_IDS = ["free", "plus"] as const;

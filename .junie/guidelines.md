@@ -46,6 +46,7 @@ Agents must stay reliable and efficient with context usage:
 - Keep files focused by responsibility; split large mixed-concern modules.
 - Prefer descriptive naming and explicit data flow over implicit behavior.
 - Extract repeated logic into a single authoritative implementation.
+- Strict DRY rule: do not re-implement the same helper/utility in multiple places. Reused frontend helpers must live in `client/src/shared/**`; cross-workspace pure helpers must live in monorepo `shared/`. Duplicating utility code across features/workspaces is forbidden.
 - Avoid dead code and stale branches during refactors.
 - Add brief comments only for non-obvious logic or important invariants.
 - Do not introduce heavy dependencies without clear benefit.
@@ -146,6 +147,7 @@ Run the narrowest relevant checks first, then escalate to monorepo checks for cr
 - Keep implementation and naming consistent with nearby code.
 - Document new non-obvious patterns briefly in code or docs.
 - If a task touches contracts, ensure both producer and consumer sides remain aligned.
+- All usage/limit metrics (existing and newly implemented) must have one canonical backend source (`/api/billing/usage`) and one canonical React Query source (`billingQueryKeys.usage`). Do not introduce parallel usage endpoints/query keys for the same metrics.
 
 ## 12) Guideline Mirror Policy
 

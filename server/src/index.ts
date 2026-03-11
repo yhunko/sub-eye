@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
+import { comparatorRouter } from "./routes/comparator";
 import { pushNotificationRouter } from "./routes/push-notifications";
 import { userRouter } from "./routes/user";
 import { telegramNotificationRouter } from "./routes/telegram-notifications";
@@ -18,6 +19,7 @@ type Bindings = {
   PADDLE_API_KEY: string;
   PADDLE_PLUS_PRODUCT_ID: string;
   PADDLE_ENV: "sandbox" | "live";
+  GEMINI_API_KEY: string;
   DATABASE_URL: string;
   QSTASH_URL: string;
   QSTASH_TOKEN: string;
@@ -46,6 +48,7 @@ export const app = new Hono<{ Bindings: Bindings }>()
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)
   .route("/analytics", analyticsRouter)
+  .route("/comparator", comparatorRouter)
   .route("/billing", billingRouter)
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)

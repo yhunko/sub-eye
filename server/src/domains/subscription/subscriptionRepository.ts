@@ -7,20 +7,20 @@ export type SubscriptionInsert = typeof subscriptionsTable.$inferInsert;
 
 export class SubscriptionRepository {
   static async findByUserId(
-    tx: typeof db,
+    database: typeof db,
     userId: string,
   ): Promise<SubscriptionRecord[]> {
-    return tx
+    return database
       .select()
       .from(subscriptionsTable)
       .where(eq(subscriptionsTable.userId, userId));
   }
 
   static async findById(
-    tx: typeof db,
+    database: typeof db,
     id: string,
   ): Promise<SubscriptionRecord | null> {
-    const [result] = await tx
+    const [result] = await database
       .select()
       .from(subscriptionsTable)
       .where(eq(subscriptionsTable.id, id));
@@ -29,10 +29,10 @@ export class SubscriptionRepository {
   }
 
   static async create(
-    tx: typeof db,
+    database: typeof db,
     data: SubscriptionInsert,
   ): Promise<SubscriptionRecord> {
-    const [subscription] = await tx
+    const [subscription] = await database
       .insert(subscriptionsTable)
       .values(data)
       .returning();
@@ -45,11 +45,11 @@ export class SubscriptionRepository {
   }
 
   static async update(
-    tx: typeof db,
+    database: typeof db,
     id: string,
     data: Partial<SubscriptionInsert>,
   ): Promise<SubscriptionRecord> {
-    const [updated] = await tx
+    const [updated] = await database
       .update(subscriptionsTable)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(subscriptionsTable.id, id))
@@ -62,12 +62,17 @@ export class SubscriptionRepository {
     return updated;
   }
 
-  static async delete(tx: typeof db, id: string): Promise<void> {
-    await tx.delete(subscriptionsTable).where(eq(subscriptionsTable.id, id));
+  static async delete(database: typeof db, id: string): Promise<void> {
+    await database
+      .delete(subscriptionsTable)
+      .where(eq(subscriptionsTable.id, id));
   }
 
-  static async countByUserId(tx: typeof db, userId: string): Promise<number> {
-    const [result] = await tx
+  static async countByUserId(
+    database: typeof db,
+    userId: string,
+  ): Promise<number> {
+    const [result] = await database
       .select({ count: count() })
       .from(subscriptionsTable)
       .where(eq(subscriptionsTable.userId, userId));
@@ -75,8 +80,11 @@ export class SubscriptionRepository {
     return result?.count ?? 0;
   }
 
-  static async deleteByUserId(tx: typeof db, userId: string): Promise<void> {
-    await tx
+  static async deleteByUserId(
+    database: typeof db,
+    userId: string,
+  ): Promise<void> {
+    await database
       .delete(subscriptionsTable)
       .where(eq(subscriptionsTable.userId, userId));
   }

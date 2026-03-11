@@ -7,10 +7,10 @@ export type BillingAccountInsert = typeof billingAccountsTable.$inferInsert;
 
 export class BillingAccountRepository {
   static async findByUserId(
-    tx: typeof db,
+    database: typeof db,
     userId: string,
   ): Promise<BillingAccountRecord | null> {
-    const [record] = await tx
+    const [record] = await database
       .select()
       .from(billingAccountsTable)
       .where(eq(billingAccountsTable.userId, userId));
@@ -19,10 +19,10 @@ export class BillingAccountRepository {
   }
 
   static async findByPaddleCustomerId(
-    tx: typeof db,
+    database: typeof db,
     paddleCustomerId: string,
   ): Promise<BillingAccountRecord | null> {
-    const [record] = await tx
+    const [record] = await database
       .select()
       .from(billingAccountsTable)
       .where(eq(billingAccountsTable.paddleCustomerId, paddleCustomerId));
@@ -31,10 +31,10 @@ export class BillingAccountRepository {
   }
 
   static async findByPaddleSubscriptionId(
-    tx: typeof db,
+    database: typeof db,
     paddleSubscriptionId: string,
   ): Promise<BillingAccountRecord | null> {
-    const [record] = await tx
+    const [record] = await database
       .select()
       .from(billingAccountsTable)
       .where(
@@ -45,7 +45,7 @@ export class BillingAccountRepository {
   }
 
   static async upsertByUserId(
-    tx: typeof db,
+    database: typeof db,
     payload: {
       userId: string;
       paddleCustomerId?: string | null;
@@ -68,7 +68,7 @@ export class BillingAccountRepository {
       updatedAt: now,
     };
 
-    const [record] = await tx
+    const [record] = await database
       .insert(billingAccountsTable)
       .values(values)
       .onConflictDoUpdate({

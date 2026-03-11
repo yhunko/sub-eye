@@ -9,10 +9,10 @@ export type SubscriptionHistoryRecord =
 
 export class SubscriptionHistoryRepository {
   static async insert(
-    tx: typeof db,
+    database: typeof db,
     payload: SubscriptionHistoryInsert,
   ): Promise<SubscriptionHistoryRecord> {
-    const [record] = await tx
+    const [record] = await database
       .insert(subscriptionHistoryTable)
       .values(payload)
       .returning();
@@ -25,7 +25,7 @@ export class SubscriptionHistoryRepository {
   }
 
   static async findBySubscriptionId(
-    tx: typeof db,
+    database: typeof db,
     {
       subscriptionId,
       userId,
@@ -35,7 +35,7 @@ export class SubscriptionHistoryRepository {
     },
     limit?: number,
   ): Promise<SubscriptionHistoryRecord[]> {
-    const query = tx
+    const query = database
       .select()
       .from(subscriptionHistoryTable)
       .where(
@@ -54,7 +54,7 @@ export class SubscriptionHistoryRepository {
   }
 
   static async deleteById(
-    tx: typeof db,
+    database: typeof db,
     {
       historyId,
       subscriptionId,
@@ -65,7 +65,7 @@ export class SubscriptionHistoryRepository {
       userId: string;
     },
   ): Promise<boolean> {
-    const deleted = await tx
+    const deleted = await database
       .delete(subscriptionHistoryTable)
       .where(
         and(
@@ -80,10 +80,10 @@ export class SubscriptionHistoryRepository {
   }
 
   static async deleteBySubscriptionId(
-    tx: typeof db,
+    database: typeof db,
     subscriptionId: string,
   ): Promise<void> {
-    await tx
+    await database
       .delete(subscriptionHistoryTable)
       .where(eq(subscriptionHistoryTable.subscriptionId, subscriptionId));
   }

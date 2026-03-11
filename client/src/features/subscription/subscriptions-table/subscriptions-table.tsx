@@ -14,6 +14,7 @@ import {
   TableHead,
   TableBody,
   TableCell,
+  Button,
 } from "@/shared/components";
 import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
 import {
@@ -26,10 +27,12 @@ import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
 import { useQueryStates } from "nuqs";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { SubscriptionSortField } from "shared";
 import * as m from "@/i18n/messages";
 import { TableBodyLoader } from "@/shared/ui";
 import { SubscriptionsMonthlySpendCard } from "../../analytics";
+import { ArrowRightLeft } from "lucide-react";
 
 const SubscriptionsTable: FC = () => {
   const [filters, setFilters] = useQueryStates(subscriptionsQueryParsers, {
@@ -110,6 +113,12 @@ const SubscriptionsTable: FC = () => {
           loading={isTableLoading}
         />
         <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/subscriptions/compare">
+              <ArrowRightLeft className="size-4" aria-hidden />
+              {m.comparator_action_open()}
+            </Link>
+          </Button>
           <SubscriptionsFilter
             status={filters.status}
             onStatusChange={(nextStatus) => setFilters({ status: nextStatus })}

@@ -176,3 +176,67 @@ export const subscriptionHistoryTable = pgTable(
     ),
   ],
 );
+
+export const comparatorUsageTable = pgTable(
+  "comparator_usage",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    periodKey: text("period_key").notNull(),
+    comparisonsCount: integer("comparisons_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comparator_usage_user_period_idx").on(
+      table.userId,
+      table.periodKey,
+    ),
+  ],
+);
+
+export const comparatorAiUsageTable = pgTable(
+  "comparator_ai_usage",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    periodKey: text("period_key").notNull(),
+    analysesCount: integer("analyses_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comparator_ai_usage_user_period_idx").on(
+      table.userId,
+      table.periodKey,
+    ),
+  ],
+);
+
+export const comparatorAiCacheTable = pgTable(
+  "comparator_ai_cache",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    periodKey: text("period_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    model: text("model").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    response: jsonb("response").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comparator_ai_cache_unique_idx").on(
+      table.userId,
+      table.periodKey,
+      table.requestHash,
+      table.model,
+      table.promptVersion,
+    ),
+    index("comparator_ai_cache_user_period_idx").on(
+      table.userId,
+      table.periodKey,
+    ),
+  ],
+);

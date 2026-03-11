@@ -1,6 +1,7 @@
 import { FC } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  ArrowRightLeft,
   CalendarArrowUp,
   Ellipsis,
   HistoryIcon,
@@ -50,6 +51,8 @@ export const SubscriptionOverviewActionsDropdown: FC<
   onDeleteSuccess,
   triggerClassName,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -84,6 +87,19 @@ export const SubscriptionOverviewActionsDropdown: FC<
           {hasScheduledPriceChange
             ? m.subscription_priceChange_action_edit()
             : m.subscription_priceChange_action_schedule()}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onSelect={() => {
+            void navigate({
+              to: "/subscriptions/compare",
+              search: { prefillId: subscriptionId },
+            });
+          }}
+        >
+          <ArrowRightLeft className="size-4" aria-hidden />
+          {m.comparator_action_open()}
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

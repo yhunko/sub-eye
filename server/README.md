@@ -14,6 +14,27 @@ bun run dev
 
 The API runs on http://localhost:3000.
 
+### Comparator API (v1)
+
+Implemented in Hono + TypeScript with Java-style layering (route/controller/service/repository/calculator).
+
+- `GET /api/comparator/quota`
+- `GET /api/comparator/ai-quota`
+- `POST /api/comparator/compare`
+- `POST /api/comparator/analyze`
+
+Quota policy:
+
+- Free: 10 comparisons per month + 10 AI analyses per month
+- Plus: unlimited comparisons + 300 AI analyses per month
+
+### Server Quality Commands
+
+```sh
+bun run --cwd server type-check
+bun run --cwd server test
+```
+
 ### Required Environment Variables
 
 - `CLIENT_ORIGIN`

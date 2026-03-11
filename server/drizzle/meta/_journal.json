@@ -50,6 +50,20 @@
       "when": 1773090000000,
       "tag": "0006_telegram_message_template",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773150000000,
+      "tag": "0007_comparator_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773300000000,
+      "tag": "0008_comparator_ai_usage_and_cache",
+      "breakpoints": true
     }
   ]
 }

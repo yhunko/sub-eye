@@ -37,6 +37,8 @@ const FEATURE_LABELS: Record<string, () => string> = {
   analytics: m.settings_billing_plans_free_features_analytics,
   notifications: m.settings_billing_plans_free_features_notifications,
   currency: m.settings_billing_plans_free_features_currency,
+  comparator: m.settings_billing_plans_free_features_comparator,
+  comparatorAiInsights: m.settings_billing_plans_free_features_aiInsights,
 };
 
 function SettingsBillingPage() {
