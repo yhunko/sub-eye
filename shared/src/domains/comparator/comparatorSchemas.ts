@@ -26,7 +26,7 @@ export const FREE_COMPARATOR_MONTHLY_LIMIT = 10;
 export const FREE_COMPARATOR_AI_MONTHLY_LIMIT = 10;
 export const PLUS_COMPARATOR_AI_MONTHLY_LIMIT = 300;
 export const COMPARATOR_AI_MODEL = "gemini-2.5-flash-lite";
-export const COMPARATOR_AI_PROMPT_VERSION = "v4";
+export const COMPARATOR_AI_PROMPT_VERSION = "v5";
 
 const currencyCodeSchema = pipe(
   string(),

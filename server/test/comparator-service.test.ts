@@ -319,6 +319,115 @@ describe("ComparatorService.analyze", () => {
     expect(response.quota.used).toBe(2);
   });
 
+  it("marks same-service billing cadence comparisons in AI prompt context", async () => {
+    let capturedPrompt = "";
+
+    const response = await ComparatorService.analyze(
+      "user_1",
+      {
+        comparison: {
+          currentPlan: {
+            source: "manual",
+            name: "Fastmail monthly",
+            amount: 6,
+            currency: "usd",
+            every: 1,
+            period: SubscriptionPeriod.MONTH,
+          },
+          candidatePlan: {
+            source: "manual",
+            name: "Fastmail 2 years",
+            amount: 120,
+            currency: "usd",
+            every: 2,
+            period: SubscriptionPeriod.YEAR,
+          },
+        },
+      },
+      {
+        repository: {
+          findAiUsageByUserAndPeriod: async () => null,
+          findAiCache: async () => null,
+          consumeAiMonthlyQuota: async () => ({
+            id: 1,
+            userId: "user_1",
+            periodKey: "2026-03",
+            analysesCount: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }),
+          upsertAiCache: async () => undefined,
+        } as never,
+        userService: {
+          getPlanId: async () => "free",
+          getUserPreferences: async () => ({
+            preferredCurrency: "usd",
+            preferredTimezone: "UTC",
+            notificationTime: "10:00",
+            notificationOffset: 1,
+            locale: "en",
+          }),
+        } as never,
+        currencyService: {
+          getRates: async () => ({ usd: 1 }),
+        } as never,
+        subscriptionService: {
+          getSubscriptions: async () => [],
+        } as never,
+        aiClient: {
+          generateInsights: async (prompt: string) => {
+            capturedPrompt = prompt;
+
+            return {
+              summary:
+                "Fastmail has solid market reputation, so cadence fit drives this choice.",
+              recommendation: {
+                decision: "depends",
+                confidence: "medium",
+                rationale:
+                  "Monthly flexibility may outweigh long prepay lock-in despite lower normalized cost.",
+              },
+              priceSignificance: {
+                level: "moderate",
+                explanation: "The normalized monthly delta is meaningful.",
+              },
+              annualCommitmentAdvice: {
+                term: "either",
+                confidence: "medium",
+                reason:
+                  "Choose yearly only if you are confident you will keep using the service.",
+              },
+              serviceMaturity: {
+                current: {
+                  level: "high",
+                  reason:
+                    "Same provider, so service maturity is effectively the same.",
+                },
+                candidate: {
+                  level: "high",
+                  reason:
+                    "Same provider, so service maturity is effectively the same.",
+                },
+              },
+              risks: ["Long prepay terms reduce flexibility."],
+              citations: [{ title: "Source", url: "https://example.com" }],
+              uncertainties: ["Future pricing policy may change."],
+            };
+          },
+        },
+      },
+    );
+
+    expect(response.mode).toBe("ai");
+    expect(capturedPrompt).toContain('"sameService": true');
+    expect(capturedPrompt).toContain(
+      '"sameServiceSignal": "normalized_name_match"',
+    );
+    expect(capturedPrompt).toContain(
+      "do not frame this as head-to-head provider competition",
+    );
+  });
+
   it("uses preferred currency in AI prose when provider returns foreign currency mentions", async () => {
     let aiCalls = 0;
 

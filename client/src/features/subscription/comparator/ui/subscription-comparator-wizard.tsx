@@ -7,6 +7,7 @@ import type {
   ComparatorRatesDto,
   CompareSubscriptionsInput,
   CompareSubscriptionsResponseDto,
+  SubscriptionDto,
 } from "shared";
 import { CurrenciesMap, CurrencyUtils, RecurrenceUtils } from "shared";
 import {
@@ -84,6 +85,13 @@ type ComparatorWizardSessionState = {
   errorMessage: string | null;
 };
 
+type ManualDraftsState = {
+  current: ManualPlanDraft;
+  candidate: ManualPlanDraft;
+};
+
+type CurrencyConverter = ReturnType<typeof toPreferredCurrencyConverter>;
+
 const toWizardStep = (value: number): ComparatorWizardStep => {
   if (value <= 1) {
     return 1;
@@ -150,6 +158,229 @@ const toPreferredCurrencyConverter = (
   };
 };
 
+const buildCurrentPreview = ({
+  mode,
+  selectedExistingSubscription,
+  currentManual,
+  convertToPreferredCurrency,
+  preferredCurrencyCode,
+}: {
+  mode: CompareMode;
+  selectedExistingSubscription: SubscriptionDto | undefined;
+  currentManual: ManualPlanDraft;
+  convertToPreferredCurrency: CurrencyConverter;
+  preferredCurrencyCode: string;
+}): PlanPreview => {
+  if (mode === "existingVsManual") {
+    if (!selectedExistingSubscription) {
+      return {
+        name: m.comparator_label_current(),
+        cycleLabel: null,
+        immediateCharge: null,
+        monthlyAmount: null,
+        yearlyAmount: null,
+        currencyCode: preferredCurrencyCode,
+        cadenceInMonths: null,
+      };
+    }
+
+    const sourceCurrencyCode = CurrencyUtils.normalizeCode(
+      selectedExistingSubscription.currency,
+    );
+    const targetCurrencyCode = CurrencyUtils.normalizeCode(
+      selectedExistingSubscription.billing.preferred.currencyCode,
+    );
+    const canUsePreferredBillingDirectly =
+      targetCurrencyCode === preferredCurrencyCode;
+    const convertedImmediateCharge = canUsePreferredBillingDirectly
+      ? selectedExistingSubscription.billing.preferred.amount
+      : convertToPreferredCurrency(
+          selectedExistingSubscription.cost,
+          sourceCurrencyCode,
+        );
+    const convertedMonthlyAmount = canUsePreferredBillingDirectly
+      ? selectedExistingSubscription.billing.preferred.monthly
+      : convertToPreferredCurrency(
+          selectedExistingSubscription.billing.original.monthly,
+          sourceCurrencyCode,
+        );
+    const hasConvertedValues =
+      convertedImmediateCharge !== null && convertedMonthlyAmount !== null;
+    const immediateCharge = hasConvertedValues
+      ? convertedImmediateCharge
+      : selectedExistingSubscription.cost;
+    const monthlyAmount = hasConvertedValues
+      ? convertedMonthlyAmount
+      : selectedExistingSubscription.billing.original.monthly;
+    const yearlyAmount = monthlyAmount * 12;
+
+    return {
+      name: selectedExistingSubscription.name,
+      cycleLabel:
+        formatSubscriptionCycle(
+          selectedExistingSubscription.every,
+          selectedExistingSubscription.period,
+        ) ?? null,
+      immediateCharge: roundMoney(immediateCharge),
+      monthlyAmount: roundMoney(monthlyAmount),
+      yearlyAmount: roundMoney(yearlyAmount),
+      currencyCode: hasConvertedValues
+        ? preferredCurrencyCode
+        : sourceCurrencyCode,
+      cadenceInMonths: RecurrenceUtils.intervalToMonths(
+        selectedExistingSubscription.every,
+        selectedExistingSubscription.period,
+      ),
+    };
+  }
+
+  const parsed = parseManualPlanDraft(currentManual);
+  const parsedPayload = parsed.payload;
+
+  if (parsed.error || !parsedPayload) {
+    return {
+      name: currentManual.name.trim() || m.comparator_label_current(),
+      cycleLabel:
+        formatSubscriptionCycle(
+          Number(currentManual.everyInput || 0),
+          currentManual.period,
+        ) ?? null,
+      immediateCharge: null,
+      monthlyAmount: null,
+      yearlyAmount: null,
+      currencyCode: preferredCurrencyCode,
+      cadenceInMonths: null,
+    };
+  }
+
+  const sourceMonthlyAmount = CurrencyUtils.toMonthly(
+    parsedPayload.amount,
+    parsedPayload.every,
+    parsedPayload.period,
+  );
+  const sourceYearlyAmount = sourceMonthlyAmount * 12;
+  const convertedImmediateCharge = convertToPreferredCurrency(
+    parsedPayload.amount,
+    parsedPayload.currency,
+  );
+  const convertedMonthlyAmount = convertToPreferredCurrency(
+    sourceMonthlyAmount,
+    parsedPayload.currency,
+  );
+  const convertedYearlyAmount = convertToPreferredCurrency(
+    sourceYearlyAmount,
+    parsedPayload.currency,
+  );
+  const hasConvertedValues =
+    convertedImmediateCharge !== null &&
+    convertedMonthlyAmount !== null &&
+    convertedYearlyAmount !== null;
+  const immediateCharge = hasConvertedValues
+    ? convertedImmediateCharge
+    : parsedPayload.amount;
+  const monthlyAmount = hasConvertedValues
+    ? convertedMonthlyAmount
+    : sourceMonthlyAmount;
+  const yearlyAmount = hasConvertedValues
+    ? convertedYearlyAmount
+    : sourceYearlyAmount;
+
+  return {
+    name: parsedPayload.name || m.comparator_label_current(),
+    cycleLabel:
+      formatSubscriptionCycle(parsedPayload.every, parsedPayload.period) ??
+      null,
+    immediateCharge: roundMoney(immediateCharge),
+    monthlyAmount: roundMoney(monthlyAmount),
+    yearlyAmount: roundMoney(yearlyAmount),
+    currencyCode: hasConvertedValues
+      ? preferredCurrencyCode
+      : parsedPayload.currency,
+    cadenceInMonths: RecurrenceUtils.intervalToMonths(
+      parsedPayload.every,
+      parsedPayload.period,
+    ),
+  };
+};
+
+const buildCandidatePreview = ({
+  candidateManual,
+  convertToPreferredCurrency,
+  preferredCurrencyCode,
+}: {
+  candidateManual: ManualPlanDraft;
+  convertToPreferredCurrency: CurrencyConverter;
+  preferredCurrencyCode: string;
+}): PlanPreview => {
+  const parsed = parseManualPlanDraft(candidateManual);
+  const parsedPayload = parsed.payload;
+
+  if (parsed.error || !parsedPayload) {
+    return {
+      name: candidateManual.name.trim() || m.comparator_label_candidate(),
+      cycleLabel:
+        formatSubscriptionCycle(
+          Number(candidateManual.everyInput || 0),
+          candidateManual.period,
+        ) ?? null,
+      immediateCharge: null,
+      monthlyAmount: null,
+      yearlyAmount: null,
+      currencyCode: preferredCurrencyCode,
+      cadenceInMonths: null,
+    };
+  }
+
+  const sourceMonthlyAmount = CurrencyUtils.toMonthly(
+    parsedPayload.amount,
+    parsedPayload.every,
+    parsedPayload.period,
+  );
+  const sourceYearlyAmount = sourceMonthlyAmount * 12;
+  const convertedImmediateCharge = convertToPreferredCurrency(
+    parsedPayload.amount,
+    parsedPayload.currency,
+  );
+  const convertedMonthlyAmount = convertToPreferredCurrency(
+    sourceMonthlyAmount,
+    parsedPayload.currency,
+  );
+  const convertedYearlyAmount = convertToPreferredCurrency(
+    sourceYearlyAmount,
+    parsedPayload.currency,
+  );
+  const hasConvertedValues =
+    convertedImmediateCharge !== null &&
+    convertedMonthlyAmount !== null &&
+    convertedYearlyAmount !== null;
+  const immediateCharge = hasConvertedValues
+    ? convertedImmediateCharge
+    : parsedPayload.amount;
+  const monthlyAmount = hasConvertedValues
+    ? convertedMonthlyAmount
+    : sourceMonthlyAmount;
+  const yearlyAmount = hasConvertedValues
+    ? convertedYearlyAmount
+    : sourceYearlyAmount;
+
+  return {
+    name: parsedPayload.name || m.comparator_label_candidate(),
+    cycleLabel:
+      formatSubscriptionCycle(parsedPayload.every, parsedPayload.period) ??
+      null,
+    immediateCharge: roundMoney(immediateCharge),
+    monthlyAmount: roundMoney(monthlyAmount),
+    yearlyAmount: roundMoney(yearlyAmount),
+    currencyCode: hasConvertedValues
+      ? preferredCurrencyCode
+      : parsedPayload.currency,
+    cadenceInMonths: RecurrenceUtils.intervalToMonths(
+      parsedPayload.every,
+      parsedPayload.period,
+    ),
+  };
+};
+
 export const SubscriptionComparatorWizard: FC<
   SubscriptionComparatorWizardProps
 > = ({ prefillSubscriptionId, persistedState, onPersistedStateChange }) => {
@@ -163,12 +394,10 @@ export const SubscriptionComparatorWizard: FC<
   const [currentExistingId, setCurrentExistingId] = useState(
     persistedState.currentExistingId,
   );
-  const [currentManual, setCurrentManual] = useState<ManualPlanDraft>(
-    persistedState.currentManual,
-  );
-  const [candidateManual, setCandidateManual] = useState<ManualPlanDraft>(
-    persistedState.candidateManual,
-  );
+  const [manualDrafts, setManualDrafts] = useState<ManualDraftsState>({
+    current: persistedState.currentManual,
+    candidate: persistedState.candidateManual,
+  });
   const [sessionState, setSessionState] =
     useState<ComparatorWizardSessionState>({
       comparison: persistedState.comparison,
@@ -176,6 +405,8 @@ export const SubscriptionComparatorWizard: FC<
       errorMessage: null,
     });
   const { comparison, aiResult, errorMessage } = sessionState;
+  const currentManual = manualDrafts.current;
+  const candidateManual = manualDrafts.candidate;
 
   useEffect(() => {
     onPersistedStateChange?.({
@@ -294,6 +525,10 @@ export const SubscriptionComparatorWizard: FC<
 
   const progressValue = (step / 4) * 100;
   const hasResult = Boolean(comparison?.response.result);
+  const hasFullAiReview = Boolean(
+    aiResult?.mode === "ai" && aiResult.aiInsights,
+  );
+  const showBottomActions = step < 4 || !hasFullAiReview;
 
   const resetComparisonState = () => {
     setSessionState((previous) => ({
@@ -318,18 +553,24 @@ export const SubscriptionComparatorWizard: FC<
 
   const handleCurrentManualChange: ManualDraftChangeHandler = (next) => {
     resetComparisonState();
-    setCurrentManual((previous) => ({
+    setManualDrafts((previous) => ({
       ...previous,
-      ...(typeof next === "function" ? next(previous) : next),
+      current: {
+        ...previous.current,
+        ...(typeof next === "function" ? next(previous.current) : next),
+      },
     }));
     setSessionState((previous) => ({ ...previous, errorMessage: null }));
   };
 
   const handleCandidateManualChange: ManualDraftChangeHandler = (next) => {
     resetComparisonState();
-    setCandidateManual((previous) => ({
+    setManualDrafts((previous) => ({
       ...previous,
-      ...(typeof next === "function" ? next(previous) : next),
+      candidate: {
+        ...previous.candidate,
+        ...(typeof next === "function" ? next(previous.candidate) : next),
+      },
     }));
     setSessionState((previous) => ({ ...previous, errorMessage: null }));
   };
@@ -537,214 +778,33 @@ export const SubscriptionComparatorWizard: FC<
             })
           : m.comparator_result_yearly_same();
 
-  const currentPreview = useMemo<PlanPreview>(() => {
-    if (mode === "existingVsManual") {
-      if (!selectedExistingSubscription) {
-        return {
-          name: m.comparator_label_current(),
-          cycleLabel: null,
-          immediateCharge: null,
-          monthlyAmount: null,
-          yearlyAmount: null,
-          currencyCode: preferredCurrencyCode,
-          cadenceInMonths: null,
-        };
-      }
+  const currentPreview = useMemo<PlanPreview>(
+    () =>
+      buildCurrentPreview({
+        mode,
+        selectedExistingSubscription,
+        currentManual,
+        convertToPreferredCurrency,
+        preferredCurrencyCode,
+      }),
+    [
+      mode,
+      selectedExistingSubscription,
+      currentManual,
+      convertToPreferredCurrency,
+      preferredCurrencyCode,
+    ],
+  );
 
-      const sourceCurrencyCode = CurrencyUtils.normalizeCode(
-        selectedExistingSubscription.currency,
-      );
-      const targetCurrencyCode = CurrencyUtils.normalizeCode(
-        selectedExistingSubscription.billing.preferred.currencyCode,
-      );
-      const canUsePreferredBillingDirectly =
-        targetCurrencyCode === preferredCurrencyCode;
-      const convertedImmediateCharge = canUsePreferredBillingDirectly
-        ? selectedExistingSubscription.billing.preferred.amount
-        : convertToPreferredCurrency(
-            selectedExistingSubscription.cost,
-            sourceCurrencyCode,
-          );
-      const convertedMonthlyAmount = canUsePreferredBillingDirectly
-        ? selectedExistingSubscription.billing.preferred.monthly
-        : convertToPreferredCurrency(
-            selectedExistingSubscription.billing.original.monthly,
-            sourceCurrencyCode,
-          );
-      const hasConvertedValues =
-        convertedImmediateCharge !== null && convertedMonthlyAmount !== null;
-      const immediateCharge = hasConvertedValues
-        ? convertedImmediateCharge
-        : selectedExistingSubscription.cost;
-      const monthlyAmount = hasConvertedValues
-        ? convertedMonthlyAmount
-        : selectedExistingSubscription.billing.original.monthly;
-      const yearlyAmount = monthlyAmount * 12;
-
-      return {
-        name: selectedExistingSubscription.name,
-        cycleLabel:
-          formatSubscriptionCycle(
-            selectedExistingSubscription.every,
-            selectedExistingSubscription.period,
-          ) ?? null,
-        immediateCharge: roundMoney(immediateCharge),
-        monthlyAmount: roundMoney(monthlyAmount),
-        yearlyAmount: roundMoney(yearlyAmount),
-        currencyCode: hasConvertedValues
-          ? preferredCurrencyCode
-          : sourceCurrencyCode,
-        cadenceInMonths: RecurrenceUtils.intervalToMonths(
-          selectedExistingSubscription.every,
-          selectedExistingSubscription.period,
-        ),
-      };
-    }
-
-    const parsed = parseManualPlanDraft(currentManual);
-    const parsedPayload = parsed.payload;
-
-    if (parsed.error || !parsedPayload) {
-      return {
-        name: currentManual.name.trim() || m.comparator_label_current(),
-        cycleLabel:
-          formatSubscriptionCycle(
-            Number(currentManual.everyInput || 0),
-            currentManual.period,
-          ) ?? null,
-        immediateCharge: null,
-        monthlyAmount: null,
-        yearlyAmount: null,
-        currencyCode: preferredCurrencyCode,
-        cadenceInMonths: null,
-      };
-    }
-
-    const sourceMonthlyAmount = CurrencyUtils.toMonthly(
-      parsedPayload.amount,
-      parsedPayload.every,
-      parsedPayload.period,
-    );
-    const sourceYearlyAmount = sourceMonthlyAmount * 12;
-    const convertedImmediateCharge = convertToPreferredCurrency(
-      parsedPayload.amount,
-      parsedPayload.currency,
-    );
-    const convertedMonthlyAmount = convertToPreferredCurrency(
-      sourceMonthlyAmount,
-      parsedPayload.currency,
-    );
-    const convertedYearlyAmount = convertToPreferredCurrency(
-      sourceYearlyAmount,
-      parsedPayload.currency,
-    );
-    const hasConvertedValues =
-      convertedImmediateCharge !== null &&
-      convertedMonthlyAmount !== null &&
-      convertedYearlyAmount !== null;
-    const immediateCharge = hasConvertedValues
-      ? convertedImmediateCharge
-      : parsedPayload.amount;
-    const monthlyAmount = hasConvertedValues
-      ? convertedMonthlyAmount
-      : sourceMonthlyAmount;
-    const yearlyAmount = hasConvertedValues
-      ? convertedYearlyAmount
-      : sourceYearlyAmount;
-
-    return {
-      name: parsedPayload.name || m.comparator_label_current(),
-      cycleLabel:
-        formatSubscriptionCycle(parsedPayload.every, parsedPayload.period) ??
-        null,
-      immediateCharge: roundMoney(immediateCharge),
-      monthlyAmount: roundMoney(monthlyAmount),
-      yearlyAmount: roundMoney(yearlyAmount),
-      currencyCode: hasConvertedValues
-        ? preferredCurrencyCode
-        : parsedPayload.currency,
-      cadenceInMonths: RecurrenceUtils.intervalToMonths(
-        parsedPayload.every,
-        parsedPayload.period,
-      ),
-    };
-  }, [
-    mode,
-    selectedExistingSubscription,
-    currentManual,
-    convertToPreferredCurrency,
-    preferredCurrencyCode,
-  ]);
-
-  const candidatePreview = useMemo<PlanPreview>(() => {
-    const parsed = parseManualPlanDraft(candidateManual);
-    const parsedPayload = parsed.payload;
-
-    if (parsed.error || !parsedPayload) {
-      return {
-        name: candidateManual.name.trim() || m.comparator_label_candidate(),
-        cycleLabel:
-          formatSubscriptionCycle(
-            Number(candidateManual.everyInput || 0),
-            candidateManual.period,
-          ) ?? null,
-        immediateCharge: null,
-        monthlyAmount: null,
-        yearlyAmount: null,
-        currencyCode: preferredCurrencyCode,
-        cadenceInMonths: null,
-      };
-    }
-
-    const sourceMonthlyAmount = CurrencyUtils.toMonthly(
-      parsedPayload.amount,
-      parsedPayload.every,
-      parsedPayload.period,
-    );
-    const sourceYearlyAmount = sourceMonthlyAmount * 12;
-    const convertedImmediateCharge = convertToPreferredCurrency(
-      parsedPayload.amount,
-      parsedPayload.currency,
-    );
-    const convertedMonthlyAmount = convertToPreferredCurrency(
-      sourceMonthlyAmount,
-      parsedPayload.currency,
-    );
-    const convertedYearlyAmount = convertToPreferredCurrency(
-      sourceYearlyAmount,
-      parsedPayload.currency,
-    );
-    const hasConvertedValues =
-      convertedImmediateCharge !== null &&
-      convertedMonthlyAmount !== null &&
-      convertedYearlyAmount !== null;
-    const immediateCharge = hasConvertedValues
-      ? convertedImmediateCharge
-      : parsedPayload.amount;
-    const monthlyAmount = hasConvertedValues
-      ? convertedMonthlyAmount
-      : sourceMonthlyAmount;
-    const yearlyAmount = hasConvertedValues
-      ? convertedYearlyAmount
-      : sourceYearlyAmount;
-
-    return {
-      name: parsedPayload.name || m.comparator_label_candidate(),
-      cycleLabel:
-        formatSubscriptionCycle(parsedPayload.every, parsedPayload.period) ??
-        null,
-      immediateCharge: roundMoney(immediateCharge),
-      monthlyAmount: roundMoney(monthlyAmount),
-      yearlyAmount: roundMoney(yearlyAmount),
-      currencyCode: hasConvertedValues
-        ? preferredCurrencyCode
-        : parsedPayload.currency,
-      cadenceInMonths: RecurrenceUtils.intervalToMonths(
-        parsedPayload.every,
-        parsedPayload.period,
-      ),
-    };
-  }, [candidateManual, convertToPreferredCurrency, preferredCurrencyCode]);
+  const candidatePreview = useMemo<PlanPreview>(
+    () =>
+      buildCandidatePreview({
+        candidateManual,
+        convertToPreferredCurrency,
+        preferredCurrencyCode,
+      }),
+    [candidateManual, convertToPreferredCurrency, preferredCurrencyCode],
+  );
 
   const cadenceInsight = useMemo(() => {
     if (
@@ -927,54 +987,56 @@ export const SubscriptionComparatorWizard: FC<
             </Alert>
           )}
 
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
-            <div className="flex items-center gap-2">
-              {step < 4 ? (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (step === 1) {
-                      goToStep(2);
-                      return;
-                    }
-                    if (step === 2) {
-                      goFromStepTwo();
-                      return;
-                    }
-                    goFromStepThree();
-                  }}
-                >
-                  {m.common_actions_continue()}
-                </Button>
-              ) : (
-                <>
-                  {hasResult && shownPayload && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={compareMutation.isPending}
-                      onClick={() => {
-                        resetComparisonState();
-                        setSessionState((previous) => ({
-                          ...previous,
-                          errorMessage: null,
-                        }));
-                      }}
-                    >
-                      {m.comparator_result_clear()}
-                    </Button>
-                  )}
+          {showBottomActions && (
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
+              <div className="flex items-center gap-2">
+                {step < 4 ? (
                   <Button
                     type="button"
-                    disabled={compareMutation.isPending || isQuotaReached}
-                    onClick={handleCompare}
+                    onClick={() => {
+                      if (step === 1) {
+                        goToStep(2);
+                        return;
+                      }
+                      if (step === 2) {
+                        goFromStepTwo();
+                        return;
+                      }
+                      goFromStepThree();
+                    }}
                   >
-                    {m.comparator_action_compare()}
+                    {m.common_actions_continue()}
                   </Button>
-                </>
-              )}
+                ) : (
+                  <>
+                    {hasResult && shownPayload && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={compareMutation.isPending}
+                        onClick={() => {
+                          resetComparisonState();
+                          setSessionState((previous) => ({
+                            ...previous,
+                            errorMessage: null,
+                          }));
+                        }}
+                      >
+                        {m.comparator_result_clear()}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      disabled={compareMutation.isPending || isQuotaReached}
+                      onClick={handleCompare}
+                    >
+                      {m.comparator_action_compare()}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

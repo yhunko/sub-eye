@@ -268,6 +268,7 @@ const InsightsContent: FC<{
         {aiInsights.risks.length > 0 && (
           <div className="space-y-1">
             <p className="text-sm font-medium">
+              <span aria-hidden>⚠️ </span>
               {m.comparator_ai_risks_label()}
             </p>
             <ul className="list-disc space-y-1 pl-5 text-sm">
@@ -281,6 +282,7 @@ const InsightsContent: FC<{
         {aiInsights.uncertainties.length > 0 && (
           <div className="space-y-1">
             <p className="text-sm font-medium">
+              <span aria-hidden>❓ </span>
               {m.comparator_ai_uncertainties_label()}
             </p>
             <ul className="list-disc space-y-1 pl-5 text-sm">
