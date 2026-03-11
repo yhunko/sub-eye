@@ -34,7 +34,7 @@ runs:
   using: composite
   steps:
     - name: Sync Release PR
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         SOURCE_BRANCH: ${{ inputs.source-branch }}
         TARGET_BRANCH: ${{ inputs.target-branch }}
