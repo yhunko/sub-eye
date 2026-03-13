@@ -118,6 +118,16 @@ await SubscriptionService.getSubscriptions(userId, params, {
 
 Follow this pattern when adding new service methods.
 
+### Hono & CF Worker gotchas
+
+**`process.env` is always `undefined` at module load time in a CF Worker.** Worker bindings (secrets, vars) are only accessible per-request via `context.env`. Never read `process.env.*` at module scope or as a fallback — it will silently produce `undefined`.
+
+**Hono RPC response type inference leaks error shapes into the client success type.** Hono RPC infers the full union of all `context.json(...)` return shapes in a route handler, including error branches. If an error handler uses `ContentfulStatusCode` (which includes 2xx codes), TypeScript cannot distinguish error responses from success responses, and the union contaminates the `queryFn` return type on the client. Always cast error handler status codes to narrow error-specific literals (`400 | 403 | 404`) — never to `ContentfulStatusCode` or `StatusCode`.
+
+**Returning 204 from Hono middleware.** `ctx.text("", 204)` fails type-checking because Hono's `ContentfulStatusCode` excludes status 204 (No Content). Use `new Response("", { status: 204 })` directly instead.
+
+**Hono inline `.use()` middleware must be `async` when it can return either `next()` or a `Response`.** A synchronous function that sometimes returns `next()` (`Promise<void>`) and sometimes returns a `Response` produces a mixed return type TypeScript rejects. Declaring the function `async` unifies both branches under `Promise<void | Response>`.
+
 ### Dev plan override
 
 In development, `client/src/shared/lib/billing/local-plan-override.ts` lets developers simulate a Plus plan locally by writing a value to `localStorage`. The `planUsageQuery` applies this override on top of the real API response when `import.meta.env.DEV` is true.
