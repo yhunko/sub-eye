@@ -41,6 +41,7 @@
     "build:client": "turbo build --filter=client",
     "build:server": "turbo build --filter=server",
     "deploy:dev": "VITE_APP_ASSET_ENV=dev turbo build && wrangler -c dev.wrangler.jsonc deploy --minify",
+    "build:dev": "VITE_APP_ASSET_ENV=dev turbo build",
     "deps:sync:lint": "syncpack lint",
     "deps:sync:up": "syncpack update",
     "deps:up": "bun x npm-check-updates --interactive",
