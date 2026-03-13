@@ -20,7 +20,7 @@ describe("comparator router", () => {
     const router = createComparatorRouter({
       protectMiddleware: async (_context, next) => next(),
       getUserId: () => "user_1",
-      controller: {
+      service: {
         getQuota: async () => ({
           planId: "free",
           periodKey: "2026-03",
@@ -66,7 +66,7 @@ describe("comparator router", () => {
     const router = createComparatorRouter({
       protectMiddleware: async (_context, next) => next(),
       getUserId: () => "user_1",
-      controller: {
+      service: {
         getQuota: async () => {
           throw new Error("Comparator quota exceeded");
         },
@@ -184,7 +184,7 @@ describe("comparator router", () => {
     const router = createComparatorRouter({
       protectMiddleware: async (_context, next) => next(),
       getUserId: () => "user_1",
-      controller: {
+      service: {
         getQuota: async () => ({
           planId: "free",
           periodKey: "2026-03",

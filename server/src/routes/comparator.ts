@@ -14,11 +14,11 @@ import {
   AnalyzeComparatorInputSchema,
   CompareSubscriptionsInputSchema,
 } from "shared";
-import { ComparatorController } from "../domains/comparator/comparatorController";
+import { ComparatorService } from "../domains/comparator/comparatorService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
 
-type ComparatorControllerContract = {
+type ComparatorServiceContract = {
   getQuota: (userId: string) => Promise<ComparatorQuotaDto>;
   getAiQuota: (userId: string) => Promise<ComparatorAiQuotaDto>;
   getRates: (userId: string) => Promise<ComparatorRatesDto>;
@@ -33,7 +33,7 @@ type ComparatorControllerContract = {
 };
 
 type ComparatorRouterDeps = {
-  controller?: ComparatorControllerContract;
+  service?: ComparatorServiceContract;
   protectMiddleware?: MiddlewareHandler;
   getUserId?: (context: Context) => string;
 };
@@ -60,7 +60,7 @@ const handleServiceError = (context: Context, error: unknown) => {
 };
 
 export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
-  const controller = deps.controller ?? ComparatorController;
+  const service = deps.service ?? ComparatorService;
   const protectMiddleware = deps.protectMiddleware ?? protect;
   const getUserId = deps.getUserId ?? requireUserId;
 
@@ -69,7 +69,7 @@ export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
       const userId = getUserId(context);
 
       try {
-        const data = await controller.getQuota(userId);
+        const data = await service.getQuota(userId);
         return context.json(data);
       } catch (error) {
         return handleServiceError(context, error);
@@ -79,7 +79,7 @@ export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
       const userId = getUserId(context);
 
       try {
-        const data = await controller.getRates(userId);
+        const data = await service.getRates(userId);
         return context.json(data);
       } catch (error) {
         return handleServiceError(context, error);
@@ -89,7 +89,7 @@ export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
       const userId = getUserId(context);
 
       try {
-        const data = await controller.getAiQuota(userId);
+        const data = await service.getAiQuota(userId);
         return context.json(data);
       } catch (error) {
         return handleServiceError(context, error);
@@ -104,7 +104,7 @@ export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
 
         try {
           const payload = context.req.valid("json");
-          const data = await controller.compare(userId, payload);
+          const data = await service.compare(userId, payload);
           return context.json(data);
         } catch (error) {
           return handleServiceError(context, error);
@@ -120,7 +120,7 @@ export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
 
         try {
           const payload = context.req.valid("json");
-          const data = await controller.analyze(userId, payload);
+          const data = await service.analyze(userId, payload);
           return context.json(data);
         } catch (error) {
           return handleServiceError(context, error);

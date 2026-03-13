@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "@tanstack/react-router";
 import type {
   AnalyzeComparatorResponseDto,
@@ -8,13 +7,6 @@ import type {
   CompareSubscriptionsResponseDto,
 } from "shared";
 import { CurrenciesMap, CurrencyUtils } from "shared";
-import { subscriptionsQuery } from "@/entities/subscription";
-import { planUsageQuery } from "@/entities/billing";
-import {
-  comparatorRatesQuery,
-  useAnalyzeComparator,
-  useCompareSubscriptions,
-} from "@/entities/comparator";
 import * as m from "@/i18n/messages";
 import {
   parseManualPlanDraft,
@@ -31,10 +23,8 @@ import type {
   ComparatorWizardPersistentState,
   ComparatorWizardStep,
 } from "./comparator-wizard-persistence";
-import type {
-  CompareMode,
-  SelectableSubscriptionOption,
-} from "../ui/wizard/subscription-comparator-wizard.types";
+import type { CompareMode } from "../ui/wizard/subscription-comparator-wizard.types";
+import { useComparatorQueries } from "./use-comparator-queries";
 
 type ComparatorWizardSessionState = {
   comparison: ComparatorWizardComparisonState | null;
@@ -54,14 +44,8 @@ export type SubscriptionComparatorWizardStateParams = {
 };
 
 const toWizardStep = (value: number): ComparatorWizardStep => {
-  if (value <= 1) {
-    return 1;
-  }
-
-  if (value >= 4) {
-    return 4;
-  }
-
+  if (value <= 1) return 1;
+  if (value >= 4) return 4;
   return value as 2 | 3;
 };
 
@@ -71,7 +55,6 @@ export const useSubscriptionComparatorWizardState = ({
   onPersistedStateChange,
 }: SubscriptionComparatorWizardStateParams) => {
   const navigate = useNavigate();
-  const { userId } = useAuth();
   const { user } = useUser();
 
   const [step, setStep] = useState<number>(persistedState.step);
@@ -89,9 +72,19 @@ export const useSubscriptionComparatorWizardState = ({
       aiResult: undefined,
       errorMessage: null,
     });
+
   const { comparison, aiResult, errorMessage } = sessionState;
   const currentManual = manualDrafts.current;
   const candidateManual = manualDrafts.candidate;
+
+  const {
+    subscriptions,
+    selectableSubscriptionOptions,
+    usage,
+    ratesFromQuery,
+    compareMutation,
+    analyzeMutation,
+  } = useComparatorQueries(prefillSubscriptionId);
 
   useEffect(() => {
     onPersistedStateChange?.({
@@ -112,54 +105,10 @@ export const useSubscriptionComparatorWizardState = ({
     step,
   ]);
 
-  const { data: subscriptions = [] } = useQuery(
-    subscriptionsQuery({
-      params: {
-        userId: userId ?? "",
-        queryParams: { status: "all" },
-      },
-      options: { enabled: Boolean(userId) },
-    }),
-  );
-  const { data: usage } = useQuery(
-    planUsageQuery({
-      params: { userId: userId ?? "" },
-      options: { enabled: Boolean(userId) },
-    }),
-  );
-  const { data: ratesFromQuery } = useQuery(
-    comparatorRatesQuery({
-      params: { userId: userId ?? "" },
-      options: { enabled: Boolean(userId) },
-    }),
-  );
-  const compareMutation = useCompareSubscriptions();
-  const analyzeMutation = useAnalyzeComparator();
-
-  const selectableSubscriptions = useMemo(() => {
-    const filtered = subscriptions.filter(
-      (subscription) =>
-        subscription.status === "active" ||
-        subscription.status === "cancelledButActive" ||
-        subscription.id === prefillSubscriptionId,
-    );
-
-    return filtered.sort((left, right) => left.name.localeCompare(right.name));
-  }, [subscriptions, prefillSubscriptionId]);
-
   const selectedExistingSubscription = useMemo(
-    () =>
-      selectableSubscriptions.find(
-        (subscription) => subscription.id === currentExistingId,
-      ),
-    [selectableSubscriptions, currentExistingId],
+    () => subscriptions.find((s) => s.id === currentExistingId),
+    [subscriptions, currentExistingId],
   );
-
-  const selectableSubscriptionOptions = useMemo<
-    SelectableSubscriptionOption[]
-  >(() => {
-    return selectableSubscriptions.map(({ id, name }) => ({ id, name }));
-  }, [selectableSubscriptions]);
 
   const preferredCurrencyCode = useMemo(() => {
     const ratesCurrency = CurrencyUtils.normalizeCode(
@@ -216,12 +165,12 @@ export const useSubscriptionComparatorWizardState = ({
   const showBottomActions = step < 4 || !hasFullAiReview;
 
   const clearErrorMessage = () => {
-    setSessionState((previous) => ({ ...previous, errorMessage: null }));
+    setSessionState((prev) => ({ ...prev, errorMessage: null }));
   };
 
   const resetComparisonState = () => {
-    setSessionState((previous) => ({
-      ...previous,
+    setSessionState((prev) => ({
+      ...prev,
       comparison: null,
       aiResult: undefined,
     }));
@@ -233,8 +182,8 @@ export const useSubscriptionComparatorWizardState = ({
     payload: CompareSubscriptionsInput,
     response: CompareSubscriptionsResponseDto,
   ) => {
-    setSessionState((previous) => ({
-      ...previous,
+    setSessionState((prev) => ({
+      ...prev,
       comparison: { payload, response },
       aiResult: undefined,
     }));
@@ -245,11 +194,11 @@ export const useSubscriptionComparatorWizardState = ({
     next: Parameters<ManualDraftChangeHandler>[0],
   ) => {
     resetComparisonState();
-    setManualDrafts((previous) => ({
-      ...previous,
+    setManualDrafts((prev) => ({
+      ...prev,
       [key]: {
-        ...previous[key],
-        ...(typeof next === "function" ? next(previous[key]) : next),
+        ...prev[key],
+        ...(typeof next === "function" ? next(prev[key]) : next),
       },
     }));
     clearErrorMessage();
@@ -290,8 +239,8 @@ export const useSubscriptionComparatorWizardState = ({
 
   const goFromStepTwo = () => {
     if (mode === "existingVsManual" && !currentExistingId) {
-      setSessionState((previous) => ({
-        ...previous,
+      setSessionState((prev) => ({
+        ...prev,
         errorMessage: m.validation_required(),
       }));
       return;
@@ -300,8 +249,8 @@ export const useSubscriptionComparatorWizardState = ({
     if (mode === "manualVsManual") {
       const current = parseManualPlanDraft(currentManual);
       if (current.error) {
-        setSessionState((previous) => ({
-          ...previous,
+        setSessionState((prev) => ({
+          ...prev,
           errorMessage: m.validation_positive_number(),
         }));
         return;
@@ -314,8 +263,8 @@ export const useSubscriptionComparatorWizardState = ({
   const goFromStepThree = () => {
     const candidate = parseManualPlanDraft(candidateManual);
     if (candidate.error) {
-      setSessionState((previous) => ({
-        ...previous,
+      setSessionState((prev) => ({
+        ...prev,
         errorMessage: m.validation_positive_number(),
       }));
       return;
@@ -326,8 +275,8 @@ export const useSubscriptionComparatorWizardState = ({
 
   const handleCompare = async () => {
     if (isQuotaReached) {
-      setSessionState((previous) => ({
-        ...previous,
+      setSessionState((prev) => ({
+        ...prev,
         errorMessage: m.comparator_quota_reached(),
       }));
       return;
@@ -335,8 +284,8 @@ export const useSubscriptionComparatorWizardState = ({
 
     const candidate = parseManualPlanDraft(candidateManual);
     if (candidate.error || !candidate.payload) {
-      setSessionState((previous) => ({
-        ...previous,
+      setSessionState((prev) => ({
+        ...prev,
         errorMessage: m.validation_positive_number(),
       }));
       return;
@@ -345,8 +294,8 @@ export const useSubscriptionComparatorWizardState = ({
     let currentPlan: CompareSubscriptionsInput["currentPlan"];
     if (mode === "existingVsManual") {
       if (!currentExistingId) {
-        setSessionState((previous) => ({
-          ...previous,
+        setSessionState((prev) => ({
+          ...prev,
           errorMessage: m.validation_required(),
         }));
         return;
@@ -359,8 +308,8 @@ export const useSubscriptionComparatorWizardState = ({
     } else {
       const currentManualPayload = parseManualPlanDraft(currentManual);
       if (currentManualPayload.error || !currentManualPayload.payload) {
-        setSessionState((previous) => ({
-          ...previous,
+        setSessionState((prev) => ({
+          ...prev,
           errorMessage: m.validation_positive_number(),
         }));
         return;
@@ -374,8 +323,8 @@ export const useSubscriptionComparatorWizardState = ({
       candidatePlan: candidate.payload,
     };
 
-    setSessionState((previous) => ({
-      ...previous,
+    setSessionState((prev) => ({
+      ...prev,
       errorMessage: null,
       aiResult: undefined,
     }));
@@ -388,7 +337,7 @@ export const useSubscriptionComparatorWizardState = ({
       .catch((error) => {
         const message =
           error instanceof Error ? error.message : m.messages_error();
-        setSessionState((previous) => ({ ...previous, errorMessage: message }));
+        setSessionState((prev) => ({ ...prev, errorMessage: message }));
       });
   };
 
@@ -402,16 +351,16 @@ export const useSubscriptionComparatorWizardState = ({
 
   const handleAnalyze = async () => {
     if (!shownPayload) {
-      setSessionState((previous) => ({
-        ...previous,
+      setSessionState((prev) => ({
+        ...prev,
         errorMessage: m.comparator_ai_requires_compare(),
       }));
       return;
     }
 
     if (isAiQuotaReached) {
-      setSessionState((previous) => ({
-        ...previous,
+      setSessionState((prev) => ({
+        ...prev,
         errorMessage: m.comparator_ai_quota_reached(),
       }));
       return;
@@ -420,18 +369,16 @@ export const useSubscriptionComparatorWizardState = ({
     clearErrorMessage();
 
     await analyzeMutation
-      .mutateAsync({
-        comparison: shownPayload,
-      })
+      .mutateAsync({ comparison: shownPayload })
       .then((response) => {
-        setSessionState((previous) => ({ ...previous, aiResult: response }));
+        setSessionState((prev) => ({ ...prev, aiResult: response }));
       })
       .catch((error) => {
         const message =
           error instanceof Error
             ? error.message
             : m.comparator_ai_error_generic();
-        setSessionState((previous) => ({ ...previous, errorMessage: message }));
+        setSessionState((prev) => ({ ...prev, errorMessage: message }));
       });
   };
 
