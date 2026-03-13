@@ -94,6 +94,7 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
             size="sm"
             variant="outline"
             asChild
+            className="flex-nowrap"
           >
             <Link
               to="/subscriptions/$id"
@@ -103,22 +104,26 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
               <ItemMedia>
                 <BrandfetchImage domain={item.brandDomain} />
               </ItemMedia>
-              <ItemContent>
-                <ItemTitle>{item.name}</ItemTitle>
-              </ItemContent>
-              <ItemActions>
-                <div
-                  className={cn(
-                    "flex items-center gap-1.5 text-xs",
-                    item.displayState.colorClass,
-                  )}
-                >
-                  <span>{item.displayState.relativeText}</span>
+              <ItemContent className="min-w-0">
+                <ItemTitle className="w-full truncate">{item.name}</ItemTitle>
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <div
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs",
+                      item.displayState.colorClass,
+                    )}
+                  >
+                    <span className="whitespace-nowrap">
+                      {item.displayState.relativeText}
+                    </span>
+                  </div>
+                  <CurrencyBadge
+                    amount={item.amount}
+                    currencyCode={item.currencyCode}
+                  />
                 </div>
-                <CurrencyBadge
-                  amount={item.amount}
-                  currencyCode={item.currencyCode}
-                />
+              </ItemContent>
+              <ItemActions className="shrink-0">
                 <ChevronRight className="size-4" />
               </ItemActions>
             </Link>
