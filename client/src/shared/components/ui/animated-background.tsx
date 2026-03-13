@@ -1,5 +1,4 @@
 /* eslint-disable */
-"use client";
 import { cn } from "@/shared/lib/classes-utils";
 import { AnimatePresence, Transition, motion } from "motion/react";
 import {

@@ -37,9 +37,11 @@ export const usePushNotificationsSubscription = (
           vapidKey &&
           !PushNotificationsUtils.areKeysEqual(existingKey, vapidKey)
         ) {
-          console.warn(
-            "VAPID key mismatch in query. Considering as not subscribed.",
-          );
+          if (import.meta.env.DEV) {
+            console.warn(
+              "VAPID key mismatch in query. Considering as not subscribed.",
+            );
+          }
 
           // We return null so the UI shows "Off".
           // The user will then toggle "On", triggering useSubscribeToPushNotifications, which handles the cleanup/resubscribe logic.
@@ -84,9 +86,11 @@ export const useSubscribeToPushNotifications = (
       if (sub) {
         const existingKey = sub.options.applicationServerKey;
         if (!PushNotificationsUtils.areKeysEqual(existingKey, vapidKey)) {
-          console.log(
-            "VAPID key changed, unsubscribing from old subscription...",
-          );
+          if (import.meta.env.DEV) {
+            console.log(
+              "VAPID key changed, unsubscribing from old subscription...",
+            );
+          }
           await sub.unsubscribe();
           sub = null;
         }

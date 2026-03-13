@@ -4,7 +4,7 @@ import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
 import { PushSubscriptionSchema } from "shared";
 import { PushNotificationRepository } from "../domains/push-notification/pushNotificationRepository";
-import { check, object, pipe, string } from "valibot";
+import { object } from "valibot";
 import { UserService } from "../domains/user/userService";
 import { PushNotificationContent } from "../domains/push-notification/pushNotificationContent";
 
@@ -33,13 +33,7 @@ export const pushNotificationRouter = new Hono()
     vValidator(
       "json",
       object({
-        endpoint: pipe(
-          string(),
-          check(
-            (value) => value.startsWith("https://"),
-            "Push endpoint must use HTTPS",
-          ),
-        ),
+        endpoint: PushSubscriptionSchema.entries.endpoint,
       }),
     ),
     async (context) => {

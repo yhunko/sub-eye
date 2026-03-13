@@ -7,9 +7,7 @@ import {
 export const telegramWebhookRouter = new Hono<{
   Bindings: { TELEGRAM_WEBHOOK_SECRET_TOKEN: string };
 }>().post("/", async (context) => {
-  const expectedSecret =
-    context.env.TELEGRAM_WEBHOOK_SECRET_TOKEN ??
-    process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
+  const expectedSecret = context.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
   const providedSecret = context.req.header("x-telegram-bot-api-secret-token");
 
   if (!expectedSecret) {

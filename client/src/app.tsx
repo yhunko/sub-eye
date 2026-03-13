@@ -5,7 +5,7 @@ import { queryClient } from "./app/providers/react-query";
 import { Toaster } from "@/shared/components";
 import { Suspense, lazy, useMemo } from "react";
 import { useIsRestoring } from "@tanstack/react-query";
-import { SplashScreen } from "./shared/ui";
+import { RootErrorFallback, SplashScreen } from "./shared/ui";
 import { SwUpdateManager } from "./features/pwa/sw-update-manager";
 import { isLocalPlanSwitcherEnabled } from "./shared/lib/env/local-dev-runtime";
 
@@ -27,6 +27,7 @@ const router = createRouter({
   scrollRestoration: true,
   defaultStructuralSharing: true,
   defaultPreloadStaleTime: 1000,
+  defaultErrorComponent: RootErrorFallback,
 });
 
 declare module "@tanstack/react-router" {

@@ -38,24 +38,13 @@ type ComparatorRouterDeps = {
   getUserId?: (context: Context) => string;
 };
 
-const knownServiceErrorStatuses: Record<string, 403 | 404> = {
-  "Subscription not found": 404,
-  "Comparator quota exceeded": 403,
-};
-
 const handleServiceError = (context: Context, error: unknown) => {
-  if (error instanceof Error) {
-    const mappedStatus = knownServiceErrorStatuses[error.message];
-    if (mappedStatus) {
-      return context.json({ error: error.message }, mappedStatus);
-    }
-
+  if (error instanceof Error && "status" in error) {
     return context.json(
-      { error: "Comparator Error", message: error.message },
-      500,
+      { error: error.message },
+      error.status as 400 | 403 | 404,
     );
   }
-
   return context.json({ error: "Internal Server Error" }, 500);
 };
 

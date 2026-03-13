@@ -7,6 +7,10 @@ import {
   type SubscriptionAction,
   type SubscriptionHistoryDto,
 } from "shared";
+import {
+  SubscriptionHistoryItemNotFoundError,
+  SubscriptionNotFoundError,
+} from "./subscriptionErrors";
 
 type SubscriptionHistoryServiceDeps = {
   repository: typeof SubscriptionHistoryRepository;
@@ -47,7 +51,7 @@ export class SubscriptionHistoryService {
     );
 
     if (!subscription || subscription.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
 
     const planId = await deps.userService.getPlanId(userId);
@@ -93,7 +97,7 @@ export class SubscriptionHistoryService {
     );
 
     if (!subscription || subscription.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
 
     const deleted = await deps.repository.deleteById(db, {
@@ -103,7 +107,7 @@ export class SubscriptionHistoryService {
     });
 
     if (!deleted) {
-      throw new Error("Subscription history item not found");
+      throw new SubscriptionHistoryItemNotFoundError();
     }
   }
 }

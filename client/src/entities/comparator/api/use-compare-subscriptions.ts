@@ -6,6 +6,7 @@ import type {
 import type { MutationHook } from "@/shared/lib/react-query/types";
 import { apiClient } from "@/shared/api/client";
 import { comparatorQueryKeys } from "../model/query-keys";
+import { billingQueryKeys } from "@/entities/billing";
 
 export const useCompareSubscriptions = ({
   options,
@@ -42,7 +43,7 @@ export const useCompareSubscriptions = ({
         queryKey: comparatorQueryKeys.quota._def,
       });
       void queryClient.invalidateQueries({
-        queryKey: ["billing"],
+        queryKey: billingQueryKeys._def,
       });
     },
     ...options,

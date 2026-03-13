@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { LocalizedDateFnsProvider } from "../../app/providers/localized-date-fns-provider";
 import { planUsageQuery } from "../../entities/billing";
+import { subscriptionsQuery } from "../../entities/subscription";
+import { RootErrorFallback } from "../../shared/ui";
 import NiceModal from "@ebay/nice-modal-react";
 
 export const Route = createFileRoute("/(protected)")({
@@ -16,10 +18,16 @@ export const Route = createFileRoute("/(protected)")({
       });
     }
 
-    await context.queryClient.prefetchQuery(
-      planUsageQuery({ params: { userId: userId! } }),
-    );
+    await Promise.all([
+      context.queryClient.prefetchQuery(
+        planUsageQuery({ params: { userId: userId! } }),
+      ),
+      context.queryClient.prefetchQuery(
+        subscriptionsQuery({ params: { userId: userId! } }),
+      ),
+    ]);
   },
+  errorComponent: RootErrorFallback,
   component: () => (
     <LocalizedDateFnsProvider>
       <NiceModal.Provider>

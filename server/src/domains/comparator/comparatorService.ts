@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto";
+import {
+  ComparatorQuotaExceededError,
+  ComparatorSubscriptionNotFoundError,
+} from "./comparatorErrors";
 import { parse } from "valibot";
 import { db } from "../../db";
 import { ComparatorCalculator } from "./comparatorCalculator";
@@ -225,7 +229,7 @@ export class ComparatorService {
       });
 
       if (!consumed) {
-        throw new Error("Comparator quota exceeded");
+        throw new ComparatorQuotaExceededError();
       }
 
       used = consumed.comparisonsCount;
@@ -506,7 +510,7 @@ export class ComparatorService {
     );
 
     if (!existing) {
-      throw new Error("Subscription not found");
+      throw new ComparatorSubscriptionNotFoundError();
     }
 
     return {

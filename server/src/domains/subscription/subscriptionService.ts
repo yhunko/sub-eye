@@ -28,6 +28,16 @@ import {
 } from "shared";
 import type { UserPreferences } from "shared";
 import { isSameDay } from "date-fns";
+import {
+  CannotScheduleCancelledError,
+  CustomDateRequiredError,
+  InvalidScheduledDateError,
+  NoScheduledPriceChangeError,
+  ScheduledDateBeforeCancellationError,
+  ScheduledDateMustBeFutureError,
+  SubscriptionLimitReachedError,
+  SubscriptionNotFoundError,
+} from "./subscriptionErrors";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
@@ -85,7 +95,7 @@ export class SubscriptionService {
     const subscription = await deps.repository.findById(db, id);
 
     if (!subscription || subscription.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
     const [reconciledSubscription] = await this.reconcileScheduledPriceChanges(
       [subscription],
@@ -116,7 +126,7 @@ export class SubscriptionService {
     const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
 
     if (currentCount >= maxSubscriptions) {
-      throw new Error("Subscription limit reached");
+      throw new SubscriptionLimitReachedError();
     }
 
     const created = await deps.repository.create(
@@ -313,7 +323,7 @@ export class SubscriptionService {
     }
 
     if (!this.hasScheduledPriceChange(existing)) {
-      throw new Error("No scheduled price change");
+      throw new NoScheduledPriceChangeError();
     }
 
     const { preferences, rates } = await this.getPreferencesAndRates(
@@ -366,7 +376,7 @@ export class SubscriptionService {
     }
 
     if (!this.hasScheduledPriceChange(existing)) {
-      throw new Error("No scheduled price change");
+      throw new NoScheduledPriceChangeError();
     }
 
     if (existing.priceChangeQstashMessageId) {
@@ -1019,7 +1029,7 @@ export class SubscriptionService {
     }
 
     if (!payload.customDate) {
-      throw new Error("Custom date is required for custom-date mode");
+      throw new CustomDateRequiredError();
     }
 
     const customEffectiveAt = this.toStartOfDayInTimezone(
@@ -1102,18 +1112,16 @@ export class SubscriptionService {
     });
 
     if (status === "cancelled") {
-      throw new Error(
-        "Cannot schedule a price change for a cancelled subscription",
-      );
+      throw new CannotScheduleCancelledError();
     }
 
     const effectiveAtTime = Date.parse(effectiveAt);
     if (Number.isNaN(effectiveAtTime)) {
-      throw new Error("Invalid scheduled effective date");
+      throw new InvalidScheduledDateError();
     }
 
     if (effectiveAtTime <= Date.now()) {
-      throw new Error("Scheduled effective date must be in the future");
+      throw new ScheduledDateMustBeFutureError();
     }
 
     const cancellationTime = subscription.willBeCancelledAt
@@ -1124,9 +1132,7 @@ export class SubscriptionService {
       !Number.isNaN(cancellationTime) &&
       effectiveAtTime >= cancellationTime
     ) {
-      throw new Error(
-        "Scheduled effective date must be before the cancellation date",
-      );
+      throw new ScheduledDateBeforeCancellationError();
     }
   }
 

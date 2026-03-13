@@ -1,5 +1,8 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "error_page_title": "Щось пішло не так",
+  "error_page_description": "Сталася несподівана помилка. Спробуйте перезавантажити сторінку.",
+  "error_page_reload": "Перезавантажити",
   "subscription_empty_title": "Підписки не знайдено",
   "subscription_date_renewal": "Поновлення",
   "subscription_filter_sortBy": "Сортувати за",

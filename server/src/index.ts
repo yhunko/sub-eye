@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
 import { subscriptionRouter } from "./routes/subscriptions";
@@ -28,21 +27,29 @@ type Bindings = {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_BOT_USERNAME: string;
   TELEGRAM_WEBHOOK_SECRET_TOKEN: string;
+  CLIENT_ORIGIN: string;
 };
-
-const corsOrigins = [process.env.CLIENT_ORIGIN];
 
 export const app = new Hono<{ Bindings: Bindings }>()
   .basePath("/api")
-  .use(
-    cors({
-      origin: (origin) => {
-        if (!origin) return "";
-        return corsOrigins.includes(origin) ? origin : "";
-      },
-      credentials: true,
-    }),
-  )
+  .use(async (ctx, next) => {
+    const origin = ctx.req.header("Origin") ?? "";
+    const allowed = ctx.env.CLIENT_ORIGIN;
+    if (origin && origin === allowed) {
+      ctx.header("Access-Control-Allow-Origin", origin);
+      ctx.header("Access-Control-Allow-Credentials", "true");
+      ctx.header("Vary", "Origin");
+    }
+    if (ctx.req.method === "OPTIONS") {
+      ctx.header(
+        "Access-Control-Allow-Methods",
+        "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      );
+      ctx.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+      return new Response("", { status: 204 });
+    }
+    return next();
+  })
   .route("/webhooks", webhookRouter)
   .use("*", clerkAuth)
   // For global protection: .use("*", protect)

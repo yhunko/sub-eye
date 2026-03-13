@@ -1,5 +1,8 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "error_page_title": "Something went wrong",
+  "error_page_description": "An unexpected error occurred. Try reloading the page.",
+  "error_page_reload": "Reload",
   "subscription_empty_title": "No subscriptions found",
   "subscription_date_renewal": "Renewal",
   "subscription_filter_sortBy": "Sort by",

@@ -2,6 +2,10 @@ import { describe, expect, it } from "bun:test";
 import { Hono } from "hono";
 import { SubscriptionPeriod } from "shared";
 import { createComparatorRouter } from "../src/routes/comparator";
+import {
+  ComparatorQuotaExceededError,
+  ComparatorSubscriptionNotFoundError,
+} from "../src/domains/comparator/comparatorErrors";
 
 describe("comparator router", () => {
   it("returns 401 when middleware rejects request", async () => {
@@ -68,7 +72,7 @@ describe("comparator router", () => {
       getUserId: () => "user_1",
       service: {
         getQuota: async () => {
-          throw new Error("Comparator quota exceeded");
+          throw new ComparatorQuotaExceededError();
         },
         getAiQuota: async () => ({
           planId: "free",
@@ -84,7 +88,7 @@ describe("comparator router", () => {
           rates: { usd: 1, eur: 0.92 },
         }),
         compare: async () => {
-          throw new Error("Subscription not found");
+          throw new ComparatorSubscriptionNotFoundError();
         },
         analyze: async () => ({
           mode: "fallback",
