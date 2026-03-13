@@ -10,7 +10,7 @@ import {
 import {
   applyPlanUsageOverride,
   applySubscriptionHistoryOverride,
-} from "../src/shared/lib/billing/local-plan-override";
+} from "./local-plan-override";
 
 describe("local plan override helpers", () => {
   const baseUsage: PlanUsage = {

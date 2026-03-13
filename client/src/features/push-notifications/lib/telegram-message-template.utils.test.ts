@@ -3,7 +3,7 @@ import {
   insertTokenAtSelection,
   renderTemplatePreview,
   validateTemplateDraft,
-} from "../src/features/push-notifications/lib/telegram-message-template.utils";
+} from "./telegram-message-template.utils";
 
 describe("telegram message template utils", () => {
   it("inserts token at selection", () => {

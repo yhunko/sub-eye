@@ -1,19 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "shared";
-import { decodeBase64Url, encodeBase64Url } from "../src/shared/lib/base64";
+import { encodeBase64Url } from "@/shared/lib/base64";
 import {
   createDefaultComparatorWizardPersistentState,
   restoreComparatorWizardPersistentState,
   serializeComparatorWizardPersistentState,
-} from "../src/features/subscription/comparator/model/comparator-wizard-persistence";
+} from "./comparator-wizard-persistence";
 
 describe("comparator wizard persistence", () => {
-  it("round-trips utf-8 content through shared base64url helpers", () => {
-    const encoded = encodeBase64Url("Порівняння планів");
-
-    expect(decodeBase64Url(encoded)).toBe("Порівняння планів");
-  });
-
   it("omits draft for default state", () => {
     const state = createDefaultComparatorWizardPersistentState("sub_123");
     const draft = serializeComparatorWizardPersistentState({

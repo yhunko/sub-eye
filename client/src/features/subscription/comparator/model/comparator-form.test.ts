@@ -3,7 +3,7 @@ import { SubscriptionPeriod } from "shared";
 import {
   createDefaultManualPlanDraft,
   parseManualPlanDraft,
-} from "../src/features/subscription/comparator/model/comparator-form";
+} from "./comparator-form";
 
 describe("parseManualPlanDraft", () => {
   it("returns parsed payload for valid manual input", () => {

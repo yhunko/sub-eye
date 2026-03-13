@@ -93,7 +93,7 @@
     "machine-translate": "inlang machine translate --project project.inlang",
     "prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/shared/lib/i18n --emit-ts-declarations",
     "preview": "vite preview",
-    "test": "bun test ./test",
+    "test": "bun test ./src",
     "type-check": "bun run prepare && tsc -b --pretty"
   },
   "type": "module"

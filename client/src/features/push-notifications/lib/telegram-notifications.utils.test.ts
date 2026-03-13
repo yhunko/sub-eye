@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   TELEGRAM_CONNECT_TIMEOUT_MS,
   isTelegramConnectTimedOut,
-} from "../src/features/push-notifications/lib/telegram-notifications.utils";
+} from "./telegram-notifications.utils";
 
 describe("telegram-notifications utils", () => {
   it("detects timeout for Telegram linking flow", () => {
