@@ -3,22 +3,11 @@ import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { SubscriptionCycleInput } from "@/features/subscription/shared/ui/subscription-cycle-input";
 import * as m from "@/i18n/messages";
 import { sanitizePriceInput } from "@/shared/lib/price-input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from "@/shared/components";
-import type { ManualPlanDraft } from "../../model/comparator-form";
-
-type ManualDraftChangeHandler = (
-  next:
-    | Partial<ManualPlanDraft>
-    | ((previous: ManualPlanDraft) => Partial<ManualPlanDraft>),
-) => void;
+import { CardDescription, CardTitle, Input, Label } from "@/shared/components";
+import type {
+  ManualDraftChangeHandler,
+  ManualPlanDraft,
+} from "../../model/comparator-form";
 
 type SubscriptionComparatorManualPlanFormProps = {
   title: string;
@@ -31,12 +20,13 @@ export const SubscriptionComparatorManualPlanForm: FC<
   SubscriptionComparatorManualPlanFormProps
 > = ({ title, description, draft, onChange }) => {
   return (
-    <Card className="rounded-2xl">
-      <CardHeader className="pb-2">
+    <section className="space-y-4">
+      <header className="border-border/50 space-y-2 border-b pb-3">
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </header>
+
+      <div className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor={`${title}-name`} className="text-xs uppercase">
             {m.form_basicInfo_name_label()}
@@ -98,7 +88,7 @@ export const SubscriptionComparatorManualPlanForm: FC<
             }}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 };

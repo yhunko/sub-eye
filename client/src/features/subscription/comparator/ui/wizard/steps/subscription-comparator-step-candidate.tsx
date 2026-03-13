@@ -1,12 +1,19 @@
 import type { FC } from "react";
 import { SubscriptionComparatorManualPlanForm } from "../subscription-comparator-manual-plan-form";
 import * as m from "@/i18n/messages";
-import { useSubscriptionComparatorWizard } from "../use-subscription-comparator-wizard";
+import type {
+  ManualDraftChangeHandler,
+  ManualPlanDraft,
+} from "../../../model/comparator-form";
 
-const SubscriptionComparatorStepCandidate: FC = () => {
-  const { candidateManual, onCandidateManualChange } =
-    useSubscriptionComparatorWizard();
+type SubscriptionComparatorStepCandidateProps = {
+  candidateManual: ManualPlanDraft;
+  onCandidateManualChange: ManualDraftChangeHandler;
+};
 
+const SubscriptionComparatorStepCandidate: FC<
+  SubscriptionComparatorStepCandidateProps
+> = ({ candidateManual, onCandidateManualChange }) => {
   return (
     <SubscriptionComparatorManualPlanForm
       title={m.comparator_candidate_title()}

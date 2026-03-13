@@ -8,11 +8,16 @@ import {
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
-import { useSubscriptionComparatorWizard } from "../use-subscription-comparator-wizard";
+import type { CompareMode } from "../subscription-comparator-wizard.types";
 
-const SubscriptionComparatorStepMode: FC = () => {
-  const { mode, onModeChange } = useSubscriptionComparatorWizard();
+type SubscriptionComparatorStepModeProps = {
+  mode: CompareMode;
+  onModeChange: (mode: CompareMode) => void;
+};
 
+const SubscriptionComparatorStepMode: FC<
+  SubscriptionComparatorStepModeProps
+> = ({ mode, onModeChange }) => {
   return (
     <Card className="rounded-2xl border-dashed">
       <CardHeader className="pb-3">

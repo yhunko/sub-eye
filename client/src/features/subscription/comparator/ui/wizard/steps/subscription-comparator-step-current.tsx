@@ -4,10 +4,7 @@ import {
   Alert,
   AlertDescription,
   Button,
-  Card,
-  CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
   Label,
   Select,
@@ -17,20 +14,38 @@ import {
   SelectValue,
 } from "@/shared/components";
 import * as m from "@/i18n/messages";
-import { useSubscriptionComparatorWizard } from "../use-subscription-comparator-wizard";
+import type {
+  ManualDraftChangeHandler,
+  ManualPlanDraft,
+} from "../../../model/comparator-form";
+import type {
+  CompareMode,
+  SelectableSubscriptionOption,
+} from "../subscription-comparator-wizard.types";
 
-const SubscriptionComparatorStepCurrent: FC = () => {
-  const {
-    mode,
-    prefillSubscriptionId,
-    currentExistingId,
-    selectableSubscriptions,
-    onCurrentExistingChange,
-    onClearPrefill,
-    currentManual,
-    onCurrentManualChange,
-  } = useSubscriptionComparatorWizard();
+type SubscriptionComparatorStepCurrentProps = {
+  mode: CompareMode;
+  prefillSubscriptionId?: string;
+  currentExistingId: string;
+  selectableSubscriptions: SelectableSubscriptionOption[];
+  onCurrentExistingChange: (id: string) => void;
+  onClearPrefill: () => void;
+  currentManual: ManualPlanDraft;
+  onCurrentManualChange: ManualDraftChangeHandler;
+};
 
+const SubscriptionComparatorStepCurrent: FC<
+  SubscriptionComparatorStepCurrentProps
+> = ({
+  mode,
+  prefillSubscriptionId,
+  currentExistingId,
+  selectableSubscriptions,
+  onCurrentExistingChange,
+  onClearPrefill,
+  currentManual,
+  onCurrentManualChange,
+}) => {
   if (mode === "manualVsManual") {
     return (
       <SubscriptionComparatorManualPlanForm
@@ -43,16 +58,16 @@ const SubscriptionComparatorStepCurrent: FC = () => {
   }
 
   return (
-    <Card className="rounded-2xl">
-      <CardHeader className="pb-2">
+    <section className="space-y-4">
+      <header className="border-border/50 space-y-2 border-b pb-3">
         <CardTitle className="text-base">
           {m.comparator_pick_subscription_title()}
         </CardTitle>
         <CardDescription>
           {m.comparator_pick_subscription_description()}
         </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+      </header>
+      <div className="space-y-3">
         {selectableSubscriptions.length === 0 ? (
           <Alert>
             <AlertDescription>
@@ -99,8 +114,8 @@ const SubscriptionComparatorStepCurrent: FC = () => {
             </Select>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 };
 

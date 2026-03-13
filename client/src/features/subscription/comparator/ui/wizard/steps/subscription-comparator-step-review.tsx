@@ -1,4 +1,10 @@
 import type { FC } from "react";
+import type {
+  AnalyzeComparatorResponseDto,
+  ComparatorDeltaDto,
+  ComparatorResultDto,
+  MonthlyUsage,
+} from "shared";
 import { Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import {
   Alert,
@@ -14,30 +20,48 @@ import {
   SubscriptionComparatorInsightTag,
   type ComparatorInsightTag,
 } from "./components/subscription-comparator-insight-tag";
-import { useSubscriptionComparatorWizard } from "../use-subscription-comparator-wizard";
 import { SubscriptionComparatorAiInsightsCard } from "./components/subscription-comparator-ai-insights-card";
 import { SubscriptionComparatorReviewPreview } from "./components/subscription-comparator-review-preview";
 import { SubscriptionComparatorReviewResults } from "./components/subscription-comparator-review-results";
+import type { PlanPreview } from "../subscription-comparator-wizard.types";
 
-const SubscriptionComparatorStepReview: FC = () => {
-  const {
-    currentPreview,
-    candidatePreview,
-    isPending,
-    result,
-    delta,
-    monthlyImpactSummary,
-    yearlyImpactSummary,
-    isSavings,
-    isIncrease,
-    canAnalyze,
-    isAnalyzePending,
-    aiResult,
-    aiQuota,
-    isAiQuotaReached,
-    onAnalyze,
-  } = useSubscriptionComparatorWizard();
+type SubscriptionComparatorStepReviewProps = {
+  currentPreview: PlanPreview;
+  candidatePreview: PlanPreview;
+  isPending: boolean;
+  result: ComparatorResultDto | undefined;
+  delta: ComparatorDeltaDto | undefined;
+  monthlyImpactSummary: string;
+  yearlyImpactSummary: string;
+  isSavings: boolean;
+  isIncrease: boolean;
+  canAnalyze: boolean;
+  isAnalyzePending: boolean;
+  aiResult: AnalyzeComparatorResponseDto | undefined;
+  aiQuota: MonthlyUsage | undefined;
+  isAiQuotaReached: boolean;
+  onAnalyze: () => void;
+};
 
+const SubscriptionComparatorStepReview: FC<
+  SubscriptionComparatorStepReviewProps
+> = ({
+  currentPreview,
+  candidatePreview,
+  isPending,
+  result,
+  delta,
+  monthlyImpactSummary,
+  yearlyImpactSummary,
+  isSavings,
+  isIncrease,
+  canAnalyze,
+  isAnalyzePending,
+  aiResult,
+  aiQuota,
+  isAiQuotaReached,
+  onAnalyze,
+}) => {
   const reviewTags: ComparatorInsightTag[] = [];
 
   if (delta) {

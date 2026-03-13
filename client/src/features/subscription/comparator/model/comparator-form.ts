@@ -13,6 +13,12 @@ export type ManualPlanDraft = {
   period: SubscriptionPeriod;
 };
 
+export type ManualDraftChangeHandler = (
+  next:
+    | Partial<ManualPlanDraft>
+    | ((previous: ManualPlanDraft) => Partial<ManualPlanDraft>),
+) => void;
+
 export type ManualPlanParseError = "invalid_amount" | "invalid_every";
 
 export const createDefaultManualPlanDraft = (): ManualPlanDraft => ({
