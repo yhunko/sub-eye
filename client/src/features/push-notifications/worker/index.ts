@@ -1,6 +1,8 @@
+import { AppAssetUrls } from "shared";
+
 declare const self: ServiceWorkerGlobalScope;
 
-const APP_ICON = "/assets/pwa/web-app-manifest-192x192.png";
+const APP_ICON = AppAssetUrls.pwaIcon192;
 
 type PushPayload = {
   title?: string;

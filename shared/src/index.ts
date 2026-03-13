@@ -1,3 +1,4 @@
+export * from "./constants/appAssetUrls";
 export * from "./domains/analytics";
 export * from "./domains/billing";
 export * from "./domains/comparator";

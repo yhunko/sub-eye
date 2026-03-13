@@ -1,7 +1,11 @@
 import { differenceInCalendarDays } from "date-fns";
-import { DateTimezoneUtils, type PushNotificationPayload } from "shared";
+import {
+  AppAssetUrls,
+  DateTimezoneUtils,
+  type PushNotificationPayload,
+} from "shared";
 
-const APP_NOTIFICATION_ICON = "/assets/pwa/web-app-manifest-192x192.png";
+const APP_NOTIFICATION_ICON = AppAssetUrls.pwaIcon192;
 const BRANDFETCH_CDN_HOSTNAME = "cdn.brandfetch.io";
 
 type StaticNotificationCopy = {
