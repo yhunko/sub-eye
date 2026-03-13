@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { AppAssetUrls } from "shared";
+import Logo from "@/shared/assets/logo.svg";
 
 export const DashboardLogo = () => {
   // const isDev = process.env.NEXT_PUBLIC_APP_ENV !== "production";
@@ -12,7 +12,7 @@ export const DashboardLogo = () => {
       >
         <img
           alt="logo"
-          src={AppAssetUrls.logo}
+          src={Logo}
           className="h-auto w-10 object-contain transition-transform duration-300 ease-in-out will-change-transform not-motion-reduce:group-hover:scale-110"
         />
 
