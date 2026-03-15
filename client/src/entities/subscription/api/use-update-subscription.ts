@@ -4,6 +4,7 @@ import { MutationHook } from "@/shared/lib/react-query/types";
 import type { UpdateSubscriptionInput, SubscriptionDto } from "shared";
 import { apiClient } from "@/shared/api/client";
 import { handleSubscriptionMutationSuccess } from "../lib/handle-subscription-mutation-success";
+import { track } from "@/shared/lib/analytics";
 
 export type UpdateSubscriptionParams = {
   id: string;
@@ -30,6 +31,7 @@ export const useUpdateSubscription = ({
       return res.json();
     },
     onSuccess: async (_data, variables) => {
+      track("subscription_updated");
       await handleSubscriptionMutationSuccess({
         queryClient,
         userId,

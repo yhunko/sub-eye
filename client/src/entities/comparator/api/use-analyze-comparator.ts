@@ -6,6 +6,7 @@ import type {
 import type { MutationHook } from "@/shared/lib/react-query/types";
 import { apiClient } from "@/shared/api/client";
 import { comparatorQueryKeys } from "../model/query-keys";
+import { track } from "@/shared/lib/analytics";
 
 export const useAnalyzeComparator = ({
   options,
@@ -35,6 +36,7 @@ export const useAnalyzeComparator = ({
       return res.json();
     },
     onSuccess() {
+      track("comparator_ai_analysis_requested");
       void queryClient.invalidateQueries({
         queryKey: comparatorQueryKeys.aiQuota._def,
       });

@@ -11,6 +11,7 @@ import { useUser } from "@clerk/clerk-react";
 import { TimezoneSelect } from "../../timezone-select";
 import { useUpdateUserMetadata } from "../../../entities/user";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 
 export const PreferredTimezoneSelect: FC = () => {
   const { user, isLoaded } = useUser();
@@ -33,7 +34,22 @@ export const PreferredTimezoneSelect: FC = () => {
       <div className="w-full">
         <TimezoneSelect
           value={user?.publicMetadata?.preferredTimezone}
-          onChange={(preferredTimezone) => mutate({ preferredTimezone })}
+          onChange={(preferredTimezone) =>
+            mutate(
+              { preferredTimezone },
+              {
+                onSuccess: () => {
+                  track("settings_general_saved", {
+                    theme_changed: false,
+                    locale_changed: false,
+                    currency_changed: false,
+                    timezone_changed: true,
+                    date_format_changed: false,
+                  });
+                },
+              },
+            )
+          }
           disabled={isLoading}
           placeholder={m.components_timezoneSelect_search()}
           emptyTitle={m.components_timezoneSelect_empty()}

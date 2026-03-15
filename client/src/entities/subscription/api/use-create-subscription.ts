@@ -5,6 +5,7 @@ import { apiClient } from "@/shared/api/client";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";
 import { billingQueryKeys } from "@/entities/billing";
+import { track } from "@/shared/lib/analytics";
 
 export const useCreateSubscription = ({
   options,
@@ -21,7 +22,11 @@ export const useCreateSubscription = ({
       }
       return res.json();
     },
-    onSuccess() {
+    onSuccess(_data, variables) {
+      track("subscription_created", {
+        billing_period: variables.period ?? "month",
+        currency: variables.currency,
+      });
       void queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
       });

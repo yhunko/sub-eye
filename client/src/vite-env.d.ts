@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_PADDLE_CLIENT_TOKEN: string;
   readonly VITE_PADDLE_ENV?: "sandbox" | "production";
   readonly VITE_LOCAL_PLAN_SWITCHER?: string;
+  readonly VITE_POSTHOG_KEY?: string;
 }
 
 interface ImportMeta {

@@ -11,6 +11,7 @@ import {
 import { useUser } from "@clerk/clerk-react";
 import { useUpdateUserMetadata } from "../../../entities/user";
 import { setLocale } from "@/i18n/runtime";
+import { track } from "@/shared/lib/analytics";
 
 const supportedLocales = [
   { code: "en", label: "English", emoji: "🇺🇸" },
@@ -28,6 +29,13 @@ export const LocaleSwitcher: FC = () => {
       },
       {
         onSuccess() {
+          track("settings_general_saved", {
+            theme_changed: false,
+            locale_changed: true,
+            currency_changed: false,
+            timezone_changed: false,
+            date_format_changed: false,
+          });
           startTransition(async () => {
             setLocale(nextLocale);
           });

@@ -46,6 +46,7 @@
     "lucide-react": "^0.577.0",
     "motion": "^12.35.2",
     "nuqs": "^2.8.9",
+    "posthog-js": "^1.360.2",
     "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-day-picker": "^9.14.0",

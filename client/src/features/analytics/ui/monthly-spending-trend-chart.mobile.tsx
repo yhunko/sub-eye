@@ -1,9 +1,11 @@
 import { FC, useCallback, useMemo } from "react";
+import { format, parseISO } from "date-fns";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Drawer } from "@/shared/components/ui/drawer";
 import { useWebHaptics } from "web-haptics/react";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { DrawerSubscriptionsContent } from "./drawer-subscriptions-content";
+import { track } from "@/shared/lib/analytics";
 import { resolveSelectedMonthIndex } from "./monthly-spending-trend-mobile.utils";
 import { SelectedMonthSummary } from "./selected-month-summary";
 import { TrendLineChart } from "./trend-line-chart";
@@ -76,7 +78,14 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
   );
 
   const handleDetailsOpenChange = (open: boolean) => {
-    if (open && monthlyTrendOpen !== true) haptics.trigger("medium");
+    if (open && monthlyTrendOpen !== true) {
+      haptics.trigger("medium");
+      if (selectedMonth) {
+        track("chart_spending_trend_month_drilldown", {
+          month: format(parseISO(selectedMonth.date), "yyyy-MM"),
+        });
+      }
+    }
 
     if (!open) {
       void navigate({

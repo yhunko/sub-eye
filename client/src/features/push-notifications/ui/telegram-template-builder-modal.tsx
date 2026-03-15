@@ -19,6 +19,7 @@ import type { TelegramNotificationStatus } from "shared";
 import { useSendTelegramTestNotification } from "../api/hooks";
 import { TelegramTemplateBuilderCard } from "./telegram-template-builder-card";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 
 type TelegramTemplateBuilderModalProps = {
   status: TelegramNotificationStatus;
@@ -47,6 +48,7 @@ export const TelegramTemplateBuilderModal = ({
   const handleSendTestNotification = () => {
     sendTestNotification(undefined, {
       onSuccess: () => {
+        track("notifications_test_sent", { channel: "telegram" });
         toast.success(m.settings_notifications_telegram_testSent());
       },
       onError: () => {
@@ -95,7 +97,10 @@ export const TelegramTemplateBuilderModal = ({
         size={triggerSize}
         className={triggerClassName}
         aria-label={triggerAriaLabel}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          track("notifications_template_builder_opened");
+        }}
       >
         {triggerIcon}
         {iconOnly ? (

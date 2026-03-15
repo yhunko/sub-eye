@@ -11,6 +11,7 @@ import { apiClient as client } from "../../../shared/api/client";
 import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 
 export const SettingsNotificationsForm = () => {
   const { userId } = useAuth();
@@ -35,6 +36,7 @@ export const SettingsNotificationsForm = () => {
           <PlanFeatureLockCard
             title={m.settings_notifications_schedule_lockTitle()}
             description={m.settings_notifications_schedule_lockDescription()}
+            analyticsSource="notification_schedule"
           />
         )}
         <NotificationTimeSelect
@@ -66,6 +68,7 @@ const TestNotificationButton = () => {
   const handleTest = () => {
     sendTest(undefined, {
       onSuccess: () => {
+        track("notifications_test_sent", { channel: "push" });
         toast.success("Test notification sent!");
       },
       onError: () => {

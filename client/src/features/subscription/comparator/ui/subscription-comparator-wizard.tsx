@@ -1,4 +1,4 @@
-import { lazy, Suspense, type FC } from "react";
+import { lazy, Suspense, useEffect, useRef, type FC } from "react";
 import {
   Alert,
   AlertDescription,
@@ -19,6 +19,7 @@ import {
   useSubscriptionComparatorWizardState,
   type SubscriptionComparatorWizardStateParams,
 } from "../model/use-subscription-comparator-wizard-state";
+import { track } from "@/shared/lib/analytics";
 
 const StepMode = lazy(
   () => import("./wizard/steps/subscription-comparator-step-mode"),
@@ -72,6 +73,9 @@ const StepBadge: FC<{ index: number; currentStep: number; label: string }> = ({
 export const SubscriptionComparatorWizard: FC<
   SubscriptionComparatorWizardProps
 > = ({ prefillSubscriptionId, persistedState, onPersistedStateChange }) => {
+  const prevStepRef = useRef<number | null>(null);
+  const hasTrackedResultRef = useRef(false);
+
   const {
     step,
     mode,
@@ -117,6 +121,49 @@ export const SubscriptionComparatorWizard: FC<
     persistedState,
     onPersistedStateChange,
   });
+
+  useEffect(() => {
+    track("comparator_opened");
+  }, []);
+
+  useEffect(() => {
+    if (isQuotaReached) {
+      track("comparator_upgrade_prompted", { reason: "quota_exceeded" });
+    }
+  }, [isQuotaReached]);
+
+  useEffect(() => {
+    if (isAiQuotaReached) {
+      track("comparator_upgrade_prompted", { reason: "ai_locked" });
+    }
+  }, [isAiQuotaReached]);
+
+  useEffect(() => {
+    const prevStep = prevStepRef.current;
+    if (prevStep !== null && step > prevStep) {
+      track("comparator_step_completed", {
+        step: prevStep as 1 | 2 | 3 | 4,
+        ...(prevStep === 1
+          ? {
+              selection_mode:
+                mode === "existingVsManual" ? "existing" : "manual",
+            }
+          : {}),
+      });
+    }
+    prevStepRef.current = step;
+  }, [step, mode]);
+
+  useEffect(() => {
+    if (step === 4 && hasResult && !hasTrackedResultRef.current) {
+      hasTrackedResultRef.current = true;
+      const verdict = isSavings ? "switch" : isIncrease ? "keep" : "neutral";
+      track("comparator_completed", { switch_verdict: verdict });
+    }
+    if (!hasResult) {
+      hasTrackedResultRef.current = false;
+    }
+  }, [step, hasResult, isSavings, isIncrease]);
 
   return (
     <div className="w-full space-y-3 p-1.5 pb-7 md:space-y-4 md:p-0 md:pb-10">

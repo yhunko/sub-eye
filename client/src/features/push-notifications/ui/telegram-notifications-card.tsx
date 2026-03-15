@@ -14,6 +14,7 @@ import { TelegramDisconnectedCard } from "./telegram-disconnected-card";
 import { TelegramErrorCard } from "./telegram-error-card";
 import { TelegramLoadingCard } from "./telegram-loading-card";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 
 export const TelegramNotificationsCard = () => {
   const queryClient = useQueryClient();
@@ -33,6 +34,7 @@ export const TelegramNotificationsCard = () => {
 
   const handleConnect = async () => {
     await NiceModal.show(TelegramConnectDialog);
+    track("notifications_telegram_connected");
     await queryClient.invalidateQueries({
       queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
     });
@@ -65,6 +67,7 @@ export const TelegramNotificationsCard = () => {
 
     disconnect(undefined, {
       onSuccess: () => {
+        track("notifications_telegram_disconnected");
         toast.success(m.settings_notifications_telegram_disconnected());
       },
       onError: () => {

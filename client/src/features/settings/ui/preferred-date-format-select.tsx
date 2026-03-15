@@ -17,6 +17,7 @@ import { Calendar } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 import { DateFormatUtils } from "shared";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 import { format } from "date-fns";
 
 const now = new Date();
@@ -47,7 +48,20 @@ export const PreferredDateFormatSelect: FC = () => {
         <Select
           value={currentFormat.format}
           onValueChange={(nextFormat) =>
-            mutate({ preferredDateFormat: nextFormat })
+            mutate(
+              { preferredDateFormat: nextFormat },
+              {
+                onSuccess: () => {
+                  track("settings_general_saved", {
+                    theme_changed: false,
+                    locale_changed: false,
+                    currency_changed: false,
+                    timezone_changed: false,
+                    date_format_changed: true,
+                  });
+                },
+              },
+            )
           }
           disabled={isLoading}
         >

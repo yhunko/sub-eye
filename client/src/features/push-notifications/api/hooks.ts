@@ -6,6 +6,7 @@ import {
   UseMutationOptions,
 } from "@tanstack/react-query";
 import { pushNotificationsQueryKeys } from "../model/query-keys";
+import { track } from "@/shared/lib/analytics";
 import { PushNotificationsUtils } from "../lib/push-notifications.utils";
 import { apiClient as client } from "@/shared/api/client";
 import { getSerwist } from "virtual:serwist";
@@ -124,6 +125,7 @@ export const useSubscribeToPushNotifications = (
       }
     },
     onSuccess: async () => {
+      track("notifications_push_enabled");
       await queryClient.refetchQueries({
         queryKey: pushNotificationsQueryKeys.subscription.queryKey,
       });
@@ -158,6 +160,7 @@ export const useUnsubscribeFromPushNotifications = (
       }
     },
     onSuccess: () => {
+      track("notifications_push_disabled");
       queryClient.setQueryData(
         pushNotificationsQueryKeys.subscription.queryKey,
         null,
