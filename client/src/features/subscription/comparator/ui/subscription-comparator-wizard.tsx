@@ -210,7 +210,12 @@ export const SubscriptionComparatorWizard: FC<
                     : m.comparator_quota_unlimited()}
                 </Badge>
               )}
-              {aiQuota && <AiQuotaBadge usage={aiQuota} />}
+              {aiQuota && (
+                <AiQuotaBadge
+                  usage={aiQuota}
+                  analyticsSource="comparator_header"
+                />
+              )}
             </div>
           </div>
 

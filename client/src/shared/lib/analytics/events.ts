@@ -19,6 +19,18 @@ type EventMap = {
   };
   comparator_completed: { switch_verdict: "switch" | "keep" | "neutral" };
   comparator_ai_analysis_requested: Record<string, never>;
+  comparator_ai_analysis_completed: {
+    mode: "ai" | "fallback";
+    cache_hit: boolean;
+    fallback_reason: "quota_exceeded" | "provider_unavailable" | "none";
+  };
+  comparator_ai_quota_badge_opened: {
+    source: "comparator_header" | "comparator_ai_card";
+    is_limited: boolean;
+    used: number;
+    remaining: number | null;
+    limit: number | null;
+  };
   comparator_upgrade_prompted: {
     reason: "quota_exceeded" | "ai_locked";
   };

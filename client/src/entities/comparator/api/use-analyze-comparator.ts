@@ -8,6 +8,16 @@ import { apiClient } from "@/shared/api/client";
 import { comparatorQueryKeys } from "../model/query-keys";
 import { track } from "@/shared/lib/analytics";
 
+const resolveFallbackReason = (
+  reason: string | null,
+): "quota_exceeded" | "provider_unavailable" | "none" => {
+  if (reason === "quota_exceeded" || reason === "provider_unavailable") {
+    return reason;
+  }
+
+  return "none";
+};
+
 export const useAnalyzeComparator = ({
   options,
 }: MutationHook<AnalyzeComparatorResponseDto, AnalyzeComparatorInput> = {}) => {
@@ -15,6 +25,8 @@ export const useAnalyzeComparator = ({
 
   return useMutation({
     mutationFn: async (payload) => {
+      track("comparator_ai_analysis_requested");
+
       const res = await apiClient.api.comparator.analyze.$post({
         json: payload,
       });
@@ -35,8 +47,12 @@ export const useAnalyzeComparator = ({
 
       return res.json();
     },
-    onSuccess() {
-      track("comparator_ai_analysis_requested");
+    onSuccess(data) {
+      track("comparator_ai_analysis_completed", {
+        mode: data.mode,
+        cache_hit: data.cacheHit,
+        fallback_reason: resolveFallbackReason(data.fallbackReason),
+      });
       void queryClient.invalidateQueries({
         queryKey: comparatorQueryKeys.aiQuota._def,
       });

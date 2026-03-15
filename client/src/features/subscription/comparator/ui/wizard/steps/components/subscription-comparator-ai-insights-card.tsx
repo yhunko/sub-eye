@@ -351,7 +351,12 @@ export const SubscriptionComparatorAiInsightsCard: FC<
             </CardTitle>
             <CardDescription>{m.comparator_ai_description()}</CardDescription>
           </div>
-          {aiQuota && <AiQuotaBadge usage={aiQuota} />}
+          {aiQuota && (
+            <AiQuotaBadge
+              usage={aiQuota}
+              analyticsSource="comparator_ai_card"
+            />
+          )}
         </div>
       </CardHeader>
 
