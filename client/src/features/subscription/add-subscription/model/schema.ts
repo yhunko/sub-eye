@@ -38,6 +38,7 @@ export const createAddSubscriptionFormSchema = () =>
         v.transform((brand) => brand.domain),
       ),
     ),
+    categoryId: v.nullish(v.string()),
   });
 
 export type AddSubscriptionFormSchema = ReturnType<

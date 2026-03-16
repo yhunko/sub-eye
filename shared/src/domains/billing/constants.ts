@@ -17,6 +17,7 @@ export const FREE_PLAN: Plan = {
   id: "free",
   limits: {
     maxSubscriptions: 20,
+    maxCategories: 20,
   },
   features: [
     { key: "subscriptions", included: true },
@@ -34,6 +35,7 @@ export const PLUS_PLAN: Plan = {
   id: "plus",
   limits: {
     maxSubscriptions: 50,
+    maxCategories: null,
   },
   features: [
     { key: "subscriptions", included: true },

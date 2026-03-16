@@ -49,13 +49,23 @@ type EventMap = {
   notifications_telegram_disconnected: Record<string, never>;
   notifications_test_sent: { channel: "push" | "telegram" };
   notifications_template_builder_opened: Record<string, never>;
+  category_created: {
+    source: "settings" | "subscription_form";
+  };
+  category_updated: Record<string, never>;
+  category_deleted: Record<string, never>;
+  category_assigned: {
+    source: "add_form" | "edit_form";
+  };
+  category_filter_used: Record<string, never>;
   upgrade_prompt_viewed: {
     source:
       | "subscription_limit"
       | "comparator_quota"
       | "comparator_ai"
       | "notification_schedule"
-      | "settings_billing";
+      | "settings_billing"
+      | "category_limit";
     feature: string;
   };
   upgrade_checkout_started: Record<string, never>;

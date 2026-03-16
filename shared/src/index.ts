@@ -1,5 +1,6 @@
 export * from "./domains/analytics";
 export * from "./domains/billing";
+export * from "./domains/category";
 export * from "./domains/comparator";
 export * from "./domains/currency";
 export * from "./domains/subscription";

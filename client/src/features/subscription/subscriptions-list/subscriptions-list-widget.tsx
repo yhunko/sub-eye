@@ -7,6 +7,7 @@ import {
 } from "@/entities/subscription";
 import { SubscriptionsList } from "./ui/subscriptions-list";
 import { SubscriptionsListToolbar } from "./ui/subscriptions-list-toolbar";
+import { CategoryFilterChips } from "./ui/category-filter-chips";
 import { useAuth } from "@clerk/clerk-react";
 import { SubscriptionsMonthlySpendCard } from "../../analytics";
 
@@ -15,7 +16,7 @@ const SubscriptionsListWidget = () => {
     history: "replace",
   });
 
-  const { search, sortBy, direction, status } = filters;
+  const { search, sortBy, direction, status, categoryId } = filters;
 
   const queryParams = useMemo(() => {
     const trimmedSearch = search.trim();
@@ -25,8 +26,9 @@ const SubscriptionsListWidget = () => {
       direction,
       status,
       ...(trimmedSearch ? { search: trimmedSearch } : {}),
+      ...(categoryId ? { categoryId } : {}),
     };
-  }, [direction, search, sortBy, status]);
+  }, [direction, search, sortBy, status, categoryId]);
 
   const { userId } = useAuth();
   const {
@@ -52,6 +54,11 @@ const SubscriptionsListWidget = () => {
       <div className="flex flex-col gap-1">
         <SubscriptionsMonthlySpendCard />
       </div>
+
+      <CategoryFilterChips
+        value={categoryId}
+        onChange={(id) => void setFilters({ categoryId: id })}
+      />
 
       <SubscriptionsListToolbar
         loading={isLoading}

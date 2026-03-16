@@ -23,6 +23,7 @@ export type GetSubscriptionsParams = {
   direction?: SortDirection;
   search?: string;
   status?: StatusFilter;
+  categoryId?: string;
 };
 
 export const listQuerySchema = object({
@@ -30,4 +31,5 @@ export const listQuerySchema = object({
   direction: optional(picklist(sortDirections)),
   search: optional(string()),
   status: optional(picklist(statusFilters)),
+  categoryId: optional(string()),
 });

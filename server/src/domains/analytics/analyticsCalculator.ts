@@ -179,7 +179,7 @@ export class AnalyticsCalculator {
           id: subscription.id,
           name: subscription.name,
           brandDomain: subscription.brandDomain,
-          provider: subscription.category ?? "Subscription",
+          provider: "Subscription",
           amount: this.resolveOccurrenceAmount(subscription, projectionDate),
           currencyCode: preferredCurrencyCode,
           nextPaymentDate: projectionDate.toISOString(),

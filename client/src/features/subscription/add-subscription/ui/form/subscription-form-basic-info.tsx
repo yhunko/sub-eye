@@ -16,6 +16,7 @@ import type { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
 import { SubscriptionFormScheduledPriceChangeCard } from "./subscription-form-scheduled-price-change-card";
 import { sanitizePriceInput } from "@/shared/lib/price-input";
+import { CategorySelector } from "@/features/category/category-selector/category-selector";
 
 type SubscriptionFormBasicInfoProps = {
   existingSubscription?: SubscriptionDto;
@@ -101,6 +102,27 @@ export const SubscriptionFormBasicInfo = ({
 
         <SubscriptionFormScheduledPriceChangeCard
           subscription={existingSubscription}
+        />
+
+        <Separator />
+
+        <FormField
+          control={control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem className="gap-1.5">
+              <FormLabel className="text-muted-foreground text-xs tracking-wide uppercase">
+                {m.form_basicInfo_category_label()}
+              </FormLabel>
+              <FormControl>
+                <CategorySelector
+                  value={field.value ?? null}
+                  onChange={(val) => field.onChange(val)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
       </div>
     </FieldSet>

@@ -18,7 +18,7 @@ const createSubscription = (
   period: SubscriptionPeriod.MONTH,
   paymentDate: "2026-01-01T00:00:00.000Z",
   autoPaid: true,
-  category: null,
+  categoryId: null,
   notes: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",

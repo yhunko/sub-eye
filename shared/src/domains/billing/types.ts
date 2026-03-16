@@ -5,6 +5,7 @@ export type PlanFeature = {
 
 export type PlanLimits = {
   maxSubscriptions: number;
+  maxCategories: number | null;
 };
 
 export type Plan = {
@@ -17,6 +18,7 @@ export type PlanUsage = {
   planId: PlanId;
   features: Record<BillingFeatureKey, boolean>;
   subscriptions: { current: number; limit: number };
+  categories: { current: number; limit: number | null };
   comparatorComparisons: MonthlyUsage;
   comparatorAiInsights: MonthlyUsage;
 };

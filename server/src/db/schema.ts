@@ -124,6 +124,19 @@ export const billingWebhookEventsTable = pgTable("billing_webhook_events", {
   processedAt: timestamp("processed_at").notNull().defaultNow(),
 });
 
+export const categoriesTable = pgTable(
+  "categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    name: text("name").notNull(),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("categories_user_id_idx").on(table.userId)],
+);
+
 export const subscriptionsTable = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -137,7 +150,9 @@ export const subscriptionsTable = pgTable("subscriptions", {
     .notNull()
     .default(SubscriptionPeriod.MONTH),
   autoPaid: boolean("auto_paid").notNull().default(false),
-  category: text("category"),
+  categoryId: uuid("category_id").references(() => categoriesTable.id, {
+    onDelete: "set null",
+  }),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

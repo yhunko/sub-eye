@@ -932,6 +932,10 @@ export class SubscriptionService {
       });
     }
 
+    if (params?.categoryId) {
+      filtered = filtered.filter((dto) => dto.categoryId === params.categoryId);
+    }
+
     if (search) {
       filtered = filtered.filter((dto) =>
         dto.name.toLowerCase().includes(search),

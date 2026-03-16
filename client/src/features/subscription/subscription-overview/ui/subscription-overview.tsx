@@ -6,6 +6,7 @@ import NiceModal from "@ebay/nice-modal-react";
 
 import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
+import { categoriesQuery } from "@/entities/category";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { useScheduledPriceChangeActions } from "../../schedule-price-change";
@@ -34,6 +35,11 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       params: { id: subscriptionId, userId: userId ?? "" },
     }),
   );
+
+  const { data: categories } = useSuspenseQuery(
+    categoriesQuery({ params: { userId: userId ?? "" } }),
+  );
+
   const { openScheduleDialog } = useScheduledPriceChangeActions({
     subscription,
   });
@@ -58,9 +64,18 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     return SubscriptionBillingUtils.toDisplayState(zonedDate, timezone);
   }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
 
+  const category = useMemo(
+    () =>
+      subscription.categoryId
+        ? (categories?.find((c) => c.id === subscription.categoryId) ?? null)
+        : null,
+    [categories, subscription.categoryId],
+  );
+
   const viewModel = useMemo(
-    () => buildSubscriptionOverviewViewModel(subscription, displayState),
-    [displayState, subscription],
+    () =>
+      buildSubscriptionOverviewViewModel(subscription, displayState, category),
+    [displayState, subscription, category],
   );
 
   const handleDeleteSuccess = async () => {

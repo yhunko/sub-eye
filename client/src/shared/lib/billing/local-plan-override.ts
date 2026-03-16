@@ -203,6 +203,10 @@ export const applyPlanUsageOverride = (
       ...usage.subscriptions,
       limit: plan.limits.maxSubscriptions,
     },
+    categories: {
+      ...usage.categories,
+      limit: plan.limits.maxCategories,
+    },
     comparatorComparisons: {
       ...usage.comparatorComparisons,
       limit: comparisonLimit,

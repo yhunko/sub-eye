@@ -74,6 +74,7 @@ export const EditSubscriptionForm = ({
           domain: subscription.brandDomain,
         } as BrandfetchSearchDto)
       : undefined,
+    categoryId: subscription.categoryId ?? null,
   };
 
   return (

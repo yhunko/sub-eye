@@ -24,6 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
 import * as m from "@/i18n/messages";
 import { ChevronLeft } from "lucide-react";
+import { track } from "@/shared/lib/analytics";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -124,11 +125,19 @@ export const AddSubscriptionForm = ({
 
     const paymentDateIso = toISO(data.paymentDate)!;
 
+    const categoryId = data.categoryId ?? null;
+
+    if (categoryId) {
+      track("category_assigned", {
+        source: isEditMode ? "edit_form" : "add_form",
+      });
+    }
+
     const basePayload = {
       ...data,
       paymentDate: paymentDateIso,
       autoPaid: false,
-      category: null,
+      categoryId,
       notes: null,
       brandDomain: data.brandDomain ?? null,
     };

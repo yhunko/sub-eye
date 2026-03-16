@@ -10,6 +10,7 @@ import { telegramNotificationRouter } from "./routes/telegram-notifications";
 
 import { webhookRouter } from "./routes/webhooks";
 import { billingRouter } from "./routes/billing";
+import { categoryRouter } from "./routes/categories";
 
 type Bindings = {
   CLERK_SECRET_KEY: string;
@@ -47,6 +48,7 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .use("*", clerkAuth)
   // For global protection: .use("*", protect)
   // For per-route protection: .get("/api/private", protect, handler)
+  .route("/categories", categoryRouter)
   .route("/analytics", analyticsRouter)
   .route("/comparator", comparatorRouter)
   .route("/billing", billingRouter)

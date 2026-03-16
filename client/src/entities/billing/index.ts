@@ -1,3 +1,4 @@
+export { isAtLimit } from "./model/limits";
 export { PlanCard } from "./ui/plan-card";
 export { PlusPlanCard } from "./ui/plus-plan-card";
 export { PlanFeatureLockCard } from "./ui/plan-feature-lock-card";

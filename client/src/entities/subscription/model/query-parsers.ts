@@ -10,4 +10,5 @@ export const subscriptionsQueryParsers = {
   sortBy: parseAsStringLiteral(sortFields).withDefault("nextPaymentDate"),
   direction: parseAsStringLiteral(sortDirections).withDefault("asc"),
   status: parseAsStringLiteral(statusFilters).withDefault("active"),
+  categoryId: parseAsString.withDefault(""),
 };

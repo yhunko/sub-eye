@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
 import { object, string } from "valibot";
@@ -16,16 +15,7 @@ import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscri
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
-
-const handleServiceError = (context: Context, error: unknown) => {
-  if (error instanceof Error && "status" in error) {
-    return context.json(
-      { error: error.message },
-      error.status as 400 | 403 | 404,
-    );
-  }
-  return context.json({ error: "Internal Server Error" }, 500);
-};
+import { handleServiceError } from "../utils/routeUtils";
 
 const historyIdParamSchema = object({
   id: string(),
