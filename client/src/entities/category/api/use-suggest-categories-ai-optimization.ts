@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import type { MutationHook } from "@/shared/lib/react-query/types";
-import { extractApiErrorMessage } from "@/shared/lib/react-query/extract-api-error";
 import type { CategoryAiOptimizeSuggestResponse } from "shared";
 import { billingQueryKeys } from "@/entities/billing";
 
@@ -14,15 +14,7 @@ export const useSuggestCategoriesAiOptimization = ({
     mutationFn: async () => {
       const response =
         await apiClient.api.categories.ai.optimize.suggest.$post();
-      if (!response.ok) {
-        throw new Error(
-          await extractApiErrorMessage(
-            response,
-            "Failed to generate optimization suggestions",
-          ),
-        );
-      }
-
+      assertOk(response);
       return response.json();
     },
     onSuccess() {

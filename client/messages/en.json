@@ -631,5 +631,6 @@
   "categories_ai_optimize_apply_success": "Optimization applied: reassigned {reassigned}, merged {merged}, deleted empty categories {deleted}.",
   "categories_ai_optimize_all_good_title": "Already well organized",
   "categories_ai_optimize_all_good_description": "No additional category cleanup is needed right now.",
-  "form_basicInfo_category_label": "Category"
+  "form_basicInfo_category_label": "Category",
+  "error_session_expired": "Session expired. Please sign in again."
 }

@@ -11,6 +11,7 @@ import { telegramNotificationRouter } from "./routes/telegram-notifications";
 import { webhookRouter } from "./routes/webhooks";
 import { billingRouter } from "./routes/billing";
 import { categoryRouter } from "./routes/categories";
+import { captureServerException } from "./utils/analytics";
 
 type Bindings = {
   CLERK_SECRET_KEY: string;
@@ -30,6 +31,7 @@ type Bindings = {
   TELEGRAM_BOT_USERNAME: string;
   TELEGRAM_WEBHOOK_SECRET_TOKEN: string;
   CLIENT_ORIGIN: string;
+  POSTHOG_KEY: string;
 };
 
 const corsOrigins = [process.env.CLIENT_ORIGIN];
@@ -55,6 +57,13 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)
   .route("/telegram-notifications", telegramNotificationRouter)
-  .route("/user", userRouter);
+  .route("/user", userRouter)
+  .onError((err, ctx) => {
+    console.error("[Unhandled Error]", err);
+    if (ctx.env.POSTHOG_KEY) {
+      void captureServerException(err, ctx.env.POSTHOG_KEY, { handled: false });
+    }
+    return ctx.json({ error: "Internal Server Error" }, 500);
+  });
 
 export default app;

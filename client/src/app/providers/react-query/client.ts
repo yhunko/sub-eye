@@ -1,5 +1,9 @@
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ApiError } from "@/shared/api/api-error";
+import { posthog } from "@/shared/lib/analytics/posthog";
+import * as m from "@/i18n/messages";
+import { router } from "../../router";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,7 +17,15 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       onError(error) {
-        toast.error(error?.message);
+        posthog.captureException(error);
+
+        if (error instanceof ApiError && error.status === 401) {
+          toast.warning(m.error_session_expired());
+          void router.navigate({ to: "/auth/sign-in/$" });
+          return;
+        }
+
+        toast.error(error?.message ?? m.messages_error());
       },
     },
   },

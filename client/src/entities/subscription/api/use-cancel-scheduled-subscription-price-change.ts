@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { MutationHook } from "@/shared/lib/react-query/types";
 import type { SubscriptionDto } from "shared";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import { handleSubscriptionMutationSuccess } from "../lib/handle-subscription-mutation-success";
 import { track } from "@/shared/lib/analytics";
 
@@ -27,11 +28,7 @@ export const useCancelScheduledSubscriptionPriceChange = ({
       ].schedule.$delete({
         param: { id },
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to cancel scheduled price change");
-      }
-
+      assertOk(res);
       return res.json();
     },
     onSuccess: async (_data, variables) => {

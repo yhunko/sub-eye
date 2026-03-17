@@ -17,6 +17,7 @@ import {
 import { ComparatorService } from "../domains/comparator/comparatorService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
+import { handleServiceError } from "../utils/routeUtils";
 
 type ComparatorServiceContract = {
   getQuota: (userId: string) => Promise<ComparatorQuotaDto>;
@@ -36,16 +37,6 @@ type ComparatorRouterDeps = {
   service?: ComparatorServiceContract;
   protectMiddleware?: MiddlewareHandler;
   getUserId?: (context: Context) => string;
-};
-
-const handleServiceError = (context: Context, error: unknown) => {
-  if (error instanceof Error && "status" in error) {
-    return context.json(
-      { error: error.message },
-      error.status as 400 | 403 | 404,
-    );
-  }
-  return context.json({ error: "Internal Server Error" }, 500);
 };
 
 export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {

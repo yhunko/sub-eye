@@ -11,12 +11,9 @@ export const useDeleteCategory = ({
 
   return useMutation({
     mutationFn: async (id) => {
-      const res = await apiClient.api.categories[":id"].$delete({
+      await apiClient.api.categories[":id"].$delete({
         param: { id },
       });
-      if (!res.ok && res.status !== 204) {
-        throw new Error("Failed to delete category");
-      }
     },
     onSuccess() {
       track("category_deleted");

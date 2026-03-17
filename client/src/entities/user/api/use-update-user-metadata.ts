@@ -3,6 +3,7 @@ import { MutationHook } from "@/shared/lib/react-query/types";
 import type { UserPreferences } from "shared";
 import type { UpdateUserPublicMetadata } from "shared";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import { subscriptionsQueryKeys } from "../../subscription";
 import { analyticsQueryKeys } from "../../analytics";
 import { useUser } from "@clerk/clerk-react";
@@ -19,9 +20,7 @@ export const useUpdateUserMetadata = ({
       const res = await apiClient.api.user["public-metadata"].$patch({
         json: metadata,
       });
-      if (!res.ok) {
-        throw new Error("Failed to update user metadata");
-      }
+      assertOk(res);
       return res.json();
     },
     async onSuccess() {

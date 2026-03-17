@@ -18,15 +18,9 @@ export const useDeleteSubscriptionHistoryItem = ({
   return useMutation({
     ...options,
     mutationFn: async ({ subscriptionId, historyId }) => {
-      const res = await apiClient.api.subscriptions[":id"].history[
-        ":historyId"
-      ].$delete({
+      await apiClient.api.subscriptions[":id"].history[":historyId"].$delete({
         param: { id: subscriptionId, historyId },
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete subscription history item");
-      }
     },
     onSuccess: async (_data, variables) => {
       if (!userId) {

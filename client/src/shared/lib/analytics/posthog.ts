@@ -7,6 +7,7 @@ export function initPostHog(key: string) {
     autocapture: false,
     capture_pageview: false,
     capture_pageleave: false,
+    capture_exceptions: true,
     disable_session_recording: true,
     persistence: "localStorage",
     ip: false,

@@ -708,5 +708,6 @@
   "categories_ai_optimize_apply_success": "Оптимізацію застосовано: переназначено — {reassigned}, злито — {merged}, видалено порожніх категорій — {deleted}.",
   "categories_ai_optimize_all_good_title": "Вже добре організовано",
   "categories_ai_optimize_all_good_description": "Зараз додаткове очищення категорій не потрібне.",
-  "form_basicInfo_category_label": "Категорія"
+  "form_basicInfo_category_label": "Категорія",
+  "error_session_expired": "Сесія закінчилася. Будь ласка, увійдіть знову."
 }

@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { captureServerException } from "./analytics";
 
 export const handleServiceError = (context: Context, error: unknown) => {
   if (error instanceof Error && "status" in error) {
@@ -12,8 +13,15 @@ export const handleServiceError = (context: Context, error: unknown) => {
     }
   }
 
+  console.error("[Route Error]", error);
+
+  const apiKey = (context.env as Record<string, string | undefined>)
+    ?.POSTHOG_KEY;
+  if (apiKey) {
+    void captureServerException(error, apiKey);
+  }
+
   if (error instanceof Error) {
-    console.error("[Route Error]", error);
     return context.json({ error: error.message }, 500);
   }
 

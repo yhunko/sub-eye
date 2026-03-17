@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { SubscriptionHistoryDto } from "shared";
 import { subscriptionsQueryKeys } from "../model/query-keys";
@@ -28,12 +29,8 @@ export const subscriptionHistoryQuery = ({
       const res = await apiClient.api.subscriptions[":id"].history.$get({
         param: { id: params.id },
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch subscription history");
-      }
-
-      const historyResponse = (await res.json()) as SubscriptionHistoryResponse;
+      assertOk(res);
+      const historyResponse = await res.json();
 
       if (!import.meta.env.DEV) {
         return historyResponse;

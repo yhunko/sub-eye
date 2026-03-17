@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import type { MutationHook } from "@/shared/lib/react-query/types";
-import { extractApiErrorMessage } from "@/shared/lib/react-query/extract-api-error";
 import type {
   CategoryAiOptimizeApplyInput,
   CategoryAiOptimizeApplyResponse,
@@ -21,15 +21,7 @@ export const useApplyCategoriesAiOptimization = ({
       const response = await apiClient.api.categories.ai.optimize.apply.$post({
         json: payload,
       });
-      if (!response.ok) {
-        throw new Error(
-          await extractApiErrorMessage(
-            response,
-            "Failed to apply optimization suggestions",
-          ),
-        );
-      }
-
+      assertOk(response);
       return response.json();
     },
     onSuccess() {

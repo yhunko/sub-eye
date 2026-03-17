@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DeleteCategoriesInput, DeleteCategoriesResponse } from "shared";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import type { MutationHook } from "@/shared/lib/react-query/types";
 import { track } from "@/shared/lib/analytics";
 import { invalidateAfterCategoryDelete } from "./invalidate-after-category-delete";
@@ -15,10 +16,8 @@ export const useDeleteCategories = ({
       const res = await apiClient.api.categories.batch.delete.$post({
         json: payload,
       });
-      if (!res.ok) {
-        throw new Error("Failed to delete categories");
-      }
-      return res.json() as Promise<DeleteCategoriesResponse>;
+      assertOk(res);
+      return res.json();
     },
     onSuccess() {
       track("category_deleted");

@@ -3,6 +3,7 @@ import { BillingService } from "../domains/billing/billingService";
 import { PaddleBillingService } from "../domains/billing/paddle/paddleBillingService";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
+import { handleServiceError } from "../utils/routeUtils";
 
 export const billingRouter = new Hono()
   /**
@@ -15,13 +16,7 @@ export const billingRouter = new Hono()
       const usage = await BillingService.getUsage(userId);
       return context.json(usage);
     } catch (error) {
-      if (error instanceof Error) {
-        return context.json(
-          { error: "Usage Error", message: error.message },
-          500,
-        );
-      }
-      return context.json({ error: "Internal Server Error" }, 500);
+      return handleServiceError(context, error);
     }
   })
   /**
@@ -35,13 +30,7 @@ export const billingRouter = new Hono()
         await PaddleBillingService.createCheckoutTransaction(userId);
       return context.json(response, 200);
     } catch (error) {
-      if (error instanceof Error) {
-        return context.json(
-          { error: "Checkout Error", message: error.message },
-          500,
-        );
-      }
-      return context.json({ error: "Internal Server Error" }, 500);
+      return handleServiceError(context, error);
     }
   })
   /**
@@ -55,12 +44,6 @@ export const billingRouter = new Hono()
         await PaddleBillingService.createCustomerPortalUrl(userId);
       return context.json(response, 200);
     } catch (error) {
-      if (error instanceof Error) {
-        return context.json(
-          { error: "Portal Error", message: error.message },
-          500,
-        );
-      }
-      return context.json({ error: "Internal Server Error" }, 500);
+      return handleServiceError(context, error);
     }
   });

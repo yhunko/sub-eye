@@ -54,10 +54,7 @@ const TestNotificationButton = () => {
   const { data: subscription } = usePushNotificationsSubscription();
   const { mutate: sendTest, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await client.api["push-notifications"].test.$post();
-      if (!res.ok) {
-        throw new Error("Failed to send test push notification");
-      }
+      await client.api["push-notifications"].test.$post();
     },
   });
 
