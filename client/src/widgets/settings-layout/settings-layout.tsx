@@ -29,7 +29,7 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
       {/* px-4: reasonable horizontal margin on mobile. */}
       {/* md: centered column, max-w-xl, no extra padding. */}
       {/* pb-28: clears mobile bottom navbar. md:pb-4: desktop bottom spacing. */}
-      <div className="flex w-full grow flex-col gap-2 px-4 pb-28 md:container md:mx-auto md:max-w-xl md:px-0 md:pb-4">
+      <div className="flex w-full grow flex-col gap-2 px-4 pb-28 md:container md:mx-auto md:max-w-xl md:px-0 md:pt-2 md:pb-4">
         <div className="grid h-14 grid-cols-[2.75rem_1fr_2.75rem] items-center">
           {backTo ? (
             <Button

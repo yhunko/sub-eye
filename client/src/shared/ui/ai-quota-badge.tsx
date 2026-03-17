@@ -1,4 +1,4 @@
-import { type FC, useCallback } from "react";
+import { type FC } from "react";
 import type { MonthlyUsage } from "shared";
 import {
   Badge,
@@ -41,22 +41,19 @@ export const AiQuotaBadge: FC<AiQuotaBadgeProps> = ({
       ? `AI: ${m.settings_billing_usage_unlimited()}`
       : m.comparator_ai_quota_badge({ remaining, limit });
 
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open || !analyticsSource) {
-        return;
-      }
+  const handleOpenChange = (open: boolean) => {
+    if (!open || !analyticsSource) {
+      return;
+    }
 
-      track("comparator_ai_quota_badge_opened", {
-        source: analyticsSource,
-        is_limited: usage.limit !== null,
-        used: usage.current,
-        remaining: usage.remaining,
-        limit: usage.limit,
-      });
-    },
-    [analyticsSource, usage.current, usage.limit, usage.remaining],
-  );
+    track("comparator_ai_quota_badge_opened", {
+      source: analyticsSource,
+      is_limited: usage.limit !== null,
+      used: usage.current,
+      remaining: usage.remaining,
+      limit: usage.limit,
+    });
+  };
 
   return (
     <Popover onOpenChange={handleOpenChange}>

@@ -1,10 +1,11 @@
 import { format, isAfter, isBefore, eachDayOfInterval } from "date-fns";
 import { RecurrenceUtils } from "shared";
 import { DateTimezoneUtils } from "shared";
-import type { SubscriptionDto } from "shared";
+import type { CategoryDto, SubscriptionDto } from "shared";
 import { shouldIncludeOccurrence } from "shared";
 import type { SubscriptionPeriod } from "shared";
 import type {
+  CategorySpendingDto,
   DashboardAnalyticsDto,
   MonthlyTrendPoint,
   MostExpensiveSubscriptionDto,
@@ -257,6 +258,37 @@ export class AnalyticsCalculator {
     );
 
     return { forecast, remainingThisMonth, totalUpcomingMonth };
+  }
+
+  /**
+   * Groups active subscriptions by category and sums their monthly spend.
+   * Returns entries sorted by amount descending; uncategorized items have categoryId = null.
+   */
+  static buildCategorySpending(
+    subscriptions: SubscriptionDto[],
+    categories: CategoryDto[],
+  ): CategorySpendingDto[] {
+    const map = new Map<string | null, CategorySpendingDto>();
+
+    for (const sub of subscriptions) {
+      const categoryId = sub.categoryId ?? null;
+      const existing = map.get(categoryId);
+      if (existing) {
+        existing.amount += sub.billing.preferred.monthly;
+      } else {
+        const category = categories.find((c) => c.id === categoryId);
+        map.set(categoryId, {
+          categoryId,
+          name: category?.name ?? "",
+          emoji: category?.emoji ?? "📦",
+          amount: sub.billing.preferred.monthly,
+        });
+      }
+    }
+
+    return Array.from(map.values())
+      .filter((item) => item.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
   }
 
   /**

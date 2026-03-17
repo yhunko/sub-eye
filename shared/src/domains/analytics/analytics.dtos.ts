@@ -72,6 +72,13 @@ export interface WeeklyRenewalsSummaryDto {
   trend: WeeklyRenewalTrendPoint[];
 }
 
+export interface CategorySpendingDto {
+  categoryId: string | null;
+  name: string;
+  emoji: string;
+  amount: number;
+}
+
 export interface DashboardAnalyticsDto {
   preferredCurrencyCode: string;
   monthlyBurnRate: number;
@@ -86,4 +93,5 @@ export interface DashboardAnalyticsDto {
   upcomingRenewals: UpcomingRenewalDto[];
   totalUpcomingMonth: number;
   monthlyTrend: MonthlyTrendPoint[];
+  categorySpending: CategorySpendingDto[];
 }

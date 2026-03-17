@@ -32,9 +32,8 @@ function SettingsCategoriesPage() {
       rightAction={
         <Button
           type="button"
-          variant="ghost"
           size="icon-lg"
-          className="rounded-full bg-gray-500/10 backdrop-blur-md"
+          className="rounded-full backdrop-blur-md"
           onClick={() => setShowForm((v) => !v)}
           aria-label={m.categories_action_add()}
         >

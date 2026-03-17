@@ -1,5 +1,6 @@
 export { AnalyticsWidget } from "./ui/analytics-widget";
 export { CashFlowChart } from "./ui/cash-flow-chart";
+export { CategorySpendingChart } from "./ui/category-spending-chart";
 export { MonthlySpendingTrendChart } from "./ui/monthly-spending-trend-chart";
 export { StatCards } from "./ui/stat-cards";
 export { UpcomingRenewals } from "./ui/upcoming-renewals";

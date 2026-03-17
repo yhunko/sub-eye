@@ -1,19 +1,33 @@
-export const EMOJI_GROUPS = [
+type EmojiGroup = {
+  /** Single emoji used as the section label in the picker UI. */
+  label: string;
+  emojis: readonly string[];
+};
+
+/**
+ * Curated emoji groups for subscription category labelling.
+ *
+ * Design constraints:
+ * - Each emoji appears in exactly one group. Duplicates cause ambiguous
+ *   keyboard-navigation focus and double "selected" highlights in the picker.
+ * - Groups are ordered from most-commonly-used to least.
+ */
+export const EMOJI_GROUPS: readonly EmojiGroup[] = [
   {
     label: "⭐",
     emojis: [
-      "📱",
-      "💻",
       "🎮",
-      "🎵",
-      "📺",
-      "☁️",
-      "💳",
       "📦",
-      "🏠",
       "🔒",
       "📚",
-      "🚗",
+      "🔔",
+      "💬",
+      "🌐",
+      "⚡",
+      "🗓️",
+      "🤖",
+      "🎁",
+      "🛍️",
     ],
   },
   {
@@ -142,7 +156,7 @@ export const EMOJI_GROUPS = [
       "📋",
       "📝",
       "✏️",
-      "📊",
+      "🗃️",
       "🗂️",
       "📌",
       "📧",
@@ -169,4 +183,4 @@ export const EMOJI_GROUPS = [
       "🔥",
     ],
   },
-] as const;
+];
