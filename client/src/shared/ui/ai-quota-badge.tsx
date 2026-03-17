@@ -21,7 +21,11 @@ import { AppleIntelligenceIcon } from "./apple-intelligence-icon";
 type AiQuotaBadgeProps = {
   usage: Pick<MonthlyUsage, "current" | "limit" | "remaining">;
   className?: string;
-  analyticsSource?: "comparator_header" | "comparator_ai_card";
+  analyticsSource?:
+    | "comparator_header"
+    | "comparator_ai_card"
+    | "category_ai_generator"
+    | "category_ai_optimizer";
 };
 
 const formatQuotaValue = (value: number | null) => String(value ?? 0);
@@ -38,15 +42,15 @@ export const AiQuotaBadge: FC<AiQuotaBadgeProps> = ({
 
   const badgeLabel =
     usage.limit === null
-      ? `AI: ${m.settings_billing_usage_unlimited()}`
-      : m.comparator_ai_quota_badge({ remaining, limit });
+      ? m.ai_usage_badge_unlimited()
+      : m.ai_usage_badge({ remaining, limit });
 
   const handleOpenChange = (open: boolean) => {
     if (!open || !analyticsSource) {
       return;
     }
 
-    track("comparator_ai_quota_badge_opened", {
+    track("ai_quota_badge_opened", {
       source: analyticsSource,
       is_limited: usage.limit !== null,
       used: usage.current,
@@ -72,7 +76,7 @@ export const AiQuotaBadge: FC<AiQuotaBadgeProps> = ({
                 <button
                   type="button"
                   className="cursor-help"
-                  aria-label={m.comparator_ai_quota_tooltip()}
+                  aria-label={m.ai_usage_tooltip()}
                 >
                   <AppleIntelligenceIcon
                     data-icon="inline-start"
@@ -83,31 +87,29 @@ export const AiQuotaBadge: FC<AiQuotaBadgeProps> = ({
               </Badge>
             </TooltipTrigger>
           </PopoverTrigger>
-          <TooltipContent side="top">
-            {m.comparator_ai_quota_tooltip()}
-          </TooltipContent>
+          <TooltipContent side="top">{m.ai_usage_tooltip()}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <PopoverContent align="start" className="w-72 space-y-3 p-3">
         <PopoverHeader className="gap-1">
-          <PopoverTitle>{m.comparator_ai_quota_popover_title()}</PopoverTitle>
+          <PopoverTitle>{m.ai_usage_popover_title()}</PopoverTitle>
           <PopoverDescription>
-            {m.comparator_ai_quota_popover_description()}
+            {m.ai_usage_popover_description()}
           </PopoverDescription>
         </PopoverHeader>
 
         {isUnlimited ? (
           <p className="bg-muted/60 rounded-md px-2.5 py-2 text-sm font-medium">
-            {m.comparator_ai_quota_popover_unlimited()}
+            {m.ai_usage_popover_unlimited()}
           </p>
         ) : (
           <div className="space-y-2">
             <p className="bg-muted/60 rounded-md px-2.5 py-2 text-sm font-semibold tabular-nums">
-              {m.comparator_ai_quota_popover_remaining({ remaining, limit })}
+              {m.ai_usage_popover_remaining({ remaining, limit })}
             </p>
             <p className="text-muted-foreground text-xs tabular-nums">
-              {m.comparator_ai_quota_popover_used({ current })}
+              {m.ai_usage_popover_used({ current })}
             </p>
           </div>
         )}

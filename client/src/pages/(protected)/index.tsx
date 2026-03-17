@@ -28,7 +28,7 @@ function Dashboard() {
         <CashFlowChart className="lg:col-span-7" />
         <UpcomingRenewals className="h-full lg:col-span-5" />
         <CategorySpendingChart className="lg:col-span-5" />
-        <MonthlySpendingTrendChart className="lg:col-span-7" />
+        <MonthlySpendingTrendChart className="h-full lg:col-span-7" />
       </AnalyticsWidget>
     </DashboardLayout>
   );

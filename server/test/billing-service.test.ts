@@ -48,9 +48,9 @@ describe("BillingService.getUsage", () => {
     expect(usage.comparatorComparisons.current).toBe(4);
     expect(usage.comparatorComparisons.limit).toBe(10);
     expect(usage.comparatorComparisons.remaining).toBe(6);
-    expect(usage.comparatorAiInsights.current).toBe(3);
-    expect(usage.comparatorAiInsights.limit).toBe(10);
-    expect(usage.comparatorAiInsights.remaining).toBe(7);
+    expect(usage.aiInsights.current).toBe(3);
+    expect(usage.aiInsights.limit).toBe(10);
+    expect(usage.aiInsights.remaining).toBe(7);
   });
 
   it("returns unlimited compare usage and capped AI usage for plus plan", async () => {
@@ -99,8 +99,8 @@ describe("BillingService.getUsage", () => {
     expect(usage.comparatorComparisons.limit).toBeNull();
     expect(usage.comparatorComparisons.remaining).toBeNull();
     expect(usage.comparatorComparisons.isLimited).toBe(false);
-    expect(usage.comparatorAiInsights.current).toBe(30);
-    expect(usage.comparatorAiInsights.limit).toBe(300);
-    expect(usage.comparatorAiInsights.remaining).toBe(270);
+    expect(usage.aiInsights.current).toBe(30);
+    expect(usage.aiInsights.limit).toBe(300);
+    expect(usage.aiInsights.remaining).toBe(270);
   });
 });

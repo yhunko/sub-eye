@@ -11,6 +11,7 @@ import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWo
 import { SubscriptionPriceChangeWorkflow } from "./subscriptionPriceChangeWorkflow";
 import { UserService } from "../user/userService";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
+import { CategoryRepository } from "../category/categoryRepository";
 import type {
   AddSubscriptionInput,
   SubscriptionDto,
@@ -35,6 +36,7 @@ import {
   NoScheduledPriceChangeError,
   ScheduledDateBeforeCancellationError,
   ScheduledDateMustBeFutureError,
+  SubscriptionCategoryNotFoundError,
   SubscriptionLimitReachedError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
@@ -46,6 +48,7 @@ type SubscriptionServiceDeps = {
   priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
   userService: typeof UserService;
   historyService: typeof SubscriptionHistoryService;
+  categoryRepository: typeof CategoryRepository;
 };
 
 type UpdateSubscriptionOptions = {
@@ -59,6 +62,7 @@ const defaultDeps: SubscriptionServiceDeps = {
   priceChangeWorkflow: SubscriptionPriceChangeWorkflow,
   userService: UserService,
   historyService: SubscriptionHistoryService,
+  categoryRepository: CategoryRepository,
 };
 
 export class SubscriptionService {
@@ -119,6 +123,8 @@ export class SubscriptionService {
     payload: AddSubscriptionInput,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
+    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
+
     const [currentCount, planId] = await Promise.all([
       deps.repository.countByUserId(db, userId),
       deps.userService.getPlanId(userId),
@@ -165,6 +171,8 @@ export class SubscriptionService {
     options: UpdateSubscriptionOptions = {},
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
+    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
+
     const existing = await deps.repository.findById(db, id);
 
     if (!existing || existing.userId !== userId) {
@@ -866,6 +874,21 @@ export class SubscriptionService {
     );
 
     return { preferences, rates };
+  }
+
+  private static async assertCategoryBelongsToUser(
+    userId: string,
+    categoryId: string | null | undefined,
+    deps: SubscriptionServiceDeps,
+  ): Promise<void> {
+    if (categoryId === undefined || categoryId === null) {
+      return;
+    }
+
+    const category = await deps.categoryRepository.findById(db, categoryId);
+    if (!category || category.userId !== userId) {
+      throw new SubscriptionCategoryNotFoundError();
+    }
   }
 
   private static async logHistoryAction(

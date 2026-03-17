@@ -11,6 +11,7 @@ type UpgradePromptSource =
   | "subscription_limit"
   | "comparator_quota"
   | "comparator_ai"
+  | "category_ai"
   | "notification_schedule"
   | "settings_billing";
 

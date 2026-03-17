@@ -24,8 +24,12 @@ type EventMap = {
     cache_hit: boolean;
     fallback_reason: "quota_exceeded" | "provider_unavailable" | "none";
   };
-  comparator_ai_quota_badge_opened: {
-    source: "comparator_header" | "comparator_ai_card";
+  ai_quota_badge_opened: {
+    source:
+      | "comparator_header"
+      | "comparator_ai_card"
+      | "category_ai_generator"
+      | "category_ai_optimizer";
     is_limited: boolean;
     used: number;
     remaining: number | null;
@@ -63,6 +67,7 @@ type EventMap = {
       | "subscription_limit"
       | "comparator_quota"
       | "comparator_ai"
+      | "category_ai"
       | "notification_schedule"
       | "settings_billing"
       | "category_limit";

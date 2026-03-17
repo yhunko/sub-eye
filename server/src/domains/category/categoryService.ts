@@ -1,5 +1,6 @@
 import { db } from "../../db";
 import type {
+  DeleteCategoriesResponse,
   CategoryDto,
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -15,11 +16,28 @@ import {
 type CategoryServiceDeps = {
   repository: typeof CategoryRepository;
   userService: typeof UserService;
+  runInTransaction?: <T>(run: (tx: unknown) => Promise<T>) => Promise<T>;
 };
 
 const defaultDeps: CategoryServiceDeps = {
   repository: CategoryRepository,
   userService: UserService,
+  runInTransaction: async (run) => db.transaction((tx) => run(tx)),
+};
+
+const isUnsupportedTransactionError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+
+  return (
+    message.includes("transaction") &&
+    (message.includes("not support") ||
+      message.includes("unsupported") ||
+      message.includes("neon-http"))
+  );
 };
 
 export class CategoryService {
@@ -98,6 +116,63 @@ export class CategoryService {
     }
 
     await deps.repository.delete(db, id);
+  }
+
+  static async deleteCategories(
+    ids: string[],
+    userId: string,
+    deps: CategoryServiceDeps = defaultDeps,
+  ): Promise<DeleteCategoriesResponse> {
+    const uniqueIds = Array.from(
+      new Set(ids.map((id) => id.trim()).filter((id) => id.length > 0)),
+    );
+
+    if (uniqueIds.length === 0) {
+      throw new CategoryNotFoundError();
+    }
+
+    const executeDelete = async (database: typeof db) => {
+      const existingCategories = await deps.repository.findByIdsForUser(
+        database,
+        userId,
+        uniqueIds,
+      );
+
+      if (existingCategories.length !== uniqueIds.length) {
+        throw new CategoryNotFoundError();
+      }
+
+      const deletedCount = await deps.repository.deleteByIdsForUser(
+        database,
+        userId,
+        uniqueIds,
+      );
+
+      if (deletedCount !== uniqueIds.length) {
+        throw new CategoryNotFoundError();
+      }
+
+      return { deletedCount };
+    };
+
+    const runInTransaction =
+      deps.runInTransaction ?? defaultDeps.runInTransaction;
+
+    if (!runInTransaction) {
+      return executeDelete(db);
+    }
+
+    try {
+      return await runInTransaction(async (tx) =>
+        executeDelete(tx as unknown as typeof db),
+      );
+    } catch (error) {
+      if (isUnsupportedTransactionError(error)) {
+        return executeDelete(db);
+      }
+
+      throw error;
+    }
   }
 
   static async deleteAllForUser(

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -20,7 +20,7 @@ import { Check, ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { toast } from "sonner";
-import type { CategoryDto } from "shared";
+import { DEFAULT_CATEGORY_EMOJI, type CategoryDto } from "shared";
 
 type CategorySelectorProps = {
   value: string | null | undefined;
@@ -31,9 +31,11 @@ export const CategorySelector = ({
   value,
   onChange,
 }: CategorySelectorProps) => {
+  const listboxId = useId();
   const [open, setOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const newCategoryInputRef = useRef<HTMLInputElement>(null);
   const { userId } = useAuth();
 
   const { data: categories = [] } = useQuery(
@@ -71,7 +73,7 @@ export const CategorySelector = ({
   const handleCreateNew = () => {
     if (!newName.trim()) return;
     createCategory(
-      { name: newName.trim(), emoji: "📦" },
+      { name: newName.trim(), emoji: DEFAULT_CATEGORY_EMOJI },
       {
         onSuccess: (created) => {
           onChange(created.id);
@@ -95,6 +97,7 @@ export const CategorySelector = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listboxId}
           className="w-full justify-between font-normal"
         >
           {selected ? (
@@ -109,10 +112,21 @@ export const CategorySelector = ({
           <ChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent
+        className="w-64 p-0"
+        align="start"
+        onOpenAutoFocus={(event) => {
+          if (!showCreate) {
+            return;
+          }
+
+          event.preventDefault();
+          newCategoryInputRef.current?.focus();
+        }}
+      >
         <Command>
           <CommandInput placeholder={m.common_placeholders_search()} />
-          <CommandList>
+          <CommandList id={listboxId}>
             <CommandEmpty>{m.common_noResults()}</CommandEmpty>
             <CommandGroup>
               {value && (
@@ -145,6 +159,7 @@ export const CategorySelector = ({
                   {showCreate ? (
                     <div className="flex gap-1 p-1">
                       <input
+                        ref={newCategoryInputRef}
                         className="flex-1 rounded border px-2 py-1 text-sm outline-none"
                         placeholder={m.categories_form_name_placeholder()}
                         value={newName}
@@ -156,7 +171,6 @@ export const CategorySelector = ({
                           }
                           if (e.key === "Escape") setShowCreate(false);
                         }}
-                        autoFocus
                         disabled={isCreating}
                       />
                       <Button

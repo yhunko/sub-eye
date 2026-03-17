@@ -1,10 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
 import type { MutationHook } from "@/shared/lib/react-query/types";
-import { categoriesQueryKeys } from "../model/query-keys";
-import { billingQueryKeys } from "@/entities/billing";
-import { subscriptionsQueryKeys } from "@/entities/subscription";
 import { track } from "@/shared/lib/analytics";
+import { invalidateAfterCategoryDelete } from "./invalidate-after-category-delete";
 
 export const useDeleteCategory = ({
   options,
@@ -22,15 +20,7 @@ export const useDeleteCategory = ({
     },
     onSuccess() {
       track("category_deleted");
-      void queryClient.invalidateQueries({
-        queryKey: categoriesQueryKeys.list._def,
-      });
-      void queryClient.invalidateQueries({
-        queryKey: billingQueryKeys.usage._def,
-      });
-      void queryClient.invalidateQueries({
-        queryKey: subscriptionsQueryKeys.list._def,
-      });
+      void invalidateAfterCategoryDelete(queryClient);
     },
     ...options,
   });

@@ -151,7 +151,7 @@ export const useSubscriptionComparatorWizardState = ({
   );
 
   const compareQuota = usage?.comparatorComparisons;
-  const aiQuota = usage?.comparatorAiInsights;
+  const aiQuota = usage?.aiInsights;
   const isQuotaReached =
     compareQuota?.isLimited === true && (compareQuota.remaining ?? 0) <= 0;
   const isAiQuotaReached =

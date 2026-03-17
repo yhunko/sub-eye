@@ -77,6 +77,14 @@ export interface CategorySpendingDto {
   name: string;
   emoji: string;
   amount: number;
+  subscriptions: CategorySpendingSubscriptionDto[];
+}
+
+export interface CategorySpendingSubscriptionDto {
+  id: string;
+  name: string;
+  brandDomain: string | null;
+  monthlyCost: number;
 }
 
 export interface DashboardAnalyticsDto {

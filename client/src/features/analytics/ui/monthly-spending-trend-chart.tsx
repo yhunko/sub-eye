@@ -106,7 +106,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
     return (
       <div
         className={cn(
-          "bg-muted h-75 w-full animate-pulse rounded-xl",
+          "bg-muted h-full min-h-[22rem] w-full animate-pulse rounded-xl",
           className,
         )}
       />
@@ -122,7 +122,7 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
   };
 
   return (
-    <Card className={cn("relative w-full", className)}>
+    <Card className={cn("relative h-full w-full", className)}>
       {monthComparisonBadge && (
         <span
           className={cn(
@@ -149,9 +149,11 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
           {m.analytics_charts_monthlySpending_subtitle()}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className={cn("flex-1", isDesktop && "flex min-h-[22rem]")}>
         <Suspense
-          fallback={<div className="bg-muted h-75 w-full rounded-xl" />}
+          fallback={
+            <div className="bg-muted h-full min-h-[18rem] w-full rounded-xl" />
+          }
         >
           {isDesktop ? (
             <MonthlySpendingTrendChartDesktop {...variantProps} />

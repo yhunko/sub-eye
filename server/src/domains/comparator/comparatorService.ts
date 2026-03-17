@@ -8,8 +8,8 @@ import { db } from "../../db";
 import { ComparatorCalculator } from "./comparatorCalculator";
 import { ComparatorAiClient } from "./comparatorAiClient";
 import { ComparatorRepository } from "./comparatorRepository";
+import { AiUsageService } from "../ai/aiUsageService";
 import {
-  getComparatorAiLimit,
   getComparatorQuotaWindow,
   toComparatorAiQuotaDto,
   toComparatorQuotaDto,
@@ -47,6 +47,7 @@ type ComparatorServiceDeps = {
   userService: typeof UserService;
   currencyService: typeof CurrencyService;
   subscriptionService: typeof SubscriptionService;
+  aiUsageService: typeof AiUsageService;
   aiClient: {
     generateInsights: (prompt: string) => Promise<ComparatorAiInsightsDto>;
   };
@@ -57,6 +58,7 @@ const defaultDeps: ComparatorServiceDeps = {
   userService: UserService,
   currencyService: CurrencyService,
   subscriptionService: SubscriptionService,
+  aiUsageService: AiUsageService,
   aiClient: ComparatorAiClient,
 };
 
@@ -195,18 +197,12 @@ export class ComparatorService {
     userId: string,
     deps: ComparatorServiceDeps = defaultDeps,
   ): Promise<ComparatorAiQuotaDto> {
-    const [planId, preferences] = await Promise.all([
-      deps.userService.getPlanId(userId),
-      deps.userService.getUserPreferences(userId),
-    ]);
-
-    const quotaWindow = getComparatorQuotaWindow(preferences.preferredTimezone);
-    const usage = await deps.repository.findAiUsageByUserAndPeriod(db, {
-      userId,
-      periodKey: quotaWindow.periodKey,
+    const aiUsageService = deps.aiUsageService ?? defaultDeps.aiUsageService;
+    const aiUsageContext = await aiUsageService.getContext(userId, {
+      comparatorRepository: deps.repository,
+      userService: deps.userService,
     });
-
-    return toAiQuota(planId, usage?.analysesCount ?? 0, quotaWindow);
+    return aiUsageService.toQuotaDto(aiUsageContext);
   }
 
   static async compare(
@@ -252,30 +248,26 @@ export class ComparatorService {
     payload: AnalyzeComparatorInput,
     deps: ComparatorServiceDeps = defaultDeps,
   ): Promise<AnalyzeComparatorResponseDto> {
+    const aiUsageService = deps.aiUsageService ?? defaultDeps.aiUsageService;
     const context = await this.resolveComparisonContext(
       userId,
       payload.comparison,
       deps,
     );
-    const quotaWindow = getComparatorQuotaWindow(
-      context.preferences.preferredTimezone,
-    );
+    const aiUsageContext = await aiUsageService.getContext(userId, {
+      comparatorRepository: deps.repository,
+      userService: deps.userService,
+    });
+    const { quotaWindow, used } = aiUsageContext;
     const coreInsights = this.buildCoreInsights(
       context.result,
       context.preferences.locale,
     );
 
-    const aiLimit = getComparatorAiLimit(context.planId);
-    const usage = await deps.repository.findAiUsageByUserAndPeriod(db, {
-      userId,
-      periodKey: quotaWindow.periodKey,
-    });
-    const used = usage?.analysesCount ?? 0;
-
-    if (used >= aiLimit) {
+    if (used >= aiUsageContext.limit) {
       return this.toFallbackAnalysisResponse({
         reason: "quota_exceeded",
-        planId: context.planId,
+        planId: aiUsageContext.planId,
         used,
         quotaWindow,
         compared: context.result,
@@ -317,7 +309,7 @@ export class ComparatorService {
           compared: context.result,
           coreInsights,
           aiInsights: normalizedCachedInsights,
-          quota: toAiQuota(context.planId, used, quotaWindow),
+          quota: aiUsageService.toQuotaDto(aiUsageContext),
           fallbackReason: null,
         };
       } catch {
@@ -348,7 +340,7 @@ export class ComparatorService {
       });
       return this.toFallbackAnalysisResponse({
         reason: "provider_unavailable",
-        planId: context.planId,
+        planId: aiUsageContext.planId,
         used,
         quotaWindow,
         compared: context.result,
@@ -356,22 +348,20 @@ export class ComparatorService {
       });
     }
 
-    const consumed = await deps.repository.consumeAiMonthlyQuota(db, {
+    const consumedContext = await aiUsageService.consume(
       userId,
-      periodKey: quotaWindow.periodKey,
-      limit: aiLimit,
-    });
+      aiUsageContext,
+      {
+        comparatorRepository: deps.repository,
+        userService: deps.userService,
+      },
+    );
 
-    if (!consumed) {
-      const latestUsage = await deps.repository.findAiUsageByUserAndPeriod(db, {
-        userId,
-        periodKey: quotaWindow.periodKey,
-      });
-
+    if (!consumedContext) {
       return this.toFallbackAnalysisResponse({
         reason: "quota_exceeded",
-        planId: context.planId,
-        used: latestUsage?.analysesCount ?? used,
+        planId: aiUsageContext.planId,
+        used,
         quotaWindow,
         compared: context.result,
         coreInsights,
@@ -400,7 +390,7 @@ export class ComparatorService {
       compared: context.result,
       coreInsights,
       aiInsights,
-      quota: toAiQuota(context.planId, consumed.analysesCount, quotaWindow),
+      quota: aiUsageService.toQuotaDto(consumedContext),
       fallbackReason: null,
     };
   }

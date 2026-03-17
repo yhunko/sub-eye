@@ -27,7 +27,7 @@ export const FREE_PLAN: Plan = {
     { key: "telegramMessageTemplate", included: false },
     { key: "currency", included: true },
     { key: "comparator", included: true },
-    { key: "comparatorAiInsights", included: true },
+    { key: "aiInsights", included: true },
   ],
 };
 
@@ -45,7 +45,7 @@ export const PLUS_PLAN: Plan = {
     { key: "telegramMessageTemplate", included: true },
     { key: "currency", included: true },
     { key: "comparator", included: true },
-    { key: "comparatorAiInsights", included: true },
+    { key: "aiInsights", included: true },
   ],
 };
 

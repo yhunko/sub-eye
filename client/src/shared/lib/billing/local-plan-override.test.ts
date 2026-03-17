@@ -28,7 +28,7 @@ describe("local plan override helpers", () => {
       resetsAt: "2026-04-01T00:00:00.000Z",
       isLimited: true,
     },
-    comparatorAiInsights: {
+    aiInsights: {
       current: 2,
       limit: FREE_COMPARATOR_AI_MONTHLY_LIMIT,
       remaining: FREE_COMPARATOR_AI_MONTHLY_LIMIT - 2,
@@ -53,9 +53,7 @@ describe("local plan override helpers", () => {
     expect(result.subscriptions.current).toBe(12);
     expect(result.subscriptions.limit).toBe(50);
     expect(result.comparatorComparisons.limit).toBeNull();
-    expect(result.comparatorAiInsights.limit).toBe(
-      PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
-    );
+    expect(result.aiInsights.limit).toBe(PLUS_COMPARATOR_AI_MONTHLY_LIMIT);
   });
 
   it("maps usage to free when override is free", () => {
@@ -74,7 +72,7 @@ describe("local plan override helpers", () => {
         resetsAt: "2026-04-01T00:00:00.000Z",
         isLimited: false,
       },
-      comparatorAiInsights: {
+      aiInsights: {
         current: 16,
         limit: PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
         remaining: PLUS_COMPARATOR_AI_MONTHLY_LIMIT - 16,
@@ -94,9 +92,7 @@ describe("local plan override helpers", () => {
     expect(result.comparatorComparisons.limit).toBe(
       FREE_COMPARATOR_MONTHLY_LIMIT,
     );
-    expect(result.comparatorAiInsights.limit).toBe(
-      FREE_COMPARATOR_AI_MONTHLY_LIMIT,
-    );
+    expect(result.aiInsights.limit).toBe(FREE_COMPARATOR_AI_MONTHLY_LIMIT);
   });
 
   it("forces hasMore off for plus override", () => {

@@ -20,7 +20,7 @@ export type PlanUsage = {
   subscriptions: { current: number; limit: number };
   categories: { current: number; limit: number | null };
   comparatorComparisons: MonthlyUsage;
-  comparatorAiInsights: MonthlyUsage;
+  aiInsights: MonthlyUsage;
 };
 
 export type MonthlyUsage = {
@@ -51,7 +51,7 @@ const BILLING_FEATURE_KEYS = [
   "telegramMessageTemplate",
   "currency",
   "comparator",
-  "comparatorAiInsights",
+  "aiInsights",
 ] as const;
 
 const PLAN_IDS = ["free", "plus"] as const;

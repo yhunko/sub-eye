@@ -53,7 +53,7 @@ function SettingsPage() {
   const { from } = Route.useSearch();
 
   return (
-    <SettingsLayout title={m.settings_title()} backTo={from}>
+    <SettingsLayout title={m.settings_title()} backTo={from} showVersion>
       <ItemGroup className="gap-3">
         {pages.map(({ key, path, Icon }) => (
           <Item key={path} variant="outline" size="default" asChild>

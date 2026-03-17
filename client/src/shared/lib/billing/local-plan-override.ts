@@ -216,10 +216,10 @@ export const applyPlanUsageOverride = (
           : Math.max(comparisonLimit - usage.comparatorComparisons.current, 0),
       isLimited: comparisonLimit !== null,
     },
-    comparatorAiInsights: {
-      ...usage.comparatorAiInsights,
+    aiInsights: {
+      ...usage.aiInsights,
       limit: aiLimit,
-      remaining: Math.max(aiLimit - usage.comparatorAiInsights.current, 0),
+      remaining: Math.max(aiLimit - usage.aiInsights.current, 0),
       isLimited: true,
     },
   };

@@ -49,8 +49,8 @@ export const SubscriptionUsageCard: FC<SubscriptionUsageCardProps> = ({
     usage.comparatorComparisons.limit,
   );
   const aiProgress = resolveProgress(
-    usage.comparatorAiInsights.current,
-    usage.comparatorAiInsights.limit,
+    usage.aiInsights.current,
+    usage.aiInsights.limit,
   );
 
   return (
@@ -101,21 +101,18 @@ export const SubscriptionUsageCard: FC<SubscriptionUsageCardProps> = ({
           <div className="flex items-center justify-between text-sm">
             <span>{m.settings_billing_usage_aiInsights()}</span>
             <span className="text-muted-foreground tabular-nums">
-              {usage.comparatorAiInsights.limit === null
+              {usage.aiInsights.limit === null
                 ? m.settings_billing_usage_unlimited()
                 : m.settings_billing_usage_subscriptionsOf({
-                    current: String(usage.comparatorAiInsights.current),
-                    limit: String(usage.comparatorAiInsights.limit),
+                    current: String(usage.aiInsights.current),
+                    limit: String(usage.aiInsights.limit),
                   })}
             </span>
           </div>
           <Progress value={aiProgress ?? 0} className="h-2" />
           <p className="text-muted-foreground text-xs">
             {m.settings_billing_usage_resetsOn({
-              date: formatResetsAt(
-                usage.comparatorAiInsights.resetsAt,
-                dateFnsFormat,
-              ),
+              date: formatResetsAt(usage.aiInsights.resetsAt, dateFnsFormat),
             })}
           </p>
         </div>

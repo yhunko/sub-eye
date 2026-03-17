@@ -1,6 +1,10 @@
 import { useForm } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { CreateCategorySchema, type CreateCategoryInput } from "shared";
+import {
+  CreateCategorySchema,
+  DEFAULT_CATEGORY_EMOJI,
+  type CreateCategoryInput,
+} from "shared";
 import {
   Form,
   FormField,
@@ -32,7 +36,7 @@ export const CategoryForm = ({
     resolver: valibotResolver(CreateCategorySchema),
     defaultValues: {
       name: "",
-      emoji: "📦",
+      emoji: DEFAULT_CATEGORY_EMOJI,
       ...defaultValues,
     },
   });

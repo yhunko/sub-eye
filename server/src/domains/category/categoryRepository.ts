@@ -1,4 +1,4 @@
-import { eq, count, asc } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { categoriesTable } from "../../db/schema";
 
@@ -27,6 +27,26 @@ export class CategoryRepository {
       .where(eq(categoriesTable.id, id));
 
     return result ?? null;
+  }
+
+  static async findByIdsForUser(
+    database: typeof db,
+    userId: string,
+    ids: string[],
+  ): Promise<CategoryRecord[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return database
+      .select()
+      .from(categoriesTable)
+      .where(
+        and(
+          eq(categoriesTable.userId, userId),
+          inArray(categoriesTable.id, ids),
+        ),
+      );
   }
 
   static async countByUserId(
@@ -77,6 +97,44 @@ export class CategoryRepository {
 
   static async delete(database: typeof db, id: string): Promise<void> {
     await database.delete(categoriesTable).where(eq(categoriesTable.id, id));
+  }
+
+  static async deleteByIds(
+    database: typeof db,
+    ids: string[],
+  ): Promise<number> {
+    if (ids.length === 0) {
+      return 0;
+    }
+
+    const deleted = await database
+      .delete(categoriesTable)
+      .where(inArray(categoriesTable.id, ids))
+      .returning({ id: categoriesTable.id });
+
+    return deleted.length;
+  }
+
+  static async deleteByIdsForUser(
+    database: typeof db,
+    userId: string,
+    ids: string[],
+  ): Promise<number> {
+    if (ids.length === 0) {
+      return 0;
+    }
+
+    const deleted = await database
+      .delete(categoriesTable)
+      .where(
+        and(
+          eq(categoriesTable.userId, userId),
+          inArray(categoriesTable.id, ids),
+        ),
+      )
+      .returning({ id: categoriesTable.id });
+
+    return deleted.length;
   }
 
   static async deleteByUserId(

@@ -57,7 +57,7 @@ export class BillingService {
       comparisonUsage?.comparisonsCount ?? 0,
       quotaWindow,
     );
-    const comparatorAiInsights = toComparatorAiQuotaDto(
+    const aiInsights = toComparatorAiQuotaDto(
       planId,
       aiUsage?.analysesCount ?? 0,
       quotaWindow,
@@ -82,13 +82,13 @@ export class BillingService {
         resetsAt: comparatorComparisons.resetsAt,
         isLimited: comparatorComparisons.isLimited,
       },
-      comparatorAiInsights: {
-        current: comparatorAiInsights.used,
-        limit: comparatorAiInsights.limit,
-        remaining: comparatorAiInsights.remaining,
-        periodKey: comparatorAiInsights.periodKey,
-        resetsAt: comparatorAiInsights.resetsAt,
-        isLimited: comparatorAiInsights.isLimited,
+      aiInsights: {
+        current: aiInsights.used,
+        limit: aiInsights.limit,
+        remaining: aiInsights.remaining,
+        periodKey: aiInsights.periodKey,
+        resetsAt: aiInsights.resetsAt,
+        isLimited: aiInsights.isLimited,
       },
     };
   }

@@ -22,6 +22,14 @@ export class SubscriptionLimitReachedError extends Error {
   }
 }
 
+export class SubscriptionCategoryNotFoundError extends Error {
+  readonly status = 404 as const;
+  constructor() {
+    super("Category not found");
+    this.name = "SubscriptionCategoryNotFoundError";
+  }
+}
+
 export class CustomDateRequiredError extends Error {
   readonly status = 400 as const;
   constructor() {

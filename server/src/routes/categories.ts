@@ -1,8 +1,15 @@
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
 import { object, string } from "valibot";
-import { CreateCategorySchema, UpdateCategorySchema } from "shared";
+import {
+  CategoryAiOptimizeApplyInputSchema,
+  CategoryAiApplyInputSchema,
+  CreateCategorySchema,
+  DeleteCategoriesInputSchema,
+  UpdateCategorySchema,
+} from "shared";
 import { CategoryService } from "../domains/category/categoryService";
+import { CategoryAiService } from "../domains/category/categoryAiService";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 import { handleServiceError } from "../utils/routeUtils";
@@ -29,6 +36,78 @@ export const categoryRouter = new Hono()
         const payload = context.req.valid("json");
         const category = await CategoryService.createCategory(userId, payload);
         return context.json(category, 201);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/batch/delete",
+    protect,
+    vValidator("json", DeleteCategoriesInputSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+      try {
+        const payload = context.req.valid("json");
+        const response = await CategoryService.deleteCategories(
+          payload.ids,
+          userId,
+        );
+        return context.json(response);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post("/ai/suggest", protect, async (context) => {
+    const userId = requireUserId(context);
+    try {
+      const response = await CategoryAiService.suggestCategories(userId);
+      return context.json(response);
+    } catch (error) {
+      return handleServiceError(context, error);
+    }
+  })
+  .post("/ai/optimize/suggest", protect, async (context) => {
+    const userId = requireUserId(context);
+    try {
+      const response = await CategoryAiService.suggestOptimization(userId);
+      return context.json(response);
+    } catch (error) {
+      return handleServiceError(context, error);
+    }
+  })
+  .post(
+    "/ai/optimize/apply",
+    protect,
+    vValidator("json", CategoryAiOptimizeApplyInputSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+      try {
+        const payload = context.req.valid("json");
+        const response = await CategoryAiService.applyOptimization(
+          userId,
+          payload,
+        );
+        return context.json(response);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/ai/apply",
+    protect,
+    vValidator("json", CategoryAiApplyInputSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+      try {
+        const payload = context.req.valid("json");
+        const response = await CategoryAiService.applyCategories(
+          userId,
+          payload,
+        );
+        return context.json(response);
       } catch (error) {
         return handleServiceError(context, error);
       }
