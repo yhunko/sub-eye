@@ -32,7 +32,7 @@ export const CategoryListItem: FC<CategoryListItemProps> = ({
   return (
     <div
       className={cn(
-        "bg-card flex items-center gap-3 rounded-xl border p-3 shadow-sm",
+        "bg-card flex items-center gap-3 overflow-hidden rounded-xl border p-2.5 shadow-sm sm:p-3",
         selected && "border-primary/50 bg-primary/5",
       )}
     >
@@ -40,15 +40,18 @@ export const CategoryListItem: FC<CategoryListItemProps> = ({
         checked={selected}
         onCheckedChange={(checked) => onSelectedChange(checked === true)}
         aria-label={m.categories_selection_toggle_aria({ name: category.name })}
+        className="shrink-0"
       />
-      <span className="text-xl">{category.emoji}</span>
-      <span className="flex-1 font-medium">{category.name}</span>
-      <div className="flex gap-1">
+      <span className="shrink-0 text-xl">{category.emoji}</span>
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {category.name}
+      </span>
+      <div className="flex shrink-0 gap-1">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8"
+          className="size-8 shrink-0"
           aria-label={m.categories_action_edit()}
           onClick={() => void handleEdit()}
         >
@@ -58,7 +61,7 @@ export const CategoryListItem: FC<CategoryListItemProps> = ({
           type="button"
           variant="ghost"
           size="icon"
-          className="text-destructive hover:text-destructive size-8"
+          className="text-destructive hover:text-destructive size-8 shrink-0"
           aria-label={m.categories_action_delete()}
           onClick={() => void handleDelete()}
         >

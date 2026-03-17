@@ -22,6 +22,7 @@ import {
   SubscriptionsSearch,
   subscriptionsQuery,
   SubscriptionsFilter,
+  CategoryFilterChips,
 } from "@/entities/subscription";
 import { useAuth } from "@clerk/clerk-react";
 import { cn } from "@/shared/lib/classes-utils";
@@ -39,7 +40,7 @@ const SubscriptionsTable: FC = () => {
     history: "replace",
   });
 
-  const { search, sortBy, direction } = filters;
+  const { search, sortBy, direction, categoryId } = filters;
 
   const queryParams = useMemo(() => {
     const trimmedSearch = search.trim();
@@ -49,8 +50,9 @@ const SubscriptionsTable: FC = () => {
       direction,
       status: filters.status,
       ...(trimmedSearch ? { search: trimmedSearch } : {}),
+      ...(categoryId ? { categoryId } : {}),
     };
-  }, [direction, search, sortBy, filters.status]);
+  }, [direction, search, sortBy, filters.status, categoryId]);
 
   const { userId } = useAuth();
   const { data: subscriptions, isLoading } = useQuery(
@@ -125,6 +127,10 @@ const SubscriptionsTable: FC = () => {
           />
         </div>
       </div>
+      <CategoryFilterChips
+        value={categoryId}
+        onChange={(id) => void setFilters({ categoryId: id })}
+      />
       <div className="relative overflow-hidden rounded-md border">
         <Table className={cn(isTableLoading && "pointer-events-none")}>
           <TableHeader>

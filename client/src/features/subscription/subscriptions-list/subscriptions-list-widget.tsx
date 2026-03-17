@@ -4,10 +4,10 @@ import { useQueryStates } from "nuqs";
 import {
   subscriptionsQueryParsers,
   subscriptionsQuery,
+  CategoryFilterChips,
 } from "@/entities/subscription";
 import { SubscriptionsList } from "./ui/subscriptions-list";
 import { SubscriptionsListToolbar } from "./ui/subscriptions-list-toolbar";
-import { CategoryFilterChips } from "./ui/category-filter-chips";
 import { useAuth } from "@clerk/clerk-react";
 import { SubscriptionsMonthlySpendCard } from "../../analytics";
 
