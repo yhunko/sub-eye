@@ -7,7 +7,14 @@ import {
   ItemActions,
   ItemGroup,
 } from "@/shared/components";
-import { Cog, ChevronRight, BellRing, User, CreditCard } from "lucide-react";
+import {
+  Cog,
+  ChevronRight,
+  BellRing,
+  User,
+  CreditCard,
+  Tag,
+} from "lucide-react";
 import * as m from "@/i18n/messages";
 import { SettingsLayout } from "@/widgets/settings-layout";
 import { valibotValidator } from "@tanstack/valibot-adapter";
@@ -26,6 +33,11 @@ const pages = [
     Icon: BellRing,
   },
   {
+    key: m.settings_pages_categories,
+    path: "/settings/categories",
+    Icon: Tag,
+  },
+  {
     key: m.settings_pages_billing,
     path: "/settings/billing",
     Icon: CreditCard,
@@ -41,7 +53,7 @@ function SettingsPage() {
   const { from } = Route.useSearch();
 
   return (
-    <SettingsLayout title={m.settings_title()} backTo={from}>
+    <SettingsLayout title={m.settings_title()} backTo={from} showVersion>
       <ItemGroup className="gap-3">
         {pages.map(({ key, path, Icon }) => (
           <Item key={path} variant="outline" size="default" asChild>

@@ -1,6 +1,7 @@
 import { FC } from "react";
-import { CalendarClock, CalendarSync, RotateCw } from "lucide-react";
+import { CalendarClock, CalendarSync, RotateCw, Tag } from "lucide-react";
 import { PeriodBadge } from "@/features/subscription/period";
+import { CategoryBadge } from "@/entities/category";
 import { cn } from "@/shared/lib/classes-utils";
 import type { SubscriptionOverviewMetaRow } from "../model/subscription-overview-view-model";
 
@@ -15,6 +16,10 @@ function RowIcon({ row }: { row: SubscriptionOverviewMetaRow }) {
 
   if (row.kind === "previousPayment") {
     return <CalendarClock className="size-4" aria-hidden />;
+  }
+
+  if (row.kind === "category") {
+    return <Tag className="size-4" aria-hidden />;
   }
 
   return <CalendarSync className="size-4" aria-hidden />;
@@ -42,6 +47,10 @@ function RowValue({ row }: { row: SubscriptionOverviewMetaRow }) {
         )}
       </div>
     );
+  }
+
+  if (row.kind === "category") {
+    return <CategoryBadge category={row.category} />;
   }
 
   return <span className="text-right text-sm font-semibold">{row.value}</span>;

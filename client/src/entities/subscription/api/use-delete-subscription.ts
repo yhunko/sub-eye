@@ -7,6 +7,7 @@ import { ApiVoidReturn } from "shared";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";
 import { billingQueryKeys } from "@/entities/billing";
+import { track } from "@/shared/lib/analytics";
 
 export const useDeleteSubscription = ({
   options,
@@ -18,12 +19,10 @@ export const useDeleteSubscription = ({
     ...options,
     mutationFn: async (param) => {
       const res = await apiClient.api.subscriptions[":id"].$delete({ param });
-      if (!res.ok) {
-        throw new Error("Failed to delete subscription");
-      }
       return res.json();
     },
     onSuccess: (_data, variables) => {
+      track("subscription_deleted");
       const { id } = variables;
 
       if (userId) {

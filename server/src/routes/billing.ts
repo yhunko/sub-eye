@@ -3,8 +3,47 @@ import { BillingService } from "../domains/billing/billingService";
 import { PaddleBillingService } from "../domains/billing/paddle/paddleBillingService";
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
+import { handleServiceError } from "../utils/routeUtils";
+import {
+  PLANS,
+  FREE_COMPARATOR_AI_MONTHLY_LIMIT,
+  FREE_COMPARATOR_MONTHLY_LIMIT,
+  PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
+  type PlansResponse,
+} from "shared";
 
-export const billingRouter = new Hono()
+export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
+  /**
+   * Returns public plan definitions for external consumers (e.g. landing page).
+   * Protected by a static API key passed via X-Api-Key header.
+   * Set PLANS_API_KEY worker secret: wrangler secret put PLANS_API_KEY
+   */
+  .get("/plans", async (context) => {
+    const apiKey = context.req.header("x-api-key");
+    const expectedKey = context.env.PLANS_API_KEY;
+
+    if (!expectedKey || apiKey !== expectedKey) {
+      return context.json({ error: "Unauthorized" }, 401 as const);
+    }
+
+    return context.json(
+      {
+        plans: PLANS,
+        quotas: {
+          free: {
+            comparatorAiMonthly: FREE_COMPARATOR_AI_MONTHLY_LIMIT,
+            comparatorMonthly: FREE_COMPARATOR_MONTHLY_LIMIT,
+          },
+          plus: {
+            comparatorAiMonthly: PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
+            comparatorMonthly: null,
+          },
+        },
+      } satisfies PlansResponse,
+      200,
+      { "Cache-Control": "public, max-age=3600", Vary: "X-Api-Key" },
+    );
+  })
   /**
    * Returns plan usage and limits for the current user.
    */
@@ -15,13 +54,7 @@ export const billingRouter = new Hono()
       const usage = await BillingService.getUsage(userId);
       return context.json(usage);
     } catch (error) {
-      if (error instanceof Error) {
-        return context.json(
-          { error: "Usage Error", message: error.message },
-          500,
-        );
-      }
-      return context.json({ error: "Internal Server Error" }, 500);
+      return handleServiceError(context, error);
     }
   })
   /**
@@ -35,13 +68,7 @@ export const billingRouter = new Hono()
         await PaddleBillingService.createCheckoutTransaction(userId);
       return context.json(response, 200);
     } catch (error) {
-      if (error instanceof Error) {
-        return context.json(
-          { error: "Checkout Error", message: error.message },
-          500,
-        );
-      }
-      return context.json({ error: "Internal Server Error" }, 500);
+      return handleServiceError(context, error);
     }
   })
   /**
@@ -55,12 +82,6 @@ export const billingRouter = new Hono()
         await PaddleBillingService.createCustomerPortalUrl(userId);
       return context.json(response, 200);
     } catch (error) {
-      if (error instanceof Error) {
-        return context.json(
-          { error: "Portal Error", message: error.message },
-          500,
-        );
-      }
-      return context.json({ error: "Internal Server Error" }, 500);
+      return handleServiceError(context, error);
     }
   });

@@ -3,6 +3,7 @@ import { DashboardNavbar, DashboardLayout } from "@/widgets/dashboard-layout";
 import {
   AnalyticsWidget,
   CashFlowChart,
+  CategorySpendingChart,
   MonthlySpendingTrendChart,
   StatCards,
   UpcomingRenewals,
@@ -26,7 +27,8 @@ function Dashboard() {
         <StatCards className="col-span-full" />
         <CashFlowChart className="lg:col-span-7" />
         <UpcomingRenewals className="h-full lg:col-span-5" />
-        <MonthlySpendingTrendChart className="col-span-full" />
+        <CategorySpendingChart className="lg:col-span-5" />
+        <MonthlySpendingTrendChart className="h-full lg:col-span-7" />
       </AnalyticsWidget>
     </DashboardLayout>
   );

@@ -132,4 +132,19 @@ export class RecurrenceUtils {
 
     return previous;
   }
+
+  static intervalToMonths(every: number, period: SubscriptionPeriod): number {
+    switch (period) {
+      case SubscriptionPeriod.DAY:
+        return every / 30.4375;
+      case SubscriptionPeriod.WEEK:
+        return (every * 7) / 30.4375;
+      case SubscriptionPeriod.MONTH:
+        return every;
+      case SubscriptionPeriod.YEAR:
+        return every * 12;
+      default:
+        return every;
+    }
+  }
 }

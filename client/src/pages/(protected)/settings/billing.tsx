@@ -25,6 +25,7 @@ import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
+import { track } from "@/shared/lib/analytics";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/(protected)/settings/billing")({
@@ -37,6 +38,8 @@ const FEATURE_LABELS: Record<string, () => string> = {
   analytics: m.settings_billing_plans_free_features_analytics,
   notifications: m.settings_billing_plans_free_features_notifications,
   currency: m.settings_billing_plans_free_features_currency,
+  comparator: m.settings_billing_plans_free_features_comparator,
+  aiInsights: m.settings_billing_plans_free_features_aiInsights,
 };
 
 function SettingsBillingPage() {
@@ -62,6 +65,10 @@ function SettingsBillingPage() {
         return;
       }
 
+      if (event.name === "checkout.completed") {
+        track("upgrade_completed");
+      }
+
       void queryClient.invalidateQueries({
         queryKey: billingQueryKeys.usage._def,
       });
@@ -75,6 +82,16 @@ function SettingsBillingPage() {
       included: true,
     }));
   const isPlusPlan = usage?.planId === PLUS_PLAN.id;
+
+  useEffect(() => {
+    if (usage && !isPlusPlan) {
+      track("upgrade_prompt_viewed", {
+        source: "settings_billing",
+        feature: "plus_plan",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(usage), isPlusPlan]);
   const isActionPending = createCheckout.isPending || createPortal.isPending;
   const checkoutEmail = user?.primaryEmailAddress?.emailAddress ?? null;
 
@@ -150,11 +167,6 @@ function SettingsBillingPage() {
                 active={isPlusPlan}
                 isActionPending={isActionPending}
                 onAction={handlePlanAction}
-                checkoutNote={
-                  !isPlusPlan && !checkoutEmail
-                    ? m.settings_billing_checkout_emailMissingHint()
-                    : undefined
-                }
               />
             </CardContent>
           </Card>

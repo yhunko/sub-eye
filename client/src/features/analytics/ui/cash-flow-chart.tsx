@@ -24,6 +24,7 @@ import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { track } from "@/shared/lib/analytics";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { DateTimezoneUtils } from "shared";
 import type { CashFlowSubscription } from "shared";
@@ -90,7 +91,10 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
           }}
           className="h-full min-h-80 w-full md:min-h-72"
         >
-          <ComposedChart data={data.cashFlowForecast}>
+          <ComposedChart
+            data={data.cashFlowForecast}
+            onClick={() => track("chart_cashflow_interacted")}
+          >
             <defs>
               <linearGradient id="fillCumulative" x1="0" y1="0" x2="0" y2="1">
                 <stop

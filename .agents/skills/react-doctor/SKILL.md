@@ -10,7 +10,7 @@ Scan React code quality for changed `client` React files and treat warnings as f
 ## Usage
 
 ```bash
-bun x react-doctor@latest . --project client --yes --no-ami --fail-on warning --verbose
+bun x react-doctor@latest . --project client --yes --fail-on warning --verbose
 ```
 
 ## Workflow
@@ -31,7 +31,7 @@ bun x react-doctor@latest . --project client --yes --no-ami --fail-on warning --
 - If at least one matching file exists, run:
 
 ```bash
-bun x react-doctor@latest . --project client --yes --no-ami --fail-on warning --verbose
+bun x react-doctor@latest . --project client --yes --fail-on warning --verbose
 ```
 
 4. Resolve findings:

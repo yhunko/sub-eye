@@ -1,14 +1,17 @@
 import * as React from "react";
+import { Link } from "@tanstack/react-router";
 import {
   SubscriptionsSearch,
   SubscriptionsFilterDrawer,
 } from "@/entities/subscription";
+import { Button } from "@/shared/components";
 import type {
   SubscriptionSortField,
   SortDirection,
   StatusFilter,
 } from "shared";
 import * as m from "@/i18n/messages";
+import { ArrowRightLeft } from "lucide-react";
 
 interface SubscriptionsListToolbarProps {
   loading?: boolean;
@@ -38,6 +41,17 @@ export const SubscriptionsListToolbar = React.memo(
           className="flex-1 shrink-0"
           loading={loading}
         />
+        <Button
+          variant="outline"
+          size="icon"
+          asChild
+          aria-label={m.comparator_action_open()}
+        >
+          <Link to="/subscriptions/compare">
+            <ArrowRightLeft className="size-4" />
+            <span className="sr-only">{m.comparator_action_open()}</span>
+          </Link>
+        </Button>
         <SubscriptionsFilterDrawer
           sortBy={sortBy}
           direction={direction}

@@ -13,6 +13,7 @@ import { DollarSign } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 import { CurrencyUtils } from "shared";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 
 export const PreferredCurrencySelect: FC = () => {
   const { user, isLoaded } = useUser();
@@ -38,7 +39,22 @@ export const PreferredCurrencySelect: FC = () => {
         <CurrencySelect
           id="preferred-currency"
           value={currencyValue}
-          onChange={(currency) => mutate({ preferredCurrency: currency })}
+          onChange={(currency) =>
+            mutate(
+              { preferredCurrency: currency },
+              {
+                onSuccess: () => {
+                  track("settings_general_saved", {
+                    theme_changed: false,
+                    locale_changed: false,
+                    currency_changed: true,
+                    timezone_changed: false,
+                    date_format_changed: false,
+                  });
+                },
+              },
+            )
+          }
           disabled={isLoading}
         />
       </ItemActions>

@@ -1,4 +1,5 @@
 import { honoClient } from "@server/client";
+import { ApiError } from "./api-error";
 
 export const apiClient = honoClient(import.meta.env.VITE_API_URL ?? "", {
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -11,10 +12,24 @@ export const apiClient = honoClient(import.meta.env.VITE_API_URL ?? "", {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
-    return fetch(input, {
+    const response = await fetch(input, {
       ...init,
       credentials: "include",
       headers,
     });
+
+    if (!response.ok) {
+      const body = await response
+        .clone()
+        .json()
+        .catch(() => null);
+      const message =
+        body && typeof body === "object" && typeof body.error === "string"
+          ? body.error
+          : "An unexpected error occurred";
+      throw new ApiError(message, response.status);
+    }
+
+    return response;
   },
 });

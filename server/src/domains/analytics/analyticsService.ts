@@ -1,5 +1,6 @@
 import { SubscriptionService } from "../subscription/subscriptionService";
 import { UserService } from "../user/userService";
+import { CategoryService } from "../category/categoryService";
 import { endOfWeek, startOfWeek, eachDayOfInterval } from "date-fns";
 import { DateTimezoneUtils } from "shared";
 import { CurrencyUtils } from "shared";
@@ -15,11 +16,13 @@ import { AnalyticsCalculator } from "./analyticsCalculator";
 type AnalyticsServiceDeps = {
   subscriptionService: typeof SubscriptionService;
   userService: typeof UserService;
+  categoryService: typeof CategoryService;
 };
 
 const defaultDeps: AnalyticsServiceDeps = {
   subscriptionService: SubscriptionService,
   userService: UserService,
+  categoryService: CategoryService,
 };
 
 /**
@@ -31,8 +34,13 @@ export class AnalyticsService {
     userId: string,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<DashboardAnalyticsDto> {
-    const { subscriptions, preferredCurrencyCode, now, timezone } =
-      await this.getAnalyticsContext(userId, deps);
+    const [
+      { subscriptions, preferredCurrencyCode, now, timezone },
+      categories,
+    ] = await Promise.all([
+      this.getAnalyticsContext(userId, deps),
+      deps.categoryService.getCategories(userId),
+    ]);
 
     const today = DateTimezoneUtils.startOfDay(now, timezone);
     const oneYearFromNow = DateTimezoneUtils.shiftMonths(today, 12, timezone);
@@ -99,6 +107,11 @@ export class AnalyticsService {
     const currentMonthIndex = Math.abs(monthlyTrendStartOffset);
     const nextMonthForecast = monthlyTrend[currentMonthIndex + 1]?.amount ?? 0;
 
+    const categorySpending = AnalyticsCalculator.buildCategorySpending(
+      currentlyActiveSubscriptions,
+      categories,
+    );
+
     return {
       preferredCurrencyCode,
       monthlyBurnRate,
@@ -113,6 +126,7 @@ export class AnalyticsService {
       upcomingRenewals,
       totalUpcomingMonth,
       monthlyTrend,
+      categorySpending,
     };
   }
 

@@ -1,10 +1,12 @@
 import { format, isAfter, isBefore, eachDayOfInterval } from "date-fns";
 import { RecurrenceUtils } from "shared";
 import { DateTimezoneUtils } from "shared";
-import type { SubscriptionDto } from "shared";
+import type { CategoryDto, SubscriptionDto } from "shared";
 import { shouldIncludeOccurrence } from "shared";
 import type { SubscriptionPeriod } from "shared";
 import type {
+  CategorySpendingDto,
+  CategorySpendingSubscriptionDto,
   DashboardAnalyticsDto,
   MonthlyTrendPoint,
   MostExpensiveSubscriptionDto,
@@ -179,7 +181,7 @@ export class AnalyticsCalculator {
           id: subscription.id,
           name: subscription.name,
           brandDomain: subscription.brandDomain,
-          provider: subscription.category ?? "Subscription",
+          provider: "Subscription",
           amount: this.resolveOccurrenceAmount(subscription, projectionDate),
           currencyCode: preferredCurrencyCode,
           nextPaymentDate: projectionDate.toISOString(),
@@ -257,6 +259,81 @@ export class AnalyticsCalculator {
     );
 
     return { forecast, remainingThisMonth, totalUpcomingMonth };
+  }
+
+  /**
+   * Groups active subscriptions by category and sums their monthly spend.
+   * Returns entries sorted by amount descending; uncategorized items have categoryId = null.
+   */
+  static buildCategorySpending(
+    subscriptions: SubscriptionDto[],
+    categories: CategoryDto[],
+  ): CategorySpendingDto[] {
+    const map = new Map<string | null, CategorySpendingDto>();
+
+    for (const sub of subscriptions) {
+      const categoryId = sub.categoryId ?? null;
+      const existing = map.get(categoryId);
+      const monthlyCost = sub.billing.preferred.monthly;
+
+      if (existing) {
+        existing.amount += monthlyCost;
+        existing.subscriptions.push({
+          id: sub.id,
+          name: sub.name,
+          brandDomain: sub.brandDomain,
+          monthlyCost,
+        });
+      } else {
+        const category = categories.find((c) => c.id === categoryId);
+        map.set(categoryId, {
+          categoryId,
+          name: category?.name ?? "",
+          emoji: category?.emoji ?? "📦",
+          amount: monthlyCost,
+          subscriptions: [
+            {
+              id: sub.id,
+              name: sub.name,
+              brandDomain: sub.brandDomain,
+              monthlyCost,
+            },
+          ],
+        });
+      }
+    }
+
+    return Array.from(map.values())
+      .filter((item) => item.amount > 0)
+      .map((item) => {
+        const groupedSubscriptions = new Map<
+          string,
+          CategorySpendingSubscriptionDto
+        >();
+
+        for (const subscription of item.subscriptions) {
+          const existingSubscription = groupedSubscriptions.get(
+            subscription.id,
+          );
+          if (existingSubscription) {
+            existingSubscription.monthlyCost += subscription.monthlyCost;
+            continue;
+          }
+          groupedSubscriptions.set(subscription.id, { ...subscription });
+        }
+
+        return {
+          ...item,
+          amount: Number(item.amount.toFixed(2)),
+          subscriptions: Array.from(groupedSubscriptions.values())
+            .map((subscription) => ({
+              ...subscription,
+              monthlyCost: Number(subscription.monthlyCost.toFixed(2)),
+            }))
+            .sort((a, b) => b.monthlyCost - a.monthlyCost),
+        };
+      })
+      .sort((a, b) => b.amount - a.amount);
   }
 
   /**

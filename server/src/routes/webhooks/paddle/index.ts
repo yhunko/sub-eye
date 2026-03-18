@@ -10,8 +10,7 @@ export const paddleWebhookRouter = new Hono<{
   Bindings: { PADDLE_WEBHOOK_SECRET: string };
 }>().post("/", async (context) => {
   const signature = context.req.header("paddle-signature");
-  const secret =
-    context.env.PADDLE_WEBHOOK_SECRET ?? process.env.PADDLE_WEBHOOK_SECRET;
+  const secret = context.env.PADDLE_WEBHOOK_SECRET;
 
   if (!secret) {
     console.error("[Paddle Webhook] Missing PADDLE_WEBHOOK_SECRET");

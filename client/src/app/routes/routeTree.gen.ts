@@ -15,13 +15,16 @@ import { Route as protectedSubscriptionsIndexRouteImport } from "./../../pages/(
 import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(protected)/settings/index"
 import { Route as AuthSignUpSplatRouteImport } from "./../../pages/auth/sign-up/$"
 import { Route as AuthSignInSplatRouteImport } from "./../../pages/auth/sign-in/$"
+import { Route as protectedSubscriptionsCompareRouteImport } from "./../../pages/(protected)/subscriptions/compare"
 import { Route as protectedSubscriptionsAddRouteImport } from "./../../pages/(protected)/subscriptions/add"
 import { Route as protectedSettingsNotificationsRouteImport } from "./../../pages/(protected)/settings/notifications"
 import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(protected)/settings/general"
+import { Route as protectedSettingsCategoriesRouteImport } from "./../../pages/(protected)/settings/categories"
 import { Route as protectedSettingsBillingRouteImport } from "./../../pages/(protected)/settings/billing"
 import { Route as protectedSettingsAccountRouteImport } from "./../../pages/(protected)/settings/account"
 import { Route as protectedSubscriptionsIdIndexRouteImport } from "./../../pages/(protected)/subscriptions/$id/index"
 import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
+import { Route as protectedSettingsCategoriesGenerateRouteImport } from "./../../pages/(protected)/settings/categories/generate"
 
 const protectedRouteRoute = protectedRouteRouteImport.update({
   id: "/(protected)",
@@ -53,6 +56,12 @@ const AuthSignInSplatRoute = AuthSignInSplatRouteImport.update({
   path: "/auth/sign-in/$",
   getParentRoute: () => rootRouteImport,
 } as any)
+const protectedSubscriptionsCompareRoute =
+  protectedSubscriptionsCompareRouteImport.update({
+    id: "/subscriptions/compare",
+    path: "/subscriptions/compare",
+    getParentRoute: () => protectedRouteRoute,
+  } as any)
 const protectedSubscriptionsAddRoute =
   protectedSubscriptionsAddRouteImport.update({
     id: "/subscriptions/add",
@@ -69,6 +78,12 @@ const protectedSettingsGeneralRoute =
   protectedSettingsGeneralRouteImport.update({
     id: "/settings/general",
     path: "/settings/general",
+    getParentRoute: () => protectedRouteRoute,
+  } as any)
+const protectedSettingsCategoriesRoute =
+  protectedSettingsCategoriesRouteImport.update({
+    id: "/settings/categories",
+    path: "/settings/categories",
     getParentRoute: () => protectedRouteRoute,
   } as any)
 const protectedSettingsBillingRoute =
@@ -95,18 +110,27 @@ const protectedSubscriptionsIdEditRoute =
     path: "/subscriptions/$id/edit",
     getParentRoute: () => protectedRouteRoute,
   } as any)
+const protectedSettingsCategoriesGenerateRoute =
+  protectedSettingsCategoriesGenerateRouteImport.update({
+    id: "/generate",
+    path: "/generate",
+    getParentRoute: () => protectedSettingsCategoriesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
+  "/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
+  "/subscriptions/compare": typeof protectedSubscriptionsCompareRoute
   "/auth/sign-in/$": typeof AuthSignInSplatRoute
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/settings/": typeof protectedSettingsIndexRoute
   "/subscriptions/": typeof protectedSubscriptionsIndexRoute
+  "/settings/categories/generate": typeof protectedSettingsCategoriesGenerateRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
@@ -114,13 +138,16 @@ export interface FileRoutesByTo {
   "/": typeof protectedIndexRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
+  "/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
   "/settings/general": typeof protectedSettingsGeneralRoute
   "/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/subscriptions/add": typeof protectedSubscriptionsAddRoute
+  "/subscriptions/compare": typeof protectedSubscriptionsCompareRoute
   "/auth/sign-in/$": typeof AuthSignInSplatRoute
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/settings": typeof protectedSettingsIndexRoute
   "/subscriptions": typeof protectedSubscriptionsIndexRoute
+  "/settings/categories/generate": typeof protectedSettingsCategoriesGenerateRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/subscriptions/$id": typeof protectedSubscriptionsIdIndexRoute
 }
@@ -130,13 +157,16 @@ export interface FileRoutesById {
   "/(protected)/": typeof protectedIndexRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/billing": typeof protectedSettingsBillingRoute
+  "/(protected)/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
   "/(protected)/settings/general": typeof protectedSettingsGeneralRoute
   "/(protected)/settings/notifications": typeof protectedSettingsNotificationsRoute
   "/(protected)/subscriptions/add": typeof protectedSubscriptionsAddRoute
+  "/(protected)/subscriptions/compare": typeof protectedSubscriptionsCompareRoute
   "/auth/sign-in/$": typeof AuthSignInSplatRoute
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/(protected)/settings/": typeof protectedSettingsIndexRoute
   "/(protected)/subscriptions/": typeof protectedSubscriptionsIndexRoute
+  "/(protected)/settings/categories/generate": typeof protectedSettingsCategoriesGenerateRoute
   "/(protected)/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/(protected)/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
@@ -146,13 +176,16 @@ export interface FileRouteTypes {
     | "/"
     | "/settings/account"
     | "/settings/billing"
+    | "/settings/categories"
     | "/settings/general"
     | "/settings/notifications"
     | "/subscriptions/add"
+    | "/subscriptions/compare"
     | "/auth/sign-in/$"
     | "/auth/sign-up/$"
     | "/settings/"
     | "/subscriptions/"
+    | "/settings/categories/generate"
     | "/subscriptions/$id/edit"
     | "/subscriptions/$id/"
   fileRoutesByTo: FileRoutesByTo
@@ -160,13 +193,16 @@ export interface FileRouteTypes {
     | "/"
     | "/settings/account"
     | "/settings/billing"
+    | "/settings/categories"
     | "/settings/general"
     | "/settings/notifications"
     | "/subscriptions/add"
+    | "/subscriptions/compare"
     | "/auth/sign-in/$"
     | "/auth/sign-up/$"
     | "/settings"
     | "/subscriptions"
+    | "/settings/categories/generate"
     | "/subscriptions/$id/edit"
     | "/subscriptions/$id"
   id:
@@ -175,13 +211,16 @@ export interface FileRouteTypes {
     | "/(protected)/"
     | "/(protected)/settings/account"
     | "/(protected)/settings/billing"
+    | "/(protected)/settings/categories"
     | "/(protected)/settings/general"
     | "/(protected)/settings/notifications"
     | "/(protected)/subscriptions/add"
+    | "/(protected)/subscriptions/compare"
     | "/auth/sign-in/$"
     | "/auth/sign-up/$"
     | "/(protected)/settings/"
     | "/(protected)/subscriptions/"
+    | "/(protected)/settings/categories/generate"
     | "/(protected)/subscriptions/$id/edit"
     | "/(protected)/subscriptions/$id/"
   fileRoutesById: FileRoutesById
@@ -236,6 +275,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthSignInSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/(protected)/subscriptions/compare": {
+      id: "/(protected)/subscriptions/compare"
+      path: "/subscriptions/compare"
+      fullPath: "/subscriptions/compare"
+      preLoaderRoute: typeof protectedSubscriptionsCompareRouteImport
+      parentRoute: typeof protectedRouteRoute
+    }
     "/(protected)/subscriptions/add": {
       id: "/(protected)/subscriptions/add"
       path: "/subscriptions/add"
@@ -255,6 +301,13 @@ declare module "@tanstack/react-router" {
       path: "/settings/general"
       fullPath: "/settings/general"
       preLoaderRoute: typeof protectedSettingsGeneralRouteImport
+      parentRoute: typeof protectedRouteRoute
+    }
+    "/(protected)/settings/categories": {
+      id: "/(protected)/settings/categories"
+      path: "/settings/categories"
+      fullPath: "/settings/categories"
+      preLoaderRoute: typeof protectedSettingsCategoriesRouteImport
       parentRoute: typeof protectedRouteRoute
     }
     "/(protected)/settings/billing": {
@@ -285,16 +338,40 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSubscriptionsIdEditRouteImport
       parentRoute: typeof protectedRouteRoute
     }
+    "/(protected)/settings/categories/generate": {
+      id: "/(protected)/settings/categories/generate"
+      path: "/generate"
+      fullPath: "/settings/categories/generate"
+      preLoaderRoute: typeof protectedSettingsCategoriesGenerateRouteImport
+      parentRoute: typeof protectedSettingsCategoriesRoute
+    }
   }
 }
+
+interface protectedSettingsCategoriesRouteChildren {
+  protectedSettingsCategoriesGenerateRoute: typeof protectedSettingsCategoriesGenerateRoute
+}
+
+const protectedSettingsCategoriesRouteChildren: protectedSettingsCategoriesRouteChildren =
+  {
+    protectedSettingsCategoriesGenerateRoute:
+      protectedSettingsCategoriesGenerateRoute,
+  }
+
+const protectedSettingsCategoriesRouteWithChildren =
+  protectedSettingsCategoriesRoute._addFileChildren(
+    protectedSettingsCategoriesRouteChildren,
+  )
 
 interface protectedRouteRouteChildren {
   protectedIndexRoute: typeof protectedIndexRoute
   protectedSettingsAccountRoute: typeof protectedSettingsAccountRoute
   protectedSettingsBillingRoute: typeof protectedSettingsBillingRoute
+  protectedSettingsCategoriesRoute: typeof protectedSettingsCategoriesRouteWithChildren
   protectedSettingsGeneralRoute: typeof protectedSettingsGeneralRoute
   protectedSettingsNotificationsRoute: typeof protectedSettingsNotificationsRoute
   protectedSubscriptionsAddRoute: typeof protectedSubscriptionsAddRoute
+  protectedSubscriptionsCompareRoute: typeof protectedSubscriptionsCompareRoute
   protectedSettingsIndexRoute: typeof protectedSettingsIndexRoute
   protectedSubscriptionsIndexRoute: typeof protectedSubscriptionsIndexRoute
   protectedSubscriptionsIdEditRoute: typeof protectedSubscriptionsIdEditRoute
@@ -305,9 +382,12 @@ const protectedRouteRouteChildren: protectedRouteRouteChildren = {
   protectedIndexRoute: protectedIndexRoute,
   protectedSettingsAccountRoute: protectedSettingsAccountRoute,
   protectedSettingsBillingRoute: protectedSettingsBillingRoute,
+  protectedSettingsCategoriesRoute:
+    protectedSettingsCategoriesRouteWithChildren,
   protectedSettingsGeneralRoute: protectedSettingsGeneralRoute,
   protectedSettingsNotificationsRoute: protectedSettingsNotificationsRoute,
   protectedSubscriptionsAddRoute: protectedSubscriptionsAddRoute,
+  protectedSubscriptionsCompareRoute: protectedSubscriptionsCompareRoute,
   protectedSettingsIndexRoute: protectedSettingsIndexRoute,
   protectedSubscriptionsIndexRoute: protectedSubscriptionsIndexRoute,
   protectedSubscriptionsIdEditRoute: protectedSubscriptionsIdEditRoute,

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { clerkWebhookRouter } from "./clerk";
 import { paddleWebhookRouter } from "./paddle";
+import { telegramWebhookRouter } from "./telegram";
 
 /**
  * Aggregates all webhook sub-routers.
@@ -16,3 +17,4 @@ export const webhookRouter = new Hono();
 
 webhookRouter.route("/clerk", clerkWebhookRouter);
 webhookRouter.route("/paddle", paddleWebhookRouter);
+webhookRouter.route("/telegram", telegramWebhookRouter);

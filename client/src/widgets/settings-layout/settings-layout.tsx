@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren, ReactNode } from "react";
 import { Button } from "../../shared/components";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -10,28 +10,33 @@ type SettingsLayoutProps = {
   title?: string;
   backTo?: string;
   backToSearch?: Record<string, unknown>;
+  rightAction?: ReactNode;
+  showVersion?: boolean;
 };
 
 export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
   title = " ",
   backTo,
   backToSearch,
+  rightAction,
+  showVersion = false,
   children,
 }) => {
   const isDesktop = useBreakpoint("md");
 
   return (
-    <div className="flex min-h-svh w-full flex-col gap-2">
+    <div className="flex min-h-svh w-full flex-col">
       {isDesktop && <DesktopNavbar />}
 
-      {/* pb-20: Adds ~112px of padding to the bottom on mobile. This accounts for the navbar height (64px) + floating button offset + safe area. */}
-      {/* md:pb-4: Resets this padding on desktop, and reserves space for version. */}
-      <div className="container mx-auto flex w-full max-w-xl grow flex-col gap-2 pb-28 md:pb-4">
-        <div className="relative flex h-14 flex-row items-center justify-center">
-          {backTo && (
+      {/* px-4: reasonable horizontal margin on mobile. */}
+      {/* md: centered column, max-w-xl, no extra padding. */}
+      {/* pb-28: clears mobile bottom navbar. md:pb-4: desktop bottom spacing. */}
+      <div className="flex w-full grow flex-col gap-2 px-4 pb-28 md:container md:mx-auto md:max-w-xl md:px-0 md:pt-2 md:pb-4">
+        <div className="grid h-14 grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-2">
+          {backTo ? (
             <Button
               variant="ghost"
-              className="absolute left-0 rounded-full bg-gray-500/10 backdrop-blur-md"
+              className="rounded-full bg-gray-500/10 backdrop-blur-md"
               size="icon-lg"
               asChild
             >
@@ -39,17 +44,25 @@ export const SettingsLayout: FC<PropsWithChildren<SettingsLayoutProps>> = ({
                 <ChevronLeft />
               </Link>
             </Button>
+          ) : (
+            <span />
           )}
 
-          <h1 className="text-2xl">{title}</h1>
+          <h1 className="truncate text-center text-2xl">{title}</h1>
+
+          <div className="justify-self-end">
+            {rightAction ?? <span className="block size-11" />}
+          </div>
         </div>
 
         <div className="flex w-full grow flex-col gap-2">
           {children}
 
-          <div className="mt-2 self-center text-sm">
-            v{import.meta.env.APP_VERSION}
-          </div>
+          {showVersion && (
+            <div className="text-muted-foreground mt-auto pt-4 pb-2 text-center text-sm">
+              v{import.meta.env.APP_VERSION}
+            </div>
+          )}
         </div>
       </div>
 

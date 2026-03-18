@@ -34,6 +34,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "netflix.com",
     });
 
@@ -42,7 +46,7 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
     );
   });
 
-  it("falls back to the client env Brandfetch id when the server one is missing", () => {
+  it("ignores client env Brandfetch id when the server one is missing", () => {
     delete process.env.BRANDFETCH_CLIENT_ID;
     process.env.VITE_BRANDFETCH_CLIENT_ID = "vite_client_id";
 
@@ -53,12 +57,14 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "netflix.com",
     });
 
-    expect(payload.icon).toBe(
-      "https://cdn.brandfetch.io/netflix.com/w/128/h/128/fallback/lettermark/type/icon?c=vite_client_id",
-    );
+    expect(payload.icon).toBe(PushNotificationContent.defaultIcon);
   });
 
   it("falls back to the app icon when Brandfetch is not configured", () => {
@@ -72,6 +78,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "netflix.com",
     });
 
@@ -89,6 +99,10 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
       notificationDate: new Date("2026-03-07T10:00:00.000Z"),
       subscriptionId: "sub_01",
       subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
       brandDomain: "https://Netflix.com/path?foo=1",
     });
 

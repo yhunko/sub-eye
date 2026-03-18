@@ -61,15 +61,7 @@ export const AddSubscriptionSchema = strictObject({
   period: optional(subscriptionPeriodSchema, SubscriptionPeriod.MONTH),
   paymentDate: isoDateSchema,
   autoPaid: optional(boolean(), false),
-  category: optional(
-    nullable(
-      pipe(
-        string(),
-        transform((value) => value.trim()),
-      ),
-    ),
-    null,
-  ),
+  categoryId: optional(nullable(string()), null),
   notes: optional(
     nullable(
       pipe(
@@ -105,14 +97,7 @@ export const UpdateSubscriptionSchema = strictObject({
   period: optional(subscriptionPeriodSchema),
   paymentDate: optional(isoDateSchema),
   autoPaid: optional(boolean()),
-  category: optional(
-    nullable(
-      pipe(
-        string(),
-        transform((value) => value.trim()),
-      ),
-    ),
-  ),
+  categoryId: optional(nullable(string())),
   notes: optional(
     nullable(
       pipe(
@@ -180,7 +165,7 @@ export const SubscriptionDtoSchema = strictObject({
   period: subscriptionPeriodSchema,
   paymentDate: string(),
   autoPaid: boolean(),
-  category: nullable(string()),
+  categoryId: nullable(string()),
   notes: nullable(string()),
   createdAt: string(),
   updatedAt: string(),

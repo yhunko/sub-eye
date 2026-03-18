@@ -13,6 +13,7 @@ import { useMounted } from "@mantine/hooks";
 import { ForwardRefExoticComponent, RefAttributes, useMemo } from "react";
 import * as m from "@/i18n/messages";
 import { useTheme } from "@/app/providers/theme-provider";
+import { track } from "@/shared/lib/analytics";
 
 export const ThemeSwitchButton = () => {
   const { theme, setTheme } = useTheme();
@@ -67,7 +68,16 @@ export const ThemeSwitchButton = () => {
       >
         <DropdownMenuItem
           disabled={theme === "light"}
-          onClick={() => setTheme("light")}
+          onClick={() => {
+            setTheme("light");
+            track("settings_general_saved", {
+              theme_changed: true,
+              locale_changed: false,
+              currency_changed: false,
+              timezone_changed: false,
+              date_format_changed: false,
+            });
+          }}
           className="cursor-pointer gap-3"
         >
           <Sun className="size-4" />
@@ -75,7 +85,16 @@ export const ThemeSwitchButton = () => {
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={theme === "dark"}
-          onClick={() => setTheme("dark")}
+          onClick={() => {
+            setTheme("dark");
+            track("settings_general_saved", {
+              theme_changed: true,
+              locale_changed: false,
+              currency_changed: false,
+              timezone_changed: false,
+              date_format_changed: false,
+            });
+          }}
           className="cursor-pointer gap-3"
         >
           <Moon className="size-4" />
@@ -83,7 +102,16 @@ export const ThemeSwitchButton = () => {
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={theme === "system"}
-          onClick={() => setTheme("system")}
+          onClick={() => {
+            setTheme("system");
+            track("settings_general_saved", {
+              theme_changed: true,
+              locale_changed: false,
+              currency_changed: false,
+              timezone_changed: false,
+              date_format_changed: false,
+            });
+          }}
           className="cursor-pointer gap-3"
         >
           <MonitorCog className="size-4" />

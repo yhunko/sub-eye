@@ -1,9 +1,19 @@
 import type { FC, ReactNode } from "react";
+import { useEffect } from "react";
 import { Badge, Button } from "@/shared/components";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
+
+type UpgradePromptSource =
+  | "subscription_limit"
+  | "comparator_quota"
+  | "comparator_ai"
+  | "category_ai"
+  | "notification_schedule"
+  | "settings_billing";
 
 type PlanFeatureLockCardProps = {
   title: string;
@@ -14,6 +24,8 @@ type PlanFeatureLockCardProps = {
   icon?: ReactNode;
   className?: string;
   onCtaClick?: () => void | Promise<void>;
+  analyticsSource?: UpgradePromptSource;
+  analyticsFeature?: string;
 };
 
 export const PlanFeatureLockCard: FC<PlanFeatureLockCardProps> = ({
@@ -25,7 +37,19 @@ export const PlanFeatureLockCard: FC<PlanFeatureLockCardProps> = ({
   icon,
   className,
   onCtaClick,
+  analyticsSource,
+  analyticsFeature,
 }) => {
+  useEffect(() => {
+    if (analyticsSource) {
+      track("upgrade_prompt_viewed", {
+        source: analyticsSource,
+        feature: analyticsFeature ?? "plus_plan",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div
       className={cn(

@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { SubscriptionDto } from "shared";
 
@@ -23,9 +24,7 @@ export const subscriptionQuery = ({
       const res = await apiClient.api.subscriptions[":id"].$get({
         param: { id: params.id },
       });
-      if (!res.ok) {
-        throw new Error("Failed to fetch subscription");
-      }
+      assertOk(res);
       return res.json();
     },
     enabled: Boolean(params.userId && params.id),

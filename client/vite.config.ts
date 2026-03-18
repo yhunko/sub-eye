@@ -14,6 +14,19 @@ export default defineConfig({
   define: {
     "import.meta.env.APP_VERSION": JSON.stringify(version),
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-motion": ["motion/react"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-router": ["@tanstack/react-router"],
+          "vendor-clerk": ["@clerk/clerk-react"],
+        },
+      },
+    },
+  },
   plugins: [
     mkcert(),
     paraglideVitePlugin({

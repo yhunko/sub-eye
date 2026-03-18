@@ -43,6 +43,47 @@ export const pushNotificationsTable = pgTable(
   (t) => [uniqueIndex("unique_endpoint_idx").on(t.userId, t.endpoint)],
 );
 
+export const telegramLinksTable = pgTable(
+  "telegram_links",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    chatId: text("chat_id").notNull(),
+    telegramUserId: text("telegram_user_id").notNull(),
+    telegramUsername: text("telegram_username"),
+    isEnabled: boolean("is_enabled").notNull().default(true),
+    messageTemplate: jsonb("message_template"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("telegram_links_user_id_idx").on(table.userId),
+    uniqueIndex("telegram_links_chat_id_idx").on(table.chatId),
+  ],
+);
+
+export const telegramLinkTokensTable = pgTable(
+  "telegram_link_tokens",
+  {
+    id: serial("id").primaryKey(),
+    token: text("token").notNull(),
+    userId: text("user_id").notNull(),
+    expiresAt: timestamp("expires_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    consumedAt: timestamp("consumed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("telegram_link_tokens_token_idx").on(table.token),
+    index("telegram_link_tokens_user_id_idx").on(table.userId),
+  ],
+);
+
 export const billingAccountsTable = pgTable(
   "billing_accounts",
   {
@@ -83,6 +124,19 @@ export const billingWebhookEventsTable = pgTable("billing_webhook_events", {
   processedAt: timestamp("processed_at").notNull().defaultNow(),
 });
 
+export const categoriesTable = pgTable(
+  "categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    name: text("name").notNull(),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("categories_user_id_idx").on(table.userId)],
+);
+
 export const subscriptionsTable = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -96,7 +150,9 @@ export const subscriptionsTable = pgTable("subscriptions", {
     .notNull()
     .default(SubscriptionPeriod.MONTH),
   autoPaid: boolean("auto_paid").notNull().default(false),
-  category: text("category"),
+  categoryId: uuid("category_id").references(() => categoriesTable.id, {
+    onDelete: "set null",
+  }),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -132,6 +188,70 @@ export const subscriptionHistoryTable = pgTable(
       table.subscriptionId,
       table.userId,
       table.createdAt,
+    ),
+  ],
+);
+
+export const comparatorUsageTable = pgTable(
+  "comparator_usage",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    periodKey: text("period_key").notNull(),
+    comparisonsCount: integer("comparisons_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comparator_usage_user_period_idx").on(
+      table.userId,
+      table.periodKey,
+    ),
+  ],
+);
+
+export const comparatorAiUsageTable = pgTable(
+  "comparator_ai_usage",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    periodKey: text("period_key").notNull(),
+    analysesCount: integer("analyses_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comparator_ai_usage_user_period_idx").on(
+      table.userId,
+      table.periodKey,
+    ),
+  ],
+);
+
+export const comparatorAiCacheTable = pgTable(
+  "comparator_ai_cache",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    periodKey: text("period_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    model: text("model").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    response: jsonb("response").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comparator_ai_cache_unique_idx").on(
+      table.userId,
+      table.periodKey,
+      table.requestHash,
+      table.model,
+      table.promptVersion,
+    ),
+    index("comparator_ai_cache_user_period_idx").on(
+      table.userId,
+      table.periodKey,
     ),
   ],
 );

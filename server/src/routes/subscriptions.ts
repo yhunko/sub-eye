@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
 import { object, string } from "valibot";
@@ -16,42 +15,7 @@ import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscri
 import { requireUserId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
-
-const knownServiceErrorStatuses: Record<string, 403 | 404> = {
-  "Subscription not found": 404,
-  "Subscription history item not found": 404,
-  "Subscription limit reached": 403,
-};
-
-const badRequestServiceErrors = new Set<string>([
-  "Custom date is required for custom-date mode",
-  "Cannot schedule a price change for a cancelled subscription",
-  "Invalid scheduled effective date",
-  "Scheduled effective date must be in the future",
-  "Scheduled effective date must be before the cancellation date",
-  "No scheduled price change",
-]);
-
-const handleServiceError = (context: Context, error: unknown) => {
-  if (error instanceof Error) {
-    const mappedStatus = knownServiceErrorStatuses[error.message];
-    if (mappedStatus) {
-      return context.json({ error: error.message }, mappedStatus);
-    }
-    if (badRequestServiceErrors.has(error.message)) {
-      return context.json(
-        { error: "Database Error", message: error.message },
-        400,
-      );
-    }
-    return context.json(
-      { error: "Database Error", message: error.message },
-      500,
-    );
-  }
-
-  return context.json({ error: "Internal Server Error" }, 500);
-};
+import { handleServiceError } from "../utils/routeUtils";
 
 const historyIdParamSchema = object({
   id: string(),

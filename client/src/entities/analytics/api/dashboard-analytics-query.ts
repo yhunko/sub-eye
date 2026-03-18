@@ -3,6 +3,7 @@ import type { DashboardAnalyticsDto } from "shared";
 import type { QueryHook } from "@/shared/lib/react-query/types";
 import { analyticsQueryKeys } from "../model/query-keys";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 
 type DashboardAnalyticsParams = { userId: string };
 
@@ -16,9 +17,7 @@ export function dashboardAnalyticsQuery({
     queryKey: analyticsQueryKeys.dashboard({ userId }).queryKey,
     queryFn: async () => {
       const res = await apiClient.api.analytics.dashboard.$get();
-      if (!res.ok) {
-        throw new Error("Failed to fetch dashboard analytics");
-      }
+      assertOk(res);
       return res.json();
     },
     ...options,

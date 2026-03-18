@@ -1,10 +1,10 @@
 {
   "name": "sub-eye",
   "description": "A monorepo template for SubEye subscriptions management app",
-  "version": "3.2.3",
+  "version": "3.3.0-beta.12",
   "author": "Yehor Hunko",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260305.1",
+    "@cloudflare/workers-types": "^4.20260307.1",
     "@commitlint/cli": "^20.4.3",
     "@commitlint/config-conventional": "^20.4.3",
     "@semantic-release/changelog": "^6.0.3",
@@ -17,9 +17,9 @@
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "semantic-release": "^25.0.3",
-    "syncpack": "^14.0.0",
-    "turbo": "^2.8.13",
-    "wrangler": "^4.70.0"
+    "syncpack": "^14.2.0",
+    "turbo": "^2.8.14",
+    "wrangler": "^4.71.0"
   },
   "homepage": "https://github.com/yhunko/sub-eye",
   "keywords": [
@@ -42,7 +42,7 @@
     "build:server": "turbo build --filter=server",
     "deploy:dev": "turbo build && wrangler -c dev.wrangler.jsonc deploy --minify",
     "deps:sync:lint": "syncpack lint",
-    "deps:sync:up": "syncpack upgrade",
+    "deps:sync:up": "syncpack update",
     "deps:up": "bun x npm-check-updates --interactive",
     "dev": "turbo dev",
     "dev:client": "turbo dev --filter=client",
@@ -52,7 +52,7 @@
     "lint": "turbo lint",
     "postinstall": "turbo build --filter=shared --filter=server",
     "prepare": "husky",
-    "react-doctor": "bun x react-doctor@latest . --yes --project client --diff --no-ami --offline --fail-on warning --verbose",
+    "react-doctor": "bun x react-doctor@latest . --yes --project client --diff --offline --fail-on warning --verbose",
     "test": "turbo test",
     "type-check": "turbo type-check"
   },

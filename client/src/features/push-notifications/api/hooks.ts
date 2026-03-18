@@ -6,9 +6,17 @@ import {
   UseMutationOptions,
 } from "@tanstack/react-query";
 import { pushNotificationsQueryKeys } from "../model/query-keys";
+import { track } from "@/shared/lib/analytics";
 import { PushNotificationsUtils } from "../lib/push-notifications.utils";
 import { apiClient as client } from "@/shared/api/client";
 import { getSerwist } from "virtual:serwist";
+import type {
+  TelegramLinkStartResponse,
+  TelegramNotificationStatus,
+  TelegramSendReport,
+  UpdateTelegramMessageTemplate,
+  UpdateTelegramNotificationPreferences,
+} from "shared";
 
 export const usePushNotificationsSubscription = (
   options: Partial<UseQueryOptions<PushSubscription | null>> = {},
@@ -30,9 +38,11 @@ export const usePushNotificationsSubscription = (
           vapidKey &&
           !PushNotificationsUtils.areKeysEqual(existingKey, vapidKey)
         ) {
-          console.warn(
-            "VAPID key mismatch in query. Considering as not subscribed.",
-          );
+          if (import.meta.env.DEV) {
+            console.warn(
+              "VAPID key mismatch in query. Considering as not subscribed.",
+            );
+          }
 
           // We return null so the UI shows "Off".
           // The user will then toggle "On", triggering useSubscribeToPushNotifications, which handles the cleanup/resubscribe logic.
@@ -77,9 +87,11 @@ export const useSubscribeToPushNotifications = (
       if (sub) {
         const existingKey = sub.options.applicationServerKey;
         if (!PushNotificationsUtils.areKeysEqual(existingKey, vapidKey)) {
-          console.log(
-            "VAPID key changed, unsubscribing from old subscription...",
-          );
+          if (import.meta.env.DEV) {
+            console.log(
+              "VAPID key changed, unsubscribing from old subscription...",
+            );
+          }
           await sub.unsubscribe();
           sub = null;
         }
@@ -113,6 +125,7 @@ export const useSubscribeToPushNotifications = (
       }
     },
     onSuccess: async () => {
+      track("notifications_push_enabled");
       await queryClient.refetchQueries({
         queryKey: pushNotificationsQueryKeys.subscription.queryKey,
       });
@@ -147,6 +160,7 @@ export const useUnsubscribeFromPushNotifications = (
       }
     },
     onSuccess: () => {
+      track("notifications_push_disabled");
       queryClient.setQueryData(
         pushNotificationsQueryKeys.subscription.queryKey,
         null,
@@ -156,6 +170,160 @@ export const useUnsubscribeFromPushNotifications = (
       await queryClient.refetchQueries({
         queryKey: pushNotificationsQueryKeys.subscription.queryKey,
       });
+    },
+    ...options,
+  });
+};
+
+export const useTelegramNotificationStatus = (
+  options: Partial<UseQueryOptions<TelegramNotificationStatus>> = {},
+) => {
+  return useQuery({
+    queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+    queryFn: async () => {
+      const response = await client.api["telegram-notifications"].status.$get();
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch telegram notification status");
+      }
+
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+export const useStartTelegramLink = (
+  options: Partial<
+    UseMutationOptions<TelegramLinkStartResponse, Error, void>
+  > = {},
+) => {
+  return useMutation({
+    mutationFn: async () => {
+      const response =
+        await client.api["telegram-notifications"].link.start.$post();
+
+      if (!response.ok) {
+        throw new Error("Failed to start telegram linking");
+      }
+
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+export const useUpdateTelegramNotificationPreferences = (
+  options: Partial<
+    UseMutationOptions<
+      TelegramNotificationStatus,
+      Error,
+      UpdateTelegramNotificationPreferences
+    >
+  > = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload) => {
+      const response = await client.api[
+        "telegram-notifications"
+      ].preferences.$patch({
+        json: payload,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update telegram notification preferences");
+      }
+
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+      });
+    },
+    ...options,
+  });
+};
+
+export const useDisconnectTelegramNotifications = (
+  options: Partial<UseMutationOptions<void, Error, void>> = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response =
+        await client.api["telegram-notifications"].disconnect.$post();
+
+      if (!response.ok) {
+        throw new Error("Failed to disconnect telegram notifications");
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+      });
+    },
+    ...options,
+  });
+};
+
+export const useUpdateTelegramMessageTemplate = (
+  options: Partial<
+    UseMutationOptions<
+      TelegramNotificationStatus,
+      Error,
+      UpdateTelegramMessageTemplate
+    >
+  > = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload) => {
+      const response = await client.api[
+        "telegram-notifications"
+      ].template.$patch({
+        json: payload,
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          body?.error ?? "Failed to update telegram message template",
+        );
+      }
+
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: pushNotificationsQueryKeys.telegramStatus.queryKey,
+      });
+    },
+    ...options,
+  });
+};
+
+export const useSendTelegramTestNotification = (
+  options: Partial<UseMutationOptions<TelegramSendReport, Error, void>> = {},
+) => {
+  return useMutation({
+    mutationFn: async () => {
+      const response = await client.api["telegram-notifications"].test.$post();
+      const body = await response
+        .json()
+        .catch(() => ({ report: undefined as TelegramSendReport | undefined }));
+
+      if (!response.ok) {
+        throw new Error("Failed to send telegram test notification");
+      }
+
+      return body.report as TelegramSendReport;
     },
     ...options,
   });

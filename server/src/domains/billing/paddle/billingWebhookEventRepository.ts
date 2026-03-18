@@ -3,7 +3,7 @@ import { billingWebhookEventsTable } from "../../../db/schema";
 
 export class BillingWebhookEventRepository {
   static async markProcessed(
-    tx: typeof db,
+    database: typeof db,
     payload: {
       eventId: string;
       eventType: string;
@@ -17,7 +17,7 @@ export class BillingWebhookEventRepository {
       throw new Error("Invalid Paddle webhook occurredAt timestamp");
     }
 
-    const [result] = await tx
+    const [result] = await database
       .insert(billingWebhookEventsTable)
       .values({
         eventId: payload.eventId,

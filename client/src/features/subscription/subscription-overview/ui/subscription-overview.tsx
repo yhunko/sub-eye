@@ -6,6 +6,7 @@ import NiceModal from "@ebay/nice-modal-react";
 
 import { DateTimezoneUtils } from "shared";
 import { subscriptionQuery } from "@/entities/subscription";
+import { categoriesQuery } from "@/entities/category";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { useScheduledPriceChangeActions } from "../../schedule-price-change";
@@ -14,6 +15,7 @@ import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list"
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
 import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -28,12 +30,18 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { userId } = useAuth();
+  const { dateFnsFormat } = useDateFormat();
 
   const { data: subscription } = useSuspenseQuery(
     subscriptionQuery({
       params: { id: subscriptionId, userId: userId ?? "" },
     }),
   );
+
+  const { data: categories } = useSuspenseQuery(
+    categoriesQuery({ params: { userId: userId ?? "" } }),
+  );
+
   const { openScheduleDialog } = useScheduledPriceChangeActions({
     subscription,
   });
@@ -58,9 +66,23 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     return SubscriptionBillingUtils.toDisplayState(zonedDate, timezone);
   }, [subscription, isLoaded, user?.publicMetadata?.preferredTimezone]);
 
+  const category = useMemo(
+    () =>
+      subscription.categoryId
+        ? (categories?.find((c) => c.id === subscription.categoryId) ?? null)
+        : null,
+    [categories, subscription.categoryId],
+  );
+
   const viewModel = useMemo(
-    () => buildSubscriptionOverviewViewModel(subscription, displayState),
-    [displayState, subscription],
+    () =>
+      buildSubscriptionOverviewViewModel(
+        subscription,
+        displayState,
+        dateFnsFormat,
+        category,
+      ),
+    [displayState, subscription, dateFnsFormat, category],
   );
 
   const handleDeleteSuccess = async () => {

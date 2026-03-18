@@ -1,7 +1,12 @@
 import type { FC } from "react";
 import { useCallback } from "react";
 import { Button, GlowEffect, Tilt } from "@/shared/components";
-import { FREE_PLAN, PLUS_PLAN, type BillingFeatureKey } from "shared";
+import {
+  PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
+  FREE_PLAN,
+  PLUS_PLAN,
+  type BillingFeatureKey,
+} from "shared";
 import * as m from "@/i18n/messages";
 import { PlanCard } from "./plan-card";
 
@@ -9,7 +14,6 @@ type PlusPlanCardProps = {
   active: boolean;
   isActionPending: boolean;
   onAction: () => void | Promise<void>;
-  checkoutNote?: string;
 };
 
 const GLOW_COLORS = ["#33A453", "#2E9B4D", "#5CCB77", "#1F6D35"];
@@ -19,13 +23,14 @@ const PLUS_ADDITIONAL_FEATURE_LABELS: Partial<
 > = {
   notificationSchedule:
     m.settings_billing_plans_pro_features_notificationSchedule,
+  telegramMessageTemplate:
+    m.settings_billing_plans_pro_features_telegramMessageTemplate,
 };
 
 export const PlusPlanCard: FC<PlusPlanCardProps> = ({
   active,
   isActionPending,
   onAction,
-  checkoutNote,
 }) => {
   const plusCapabilityFeatures = PLUS_PLAN.features
     .filter((feature) => {
@@ -46,6 +51,12 @@ export const PlusPlanCard: FC<PlusPlanCardProps> = ({
       label: m.settings_billing_plans_pro_features_subscriptionLimitIncrease({
         free: String(FREE_PLAN.limits.maxSubscriptions),
         plus: String(PLUS_PLAN.limits.maxSubscriptions),
+      }),
+      included: true,
+    },
+    {
+      label: m.settings_billing_plans_pro_features_aiInsightsQuota({
+        limit: String(PLUS_COMPARATOR_AI_MONTHLY_LIMIT),
       }),
       included: true,
     },
@@ -86,12 +97,6 @@ export const PlusPlanCard: FC<PlusPlanCardProps> = ({
                   ? m.settings_billing_plans_manageBilling()
                   : m.settings_billing_plans_upgradePlus()}
               </Button>
-
-              {!active && checkoutNote ? (
-                <p className="text-muted-foreground text-center text-xs leading-relaxed">
-                  {checkoutNote}
-                </p>
-              ) : null}
             </div>
           }
         />

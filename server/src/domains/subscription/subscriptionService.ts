@@ -11,6 +11,7 @@ import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWo
 import { SubscriptionPriceChangeWorkflow } from "./subscriptionPriceChangeWorkflow";
 import { UserService } from "../user/userService";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
+import { CategoryRepository } from "../category/categoryRepository";
 import type {
   AddSubscriptionInput,
   SubscriptionDto,
@@ -28,6 +29,17 @@ import {
 } from "shared";
 import type { UserPreferences } from "shared";
 import { isSameDay } from "date-fns";
+import {
+  CannotScheduleCancelledError,
+  CustomDateRequiredError,
+  InvalidScheduledDateError,
+  NoScheduledPriceChangeError,
+  ScheduledDateBeforeCancellationError,
+  ScheduledDateMustBeFutureError,
+  SubscriptionCategoryNotFoundError,
+  SubscriptionLimitReachedError,
+  SubscriptionNotFoundError,
+} from "./subscriptionErrors";
 
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
@@ -36,6 +48,7 @@ type SubscriptionServiceDeps = {
   priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
   userService: typeof UserService;
   historyService: typeof SubscriptionHistoryService;
+  categoryRepository: typeof CategoryRepository;
 };
 
 type UpdateSubscriptionOptions = {
@@ -49,6 +62,7 @@ const defaultDeps: SubscriptionServiceDeps = {
   priceChangeWorkflow: SubscriptionPriceChangeWorkflow,
   userService: UserService,
   historyService: SubscriptionHistoryService,
+  categoryRepository: CategoryRepository,
 };
 
 export class SubscriptionService {
@@ -85,7 +99,7 @@ export class SubscriptionService {
     const subscription = await deps.repository.findById(db, id);
 
     if (!subscription || subscription.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
     const [reconciledSubscription] = await this.reconcileScheduledPriceChanges(
       [subscription],
@@ -109,6 +123,8 @@ export class SubscriptionService {
     payload: AddSubscriptionInput,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
+    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
+
     const [currentCount, planId] = await Promise.all([
       deps.repository.countByUserId(db, userId),
       deps.userService.getPlanId(userId),
@@ -116,7 +132,7 @@ export class SubscriptionService {
     const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
 
     if (currentCount >= maxSubscriptions) {
-      throw new Error("Subscription limit reached");
+      throw new SubscriptionLimitReachedError();
     }
 
     const created = await deps.repository.create(
@@ -155,6 +171,8 @@ export class SubscriptionService {
     options: UpdateSubscriptionOptions = {},
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
+    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
+
     const existing = await deps.repository.findById(db, id);
 
     if (!existing || existing.userId !== userId) {
@@ -313,7 +331,7 @@ export class SubscriptionService {
     }
 
     if (!this.hasScheduledPriceChange(existing)) {
-      throw new Error("No scheduled price change");
+      throw new NoScheduledPriceChangeError();
     }
 
     const { preferences, rates } = await this.getPreferencesAndRates(
@@ -366,7 +384,7 @@ export class SubscriptionService {
     }
 
     if (!this.hasScheduledPriceChange(existing)) {
-      throw new Error("No scheduled price change");
+      throw new NoScheduledPriceChangeError();
     }
 
     if (existing.priceChangeQstashMessageId) {
@@ -858,6 +876,21 @@ export class SubscriptionService {
     return { preferences, rates };
   }
 
+  private static async assertCategoryBelongsToUser(
+    userId: string,
+    categoryId: string | null | undefined,
+    deps: SubscriptionServiceDeps,
+  ): Promise<void> {
+    if (categoryId === undefined || categoryId === null) {
+      return;
+    }
+
+    const category = await deps.categoryRepository.findById(db, categoryId);
+    if (!category || category.userId !== userId) {
+      throw new SubscriptionCategoryNotFoundError();
+    }
+  }
+
   private static async logHistoryAction(
     {
       subscriptionId,
@@ -920,6 +953,10 @@ export class SubscriptionService {
         }
         return true;
       });
+    }
+
+    if (params?.categoryId) {
+      filtered = filtered.filter((dto) => dto.categoryId === params.categoryId);
     }
 
     if (search) {
@@ -1019,7 +1056,7 @@ export class SubscriptionService {
     }
 
     if (!payload.customDate) {
-      throw new Error("Custom date is required for custom-date mode");
+      throw new CustomDateRequiredError();
     }
 
     const customEffectiveAt = this.toStartOfDayInTimezone(
@@ -1102,18 +1139,16 @@ export class SubscriptionService {
     });
 
     if (status === "cancelled") {
-      throw new Error(
-        "Cannot schedule a price change for a cancelled subscription",
-      );
+      throw new CannotScheduleCancelledError();
     }
 
     const effectiveAtTime = Date.parse(effectiveAt);
     if (Number.isNaN(effectiveAtTime)) {
-      throw new Error("Invalid scheduled effective date");
+      throw new InvalidScheduledDateError();
     }
 
     if (effectiveAtTime <= Date.now()) {
-      throw new Error("Scheduled effective date must be in the future");
+      throw new ScheduledDateMustBeFutureError();
     }
 
     const cancellationTime = subscription.willBeCancelledAt
@@ -1124,9 +1159,7 @@ export class SubscriptionService {
       !Number.isNaN(cancellationTime) &&
       effectiveAtTime >= cancellationTime
     ) {
-      throw new Error(
-        "Scheduled effective date must be before the cancellation date",
-      );
+      throw new ScheduledDateBeforeCancellationError();
     }
   }
 

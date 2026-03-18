@@ -28,7 +28,7 @@ const MonthlySpendingTrendChartDesktop: FC<
           color: "var(--chart-1)",
         },
       }}
-      className="h-full w-full md:max-h-72"
+      className="h-full min-h-[18rem] w-full"
     >
       {Recharts ? (
         <Recharts.AreaChart

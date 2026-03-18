@@ -5,6 +5,7 @@ export type PlanFeature = {
 
 export type PlanLimits = {
   maxSubscriptions: number;
+  maxCategories: number | null;
 };
 
 export type Plan = {
@@ -17,6 +18,18 @@ export type PlanUsage = {
   planId: PlanId;
   features: Record<BillingFeatureKey, boolean>;
   subscriptions: { current: number; limit: number };
+  categories: { current: number; limit: number | null };
+  comparatorComparisons: MonthlyUsage;
+  aiInsights: MonthlyUsage;
+};
+
+export type MonthlyUsage = {
+  current: number;
+  limit: number | null;
+  remaining: number | null;
+  periodKey: string;
+  resetsAt: string;
+  isLimited: boolean;
 };
 
 export type BillingCheckoutResponse = {
@@ -27,6 +40,14 @@ export type BillingPortalResponse = {
   url: string;
 };
 
+export type PlansResponse = {
+  plans: Plan[];
+  quotas: {
+    free: { comparatorAiMonthly: number; comparatorMonthly: number };
+    plus: { comparatorAiMonthly: number; comparatorMonthly: number | null };
+  };
+};
+
 export type PlanId = (typeof PLAN_IDS)[number];
 export type BillingFeatureKey = (typeof BILLING_FEATURE_KEYS)[number];
 
@@ -35,7 +56,10 @@ const BILLING_FEATURE_KEYS = [
   "analytics",
   "notifications",
   "notificationSchedule",
+  "telegramMessageTemplate",
   "currency",
+  "comparator",
+  "aiInsights",
 ] as const;
 
 const PLAN_IDS = ["free", "plus"] as const;

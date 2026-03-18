@@ -3,145 +3,201 @@
 This file is the single source of truth for agent behavior in this repository.
 Tool-specific guideline files are generated mirrors.
 
-## 1) Project Scope and Architecture
+## 1) Project Overview
 
-- Monorepo workspaces:
-  - `client/`: React + Vite PWA, Feature-Sliced Design-oriented structure.
-  - `server/`: Hono API with layered backend organization.
-  - `shared/`: cross-workspace contracts, schemas, enums, and pure utilities.
-- Current import boundaries:
-  - `client -> shared`: allowed.
-  - `server -> shared`: allowed.
-  - `client -> server`: allowed only via `@server/client` alias.
-  - `client -> server/src/*`: forbidden direct imports.
+SubEye is a subscription management SaaS. Three Bun workspaces:
 
-## 2) Core Engineering Goals
+- `client/`: React 19 + Vite PWA, Feature-Sliced Design structure (`app/entities/features/widgets/shared/pages`).
+- `server/`: Hono API deployed as a **Cloudflare Worker** — serves both the API and the built client static assets from a single worker.
+- `shared/`: Environment-agnostic contracts — types, Valibot schemas, enums, constants, pure utilities.
 
-- Keep code readable, explicit, and maintainable for open source contributors.
-- Prefer small, focused changes over broad rewrites.
-- Optimize for correctness first, then performance where it matters.
-- Keep shared contracts authoritative and avoid duplication across workspaces.
-- Leave code in a better state than it was found.
+**Key external services:**
 
-## 3) Token and Context Efficiency Protocol
+- **Auth:** Clerk (JWT on every request; webhooks via Svix for `user.deleted`)
+- **Database:** Neon serverless PostgreSQL + Drizzle ORM (`server/src/db/schema.ts`)
+- **Billing:** Paddle (checkout/portal; webhooks update `billing_accounts` table)
+- **Async/Scheduled workflows:** Upstash QStash (subscription renewal notifications, price-change scheduling)
+- **AI:** Google Gemini (subscription comparison analysis; per-user monthly quota tracked in DB)
+- **Notifications:** Web Push + Telegram Bot API
 
-Agents must stay reliable and efficient with context usage:
+**Import boundaries:**
 
-- Start with the smallest relevant scope (workspace + feature/domain folder).
-- Use targeted search (`rg`, symbol lookup, specific file reads) before broad scans.
-- Expand scope only when a change crosses package boundaries (for example, `shared` contracts or `@server/client` API surface).
-- Validate assumptions against real code (imports, types, schemas, route handlers, service/repository calls) before editing.
-- Prefer minimal context for small patches; widen context only for refactors or architectural changes.
-- Avoid loading unrelated files, generated output, or build artifacts.
-- If uncertainty remains after targeted reads, inspect one layer deeper before deciding.
+- `client → shared`: allowed.
+- `server → shared`: allowed.
+- `client → server`: allowed **only** via `@server/client` alias (Hono RPC type export).
+- `client → server/src/*`: forbidden.
 
-## 4) Shared Rules for All Workspaces
+## 2) Development Commands
 
-- Keep files focused by responsibility; split large mixed-concern modules.
-- Prefer descriptive naming and explicit data flow over implicit behavior.
-- Extract repeated logic into a single authoritative implementation.
-- Avoid dead code and stale branches during refactors.
-- Add brief comments only for non-obvious logic or important invariants.
-- Do not introduce heavy dependencies without clear benefit.
-- Do not re-invent the wheel for solved problems: prefer good, maintained libraries instead of custom implementations when they provide a solid fit.
-- Installing well-maintained, widely-used libraries is allowed when it reduces complexity and long-term maintenance burden.
+```bash
+bun install            # install all workspaces
+bun run dev            # run client + server concurrently (Turbo)
+bun run dev:client     # Vite dev server only
+bun run dev:server     # Hono server only (bun --watch + tsc --watch)
+```
 
-## 5) Workspace-Specific Rules
+```bash
+bun run test                      # all workspaces
+bun --cwd client run test         # client (bun test ./src)
+bun --cwd server run test         # server (bun test ./test)
+```
+
+```bash
+# Database (Drizzle + Neon)
+bun --cwd server run db:generate  # generate migration SQL (custom)
+bun --cwd server run db:migrate   # apply pending migrations
+bun --cwd server run db:push      # push schema directly (dev only)
+```
+
+```bash
+# i18n — must compile before type-checking client
+bun --cwd client run prepare           # paraglide compile → src/shared/lib/i18n/
+bun --cwd client run machine-translate # AI-translate missing message keys
+```
+
+```bash
+# Deployment (Cloudflare Workers + Wrangler)
+bun run deploy:dev   # build with VITE_APP_ASSET_ENV=dev, then wrangler -c dev.wrangler.jsonc deploy
+```
+
+```bash
+# Telegram bot webhook helpers
+bun --cwd server run telegram:webhook:wizard  # interactive setup
+bun --cwd server run telegram:webhook:set     # register webhook URL
+```
+
+```bash
+bun run react-doctor        # audit React code quality after client/src changes
+bun run guidelines:sync     # regenerate CLAUDE.md and other mirrors from this file
+bun run guidelines:check    # verify mirrors are in sync
+```
+
+## 3) Non-Obvious Architecture Details
+
+### `@server/client` — Hono RPC type bridge
+
+`server/src/client.ts` exports the Hono app type. The Vite alias `@server/client → ../server/src/client` lets the client import `honoClient` and get full end-to-end type safety without bundling any server code.
+
+The actual API client lives at `client/src/shared/api/client.ts`. It wraps `honoClient`, auto-appends the Clerk Bearer token to every request, and is the single instance used by all query/mutation hooks.
+
+### TanStack Router — file-based routing
+
+Routes live in `client/src/pages/`. Key conventions:
+
+- `(protected)/route.tsx` — layout group (no segment in URL); `beforeLoad` checks Clerk `userId` and redirects to `/auth/sign-in/$` if missing.
+- `$id/` — dynamic segment.
+- `auth/sign-in/$.tsx` — `$` suffix = catch-all (required for Clerk's hosted UI deep links).
+- Files prefixed with `-` are ignored by the router plugin (`routeFileIgnorePrefix: "-"`).
+- Route tree is **generated** at `client/src/app/routes/routeTree.gen.ts` — never hand-edit.
+
+### i18n — Paraglide (inlang)
+
+Base locale is **Ukrainian (`uk`)**, secondary is English (`en`). Source messages: `client/messages/{locale}.json`. Compiled output goes to `client/src/shared/lib/i18n/` (generated — do not edit).
+
+The compile step (`bun --cwd client run prepare`) runs automatically before `type-check`, but must be run manually before first use or after adding new message keys.
+
+### Billing — canonical usage source
+
+`GET /api/billing/usage` (→ `BillingService.getUsage`) is the **single source of truth** for all plan usage and limit data: subscription count, comparator quota, AI quota, feature availability. On the client, `billingQueryKeys.usage` is the single query key for this data.
+
+**Do not** introduce parallel usage endpoints or separate query keys for the same metrics.
+
+### Service layer — dependency injection for testability
+
+Server services accept an optional `deps` parameter that defaults to real implementations. Tests pass mock repositories directly:
+
+```ts
+// Real call
+await SubscriptionService.getSubscriptions(userId, params);
+
+// Test call
+await SubscriptionService.getSubscriptions(userId, params, {
+  repository: { findByUserId: async () => [] } as never,
+});
+```
+
+Follow this pattern when adding new service methods.
+
+### Hono & CF Worker gotchas
+
+**`process.env` is always `undefined` at module load time in a CF Worker.** Worker bindings (secrets, vars) are only accessible per-request via `context.env`. Never read `process.env.*` at module scope or as a fallback — it will silently produce `undefined`.
+
+**Hono RPC response type inference leaks error shapes into the client success type.** Hono RPC infers the full union of all `context.json(...)` return shapes in a route handler, including error branches. If an error handler uses `ContentfulStatusCode` (which includes 2xx codes), TypeScript cannot distinguish error responses from success responses, and the union contaminates the `queryFn` return type on the client. Always cast error handler status codes to narrow error-specific literals (`400 | 403 | 404`) — never to `ContentfulStatusCode` or `StatusCode`.
+
+**Returning 204 from Hono middleware.** `ctx.text("", 204)` fails type-checking because Hono's `ContentfulStatusCode` excludes status 204 (No Content). Use `new Response("", { status: 204 })` directly instead.
+
+**Hono inline `.use()` middleware must be `async` when it can return either `next()` or a `Response`.** A synchronous function that sometimes returns `next()` (`Promise<void>`) and sometimes returns a `Response` produces a mixed return type TypeScript rejects. Declaring the function `async` unifies both branches under `Promise<void | Response>`.
+
+### Dev plan override
+
+In development, `client/src/shared/lib/billing/local-plan-override.ts` lets developers simulate a Plus plan locally by writing a value to `localStorage`. The `planUsageQuery` applies this override on top of the real API response when `import.meta.env.DEV` is true.
+
+## 4) Workspace-Specific Rules
 
 ### `client/`
 
-- Respect existing `app/entities/features/widgets/shared/pages` boundaries.
-- Keep business/domain logic out of JSX-heavy UI files when possible.
-- Use TanStack Query for server state and centralized query keys.
-- Use `NiceModal.show` for dialogs instead of mounting large modal trees inline.
-- Keep user-facing copy localizable; avoid hardcoded strings in feature UI.
-- For expensive UI paths, prefer lazy loading and update-frequency-based component splits.
+- All user-facing strings must use Paraglide messages (`import * as m from "@/i18n/messages"`). No hardcoded UI copy.
+- Use `NiceModal.show(MyDialog, props)` for dialogs. Do not mount large modal trees inline in pages/features.
+- Query keys use `@lukemorales/query-key-factory`. Add new keys in the domain's `model/query-keys.ts` file and keep them co-located with the entity. `billingQueryKeys.usage` is the canonical key for all plan usage data.
+- Mutation hooks follow the pattern in `client/src/entities/subscription/api/`: `mutationFn` calls `apiClient`, `onSuccess` invalidates relevant query keys from `subscriptionsQueryKeys`, `billingQueryKeys`, `analyticsQueryKeys` as needed.
+- TanStack Query is persisted to IndexedDB (via `idb-keyval`). Cache invalidation must be explicit and deterministic — avoid ad hoc `setQueryData` calls when invalidation is sufficient.
+- Lazy-load expensive routes and feature components; TanStack Router `autoCodeSplitting` handles route-level splitting automatically.
 
 ### `server/`
 
-- Keep layering explicit:
-  - Route/controller: HTTP boundary and request/response mapping.
-  - Service: business rules and orchestration.
-  - Repository: persistence and query concerns.
-- Validate request payloads at boundaries; never trust client input.
-- Keep auth/session/permission checks server-side.
-- Avoid unbounded queries and N+1 patterns; index for actual query patterns.
-- Keep secrets in environment variables and never leak them to responses/logs.
+- Layering is strict: **Route** (HTTP boundary, validators) → **Service** (business rules, orchestration) → **Repository** (DB queries only).
+- Validate all request payloads at the route boundary using `@hono/valibot-validator`. Never trust client input inside services.
+- Auth: call `protect` middleware on every authenticated route. It extracts `userId` from the Clerk JWT; never re-derive the user identity inside services.
+- Webhook routes (`/api/webhooks/**`) are excluded from auth middleware. Verify Svix (Clerk) or Paddle signatures in their respective middleware before processing.
+- Scheduled workflows (QStash) are triggered from services — never from routes directly. Keep `qstashMessageId` on subscriptions to allow workflow cancellation.
+- Avoid N+1 queries. Repositories should batch-load related data when a service needs collections.
 
 ### `shared/`
 
-- Keep modules environment-agnostic and side-effect free.
-- Restrict to contracts, schemas, types, enums, constants, and pure utilities.
-- Do not import runtime-only client/server internals into `shared`.
-- Keep exports clean via package root to prevent deep-coupling imports.
+- No runtime-only client or server imports. Dependencies are limited to `valibot` and `date-fns`.
+- Export everything through the package root (`shared/src/index.ts`). Deep imports from consumers are forbidden.
+- Valibot schemas are the source of truth for input validation shapes. Both client forms and server validators derive from them.
 
-## 6) Naming and File Conventions
+## 5) Naming and File Conventions
 
-- Frontend files in `client/src`: `kebab-case`.
-- Backend files in `server/src`:
-  - Keep established mixed style where it already exists.
-  - Forward rule: use `camelCase` for domain/service/repository/utils modules.
-  - Forward rule: use `kebab-case` for multi-word route resource files when it matches URL/resource naming (for example `push-notifications.ts`).
-  - Do not perform mass renames only for style normalization.
-- Database tables/columns/migration SQL identifiers: `snake_case`.
-- TypeScript identifiers: `camelCase`; types/classes/components: `PascalCase`.
+- `client/src` files: `kebab-case`.
+- `server/src` files:
+  - `camelCase` for domain/service/repository/utils modules.
+  - `kebab-case` for route resource files matching URL naming (e.g., `push-notifications.ts`).
+  - Do not mass-rename for style alone.
+- Database identifiers: `snake_case`.
+- TypeScript: `camelCase` for values, `PascalCase` for types/classes/components.
 
-## 7) Security and Privacy Baseline
+## 6) Generated Files — Do Not Edit
 
-- Validate and sanitize external input.
-- Treat auth and authorization as server responsibilities.
-- Never commit or expose secrets in client bundles.
-- Avoid logging personally sensitive user data.
-- Minimize data exposure in DTOs and API responses.
+| File / Path                                                       | Generator                                  |
+| ----------------------------------------------------------------- | ------------------------------------------ |
+| `client/src/app/routes/routeTree.gen.ts`                          | TanStack Router Vite plugin                |
+| `client/src/shared/lib/i18n/**`                                   | Paraglide (`bun --cwd client run prepare`) |
+| `CLAUDE.md`, `.agent/rules/guidelines.md`, `.junie/guidelines.md` | `bun run guidelines:sync`                  |
+| `**/dist/**`, `**/.turbo/**`                                      | Build tools                                |
 
-## 8) Performance and Resilience Baseline
+Edit source inputs and rerun the appropriate tool instead of hand-editing these.
 
-- Keep render paths lightweight and avoid avoidable re-renders.
-- Use memoization intentionally for expensive calculations and stable boundaries.
-- Keep initial PWA payload small through route/component code-splitting.
-- Handle loading, empty, error, and offline states in user-facing async flows.
-- Prefer deterministic caching/query invalidation behavior over ad hoc state mutations.
+## 7) Quality Gates by Change Scope
 
-## 9) Generated and Build Artifacts (Not Source of Truth)
+- **Full monorepo / cross-boundary:** `bun run lint` → `bun run type-check` → `bun run test`
+- **Client-focused:** `bun --cwd client run type-check` → `bun --cwd client run test`; add `bun run react-doctor` if React source changed.
+- **Server-focused:** `bun --cwd server run type-check` → `bun --cwd server run test`
+- **Shared-focused:** `bun --cwd shared run type-check` → `bun --cwd shared run build`
 
-Do not treat these as authoritative implementation files:
+Run the narrowest relevant checks first, then escalate for cross-workspace impact.
 
-- `**/dist/**`
-- `**/node_modules/**`
-- `**/.turbo/**`
-- `client/src/app/routes/routeTree.gen.ts` (TanStack generated)
-- `client/src/shared/lib/i18n/**` generated outputs (runtime/messages registry artifacts)
-
-When required, edit source inputs and rerun the appropriate generator/build tool instead of hand-editing generated files.
-
-## 10) Quality Gates by Change Scope
-
-- Full monorepo or cross-boundary changes:
-  - `bun run lint`
-  - `bun run type-check`
-  - `bun run test`
-- Client-focused changes:
-  - `bun --cwd client run type-check`
-  - `bun --cwd client run test`
-  - If React source changed in `client/src`: `bun run react-doctor`
-- Server-focused changes:
-  - `bun --cwd server run type-check`
-  - `bun --cwd server run test`
-- Shared-focused changes:
-  - `bun --cwd shared run type-check`
-  - `bun --cwd shared run build`
-
-Run the narrowest relevant checks first, then escalate to monorepo checks for cross-workspace impact.
-
-## 11) Agent Workflow Defaults
+## 8) Agent Workflow Defaults
 
 - Preserve backward compatibility unless the task explicitly allows breaking changes.
-- Prefer minimal diffs with high signal-to-noise.
-- Keep implementation and naming consistent with nearby code.
-- Document new non-obvious patterns briefly in code or docs.
-- If a task touches contracts, ensure both producer and consumer sides remain aligned.
+- Prefer minimal diffs. Keep implementation and naming consistent with nearby code.
+- If a task touches `shared/` contracts, verify both producer (server) and consumer (client) sides remain aligned.
+- When adding a new billing/usage metric, add it to `BillingService.getUsage` and surface it through `billingQueryKeys.usage` — do not create a parallel endpoint.
+- Start with the smallest relevant scope (workspace + feature/domain folder). Expand scope only when a change crosses package boundaries.
+- Validate assumptions against real code (imports, types, schemas, route handlers, service/repository calls) before editing.
 
-## 12) Guideline Mirror Policy
+## 9) Guideline Mirror Policy
 
 - Canonical source: `AGENTS.md` (this file).
 - Generated mirrors:

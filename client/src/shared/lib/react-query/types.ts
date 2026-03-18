@@ -18,5 +18,4 @@ export type MutationHook<TData, TParameters, TContext = never> = {
     UseMutationOptions<TData, Error, TParameters, TContext>,
     "mutationKey" | "mutationFn" | "onSuccess"
   >;
-  hideToast?: boolean;
 };

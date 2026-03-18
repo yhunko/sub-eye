@@ -29,22 +29,22 @@ export const svixVerification = <
   secretEnvKey: keyof TEnv & string,
   variableKey = "webhookEvent",
 ): MiddlewareHandler => {
-  return async (c: Context, next: Next) => {
-    const signingSecret = (c.env as TEnv)[secretEnvKey];
+  return async (context: Context, next: Next) => {
+    const signingSecret = (context.env as TEnv)[secretEnvKey];
 
     if (!signingSecret) {
       throw new Error(`Missing ${secretEnvKey} – add it to your .env file`);
     }
 
-    const svixId = c.req.header("svix-id");
-    const svixTimestamp = c.req.header("svix-timestamp");
-    const svixSignature = c.req.header("svix-signature");
+    const svixId = context.req.header("svix-id");
+    const svixTimestamp = context.req.header("svix-timestamp");
+    const svixSignature = context.req.header("svix-signature");
 
     if (!svixId || !svixTimestamp || !svixSignature) {
-      return c.text("Error: Missing Svix headers", 400);
+      return context.text("Error: Missing Svix headers", 400);
     }
 
-    const body = await c.req.text();
+    const body = await context.req.text();
 
     try {
       const event = new Webhook(signingSecret).verify(body, {
@@ -53,10 +53,10 @@ export const svixVerification = <
         "svix-signature": svixSignature,
       }) as SvixWebhookEvent;
 
-      c.set(variableKey, event);
-    } catch (err) {
-      console.error(`[Webhook] Verification failed (${secretEnvKey}):`, err);
-      return c.text("Error: Verification error", 400);
+      context.set(variableKey, event);
+    } catch (error) {
+      console.error(`[Webhook] Verification failed (${secretEnvKey}):`, error);
+      return context.text("Error: Verification error", 400);
     }
 
     await next();

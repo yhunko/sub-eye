@@ -11,7 +11,7 @@
     "drizzle-orm": "^0.45.1",
     "hono": "^4.12.5",
     "shared": "workspace:*",
-    "svix": "^1.86.0",
+    "svix": "^1.87.0",
     "valibot": "^1.2.0",
     "web-push": "^3.6.7"
   },
@@ -28,6 +28,12 @@
     "db:push": "drizzle-kit push",
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "qstash:dev": "npx @upstash/qstash-cli dev",
+    "telegram:webhook": "bun ./scripts/telegram-webhook.mjs",
+    "telegram:webhook:info": "bun ./scripts/telegram-webhook.mjs info",
+    "telegram:webhook:set": "bun ./scripts/telegram-webhook.mjs set",
+    "telegram:webhook:delete": "bun ./scripts/telegram-webhook.mjs delete",
+    "telegram:webhook:secret": "bun ./scripts/telegram-webhook.mjs secret",
+    "telegram:webhook:wizard": "bun ./scripts/telegram-webhook.mjs wizard",
     "test": "bun test ./test",
     "type-check": "tsc --noEmit --pretty"
   },

@@ -1,5 +1,6 @@
 import * as m from "@/i18n/messages";
-import type { SubscriptionDto } from "shared";
+import { format } from "date-fns";
+import type { CategoryDto, SubscriptionDto } from "shared";
 import type { BillDisplayState } from "../../billing/lib/subscription-billing-utils";
 
 type SubscriptionOverviewSummaryRow = {
@@ -26,26 +27,38 @@ type SubscriptionOverviewPreviousPaymentRow = {
   value: string;
 };
 
+type SubscriptionOverviewCategoryRow = {
+  key: "category";
+  kind: "category";
+  label: string;
+  category: CategoryDto;
+};
+
 export type SubscriptionOverviewMetaRow =
   | SubscriptionOverviewSummaryRow
   | SubscriptionOverviewPeriodRow
-  | SubscriptionOverviewPreviousPaymentRow;
+  | SubscriptionOverviewPreviousPaymentRow
+  | SubscriptionOverviewCategoryRow;
 
 export type SubscriptionOverviewViewModel = {
   metaRows: SubscriptionOverviewMetaRow[];
 };
 
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
+function formatDate(date: string, dateFnsFormat: string) {
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+
+  return format(parsed, dateFnsFormat);
 }
 
 export function buildSubscriptionOverviewViewModel(
   subscription: SubscriptionDto,
   displayState: BillDisplayState | null,
+  dateFnsFormat: string,
+  category?: CategoryDto | null,
 ): SubscriptionOverviewViewModel {
   const summaryLabel =
     subscription.status === "cancelled"
@@ -85,7 +98,16 @@ export function buildSubscriptionOverviewViewModel(
       key: "previousPayment",
       kind: "previousPayment",
       label: m.subscription_overview_previousPayment(),
-      value: formatDate(subscription.lastPaymentDate),
+      value: formatDate(subscription.lastPaymentDate, dateFnsFormat),
+    });
+  }
+
+  if (category) {
+    metaRows.push({
+      key: "category",
+      kind: "category",
+      label: m.form_basicInfo_category_label(),
+      category,
     });
   }
 

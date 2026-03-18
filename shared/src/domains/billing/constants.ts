@@ -17,13 +17,17 @@ export const FREE_PLAN: Plan = {
   id: "free",
   limits: {
     maxSubscriptions: 20,
+    maxCategories: 20,
   },
   features: [
     { key: "subscriptions", included: true },
     { key: "analytics", included: true },
     { key: "notifications", included: true },
     { key: "notificationSchedule", included: false },
+    { key: "telegramMessageTemplate", included: false },
     { key: "currency", included: true },
+    { key: "comparator", included: true },
+    { key: "aiInsights", included: true },
   ],
 };
 
@@ -31,13 +35,17 @@ export const PLUS_PLAN: Plan = {
   id: "plus",
   limits: {
     maxSubscriptions: 50,
+    maxCategories: null,
   },
   features: [
     { key: "subscriptions", included: true },
     { key: "analytics", included: true },
     { key: "notifications", included: true },
     { key: "notificationSchedule", included: true },
+    { key: "telegramMessageTemplate", included: true },
     { key: "currency", included: true },
+    { key: "comparator", included: true },
+    { key: "aiInsights", included: true },
   ],
 };
 

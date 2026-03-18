@@ -25,7 +25,7 @@ export class SubscriptionMapper {
       period: subscription.period,
       paymentDate,
       autoPaid: subscription.autoPaid,
-      category: subscription.category ?? null,
+      categoryId: subscription.categoryId ?? null,
       notes: subscription.notes ?? null,
       createdAt: this.normalizeDate(subscription.createdAt),
       updatedAt: this.normalizeDate(subscription.updatedAt),

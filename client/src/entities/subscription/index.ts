@@ -16,3 +16,4 @@ export { subscriptionsQueryParsers } from "./model/query-parsers";
 export { SubscriptionsSearch } from "./ui/subscriptions-search";
 export { SubscriptionsFilter } from "./ui/subscriptions-filter";
 export { SubscriptionsFilterDrawer } from "./ui/subscriptions-filter-drawer";
+export { CategoryFilterChips } from "./ui/category-filter-chips";

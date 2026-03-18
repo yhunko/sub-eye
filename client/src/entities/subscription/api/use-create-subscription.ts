@@ -2,9 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MutationHook } from "@/shared/lib/react-query/types";
 import type { AddSubscriptionInput, SubscriptionDto } from "shared";
 import { apiClient } from "@/shared/api/client";
+import { assertOk } from "@/shared/api/api-error";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 import { analyticsQueryKeys } from "../../analytics";
 import { billingQueryKeys } from "@/entities/billing";
+import { track } from "@/shared/lib/analytics";
 
 export const useCreateSubscription = ({
   options,
@@ -16,12 +18,14 @@ export const useCreateSubscription = ({
       const res = await apiClient.api.subscriptions.$post({
         json: payload,
       });
-      if (!res.ok) {
-        throw new Error("Failed to create subscription");
-      }
+      assertOk(res);
       return res.json();
     },
-    onSuccess() {
+    onSuccess(_data, variables) {
+      track("subscription_created", {
+        billing_period: variables.period ?? "month",
+        currency: variables.currency,
+      });
       void queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
       });

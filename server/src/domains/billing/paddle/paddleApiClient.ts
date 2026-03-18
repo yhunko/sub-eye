@@ -35,21 +35,21 @@ export class PaddleApiClient {
       per_page: "200",
     });
 
-    const res = await this.request<PaddleApiResponse<PaddlePrice[]>>(
+    const response = await this.request<PaddleApiResponse<PaddlePrice[]>>(
       `/prices?${query.toString()}`,
       {
         method: "GET",
       },
     );
 
-    return res.data;
+    return response.data;
   }
 
   static async createCustomer(input: {
     email: string;
     name?: string;
   }): Promise<PaddleCustomer> {
-    const res = await this.request<PaddleApiResponse<PaddleCustomer>>(
+    const response = await this.request<PaddleApiResponse<PaddleCustomer>>(
       "/customers",
       {
         method: "POST",
@@ -60,7 +60,7 @@ export class PaddleApiClient {
       },
     );
 
-    return res.data;
+    return response.data;
   }
 
   static async createTransaction(input: {
@@ -91,7 +91,7 @@ export class PaddleApiClient {
       body.customer_id = input.customerId;
     }
 
-    const res = await this.request<PaddleApiResponse<PaddleTransaction>>(
+    const response = await this.request<PaddleApiResponse<PaddleTransaction>>(
       "/transactions",
       {
         method: "POST",
@@ -99,20 +99,20 @@ export class PaddleApiClient {
       },
     );
 
-    return res.data;
+    return response.data;
   }
 
   static async createCustomerPortalSession(
     customerId: string,
   ): Promise<PaddlePortalSession> {
-    const res = await this.request<PaddleApiResponse<PaddlePortalSession>>(
+    const response = await this.request<PaddleApiResponse<PaddlePortalSession>>(
       `/customers/${customerId}/portal-sessions`,
       {
         method: "POST",
       },
     );
 
-    return res.data;
+    return response.data;
   }
 
   private static getApiBaseUrl(): string {

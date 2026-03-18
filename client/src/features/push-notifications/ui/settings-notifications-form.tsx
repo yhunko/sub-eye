@@ -1,6 +1,7 @@
 import { NotificationsButton } from "./notifications-button";
 import { NotificationsStatus } from "./notifications-status";
 import { NotificationTimeSelect } from "./notification-time-select";
+import { TelegramNotificationsCard } from "./telegram-notifications-card";
 import { Button } from "@/shared/components/ui/button";
 import { usePushNotificationsSubscription } from "../api/hooks";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { apiClient as client } from "../../../shared/api/client";
 import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
 import { useAuth } from "@clerk/clerk-react";
 import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 
 export const SettingsNotificationsForm = () => {
   const { userId } = useAuth();
@@ -26,6 +28,7 @@ export const SettingsNotificationsForm = () => {
       <div className="space-y-4">
         <NotificationsStatus />
         <NotificationsButton />
+        <TelegramNotificationsCard />
       </div>
 
       <div className="flex flex-col gap-4">
@@ -33,6 +36,7 @@ export const SettingsNotificationsForm = () => {
           <PlanFeatureLockCard
             title={m.settings_notifications_schedule_lockTitle()}
             description={m.settings_notifications_schedule_lockDescription()}
+            analyticsSource="notification_schedule"
           />
         )}
         <NotificationTimeSelect
@@ -50,10 +54,7 @@ const TestNotificationButton = () => {
   const { data: subscription } = usePushNotificationsSubscription();
   const { mutate: sendTest, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await client.api["push-notifications"].test.$post();
-      if (!res.ok) {
-        throw new Error("Failed to send test push notification");
-      }
+      await client.api["push-notifications"].test.$post();
     },
   });
 
@@ -64,6 +65,7 @@ const TestNotificationButton = () => {
   const handleTest = () => {
     sendTest(undefined, {
       onSuccess: () => {
+        track("notifications_test_sent", { channel: "push" });
         toast.success("Test notification sent!");
       },
       onError: () => {
