@@ -40,6 +40,14 @@ export type BillingPortalResponse = {
   url: string;
 };
 
+export type PlansResponse = {
+  plans: Plan[];
+  quotas: {
+    free: { comparatorAiMonthly: number; comparatorMonthly: number };
+    plus: { comparatorAiMonthly: number; comparatorMonthly: number | null };
+  };
+};
+
 export type PlanId = (typeof PLAN_IDS)[number];
 export type BillingFeatureKey = (typeof BILLING_FEATURE_KEYS)[number];
 

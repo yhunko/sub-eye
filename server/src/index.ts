@@ -32,6 +32,7 @@ type Bindings = {
   TELEGRAM_WEBHOOK_SECRET_TOKEN: string;
   CLIENT_ORIGIN: string;
   POSTHOG_KEY: string;
+  PLANS_API_KEY: string;
 };
 
 const corsOrigins = [process.env.CLIENT_ORIGIN];
