@@ -29,6 +29,7 @@ import {
   updateSuggestionName,
 } from "../model/suggestions-state";
 import { useCategoryAiWorkbench } from "../model/category-ai-workbench-context";
+import { useLastGeneratedLabel } from "../model/use-last-generated-label";
 import { CategoryAiSuggestionItem } from "./category-ai-suggestion-item";
 
 export const CategoryAiGenerateFlow = () => {
@@ -53,6 +54,7 @@ export const CategoryAiGenerateFlow = () => {
 
   const suggestMutation = useSuggestCategoriesAi();
   const applyMutation = useApplyCategoriesAi();
+  const lastGeneratedLabel = useLastGeneratedLabel(lastGeneratedAt);
 
   const aiQuota = usage?.aiInsights;
   const quotaForBadge = generatedQuota ?? aiQuota ?? null;
@@ -147,10 +149,10 @@ export const CategoryAiGenerateFlow = () => {
             <CardTitle>{m.categories_ai_title()}</CardTitle>
             <CardDescription>{m.categories_ai_description()}</CardDescription>
           </div>
-          {lastGeneratedAt && (
+          {lastGeneratedLabel && (
             <div className="text-muted-foreground text-xs">
               {m.categories_ai_last_generated({
-                date: new Date(lastGeneratedAt).toLocaleString(),
+                date: lastGeneratedLabel,
               })}
             </div>
           )}

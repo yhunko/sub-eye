@@ -15,6 +15,7 @@ import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list"
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
 import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -29,6 +30,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { userId } = useAuth();
+  const { dateFnsFormat } = useDateFormat();
 
   const { data: subscription } = useSuspenseQuery(
     subscriptionQuery({
@@ -74,8 +76,13 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
 
   const viewModel = useMemo(
     () =>
-      buildSubscriptionOverviewViewModel(subscription, displayState, category),
-    [displayState, subscription, category],
+      buildSubscriptionOverviewViewModel(
+        subscription,
+        displayState,
+        dateFnsFormat,
+        category,
+      ),
+    [displayState, subscription, dateFnsFormat, category],
   );
 
   const handleDeleteSuccess = async () => {

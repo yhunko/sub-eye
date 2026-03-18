@@ -31,6 +31,7 @@ import {
   toggleOptimizationMergeEnabled,
   toggleOptimizationReassignmentEnabled,
 } from "../model/optimization-state";
+import { useLastGeneratedLabel } from "../model/use-last-generated-label";
 import { CategoryAiOptimizationReassignmentItem } from "./category-ai-optimization-reassignment-item";
 import { CategoryAiOptimizationMergeItem } from "./category-ai-optimization-merge-item";
 
@@ -58,6 +59,7 @@ export const CategoryAiOptimizeFlow = () => {
 
   const suggestMutation = useSuggestCategoriesAiOptimization();
   const applyMutation = useApplyCategoriesAiOptimization();
+  const lastGeneratedLabel = useLastGeneratedLabel(lastGeneratedAt);
 
   const aiQuota = usage?.aiInsights;
   const quotaForBadge = generatedQuota ?? aiQuota ?? null;
@@ -161,10 +163,10 @@ export const CategoryAiOptimizeFlow = () => {
                 count: String(lastSourceCount ?? subscriptions.length),
               })}
             </Badge>
-            {lastGeneratedAt && (
+            {lastGeneratedLabel && (
               <span className="text-muted-foreground">
                 {m.categories_ai_last_generated({
-                  date: new Date(lastGeneratedAt).toLocaleString(),
+                  date: lastGeneratedLabel,
                 })}
               </span>
             )}
