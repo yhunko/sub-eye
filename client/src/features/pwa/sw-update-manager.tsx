@@ -12,6 +12,7 @@ export function SwUpdateManager() {
 
     let waitingHandler: (() => void) | undefined;
     let controllingHandler: (() => void) | undefined;
+    let updateInitiated = false;
 
     const loadSerwist = async () => {
       if (!("serviceWorker" in navigator)) return;
@@ -27,6 +28,7 @@ export function SwUpdateManager() {
           action: {
             label: "Update Now",
             onClick: () => {
+              updateInitiated = true;
               serwist.messageSkipWaiting();
             },
           },
@@ -35,7 +37,9 @@ export function SwUpdateManager() {
       };
 
       controllingHandler = () => {
-        window.location.reload();
+        if (updateInitiated) {
+          window.location.reload();
+        }
       };
 
       serwist.addEventListener("waiting", waitingHandler);
