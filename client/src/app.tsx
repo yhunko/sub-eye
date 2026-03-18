@@ -3,7 +3,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./app/router";
 import { queryClient } from "./app/providers/react-query";
 import { Toaster } from "@/shared/components";
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy, useMemo, useState, useEffect } from "react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { SplashScreen } from "./shared/ui";
 import { SwUpdateManager } from "./features/pwa/sw-update-manager";
@@ -22,6 +22,13 @@ export function App() {
   const isRestoring = useIsRestoring();
   const shouldLoadDevPlanSwitcher =
     DevPlanSwitcher && isLocalPlanSwitcherEnabled();
+  const [routerReady, setRouterReady] = useState(false);
+
+  useEffect(() => {
+    return router.subscribe("onResolved", () => {
+      setRouterReady(true);
+    });
+  }, []);
 
   const routerContext = useMemo(
     () => ({
@@ -38,7 +45,7 @@ export function App() {
   return (
     <>
       <RouterProvider router={router} context={routerContext} />
-      <SwUpdateManager />
+      {routerReady && <SwUpdateManager />}
       <Toaster position="top-center" richColors />
       {shouldLoadDevPlanSwitcher ? (
         <Suspense fallback={null}>
