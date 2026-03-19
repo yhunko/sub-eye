@@ -13,6 +13,7 @@ import {
 import * as m from "@/i18n/messages";
 import { SubscriptionSortField, SortDirection, StatusFilter } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
+import { statusFilterOptions } from "../model/status-filter-options";
 
 interface SubscriptionsFilterDialogProps {
   sortBy: SubscriptionSortField;
@@ -25,31 +26,33 @@ interface SubscriptionsFilterDialogProps {
   onStatusChange: (status: StatusFilter) => void;
 }
 
+type SubscriptionsFilterDialogState = {
+  status: StatusFilter;
+  sortBy: SubscriptionSortField;
+  direction: SortDirection;
+};
+
 const sortOptions: { label: () => string; value: SubscriptionSortField }[] = [
   { label: m.subscription_filter_sort_renewal, value: "nextPaymentDate" },
   { label: m.subscription_filter_sort_name, value: "name" },
   { label: m.subscription_filter_sort_cost, value: "cost" },
 ];
 
-const statusOptions: { label: () => string; value: StatusFilter }[] = [
-  { label: m.subscription_filter_status_active, value: "active" },
-  {
-    label: m.subscription_status_cancelledButActive,
-    value: "cancelledButActive",
-  },
-  { label: m.subscription_status_cancelled, value: "cancelled" },
-  { label: m.subscription_filter_status_all, value: "all" },
-];
-
 export const SubscriptionsFilterDialog =
   NiceModal.create<SubscriptionsFilterDialogProps>(
     ({ sortBy, direction, status, onSortChange, onStatusChange }) => {
       const modal = useModal();
-      const [localStatus, setLocalStatus] = useState<StatusFilter>(status);
-      const [localSortBy, setLocalSortBy] =
-        useState<SubscriptionSortField>(sortBy);
-      const [localDirection, setLocalDirection] =
-        useState<SortDirection>(direction);
+      const [localFilters, setLocalFilters] =
+        useState<SubscriptionsFilterDialogState>({
+          status,
+          sortBy,
+          direction,
+        });
+      const {
+        status: localStatus,
+        sortBy: localSortBy,
+        direction: localDirection,
+      } = localFilters;
 
       const closeModal = useCallback(async () => {
         await modal.hide();
@@ -58,9 +61,11 @@ export const SubscriptionsFilterDialog =
 
       useEffect(() => {
         if (modal.visible) {
-          setLocalStatus(status);
-          setLocalSortBy(sortBy);
-          setLocalDirection(direction);
+          setLocalFilters({
+            status,
+            sortBy,
+            direction,
+          });
         }
       }, [direction, modal.visible, sortBy, status]);
 
@@ -71,13 +76,20 @@ export const SubscriptionsFilterDialog =
       };
 
       const handleSortSelect = (field: SubscriptionSortField) => {
-        if (localSortBy === field) {
-          setLocalDirection(localDirection === "asc" ? "desc" : "asc");
-          return;
-        }
+        setLocalFilters((prev) => {
+          if (prev.sortBy === field) {
+            return {
+              ...prev,
+              direction: prev.direction === "asc" ? "desc" : "asc",
+            };
+          }
 
-        setLocalSortBy(field);
-        setLocalDirection("desc");
+          return {
+            ...prev,
+            sortBy: field,
+            direction: "desc",
+          };
+        });
       };
 
       return (
@@ -103,14 +115,19 @@ export const SubscriptionsFilterDialog =
                   {m.subscription_filter_status_label()}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {statusOptions.map((option) => (
+                  {statusFilterOptions.map((option) => (
                     <Button
                       key={option.value}
                       variant={
                         localStatus === option.value ? "default" : "outline"
                       }
                       size="sm"
-                      onClick={() => setLocalStatus(option.value)}
+                      onClick={() =>
+                        setLocalFilters((prev) => ({
+                          ...prev,
+                          status: option.value,
+                        }))
+                      }
                       className="h-8 rounded-full px-3 text-xs"
                     >
                       {localStatus === option.value && (
