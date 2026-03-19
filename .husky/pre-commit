@@ -10,7 +10,7 @@ echo "🎨 Running lint-staged (ESLint + Prettier)..."
 bunx lint-staged
 
 echo "🔎 Running lint across the repo..."
-bun run lint
+bun run lint --output-logs=errors-only
 
 echo "🔎 Running type checks across the repo..."
 bun run type-check

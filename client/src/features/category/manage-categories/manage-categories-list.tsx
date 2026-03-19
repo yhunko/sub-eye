@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import NiceModal from "@ebay/nice-modal-react";
 import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { categoriesQuery, useCreateCategory } from "@/entities/category";
+import { categoriesQuery } from "@/entities/category";
 import { isAtLimit, planUsageQuery } from "@/entities/billing";
 import {
   Empty,
@@ -19,10 +19,7 @@ import { Button } from "@/shared/components/ui/button";
 import { CategoryListItem } from "./ui/category-list-item";
 import { CategoryLimitAlert } from "./ui/category-limit-alert";
 import { CategorySelectionToolbar } from "./ui/category-selection-toolbar";
-import { CategoryForm } from "./ui/category-form";
-import type { CreateCategoryInput } from "shared";
 import * as m from "@/i18n/messages";
-import { toast } from "sonner";
 import {
   clearCategorySelection,
   pruneCategorySelection,
@@ -33,17 +30,9 @@ import {
 
 type ManageCategoriesListProps = {
   from?: string;
-  showForm: boolean;
-  onFormOpen: () => void;
-  onFormClose: () => void;
 };
 
-export const ManageCategoriesList = ({
-  from,
-  showForm,
-  onFormOpen,
-  onFormClose,
-}: ManageCategoriesListProps) => {
+export const ManageCategoriesList = ({ from }: ManageCategoriesListProps) => {
   const { userId } = useAuth();
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(
     () => clearCategorySelection(),
@@ -71,22 +60,6 @@ export const ManageCategoriesList = ({
   const selectedCount = selectedCategoryIds.size;
   const showBulkToolbar = shouldShowBulkDeleteToolbar(selectedCount);
 
-  const { mutate: createCategory, isPending: isCreating } = useCreateCategory({
-    source: "settings",
-  });
-
-  const handleCreate = (data: CreateCategoryInput) => {
-    createCategory(data, {
-      onSuccess: () => {
-        toast.success(m.messages_added());
-        onFormClose();
-      },
-      onError: () => {
-        toast.error(m.messages_error());
-      },
-    });
-  };
-
   useEffect(() => {
     setSelectedCategoryIds((previousSelection) => {
       const nextSelection = pruneCategorySelection(
@@ -103,6 +76,11 @@ export const ManageCategoriesList = ({
       return nextSelection;
     });
   }, [categoryIds]);
+
+  const handleOpenCreateDialog = useCallback(async () => {
+    const { EditCategoryDialog } = await import("./ui/edit-category-dialog");
+    void NiceModal.show(EditCategoryDialog, {});
+  }, []);
 
   const handleCategorySelectionChange = useCallback(
     (categoryId: string, checked: boolean) => {
@@ -159,7 +137,7 @@ export const ManageCategoriesList = ({
         />
       )}
 
-      {categories.length === 0 && !showForm && (
+      {categories.length === 0 && (
         <Empty className="bg-muted/20 gap-5 border-dashed py-10">
           <EmptyHeader>
             <EmptyMedia variant="icon" className="bg-cyan-500/10 text-cyan-500">
@@ -181,7 +159,7 @@ export const ManageCategoriesList = ({
                 type="button"
                 variant="outline"
                 className="flex-1"
-                onClick={onFormOpen}
+                onClick={() => void handleOpenCreateDialog()}
               >
                 {m.categories_action_add()}
               </Button>
@@ -211,14 +189,6 @@ export const ManageCategoriesList = ({
           />
         ))}
       </div>
-
-      {showForm && (
-        <CategoryForm
-          onSubmit={handleCreate}
-          isPending={isCreating}
-          submitLabel={m.categories_action_add()}
-        />
-      )}
     </div>
   );
 };
