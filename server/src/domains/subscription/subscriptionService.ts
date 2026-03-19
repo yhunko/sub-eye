@@ -938,18 +938,15 @@ export class SubscriptionService {
     const search = params?.search?.trim().toLowerCase();
     const sortBy = params?.sortBy ?? "nextPaymentDate";
     const direction = params?.direction ?? "asc";
-    const status = params?.status ?? "active"; // Default to active
+    const status = params?.status ?? "active";
 
     let filtered = dtos;
 
     if (status !== "all") {
       filtered = filtered.filter((dto) => {
-        if (status === "active") return dto.status === "active";
-        if (status === "cancelledButActive") {
-          return dto.status === "cancelledButActive";
-        }
+        if (status === "active") return this.isActiveFilterMatch(dto.status);
         if (status === "cancelled") {
-          return this.isCancelledFilterMatch(dto.status);
+          return dto.status === "cancelled";
         }
         return true;
       });
@@ -985,10 +982,10 @@ export class SubscriptionService {
     });
   }
 
-  private static isCancelledFilterMatch(
+  private static isActiveFilterMatch(
     status: SubscriptionLifecycleStatus,
   ): boolean {
-    return status === "cancelled";
+    return status === "active" || status === "cancelledButActive";
   }
 
   private static normalizeTimestamp(
