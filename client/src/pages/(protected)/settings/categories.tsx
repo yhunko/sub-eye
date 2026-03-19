@@ -1,4 +1,5 @@
-import { useState } from "react";
+import NiceModal from "@ebay/nice-modal-react";
+import { useCallback } from "react";
 import {
   createFileRoute,
   Link,
@@ -28,7 +29,12 @@ export const Route = createFileRoute("/(protected)/settings/categories")({
 function SettingsCategoriesPage() {
   const { from } = Route.useSearch();
   const { pathname } = useLocation();
-  const [showForm, setShowForm] = useState(false);
+
+  const handleOpenCreateDialog = useCallback(async () => {
+    const { EditCategoryDialog } =
+      await import("@/features/category/manage-categories/ui/edit-category-dialog");
+    void NiceModal.show(EditCategoryDialog, {});
+  }, []);
 
   if (pathname === "/settings/categories/generate") {
     return <Outlet />;
@@ -56,7 +62,7 @@ function SettingsCategoriesPage() {
             type="button"
             size="icon-lg"
             className="rounded-full backdrop-blur-md"
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => void handleOpenCreateDialog()}
             aria-label={m.categories_action_add()}
           >
             <Plus className="size-5" />
@@ -73,12 +79,7 @@ function SettingsCategoriesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ManageCategoriesList
-              from={from}
-              showForm={showForm}
-              onFormOpen={() => setShowForm(true)}
-              onFormClose={() => setShowForm(false)}
-            />
+            <ManageCategoriesList from={from} />
           </CardContent>
         </Card>
       </SettingsFormLayout>
