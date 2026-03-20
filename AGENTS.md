@@ -62,8 +62,8 @@ bun run deploy:dev   # build with VITE_APP_ASSET_ENV=dev, then wrangler -c dev.w
 
 ```bash
 # Telegram bot webhook helpers
-bun --cwd server run telegram:webhook:wizard  # interactive setup
-bun --cwd server run telegram:webhook:set     # register webhook URL
+bun --cwd server run telegram:webhook:configure dev   # configure dev webhook
+bun --cwd server run telegram:webhook:configure prod  # configure prod webhook
 ```
 
 ```bash

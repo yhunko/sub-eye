@@ -29,6 +29,8 @@ import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { DateTimezoneUtils } from "shared";
 import type { CashFlowSubscription } from "shared";
 
+const HALF_DAY_MS = 12 * 60 * 60 * 1000;
+
 type CashFlowChartProps = {
   className?: string;
 };
@@ -43,13 +45,43 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
     }),
   );
 
-  const today = useMemo(() => {
+  const todayTimestamp = useMemo(() => {
     if (user) {
       return startOfDay(
         DateTimezoneUtils.now(user?.publicMetadata?.preferredTimezone),
-      ).toISOString();
+      ).getTime();
     }
   }, [user]);
+
+  const chartData = useMemo(
+    () =>
+      data.cashFlowForecast.map((d) => ({
+        ...d,
+        timestamp: parseISO(d.date).getTime(),
+      })),
+    [data.cashFlowForecast],
+  );
+
+  const xDomain = useMemo((): [number, number] => {
+    if (!chartData.length) {
+      const now = todayTimestamp ?? 0;
+      return [now - HALF_DAY_MS, now + HALF_DAY_MS];
+    }
+    return [
+      chartData[0].timestamp - HALF_DAY_MS,
+      chartData[chartData.length - 1].timestamp + HALF_DAY_MS,
+    ];
+  }, [chartData, todayTimestamp]);
+
+  const yAxisWidth = useMemo(() => {
+    const maxValue = Math.max(
+      ...data.cashFlowForecast.map((d) => d.cumulative),
+      0,
+    );
+    const symbol = CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+    const formatted = `${symbol}${maxValue}`;
+    return Math.max(45, Math.ceil(formatted.length * 7.5));
+  }, [data]);
 
   if (!user) {
     return <div className="bg-muted h-75 animate-pulse rounded-xl" />;
@@ -92,7 +124,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
           className="h-full min-h-80 w-full md:min-h-72"
         >
           <ComposedChart
-            data={data.cashFlowForecast}
+            data={chartData}
             onClick={() => track("chart_cashflow_interacted")}
           >
             <defs>
@@ -116,21 +148,22 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
               stroke="var(--border)"
             />
             <XAxis
-              dataKey="date"
+              dataKey="timestamp"
+              type="number"
+              scale="time"
+              domain={xDomain}
               tickLine={false}
               axisLine={false}
               tickMargin={10}
               minTickGap={10}
-              tickFormatter={(val: string) =>
-                format(parseISO(val), "dd", { locale })
-              }
+              tickFormatter={(val: number) => format(val, "dd", { locale })}
             />
             <YAxis
               domain={[0, "auto"]}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              width={35}
+              width={yAxisWidth}
               className="text-muted-foreground font-mono text-[10px] font-medium"
               tickFormatter={(value: number) => `${currencySymbol}${value}`}
             />
@@ -230,9 +263,9 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
                 strokeWidth: 2,
               }}
             />
-            {today && (
+            {todayTimestamp && (
               <ReferenceLine
-                x={today}
+                x={todayTimestamp}
                 stroke="var(--primary)"
                 strokeWidth={2.5}
                 strokeOpacity={0.7}

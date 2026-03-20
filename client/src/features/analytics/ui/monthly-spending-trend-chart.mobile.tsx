@@ -93,7 +93,6 @@ const MonthlySpendingTrendChartMobile: FC<MonthlySpendingTrendVariantProps> = ({
         search: (previousSearch) => ({
           ...previousSearch,
           monthlyTrendOpen: undefined,
-          monthlyTrendMonth: undefined,
         }),
         replace: true,
         resetScroll: false,
