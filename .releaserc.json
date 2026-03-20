@@ -19,7 +19,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "bun install"
+        "prepareCmd": "bun install --ignore-scripts"
       }
     ],
     [
