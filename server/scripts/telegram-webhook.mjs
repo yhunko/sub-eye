@@ -5,493 +5,215 @@ import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
-const DEFAULT_WEBHOOK_PATH = "/api/webhooks/telegram";
+const WEBHOOK_PATH = "/api/webhooks/telegram";
+
+const ENV_PRESETS = {
+  prod: {
+    label: "prod",
+    baseUrl: "https://app.subeye.cc",
+    botUsername: "subeye_bot",
+  },
+  dev: {
+    label: "dev",
+    baseUrl: "https://dev.subeye.cc",
+    botUsername: "subeye_dev_bot",
+  },
+};
 
 const command = process.argv[2] ?? "help";
-const args = parseArgs(process.argv.slice(3));
-
-if (args.help || command === "help" || command === "--help" || command === "-h") {
-  printHelp();
-  process.exit(0);
-}
+const arg = process.argv[3];
 
 switch (command) {
-  case "info":
-    await printWebhookInfo(resolveBotToken(args));
+  case "configure":
+    await runConfigure(arg);
     break;
-  case "set":
-    await runSetCommand(args);
+  case "info":
+    await runInfo();
     break;
   case "delete":
-    await runDeleteCommand(args);
-    break;
-  case "secret":
-    printGeneratedSecret(args);
-    break;
-  case "wizard":
-    await runWizard(args);
+    await runDelete();
     break;
   default:
-    console.error(`Unknown command: ${command}`);
     printHelp();
+    if (command !== "help") process.exit(1);
+}
+
+// --- Commands ---
+
+async function runConfigure(env) {
+  const preset = ENV_PRESETS[env];
+
+  if (!preset) {
+    console.error(`Unknown environment: "${env}". Use "dev" or "prod".`);
     process.exit(1);
-}
-
-async function runSetCommand(parsedArgs) {
-  const token = resolveBotToken(parsedArgs);
-  const baseUrl = requiredValue(
-    "base URL (--base-url or TELEGRAM_WEBHOOK_BASE_URL)",
-    resolveBaseUrl(parsedArgs),
-  );
-  const secret = requiredValue(
-    "TELEGRAM_WEBHOOK_SECRET_TOKEN",
-    parsedArgs.secret ?? process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN,
-  );
-  const webhookPath = normalizePath(
-    parsedArgs.path ?? process.env.TELEGRAM_WEBHOOK_PATH ?? DEFAULT_WEBHOOK_PATH,
-  );
-  const dropPendingUpdates = parseBoolean(parsedArgs["drop-pending"], true);
-
-  await applyWebhook({
-    token,
-    baseUrl,
-    secret,
-    webhookPath,
-    dropPendingUpdates,
-  });
-}
-
-async function runDeleteCommand(parsedArgs) {
-  const token = resolveBotToken(parsedArgs);
-  const dropPendingUpdates = parseBoolean(parsedArgs["drop-pending"], true);
-
-  const deleteResult = await callTelegramApi(token, "deleteWebhook", {
-    method: "POST",
-    body: {
-      drop_pending_updates: dropPendingUpdates,
-    },
-  });
-
-  console.log("Webhook delete response:");
-  console.log(JSON.stringify(deleteResult, null, 2));
-  console.log("Current webhook info:");
-  await printWebhookInfo(token);
-}
-
-function printGeneratedSecret(parsedArgs) {
-  const envName = normalizeEnvName(
-    String(parsedArgs.env ?? parsedArgs.environment ?? "env"),
-  );
-  const secret = generateWebhookSecret(envName);
-
-  console.log(`Generated secret (${envName}):`);
-  console.log(secret);
-}
-
-async function runWizard(parsedArgs) {
-  if (!input.isTTY || !output.isTTY) {
-    throw new Error("Wizard requires an interactive terminal (TTY)");
   }
 
   const rl = createInterface({ input, output });
 
   try {
-    console.log("Telegram webhook setup wizard\n");
+    console.log(`\nConfiguring Telegram webhook for ${preset.label.toUpperCase()}\n`);
+    console.log(`  Base URL : ${preset.baseUrl}`);
+    console.log(`  Bot      : @${preset.botUsername}`);
+    console.log(`  Path     : ${WEBHOOK_PATH}`);
+    console.log();
 
-    const defaultEnv = normalizeEnvName(
-      String(parsedArgs.env ?? parsedArgs.environment ?? "dev"),
-    );
-    const envName = await promptValue(rl, {
-      label: "Environment label",
-      defaultValue: defaultEnv,
-    });
-    const baseUrl = await promptValue(rl, {
-      label: "Public webhook base URL (https://...)",
-      defaultValue: String(resolveBaseUrl(parsedArgs) ?? ""),
-    });
     const token = await promptSecret(
       rl,
-      "Telegram bot token",
-      parsedArgs.token ?? process.env.TELEGRAM_BOT_TOKEN,
+      "Telegram bot token  (from BotFather — @BotFather → /mybots → API Token)",
+      process.env.TELEGRAM_BOT_TOKEN,
     );
-    const botUsername = normalizeBotUsername(
-      await promptValue(rl, {
-        label: "Bot username (optional, without @)",
-        defaultValue: String(
-          parsedArgs.username ?? process.env.TELEGRAM_BOT_USERNAME ?? "",
-        ),
-        required: false,
-      }),
-    );
-    const path = normalizePath(
-      String(
-        parsedArgs.path ?? process.env.TELEGRAM_WEBHOOK_PATH ?? DEFAULT_WEBHOOK_PATH,
-      ),
-    );
+    const secret = generateSecret(preset.label);
 
-    const generateSecret = await askYesNo(
-      rl,
-      "Generate a new webhook secret token?",
-      true,
-    );
+    console.log(`\nWebhook secret token (auto-generated): ${maskSecret(secret)}`);
 
-    const secret = generateSecret
-      ? generateWebhookSecret(envName)
-      : await promptSecret(
-          rl,
-          "Webhook secret token",
-          parsedArgs.secret ?? process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN,
-        );
-
-    if (generateSecret) {
-      console.log(`Generated secret: ${secret}`);
-    }
-
-    const dropPendingUpdates = await askYesNo(
-      rl,
-      "Drop pending Telegram updates when setting webhook?",
-      parseBoolean(parsedArgs["drop-pending"], true),
-    );
-
-    const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-    if (!normalizedBaseUrl.startsWith("https://")) {
-      throw new Error("Webhook base URL must use https://");
-    }
-    const webhookUrl = `${normalizedBaseUrl}${path}`;
-
-    console.log("\nSummary:");
-    console.log(`- Environment: ${envName}`);
-    console.log(`- Webhook URL: ${webhookUrl}`);
-    console.log(`- Bot token: ${maskSecret(token)}`);
-    console.log(
-      `- Secret token: ${maskSecret(secret)} ${generateSecret ? "(generated)" : "(manual)"}`,
-    );
-    console.log(`- Drop pending updates: ${dropPendingUpdates}`);
-    if (botUsername) {
-      console.log(`- Bot username: ${botUsername}`);
-    }
-
-    const proceed = await askYesNo(rl, "Apply setWebhook now?", true);
+    const proceed = await askYesNo(rl, "\nApply setWebhook now?", true);
     if (!proceed) {
       console.log("Aborted.");
       return;
     }
 
-    await applyWebhook({
-      token,
-      baseUrl,
-      secret,
-      webhookPath: path,
-      dropPendingUpdates,
-    });
+    await applyWebhook({ token, baseUrl: preset.baseUrl, secret });
 
-    printEnvBlock({
-      token,
-      botUsername,
-      secret,
-      baseUrl: normalizedBaseUrl,
-      envName,
-    });
+    printEnvBlock({ token, secret, preset });
   } finally {
     rl.close();
   }
 }
 
-async function applyWebhook(config) {
-  const normalizedBaseUrl = normalizeBaseUrl(config.baseUrl);
-
-  if (!normalizedBaseUrl.startsWith("https://")) {
-    throw new Error("Webhook base URL must use https://");
-  }
-
-  const webhookUrl = `${normalizedBaseUrl}${config.webhookPath}`;
-  const setResult = await callTelegramApi(config.token, "setWebhook", {
-    method: "POST",
-    body: {
-      url: webhookUrl,
-      secret_token: config.secret,
-      drop_pending_updates: config.dropPendingUpdates,
-    },
-  });
-
-  console.log("Webhook set response:");
-  console.log(JSON.stringify(setResult, null, 2));
-  console.log(`\nConfigured webhook URL: ${webhookUrl}`);
-  console.log("Current webhook info:");
-  await printWebhookInfo(config.token);
-}
-
-function printEnvBlock(config) {
-  console.log("\nSuggested env values:");
-  console.log(`TELEGRAM_BOT_TOKEN=${config.token}`);
-  if (config.botUsername) {
-    console.log(`TELEGRAM_BOT_USERNAME=${config.botUsername}`);
-  }
-  console.log(`TELEGRAM_WEBHOOK_SECRET_TOKEN=${config.secret}`);
-  console.log(`TELEGRAM_WEBHOOK_BASE_URL=${config.baseUrl}`);
-  console.log(`TELEGRAM_PUBLIC_BASE_URL=${config.baseUrl}`);
-  console.log(`\n# Environment label used: ${config.envName}`);
-}
-
-async function printWebhookInfo(tokenValue) {
-  const info = await callTelegramApi(tokenValue, "getWebhookInfo");
+async function runInfo() {
+  const token = requireEnvToken();
+  const info = await telegramApi(token, "getWebhookInfo");
   console.log(JSON.stringify(info, null, 2));
 }
 
-async function callTelegramApi(tokenValue, methodName, options = {}) {
-  const endpoint = `${TELEGRAM_API_BASE}/bot${tokenValue}/${methodName}`;
-  const response = await fetch(endpoint, {
-    method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+async function runDelete() {
+  const token = requireEnvToken();
+  const rl = createInterface({ input, output });
+
+  try {
+    const proceed = await askYesNo(rl, "Delete webhook?", false);
+    if (!proceed) {
+      console.log("Aborted.");
+      return;
+    }
+
+    await telegramApi(token, "deleteWebhook", { drop_pending_updates: true });
+    console.log("Webhook deleted.");
+
+    const info = await telegramApi(token, "getWebhookInfo");
+    console.log(JSON.stringify(info, null, 2));
+  } finally {
+    rl.close();
+  }
+}
+
+// --- Core logic ---
+
+async function applyWebhook({ token, baseUrl, secret }) {
+  const url = `${baseUrl}${WEBHOOK_PATH}`;
+
+  await telegramApi(token, "setWebhook", {
+    url,
+    secret_token: secret,
+    drop_pending_updates: true,
   });
 
-  const payload = await response.json().catch(() => null);
+  console.log(`\nWebhook set: ${url}`);
 
-  if (!response.ok) {
-    throw new Error(
-      `Telegram API request failed (${response.status}): ${safeStringify(payload)}`,
-    );
+  const info = await telegramApi(token, "getWebhookInfo");
+  if (info.last_error_message) {
+    console.warn(`Warning: ${info.last_error_message}`);
+  }
+}
+
+function printEnvBlock({ token, secret, preset }) {
+  console.log("\n--- Cloudflare Worker secrets to set ---\n");
+  console.log(`TELEGRAM_BOT_TOKEN=${token}`);
+  console.log(`TELEGRAM_BOT_USERNAME=${preset.botUsername}`);
+  console.log(`TELEGRAM_WEBHOOK_SECRET_TOKEN=${secret}`);
+  console.log(`BASE_URL=${preset.baseUrl}`);
+  console.log("\n--- Run these wrangler commands ---\n");
+  console.log(`wrangler secret put TELEGRAM_BOT_TOKEN`);
+  console.log(`wrangler secret put TELEGRAM_BOT_USERNAME`);
+  console.log(`wrangler secret put TELEGRAM_WEBHOOK_SECRET_TOKEN`);
+  console.log(`wrangler secret put BASE_URL`);
+}
+
+// --- Helpers ---
+
+function generateSecret(envLabel) {
+  return `${envLabel}_${randomBytes(24).toString("base64url")}`;
+}
+
+function requireEnvToken() {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) {
+    console.error("TELEGRAM_BOT_TOKEN is not set in environment.");
+    process.exit(1);
+  }
+  return token;
+}
+
+async function telegramApi(token, method, body) {
+  const res = await fetch(`${TELEGRAM_API_BASE}/bot${token}/${method}`, {
+    method: body ? "POST" : "GET",
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || !data?.ok) {
+    throw new Error(`Telegram API error [${method}]: ${JSON.stringify(data)}`);
   }
 
-  if (!payload || payload.ok !== true) {
-    throw new Error(`Telegram API returned error: ${safeStringify(payload)}`);
+  return data.result;
+}
+
+async function promptSecret(rl, label, envValue) {
+  if (envValue?.trim()) {
+    const use = await askYesNo(rl, `Use ${label.split("(")[0].trim()} from environment?`, true);
+    if (use) return envValue.trim();
   }
-
-  return payload.result;
+  return promptValue(rl, `${label} (input visible)`);
 }
 
-function resolveBotToken(parsedArgs) {
-  return requiredValue(
-    "TELEGRAM_BOT_TOKEN",
-    parsedArgs.token ?? process.env.TELEGRAM_BOT_TOKEN,
-  );
-}
-
-function resolveBaseUrl(parsedArgs) {
-  return (
-    parsedArgs["base-url"] ??
-    parsedArgs.baseUrl ??
-    process.env.TELEGRAM_WEBHOOK_BASE_URL ??
-    process.env.TELEGRAM_PUBLIC_BASE_URL ??
-    process.env.BASE_URL
-  );
-}
-
-function generateWebhookSecret(envName) {
-  const prefix = normalizeEnvName(envName);
-  const randomPart = randomBytes(24).toString("base64url");
-  return `${prefix}_${randomPart}`;
-}
-
-function normalizeEnvName(value) {
-  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  const collapsed = normalized.replace(/^_+|_+$/g, "");
-  return collapsed || "env";
-}
-
-function normalizeBotUsername(value) {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  return trimmed.startsWith("@") ? trimmed.slice(1) : trimmed;
-}
-
-function requiredValue(label, value) {
-  const normalized = typeof value === "string" ? value.trim() : "";
-
-  if (!normalized) {
-    throw new Error(`Missing required value: ${label}`);
-  }
-
-  return normalized;
-}
-
-function normalizeBaseUrl(value) {
-  const trimmed = value.trim();
-  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
-}
-
-function normalizePath(value) {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return DEFAULT_WEBHOOK_PATH;
-  }
-
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
-
-function parseBoolean(value, defaultValue) {
-  if (value == null) {
-    return defaultValue;
-  }
-
-  const normalized = String(value).trim().toLowerCase();
-
-  if (["1", "true", "yes", "y", "on"].includes(normalized)) {
-    return true;
-  }
-
-  if (["0", "false", "no", "n", "off"].includes(normalized)) {
-    return false;
-  }
-
-  throw new Error(
-    `Invalid boolean value "${value}". Use true/false for --drop-pending.`,
-  );
-}
-
-function parseArgs(rawArgs) {
-  const output = {};
-
-  for (let index = 0; index < rawArgs.length; index += 1) {
-    const current = rawArgs[index];
-
-    if (!current.startsWith("--")) {
-      continue;
-    }
-
-    const withoutPrefix = current.slice(2);
-    const [key, inlineValue] = withoutPrefix.split("=", 2);
-
-    if (inlineValue !== undefined) {
-      output[key] = inlineValue;
-      continue;
-    }
-
-    const next = rawArgs[index + 1];
-
-    if (!next || next.startsWith("--")) {
-      output[key] = true;
-      continue;
-    }
-
-    output[key] = next;
-    index += 1;
-  }
-
-  return output;
-}
-
-async function promptValue(
-  rl,
-  { label, defaultValue = "", required = true, showDefault = true },
-) {
+async function promptValue(rl, label) {
   while (true) {
-    const defaultSuffix =
-      defaultValue && showDefault ? ` [${String(defaultValue)}]` : "";
-    const response = (await rl.question(`${label}${defaultSuffix}: `)).trim();
-    const value = response || String(defaultValue ?? "");
-
-    if (value || !required) {
-      return value.trim();
-    }
-
-    console.log("Value is required.");
+    const value = (await rl.question(`${label}: `)).trim();
+    if (value) return value;
+    console.log("Required.");
   }
-}
-
-async function promptSecret(rl, label, defaultValue) {
-  const hasDefault = typeof defaultValue === "string" && defaultValue.trim().length > 0;
-
-  if (hasDefault) {
-    const useDefault = await askYesNo(
-      rl,
-      `Use ${label} from current environment?`,
-      true,
-    );
-
-    if (useDefault) {
-      return defaultValue.trim();
-    }
-  }
-
-  return promptValue(rl, {
-    label: `${label} (input visible)`,
-    required: true,
-    showDefault: false,
-  });
 }
 
 async function askYesNo(rl, question, defaultValue) {
-  const suffix = defaultValue ? " [Y/n]" : " [y/N]";
-
+  const hint = defaultValue ? "[Y/n]" : "[y/N]";
   while (true) {
-    const answer = (await rl.question(`${question}${suffix}: `))
-      .trim()
-      .toLowerCase();
-
-    if (!answer) {
-      return defaultValue;
-    }
-
-    if (["y", "yes"].includes(answer)) {
-      return true;
-    }
-
-    if (["n", "no"].includes(answer)) {
-      return false;
-    }
-
-    console.log("Please answer yes or no.");
+    const answer = (await rl.question(`${question} ${hint}: `)).trim().toLowerCase();
+    if (!answer) return defaultValue;
+    if (answer === "y" || answer === "yes") return true;
+    if (answer === "n" || answer === "no") return false;
+    console.log("Please answer y or n.");
   }
 }
 
 function maskSecret(value) {
-  const trimmed = value.trim();
-
-  if (trimmed.length <= 6) {
-    return "***";
-  }
-
-  return `${trimmed.slice(0, 3)}***${trimmed.slice(-3)}`;
-}
-
-function safeStringify(value) {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
+  if (value.length <= 6) return "***";
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
 function printHelp() {
-  console.log(`Telegram webhook helper
+  console.log(`
+Telegram webhook manager
 
-Usage:
-  bun run telegram:webhook:info
-  bun run telegram:webhook:set --base-url https://your-tunnel.ngrok-free.app
-  bun run telegram:webhook:delete
-  bun run telegram:webhook:secret --env dev
-  bun run telegram:webhook:wizard
+Commands:
+  configure <dev|prod>   Set up webhook and print required env vars
+  info                   Show current webhook status (requires TELEGRAM_BOT_TOKEN in env)
+  delete                 Remove webhook (requires TELEGRAM_BOT_TOKEN in env)
 
-Generic form:
-  bun run telegram:webhook <info|set|delete|secret|wizard> [options]
-
-Required environment:
-  TELEGRAM_BOT_TOKEN for info/set/delete (wizard can prompt)
-
-Set command requires:
-  TELEGRAM_WEBHOOK_SECRET_TOKEN (or --secret)
-  webhook base URL via:
-    --base-url
-    TELEGRAM_WEBHOOK_BASE_URL
-    TELEGRAM_PUBLIC_BASE_URL
-    BASE_URL
-
-Options:
-  --token <value>         Override TELEGRAM_BOT_TOKEN
-  --secret <value>        Override TELEGRAM_WEBHOOK_SECRET_TOKEN (set/wizard)
-  --base-url <value>      Public HTTPS base URL (set/wizard)
-  --path <value>          Webhook path (default: ${DEFAULT_WEBHOOK_PATH})
-  --drop-pending <bool>   true/false (default: true)
-  --env <value>           Environment label used for secret generation
-  --username <value>      Bot username hint for wizard output
-  --help                  Show this message
+Examples:
+  bun run telegram:webhook configure prod
+  bun run telegram:webhook configure dev
+  TELEGRAM_BOT_TOKEN=xxx bun run telegram:webhook info
 `);
 }

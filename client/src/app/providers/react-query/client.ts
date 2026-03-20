@@ -17,7 +17,9 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       onError(error) {
-        posthog.captureException(error);
+        posthog.captureException(error, {
+          release: import.meta.env.APP_VERSION,
+        });
 
         if (error instanceof ApiError && error.status === 401) {
           toast.warning(m.error_session_expired());

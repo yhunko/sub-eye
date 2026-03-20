@@ -29,11 +29,9 @@
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "qstash:dev": "npx @upstash/qstash-cli dev",
     "telegram:webhook": "bun ./scripts/telegram-webhook.mjs",
+    "telegram:webhook:configure": "bun ./scripts/telegram-webhook.mjs configure",
     "telegram:webhook:info": "bun ./scripts/telegram-webhook.mjs info",
-    "telegram:webhook:set": "bun ./scripts/telegram-webhook.mjs set",
     "telegram:webhook:delete": "bun ./scripts/telegram-webhook.mjs delete",
-    "telegram:webhook:secret": "bun ./scripts/telegram-webhook.mjs secret",
-    "telegram:webhook:wizard": "bun ./scripts/telegram-webhook.mjs wizard",
     "test": "bun test ./test",
     "type-check": "tsc --noEmit --pretty"
   },
