@@ -86,7 +86,10 @@ export const StatSummaryCard: FC<StatSummaryCardProps> = ({
           </div>
           {trend && trend.length > 0 && (
             <div className="h-15 w-25 text-xs md:w-60">
-              <ChartContainer config={chartConfig} className="h-full w-full">
+              <ChartContainer
+                config={chartConfig}
+                className="aspect-auto h-full w-full"
+              >
                 <AreaChart
                   data={trend}
                   margin={{ top: 5, right: 0, left: 0, bottom: 0 }}
