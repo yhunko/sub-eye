@@ -1,4 +1,4 @@
-import { eq, count } from "drizzle-orm";
+import { eq, count, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";
 
@@ -87,5 +87,44 @@ export class SubscriptionRepository {
     await database
       .delete(subscriptionsTable)
       .where(eq(subscriptionsTable.userId, userId));
+  }
+
+  static async deleteMany(database: typeof db, ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+
+    const deleted = await database
+      .delete(subscriptionsTable)
+      .where(inArray(subscriptionsTable.id, ids))
+      .returning({ id: subscriptionsTable.id });
+
+    return deleted.length;
+  }
+
+  static async updateCategoryMany(
+    database: typeof db,
+    ids: string[],
+    categoryId: string | null,
+  ): Promise<number> {
+    if (ids.length === 0) return 0;
+
+    const updated = await database
+      .update(subscriptionsTable)
+      .set({ categoryId, updatedAt: new Date() })
+      .where(inArray(subscriptionsTable.id, ids))
+      .returning({ id: subscriptionsTable.id });
+
+    return updated.length;
+  }
+
+  static async findManyByIds(
+    database: typeof db,
+    ids: string[],
+  ): Promise<SubscriptionRecord[]> {
+    if (ids.length === 0) return [];
+
+    return database
+      .select()
+      .from(subscriptionsTable)
+      .where(inArray(subscriptionsTable.id, ids));
   }
 }

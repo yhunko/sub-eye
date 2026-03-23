@@ -20,6 +20,8 @@ import type {
   GetSubscriptionsParams,
   SubscriptionLifecycleStatus,
   SchedulePriceChangeInput,
+  BulkDeleteSubscriptionsInput,
+  BulkUpdateCategoryInput,
 } from "shared";
 import {
   DateTimezoneUtils,
@@ -609,6 +611,102 @@ export class SubscriptionService {
     );
 
     await deps.repository.deleteByUserId(db, userId);
+  }
+
+  static async bulkDeleteSubscriptions(
+    userId: string,
+    input: BulkDeleteSubscriptionsInput,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<{ deletedCount: number }> {
+    const subscriptions = await deps.repository.findManyByIds(db, input.ids);
+
+    const userSubscriptionIds = subscriptions
+      .filter((sub) => sub.userId === userId)
+      .map((sub) => sub.id);
+
+    if (userSubscriptionIds.length === 0) {
+      return { deletedCount: 0 };
+    }
+
+    await Promise.all(
+      userSubscriptionIds.map(async (id) => {
+        const sub = subscriptions.find((s) => s.id === id);
+        if (sub?.qstashMessageId) {
+          await this.tryCancelWorkflow(sub.qstashMessageId, deps);
+        }
+        if (sub?.priceChangeQstashMessageId) {
+          await this.tryCancelPriceChangeWorkflow(
+            sub.priceChangeQstashMessageId,
+            deps,
+          );
+        }
+      }),
+    );
+
+    let prefsAndRates: Awaited<
+      ReturnType<typeof this.getPreferencesAndRates>
+    > | null = null;
+    try {
+      prefsAndRates = await this.getPreferencesAndRates(userId, deps);
+    } catch (error) {
+      console.error("Failed to prepare delete history snapshots", {
+        userId,
+        error,
+      });
+    }
+
+    await Promise.all(
+      userSubscriptionIds.map(async (id) => {
+        const sub = subscriptions.find((s) => s.id === id);
+        const historySnapshot =
+          sub && prefsAndRates
+            ? this.mapToDto(sub, prefsAndRates.preferences, prefsAndRates.rates)
+            : null;
+
+        await this.logHistoryAction(
+          {
+            subscriptionId: id,
+            userId,
+            action: "deleted",
+            snapshot: historySnapshot,
+          },
+          deps,
+        );
+      }),
+    );
+
+    const deletedCount = await deps.repository.deleteMany(
+      db,
+      userSubscriptionIds,
+    );
+
+    return { deletedCount };
+  }
+
+  static async bulkUpdateCategory(
+    userId: string,
+    input: BulkUpdateCategoryInput,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<{ updatedCount: number }> {
+    await this.assertCategoryBelongsToUser(userId, input.categoryId, deps);
+
+    const subscriptions = await deps.repository.findManyByIds(db, input.ids);
+
+    const userSubscriptionIds = subscriptions
+      .filter((sub) => sub.userId === userId)
+      .map((sub) => sub.id);
+
+    if (userSubscriptionIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+
+    const updatedCount = await deps.repository.updateCategoryMany(
+      db,
+      userSubscriptionIds,
+      input.categoryId,
+    );
+
+    return { updatedCount };
   }
 
   static async rescheduleUserNotifications(

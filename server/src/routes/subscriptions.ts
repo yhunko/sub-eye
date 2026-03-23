@@ -5,6 +5,8 @@ import {
   AddSubscriptionSchema,
   SchedulePriceChangeSchema,
   UpdateSubscriptionSchema,
+  BulkDeleteSubscriptionsSchema,
+  BulkUpdateCategorySchema,
   idQuerySchema,
   listQuerySchema,
   updateSubscriptionQuerySchema,
@@ -37,6 +39,44 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
+  .post(
+    "/batch/delete",
+    protect,
+    vValidator("json", BulkDeleteSubscriptionsSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const payload = context.req.valid("json");
+        const result = await SubscriptionService.bulkDeleteSubscriptions(
+          userId,
+          payload,
+        );
+        return context.json(result);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/batch/category",
+    protect,
+    vValidator("json", BulkUpdateCategorySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const payload = context.req.valid("json");
+        const result = await SubscriptionService.bulkUpdateCategory(
+          userId,
+          payload,
+        );
+        return context.json(result);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .get("/:id", protect, vValidator("param", idQuerySchema), async (context) => {
     const userId = requireUserId(context);
 

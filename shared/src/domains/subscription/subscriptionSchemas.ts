@@ -1,7 +1,9 @@
 import {
+  array,
   boolean,
   check,
   integer,
+  maxLength,
   minLength,
   minValue,
   nullable,
@@ -217,3 +219,38 @@ export type PushNotificationPayload = {
   requireInteraction?: boolean;
   data?: Record<string, unknown>;
 };
+
+export const BulkDeleteSubscriptionsSchema = strictObject({
+  ids: pipe(array(pipe(string(), minLength(1))), minLength(1), maxLength(500)),
+});
+
+export const BulkUpdateCategorySchema = strictObject({
+  ids: pipe(array(pipe(string(), minLength(1))), minLength(1), maxLength(500)),
+  categoryId: nullable(string()),
+});
+
+export type BulkDeleteSubscriptionsInput = InferOutput<
+  typeof BulkDeleteSubscriptionsSchema
+>;
+export type BulkUpdateCategoryInput = InferOutput<
+  typeof BulkUpdateCategorySchema
+>;
+
+export const BulkDeleteResponseSchema = strictObject({
+  deletedCount: pipe(
+    number(),
+    check((value) => Number.isFinite(value) && value >= 0),
+  ),
+});
+
+export const BulkUpdateCategoryResponseSchema = strictObject({
+  updatedCount: pipe(
+    number(),
+    check((value) => Number.isFinite(value) && value >= 0),
+  ),
+});
+
+export type BulkDeleteResponse = InferOutput<typeof BulkDeleteResponseSchema>;
+export type BulkUpdateCategoryResponse = InferOutput<
+  typeof BulkUpdateCategoryResponseSchema
+>;
