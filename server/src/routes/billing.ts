@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { BillingService } from "../domains/billing/billingService";
 import { PaddleBillingService } from "../domains/billing/paddle/paddleBillingService";
-import { requireUserId } from "../utils/authUtils";
+import { requireUserId, getOrgId, requireOrgAdmin } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 import { handleServiceError } from "../utils/routeUtils";
 import {
@@ -12,7 +12,13 @@ import {
   type PlansResponse,
 } from "shared";
 
-export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
+type BillingBindings = {
+  PLANS_API_KEY: string;
+  PADDLE_PLUS_PRODUCT_ID: string;
+  PADDLE_FAMILY_PRODUCT_ID: string;
+};
+
+export const billingRouter = new Hono<{ Bindings: BillingBindings }>()
   /**
    * Returns public plan definitions for external consumers (e.g. landing page).
    * Protected by a static API key passed via X-Api-Key header.
@@ -45,7 +51,7 @@ export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
     );
   })
   /**
-   * Returns plan usage and limits for the current user.
+   * Returns plan usage and limits for the current user (personal space).
    */
   .get("/usage", protect, async (context) => {
     const userId = requireUserId(context);
@@ -58,14 +64,58 @@ export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
     }
   })
   /**
+   * Returns plan usage and limits for the current org space.
+   */
+  .get("/org/usage", protect, async (context) => {
+    const userId = requireUserId(context);
+    const orgId = getOrgId(context);
+
+    if (!orgId) {
+      return context.json({ error: "No active organization" }, 400 as const);
+    }
+
+    try {
+      const usage = await BillingService.getUsage(userId, orgId);
+      return context.json(usage);
+    } catch (error) {
+      return handleServiceError(context, error);
+    }
+  })
+  /**
    * Creates a Paddle checkout transaction for Plus plan upgrades.
    */
   .post("/checkout", protect, async (context) => {
     const userId = requireUserId(context);
 
     try {
-      const response =
-        await PaddleBillingService.createCheckoutTransaction(userId);
+      const response = await PaddleBillingService.createCheckoutTransaction(
+        userId,
+        context.env,
+      );
+      return context.json(response, 200);
+    } catch (error) {
+      return handleServiceError(context, error);
+    }
+  })
+  /**
+   * Creates a Paddle checkout transaction for Family plan (org billing).
+   * Requires org:admin role.
+   */
+  .post("/org/checkout", protect, async (context) => {
+    const userId = requireUserId(context);
+    const orgId = getOrgId(context);
+
+    if (!orgId) {
+      return context.json({ error: "No active organization" }, 400 as const);
+    }
+
+    try {
+      requireOrgAdmin(context);
+      const response = await PaddleBillingService.createOrgCheckoutTransaction(
+        orgId,
+        userId,
+        context.env,
+      );
       return context.json(response, 200);
     } catch (error) {
       return handleServiceError(context, error);
@@ -80,6 +130,25 @@ export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
     try {
       const response =
         await PaddleBillingService.createCustomerPortalUrl(userId);
+      return context.json(response, 200);
+    } catch (error) {
+      return handleServiceError(context, error);
+    }
+  })
+  /**
+   * Creates a Paddle customer portal session for the org subscription.
+   * Requires org:admin role.
+   */
+  .post("/org/portal", protect, async (context) => {
+    const orgId = getOrgId(context);
+
+    if (!orgId) {
+      return context.json({ error: "No active organization" }, 400 as const);
+    }
+
+    try {
+      requireOrgAdmin(context);
+      const response = await PaddleBillingService.createOrgPortalUrl(orgId);
       return context.json(response, 200);
     } catch (error) {
       return handleServiceError(context, error);

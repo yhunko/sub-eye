@@ -10,11 +10,12 @@ export const subscriptionsQuery = ({
   params,
   options,
 }: QueryHook<SubscriptionDto[], UseSubscriptionsParams>) => {
-  const { userId, queryParams = {} } = params;
+  const { userId, orgId, queryParams = {} } = params;
 
   return queryOptions({
     queryKey: subscriptionsQueryKeys.list({
       userId,
+      orgId,
       queryParams,
     }).queryKey,
     queryFn: async () => {

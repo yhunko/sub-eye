@@ -20,17 +20,19 @@ const addPayload = {
 describe("SubscriptionService category ownership validation", () => {
   it("rejects add when category belongs to another user", async () => {
     await expect(
-      SubscriptionService.addSubscription("user_1", addPayload, {
+      SubscriptionService.addSubscription("user_1", addPayload, null, {
         repository: {} as never,
         currencyService: {} as never,
         workflow: {} as never,
         priceChangeWorkflow: {} as never,
         userService: {} as never,
+        orgService: {} as never,
         historyService: {} as never,
         categoryRepository: {
           findById: async () => ({
             id: "cat_foreign",
             userId: "user_2",
+            orgId: null,
           }),
         } as never,
       }),
@@ -45,11 +47,18 @@ describe("SubscriptionService category ownership validation", () => {
         { categoryId: "cat_missing" },
         {},
         {
-          repository: {} as never,
+          repository: {
+            findById: async () => ({
+              id: "sub_1",
+              userId: "user_1",
+              orgId: null,
+            }),
+          } as never,
           currencyService: {} as never,
           workflow: {} as never,
           priceChangeWorkflow: {} as never,
           userService: {} as never,
+          orgService: {} as never,
           historyService: {} as never,
           categoryRepository: {
             findById: async () => null,

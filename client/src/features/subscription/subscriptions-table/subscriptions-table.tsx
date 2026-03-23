@@ -26,6 +26,7 @@ import {
 } from "@/entities/subscription";
 import { categoriesQuery } from "@/entities/category";
 import { useAuth } from "@clerk/clerk-react";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { cn } from "@/shared/lib/classes-utils";
 import { useQueryStates } from "nuqs";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -65,10 +66,12 @@ const SubscriptionsTable: FC = () => {
   }, [direction, search, sortBy, filters.status, categoryId]);
 
   const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
   const { data: subscriptions = [], isLoading } = useQuery(
     subscriptionsQuery({
       params: {
         userId: userId!,
+        orgId,
         queryParams,
       },
       options: {
@@ -78,7 +81,7 @@ const SubscriptionsTable: FC = () => {
   );
 
   const { data: categories = [] } = useQuery(
-    categoriesQuery({ params: { userId: userId ?? "" } }),
+    categoriesQuery({ params: { userId: userId ?? "", orgId } }),
   );
 
   const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState<

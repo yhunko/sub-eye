@@ -1,4 +1,5 @@
 import { UserDropdownMenu } from "@/features/auth";
+import { SpaceSwitcher } from "@/features/org/space-switcher";
 import { DashboardLogo } from "../dashboard-logo";
 import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "../../../shared/lib/classes-utils";
@@ -58,6 +59,8 @@ export const DesktopNavbar = () => {
           </div>
 
           <div className="ml-auto flex items-center gap-2 md:ml-0">
+            <SpaceSwitcher />
+
             <Button
               asChild
               variant="outline"

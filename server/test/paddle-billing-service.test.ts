@@ -54,6 +54,7 @@ const createCheckoutDeps = (prices: PaddlePrice[]) => {
   };
 
   return {
+    env: { PADDLE_PLUS_PRODUCT_ID: process.env.PADDLE_PLUS_PRODUCT_ID ?? "" },
     deps: {
       apiClient: {
         listActivePrices: async () => prices,
@@ -81,7 +82,9 @@ const createCheckoutDeps = (prices: PaddlePrice[]) => {
           updatedAt: new Date(),
         }),
       },
+      orgBillingAccountRepository: {} as never,
       userService: {} as never,
+      orgService: {} as never,
     } as never,
     getCapturedPriceId: () => capturedPriceId,
     getCapturedCustomerId: () => capturedCustomerId,
@@ -110,7 +113,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
     const { deps } = createCheckoutDeps([]);
 
     await expect(
-      PaddleBillingService.createCheckoutTransaction("user_01", deps),
+      PaddleBillingService.createCheckoutTransaction(
+        "user_01",
+        { PADDLE_PLUS_PRODUCT_ID: "" },
+        deps,
+      ),
     ).rejects.toThrow("PADDLE_PLUS_PRODUCT_ID is required");
   });
 
@@ -130,7 +137,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
       },
     ]);
 
-    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+    await PaddleBillingService.createCheckoutTransaction(
+      "user_01",
+      { PADDLE_PLUS_PRODUCT_ID: "pro_plus" },
+      deps,
+    );
 
     expect(getCapturedPriceId()).toBe("pri_plus_year");
   });
@@ -151,7 +162,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
       },
     ]);
 
-    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+    await PaddleBillingService.createCheckoutTransaction(
+      "user_01",
+      { PADDLE_PLUS_PRODUCT_ID: "pro_plus" },
+      deps,
+    );
 
     expect(getCapturedPriceId()).toBe("pri_plus_month");
   });
@@ -170,7 +185,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
 
     setBillingAccount(null);
 
-    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+    await PaddleBillingService.createCheckoutTransaction(
+      "user_01",
+      { PADDLE_PLUS_PRODUCT_ID: "pro_plus" },
+      deps,
+    );
 
     expect(getCapturedCustomerId()).toBeNull();
   });
@@ -199,11 +218,13 @@ describe("PaddleBillingService.processWebhookEvent", () => {
           return null;
         },
       } as never,
+      orgBillingAccountRepository: {} as never,
       userService: {
         setPlanId: async () => {
           setPlanCalls += 1;
         },
       } as never,
+      orgService: {} as never,
     });
 
     expect(findByUserIdCalls).toBe(0);
@@ -239,11 +260,16 @@ describe("PaddleBillingService.processWebhookEvent", () => {
           return null;
         },
       } as never,
+      orgBillingAccountRepository: {
+        findByPaddleCustomerId: async () => null,
+        findByPaddleSubscriptionId: async () => null,
+      } as never,
       userService: {
         setPlanId: async () => {
           setPlanCalls += 1;
         },
       } as never,
+      orgService: {} as never,
     });
 
     expect(upsertCalls).toBe(0);
@@ -278,11 +304,16 @@ describe("PaddleBillingService.processWebhookEvent", () => {
           };
         },
       } as never,
+      orgBillingAccountRepository: {
+        findByPaddleCustomerId: async () => null,
+        findByPaddleSubscriptionId: async () => null,
+      } as never,
       userService: {
         setPlanId: async (_userId, planId) => {
           capturedPlanId = planId;
         },
       } as never,
+      orgService: {} as never,
     });
 
     expect(upsertCalls).toBe(1);

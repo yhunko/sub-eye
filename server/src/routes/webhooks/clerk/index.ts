@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { svixVerification } from "../../../middleware/svixVerification";
 import { handleUserDeleted } from "./handlers/userDeleted";
+import { handleOrganizationDeleted } from "./handlers/organizationDeleted";
+import { handleOrganizationMembershipDeleted } from "./handlers/organizationMembershipDeleted";
 import type { ClerkWebhookEnv } from "./types";
 
 /**
@@ -19,8 +21,11 @@ import type { ClerkWebhookEnv } from "./types";
  */
 const verify = svixVerification("CLERK_WEBHOOK_SECRET");
 
-export const clerkWebhookRouter = new Hono<ClerkWebhookEnv>().post(
-  "/user/deleted",
-  verify,
-  handleUserDeleted,
-);
+export const clerkWebhookRouter = new Hono<ClerkWebhookEnv>()
+  .post("/user/deleted", verify, handleUserDeleted)
+  .post("/organization/deleted", verify, handleOrganizationDeleted)
+  .post(
+    "/organization/membership/deleted",
+    verify,
+    handleOrganizationMembershipDeleted,
+  );

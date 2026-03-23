@@ -4,7 +4,7 @@ export type PlanFeature = {
 };
 
 export type PlanLimits = {
-  maxSubscriptions: number;
+  maxSubscriptions: number | null;
   maxCategories: number | null;
 };
 
@@ -17,7 +17,7 @@ export type Plan = {
 export type PlanUsage = {
   planId: PlanId;
   features: Record<BillingFeatureKey, boolean>;
-  subscriptions: { current: number; limit: number };
+  subscriptions: { current: number; limit: number | null };
   categories: { current: number; limit: number | null };
   comparatorComparisons: MonthlyUsage;
   aiInsights: MonthlyUsage;
@@ -62,6 +62,6 @@ const BILLING_FEATURE_KEYS = [
   "aiInsights",
 ] as const;
 
-const PLAN_IDS = ["free", "plus"] as const;
+const PLAN_IDS = ["free", "plus", "family"] as const;
 export { PLAN_IDS };
 export { BILLING_FEATURE_KEYS };

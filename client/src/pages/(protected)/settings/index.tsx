@@ -14,6 +14,7 @@ import {
   User,
   CreditCard,
   Tag,
+  Users,
 } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { SettingsLayout } from "@/widgets/settings-layout";
@@ -46,6 +47,11 @@ const pages = [
     key: m.settings_pages_account,
     path: "/settings/account",
     Icon: User,
+  },
+  {
+    key: m.family_settings_title,
+    path: "/settings/group",
+    Icon: Users,
   },
 ] as const;
 

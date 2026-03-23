@@ -5,16 +5,16 @@ import { analyticsQueryKeys } from "../model/query-keys";
 import { apiClient } from "@/shared/api/client";
 import { assertOk } from "@/shared/api/api-error";
 
-type DashboardAnalyticsParams = { userId: string };
+type DashboardAnalyticsParams = { userId: string; orgId?: string | null };
 
 export function dashboardAnalyticsQuery({
   params,
   options,
 }: QueryHook<DashboardAnalyticsDto, DashboardAnalyticsParams>) {
-  const { userId } = params;
+  const { userId, orgId } = params;
 
   return queryOptions({
-    queryKey: analyticsQueryKeys.dashboard({ userId }).queryKey,
+    queryKey: analyticsQueryKeys.dashboard({ userId, orgId }).queryKey,
     queryFn: async () => {
       const res = await apiClient.api.analytics.dashboard.$get();
       assertOk(res);

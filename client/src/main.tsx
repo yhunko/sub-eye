@@ -6,6 +6,7 @@ import { App } from "./app";
 import { ThemeProvider } from "./app/providers/theme-provider";
 import { ReactQueryProvider } from "./app/providers/react-query";
 import { AnalyticsProvider } from "./app/providers/analytics-provider";
+import { SpaceProvider } from "./app/providers/space-provider";
 
 const rootElement = document.getElementById("root")!;
 
@@ -16,7 +17,9 @@ root.render(
       <AuthProvider>
         <AnalyticsProvider>
           <ReactQueryProvider>
-            <App />
+            <SpaceProvider>
+              <App />
+            </SpaceProvider>
           </ReactQueryProvider>
         </AnalyticsProvider>
       </AuthProvider>

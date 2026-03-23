@@ -49,19 +49,38 @@ export const PLUS_PLAN: Plan = {
   ],
 };
 
-export const PLANS: Plan[] = [FREE_PLAN, PLUS_PLAN];
+export const FAMILY_PLAN: Plan = {
+  id: "family",
+  limits: {
+    maxSubscriptions: null,
+    maxCategories: null,
+  },
+  features: [
+    { key: "subscriptions", included: true },
+    { key: "analytics", included: true },
+    { key: "notifications", included: true },
+    { key: "notificationSchedule", included: true },
+    { key: "telegramMessageTemplate", included: true },
+    { key: "currency", included: true },
+    { key: "comparator", included: true },
+    { key: "aiInsights", included: true },
+  ],
+};
+
+export const PLANS: Plan[] = [FREE_PLAN, PLUS_PLAN, FAMILY_PLAN];
 
 export const DEFAULT_PLAN_ID: PlanId = "free";
 
 const PLAN_BY_ID: Record<PlanId, Plan> = {
   free: FREE_PLAN,
   plus: PLUS_PLAN,
+  family: FAMILY_PLAN,
 };
 
 export const getPlanById = (planId: PlanId): Plan => PLAN_BY_ID[planId];
 
 export const resolvePlanId = (value: unknown): PlanId =>
-  value === "plus" ? "plus" : DEFAULT_PLAN_ID;
+  value === "plus" ? "plus" : value === "family" ? "family" : DEFAULT_PLAN_ID;
 
 export const hasPlanFeature = (
   planId: PlanId,

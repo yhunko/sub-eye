@@ -10,6 +10,7 @@ import { CurrencyService } from "../currency/currencyService";
 import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
 import { SubscriptionPriceChangeWorkflow } from "./subscriptionPriceChangeWorkflow";
 import { UserService } from "../user/userService";
+import { OrgService } from "../org/orgService";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import { CategoryRepository } from "../category/categoryRepository";
 import type {
@@ -49,6 +50,7 @@ type SubscriptionServiceDeps = {
   workflow: typeof SubscriptionNotificationsWorkflow;
   priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
   userService: typeof UserService;
+  orgService: typeof OrgService;
   historyService: typeof SubscriptionHistoryService;
   categoryRepository: typeof CategoryRepository;
 };
@@ -63,6 +65,7 @@ const defaultDeps: SubscriptionServiceDeps = {
   workflow: SubscriptionNotificationsWorkflow,
   priceChangeWorkflow: SubscriptionPriceChangeWorkflow,
   userService: UserService,
+  orgService: OrgService,
   historyService: SubscriptionHistoryService,
   categoryRepository: CategoryRepository,
 };
@@ -123,23 +126,35 @@ export class SubscriptionService {
   static async addSubscription(
     userId: string,
     payload: AddSubscriptionInput,
+    orgId?: string | null,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
+    const effectiveOrgId = orgId ?? null;
+
+    await this.assertCategoryBelongsToSpace(
+      userId,
+      effectiveOrgId,
+      payload.categoryId,
+      deps,
+    );
 
     const [currentCount, planId] = await Promise.all([
-      deps.repository.countByUserId(db, userId),
-      deps.userService.getPlanId(userId),
+      effectiveOrgId
+        ? deps.repository.countByOrgId(db, effectiveOrgId)
+        : deps.repository.countByUserId(db, userId),
+      effectiveOrgId
+        ? deps.orgService.getOrgPlanId(effectiveOrgId)
+        : deps.userService.getPlanId(userId),
     ]);
     const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
 
-    if (currentCount >= maxSubscriptions) {
+    if (maxSubscriptions !== null && currentCount >= maxSubscriptions) {
       throw new SubscriptionLimitReachedError();
     }
 
     const created = await deps.repository.create(
       db,
-      this.toInsertPayload(userId, payload),
+      this.toInsertPayload(userId, effectiveOrgId, payload),
     );
 
     const result = this.shouldScheduleWorkflow(created)
@@ -157,6 +172,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: effectiveOrgId,
         action: "created",
         snapshot: dto,
       },
@@ -173,13 +189,18 @@ export class SubscriptionService {
     options: UpdateSubscriptionOptions = {},
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
-
     const existing = await deps.repository.findById(db, id);
 
     if (!existing || existing.userId !== userId) {
       throw new Error("Subscription not found");
     }
+
+    await this.assertCategoryBelongsToSpace(
+      userId,
+      existing.orgId,
+      payload.categoryId,
+      deps,
+    );
 
     if (existing.qstashMessageId) {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
@@ -228,6 +249,7 @@ export class SubscriptionService {
         {
           subscriptionId: dto.id,
           userId,
+          orgId: existing.orgId,
           action: "updated",
           snapshot: {
             before: previousDto,
@@ -309,6 +331,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -362,6 +385,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -418,6 +442,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -470,6 +495,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId: existing.userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -522,6 +548,7 @@ export class SubscriptionService {
       {
         subscriptionId: id,
         userId,
+        orgId: existing.orgId,
         action: "deleted",
         snapshot: historySnapshot,
       },
@@ -580,6 +607,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "cancelled",
         snapshot: dto,
       },
@@ -667,6 +695,7 @@ export class SubscriptionService {
           {
             subscriptionId: id,
             userId,
+            orgId: sub?.orgId,
             action: "deleted",
             snapshot: historySnapshot,
           },
@@ -688,7 +717,14 @@ export class SubscriptionService {
     input: BulkUpdateCategoryInput,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<{ updatedCount: number }> {
-    await this.assertCategoryBelongsToUser(userId, input.categoryId, deps);
+    // For bulk update, we check category ownership in personal space
+    // Individual subscriptions already have their orgId set from creation
+    await this.assertCategoryBelongsToSpace(
+      userId,
+      null,
+      input.categoryId,
+      deps,
+    );
 
     const subscriptions = await deps.repository.findManyByIds(db, input.ids);
 
@@ -802,6 +838,7 @@ export class SubscriptionService {
 
   private static toInsertPayload(
     userId: string,
+    orgId: string | null,
     payload: AddSubscriptionInput,
   ): SubscriptionInsert {
     const willBeCancelledAt = this.normalizeTimestamp(
@@ -810,6 +847,7 @@ export class SubscriptionService {
 
     return {
       userId,
+      orgId,
       ...this.toDbPayload(payload),
       willBeCancelledAt: willBeCancelledAt ?? undefined,
     } as SubscriptionInsert;
@@ -974,8 +1012,9 @@ export class SubscriptionService {
     return { preferences, rates };
   }
 
-  private static async assertCategoryBelongsToUser(
+  private static async assertCategoryBelongsToSpace(
     userId: string,
+    orgId: string | null,
     categoryId: string | null | undefined,
     deps: SubscriptionServiceDeps,
   ): Promise<void> {
@@ -984,8 +1023,20 @@ export class SubscriptionService {
     }
 
     const category = await deps.categoryRepository.findById(db, categoryId);
-    if (!category || category.userId !== userId) {
+    if (!category) {
       throw new SubscriptionCategoryNotFoundError();
+    }
+
+    // For org space, category must belong to the org
+    // For personal space, category must belong to the user (no org)
+    if (orgId) {
+      if (category.orgId !== orgId) {
+        throw new SubscriptionCategoryNotFoundError();
+      }
+    } else {
+      if (category.userId !== userId || category.orgId !== null) {
+        throw new SubscriptionCategoryNotFoundError();
+      }
     }
   }
 
@@ -993,11 +1044,13 @@ export class SubscriptionService {
     {
       subscriptionId,
       userId,
+      orgId,
       action,
       snapshot,
     }: {
       subscriptionId: string | null;
       userId: string;
+      orgId: string | null | undefined;
       action: SubscriptionAction;
       snapshot: unknown;
     },
@@ -1014,6 +1067,7 @@ export class SubscriptionService {
         userId,
         action,
         preparedSnapshot,
+        orgId ?? null,
       );
     } catch (error) {
       console.error("Failed to log subscription history", {
@@ -1359,5 +1413,55 @@ export class SubscriptionService {
         return subscription;
       }),
     );
+  }
+
+  static async getOrgSubscriptions(
+    orgId: string,
+    userId: string,
+    params?: GetSubscriptionsParams,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto[]> {
+    const [subscriptions, preferences] = await Promise.all([
+      deps.repository.findByOrgId(db, orgId),
+      deps.userService.getUserPreferences(userId),
+    ]);
+    const reconciledSubscriptions = await this.reconcileScheduledPriceChanges(
+      subscriptions,
+      deps,
+    );
+
+    const rates = await deps.currencyService.getRates(
+      preferences.preferredCurrency,
+    );
+
+    const dtos = reconciledSubscriptions.map((subscription) =>
+      this.mapToDto(subscription, preferences, rates),
+    );
+
+    return this.applyFilters(dtos, params);
+  }
+
+  static async deleteAllForOrg(
+    orgId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<void> {
+    const existing = await deps.repository.findByOrgId(db, orgId);
+
+    await Promise.all(
+      existing.map(async (subscription) => {
+        if (subscription.qstashMessageId) {
+          await this.tryCancelWorkflow(subscription.qstashMessageId, deps);
+        }
+
+        if (subscription.priceChangeQstashMessageId) {
+          await this.tryCancelPriceChangeWorkflow(
+            subscription.priceChangeQstashMessageId,
+            deps,
+          );
+        }
+      }),
+    );
+
+    await deps.repository.deleteByOrgId(db, orgId);
   }
 }

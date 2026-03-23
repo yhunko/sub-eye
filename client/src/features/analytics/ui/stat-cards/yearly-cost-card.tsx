@@ -6,13 +6,15 @@ import { CurrencyText } from "@/entities/currency";
 import { StatCardSkeleton } from "../stat-card-skeleton";
 import * as m from "@/i18n/messages";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 
 export const YearlyCostCard: FC = () => {
   const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
-      params: { userId: userId! },
+      params: { userId: userId!, orgId },
       options: { enabled: true },
     }),
   );

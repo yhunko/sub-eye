@@ -30,11 +30,13 @@ export class SubscriptionHistoryService {
     userId: string,
     action: SubscriptionAction,
     snapshot: unknown,
+    orgId: string | null = null,
     deps: SubscriptionHistoryServiceDeps = defaultDeps,
   ): Promise<void> {
     await deps.repository.insert(db, {
       subscriptionId,
       userId,
+      orgId,
       action,
       snapshot,
     });

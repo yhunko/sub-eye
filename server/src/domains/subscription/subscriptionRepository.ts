@@ -1,4 +1,4 @@
-import { eq, count, inArray } from "drizzle-orm";
+import { and, eq, count, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";
 
@@ -13,7 +13,12 @@ export class SubscriptionRepository {
     return database
       .select()
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId));
+      .where(
+        and(
+          eq(subscriptionsTable.userId, userId),
+          isNull(subscriptionsTable.orgId),
+        ),
+      );
   }
 
   static async findById(
@@ -75,7 +80,12 @@ export class SubscriptionRepository {
     const [result] = await database
       .select({ count: count() })
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId));
+      .where(
+        and(
+          eq(subscriptionsTable.userId, userId),
+          isNull(subscriptionsTable.orgId),
+        ),
+      );
 
     return result?.count ?? 0;
   }
@@ -86,7 +96,12 @@ export class SubscriptionRepository {
   ): Promise<void> {
     await database
       .delete(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId));
+      .where(
+        and(
+          eq(subscriptionsTable.userId, userId),
+          isNull(subscriptionsTable.orgId),
+        ),
+      );
   }
 
   static async deleteMany(database: typeof db, ids: string[]): Promise<number> {
@@ -126,5 +141,51 @@ export class SubscriptionRepository {
       .select()
       .from(subscriptionsTable)
       .where(inArray(subscriptionsTable.id, ids));
+  }
+
+  static async findByOrgId(
+    database: typeof db,
+    orgId: string,
+  ): Promise<SubscriptionRecord[]> {
+    return database
+      .select()
+      .from(subscriptionsTable)
+      .where(eq(subscriptionsTable.orgId, orgId));
+  }
+
+  static async countByOrgId(
+    database: typeof db,
+    orgId: string,
+  ): Promise<number> {
+    const [result] = await database
+      .select({ count: count() })
+      .from(subscriptionsTable)
+      .where(eq(subscriptionsTable.orgId, orgId));
+
+    return result?.count ?? 0;
+  }
+
+  static async deleteByOrgId(
+    database: typeof db,
+    orgId: string,
+  ): Promise<void> {
+    await database
+      .delete(subscriptionsTable)
+      .where(eq(subscriptionsTable.orgId, orgId));
+  }
+
+  static async findByIdForOrg(
+    database: typeof db,
+    id: string,
+    orgId: string,
+  ): Promise<SubscriptionRecord | null> {
+    const [result] = await database
+      .select()
+      .from(subscriptionsTable)
+      .where(
+        and(eq(subscriptionsTable.id, id), eq(subscriptionsTable.orgId, orgId)),
+      );
+
+    return result ?? null;
   }
 }

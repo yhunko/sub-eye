@@ -1,6 +1,7 @@
 import { FC, Suspense, lazy, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { CurrenciesMap } from "shared";
 import {
   Card,
@@ -33,12 +34,13 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
   className,
 }) => {
   const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
   const { locale } = useDateFnsLocale();
   const isDesktop = useBreakpoint("md");
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
-      params: { userId: userId! },
+      params: { userId: userId!, orgId },
       options: { enabled: true },
     }),
   );

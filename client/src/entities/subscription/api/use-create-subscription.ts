@@ -29,8 +29,12 @@ export const useCreateSubscription = ({
       void queryClient.invalidateQueries({
         queryKey: subscriptionsQueryKeys.list._def,
       });
+      // Invalidate both personal and org usage queries
       void queryClient.invalidateQueries({
         queryKey: billingQueryKeys.usage._def,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: billingQueryKeys.orgUsage._def,
       });
       void queryClient.invalidateQueries({
         queryKey: analyticsQueryKeys._def,

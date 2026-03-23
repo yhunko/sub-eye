@@ -20,6 +20,7 @@ type Bindings = {
   PADDLE_WEBHOOK_SECRET: string;
   PADDLE_API_KEY: string;
   PADDLE_PLUS_PRODUCT_ID: string;
+  PADDLE_FAMILY_PRODUCT_ID: string;
   PADDLE_ENV: "sandbox" | "live";
   GEMINI_API_KEY: string;
   DATABASE_URL: string;

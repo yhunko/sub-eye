@@ -1,9 +1,13 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 
 export const categoriesQueryKeys = createQueryKeys("categories", {
-  list: (filters: { userId: string }) => [filters.userId],
-  detail: (filters: { userId: string; categoryId: string }) => [
+  list: (filters: { userId: string; orgId?: string | null }) => [
     filters.userId,
-    filters.categoryId,
+    filters.orgId ?? undefined,
   ],
+  detail: (filters: {
+    userId: string;
+    categoryId: string;
+    orgId?: string | null;
+  }) => [filters.userId, filters.orgId ?? undefined, filters.categoryId],
 });
