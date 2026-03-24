@@ -1,7 +1,6 @@
 import { posthog } from "./posthog";
 
 type EventMap = {
-  page_viewed: { path: string };
   subscription_created: { billing_period: string; currency: string };
   subscription_updated: Record<string, never>;
   subscription_deleted: Record<string, never>;

@@ -1,7 +1,18 @@
+import { useEffect } from "react";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import * as m from "@/i18n/messages";
+import { posthog } from "@/shared/lib/analytics";
 
-export function RootErrorFallback({ reset }: ErrorComponentProps) {
+export function RootErrorFallback({ error, reset }: ErrorComponentProps) {
+  useEffect(() => {
+    posthog.captureException(error, {
+      extra: {
+        error_type: "render",
+        route: window.location.pathname,
+        release: import.meta.env.APP_VERSION,
+      },
+    });
+  }, [error]);
   return (
     <div className="flex h-svh flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="text-xl font-semibold">{m.error_page_title()}</h1>
