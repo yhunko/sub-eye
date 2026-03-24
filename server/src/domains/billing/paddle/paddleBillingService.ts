@@ -3,7 +3,6 @@ import { db } from "../../../db";
 import { UserService } from "../../user/userService";
 import { OrgService } from "../../org/orgService";
 import { BillingAccountRepository } from "./billingAccountRepository";
-import { OrgBillingAccountRepository } from "../org/orgBillingAccountRepository";
 import { BillingWebhookEventRepository } from "./billingWebhookEventRepository";
 import { PaddleApiClient } from "./paddleApiClient";
 import type {
@@ -33,7 +32,6 @@ const PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
 type PaddleBillingDeps = {
   apiClient: typeof PaddleApiClient;
   billingAccountRepository: typeof BillingAccountRepository;
-  orgBillingAccountRepository: typeof OrgBillingAccountRepository;
   billingWebhookEventRepository: typeof BillingWebhookEventRepository;
   userService: typeof UserService;
   orgService: typeof OrgService;
@@ -42,7 +40,6 @@ type PaddleBillingDeps = {
 const defaultDeps: PaddleBillingDeps = {
   apiClient: PaddleApiClient,
   billingAccountRepository: BillingAccountRepository,
-  orgBillingAccountRepository: OrgBillingAccountRepository,
   billingWebhookEventRepository: BillingWebhookEventRepository,
   userService: UserService,
   orgService: OrgService,
@@ -56,32 +53,14 @@ type ResolvedUserContext = {
   >;
 };
 
-type ResolvedOrgContext = {
-  kind: "org";
-  orgId: string;
-  adminUserId: string;
-  orgBillingAccount: Awaited<
-    ReturnType<typeof OrgBillingAccountRepository.findByOrgId>
-  >;
-};
-
 type ResolvedUnknownContext = {
   kind: "unknown";
 };
 
-type ResolvedContext =
-  | ResolvedUserContext
-  | ResolvedOrgContext
-  | ResolvedUnknownContext;
+type ResolvedContext = ResolvedUserContext | ResolvedUnknownContext;
 
 export class PaddleBillingService {
   private static plusPriceCache: {
-    productId: string;
-    priceId: string;
-    expiresAt: number;
-  } | null = null;
-
-  private static familyPriceCache: {
     productId: string;
     priceId: string;
     expiresAt: number;
@@ -126,37 +105,6 @@ export class PaddleBillingService {
     return { transactionId: transaction.id };
   }
 
-  static async createOrgCheckoutTransaction(
-    orgId: string,
-    adminUserId: string,
-    env: { PADDLE_FAMILY_PRODUCT_ID: string },
-    deps: PaddleBillingDeps = defaultDeps,
-  ): Promise<BillingCheckoutResponse> {
-    const orgBillingAccount =
-      await deps.orgBillingAccountRepository.findByOrgId(db, orgId);
-    const priceId = await this.getFamilyPriceId(env, deps);
-    const paddleCustomerId = orgBillingAccount?.paddleCustomerId ?? undefined;
-
-    const transaction = await deps.apiClient.createTransaction({
-      customerId: paddleCustomerId,
-      priceId,
-      customData: {
-        orgId,
-        adminUserId,
-        planId: "family",
-      },
-    });
-
-    await deps.orgBillingAccountRepository.upsertByOrgId(db, {
-      orgId,
-      adminUserId,
-      paddlePriceId: priceId,
-      ...(paddleCustomerId ? { paddleCustomerId } : undefined),
-    });
-
-    return { transactionId: transaction.id };
-  }
-
   static async createCustomerPortalUrl(
     userId: string,
     deps: PaddleBillingDeps = defaultDeps,
@@ -169,30 +117,6 @@ export class PaddleBillingService {
 
     if (!url) {
       throw new Error("Failed to create Paddle customer portal URL");
-    }
-
-    return { url };
-  }
-
-  static async createOrgPortalUrl(
-    orgId: string,
-    deps: PaddleBillingDeps = defaultDeps,
-  ): Promise<BillingPortalResponse> {
-    const orgBillingAccount =
-      await deps.orgBillingAccountRepository.findByOrgId(db, orgId);
-
-    if (!orgBillingAccount?.paddleCustomerId) {
-      throw new Error("No billing account found for org");
-    }
-
-    const portalSession = await deps.apiClient.createCustomerPortalSession(
-      orgBillingAccount.paddleCustomerId,
-    );
-
-    const url = portalSession.urls?.general?.overview;
-
-    if (!url) {
-      throw new Error("Failed to create Paddle customer portal URL for org");
     }
 
     return { url };
@@ -224,12 +148,6 @@ export class PaddleBillingService {
       return;
     }
 
-    if (resolvedContext.kind === "org") {
-      await this.processOrgBillingEvent(event, resolvedContext, deps);
-      return;
-    }
-
-    // User context
     if (
       this.isEventOlderThanLatest(
         event.occurred_at,
@@ -272,74 +190,19 @@ export class PaddleBillingService {
 
     if (planId) {
       await deps.userService.setPlanId(resolvedContext.userId, planId);
-    }
-  }
 
-  private static async processOrgBillingEvent(
-    event: PaddleWebhookEvent,
-    ctx: ResolvedOrgContext,
-    deps: PaddleBillingDeps,
-  ): Promise<void> {
-    if (
-      this.isEventOlderThanLatest(
-        event.occurred_at,
-        ctx.orgBillingAccount?.lastEventOccurredAt,
-      )
-    ) {
-      return;
-    }
-
-    const billingPatch = this.extractBillingPatchFromEvent(event);
-
-    const orgBillingAccount =
-      await deps.orgBillingAccountRepository.upsertByOrgId(db, {
-        orgId: ctx.orgId,
-        adminUserId: ctx.adminUserId,
-        paddleCustomerId:
-          billingPatch.paddleCustomerId ??
-          ctx.orgBillingAccount?.paddleCustomerId,
-        paddleSubscriptionId:
-          billingPatch.paddleSubscriptionId ??
-          ctx.orgBillingAccount?.paddleSubscriptionId,
-        paddleSubscriptionStatus:
-          billingPatch.paddleSubscriptionStatus ??
-          ctx.orgBillingAccount?.paddleSubscriptionStatus,
-        paddlePriceId:
-          billingPatch.paddlePriceId ?? ctx.orgBillingAccount?.paddlePriceId,
-        paddleCurrentPeriodEnd:
-          billingPatch.paddleCurrentPeriodEnd ??
-          ctx.orgBillingAccount?.paddleCurrentPeriodEnd,
-        lastEventOccurredAt: event.occurred_at,
+      // Sync org plan to match user's plan (orgs inherit admin's personal plan)
+      const userOrgs = await clerkClient.users.getOrganizationMembershipList({
+        userId: resolvedContext.userId,
       });
 
-    const planId = this.resolvePlanIdForEvent(
-      event.event_type,
-      orgBillingAccount.paddleSubscriptionStatus,
-      orgBillingAccount.paddleSubscriptionId,
-    );
-
-    if (!planId) {
-      return;
-    }
-
-    const orgPlanId = planId === "plus" ? "family" : "free";
-    await deps.orgService.setOrgPlanId(ctx.orgId, orgPlanId);
-
-    if (orgPlanId === "family") {
-      // Admin gets personal Plus when Family plan is activated
-      await deps.userService.setPlanId(ctx.adminUserId, "plus");
-    } else {
-      // Revert admin personal plan only if they don't have an independent Plus sub
-      const adminBillingAccount =
-        await deps.billingAccountRepository.findByUserId(db, ctx.adminUserId);
-      const hasIndependentPlus =
-        adminBillingAccount?.paddleSubscriptionStatus &&
-        PAID_PLUS_STATUSES.has(
-          adminBillingAccount.paddleSubscriptionStatus as PaddleSubscriptionStatus,
-        );
-
-      if (!hasIndependentPlus) {
-        await deps.userService.setPlanId(ctx.adminUserId, "free");
+      for (const membership of userOrgs.data) {
+        if (membership.role === "org:admin") {
+          await deps.orgService.setOrgPlanId(
+            membership.organization.id,
+            planId,
+          );
+        }
       }
     }
   }
@@ -348,65 +211,6 @@ export class PaddleBillingService {
     event: PaddleWebhookEvent,
     deps: PaddleBillingDeps,
   ): Promise<ResolvedContext> {
-    // Check for org context first
-    const orgIdFromCustomData = this.extractOrgIdFromEvent(event);
-
-    if (orgIdFromCustomData) {
-      const adminUserId =
-        this.extractAdminUserIdFromEvent(event) ??
-        this.extractUserIdFromEvent(event);
-      const orgBillingAccount =
-        await deps.orgBillingAccountRepository.findByOrgId(
-          db,
-          orgIdFromCustomData,
-        );
-
-      if (adminUserId || orgBillingAccount) {
-        return {
-          kind: "org",
-          orgId: orgIdFromCustomData,
-          adminUserId: adminUserId ?? orgBillingAccount?.adminUserId ?? "",
-          orgBillingAccount,
-        };
-      }
-    }
-
-    // Check for org via customer/subscription ID
-    const customerId = this.extractCustomerId(event);
-    if (customerId) {
-      const orgBillingAccount =
-        await deps.orgBillingAccountRepository.findByPaddleCustomerId(
-          db,
-          customerId,
-        );
-      if (orgBillingAccount) {
-        return {
-          kind: "org",
-          orgId: orgBillingAccount.orgId,
-          adminUserId: orgBillingAccount.adminUserId,
-          orgBillingAccount,
-        };
-      }
-    }
-
-    const subscriptionId = this.extractSubscriptionId(event);
-    if (subscriptionId) {
-      const orgBillingAccount =
-        await deps.orgBillingAccountRepository.findByPaddleSubscriptionId(
-          db,
-          subscriptionId,
-        );
-      if (orgBillingAccount) {
-        return {
-          kind: "org",
-          orgId: orgBillingAccount.orgId,
-          adminUserId: orgBillingAccount.adminUserId,
-          orgBillingAccount,
-        };
-      }
-    }
-
-    // Fall back to user context
     const userIdFromCustomData = this.extractUserIdFromEvent(event);
 
     if (userIdFromCustomData) {
@@ -417,6 +221,7 @@ export class PaddleBillingService {
       return { kind: "user", userId: userIdFromCustomData, billingAccount };
     }
 
+    const customerId = this.extractCustomerId(event);
     if (customerId) {
       const billingAccount =
         await deps.billingAccountRepository.findByPaddleCustomerId(
@@ -429,6 +234,7 @@ export class PaddleBillingService {
       }
     }
 
+    const subscriptionId = this.extractSubscriptionId(event);
     if (subscriptionId) {
       const billingAccount =
         await deps.billingAccountRepository.findByPaddleSubscriptionId(
@@ -468,22 +274,6 @@ export class PaddleBillingService {
         ? { paddleCurrentPeriodEnd: currentPeriodEnd }
         : undefined),
     };
-  }
-
-  private static extractOrgIdFromEvent(
-    event: PaddleWebhookEvent,
-  ): string | null {
-    const customData = this.getObject(event.data, "custom_data");
-    if (!customData) return null;
-    return this.getString(customData, "orgId") ?? null;
-  }
-
-  private static extractAdminUserIdFromEvent(
-    event: PaddleWebhookEvent,
-  ): string | null {
-    const customData = this.getObject(event.data, "custom_data");
-    if (!customData) return null;
-    return this.getString(customData, "adminUserId") ?? null;
   }
 
   private static extractUserIdFromEvent(
@@ -717,59 +507,6 @@ export class PaddleBillingService {
     return monthlyRecurringPrice.id;
   }
 
-  private static async getFamilyPriceId(
-    env: { PADDLE_FAMILY_PRODUCT_ID: string },
-    deps: PaddleBillingDeps,
-  ): Promise<string> {
-    const productId = this.getFamilyProductId(env);
-
-    if (
-      this.familyPriceCache &&
-      this.familyPriceCache.productId === productId &&
-      this.familyPriceCache.expiresAt > Date.now()
-    ) {
-      return this.familyPriceCache.priceId;
-    }
-
-    const prices = await deps.apiClient.listActivePrices();
-    const productPrices = prices.filter((price) =>
-      this.priceBelongsToProduct(price, productId),
-    );
-
-    if (!productPrices.length) {
-      throw new Error(`No active Paddle prices found for product ${productId}`);
-    }
-
-    const recurringPrices = productPrices.filter(
-      (price) => this.extractInterval(price) !== null,
-    );
-
-    if (!recurringPrices.length) {
-      throw new Error(
-        `No active recurring Paddle prices found for product ${productId}`,
-      );
-    }
-
-    const monthlyRecurringPrice =
-      recurringPrices.find(
-        (price) => this.extractInterval(price) === "month",
-      ) ?? recurringPrices[0];
-
-    if (!monthlyRecurringPrice?.id) {
-      throw new Error(
-        `Failed to resolve Paddle price for product ${productId}`,
-      );
-    }
-
-    this.familyPriceCache = {
-      productId,
-      priceId: monthlyRecurringPrice.id,
-      expiresAt: Date.now() + PRICE_CACHE_TTL_MS,
-    };
-
-    return monthlyRecurringPrice.id;
-  }
-
   private static getPlusProductId(env: {
     PADDLE_PLUS_PRODUCT_ID: string;
   }): string {
@@ -781,22 +518,6 @@ export class PaddleBillingService {
 
     if (!value.startsWith("pro_")) {
       throw new Error("PADDLE_PLUS_PRODUCT_ID must be a Paddle product ID");
-    }
-
-    return value;
-  }
-
-  private static getFamilyProductId(env: {
-    PADDLE_FAMILY_PRODUCT_ID: string;
-  }): string {
-    const value = env.PADDLE_FAMILY_PRODUCT_ID?.trim();
-
-    if (!value) {
-      throw new Error("PADDLE_FAMILY_PRODUCT_ID is required");
-    }
-
-    if (!value.startsWith("pro_")) {
-      throw new Error("PADDLE_FAMILY_PRODUCT_ID must be a Paddle product ID");
     }
 
     return value;

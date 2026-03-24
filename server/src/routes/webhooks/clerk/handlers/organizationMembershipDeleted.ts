@@ -1,10 +1,6 @@
 import type { Context } from "hono";
 import { clerkClient } from "@clerk/express";
-import {
-  cleanupOrgData,
-  getOrgBillingInfo,
-  revertAdminPlanIfNeeded,
-} from "../../../../domains/org/orgCleanupService";
+import { cleanupOrgData } from "../../../../domains/org/orgCleanupService";
 import type { ClerkWebhookEnv } from "../types";
 
 type OrganizationMembershipDeletedData = {
@@ -47,30 +43,12 @@ export const handleOrganizationMembershipDeleted = async (
         `[Clerk Webhook] Last member left org ${orgId}, cleaning up and deleting org`,
       );
 
-      // Get billing info before cleanup
-      const billingInfo = await getOrgBillingInfo(orgId);
-
       // Cleanup all org data
       await cleanupOrgData(orgId);
-
-      // Revert admin's personal plan if needed
-      if (billingInfo.adminUserId) {
-        await revertAdminPlanIfNeeded(billingInfo.adminUserId);
-      }
 
       // Delete the org via Clerk API
       await clerkClient.organizations.deleteOrganization(orgId);
       console.log(`[Clerk Webhook] Organization ${orgId} deleted`);
-    } else {
-      // Not the last member - check if the leaving user was the billing admin
-      const billingInfo = await getOrgBillingInfo(orgId);
-
-      if (billingInfo.adminUserId === userId) {
-        console.warn(
-          `[Clerk Webhook] WARNING: Billing admin ${userId} left org ${orgId} with ${totalCount} remaining members. ` +
-            `Consider transferring billing responsibility or notify the org.`,
-        );
-      }
     }
   } catch (error) {
     // If org doesn't exist anymore (race condition), log and continue

@@ -374,6 +374,7 @@
   "settings_billing_plans_pro_features_aiInsightsQuota": "До {limit} AI-запитів/місяць на Gemini 2.5 Flash",
   "settings_billing_plans_pro_features_notificationSchedule": "Власний розклад сповіщень",
   "settings_billing_plans_pro_features_telegramMessageTemplate": "Власні шаблони повідомлень Telegram",
+  "settings_billing_plans_pro_features_familyMembers": "Поділіться з {count} членами родини",
   "settings_billing_plans_upgradePlus": "Оновити до Plus",
   "settings_billing_plans_manageBilling": "Керувати оплатою",
   "settings_billing_plans_comingSoon": "Більше планів незабаром",

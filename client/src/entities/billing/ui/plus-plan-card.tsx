@@ -28,6 +28,8 @@ const PLUS_ADDITIONAL_FEATURE_LABELS: Partial<
   familyGroup: m.settings_billing_plans_pro_features_familyGroup,
 };
 
+const PLUS_FAMILY_MEMBERS = PLUS_PLAN.limits.maxFamilyMembers ?? 5;
+
 export const PlusPlanCard: FC<PlusPlanCardProps> = ({
   active,
   isActionPending,
@@ -43,7 +45,12 @@ export const PlusPlanCard: FC<PlusPlanCardProps> = ({
       return !freeFeature?.included;
     })
     .map((feature) => ({
-      label: PLUS_ADDITIONAL_FEATURE_LABELS[feature.key]?.() ?? feature.key,
+      label:
+        feature.key === "familyGroup"
+          ? m.settings_billing_plans_pro_features_familyMembers({
+              count: PLUS_FAMILY_MEMBERS,
+            })
+          : (PLUS_ADDITIONAL_FEATURE_LABELS[feature.key]?.() ?? feature.key),
       included: true,
     }));
 

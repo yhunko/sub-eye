@@ -329,6 +329,8 @@
   "settings_billing_plans_pro_features_aiInsightsQuota": "Up to {limit} AI requests/month, powered by Gemini 2.5 Flash",
   "settings_billing_plans_pro_features_notificationSchedule": "Custom notification schedule",
   "settings_billing_plans_pro_features_telegramMessageTemplate": "Custom Telegram message templates",
+  "settings_billing_plans_pro_features_familyGroup": "Family group for shared subscriptions",
+  "settings_billing_plans_pro_features_familyMembers": "Share with up to {count} family members",
   "settings_billing_plans_upgradePlus": "Upgrade to Plus",
   "settings_billing_plans_manageBilling": "Manage billing",
   "settings_billing_plans_comingSoon": "More plans coming soon",
@@ -697,6 +699,5 @@
   "family_settings_delete": "Delete Family group",
   "family_settings_delete_confirm": "Are you sure you want to delete this family group? All shared subscriptions will become personal. This action cannot be undone.",
   "family_upgrade_title": "Unlock Family groups",
-  "family_upgrade_description": "Upgrade to Plus to create a family group and share subscriptions with your household. Everyone gets their own space while you manage shared expenses together.",
-  "settings_billing_plans_pro_features_familyGroup": "Family group for shared subscriptions"
+  "family_upgrade_description": "Upgrade to Plus to create a family group and share subscriptions with your household. Everyone gets their own space while you manage shared expenses together."
 }

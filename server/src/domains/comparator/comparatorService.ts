@@ -574,9 +574,7 @@ export class ComparatorService {
   }
 
   private static resolveAiModel(planId: PlanId): string {
-    return planId === "plus" || planId === "family"
-      ? COMPARATOR_AI_MODEL_PLUS
-      : COMPARATOR_AI_MODEL;
+    return planId === "plus" ? COMPARATOR_AI_MODEL_PLUS : COMPARATOR_AI_MODEL;
   }
 
   private static normalizeLocale(locale?: string): string {

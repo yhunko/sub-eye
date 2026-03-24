@@ -6,6 +6,7 @@ export type PlanFeature = {
 export type PlanLimits = {
   maxSubscriptions: number | null;
   maxCategories: number | null;
+  maxFamilyMembers?: number;
 };
 
 export type Plan = {
@@ -63,6 +64,6 @@ const BILLING_FEATURE_KEYS = [
   "familyGroup",
 ] as const;
 
-const PLAN_IDS = ["free", "plus", "family"] as const;
+const PLAN_IDS = ["free", "plus"] as const;
 export { PLAN_IDS };
 export { BILLING_FEATURE_KEYS };
