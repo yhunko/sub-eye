@@ -278,7 +278,7 @@ describe("ComparatorService.analyze", () => {
                 current: { level: "high", reason: "stable" },
                 candidate: { level: "high", reason: "stable" },
               },
-              risks: ["risk"],
+              risks: [{ text: "risk", severity: "medium" }],
               citations: [{ title: "Source", url: "https://example.com" }],
               uncertainties: ["uncertain"],
             },

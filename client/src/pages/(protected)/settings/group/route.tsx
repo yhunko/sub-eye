@@ -21,6 +21,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Users, UserPlus, LogOut, Trash2, ArrowRight } from "lucide-react";
 import { useActiveSpace } from "@/shared/lib/org/use-active-space";
+import { useQuery } from "@tanstack/react-query";
+import { planUsageQuery, PlanFeatureLockCard } from "@/entities/billing";
 
 export const Route = createFileRoute("/(protected)/settings/group")({
   component: SettingsGroupPage,
@@ -40,6 +42,14 @@ function SettingsGroupPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
   const [showCreateOrg, setShowCreateOrg] = useState(false);
+
+  const { data: planUsage } = useQuery(
+    planUsageQuery({
+      params: { userId: userId! },
+      options: { enabled: Boolean(userId) },
+    }),
+  );
+  const hasFamilyGroupFeature = planUsage?.features.familyGroup === true;
 
   const isAdmin = membership?.role === "org:admin";
 
@@ -168,7 +178,14 @@ function SettingsGroupPage() {
         backToSearch={{ from }}
       >
         <SettingsFormLayout>
-          {showCreateOrg ? (
+          {!hasFamilyGroupFeature ? (
+            <PlanFeatureLockCard
+              title={m.family_upgrade_title()}
+              description={m.family_upgrade_description()}
+              analyticsSource="settings_billing"
+              analyticsFeature="family_group"
+            />
+          ) : showCreateOrg ? (
             <div className="flex justify-center">
               <CreateOrganization afterCreateOrganizationUrl="/settings/group" />
             </div>

@@ -8,7 +8,6 @@ import { SubscriptionCalculator } from "./subscriptionCalculator";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { CurrencyService } from "../currency/currencyService";
 import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
-import { SubscriptionPriceChangeWorkflow } from "./subscriptionPriceChangeWorkflow";
 import { UserService } from "../user/userService";
 import { OrgService } from "../org/orgService";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
@@ -44,11 +43,21 @@ import {
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
 
+type PriceChangeWorkflowApi = {
+  schedule: (payload: {
+    subscriptionId: string;
+    effectiveAt: string;
+    scheduledCost: number;
+    scheduledCurrency: string;
+  }) => Promise<string>;
+  cancel: (workflowRunId: string) => Promise<void>;
+};
+
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
   currencyService: typeof CurrencyService;
   workflow: typeof SubscriptionNotificationsWorkflow;
-  priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
+  priceChangeWorkflow: PriceChangeWorkflowApi;
   userService: typeof UserService;
   orgService: typeof OrgService;
   historyService: typeof SubscriptionHistoryService;
@@ -59,11 +68,25 @@ type UpdateSubscriptionOptions = {
   trackHistory?: boolean;
 };
 
+// Lazy-loaded module reference to avoid circular dependency
+let priceChangeWorkflowModule: PriceChangeWorkflowApi | undefined;
+const getPriceChangeWorkflow = (): PriceChangeWorkflowApi => {
+  if (!priceChangeWorkflowModule) {
+    // Dynamic import is safe here - module will be loaded on first access
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    priceChangeWorkflowModule =
+      require("./subscriptionPriceChangeWorkflow").SubscriptionPriceChangeWorkflow;
+  }
+  return priceChangeWorkflowModule!;
+};
+
 const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
   currencyService: CurrencyService,
   workflow: SubscriptionNotificationsWorkflow,
-  priceChangeWorkflow: SubscriptionPriceChangeWorkflow,
+  get priceChangeWorkflow() {
+    return getPriceChangeWorkflow();
+  },
   userService: UserService,
   orgService: OrgService,
   historyService: SubscriptionHistoryService,

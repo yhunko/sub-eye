@@ -28,6 +28,7 @@ export const FREE_PLAN: Plan = {
     { key: "currency", included: true },
     { key: "comparator", included: true },
     { key: "aiInsights", included: true },
+    { key: "familyGroup", included: false },
   ],
 };
 
@@ -46,6 +47,7 @@ export const PLUS_PLAN: Plan = {
     { key: "currency", included: true },
     { key: "comparator", included: true },
     { key: "aiInsights", included: true },
+    { key: "familyGroup", included: true },
   ],
 };
 
@@ -64,6 +66,7 @@ export const FAMILY_PLAN: Plan = {
     { key: "currency", included: true },
     { key: "comparator", included: true },
     { key: "aiInsights", included: true },
+    { key: "familyGroup", included: true },
   ],
 };
 

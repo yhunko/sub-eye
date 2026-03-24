@@ -6,7 +6,10 @@ import {
 import { parse } from "valibot";
 import { db } from "../../db";
 import { ComparatorCalculator } from "./comparatorCalculator";
-import { ComparatorAiClient } from "./comparatorAiClient";
+import {
+  ComparatorAiClient,
+  normalizeAiInsightsPayload,
+} from "./comparatorAiClient";
 import { ComparatorRepository } from "./comparatorRepository";
 import { AiUsageService } from "../ai/aiUsageService";
 import {
@@ -21,6 +24,7 @@ import { SubscriptionService } from "../subscription/subscriptionService";
 import {
   CurrenciesMap,
   COMPARATOR_AI_MODEL,
+  COMPARATOR_AI_MODEL_PLUS,
   COMPARATOR_AI_PROMPT_VERSION,
   CurrencyUtils,
   ComparatorAiInsightsDtoSchema,
@@ -49,7 +53,10 @@ type ComparatorServiceDeps = {
   subscriptionService: typeof SubscriptionService;
   aiUsageService: typeof AiUsageService;
   aiClient: {
-    generateInsights: (prompt: string) => Promise<ComparatorAiInsightsDto>;
+    generateInsights: (
+      prompt: string,
+      options?: { model?: string },
+    ) => Promise<ComparatorAiInsightsDto>;
   };
 };
 
@@ -119,7 +126,7 @@ const AI_OUTPUT_SCHEMA = {
     current: { level: "low|medium|high|unknown", reason: "string" },
     candidate: { level: "low|medium|high|unknown", reason: "string" },
   },
-  risks: ["string"],
+  risks: [{ text: "string", severity: "low|medium|high" }],
   citations: [{ title: "string", url: "https://..." }],
   uncertainties: ["string"],
 } as const;
@@ -263,6 +270,7 @@ export class ComparatorService {
       context.result,
       context.preferences.locale,
     );
+    const aiModel = this.resolveAiModel(context.planId);
 
     if (used >= aiUsageContext.limit) {
       return this.toFallbackAnalysisResponse({
@@ -287,7 +295,7 @@ export class ComparatorService {
       userId,
       periodKey: quotaWindow.periodKey,
       requestHash,
-      model: COMPARATOR_AI_MODEL,
+      model: aiModel,
       promptVersion: COMPARATOR_AI_PROMPT_VERSION,
     });
 
@@ -295,7 +303,7 @@ export class ComparatorService {
       try {
         const cachedInsights = parse(
           ComparatorAiInsightsDtoSchema,
-          this.normalizeAiInsightsPayload(cached.response),
+          normalizeAiInsightsPayload(cached.response),
         );
         const normalizedCachedInsights = this.normalizeInsightsCurrencyMentions(
           cachedInsights,
@@ -305,7 +313,7 @@ export class ComparatorService {
         return {
           mode: "ai",
           cacheHit: true,
-          model: COMPARATOR_AI_MODEL,
+          model: aiModel,
           compared: context.result,
           coreInsights,
           aiInsights: normalizedCachedInsights,
@@ -327,12 +335,15 @@ export class ComparatorService {
     let aiInsights: ComparatorAiInsightsDto;
 
     try {
-      aiInsights = await deps.aiClient.generateInsights(prompt);
+      aiInsights = await deps.aiClient.generateInsights(prompt, {
+        model: aiModel,
+      });
       aiInsights = await this.enforcePreferredCurrencyMentions({
         aiInsights,
         preferredCurrencyCode: context.result.preferredCurrencyCode,
         locale: context.preferences.locale,
         aiClient: deps.aiClient,
+        model: aiModel,
       });
     } catch (error) {
       console.error("Comparator AI provider error", {
@@ -373,7 +384,7 @@ export class ComparatorService {
         userId,
         periodKey: quotaWindow.periodKey,
         requestHash,
-        model: COMPARATOR_AI_MODEL,
+        model: aiModel,
         promptVersion: COMPARATOR_AI_PROMPT_VERSION,
         response: aiInsights,
       });
@@ -386,7 +397,7 @@ export class ComparatorService {
     return {
       mode: "ai",
       cacheHit: false,
-      model: COMPARATOR_AI_MODEL,
+      model: aiModel,
       compared: context.result,
       coreInsights,
       aiInsights,
@@ -562,6 +573,12 @@ export class ComparatorService {
     };
   }
 
+  private static resolveAiModel(planId: PlanId): string {
+    return planId === "plus" || planId === "family"
+      ? COMPARATOR_AI_MODEL_PLUS
+      : COMPARATOR_AI_MODEL;
+  }
+
   private static normalizeLocale(locale?: string): string {
     if (!locale) {
       return FALLBACK_LOCALE;
@@ -572,29 +589,6 @@ export class ComparatorService {
     } catch {
       return FALLBACK_LOCALE;
     }
-  }
-
-  private static resolveOutputLanguage(locale: string): string {
-    const baseLocale = locale.split("-")[0]?.toLowerCase();
-
-    if (baseLocale === "uk") {
-      return "Ukrainian";
-    }
-
-    return "English";
-  }
-
-  private static normalizeAiInsightsPayload(payload: unknown): unknown {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      return payload;
-    }
-
-    const { nextActions: _nextActions, ...rest } = payload as Record<
-      string,
-      unknown
-    >;
-
-    return rest;
   }
 
   private static buildAiRequestHash(input: {
@@ -629,7 +623,6 @@ export class ComparatorService {
     locale: string;
   }): string {
     const normalizedLocale = this.normalizeLocale(locale);
-    const outputLanguage = this.resolveOutputLanguage(normalizedLocale);
     const preferredCurrencyCode = CurrencyUtils.normalizeCode(
       compared.preferredCurrencyCode,
     ).toUpperCase();
@@ -639,7 +632,6 @@ export class ComparatorService {
 
     const promptPayload = {
       locale: normalizedLocale,
-      outputLanguage,
       reportCurrency: {
         code: preferredCurrencyCode,
         symbol: preferredCurrencySymbol,
@@ -685,11 +677,11 @@ export class ComparatorService {
       "9) If evidence is uncertain, explicitly mention uncertainty and lower confidence.",
       "10) Prefer reversible recommendations when uncertainty is high (monthly before yearly).",
       "11) Do not provide legal, tax, or investment advice.",
-      `12) Write all prose fields in ${outputLanguage} only (locale: ${normalizedLocale}). Do not mix languages.`,
+      `12) Write all prose fields strictly in the language of IETF locale '${normalizedLocale}'. Do not mix languages or default to English unless that is the locale.`,
       "13) Keep enum values exactly from schema (decision/confidence/levels/term). Do not translate enum values.",
       "14) Do not include recommended steps or action checklists.",
       "15) Return strict JSON only using the exact schema below. No markdown.",
-      `16) Before returning JSON, re-check that every prose field is in ${outputLanguage}.`,
+      `16) Before returning JSON, re-check that every prose field matches locale '${normalizedLocale}'.`,
       "17) Make outputs substantive: summary must be 2-4 sentences and cover recommendation driver, savings significance, and service maturity/reputation context.",
       "18) recommendation.rationale must explain why switch/keep/depends and reference at least one numeric comparison value from input.",
       "19) priceSignificance.explanation must explicitly justify significance using deltas and, when relevant, portfolio impact.",
@@ -699,6 +691,12 @@ export class ComparatorService {
       "23) Provide citations for maturity/reputation claims whenever confidence is not low.",
       `24) Currency policy: mention monetary values only in ${preferredCurrencyCode}. Never use other currency names/codes/symbols (for example USD, EUR, dollars, €, $).`,
       `25) Whenever you write a money amount in prose, append ${preferredCurrencyCode}.`,
+      "26) If the two services are functional equivalents from different providers (e.g., music streaming, cloud storage, password managers, video on demand), explicitly identify this equivalence in your summary. For different-provider comparisons, research and include: feature parity, privacy/security incident history, support quality, platform availability, and key differentiators between them.",
+      "27) For different-provider comparisons: if either service has known significant privacy incidents, data breaches, regulatory fines, or major service outages in recent years, mention them in risks with citations. Do not fabricate incidents — only include what is verifiable.",
+      "28) For same-service comparisons (same provider, different billing cadences): if the candidate billing cadence is > 1 month, explicitly calculate and state the total upfront payment required (candidatePlan.immediateCharge in preferred currency). Evaluate whether this immediate financial commitment is appropriate given the user's riskTolerance.",
+      `29) If the candidate plan requires an upfront payment that is 6× or more than the equivalent monthly cost, flag this as HIGH INITIAL FINANCIAL IMPACT in annualCommitmentAdvice.reason. Even if the normalized monthly price is lower, a large upfront sum may cause financial strain and may not suit all users.`,
+      `30) annualCommitmentAdvice.reason must always state the actual upfront amount in preferred currency when candidatePlan billing cadence > 1 month. Include the format: '[Amount] ${preferredCurrencyCode} upfront for [N]-month commitment vs [monthly amount] ${preferredCurrencyCode}/month.'`,
+      "31) For each risk entry, set severity: 'high' for verifiable data breaches, active privacy violations, regulatory fines, or severe financial traps; 'medium' for moderate concerns such as vendor lock-in, large upfront cost, missing key features, or unresolved complaints; 'low' for minor inconveniences or easily mitigated concerns.",
       "",
       "INPUT",
       JSON.stringify(promptPayload, null, 2),
@@ -718,7 +716,6 @@ export class ComparatorService {
     locale: string;
   }): string {
     const normalizedLocale = this.normalizeLocale(locale);
-    const outputLanguage = this.resolveOutputLanguage(normalizedLocale);
     const normalizedPreferredCurrencyCode = CurrencyUtils.normalizeCode(
       preferredCurrencyCode,
     ).toUpperCase();
@@ -729,7 +726,7 @@ export class ComparatorService {
       "Hard rules:",
       "1) Keep recommendation decision, confidence levels, and numeric values unchanged.",
       "2) Rewrite prose fields only where needed to fix currency references.",
-      `3) Write prose in ${outputLanguage} only.`,
+      `3) Write prose in the language of locale '${normalizedLocale}' only.`,
       `4) Use only ${normalizedPreferredCurrencyCode} for money mentions. Do not mention any other currency names/codes/symbols.`,
       "5) Return strict JSON with the same schema and no markdown.",
       "",
@@ -817,7 +814,7 @@ export class ComparatorService {
       aiInsights.annualCommitmentAdvice.reason,
       aiInsights.serviceMaturity.current.reason,
       aiInsights.serviceMaturity.candidate.reason,
-      ...aiInsights.risks,
+      ...aiInsights.risks.map((r) => r.text),
       ...aiInsights.uncertainties,
     ];
   }
@@ -875,7 +872,10 @@ export class ComparatorService {
           reason: map(aiInsights.serviceMaturity.candidate.reason),
         },
       },
-      risks: aiInsights.risks.map(map),
+      risks: aiInsights.risks.map((risk) => ({
+        ...risk,
+        text: map(risk.text),
+      })),
       uncertainties: aiInsights.uncertainties.map(map),
     };
   }
@@ -912,11 +912,13 @@ export class ComparatorService {
     preferredCurrencyCode,
     locale,
     aiClient,
+    model,
   }: {
     aiInsights: ComparatorAiInsightsDto;
     preferredCurrencyCode: string;
     locale: string;
     aiClient: ComparatorServiceDeps["aiClient"];
+    model: string;
   }): Promise<ComparatorAiInsightsDto> {
     if (!this.hasForeignCurrencyMention(aiInsights, preferredCurrencyCode)) {
       return aiInsights;
@@ -929,6 +931,7 @@ export class ComparatorService {
           preferredCurrencyCode,
           locale,
         }),
+        { model },
       );
 
       if (!this.hasForeignCurrencyMention(repaired, preferredCurrencyCode)) {

@@ -25,6 +25,7 @@ const PLUS_ADDITIONAL_FEATURE_LABELS: Partial<
     m.settings_billing_plans_pro_features_notificationSchedule,
   telegramMessageTemplate:
     m.settings_billing_plans_pro_features_telegramMessageTemplate,
+  familyGroup: m.settings_billing_plans_pro_features_familyGroup,
 };
 
 export const PlusPlanCard: FC<PlusPlanCardProps> = ({

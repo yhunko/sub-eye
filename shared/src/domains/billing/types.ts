@@ -60,6 +60,7 @@ const BILLING_FEATURE_KEYS = [
   "currency",
   "comparator",
   "aiInsights",
+  "familyGroup",
 ] as const;
 
 const PLAN_IDS = ["free", "plus", "family"] as const;

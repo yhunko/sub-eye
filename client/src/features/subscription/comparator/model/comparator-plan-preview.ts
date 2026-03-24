@@ -40,6 +40,57 @@ export const toPreferredCurrencyConverter = (
   };
 };
 
+/**
+ * Builds a PlanPreview from an existing subscription.
+ * Shared between buildCurrentPreview (existingVsManual mode) and buildCandidateExistingPreview.
+ */
+const buildPlanPreviewFromExistingSubscription = (
+  subscription: SubscriptionDto,
+  preferredCurrencyCode: string,
+  convertToPreferredCurrency: CurrencyConverter,
+): PlanPreview => {
+  const sourceCurrencyCode = CurrencyUtils.normalizeCode(subscription.currency);
+  const targetCurrencyCode = CurrencyUtils.normalizeCode(
+    subscription.billing.preferred.currencyCode,
+  );
+  const canUsePreferredBillingDirectly =
+    targetCurrencyCode === preferredCurrencyCode;
+  const convertedImmediateCharge = canUsePreferredBillingDirectly
+    ? subscription.billing.preferred.amount
+    : convertToPreferredCurrency(subscription.cost, sourceCurrencyCode);
+  const convertedMonthlyAmount = canUsePreferredBillingDirectly
+    ? subscription.billing.preferred.monthly
+    : convertToPreferredCurrency(
+        subscription.billing.original.monthly,
+        sourceCurrencyCode,
+      );
+  const hasConvertedValues =
+    convertedImmediateCharge !== null && convertedMonthlyAmount !== null;
+  const immediateCharge = hasConvertedValues
+    ? convertedImmediateCharge
+    : subscription.cost;
+  const monthlyAmount = hasConvertedValues
+    ? convertedMonthlyAmount
+    : subscription.billing.original.monthly;
+  const yearlyAmount = monthlyAmount * 12;
+
+  return {
+    name: subscription.name,
+    cycleLabel:
+      formatSubscriptionCycle(subscription.every, subscription.period) ?? null,
+    immediateCharge: roundMoney(immediateCharge),
+    monthlyAmount: roundMoney(monthlyAmount),
+    yearlyAmount: roundMoney(yearlyAmount),
+    currencyCode: hasConvertedValues
+      ? preferredCurrencyCode
+      : sourceCurrencyCode,
+    cadenceInMonths: RecurrenceUtils.intervalToMonths(
+      subscription.every,
+      subscription.period,
+    ),
+  };
+};
+
 const resolveManualPlanAmounts = ({
   amount,
   every,
@@ -167,54 +218,11 @@ export const buildCurrentPreview = ({
       };
     }
 
-    const sourceCurrencyCode = CurrencyUtils.normalizeCode(
-      selectedExistingSubscription.currency,
+    return buildPlanPreviewFromExistingSubscription(
+      selectedExistingSubscription,
+      preferredCurrencyCode,
+      convertToPreferredCurrency,
     );
-    const targetCurrencyCode = CurrencyUtils.normalizeCode(
-      selectedExistingSubscription.billing.preferred.currencyCode,
-    );
-    const canUsePreferredBillingDirectly =
-      targetCurrencyCode === preferredCurrencyCode;
-    const convertedImmediateCharge = canUsePreferredBillingDirectly
-      ? selectedExistingSubscription.billing.preferred.amount
-      : convertToPreferredCurrency(
-          selectedExistingSubscription.cost,
-          sourceCurrencyCode,
-        );
-    const convertedMonthlyAmount = canUsePreferredBillingDirectly
-      ? selectedExistingSubscription.billing.preferred.monthly
-      : convertToPreferredCurrency(
-          selectedExistingSubscription.billing.original.monthly,
-          sourceCurrencyCode,
-        );
-    const hasConvertedValues =
-      convertedImmediateCharge !== null && convertedMonthlyAmount !== null;
-    const immediateCharge = hasConvertedValues
-      ? convertedImmediateCharge
-      : selectedExistingSubscription.cost;
-    const monthlyAmount = hasConvertedValues
-      ? convertedMonthlyAmount
-      : selectedExistingSubscription.billing.original.monthly;
-    const yearlyAmount = monthlyAmount * 12;
-
-    return {
-      name: selectedExistingSubscription.name,
-      cycleLabel:
-        formatSubscriptionCycle(
-          selectedExistingSubscription.every,
-          selectedExistingSubscription.period,
-        ) ?? null,
-      immediateCharge: roundMoney(immediateCharge),
-      monthlyAmount: roundMoney(monthlyAmount),
-      yearlyAmount: roundMoney(yearlyAmount),
-      currencyCode: hasConvertedValues
-        ? preferredCurrencyCode
-        : sourceCurrencyCode,
-      cadenceInMonths: RecurrenceUtils.intervalToMonths(
-        selectedExistingSubscription.every,
-        selectedExistingSubscription.period,
-      ),
-    };
   }
 
   return buildManualPreview({
@@ -240,4 +248,32 @@ export const buildCandidatePreview = ({
     preferredCurrencyCode,
     convertToPreferredCurrency,
   });
+};
+
+export const buildCandidateExistingPreview = ({
+  selectedCandidateExistingSubscription,
+  convertToPreferredCurrency,
+  preferredCurrencyCode,
+}: {
+  selectedCandidateExistingSubscription: SubscriptionDto | undefined;
+  convertToPreferredCurrency: CurrencyConverter;
+  preferredCurrencyCode: string;
+}): PlanPreview => {
+  if (!selectedCandidateExistingSubscription) {
+    return {
+      name: m.comparator_label_candidate(),
+      cycleLabel: null,
+      immediateCharge: null,
+      monthlyAmount: null,
+      yearlyAmount: null,
+      currencyCode: preferredCurrencyCode,
+      cadenceInMonths: null,
+    };
+  }
+
+  return buildPlanPreviewFromExistingSubscription(
+    selectedCandidateExistingSubscription,
+    preferredCurrencyCode,
+    convertToPreferredCurrency,
+  );
 };

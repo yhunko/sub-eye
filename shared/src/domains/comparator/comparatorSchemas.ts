@@ -26,7 +26,8 @@ export const FREE_COMPARATOR_MONTHLY_LIMIT = 10;
 export const FREE_COMPARATOR_AI_MONTHLY_LIMIT = 10;
 export const PLUS_COMPARATOR_AI_MONTHLY_LIMIT = 300;
 export const COMPARATOR_AI_MODEL = "gemini-2.5-flash-lite";
-export const COMPARATOR_AI_PROMPT_VERSION = "v5";
+export const COMPARATOR_AI_MODEL_PLUS = "gemini-2.5-flash";
+export const COMPARATOR_AI_PROMPT_VERSION = "v7";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -181,6 +182,13 @@ export const ComparatorCoreInsightsDtoSchema = strictObject({
 
 const confidenceSchema = picklist(["low", "medium", "high"]);
 
+export const ComparatorAiRiskDtoSchema = strictObject({
+  text: string(),
+  severity: picklist(["low", "medium", "high"]),
+});
+
+export type ComparatorAiRiskDto = InferOutput<typeof ComparatorAiRiskDtoSchema>;
+
 export const ComparatorAiCitationDtoSchema = strictObject({
   title: string(),
   url: string(),
@@ -212,7 +220,7 @@ export const ComparatorAiInsightsDtoSchema = strictObject({
       reason: string(),
     }),
   }),
-  risks: array(string()),
+  risks: array(ComparatorAiRiskDtoSchema),
   citations: array(ComparatorAiCitationDtoSchema),
   uncertainties: array(string()),
 });

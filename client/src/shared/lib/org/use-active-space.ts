@@ -7,12 +7,14 @@ import { useCallback } from "react";
 
 export type ActiveSpace = "personal" | string; // string = orgId
 
+const ORGANIZATION_LIST_OPTIONS = { userMemberships: true } as const;
+
 export function useActiveSpace() {
   const clerk = useClerk();
   const { organization, isLoaded: isOrgLoaded } = useOrganization();
-  const { isLoaded: isOrgListLoaded, userMemberships } = useOrganizationList({
-    userMemberships: true,
-  });
+  const { isLoaded: isOrgListLoaded, userMemberships } = useOrganizationList(
+    ORGANIZATION_LIST_OPTIONS,
+  );
 
   // Both must be loaded to have a stable space value
   const isLoaded = isOrgLoaded && isOrgListLoaded;

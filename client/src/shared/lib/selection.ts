@@ -21,6 +21,8 @@ export const pruneSelection = (
   selectedIds: Set<string>,
   availableIds: readonly string[],
 ): Set<string> => {
+  if (selectedIds.size === 0) return selectedIds;
+
   const available = new Set(availableIds);
   const next = new Set<string>();
 
@@ -30,5 +32,6 @@ export const pruneSelection = (
     }
   }
 
-  return next;
+  // Return the same reference if nothing was pruned — prevents unnecessary re-renders
+  return next.size === selectedIds.size ? selectedIds : next;
 };

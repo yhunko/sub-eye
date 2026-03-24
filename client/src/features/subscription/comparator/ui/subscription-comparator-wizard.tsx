@@ -80,6 +80,7 @@ export const SubscriptionComparatorWizard: FC<
     step,
     mode,
     currentExistingId,
+    candidateExistingId,
     selectableSubscriptionOptions,
     currentManual,
     candidateManual,
@@ -108,6 +109,7 @@ export const SubscriptionComparatorWizard: FC<
     goToStep,
     handleBackNavigation,
     handleCurrentExistingChange,
+    handleCandidateExistingChange,
     handleClearPrefill,
     handleCurrentManualChange,
     handleCandidateManualChange,
@@ -146,7 +148,11 @@ export const SubscriptionComparatorWizard: FC<
         ...(prevStep === 1
           ? {
               selection_mode:
-                mode === "existingVsManual" ? "existing" : "manual",
+                mode === "existingVsManual"
+                  ? "existing"
+                  : mode === "existingVsExisting"
+                    ? "existing_existing"
+                    : "manual",
             }
           : {}),
       });
@@ -195,7 +201,7 @@ export const SubscriptionComparatorWizard: FC<
       </div>
 
       <Card className="border-border/70 rounded-[1.1rem] border shadow-sm md:rounded-3xl">
-        <CardHeader className="border-border/60 space-y-3 border-b pb-3 md:space-y-4">
+        <CardHeader className="border-border/60 space-y-3 border-b px-3 pb-3 md:space-y-4 md:px-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {compareQuota && (
@@ -252,7 +258,7 @@ export const SubscriptionComparatorWizard: FC<
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 pt-2">
+        <CardContent className="space-y-4 px-3 pt-2 md:px-6">
           <div className="sticky top-2 z-10 hidden md:block">
             <Button
               type="button"
@@ -296,8 +302,12 @@ export const SubscriptionComparatorWizard: FC<
 
             {step === 3 && (
               <StepCandidate
+                mode={mode}
                 candidateManual={candidateManual}
                 onCandidateManualChange={handleCandidateManualChange}
+                candidateExistingId={candidateExistingId}
+                selectableSubscriptions={selectableSubscriptionOptions}
+                onCandidateExistingChange={handleCandidateExistingChange}
               />
             )}
 

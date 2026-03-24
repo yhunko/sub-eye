@@ -189,9 +189,14 @@ const SubscriptionsTable: FC = () => {
   const allVisibleSelected =
     visibleIds.length > 0 && selectedSubscriptionIds.size === visibleIds.length;
 
+  const isSelected = useCallback(
+    (id: string) => selectedSubscriptionIds.has(id),
+    [selectedSubscriptionIds],
+  );
+
   const columns = useColumns({
     onToggleSelect,
-    isSelected: (id) => selectedSubscriptionIds.has(id),
+    isSelected,
     allVisibleSelected,
     onToggleAll,
     showCategoryColumn,
