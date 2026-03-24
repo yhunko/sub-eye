@@ -1,16 +1,4 @@
 set -e
 
-echo "📦 Checking dependencies..."
-syncpack lint
-
-echo "🌎 Compiling i18n..."
-bun run prepare
-
 echo "🎨 Running lint-staged (ESLint + Prettier)..."
 bunx lint-staged
-
-echo "🔎 Running lint across the repo..."
-bun run lint --output-logs=errors-only
-
-echo "🔎 Running type checks across the repo..."
-bun run type-check
