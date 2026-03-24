@@ -600,7 +600,6 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(db, id, {
       willBeCancelledAt: new Date(nextPaymentDate),
-      paymentDate: nextPaymentDate,
       qstashMessageId: null,
       scheduledCost: null,
       scheduledCurrency: null,
@@ -885,11 +884,6 @@ export class SubscriptionService {
 
     if (willBeCancelledAt !== undefined) {
       dbPayload.willBeCancelledAt = normalizedCancellation;
-
-      // Cancellation resets the billing anchor so recurring projections stay consistent.
-      if (normalizedCancellation) {
-        dbPayload.paymentDate = normalizedCancellation.toISOString();
-      }
     }
 
     return this.stripUndefined(dbPayload);
