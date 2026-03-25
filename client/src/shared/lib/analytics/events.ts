@@ -1,7 +1,6 @@
 import { posthog } from "./posthog";
 
 type EventMap = {
-  page_viewed: { path: string };
   subscription_created: { billing_period: string; currency: string };
   subscription_updated: Record<string, never>;
   subscription_deleted: Record<string, never>;
@@ -15,7 +14,7 @@ type EventMap = {
   comparator_opened: Record<string, never>;
   comparator_step_completed: {
     step: 1 | 2 | 3 | 4;
-    selection_mode?: "existing" | "manual";
+    selection_mode?: "existing" | "existing_existing" | "manual";
   };
   comparator_completed: { switch_verdict: "switch" | "keep" | "neutral" };
   comparator_ai_analysis_requested: Record<string, never>;

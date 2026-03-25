@@ -1,0 +1,16 @@
+set -e
+
+echo "📦 Checking dependency consistency..."
+bun run deps:lint
+
+echo "🌎 Compiling i18n..."
+bun --cwd client run prepare
+
+echo "🔎 Running lint across the repo..."
+bun run lint --output-logs=errors-only
+
+echo "🔎 Running type checks across the repo..."
+bun run type-check
+
+echo "🔄 Checking for circular dependencies..."
+bun run check:circular

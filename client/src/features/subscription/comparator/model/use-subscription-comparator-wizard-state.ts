@@ -14,6 +14,7 @@ import {
   type ManualPlanDraft,
 } from "./comparator-form";
 import {
+  buildCandidateExistingPreview,
   buildCandidatePreview,
   buildCurrentPreview,
   toPreferredCurrencyConverter,
@@ -22,8 +23,8 @@ import type {
   ComparatorWizardComparisonState,
   ComparatorWizardPersistentState,
   ComparatorWizardStep,
+  CompareMode,
 } from "./comparator-wizard-persistence";
-import type { CompareMode } from "../ui/wizard/subscription-comparator-wizard.types";
 import { useComparatorQueries } from "./use-comparator-queries";
 
 type ComparatorWizardSessionState = {
@@ -62,6 +63,9 @@ export const useSubscriptionComparatorWizardState = ({
   const [currentExistingId, setCurrentExistingId] = useState(
     persistedState.currentExistingId,
   );
+  const [candidateExistingId, setCandidateExistingId] = useState(
+    persistedState.candidateExistingId,
+  );
   const [manualDrafts, setManualDrafts] = useState<ManualDraftsState>({
     current: persistedState.currentManual,
     candidate: persistedState.candidateManual,
@@ -91,11 +95,13 @@ export const useSubscriptionComparatorWizardState = ({
       step: toWizardStep(step),
       mode,
       currentExistingId,
+      candidateExistingId,
       currentManual,
       candidateManual,
       comparison,
     });
   }, [
+    candidateExistingId,
     candidateManual,
     comparison,
     currentExistingId,
@@ -108,6 +114,11 @@ export const useSubscriptionComparatorWizardState = ({
   const selectedExistingSubscription = useMemo(
     () => subscriptions.find((s) => s.id === currentExistingId),
     [subscriptions, currentExistingId],
+  );
+
+  const selectedCandidateExistingSubscription = useMemo(
+    () => subscriptions.find((s) => s.id === candidateExistingId),
+    [subscriptions, candidateExistingId],
   );
 
   const preferredCurrencyCode = useMemo(() => {
@@ -215,6 +226,7 @@ export const useSubscriptionComparatorWizardState = ({
   const handleModeChange = (nextMode: CompareMode) => {
     setMode(nextMode);
     setStep(1);
+    setCandidateExistingId("");
     clearErrorMessage();
     resetComparisonState();
   };
@@ -261,6 +273,18 @@ export const useSubscriptionComparatorWizardState = ({
   };
 
   const goFromStepThree = () => {
+    if (mode === "existingVsExisting") {
+      if (!candidateExistingId) {
+        setSessionState((prev) => ({
+          ...prev,
+          errorMessage: m.validation_required(),
+        }));
+        return;
+      }
+      goToStep(4);
+      return;
+    }
+
     const candidate = parseManualPlanDraft(candidateManual);
     if (candidate.error) {
       setSessionState((prev) => ({
@@ -282,17 +306,10 @@ export const useSubscriptionComparatorWizardState = ({
       return;
     }
 
-    const candidate = parseManualPlanDraft(candidateManual);
-    if (candidate.error || !candidate.payload) {
-      setSessionState((prev) => ({
-        ...prev,
-        errorMessage: m.validation_positive_number(),
-      }));
-      return;
-    }
-
     let currentPlan: CompareSubscriptionsInput["currentPlan"];
-    if (mode === "existingVsManual") {
+    let candidatePlan: CompareSubscriptionsInput["candidatePlan"];
+
+    if (mode === "existingVsManual" || mode === "existingVsExisting") {
       if (!currentExistingId) {
         setSessionState((prev) => ({
           ...prev,
@@ -300,11 +317,7 @@ export const useSubscriptionComparatorWizardState = ({
         }));
         return;
       }
-
-      currentPlan = {
-        source: "existing",
-        subscriptionId: currentExistingId,
-      };
+      currentPlan = { source: "existing", subscriptionId: currentExistingId };
     } else {
       const currentManualPayload = parseManualPlanDraft(currentManual);
       if (currentManualPayload.error || !currentManualPayload.payload) {
@@ -314,13 +327,36 @@ export const useSubscriptionComparatorWizardState = ({
         }));
         return;
       }
-
       currentPlan = currentManualPayload.payload;
+    }
+
+    if (mode === "existingVsExisting") {
+      if (!candidateExistingId) {
+        setSessionState((prev) => ({
+          ...prev,
+          errorMessage: m.validation_required(),
+        }));
+        return;
+      }
+      candidatePlan = {
+        source: "existing",
+        subscriptionId: candidateExistingId,
+      };
+    } else {
+      const candidate = parseManualPlanDraft(candidateManual);
+      if (candidate.error || !candidate.payload) {
+        setSessionState((prev) => ({
+          ...prev,
+          errorMessage: m.validation_positive_number(),
+        }));
+        return;
+      }
+      candidatePlan = candidate.payload;
     }
 
     const payload: CompareSubscriptionsInput = {
       currentPlan,
-      candidatePlan: candidate.payload,
+      candidatePlan,
     };
 
     setSessionState((prev) => ({
@@ -428,17 +464,35 @@ export const useSubscriptionComparatorWizardState = ({
 
   const candidatePreview = useMemo(
     () =>
-      buildCandidatePreview({
-        candidateManual,
-        convertToPreferredCurrency,
-        preferredCurrencyCode,
-      }),
-    [candidateManual, convertToPreferredCurrency, preferredCurrencyCode],
+      mode === "existingVsExisting"
+        ? buildCandidateExistingPreview({
+            selectedCandidateExistingSubscription,
+            convertToPreferredCurrency,
+            preferredCurrencyCode,
+          })
+        : buildCandidatePreview({
+            candidateManual,
+            convertToPreferredCurrency,
+            preferredCurrencyCode,
+          }),
+    [
+      mode,
+      selectedCandidateExistingSubscription,
+      candidateManual,
+      convertToPreferredCurrency,
+      preferredCurrencyCode,
+    ],
   );
 
   const handleCurrentExistingChange = (value: string) => {
     resetComparisonState();
     setCurrentExistingId(value);
+    clearErrorMessage();
+  };
+
+  const handleCandidateExistingChange = (value: string) => {
+    resetComparisonState();
+    setCandidateExistingId(value);
     clearErrorMessage();
   };
 
@@ -472,6 +526,7 @@ export const useSubscriptionComparatorWizardState = ({
     mode,
     prefillSubscriptionId,
     currentExistingId,
+    candidateExistingId,
     selectableSubscriptionOptions,
     currentManual,
     candidateManual,
@@ -500,6 +555,7 @@ export const useSubscriptionComparatorWizardState = ({
     goToStep,
     handleBackNavigation,
     handleCurrentExistingChange,
+    handleCandidateExistingChange,
     handleClearPrefill,
     handleCurrentManualChange,
     handleCandidateManualChange,

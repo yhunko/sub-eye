@@ -17,7 +17,10 @@ export interface ClerkWebhookEvent extends SvixWebhookEvent {
  * Add new entries here when subscribing to additional events in
  * the Clerk Dashboard – the compiler will guide you to handle them.
  */
-export type ClerkEventType = "user.deleted";
+export type ClerkEventType =
+  | "user.deleted"
+  | "organization.deleted"
+  | "organizationMembership.deleted";
 
 /** Hono env shape shared by all Clerk webhook routes. */
 export type ClerkWebhookEnv = {

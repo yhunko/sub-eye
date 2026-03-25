@@ -12,3 +12,17 @@ export const requireUserId = (context: Context): string => {
 
   return userId;
 };
+
+export const getOrgId = (context: Context): string | null => {
+  const orgId = context.get("orgId");
+  return typeof orgId === "string" ? orgId : null;
+};
+
+export const requireOrgAdmin = (context: Context): void => {
+  const orgRole = context.get("orgRole");
+  if (orgRole !== "org:admin") {
+    throw new HTTPException(403, {
+      res: context.json({ error: "Forbidden" }, 403),
+    });
+  }
+};

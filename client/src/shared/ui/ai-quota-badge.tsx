@@ -17,6 +17,8 @@ import { track } from "@/shared/lib/analytics";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { AppleIntelligenceIcon } from "./apple-intelligence-icon";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 
 type AiQuotaBadgeProps = {
   usage: Pick<MonthlyUsage, "current" | "limit" | "remaining">;
@@ -111,6 +113,13 @@ export const AiQuotaBadge: FC<AiQuotaBadgeProps> = ({
             <p className="text-muted-foreground text-xs tabular-nums">
               {m.ai_usage_popover_used({ current })}
             </p>
+            <Link
+              to="/settings/billing"
+              className="group flex items-center gap-1.5 rounded-md border border-cyan-500/30 bg-cyan-500/5 px-2.5 py-1.5 text-xs font-medium text-cyan-700 transition-colors hover:bg-cyan-500/10 dark:text-cyan-300"
+            >
+              {m.ai_usage_popover_upgrade_hint()}
+              <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         )}
       </PopoverContent>

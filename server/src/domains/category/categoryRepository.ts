@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { categoriesTable } from "../../db/schema";
 
@@ -13,7 +13,9 @@ export class CategoryRepository {
     return database
       .select()
       .from(categoriesTable)
-      .where(eq(categoriesTable.userId, userId))
+      .where(
+        and(eq(categoriesTable.userId, userId), isNull(categoriesTable.orgId)),
+      )
       .orderBy(asc(categoriesTable.createdAt));
   }
 
@@ -56,7 +58,9 @@ export class CategoryRepository {
     const [result] = await database
       .select({ count: count() })
       .from(categoriesTable)
-      .where(eq(categoriesTable.userId, userId));
+      .where(
+        and(eq(categoriesTable.userId, userId), isNull(categoriesTable.orgId)),
+      );
 
     return result?.count ?? 0;
   }
@@ -143,6 +147,40 @@ export class CategoryRepository {
   ): Promise<void> {
     await database
       .delete(categoriesTable)
-      .where(eq(categoriesTable.userId, userId));
+      .where(
+        and(eq(categoriesTable.userId, userId), isNull(categoriesTable.orgId)),
+      );
+  }
+
+  static async findByOrgId(
+    database: typeof db,
+    orgId: string,
+  ): Promise<CategoryRecord[]> {
+    return database
+      .select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.orgId, orgId))
+      .orderBy(asc(categoriesTable.createdAt));
+  }
+
+  static async countByOrgId(
+    database: typeof db,
+    orgId: string,
+  ): Promise<number> {
+    const [result] = await database
+      .select({ count: count() })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.orgId, orgId));
+
+    return result?.count ?? 0;
+  }
+
+  static async deleteByOrgId(
+    database: typeof db,
+    orgId: string,
+  ): Promise<void> {
+    await database
+      .delete(categoriesTable)
+      .where(eq(categoriesTable.orgId, orgId));
   }
 }

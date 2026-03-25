@@ -2,14 +2,7 @@
   "$schema": "./node_modules/syncpack/schema.json",
   "versionGroups": [
     {
-      "label": "Pin ESLint v9 across monorepo",
-      "packages": ["**"],
-      "dependencies": ["eslint"],
-      "dependencyTypes": ["dev"],
-      "pinVersion": "9.39.2"
-    },
-    {
-      "label": "Sync all other dependencies to highest semver",
+      "label": "Sync all dependencies to highest semver",
       "packages": ["**"],
       "dependencies": ["**"],
       "dependencyTypes": ["dev", "prod"],

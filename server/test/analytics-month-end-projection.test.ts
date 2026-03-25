@@ -152,3 +152,86 @@ describe("AnalyticsCalculator.buildMonthlyTrend", () => {
     expect(trend.map((point) => point.amount)).toEqual([131.3, 131.3, 131.3]);
   });
 });
+
+describe("AnalyticsCalculator — cancelled subscriptions", () => {
+  it("calculateSpendInRange includes a payment from the month before cancellation", () => {
+    // Started March 13, cancelled April 13 — the March payment must appear in analytics
+    const subscription: SubscriptionDto = {
+      ...createMonthlySubscription("2025-03-13T12:00:00.000Z"),
+      willBeCancelledAt: "2025-04-13T12:00:00.000Z",
+      status: "cancelled",
+    };
+
+    const total = AnalyticsCalculator.calculateSpendInRange(
+      subscription,
+      new Date("2025-03-01T00:00:00.000Z"),
+      new Date("2025-03-31T23:59:59.999Z"),
+      "UTC",
+    );
+
+    expect(total).toBeCloseTo(9.99);
+  });
+
+  it("calculateSpendInRange excludes the payment on the exact cancellation date", () => {
+    // April 13 === willBeCancelledAt: shouldIncludeOccurrence uses strict < so it's excluded
+    const subscription: SubscriptionDto = {
+      ...createMonthlySubscription("2025-03-13T12:00:00.000Z"),
+      willBeCancelledAt: "2025-04-13T12:00:00.000Z",
+      status: "cancelled",
+    };
+
+    const total = AnalyticsCalculator.calculateSpendInRange(
+      subscription,
+      new Date("2025-04-01T00:00:00.000Z"),
+      new Date("2025-04-30T23:59:59.999Z"),
+      "UTC",
+    );
+
+    expect(total).toBe(0);
+  });
+
+  it("calculateSpendInRange includes payments from multiple months before cancellation", () => {
+    // Subscription anchored Dec 13 — Jan and Feb payments should both be included
+    const subscription: SubscriptionDto = {
+      ...createMonthlySubscription("2024-12-13T12:00:00.000Z"),
+      willBeCancelledAt: "2025-03-13T12:00:00.000Z",
+      status: "cancelled",
+    };
+
+    const janTotal = AnalyticsCalculator.calculateSpendInRange(
+      subscription,
+      new Date("2025-01-01T00:00:00.000Z"),
+      new Date("2025-01-31T23:59:59.999Z"),
+      "UTC",
+    );
+    const febTotal = AnalyticsCalculator.calculateSpendInRange(
+      subscription,
+      new Date("2025-02-01T00:00:00.000Z"),
+      new Date("2025-02-28T23:59:59.999Z"),
+      "UTC",
+    );
+
+    expect(janTotal).toBeCloseTo(9.99);
+    expect(febTotal).toBeCloseTo(9.99);
+  });
+
+  it("buildMonthlyTrend shows correct spend for months around cancellation", () => {
+    const subscription: SubscriptionDto = {
+      ...createMonthlySubscription("2025-03-13T12:00:00.000Z"),
+      willBeCancelledAt: "2025-04-13T12:00:00.000Z",
+      status: "cancelled",
+    };
+
+    const trend = AnalyticsCalculator.buildMonthlyTrend(
+      [subscription],
+      new Date("2025-03-01T00:00:00.000Z"),
+      2,
+      "UTC",
+    );
+
+    // March: payment on March 13 (< April 13) → included
+    expect(trend[0].amount).toBeCloseTo(9.99);
+    // April: payment on April 13 === willBeCancelledAt → excluded
+    expect(trend[1].amount).toBe(0);
+  });
+});

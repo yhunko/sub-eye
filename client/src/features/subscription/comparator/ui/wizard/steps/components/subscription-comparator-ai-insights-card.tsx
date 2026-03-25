@@ -1,5 +1,21 @@
-import type { FC } from "react";
-import { ExternalLink, Sparkles, Lock } from "lucide-react";
+import { type FC, useState, useEffect } from "react";
+import {
+  AlertTriangle,
+  ExternalLink,
+  HelpCircle,
+  Sparkles,
+  Lock,
+  TrendingDown,
+  TrendingUp,
+  Minus,
+  Calendar,
+  DollarSign,
+  ShieldCheck,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Info,
+} from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -16,8 +32,14 @@ import {
   TooltipTrigger,
 } from "@/shared/components";
 import { AiQuotaBadge } from "@/shared/ui";
+import { PlanFeatureLockCard } from "@/entities/billing/ui/plan-feature-lock-card";
+import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
-import type { AnalyzeComparatorResponseDto, MonthlyUsage } from "shared";
+import type {
+  AnalyzeComparatorResponseDto,
+  ComparatorAiRiskDto,
+  MonthlyUsage,
+} from "shared";
 
 type SubscriptionComparatorAiInsightsCardProps = {
   aiResult: AnalyzeComparatorResponseDto | undefined;
@@ -121,6 +143,147 @@ const resolveCommitmentTermLabel = (term: CommitmentTerm): string => {
   }
 };
 
+const resolveRiskSeverityLabel = (
+  severity: ComparatorAiRiskDto["severity"],
+): string => {
+  switch (severity) {
+    case "high":
+      return m.comparator_ai_risk_severity_high();
+    case "medium":
+      return m.comparator_ai_risk_severity_medium();
+    case "low":
+      return m.comparator_ai_risk_severity_low();
+    default:
+      return severity;
+  }
+};
+
+const DECISION_STYLES: Record<
+  RecommendationDecision,
+  { banner: string; text: string; icon: FC<{ className?: string }> }
+> = {
+  switch: {
+    banner:
+      "bg-emerald-500/10 border-emerald-500/30 dark:bg-emerald-500/10 dark:border-emerald-500/30",
+    text: "text-emerald-700 dark:text-emerald-400",
+    icon: TrendingDown,
+  },
+  keep: {
+    banner:
+      "bg-amber-500/10 border-amber-500/30 dark:bg-amber-500/10 dark:border-amber-500/30",
+    text: "text-amber-700 dark:text-amber-400",
+    icon: TrendingUp,
+  },
+  trial_first: {
+    banner:
+      "bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/10 dark:border-blue-500/30",
+    text: "text-blue-700 dark:text-blue-400",
+    icon: Sparkles,
+  },
+  depends: {
+    banner:
+      "bg-slate-500/10 border-slate-400/30 dark:bg-slate-500/10 dark:border-slate-400/30",
+    text: "text-slate-600 dark:text-slate-400",
+    icon: Minus,
+  },
+};
+
+const PRICE_LEVEL_STYLES: Record<PriceSignificanceLevel, string> = {
+  negligible: "bg-muted text-muted-foreground",
+  moderate: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  material: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+};
+
+const RISK_SEVERITY_STYLES: Record<
+  ComparatorAiRiskDto["severity"],
+  { row: string; icon: string; badge: string }
+> = {
+  high: {
+    row: "bg-red-500/8 border border-red-500/20",
+    icon: "text-red-500",
+    badge: "bg-red-500/10 text-red-600 dark:text-red-400",
+  },
+  medium: {
+    row: "bg-amber-500/8 border border-amber-500/20",
+    icon: "text-amber-500",
+    badge: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  },
+  low: {
+    row: "bg-muted/40 border border-border/50",
+    icon: "text-muted-foreground",
+    badge: "bg-muted text-muted-foreground",
+  },
+};
+
+const SEVERITY_ORDER: Record<ComparatorAiRiskDto["severity"], number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+const MATURITY_STYLES: Record<MaturityLevel, string> = {
+  high: "text-emerald-600 dark:text-emerald-400",
+  medium: "text-amber-600 dark:text-amber-400",
+  low: "text-red-600 dark:text-red-400",
+  unknown: "text-muted-foreground",
+};
+
+const getMaturityTextColor = (level: MaturityLevel): string =>
+  MATURITY_STYLES[level] ?? MATURITY_STYLES.unknown;
+
+const MaturityDots: FC<{ level: MaturityLevel }> = ({ level }) => {
+  const filledCount =
+    level === "high" ? 3 : level === "medium" ? 2 : level === "low" ? 1 : 0;
+
+  return (
+    <span className="inline-flex gap-0.5" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={cn(
+            "size-2 rounded-full",
+            i < filledCount
+              ? "bg-current opacity-100"
+              : "bg-current opacity-20",
+          )}
+        />
+      ))}
+    </span>
+  );
+};
+
+const ANALYZING_STEPS = [
+  m.comparator_ai_analyzing_step_1,
+  m.comparator_ai_analyzing_step_2,
+  m.comparator_ai_analyzing_step_3,
+  m.comparator_ai_analyzing_step_4,
+] as const;
+
+const AnalyzingProgress: FC = () => {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStepIndex((prev) => (prev + 1) % ANALYZING_STEPS.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const StepFn = ANALYZING_STEPS[stepIndex];
+
+  return (
+    <div className="space-y-2 rounded-lg border border-dashed p-4">
+      <div className="flex items-center gap-2">
+        <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" />
+        <p className="text-sm font-medium">{StepFn()}</p>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        {m.comparator_ai_analyzing_hint()}
+      </p>
+    </div>
+  );
+};
+
 const AnalyzeButton: FC<{
   disabledReason: string | null;
   isAnalyzePending: boolean;
@@ -168,11 +331,24 @@ const AnalyzeButton: FC<{
 const InsightsContent: FC<{
   aiResult: AnalyzeComparatorResponseDto;
 }> = ({ aiResult }) => {
+  const [citationsOpen, setCitationsOpen] = useState(false);
+
   if (!aiResult.aiInsights) {
     return null;
   }
 
   const { aiInsights } = aiResult;
+  const decision = aiInsights.recommendation.decision as RecommendationDecision;
+  const confidence = aiInsights.recommendation
+    .confidence as RecommendationConfidence;
+  const decisionStyle = DECISION_STYLES[decision] ?? DECISION_STYLES.depends;
+  const DecisionIcon = decisionStyle.icon;
+
+  const sortedRisks = [...aiInsights.risks].sort(
+    (a, b) =>
+      SEVERITY_ORDER[a.severity as ComparatorAiRiskDto["severity"]] -
+      SEVERITY_ORDER[b.severity as ComparatorAiRiskDto["severity"]],
+  );
 
   return (
     <div className="relative rounded-lg p-px">
@@ -183,135 +359,254 @@ const InsightsContent: FC<{
         duration={8}
       />
 
-      <div className="bg-card relative space-y-3 rounded-lg p-3">
-        <p className="text-sm font-medium">{aiInsights.summary}</p>
-
-        <div className="text-sm">
-          <span className="font-medium">
-            {m.comparator_ai_recommendation_label()}
-          </span>{" "}
-          {m.comparator_ai_recommendation_value({
-            decision: resolveRecommendationDecisionLabel(
-              aiInsights.recommendation.decision,
-            ),
-            confidence: resolveRecommendationConfidenceLabel(
-              aiInsights.recommendation.confidence,
-            ),
-          })}
+      <div className="bg-card relative space-y-3 rounded-lg p-2 md:p-3">
+        {/* Recommendation banner */}
+        <div className="space-y-1.5">
+          <div
+            className={cn(
+              "flex flex-col gap-1.5 rounded-lg border p-3",
+              decisionStyle.banner,
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <DecisionIcon
+                className={cn("size-4 shrink-0", decisionStyle.text)}
+              />
+              <span className={cn("text-sm font-semibold", decisionStyle.text)}>
+                {resolveRecommendationDecisionLabel(decision)}
+              </span>
+            </div>
+            <p className={cn("text-sm", decisionStyle.text)}>
+              {aiInsights.recommendation.rationale}
+            </p>
+          </div>
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
+            <ShieldCheck className="size-3 shrink-0" />
+            <span>
+              {m.comparator_ai_confidence_label()}:{" "}
+              {resolveRecommendationConfidenceLabel(confidence)}
+            </span>
+          </div>
         </div>
 
-        <div className="text-muted-foreground text-sm">
-          <span className="text-foreground font-medium">
-            {m.comparator_ai_rationale_label()}
-          </span>{" "}
-          {aiInsights.recommendation.rationale}
-        </div>
+        {/* Summary */}
+        <p className="text-sm">{aiInsights.summary}</p>
 
-        <div className="text-sm">
-          <span className="font-medium">
-            {m.comparator_ai_price_significance_label()}
-          </span>{" "}
-          {m.comparator_ai_price_significance_value({
-            level: resolvePriceLevelLabel(aiInsights.priceSignificance.level),
-          })}
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {aiInsights.priceSignificance.explanation}
-        </p>
-
-        <div className="text-sm">
-          <span className="font-medium">
-            {m.comparator_ai_commitment_label()}
-          </span>{" "}
-          {m.comparator_ai_commitment_value({
-            term: resolveCommitmentTermLabel(
-              aiInsights.annualCommitmentAdvice.term,
-            ),
-            confidence: resolveRecommendationConfidenceLabel(
-              aiInsights.annualCommitmentAdvice.confidence,
-            ),
-          })}
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {aiInsights.annualCommitmentAdvice.reason}
-        </p>
-
+        {/* Metric cards row */}
         <div className="grid gap-2 md:grid-cols-2">
-          <div className="rounded-lg border p-2">
-            <p className="text-xs font-medium uppercase">
-              {m.comparator_ai_maturity_current_label()}
-            </p>
-            <p className="mt-1 text-sm">
-              {resolveMaturityLevelLabel(
-                aiInsights.serviceMaturity.current.level,
+          {/* Price significance card */}
+          <div className="space-y-1.5 rounded-lg border p-2.5">
+            <div className="flex items-center gap-1.5">
+              <DollarSign className="text-muted-foreground size-3.5" />
+              <p className="text-xs font-medium tracking-wide uppercase">
+                {m.comparator_ai_price_significance_label()}
+              </p>
+            </div>
+            <span
+              className={cn(
+                "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
+                PRICE_LEVEL_STYLES[
+                  aiInsights.priceSignificance.level as PriceSignificanceLevel
+                ],
               )}
-            </p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {aiInsights.serviceMaturity.current.reason}
+            >
+              {resolvePriceLevelLabel(
+                aiInsights.priceSignificance.level as PriceSignificanceLevel,
+              )}
+            </span>
+            <p className="text-muted-foreground text-xs">
+              {aiInsights.priceSignificance.explanation}
             </p>
           </div>
-          <div className="rounded-lg border p-2">
-            <p className="text-xs font-medium uppercase">
-              {m.comparator_ai_maturity_candidate_label()}
-            </p>
-            <p className="mt-1 text-sm">
-              {resolveMaturityLevelLabel(
-                aiInsights.serviceMaturity.candidate.level,
-              )}
-            </p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {aiInsights.serviceMaturity.candidate.reason}
+
+          {/* Commitment advice card */}
+          <div className="space-y-1.5 rounded-lg border p-2.5">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="text-muted-foreground size-3.5" />
+              <p className="text-xs font-medium tracking-wide uppercase">
+                {m.comparator_ai_commitment_label()}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                {resolveCommitmentTermLabel(
+                  aiInsights.annualCommitmentAdvice.term as CommitmentTerm,
+                )}
+              </span>
+              <span className="text-muted-foreground text-xs">
+                {resolveRecommendationConfidenceLabel(
+                  aiInsights.annualCommitmentAdvice.confidence,
+                )}
+              </span>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {aiInsights.annualCommitmentAdvice.reason}
             </p>
           </div>
         </div>
 
-        {aiInsights.risks.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              <span aria-hidden>⚠️ </span>
+        {/* Service maturity */}
+        <div className="space-y-2 rounded-lg border p-2.5">
+          <div className="grid gap-2 md:grid-cols-2">
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+                {m.comparator_ai_maturity_current_label()}
+              </p>
+              <div
+                className={cn(
+                  "flex items-center gap-2",
+                  getMaturityTextColor(
+                    aiInsights.serviceMaturity.current.level as MaturityLevel,
+                  ),
+                )}
+              >
+                <MaturityDots
+                  level={
+                    aiInsights.serviceMaturity.current.level as MaturityLevel
+                  }
+                />
+                <span className="text-sm font-medium">
+                  {resolveMaturityLevelLabel(
+                    aiInsights.serviceMaturity.current.level as MaturityLevel,
+                  )}
+                </span>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {aiInsights.serviceMaturity.current.reason}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+                {m.comparator_ai_maturity_candidate_label()}
+              </p>
+              <div
+                className={cn(
+                  "flex items-center gap-2",
+                  getMaturityTextColor(
+                    aiInsights.serviceMaturity.candidate.level as MaturityLevel,
+                  ),
+                )}
+              >
+                <MaturityDots
+                  level={
+                    aiInsights.serviceMaturity.candidate.level as MaturityLevel
+                  }
+                />
+                <span className="text-sm font-medium">
+                  {resolveMaturityLevelLabel(
+                    aiInsights.serviceMaturity.candidate.level as MaturityLevel,
+                  )}
+                </span>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {aiInsights.serviceMaturity.candidate.reason}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Risks */}
+        {sortedRisks.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium tracking-wide uppercase">
               {m.comparator_ai_risks_label()}
             </p>
-            <ul className="list-disc space-y-1 pl-5 text-sm">
-              {aiInsights.risks.map((risk) => (
-                <li key={risk}>{risk}</li>
-              ))}
-            </ul>
+            <div className="space-y-1">
+              {sortedRisks.map((risk) => {
+                const severityStyle =
+                  RISK_SEVERITY_STYLES[
+                    risk.severity as ComparatorAiRiskDto["severity"]
+                  ] ?? RISK_SEVERITY_STYLES.low;
+                const RiskIcon = risk.severity === "low" ? Info : AlertTriangle;
+                return (
+                  <div
+                    key={risk.text}
+                    className={cn(
+                      "flex items-start gap-2 rounded-md px-2.5 py-1.5",
+                      severityStyle.row,
+                    )}
+                  >
+                    <RiskIcon
+                      className={cn(
+                        "mt-0.5 size-3.5 shrink-0",
+                        severityStyle.icon,
+                      )}
+                    />
+                    <div className="flex min-w-0 flex-wrap items-start gap-1.5">
+                      <span
+                        className={cn(
+                          "inline-block shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium",
+                          severityStyle.badge,
+                        )}
+                      >
+                        {resolveRiskSeverityLabel(
+                          risk.severity as ComparatorAiRiskDto["severity"],
+                        )}
+                      </span>
+                      <p className="text-sm">{risk.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
+        {/* Uncertainties */}
         {aiInsights.uncertainties.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              <span aria-hidden>❓ </span>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium tracking-wide uppercase">
               {m.comparator_ai_uncertainties_label()}
             </p>
-            <ul className="list-disc space-y-1 pl-5 text-sm">
+            <div className="space-y-1">
               {aiInsights.uncertainties.map((uncertainty) => (
-                <li key={uncertainty}>{uncertainty}</li>
+                <div
+                  key={uncertainty}
+                  className="flex items-start gap-2 rounded-md px-2.5 py-1.5"
+                >
+                  <HelpCircle className="text-muted-foreground mt-0.5 size-3.5 shrink-0" />
+                  <p className="text-muted-foreground text-sm">{uncertainty}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
+        {/* Citations */}
         {aiInsights.citations.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              {m.comparator_ai_sources_label()}
-            </p>
-            <div className="flex flex-col gap-1">
-              {aiInsights.citations.map((citation) => (
-                <a
-                  key={citation.url}
-                  href={citation.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
-                >
-                  {citation.title}
-                  <ExternalLink className="size-3" />
-                </a>
-              ))}
-            </div>
+          <div className="border-border/50 border-t pt-2">
+            <button
+              type="button"
+              onClick={() => setCitationsOpen((v) => !v)}
+              className="hover:text-foreground text-muted-foreground flex w-full items-center justify-between text-xs font-medium tracking-wide uppercase transition-colors"
+            >
+              <span>
+                {m.comparator_ai_sources_toggle({
+                  count: String(aiInsights.citations.length),
+                })}
+              </span>
+              {citationsOpen ? (
+                <ChevronUp className="size-3.5" />
+              ) : (
+                <ChevronDown className="size-3.5" />
+              )}
+            </button>
+            {citationsOpen && (
+              <div className="mt-2 flex flex-col gap-1">
+                {aiInsights.citations.map((citation) => (
+                  <a
+                    key={citation.url}
+                    href={citation.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
+                  >
+                    {citation.title}
+                    <ExternalLink className="size-3" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -343,7 +638,7 @@ export const SubscriptionComparatorAiInsightsCard: FC<
 
   return (
     <Card className="rounded-2xl border-dashed">
-      <CardHeader className="pb-2">
+      <CardHeader className="px-3 pb-2 md:px-6">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <CardTitle className="text-base">
@@ -360,13 +655,26 @@ export const SubscriptionComparatorAiInsightsCard: FC<
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        <AnalyzeButton
-          disabledReason={analyzeDisabledReason}
-          isAnalyzePending={isAnalyzePending}
-          isAnalyzeDisabled={isAnalyzeDisabled}
-          onAnalyze={onAnalyze}
-        />
+      <CardContent className="space-y-3 px-3 md:px-6">
+        {isAiQuotaReached && !aiResult?.aiInsights ? (
+          <PlanFeatureLockCard
+            title={m.comparator_ai_upgrade_title()}
+            description={m.comparator_ai_upgrade_description()}
+            analyticsSource="comparator_ai"
+            analyticsFeature="ai_quota"
+          />
+        ) : (
+          <>
+            <AnalyzeButton
+              disabledReason={analyzeDisabledReason}
+              isAnalyzePending={isAnalyzePending}
+              isAnalyzeDisabled={isAnalyzeDisabled}
+              onAnalyze={onAnalyze}
+            />
+
+            {isAnalyzePending && <AnalyzingProgress />}
+          </>
+        )}
 
         {aiResult?.mode === "fallback" && (
           <Alert>

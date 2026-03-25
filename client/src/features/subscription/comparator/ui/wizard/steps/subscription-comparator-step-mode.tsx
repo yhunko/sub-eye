@@ -24,7 +24,7 @@ const SubscriptionComparatorStepMode: FC<
         <CardTitle className="text-base">{m.comparator_mode_title()}</CardTitle>
         <CardDescription>{m.comparator_mode_description()}</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-2 md:grid-cols-2">
+      <CardContent className="grid gap-2 md:grid-cols-3">
         <button
           type="button"
           className={cn(
@@ -38,6 +38,23 @@ const SubscriptionComparatorStepMode: FC<
           <p className="font-medium">{m.comparator_mode_existing_title()}</p>
           <p className="text-muted-foreground mt-1 text-sm">
             {m.comparator_mode_existing_description()}
+          </p>
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "rounded-xl border p-4 text-left transition",
+            mode === "existingVsExisting"
+              ? "border-primary bg-primary/5"
+              : "hover:bg-muted/50",
+          )}
+          onClick={() => onModeChange("existingVsExisting")}
+        >
+          <p className="font-medium">
+            {m.comparator_mode_existing_existing_title()}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {m.comparator_mode_existing_existing_description()}
           </p>
         </button>
         <button

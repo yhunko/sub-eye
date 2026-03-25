@@ -1,6 +1,7 @@
 import { FC, useMemo } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { CurrencyBadge } from "@/entities/currency";
 import {
   Card,
@@ -31,10 +32,11 @@ type UpcomingRenewalsProps = {
 export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
   const { user } = useUser();
   const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
-      params: { userId: userId! },
+      params: { userId: userId!, orgId },
       options: { enabled: true },
     }),
   );

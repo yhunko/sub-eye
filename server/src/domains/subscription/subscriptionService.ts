@@ -8,8 +8,8 @@ import { SubscriptionCalculator } from "./subscriptionCalculator";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { CurrencyService } from "../currency/currencyService";
 import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
-import { SubscriptionPriceChangeWorkflow } from "./subscriptionPriceChangeWorkflow";
 import { UserService } from "../user/userService";
+import { OrgService } from "../org/orgService";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import { CategoryRepository } from "../category/categoryRepository";
 import type {
@@ -20,6 +20,8 @@ import type {
   GetSubscriptionsParams,
   SubscriptionLifecycleStatus,
   SchedulePriceChangeInput,
+  BulkDeleteSubscriptionsInput,
+  BulkUpdateCategoryInput,
 } from "shared";
 import {
   DateTimezoneUtils,
@@ -41,12 +43,23 @@ import {
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
 
+type PriceChangeWorkflowApi = {
+  schedule: (payload: {
+    subscriptionId: string;
+    effectiveAt: string;
+    scheduledCost: number;
+    scheduledCurrency: string;
+  }) => Promise<string>;
+  cancel: (workflowRunId: string) => Promise<void>;
+};
+
 type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
   currencyService: typeof CurrencyService;
   workflow: typeof SubscriptionNotificationsWorkflow;
-  priceChangeWorkflow: typeof SubscriptionPriceChangeWorkflow;
+  priceChangeWorkflow: PriceChangeWorkflowApi;
   userService: typeof UserService;
+  orgService: typeof OrgService;
   historyService: typeof SubscriptionHistoryService;
   categoryRepository: typeof CategoryRepository;
 };
@@ -55,12 +68,27 @@ type UpdateSubscriptionOptions = {
   trackHistory?: boolean;
 };
 
+// Lazy-loaded module reference to avoid circular dependency
+let priceChangeWorkflowModule: PriceChangeWorkflowApi | undefined;
+const getPriceChangeWorkflow = (): PriceChangeWorkflowApi => {
+  if (!priceChangeWorkflowModule) {
+    // Dynamic import is safe here - module will be loaded on first access
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    priceChangeWorkflowModule =
+      require("./subscriptionPriceChangeWorkflow").SubscriptionPriceChangeWorkflow;
+  }
+  return priceChangeWorkflowModule!;
+};
+
 const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
   currencyService: CurrencyService,
   workflow: SubscriptionNotificationsWorkflow,
-  priceChangeWorkflow: SubscriptionPriceChangeWorkflow,
+  get priceChangeWorkflow() {
+    return getPriceChangeWorkflow();
+  },
   userService: UserService,
+  orgService: OrgService,
   historyService: SubscriptionHistoryService,
   categoryRepository: CategoryRepository,
 };
@@ -121,23 +149,35 @@ export class SubscriptionService {
   static async addSubscription(
     userId: string,
     payload: AddSubscriptionInput,
+    orgId?: string | null,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
+    const effectiveOrgId = orgId ?? null;
+
+    await this.assertCategoryBelongsToSpace(
+      userId,
+      effectiveOrgId,
+      payload.categoryId,
+      deps,
+    );
 
     const [currentCount, planId] = await Promise.all([
-      deps.repository.countByUserId(db, userId),
-      deps.userService.getPlanId(userId),
+      effectiveOrgId
+        ? deps.repository.countByOrgId(db, effectiveOrgId)
+        : deps.repository.countByUserId(db, userId),
+      effectiveOrgId
+        ? deps.orgService.getOrgPlanId(effectiveOrgId)
+        : deps.userService.getPlanId(userId),
     ]);
     const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
 
-    if (currentCount >= maxSubscriptions) {
+    if (maxSubscriptions !== null && currentCount >= maxSubscriptions) {
       throw new SubscriptionLimitReachedError();
     }
 
     const created = await deps.repository.create(
       db,
-      this.toInsertPayload(userId, payload),
+      this.toInsertPayload(userId, effectiveOrgId, payload),
     );
 
     const result = this.shouldScheduleWorkflow(created)
@@ -155,6 +195,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: effectiveOrgId,
         action: "created",
         snapshot: dto,
       },
@@ -171,13 +212,18 @@ export class SubscriptionService {
     options: UpdateSubscriptionOptions = {},
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    await this.assertCategoryBelongsToUser(userId, payload.categoryId, deps);
-
     const existing = await deps.repository.findById(db, id);
 
     if (!existing || existing.userId !== userId) {
       throw new Error("Subscription not found");
     }
+
+    await this.assertCategoryBelongsToSpace(
+      userId,
+      existing.orgId,
+      payload.categoryId,
+      deps,
+    );
 
     if (existing.qstashMessageId) {
       await this.tryCancelWorkflow(existing.qstashMessageId, deps);
@@ -226,6 +272,7 @@ export class SubscriptionService {
         {
           subscriptionId: dto.id,
           userId,
+          orgId: existing.orgId,
           action: "updated",
           snapshot: {
             before: previousDto,
@@ -307,6 +354,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -360,6 +408,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -416,6 +465,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -468,6 +518,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId: existing.userId,
+        orgId: existing.orgId,
         action: "updated",
         snapshot: {
           before: previousDto,
@@ -520,6 +571,7 @@ export class SubscriptionService {
       {
         subscriptionId: id,
         userId,
+        orgId: existing.orgId,
         action: "deleted",
         snapshot: historySnapshot,
       },
@@ -548,7 +600,6 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(db, id, {
       willBeCancelledAt: new Date(nextPaymentDate),
-      paymentDate: nextPaymentDate,
       qstashMessageId: null,
       scheduledCost: null,
       scheduledCurrency: null,
@@ -578,6 +629,7 @@ export class SubscriptionService {
       {
         subscriptionId: dto.id,
         userId,
+        orgId: existing.orgId,
         action: "cancelled",
         snapshot: dto,
       },
@@ -609,6 +661,110 @@ export class SubscriptionService {
     );
 
     await deps.repository.deleteByUserId(db, userId);
+  }
+
+  static async bulkDeleteSubscriptions(
+    userId: string,
+    input: BulkDeleteSubscriptionsInput,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<{ deletedCount: number }> {
+    const subscriptions = await deps.repository.findManyByIds(db, input.ids);
+
+    const userSubscriptionIds = subscriptions
+      .filter((sub) => sub.userId === userId)
+      .map((sub) => sub.id);
+
+    if (userSubscriptionIds.length === 0) {
+      return { deletedCount: 0 };
+    }
+
+    await Promise.all(
+      userSubscriptionIds.map(async (id) => {
+        const sub = subscriptions.find((s) => s.id === id);
+        if (sub?.qstashMessageId) {
+          await this.tryCancelWorkflow(sub.qstashMessageId, deps);
+        }
+        if (sub?.priceChangeQstashMessageId) {
+          await this.tryCancelPriceChangeWorkflow(
+            sub.priceChangeQstashMessageId,
+            deps,
+          );
+        }
+      }),
+    );
+
+    let prefsAndRates: Awaited<
+      ReturnType<typeof this.getPreferencesAndRates>
+    > | null = null;
+    try {
+      prefsAndRates = await this.getPreferencesAndRates(userId, deps);
+    } catch (error) {
+      console.error("Failed to prepare delete history snapshots", {
+        userId,
+        error,
+      });
+    }
+
+    await Promise.all(
+      userSubscriptionIds.map(async (id) => {
+        const sub = subscriptions.find((s) => s.id === id);
+        const historySnapshot =
+          sub && prefsAndRates
+            ? this.mapToDto(sub, prefsAndRates.preferences, prefsAndRates.rates)
+            : null;
+
+        await this.logHistoryAction(
+          {
+            subscriptionId: id,
+            userId,
+            orgId: sub?.orgId,
+            action: "deleted",
+            snapshot: historySnapshot,
+          },
+          deps,
+        );
+      }),
+    );
+
+    const deletedCount = await deps.repository.deleteMany(
+      db,
+      userSubscriptionIds,
+    );
+
+    return { deletedCount };
+  }
+
+  static async bulkUpdateCategory(
+    userId: string,
+    input: BulkUpdateCategoryInput,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<{ updatedCount: number }> {
+    // For bulk update, we check category ownership in personal space
+    // Individual subscriptions already have their orgId set from creation
+    await this.assertCategoryBelongsToSpace(
+      userId,
+      null,
+      input.categoryId,
+      deps,
+    );
+
+    const subscriptions = await deps.repository.findManyByIds(db, input.ids);
+
+    const userSubscriptionIds = subscriptions
+      .filter((sub) => sub.userId === userId)
+      .map((sub) => sub.id);
+
+    if (userSubscriptionIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+
+    const updatedCount = await deps.repository.updateCategoryMany(
+      db,
+      userSubscriptionIds,
+      input.categoryId,
+    );
+
+    return { updatedCount };
   }
 
   static async rescheduleUserNotifications(
@@ -704,6 +860,7 @@ export class SubscriptionService {
 
   private static toInsertPayload(
     userId: string,
+    orgId: string | null,
     payload: AddSubscriptionInput,
   ): SubscriptionInsert {
     const willBeCancelledAt = this.normalizeTimestamp(
@@ -712,6 +869,7 @@ export class SubscriptionService {
 
     return {
       userId,
+      orgId,
       ...this.toDbPayload(payload),
       willBeCancelledAt: willBeCancelledAt ?? undefined,
     } as SubscriptionInsert;
@@ -726,11 +884,6 @@ export class SubscriptionService {
 
     if (willBeCancelledAt !== undefined) {
       dbPayload.willBeCancelledAt = normalizedCancellation;
-
-      // Cancellation resets the billing anchor so recurring projections stay consistent.
-      if (normalizedCancellation) {
-        dbPayload.paymentDate = normalizedCancellation.toISOString();
-      }
     }
 
     return this.stripUndefined(dbPayload);
@@ -876,8 +1029,9 @@ export class SubscriptionService {
     return { preferences, rates };
   }
 
-  private static async assertCategoryBelongsToUser(
+  private static async assertCategoryBelongsToSpace(
     userId: string,
+    orgId: string | null,
     categoryId: string | null | undefined,
     deps: SubscriptionServiceDeps,
   ): Promise<void> {
@@ -886,8 +1040,20 @@ export class SubscriptionService {
     }
 
     const category = await deps.categoryRepository.findById(db, categoryId);
-    if (!category || category.userId !== userId) {
+    if (!category) {
       throw new SubscriptionCategoryNotFoundError();
+    }
+
+    // For org space, category must belong to the org
+    // For personal space, category must belong to the user (no org)
+    if (orgId) {
+      if (category.orgId !== orgId) {
+        throw new SubscriptionCategoryNotFoundError();
+      }
+    } else {
+      if (category.userId !== userId || category.orgId !== null) {
+        throw new SubscriptionCategoryNotFoundError();
+      }
     }
   }
 
@@ -895,11 +1061,13 @@ export class SubscriptionService {
     {
       subscriptionId,
       userId,
+      orgId,
       action,
       snapshot,
     }: {
       subscriptionId: string | null;
       userId: string;
+      orgId: string | null | undefined;
       action: SubscriptionAction;
       snapshot: unknown;
     },
@@ -916,6 +1084,7 @@ export class SubscriptionService {
         userId,
         action,
         preparedSnapshot,
+        orgId ?? null,
       );
     } catch (error) {
       console.error("Failed to log subscription history", {
@@ -1261,5 +1430,55 @@ export class SubscriptionService {
         return subscription;
       }),
     );
+  }
+
+  static async getOrgSubscriptions(
+    orgId: string,
+    userId: string,
+    params?: GetSubscriptionsParams,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto[]> {
+    const [subscriptions, preferences] = await Promise.all([
+      deps.repository.findByOrgId(db, orgId),
+      deps.userService.getUserPreferences(userId),
+    ]);
+    const reconciledSubscriptions = await this.reconcileScheduledPriceChanges(
+      subscriptions,
+      deps,
+    );
+
+    const rates = await deps.currencyService.getRates(
+      preferences.preferredCurrency,
+    );
+
+    const dtos = reconciledSubscriptions.map((subscription) =>
+      this.mapToDto(subscription, preferences, rates),
+    );
+
+    return this.applyFilters(dtos, params);
+  }
+
+  static async deleteAllForOrg(
+    orgId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<void> {
+    const existing = await deps.repository.findByOrgId(db, orgId);
+
+    await Promise.all(
+      existing.map(async (subscription) => {
+        if (subscription.qstashMessageId) {
+          await this.tryCancelWorkflow(subscription.qstashMessageId, deps);
+        }
+
+        if (subscription.priceChangeQstashMessageId) {
+          await this.tryCancelPriceChangeWorkflow(
+            subscription.priceChangeQstashMessageId,
+            deps,
+          );
+        }
+      }),
+    );
+
+    await deps.repository.deleteByOrgId(db, orgId);
   }
 }

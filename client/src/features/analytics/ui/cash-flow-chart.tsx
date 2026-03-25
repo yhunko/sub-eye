@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { format, parseISO, startOfDay } from "date-fns";
 import { useUser } from "@clerk/clerk-react";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import { CurrenciesMap } from "shared";
@@ -37,10 +38,11 @@ type CashFlowChartProps = {
 export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
   const { locale } = useDateFnsLocale();
   const { user } = useUser();
+  const { orgId } = useActiveSpace();
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
-      params: { userId: user!.id },
+      params: { userId: user!.id, orgId },
       options: { enabled: !!user },
     }),
   );

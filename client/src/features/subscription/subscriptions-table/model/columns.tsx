@@ -1,4 +1,5 @@
 import { BrandfetchImage } from "@/features/brandfetch";
+import { useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { SubscriptionTableHead } from "../ui/subscriptions-table-head";
 import {
@@ -10,26 +11,71 @@ import {
   Edit,
 } from "lucide-react";
 import { Button, ButtonGroup } from "@/shared/components";
-import { SubscriptionDto } from "shared";
+import { SubscriptionDto, CategoryDto } from "shared";
 import { SubscriptionNextBill } from "../../billing";
 import { CurrencyBadge } from "@/entities/currency";
 import { PeriodBadge } from "../../period";
+import { CategoryBadge } from "@/entities/category";
 
 import * as m from "@/i18n/messages";
 import { SubscriptionDeleteButton } from "../../delete-subscription";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/shared/lib/classes-utils";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 
-export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
-  return [
-    {
+export type UseColumnsParams = {
+  onToggleSelect: (id: string) => void;
+  isSelected: (id: string) => boolean;
+  allVisibleSelected: boolean;
+  onToggleAll: () => void;
+  showCategoryColumn: boolean;
+  categories: CategoryDto[];
+};
+
+export const useColumns = ({
+  onToggleSelect,
+  isSelected,
+  allVisibleSelected,
+  onToggleAll,
+  showCategoryColumn,
+  categories,
+}: UseColumnsParams): ColumnDef<SubscriptionDto>[] => {
+  return useMemo(() => {
+    const cols: ColumnDef<SubscriptionDto>[] = [];
+
+    cols.push({
+      id: "select",
+      header: () => (
+        <Checkbox
+          checked={allVisibleSelected}
+          onCheckedChange={() => onToggleAll()}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <div
+          role="presentation"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={isSelected(row.original.id)}
+            onCheckedChange={() => onToggleSelect(row.original.id)}
+            aria-label={`Select ${row.original.name}`}
+          />
+        </div>
+      ),
+      size: 40,
+      enableSorting: false,
+    });
+
+    cols.push({
       id: "icon",
       accessorKey: "brandDomain",
       header: "",
       size: 40,
       cell: ({ getValue, row }) => {
         const brandDomain = getValue<SubscriptionDto["brandDomain"]>();
-
         const isCancelled = row.original.status === "cancelled";
 
         return (
@@ -39,8 +85,9 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
           />
         );
       },
-    },
-    {
+    });
+
+    cols.push({
       id: "name",
       accessorKey: "name",
       enableSorting: true,
@@ -54,8 +101,9 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
           />
         );
       },
-    },
-    {
+    });
+
+    cols.push({
       id: "cost",
       accessorKey: "billing",
       enableSorting: true,
@@ -82,8 +130,9 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
           />
         );
       },
-    },
-    {
+    });
+
+    cols.push({
       id: "interval",
       header: () => {
         return (
@@ -103,8 +152,9 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
           />
         );
       },
-    },
-    {
+    });
+
+    cols.push({
       id: "nextPaymentDate",
       accessorKey: "nextPaymentDate",
       enableSorting: true,
@@ -149,51 +199,86 @@ export const useColumns = (): ColumnDef<SubscriptionDto>[] => {
           <SubscriptionNextBill nextBillDate={subscription.nextPaymentDate} />
         );
       },
-    },
-    {
+    });
+
+    if (showCategoryColumn) {
+      cols.push({
+        id: "category",
+        accessorKey: "categoryId",
+        header: () => (
+          <SubscriptionTableHead header={m.form_basicInfo_category_label()} />
+        ),
+        cell: ({ row }) => {
+          const category = categories.find(
+            (c) => c.id === row.original.categoryId,
+          );
+          return <CategoryBadge category={category} />;
+        },
+        size: 140,
+        enableSorting: false,
+      });
+    }
+
+    cols.push({
       id: "actions",
       accessorKey: "id",
       header: "",
       cell: ({ row, getValue }) => {
         const id = getValue<SubscriptionDto["id"]>();
-
         const subscription = row.original;
 
         return (
-          <ButtonGroup
-            orientation="horizontal"
-            aria-label={m.subscription_table_actionsAriaLabel()}
-            className="h-fit"
+          <div
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            <Button
-              variant="outline"
-              size="icon"
-              asChild
-              aria-label={`View ${subscription.name}`}
+            <ButtonGroup
+              orientation="horizontal"
+              aria-label={m.subscription_table_actionsAriaLabel()}
+              className="h-fit"
             >
-              <Link to="/subscriptions/$id" params={{ id }}>
-                <EyeIcon />
-                <span className="sr-only">View {subscription.name}</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              asChild
-              aria-label={`Edit ${subscription.name}`}
-            >
-              <Link to="/subscriptions/$id/edit" params={{ id }}>
-                <Edit className="size-4 transition-all" />
-                <span className="sr-only">Edit {subscription.name}</span>
-              </Link>
-            </Button>
-            <SubscriptionDeleteButton
-              subscriptionId={id}
-              subscriptionName={subscription.name}
-            />
-          </ButtonGroup>
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+                aria-label={m.subscription_table_view_aria_label({
+                  name: subscription.name,
+                })}
+              >
+                <Link to="/subscriptions/$id" params={{ id }}>
+                  <EyeIcon />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+                aria-label={m.subscription_table_edit_aria_label({
+                  name: subscription.name,
+                })}
+              >
+                <Link to="/subscriptions/$id/edit" params={{ id }}>
+                  <Edit className="size-4 transition-all" />
+                </Link>
+              </Button>
+              <SubscriptionDeleteButton
+                subscriptionId={id}
+                subscriptionName={subscription.name}
+              />
+            </ButtonGroup>
+          </div>
         );
       },
-    },
-  ];
+    });
+
+    return cols;
+  }, [
+    onToggleSelect,
+    isSelected,
+    allVisibleSelected,
+    onToggleAll,
+    showCategoryColumn,
+    categories,
+  ]);
 };

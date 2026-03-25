@@ -5,6 +5,8 @@ import {
   AddSubscriptionSchema,
   SchedulePriceChangeSchema,
   UpdateSubscriptionSchema,
+  BulkDeleteSubscriptionsSchema,
+  BulkUpdateCategorySchema,
   idQuerySchema,
   listQuerySchema,
   updateSubscriptionQuerySchema,
@@ -12,7 +14,7 @@ import {
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
 import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscriptionPriceChangeWorkflow";
-import { requireUserId } from "../utils/authUtils";
+import { requireUserId, getOrgId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
 import { handleServiceError } from "../utils/routeUtils";
@@ -25,18 +27,56 @@ const historyIdParamSchema = object({
 export const subscriptionRouter = new Hono()
   .get("/", protect, vValidator("query", listQuerySchema), async (context) => {
     const userId = requireUserId(context);
+    const orgId = getOrgId(context);
 
     try {
       const params = context.req.valid("query");
-      const subscriptions = await SubscriptionService.getSubscriptions(
-        userId,
-        params,
-      );
+      const subscriptions = orgId
+        ? await SubscriptionService.getOrgSubscriptions(orgId, userId, params)
+        : await SubscriptionService.getSubscriptions(userId, params);
       return context.json(subscriptions);
     } catch (error) {
       return handleServiceError(context, error);
     }
   })
+  .post(
+    "/batch/delete",
+    protect,
+    vValidator("json", BulkDeleteSubscriptionsSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const payload = context.req.valid("json");
+        const result = await SubscriptionService.bulkDeleteSubscriptions(
+          userId,
+          payload,
+        );
+        return context.json(result);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/batch/category",
+    protect,
+    vValidator("json", BulkUpdateCategorySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const payload = context.req.valid("json");
+        const result = await SubscriptionService.bulkUpdateCategory(
+          userId,
+          payload,
+        );
+        return context.json(result);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .get("/:id", protect, vValidator("param", idQuerySchema), async (context) => {
     const userId = requireUserId(context);
 
@@ -98,12 +138,14 @@ export const subscriptionRouter = new Hono()
     vValidator("json", AddSubscriptionSchema),
     async (context) => {
       const userId = requireUserId(context);
+      const orgId = getOrgId(context);
 
       try {
         const payload = context.req.valid("json");
         const subscription = await SubscriptionService.addSubscription(
           userId,
           payload,
+          orgId,
         );
         return context.json(subscription, 201);
       } catch (error) {

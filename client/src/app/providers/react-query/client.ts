@@ -1,11 +1,25 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError } from "@/shared/api/api-error";
 import { posthog } from "@/shared/lib/analytics/posthog";
 import * as m from "@/i18n/messages";
 import { router } from "../../router";
 
+const queryCache = new QueryCache({
+  onError(error) {
+    posthog.captureException(error, {
+      extra: {
+        error_type: "query",
+        status: error instanceof ApiError ? error.status : undefined,
+        route: window.location.pathname,
+        release: import.meta.env.APP_VERSION,
+      },
+    });
+  },
+});
+
 export const queryClient = new QueryClient({
+  queryCache,
   defaultOptions: {
     queries: {
       staleTime: 20 * 1000, // Keep data fresh while still smoothing rapid route changes
@@ -18,7 +32,12 @@ export const queryClient = new QueryClient({
     mutations: {
       onError(error) {
         posthog.captureException(error, {
-          release: import.meta.env.APP_VERSION,
+          extra: {
+            error_type: "mutation",
+            status: error instanceof ApiError ? error.status : undefined,
+            route: window.location.pathname,
+            release: import.meta.env.APP_VERSION,
+          },
         });
 
         if (error instanceof ApiError && error.status === 401) {

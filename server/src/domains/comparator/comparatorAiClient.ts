@@ -5,6 +5,10 @@ import {
   type ComparatorAiInsightsDto,
 } from "shared";
 
+export type ComparatorAiGenerateOptions = {
+  model?: string;
+};
+
 type GeminiGenerateContentResponse = {
   candidates?: Array<{
     content?: {
@@ -71,7 +75,7 @@ const extractGroundingCitations = (
   );
 };
 
-const normalizeAiInsightsPayload = (payload: unknown): unknown => {
+export const normalizeAiInsightsPayload = (payload: unknown): unknown => {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return payload;
   }
@@ -87,14 +91,17 @@ const normalizeAiInsightsPayload = (payload: unknown): unknown => {
 export class ComparatorAiClient {
   static async generateInsights(
     prompt: string,
+    options: ComparatorAiGenerateOptions = {},
   ): Promise<ComparatorAiInsightsDto> {
     const apiKey = process.env.GEMINI_API_KEY?.trim();
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY is not set");
     }
 
+    const model = options.model ?? COMPARATOR_AI_MODEL;
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${COMPARATOR_AI_MODEL}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {

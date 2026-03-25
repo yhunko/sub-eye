@@ -2,7 +2,7 @@ import { createRouter } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routes/routeTree.gen";
 import { RootErrorFallback } from "@/shared/ui";
-import { track } from "@/shared/lib/analytics";
+import { posthog } from "@/shared/lib/analytics";
 
 export const router = createRouter({
   routeTree,
@@ -17,8 +17,8 @@ export const router = createRouter({
   defaultErrorComponent: RootErrorFallback,
 });
 
-router.subscribe("onResolved", ({ toLocation }) => {
-  track("page_viewed", { path: toLocation.pathname });
+router.subscribe("onResolved", () => {
+  posthog.capture("$pageview");
 });
 
 declare module "@tanstack/react-router" {

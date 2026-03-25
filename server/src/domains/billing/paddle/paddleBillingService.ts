@@ -1,6 +1,7 @@
 import { clerkClient } from "@clerk/express";
 import { db } from "../../../db";
 import { UserService } from "../../user/userService";
+import { OrgService } from "../../org/orgService";
 import { BillingAccountRepository } from "./billingAccountRepository";
 import { BillingWebhookEventRepository } from "./billingWebhookEventRepository";
 import { PaddleApiClient } from "./paddleApiClient";
@@ -33,6 +34,7 @@ type PaddleBillingDeps = {
   billingAccountRepository: typeof BillingAccountRepository;
   billingWebhookEventRepository: typeof BillingWebhookEventRepository;
   userService: typeof UserService;
+  orgService: typeof OrgService;
 };
 
 const defaultDeps: PaddleBillingDeps = {
@@ -40,7 +42,22 @@ const defaultDeps: PaddleBillingDeps = {
   billingAccountRepository: BillingAccountRepository,
   billingWebhookEventRepository: BillingWebhookEventRepository,
   userService: UserService,
+  orgService: OrgService,
 };
+
+type ResolvedUserContext = {
+  kind: "user";
+  userId: string;
+  billingAccount: Awaited<
+    ReturnType<typeof BillingAccountRepository.findByUserId>
+  >;
+};
+
+type ResolvedUnknownContext = {
+  kind: "unknown";
+};
+
+type ResolvedContext = ResolvedUserContext | ResolvedUnknownContext;
 
 export class PaddleBillingService {
   private static plusPriceCache: {
@@ -51,13 +68,14 @@ export class PaddleBillingService {
 
   static async createCheckoutTransaction(
     userId: string,
+    env: { PADDLE_PLUS_PRODUCT_ID: string },
     deps: PaddleBillingDeps = defaultDeps,
   ): Promise<BillingCheckoutResponse> {
     const billingAccount = await deps.billingAccountRepository.findByUserId(
       db,
       userId,
     );
-    const priceId = await this.getPlusPriceId(deps);
+    const priceId = await this.getPlusPriceId(env, deps);
     const paddleCustomerId = billingAccount?.paddleCustomerId ?? undefined;
 
     const transaction = await deps.apiClient.createTransaction({
@@ -122,8 +140,8 @@ export class PaddleBillingService {
 
     const resolvedContext = await this.resolveEventContext(event, deps);
 
-    if (!resolvedContext.userId) {
-      console.warn("[Paddle Webhook] Unable to resolve user for event", {
+    if (resolvedContext.kind === "unknown") {
+      console.warn("[Paddle Webhook] Unable to resolve context for event", {
         eventId: event.event_id,
         eventType: event.event_type,
       });
@@ -172,18 +190,27 @@ export class PaddleBillingService {
 
     if (planId) {
       await deps.userService.setPlanId(resolvedContext.userId, planId);
+
+      // Sync org plan to match user's plan (orgs inherit admin's personal plan)
+      const userOrgs = await clerkClient.users.getOrganizationMembershipList({
+        userId: resolvedContext.userId,
+      });
+
+      for (const membership of userOrgs.data) {
+        if (membership.role === "org:admin") {
+          await deps.orgService.setOrgPlanId(
+            membership.organization.id,
+            planId,
+          );
+        }
+      }
     }
   }
 
   private static async resolveEventContext(
     event: PaddleWebhookEvent,
     deps: PaddleBillingDeps,
-  ): Promise<{
-    userId: string | null;
-    billingAccount: Awaited<
-      ReturnType<typeof BillingAccountRepository.findByUserId>
-    >;
-  }> {
+  ): Promise<ResolvedContext> {
     const userIdFromCustomData = this.extractUserIdFromEvent(event);
 
     if (userIdFromCustomData) {
@@ -191,11 +218,10 @@ export class PaddleBillingService {
         db,
         userIdFromCustomData,
       );
-      return { userId: userIdFromCustomData, billingAccount };
+      return { kind: "user", userId: userIdFromCustomData, billingAccount };
     }
 
     const customerId = this.extractCustomerId(event);
-
     if (customerId) {
       const billingAccount =
         await deps.billingAccountRepository.findByPaddleCustomerId(
@@ -204,12 +230,11 @@ export class PaddleBillingService {
         );
 
       if (billingAccount) {
-        return { userId: billingAccount.userId, billingAccount };
+        return { kind: "user", userId: billingAccount.userId, billingAccount };
       }
     }
 
     const subscriptionId = this.extractSubscriptionId(event);
-
     if (subscriptionId) {
       const billingAccount =
         await deps.billingAccountRepository.findByPaddleSubscriptionId(
@@ -218,11 +243,11 @@ export class PaddleBillingService {
         );
 
       if (billingAccount) {
-        return { userId: billingAccount.userId, billingAccount };
+        return { kind: "user", userId: billingAccount.userId, billingAccount };
       }
     }
 
-    return { userId: null, billingAccount: null };
+    return { kind: "unknown" };
   }
 
   private static extractBillingPatchFromEvent(event: PaddleWebhookEvent): {
@@ -383,11 +408,11 @@ export class PaddleBillingService {
       return null;
     }
 
-    if (PAID_PLUS_STATUSES.has(status)) {
+    if (PAID_PLUS_STATUSES.has(status as PaddleSubscriptionStatus)) {
       return "plus";
     }
 
-    if (FREE_STATUSES.has(status)) {
+    if (FREE_STATUSES.has(status as PaddleSubscriptionStatus)) {
       return "free";
     }
 
@@ -430,9 +455,10 @@ export class PaddleBillingService {
   }
 
   private static async getPlusPriceId(
+    env: { PADDLE_PLUS_PRODUCT_ID: string },
     deps: PaddleBillingDeps,
   ): Promise<string> {
-    const productId = this.getPlusProductId();
+    const productId = this.getPlusProductId(env);
 
     if (
       this.plusPriceCache &&
@@ -481,8 +507,10 @@ export class PaddleBillingService {
     return monthlyRecurringPrice.id;
   }
 
-  private static getPlusProductId(): string {
-    const value = process.env.PADDLE_PLUS_PRODUCT_ID?.trim();
+  private static getPlusProductId(env: {
+    PADDLE_PLUS_PRODUCT_ID: string;
+  }): string {
+    const value = env.PADDLE_PLUS_PRODUCT_ID?.trim();
 
     if (!value) {
       throw new Error("PADDLE_PLUS_PRODUCT_ID is required");

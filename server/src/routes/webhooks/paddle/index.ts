@@ -5,6 +5,7 @@ import {
   isValidPaddleOccurredAt,
 } from "./paddleWebhookValidators";
 import { verifyPaddleSignature } from "./verifyPaddleSignature";
+import { captureServerException } from "../../../utils/analytics";
 
 export const paddleWebhookRouter = new Hono<{
   Bindings: { PADDLE_WEBHOOK_SECRET: string };
@@ -54,6 +55,26 @@ export const paddleWebhookRouter = new Hono<{
       eventType: payload.event_type,
       error,
     });
+
+    const apiKey = (context.env as Record<string, string | undefined>)
+      .POSTHOG_KEY;
+    if (apiKey) {
+      void captureServerException(error, apiKey, {
+        handled: false,
+        requestContext: {
+          method: context.req.method,
+          url: context.req.url,
+          route: context.req.routePath,
+          rayId: context.req.header("cf-ray"),
+          responseStatus: 500,
+        },
+        extra: {
+          webhook_source: "paddle",
+          event_id: payload.event_id,
+          event_type: payload.event_type,
+        },
+      });
+    }
 
     return context.text("Error: Processing failed", 500);
   }

@@ -7,13 +7,15 @@ import { StatCard } from "../stat-card";
 import { CurrencyText } from "@/entities/currency";
 import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 
 export const MostExpensiveSubscriptionCard: FC = () => {
   const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
 
   const { data } = useSuspenseQuery(
     dashboardAnalyticsQuery({
-      params: { userId: userId! },
+      params: { userId: userId!, orgId },
       options: { enabled: true },
     }),
   );

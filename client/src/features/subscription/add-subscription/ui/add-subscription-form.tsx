@@ -73,6 +73,7 @@ export const AddSubscriptionForm = ({
   const isLimitReached =
     !isEditMode &&
     !!usage &&
+    usage.subscriptions.limit !== null &&
     usage.subscriptions.current >= usage.subscriptions.limit;
   const shouldBlockNavigation = formState.isDirty || isPending;
 
@@ -226,7 +227,7 @@ export const AddSubscriptionForm = ({
               disabled={isPending}
               className={cn("space-y-4", isPending && "pointer-events-none")}
             >
-              {isLimitReached && (
+              {isLimitReached && usage?.subscriptions.limit !== null && (
                 <SubscriptionLimitAlert
                   current={usage.subscriptions.current}
                   limit={usage.subscriptions.limit}

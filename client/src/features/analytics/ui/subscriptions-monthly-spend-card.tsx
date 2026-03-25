@@ -4,9 +4,16 @@ import { CurrencyText } from "@/entities/currency";
 import { StatSummaryCard } from "./stat-summary-card";
 import { monthlySpendSummaryQuery } from "@/entities/analytics";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/clerk-react";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 
 export const SubscriptionsMonthlySpendCard = () => {
-  const { data, isLoading, isSuccess } = useQuery(monthlySpendSummaryQuery());
+  const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
+
+  const { data, isLoading, isSuccess } = useQuery(
+    monthlySpendSummaryQuery({ userId: userId!, orgId }),
+  );
 
   if (!isSuccess && !isLoading && !data) return null;
 

@@ -7,6 +7,7 @@ import type {
 } from "shared";
 import { getPlanById } from "shared";
 import { UserService } from "../user/userService";
+import { OrgService } from "../org/orgService";
 import { CategoryRepository } from "./categoryRepository";
 import {
   CategoryLimitReachedError,
@@ -16,12 +17,14 @@ import {
 type CategoryServiceDeps = {
   repository: typeof CategoryRepository;
   userService: typeof UserService;
+  orgService: typeof OrgService;
   runInTransaction?: <T>(run: (tx: unknown) => Promise<T>) => Promise<T>;
 };
 
 const defaultDeps: CategoryServiceDeps = {
   repository: CategoryRepository,
   userService: UserService,
+  orgService: OrgService,
   runInTransaction: async (run) => db.transaction((tx) => run(tx)),
 };
 
@@ -66,11 +69,18 @@ export class CategoryService {
   static async createCategory(
     userId: string,
     payload: CreateCategoryInput,
+    orgId?: string | null,
     deps: CategoryServiceDeps = defaultDeps,
   ): Promise<CategoryDto> {
+    const effectiveOrgId = orgId ?? null;
+
     const [count, planId] = await Promise.all([
-      deps.repository.countByUserId(db, userId),
-      deps.userService.getPlanId(userId),
+      effectiveOrgId
+        ? deps.repository.countByOrgId(db, effectiveOrgId)
+        : deps.repository.countByUserId(db, userId),
+      effectiveOrgId
+        ? deps.orgService.getOrgPlanId(effectiveOrgId)
+        : deps.userService.getPlanId(userId),
     ]);
 
     const maxCategories = getPlanById(planId).limits.maxCategories;
@@ -81,6 +91,7 @@ export class CategoryService {
 
     const created = await deps.repository.create(db, {
       userId,
+      orgId: effectiveOrgId,
       name: payload.name,
       emoji: payload.emoji,
     });
@@ -182,9 +193,25 @@ export class CategoryService {
     await deps.repository.deleteByUserId(db, userId);
   }
 
+  static async getOrgCategories(
+    orgId: string,
+    deps: CategoryServiceDeps = defaultDeps,
+  ): Promise<CategoryDto[]> {
+    const categories = await deps.repository.findByOrgId(db, orgId);
+    return categories.map(this.toDto);
+  }
+
+  static async deleteAllForOrg(
+    orgId: string,
+    deps: CategoryServiceDeps = defaultDeps,
+  ): Promise<void> {
+    await deps.repository.deleteByOrgId(db, orgId);
+  }
+
   private static toDto(category: {
     id: string;
     userId: string;
+    orgId: string | null;
     name: string;
     emoji: string;
     createdAt: Date;
@@ -193,6 +220,7 @@ export class CategoryService {
     return {
       id: category.id,
       userId: category.userId,
+      orgId: category.orgId,
       name: category.name,
       emoji: category.emoji,
       createdAt: category.createdAt.toISOString(),

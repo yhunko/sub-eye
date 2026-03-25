@@ -3,7 +3,7 @@ import { BillingService } from "../src/domains/billing/billingService";
 
 describe("BillingService.getUsage", () => {
   it("returns canonical usage payload for free plan", async () => {
-    const usage = await BillingService.getUsage("user_1", {
+    const usage = await BillingService.getUsage("user_1", undefined, {
       subscriptionRepository: {
         countByUserId: async () => 12,
       } as never,
@@ -38,6 +38,9 @@ describe("BillingService.getUsage", () => {
           locale: "en",
         }),
       } as never,
+      orgService: {
+        getOrgPlanId: async () => "free",
+      } as never,
     });
 
     expect(usage.planId).toBe("free");
@@ -54,7 +57,7 @@ describe("BillingService.getUsage", () => {
   });
 
   it("returns unlimited compare usage and capped AI usage for plus plan", async () => {
-    const usage = await BillingService.getUsage("user_1", {
+    const usage = await BillingService.getUsage("user_1", undefined, {
       subscriptionRepository: {
         countByUserId: async () => 42,
       } as never,
@@ -88,6 +91,9 @@ describe("BillingService.getUsage", () => {
           notificationOffset: 1,
           locale: "en",
         }),
+      } as never,
+      orgService: {
+        getOrgPlanId: async () => "plus",
       } as never,
     });
 

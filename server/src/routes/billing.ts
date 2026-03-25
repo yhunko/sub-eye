@@ -12,12 +12,12 @@ import {
   type PlansResponse,
 } from "shared";
 
-export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
-  /**
-   * Returns public plan definitions for external consumers (e.g. landing page).
-   * Protected by a static API key passed via X-Api-Key header.
-   * Set PLANS_API_KEY worker secret: wrangler secret put PLANS_API_KEY
-   */
+type BillingBindings = {
+  PLANS_API_KEY: string;
+  PADDLE_PLUS_PRODUCT_ID: string;
+};
+
+export const billingRouter = new Hono<{ Bindings: BillingBindings }>()
   .get("/plans", async (context) => {
     const apiKey = context.req.header("x-api-key");
     const expectedKey = context.env.PLANS_API_KEY;
@@ -44,9 +44,6 @@ export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
       { "Cache-Control": "public, max-age=3600", Vary: "X-Api-Key" },
     );
   })
-  /**
-   * Returns plan usage and limits for the current user.
-   */
   .get("/usage", protect, async (context) => {
     const userId = requireUserId(context);
 
@@ -57,23 +54,19 @@ export const billingRouter = new Hono<{ Bindings: { PLANS_API_KEY: string } }>()
       return handleServiceError(context, error);
     }
   })
-  /**
-   * Creates a Paddle checkout transaction for Plus plan upgrades.
-   */
   .post("/checkout", protect, async (context) => {
     const userId = requireUserId(context);
 
     try {
-      const response =
-        await PaddleBillingService.createCheckoutTransaction(userId);
+      const response = await PaddleBillingService.createCheckoutTransaction(
+        userId,
+        context.env,
+      );
       return context.json(response, 200);
     } catch (error) {
       return handleServiceError(context, error);
     }
   })
-  /**
-   * Creates a Paddle customer portal session URL.
-   */
   .post("/portal", protect, async (context) => {
     const userId = requireUserId(context);
 

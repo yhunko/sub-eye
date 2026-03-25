@@ -11,7 +11,10 @@ import { telegramNotificationRouter } from "./routes/telegram-notifications";
 import { webhookRouter } from "./routes/webhooks";
 import { billingRouter } from "./routes/billing";
 import { categoryRouter } from "./routes/categories";
-import { captureServerException } from "./utils/analytics";
+import {
+  captureServerException,
+  extractRequestContext,
+} from "./utils/analytics";
 
 type Bindings = {
   CLERK_SECRET_KEY: string;
@@ -62,7 +65,13 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .onError((err, ctx) => {
     console.error("[Unhandled Error]", err);
     if (ctx.env.POSTHOG_KEY) {
-      void captureServerException(err, ctx.env.POSTHOG_KEY, { handled: false });
+      void captureServerException(err, ctx.env.POSTHOG_KEY, {
+        handled: false,
+        requestContext: {
+          ...extractRequestContext(ctx),
+          responseStatus: 500,
+        },
+      });
     }
     return ctx.json({ error: "Internal Server Error" }, 500);
   });

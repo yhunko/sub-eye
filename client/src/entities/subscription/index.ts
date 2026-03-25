@@ -1,5 +1,7 @@
 export { useCreateSubscription } from "./api/use-create-subscription";
 export { useDeleteSubscription } from "./api/use-delete-subscription";
+export { useBulkDeleteSubscriptions } from "./api/use-bulk-delete-subscriptions";
+export { useBulkUpdateCategory } from "./api/use-bulk-update-category";
 export { subscriptionQuery } from "./api/subscription-query";
 export { subscriptionHistoryQuery } from "./api/subscription-history-query";
 export { subscriptionsQuery } from "./api/subscriptions-query";

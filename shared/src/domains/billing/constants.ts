@@ -28,6 +28,7 @@ export const FREE_PLAN: Plan = {
     { key: "currency", included: true },
     { key: "comparator", included: true },
     { key: "aiInsights", included: true },
+    { key: "familyGroup", included: false },
   ],
 };
 
@@ -36,6 +37,7 @@ export const PLUS_PLAN: Plan = {
   limits: {
     maxSubscriptions: 50,
     maxCategories: null,
+    maxFamilyMembers: 5,
   },
   features: [
     { key: "subscriptions", included: true },
@@ -46,6 +48,7 @@ export const PLUS_PLAN: Plan = {
     { key: "currency", included: true },
     { key: "comparator", included: true },
     { key: "aiInsights", included: true },
+    { key: "familyGroup", included: true },
   ],
 };
 

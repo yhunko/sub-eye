@@ -22,6 +22,7 @@ import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(pro
 import { Route as protectedSettingsCategoriesRouteImport } from "./../../pages/(protected)/settings/categories"
 import { Route as protectedSettingsBillingRouteImport } from "./../../pages/(protected)/settings/billing"
 import { Route as protectedSettingsAccountRouteImport } from "./../../pages/(protected)/settings/account"
+import { Route as protectedSettingsGroupRouteRouteImport } from "./../../pages/(protected)/settings/group/route"
 import { Route as protectedSubscriptionsIdIndexRouteImport } from "./../../pages/(protected)/subscriptions/$id/index"
 import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
 import { Route as protectedSettingsCategoriesGenerateRouteImport } from "./../../pages/(protected)/settings/categories/generate"
@@ -98,6 +99,12 @@ const protectedSettingsAccountRoute =
     path: "/settings/account",
     getParentRoute: () => protectedRouteRoute,
   } as any)
+const protectedSettingsGroupRouteRoute =
+  protectedSettingsGroupRouteRouteImport.update({
+    id: "/settings/group",
+    path: "/settings/group",
+    getParentRoute: () => protectedRouteRoute,
+  } as any)
 const protectedSubscriptionsIdIndexRoute =
   protectedSubscriptionsIdIndexRouteImport.update({
     id: "/subscriptions/$id/",
@@ -119,6 +126,7 @@ const protectedSettingsCategoriesGenerateRoute =
 
 export interface FileRoutesByFullPath {
   "/": typeof protectedIndexRoute
+  "/settings/group": typeof protectedSettingsGroupRouteRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
   "/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
@@ -136,6 +144,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof protectedIndexRoute
+  "/settings/group": typeof protectedSettingsGroupRouteRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
   "/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
@@ -155,6 +164,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/(protected)": typeof protectedRouteRouteWithChildren
   "/(protected)/": typeof protectedIndexRoute
+  "/(protected)/settings/group": typeof protectedSettingsGroupRouteRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/billing": typeof protectedSettingsBillingRoute
   "/(protected)/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | "/"
+    | "/settings/group"
     | "/settings/account"
     | "/settings/billing"
     | "/settings/categories"
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
+    | "/settings/group"
     | "/settings/account"
     | "/settings/billing"
     | "/settings/categories"
@@ -209,6 +221,7 @@ export interface FileRouteTypes {
     | "__root__"
     | "/(protected)"
     | "/(protected)/"
+    | "/(protected)/settings/group"
     | "/(protected)/settings/account"
     | "/(protected)/settings/billing"
     | "/(protected)/settings/categories"
@@ -324,6 +337,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSettingsAccountRouteImport
       parentRoute: typeof protectedRouteRoute
     }
+    "/(protected)/settings/group": {
+      id: "/(protected)/settings/group"
+      path: "/settings/group"
+      fullPath: "/settings/group"
+      preLoaderRoute: typeof protectedSettingsGroupRouteRouteImport
+      parentRoute: typeof protectedRouteRoute
+    }
     "/(protected)/subscriptions/$id/": {
       id: "/(protected)/subscriptions/$id/"
       path: "/subscriptions/$id"
@@ -365,6 +385,7 @@ const protectedSettingsCategoriesRouteWithChildren =
 
 interface protectedRouteRouteChildren {
   protectedIndexRoute: typeof protectedIndexRoute
+  protectedSettingsGroupRouteRoute: typeof protectedSettingsGroupRouteRoute
   protectedSettingsAccountRoute: typeof protectedSettingsAccountRoute
   protectedSettingsBillingRoute: typeof protectedSettingsBillingRoute
   protectedSettingsCategoriesRoute: typeof protectedSettingsCategoriesRouteWithChildren
@@ -380,6 +401,7 @@ interface protectedRouteRouteChildren {
 
 const protectedRouteRouteChildren: protectedRouteRouteChildren = {
   protectedIndexRoute: protectedIndexRoute,
+  protectedSettingsGroupRouteRoute: protectedSettingsGroupRouteRoute,
   protectedSettingsAccountRoute: protectedSettingsAccountRoute,
   protectedSettingsBillingRoute: protectedSettingsBillingRoute,
   protectedSettingsCategoriesRoute:

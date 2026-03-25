@@ -1,9 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { PaddleBillingService } from "../src/domains/billing/paddle/paddleBillingService";
 import type {
   PaddlePrice,
   PaddleWebhookEvent,
 } from "../src/domains/billing/paddle/paddleTypes";
+
+// Mock clerkClient globally
+mock.module("@clerk/express", () => ({
+  clerkClient: {
+    users: {
+      getUser: async () => ({
+        id: "user_01",
+        primaryEmailAddress: { emailAddress: "test@example.com" },
+        fullName: "Test User",
+      }),
+      getOrganizationMembershipList: async () => ({ data: [] }),
+    },
+    organizations: {
+      getOrganization: async () => ({ id: "org_01", publicMetadata: {} }),
+      updateOrganizationMetadata: async () => ({}),
+    },
+  },
+}));
 
 const createWebhookEvent = (
   overrides: Partial<PaddleWebhookEvent> = {},
@@ -54,6 +72,7 @@ const createCheckoutDeps = (prices: PaddlePrice[]) => {
   };
 
   return {
+    env: { PADDLE_PLUS_PRODUCT_ID: process.env.PADDLE_PLUS_PRODUCT_ID ?? "" },
     deps: {
       apiClient: {
         listActivePrices: async () => prices,
@@ -82,6 +101,7 @@ const createCheckoutDeps = (prices: PaddlePrice[]) => {
         }),
       },
       userService: {} as never,
+      orgService: {} as never,
     } as never,
     getCapturedPriceId: () => capturedPriceId,
     getCapturedCustomerId: () => capturedCustomerId,
@@ -110,7 +130,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
     const { deps } = createCheckoutDeps([]);
 
     await expect(
-      PaddleBillingService.createCheckoutTransaction("user_01", deps),
+      PaddleBillingService.createCheckoutTransaction(
+        "user_01",
+        { PADDLE_PLUS_PRODUCT_ID: "" },
+        deps,
+      ),
     ).rejects.toThrow("PADDLE_PLUS_PRODUCT_ID is required");
   });
 
@@ -130,7 +154,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
       },
     ]);
 
-    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+    await PaddleBillingService.createCheckoutTransaction(
+      "user_01",
+      { PADDLE_PLUS_PRODUCT_ID: "pro_plus" },
+      deps,
+    );
 
     expect(getCapturedPriceId()).toBe("pri_plus_year");
   });
@@ -151,7 +179,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
       },
     ]);
 
-    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+    await PaddleBillingService.createCheckoutTransaction(
+      "user_01",
+      { PADDLE_PLUS_PRODUCT_ID: "pro_plus" },
+      deps,
+    );
 
     expect(getCapturedPriceId()).toBe("pri_plus_month");
   });
@@ -170,7 +202,11 @@ describe("PaddleBillingService.createCheckoutTransaction", () => {
 
     setBillingAccount(null);
 
-    await PaddleBillingService.createCheckoutTransaction("user_01", deps);
+    await PaddleBillingService.createCheckoutTransaction(
+      "user_01",
+      { PADDLE_PLUS_PRODUCT_ID: "pro_plus" },
+      deps,
+    );
 
     expect(getCapturedCustomerId()).toBeNull();
   });
@@ -203,6 +239,9 @@ describe("PaddleBillingService.processWebhookEvent", () => {
         setPlanId: async () => {
           setPlanCalls += 1;
         },
+      } as never,
+      orgService: {
+        setOrgPlanId: async () => {},
       } as never,
     });
 
@@ -244,6 +283,9 @@ describe("PaddleBillingService.processWebhookEvent", () => {
           setPlanCalls += 1;
         },
       } as never,
+      orgService: {
+        setOrgPlanId: async () => {},
+      } as never,
     });
 
     expect(upsertCalls).toBe(0);
@@ -251,7 +293,7 @@ describe("PaddleBillingService.processWebhookEvent", () => {
   });
 
   it("updates user plan to plus for active subscription events", async () => {
-    let capturedPlanId: string | null = null;
+    let capturedPlanId: string | undefined;
     let upsertCalls = 0;
 
     await PaddleBillingService.processWebhookEvent(createWebhookEvent(), {
@@ -282,6 +324,9 @@ describe("PaddleBillingService.processWebhookEvent", () => {
         setPlanId: async (_userId, planId) => {
           capturedPlanId = planId;
         },
+      } as never,
+      orgService: {
+        setOrgPlanId: async () => {},
       } as never,
     });
 

@@ -1,6 +1,7 @@
 import posthog from "posthog-js";
 
 export function initPostHog(key: string) {
+  if (posthog.__loaded) return;
   posthog.init(key, {
     api_host: "https://eu.i.posthog.com",
     person_profiles: "identified_only",

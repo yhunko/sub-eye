@@ -1,6 +1,7 @@
 import { FC, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { CurrencyText } from "@/entities/currency";
 import type { CategorySpendingDto } from "shared";
 import { BrandfetchImage } from "@/features/brandfetch";
@@ -72,15 +73,19 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
 }) => {
   const Recharts = useRechartsModule();
   const { userId } = useAuth();
+  const { orgId } = useActiveSpace();
 
   const { data: analytics } = useSuspenseQuery(
     dashboardAnalyticsQuery({
-      params: { userId: userId! },
+      params: { userId: userId!, orgId },
       options: { enabled: !!userId },
     }),
   );
 
-  const categorySpending = analytics.categorySpending ?? [];
+  const categorySpending = useMemo(
+    () => analytics.categorySpending ?? [],
+    [analytics.categorySpending],
+  );
 
   const total = useMemo(
     () => categorySpending.reduce((sum, item) => sum + item.amount, 0),

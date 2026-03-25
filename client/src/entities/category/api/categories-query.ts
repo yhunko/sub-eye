@@ -5,16 +5,16 @@ import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { CategoryDto } from "shared";
 import { categoriesQueryKeys } from "../model/query-keys";
 
-export type CategoriesParams = { userId: string };
+export type CategoriesParams = { userId: string; orgId?: string | null };
 
 export const categoriesQuery = ({
   params,
   options,
 }: QueryHook<CategoryDto[], CategoriesParams>) => {
-  const { userId } = params;
+  const { userId, orgId } = params;
 
   return queryOptions({
-    queryKey: categoriesQueryKeys.list({ userId }).queryKey,
+    queryKey: categoriesQueryKeys.list({ userId, orgId }).queryKey,
     queryFn: async () => {
       const res = await apiClient.api.categories.$get();
       assertOk(res);
