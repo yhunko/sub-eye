@@ -6,6 +6,7 @@ import { protect } from "../middleware/auth";
 import { handleServiceError } from "../utils/routeUtils";
 import {
   PLANS,
+  PLAN_FEATURE_LABELS,
   FREE_COMPARATOR_AI_MONTHLY_LIMIT,
   FREE_COMPARATOR_MONTHLY_LIMIT,
   PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
@@ -39,6 +40,7 @@ export const billingRouter = new Hono<{ Bindings: BillingBindings }>()
             comparatorMonthly: null,
           },
         },
+        featureLabels: PLAN_FEATURE_LABELS,
       } satisfies PlansResponse,
       200,
       { "Cache-Control": "public, max-age=3600", Vary: "X-Api-Key" },

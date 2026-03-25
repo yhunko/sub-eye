@@ -38,21 +38,21 @@ bun run dev:server     # Hono server only (bun --watch + tsc --watch)
 
 ```bash
 bun run test                      # all workspaces
-bun --cwd client run test         # client (bun test ./src)
-bun --cwd server run test         # server (bun test ./test)
+bun run --cwd client test         # client (bun test ./src)
+bun run --cwd server test         # server (bun test ./test)
 ```
 
 ```bash
 # Database (Drizzle + Neon)
-bun --cwd server run db:generate  # generate migration SQL (custom)
-bun --cwd server run db:migrate   # apply pending migrations
-bun --cwd server run db:push      # push schema directly (dev only)
+bun run --cwd server db:generate  # generate migration SQL (custom)
+bun run --cwd server db:migrate   # apply pending migrations
+bun run --cwd server db:push      # push schema directly (dev only)
 ```
 
 ```bash
 # i18n — must compile before type-checking client
-bun --cwd client run prepare           # paraglide compile → src/shared/lib/i18n/
-bun --cwd client run machine-translate # AI-translate missing message keys
+bun run --cwd client prepare           # paraglide compile → src/shared/lib/i18n/
+bun run --cwd client machine-translate # AI-translate missing message keys
 ```
 
 ```bash
@@ -62,8 +62,8 @@ bun run deploy:dev   # build with VITE_APP_ASSET_ENV=dev, then wrangler -c dev.w
 
 ```bash
 # Telegram bot webhook helpers
-bun --cwd server run telegram:webhook:configure dev   # configure dev webhook
-bun --cwd server run telegram:webhook:configure prod  # configure prod webhook
+bun run --cwd server telegram:webhook:configure dev   # configure dev webhook
+bun run --cwd server telegram:webhook:configure prod  # configure prod webhook
 ```
 
 ```bash
@@ -94,7 +94,7 @@ Routes live in `client/src/pages/`. Key conventions:
 
 Base locale is **Ukrainian (`uk`)**, secondary is English (`en`). Source messages: `client/messages/{locale}.json`. Compiled output goes to `client/src/shared/lib/i18n/` (generated — do not edit).
 
-The compile step (`bun --cwd client run prepare`) runs automatically before `type-check`, but must be run manually before first use or after adding new message keys.
+The compile step (`bun run --cwd client prepare`) runs automatically before `type-check`, but must be run manually before first use or after adding new message keys.
 
 ### Billing — canonical usage source
 
@@ -182,9 +182,9 @@ Edit source inputs and rerun the appropriate tool instead of hand-editing these.
 ## 7) Quality Gates by Change Scope
 
 - **Full monorepo / cross-boundary:** `bun run lint` → `bun run type-check` → `bun run test`
-- **Client-focused:** `bun --cwd client run type-check` → `bun --cwd client run test`; add `bun run react-doctor` if React source changed.
-- **Server-focused:** `bun --cwd server run type-check` → `bun --cwd server run test`
-- **Shared-focused:** `bun --cwd shared run type-check` → `bun --cwd shared run build`
+- **Client-focused:** `bun run --cwd client type-check` → `bun run --cwd client test`; add `bun run react-doctor` if React source changed.
+- **Server-focused:** `bun run --cwd server type-check` → `bun run --cwd server test`
+- **Shared-focused:** `bun run --cwd shared type-check` → `bun run --cwd shared build`
 
 Run the narrowest relevant checks first, then escalate for cross-workspace impact.
 

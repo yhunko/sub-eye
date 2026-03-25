@@ -47,6 +47,7 @@ export type PlansResponse = {
     free: { comparatorAiMonthly: number; comparatorMonthly: number };
     plus: { comparatorAiMonthly: number; comparatorMonthly: number | null };
   };
+  featureLabels: Record<BillingFeatureKey, { en: string; uk: string }>;
 };
 
 export type PlanId = (typeof PLAN_IDS)[number];
