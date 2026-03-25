@@ -5,6 +5,33 @@ import {
   type PlanId,
 } from "./types";
 
+export const PLAN_FEATURE_LABELS: Record<
+  BillingFeatureKey,
+  { en: string; uk: string }
+> = {
+  subscriptions: { en: "Subscription tracking", uk: "Трекінг підписок" },
+  analytics: { en: "Spending analytics", uk: "Аналітика витрат" },
+  notifications: {
+    en: "Renewal notifications",
+    uk: "Нагадування про продовження",
+  },
+  notificationSchedule: {
+    en: "Custom notification schedule",
+    uk: "Гнучкий графік сповіщень",
+  },
+  telegramMessageTemplate: {
+    en: "Custom Telegram template",
+    uk: "Кастомний шаблон Telegram",
+  },
+  currency: { en: "Multi-currency support", uk: "Підтримка мультивалютності" },
+  comparator: { en: "Subscription comparator", uk: "Порівняння підписок" },
+  aiInsights: { en: "AI-powered insights", uk: "AI-інсайти" },
+  familyGroup: {
+    en: "Family group for shared subscriptions",
+    uk: "Сімейна група для спільних підписок",
+  },
+};
+
 export const DEFAULT_NOTIFICATION_TIME = "10:00" as const;
 export const DEFAULT_NOTIFICATION_OFFSET = 1 as const;
 
