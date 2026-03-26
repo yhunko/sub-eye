@@ -8,6 +8,7 @@ import type {
 } from "shared";
 import { CurrenciesMap, CurrencyUtils } from "shared";
 import * as m from "@/i18n/messages";
+import { getLocale } from "@/i18n/runtime";
 import {
   parseManualPlanDraft,
   type ManualDraftChangeHandler,
@@ -31,6 +32,8 @@ type ComparatorWizardSessionState = {
   comparison: ComparatorWizardComparisonState | null;
   aiResult: AnalyzeComparatorResponseDto | undefined;
   errorMessage: string | null;
+  userIntentNote: string;
+  userIntentNoteUsed: string;
 };
 
 type ManualDraftsState = {
@@ -75,9 +78,17 @@ export const useSubscriptionComparatorWizardState = ({
       comparison: persistedState.comparison,
       aiResult: undefined,
       errorMessage: null,
+      userIntentNote: "",
+      userIntentNoteUsed: "",
     });
 
-  const { comparison, aiResult, errorMessage } = sessionState;
+  const {
+    comparison,
+    aiResult,
+    errorMessage,
+    userIntentNote,
+    userIntentNoteUsed,
+  } = sessionState;
   const currentManual = manualDrafts.current;
   const candidateManual = manualDrafts.candidate;
 
@@ -170,10 +181,7 @@ export const useSubscriptionComparatorWizardState = ({
 
   const progressValue = (step / 4) * 100;
   const hasResult = Boolean(comparison?.response.result);
-  const hasFullAiReview = Boolean(
-    aiResult?.mode === "ai" && aiResult.aiInsights,
-  );
-  const showBottomActions = step < 4 || !hasFullAiReview;
+  const showBottomActions = step < 4 || !hasResult;
 
   const clearErrorMessage = () => {
     setSessionState((prev) => ({ ...prev, errorMessage: null }));
@@ -184,9 +192,18 @@ export const useSubscriptionComparatorWizardState = ({
       ...prev,
       comparison: null,
       aiResult: undefined,
+      userIntentNote: "",
+      userIntentNoteUsed: "",
     }));
     compareMutation.reset();
     analyzeMutation.reset();
+  };
+
+  const setUserIntentNote = (note: string) => {
+    setSessionState((prev) => ({
+      ...prev,
+      userIntentNote: note.slice(0, 280),
+    }));
   };
 
   const setComparisonState = (
@@ -404,10 +421,27 @@ export const useSubscriptionComparatorWizardState = ({
 
     clearErrorMessage();
 
+    const currentLocale = getLocale();
+    const trimmedFocusNote = userIntentNote.trim();
+
     await analyzeMutation
-      .mutateAsync({ comparison: shownPayload })
+      .mutateAsync({
+        comparison: shownPayload,
+        userIntent: trimmedFocusNote
+          ? {
+              focusNote: trimmedFocusNote,
+              commitmentPreference: "undecided",
+              riskTolerance: "medium",
+            }
+          : undefined,
+        locale: currentLocale,
+      })
       .then((response) => {
-        setSessionState((prev) => ({ ...prev, aiResult: response }));
+        setSessionState((prev) => ({
+          ...prev,
+          aiResult: response,
+          userIntentNoteUsed: trimmedFocusNote,
+        }));
       })
       .catch((error) => {
         const message =
@@ -521,6 +555,13 @@ export const useSubscriptionComparatorWizardState = ({
     goFromStepThree();
   };
 
+  const hasAiResult = Boolean(aiResult?.aiInsights);
+  const canRegenerate =
+    hasAiResult &&
+    !isAiQuotaReached &&
+    Boolean(shownPayload && result) &&
+    userIntentNote.trim() !== userIntentNoteUsed;
+
   return {
     step,
     mode,
@@ -551,6 +592,9 @@ export const useSubscriptionComparatorWizardState = ({
     candidatePreview,
     aiResult,
     canAnalyze: Boolean(shownPayload && result),
+    canRegenerate,
+    userIntentNote,
+    setUserIntentNote,
     handleExitFlow,
     goToStep,
     handleBackNavigation,

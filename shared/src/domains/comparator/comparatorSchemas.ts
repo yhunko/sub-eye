@@ -167,9 +167,17 @@ export const ComparatorAiUserIntentSchema = strictObject({
   riskTolerance: optional(picklist(["low", "medium", "high"]), "medium"),
 });
 
+const localeSchema = pipe(
+  string(),
+  transform((value) => value.trim()),
+  minLength(2),
+  maxLength(10),
+);
+
 export const AnalyzeComparatorInputSchema = strictObject({
   comparison: CompareSubscriptionsInputSchema,
   userIntent: optional(ComparatorAiUserIntentSchema),
+  locale: optional(localeSchema),
 });
 
 export const ComparatorCoreInsightsDtoSchema = strictObject({

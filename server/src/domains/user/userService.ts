@@ -178,4 +178,14 @@ export class UserService {
 
     return this.parseUserPreferences(updatedMetadata, planId);
   }
+
+  static async updateLocale(userId: string, locale: string): Promise<void> {
+    const user = await clerkClient.users.getUser(userId);
+    const metadata = (user.publicMetadata ?? {}) as Record<string, unknown>;
+    const updatedMetadata = { ...metadata, locale };
+
+    await clerkClient.users.updateUserMetadata(userId, {
+      publicMetadata: updatedMetadata,
+    });
+  }
 }

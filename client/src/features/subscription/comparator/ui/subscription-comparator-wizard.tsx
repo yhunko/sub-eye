@@ -105,6 +105,9 @@ export const SubscriptionComparatorWizard: FC<
     candidatePreview,
     aiResult,
     canAnalyze,
+    canRegenerate,
+    userIntentNote,
+    setUserIntentNote,
     handleExitFlow,
     goToStep,
     handleBackNavigation,
@@ -323,10 +326,13 @@ export const SubscriptionComparatorWizard: FC<
                 isSavings={isSavings}
                 isIncrease={isIncrease}
                 canAnalyze={canAnalyze}
+                canRegenerate={canRegenerate}
                 isAnalyzePending={isAnalyzePending}
                 aiResult={aiResult}
                 aiQuota={aiQuota}
                 isAiQuotaReached={isAiQuotaReached}
+                userIntentNote={userIntentNote}
+                onUserIntentNoteChange={setUserIntentNote}
                 onAnalyze={handleAnalyze}
               />
             )}
