@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  RotateCcw,
 } from "lucide-react";
 import {
   Alert,
@@ -26,6 +27,7 @@ import {
   CardHeader,
   CardTitle,
   GlowEffect,
+  Textarea,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -45,8 +47,11 @@ type SubscriptionComparatorAiInsightsCardProps = {
   aiResult: AnalyzeComparatorResponseDto | undefined;
   aiQuota: MonthlyUsage | undefined;
   canAnalyze: boolean;
+  canRegenerate: boolean;
   isAnalyzePending: boolean;
   isAiQuotaReached: boolean;
+  userIntentNote: string;
+  onUserIntentNoteChange: (note: string) => void;
   onAnalyze: () => void;
 };
 
@@ -281,6 +286,50 @@ const AnalyzingProgress: FC = () => {
         {m.comparator_ai_analyzing_hint()}
       </p>
     </div>
+  );
+};
+
+const UserIntentNoteInput: FC<{
+  value: string;
+  onChange: (note: string) => void;
+  disabled: boolean;
+}> = ({ value, onChange, disabled }) => {
+  const remainingChars = 280 - value.length;
+
+  return (
+    <div className="space-y-1.5">
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={m.comparator_ai_prompt_placeholder()}
+        disabled={disabled}
+        className="min-h-[60px] resize-none text-sm"
+        maxLength={280}
+      />
+      <p className="text-muted-foreground text-xs">
+        {m.comparator_ai_prompt_chars({ count: String(remainingChars) })}
+      </p>
+    </div>
+  );
+};
+
+const RegenerateButton: FC<{
+  isAnalyzePending: boolean;
+  isAnalyzeDisabled: boolean;
+  onAnalyze: () => void;
+}> = ({ isAnalyzePending, isAnalyzeDisabled, onAnalyze }) => {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onAnalyze}
+      disabled={isAnalyzeDisabled}
+    >
+      <RotateCcw />
+      {isAnalyzePending
+        ? m.comparator_ai_action_loading()
+        : m.comparator_ai_regenerate()}
+    </Button>
   );
 };
 
@@ -620,21 +669,16 @@ export const SubscriptionComparatorAiInsightsCard: FC<
   aiResult,
   aiQuota,
   canAnalyze,
+  canRegenerate,
   isAnalyzePending,
   isAiQuotaReached,
+  userIntentNote,
+  onUserIntentNoteChange,
   onAnalyze,
 }) => {
   const isAiAlreadyGenerated = Boolean(
     aiResult?.mode === "ai" && aiResult.aiInsights,
   );
-  const analyzeDisabledReason = isAiAlreadyGenerated
-    ? m.comparator_ai_already_generated_tooltip()
-    : isAiQuotaReached
-      ? m.comparator_ai_quota_reached()
-      : !canAnalyze
-        ? m.comparator_ai_requires_compare()
-        : null;
-  const isAnalyzeDisabled = Boolean(analyzeDisabledReason) || isAnalyzePending;
 
   return (
     <Card className="rounded-2xl border-dashed">
@@ -665,12 +709,34 @@ export const SubscriptionComparatorAiInsightsCard: FC<
           />
         ) : (
           <>
-            <AnalyzeButton
-              disabledReason={analyzeDisabledReason}
-              isAnalyzePending={isAnalyzePending}
-              isAnalyzeDisabled={isAnalyzeDisabled}
-              onAnalyze={onAnalyze}
+            <UserIntentNoteInput
+              value={userIntentNote}
+              onChange={onUserIntentNoteChange}
+              disabled={isAnalyzePending}
             />
+
+            {isAiAlreadyGenerated ? (
+              <RegenerateButton
+                isAnalyzePending={isAnalyzePending}
+                isAnalyzeDisabled={!canRegenerate || isAnalyzePending}
+                onAnalyze={onAnalyze}
+              />
+            ) : (
+              <AnalyzeButton
+                disabledReason={
+                  isAiQuotaReached
+                    ? m.comparator_ai_quota_reached()
+                    : !canAnalyze
+                      ? m.comparator_ai_requires_compare()
+                      : null
+                }
+                isAnalyzePending={isAnalyzePending}
+                isAnalyzeDisabled={
+                  isAiQuotaReached || !canAnalyze || isAnalyzePending
+                }
+                onAnalyze={onAnalyze}
+              />
+            )}
 
             {isAnalyzePending && <AnalyzingProgress />}
           </>

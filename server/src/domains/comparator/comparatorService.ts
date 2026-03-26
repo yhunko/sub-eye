@@ -266,9 +266,24 @@ export class ComparatorService {
       userService: deps.userService,
     });
     const { quotaWindow, used } = aiUsageContext;
+
+    const clientLocale = payload.locale?.trim();
+    const storedLocale = context.preferences.locale;
+    const effectiveLocale = clientLocale || storedLocale;
+
+    if (clientLocale && clientLocale !== storedLocale) {
+      try {
+        await deps.userService.updateLocale(userId, clientLocale);
+      } catch (error) {
+        console.error("Failed to sync user locale", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     const coreInsights = this.buildCoreInsights(
       context.result,
-      context.preferences.locale,
+      effectiveLocale,
     );
     const aiModel = this.resolveAiModel(context.planId);
 
@@ -287,7 +302,7 @@ export class ComparatorService {
       comparison: payload.comparison,
       userIntent: payload.userIntent ?? null,
       preferredCurrency: context.preferences.preferredCurrency,
-      locale: context.preferences.locale,
+      locale: effectiveLocale,
       compared: context.result,
     });
 
@@ -329,7 +344,7 @@ export class ComparatorService {
       payload,
       compared: context.result,
       coreInsights,
-      locale: context.preferences.locale,
+      locale: effectiveLocale,
     });
 
     let aiInsights: ComparatorAiInsightsDto;
@@ -341,7 +356,7 @@ export class ComparatorService {
       aiInsights = await this.enforcePreferredCurrencyMentions({
         aiInsights,
         preferredCurrencyCode: context.result.preferredCurrencyCode,
-        locale: context.preferences.locale,
+        locale: effectiveLocale,
         aiClient: deps.aiClient,
         model: aiModel,
       });

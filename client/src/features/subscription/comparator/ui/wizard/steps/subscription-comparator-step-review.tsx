@@ -36,10 +36,13 @@ type SubscriptionComparatorStepReviewProps = {
   isSavings: boolean;
   isIncrease: boolean;
   canAnalyze: boolean;
+  canRegenerate: boolean;
   isAnalyzePending: boolean;
   aiResult: AnalyzeComparatorResponseDto | undefined;
   aiQuota: MonthlyUsage | undefined;
   isAiQuotaReached: boolean;
+  userIntentNote: string;
+  onUserIntentNoteChange: (note: string) => void;
   onAnalyze: () => void;
 };
 
@@ -56,10 +59,13 @@ const SubscriptionComparatorStepReview: FC<
   isSavings,
   isIncrease,
   canAnalyze,
+  canRegenerate,
   isAnalyzePending,
   aiResult,
   aiQuota,
   isAiQuotaReached,
+  userIntentNote,
+  onUserIntentNoteChange,
   onAnalyze,
 }) => {
   const reviewTags: ComparatorInsightTag[] = [];
@@ -170,8 +176,11 @@ const SubscriptionComparatorStepReview: FC<
             aiResult={aiResult}
             aiQuota={aiQuota}
             canAnalyze={canAnalyze}
+            canRegenerate={canRegenerate}
             isAnalyzePending={isAnalyzePending}
             isAiQuotaReached={isAiQuotaReached}
+            userIntentNote={userIntentNote}
+            onUserIntentNoteChange={onUserIntentNoteChange}
             onAnalyze={onAnalyze}
           />
         </>
