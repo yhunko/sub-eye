@@ -77,3 +77,34 @@ export const captureServerException = async (
     // analytics failures must never affect the error response
   }
 };
+
+interface CaptureEventOptions {
+  distinctId: string;
+  properties?: Record<string, unknown>;
+}
+
+/**
+ * Sends a custom event to PostHog from the server.
+ * Uses the raw capture endpoint — no SDK needed, works in any runtime.
+ * Never throws — analytics failures must not affect the request.
+ */
+export const captureServerEvent = async (
+  eventName: string,
+  apiKey: string,
+  { distinctId, properties }: CaptureEventOptions,
+): Promise<void> => {
+  try {
+    await fetch(POSTHOG_CAPTURE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: apiKey,
+        event: eventName,
+        distinct_id: distinctId,
+        properties: properties ?? {},
+      }),
+    });
+  } catch {
+    // analytics failures must never affect the request
+  }
+};

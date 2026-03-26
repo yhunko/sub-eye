@@ -96,4 +96,13 @@ export class SubscriptionHistoryRepository {
       .delete(subscriptionHistoryTable)
       .where(eq(subscriptionHistoryTable.orgId, orgId));
   }
+
+  static async deleteByUserId(
+    database: typeof db,
+    userId: string,
+  ): Promise<void> {
+    await database
+      .delete(subscriptionHistoryTable)
+      .where(eq(subscriptionHistoryTable.userId, userId));
+  }
 }

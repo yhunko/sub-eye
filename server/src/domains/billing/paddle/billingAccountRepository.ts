@@ -96,4 +96,13 @@ export class BillingAccountRepository {
       ),
     ) as Partial<T>;
   }
+
+  static async deleteByUserId(
+    database: typeof db,
+    userId: string,
+  ): Promise<void> {
+    await database
+      .delete(billingAccountsTable)
+      .where(eq(billingAccountsTable.userId, userId));
+  }
 }

@@ -243,4 +243,21 @@ export class ComparatorRepository {
 
     return record;
   }
+
+  static async deleteAllForUser(
+    database: typeof db,
+    userId: string,
+  ): Promise<void> {
+    await Promise.all([
+      database
+        .delete(comparatorUsageTable)
+        .where(eq(comparatorUsageTable.userId, userId)),
+      database
+        .delete(comparatorAiUsageTable)
+        .where(eq(comparatorAiUsageTable.userId, userId)),
+      database
+        .delete(comparatorAiCacheTable)
+        .where(eq(comparatorAiCacheTable.userId, userId)),
+    ]);
+  }
 }

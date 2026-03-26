@@ -1,29 +1,65 @@
 import type { Context } from "hono";
-import { SubscriptionService } from "../../../../domains/subscription/subscriptionService";
-import { CategoryService } from "../../../../domains/category/categoryService";
-import { PushNotificationService } from "../../../../domains/push-notification/pushNotificationService";
-import { TelegramNotificationService } from "../../../../domains/telegram-notification/telegramNotificationService";
+import {
+  cleanupUserData,
+  type UserCleanupResult,
+} from "../../../../domains/user/userCleanupService";
+import { captureServerEvent } from "../../../../utils/analytics";
 import type { ClerkWebhookEnv } from "../types";
 
-/**
- * Handles the `user.deleted` Clerk event.
- *
- * Removes all user-owned data (subscriptions and push-notification
- * registrations) in parallel.
- */
+const logStructured = (
+  phase: "start" | "complete" | "errors",
+  data: Record<string, unknown>,
+) => {
+  console.log(JSON.stringify({ event: "user.deleted", phase, ...data }));
+};
+
+const toStatusRecord = (result: UserCleanupResult): Record<string, string> => {
+  return Object.fromEntries(
+    result.results.map((r) => [r.domain, r.ok ? "ok" : "failed"]),
+  );
+};
+
 export const handleUserDeleted = async (c: Context<ClerkWebhookEnv>) => {
-  // Type is scoped to `user.deleted` in Clerk dashboard
   const { data } = c.var.webhookEvent;
-
   const userId = data.id;
-  console.log(`[Clerk Webhook] User deleted: ${userId}`);
+  const posthogKey = c.env.POSTHOG_KEY;
 
-  await Promise.all([
-    SubscriptionService.deleteAllForUser(userId),
-    CategoryService.deleteAllForUser(userId),
-    PushNotificationService.deleteAllForUser(userId),
-    TelegramNotificationService.deleteAllForUser(userId),
-  ]);
+  logStructured("start", { userId });
+
+  const result = await cleanupUserData(userId);
+
+  logStructured("complete", {
+    userId,
+    domains: toStatusRecord(result),
+  });
+
+  void captureServerEvent("user_deleted", posthogKey, {
+    distinctId: userId,
+    properties: {
+      source: "clerk_webhook",
+      ...toStatusRecord(result),
+    },
+  });
+
+  if (result.errors.length > 0) {
+    for (const { domain, error } of result.errors) {
+      void captureServerEvent("$exception", posthogKey, {
+        distinctId: userId,
+        properties: {
+          $exception_type: "CleanupError",
+          $exception_message: error,
+          $exception_is_handled: true,
+          domain,
+          source: "user_deleted_cleanup",
+        },
+      });
+    }
+
+    logStructured("errors", {
+      userId,
+      errors: result.errors,
+    });
+  }
 
   return c.text("Webhook received", 200);
 };
