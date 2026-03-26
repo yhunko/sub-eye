@@ -1,7 +1,7 @@
 {
   "name": "sub-eye",
   "description": "A monorepo template for SubEye subscriptions management app",
-  "version": "3.8.1-beta.1",
+  "version": "3.8.1",
   "author": "Yehor Hunko",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260317.1",
