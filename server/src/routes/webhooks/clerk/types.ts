@@ -24,6 +24,9 @@ export type ClerkEventType =
 
 /** Hono env shape shared by all Clerk webhook routes. */
 export type ClerkWebhookEnv = {
-  Bindings: { CLERK_WEBHOOK_SECRET: string };
+  Bindings: {
+    CLERK_WEBHOOK_SECRET: string;
+    POSTHOG_KEY: string;
+  };
   Variables: { webhookEvent: ClerkWebhookEvent };
 };
