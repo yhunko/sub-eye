@@ -704,5 +704,8 @@
   "family_settings_delete": "Delete Family group",
   "family_settings_delete_confirm": "Are you sure you want to delete this family group? All shared subscriptions will become personal. This action cannot be undone.",
   "family_upgrade_title": "Unlock Family groups",
-  "family_upgrade_description": "Upgrade to Plus to create a family group and share subscriptions with your household. Everyone gets their own space while you manage shared expenses together."
+  "family_upgrade_description": "Upgrade to Plus to create a family group and share subscriptions with your household. Everyone gets their own space while you manage shared expenses together.",
+  "demo_nav_dashboard": "Dashboard",
+  "demo_nav_subscriptions": "Subscriptions",
+  "demo_nav_signUp": "Sign Up"
 }

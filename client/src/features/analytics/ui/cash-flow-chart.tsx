@@ -9,11 +9,8 @@ import {
   ReferenceLine,
 } from "recharts";
 import { format, parseISO, startOfDay } from "date-fns";
-import { useUser } from "@clerk/clerk-react";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
-import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { CurrenciesMap } from "shared";
+import { CurrenciesMap, DateTimezoneUtils } from "shared";
 import {
   Card,
   CardContent,
@@ -24,44 +21,40 @@ import {
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { track } from "@/shared/lib/analytics";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import { DateTimezoneUtils } from "shared";
-import type { CashFlowSubscription } from "shared";
+import type { CashFlowPoint, CashFlowSubscription } from "shared";
 
 const HALF_DAY_MS = 12 * 60 * 60 * 1000;
 
 type CashFlowChartProps = {
+  cashFlowForecast: CashFlowPoint[];
+  totalUpcomingMonth: number;
+  preferredCurrencyCode: string;
+  timezone: string;
   className?: string;
 };
-export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
-  const { locale } = useDateFnsLocale();
-  const { user } = useUser();
-  const { orgId } = useActiveSpace();
 
-  const { data } = useSuspenseQuery(
-    dashboardAnalyticsQuery({
-      params: { userId: user!.id, orgId },
-      options: { enabled: !!user },
-    }),
-  );
+export const CashFlowChart: FC<CashFlowChartProps> = ({
+  cashFlowForecast,
+  totalUpcomingMonth,
+  preferredCurrencyCode,
+  timezone,
+  className,
+}) => {
+  const { locale } = useDateFnsLocale();
 
   const todayTimestamp = useMemo(() => {
-    if (user) {
-      return startOfDay(
-        DateTimezoneUtils.now(user?.publicMetadata?.preferredTimezone),
-      ).getTime();
-    }
-  }, [user]);
+    return startOfDay(DateTimezoneUtils.now(timezone)).getTime();
+  }, [timezone]);
 
   const chartData = useMemo(
     () =>
-      data.cashFlowForecast.map((d) => ({
+      cashFlowForecast.map((d) => ({
         ...d,
         timestamp: parseISO(d.date).getTime(),
       })),
-    [data.cashFlowForecast],
+    [cashFlowForecast],
   );
 
   const xDomain = useMemo((): [number, number] => {
@@ -76,21 +69,13 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
   }, [chartData, todayTimestamp]);
 
   const yAxisWidth = useMemo(() => {
-    const maxValue = Math.max(
-      ...data.cashFlowForecast.map((d) => d.cumulative),
-      0,
-    );
-    const symbol = CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+    const maxValue = Math.max(...cashFlowForecast.map((d) => d.cumulative), 0);
+    const symbol = CurrenciesMap.get(preferredCurrencyCode)?.symbol ?? "";
     const formatted = `${symbol}${maxValue}`;
     return Math.max(45, Math.ceil(formatted.length * 7.5));
-  }, [data]);
+  }, [cashFlowForecast, preferredCurrencyCode]);
 
-  if (!user) {
-    return <div className="bg-muted h-75 animate-pulse rounded-xl" />;
-  }
-
-  const currencySymbol =
-    CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+  const currencySymbol = CurrenciesMap.get(preferredCurrencyCode)?.symbol ?? "";
 
   return (
     <Card className={className}>
@@ -106,8 +91,8 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
             {m.analytics_charts_cashFlow_30DaysTotal()}
           </span>
           <CurrencyBadge
-            amount={data.totalUpcomingMonth}
-            currencyCode={data.preferredCurrencyCode}
+            amount={totalUpcomingMonth}
+            currencyCode={preferredCurrencyCode}
           />
         </div>
       </CardHeader>
@@ -203,7 +188,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
                               <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                                 <CurrencyText
                                   amount={sub.amount}
-                                  currencyCode={data.preferredCurrencyCode}
+                                  currencyCode={preferredCurrencyCode}
                                 />
                               </span>
                             </div>
@@ -218,7 +203,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
                             </span>
                             <CurrencyBadge
                               amount={item.amount}
-                              currencyCode={data.preferredCurrencyCode}
+                              currencyCode={preferredCurrencyCode}
                             />
                           </div>
                         )}
@@ -234,7 +219,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({ className }) => {
                           </span>
                           <CurrencyBadge
                             amount={item.cumulative}
-                            currencyCode={data.preferredCurrencyCode}
+                            currencyCode={preferredCurrencyCode}
                           />
                         </div>
                       </div>

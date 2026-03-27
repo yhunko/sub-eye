@@ -1,7 +1,4 @@
 import { FC, useMemo } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { dashboardAnalyticsQuery } from "@/entities/analytics";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { CurrencyBadge } from "@/entities/currency";
 import {
   Card,
@@ -22,30 +19,22 @@ import { BrandfetchImage } from "@/features/brandfetch";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import type { UpcomingRenewalDto } from "shared";
 
 type UpcomingRenewalsProps = {
+  upcomingRenewals: UpcomingRenewalDto[];
+  timezone: string;
+  disableLinks?: boolean;
   className?: string;
 };
 
-export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
-  const { user } = useUser();
-  const { userId } = useAuth();
-  const { orgId } = useActiveSpace();
-
-  const { data } = useSuspenseQuery(
-    dashboardAnalyticsQuery({
-      params: { userId: userId!, orgId },
-      options: { enabled: true },
-    }),
-  );
-
-  const upcomingRenewals = data.upcomingRenewals;
-  const timezone =
-    (user?.publicMetadata as { preferredTimezone?: string })
-      ?.preferredTimezone ?? "UTC";
-
+export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({
+  upcomingRenewals,
+  timezone,
+  disableLinks = false,
+  className,
+}) => {
   const renewalsWithDisplayState = useMemo(() => {
     if (!upcomingRenewals) return [];
 
@@ -64,12 +53,6 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
       };
     });
   }, [upcomingRenewals, timezone]);
-
-  if (!userId) {
-    return (
-      <Card className={cn("bg-muted/20 h-full animate-pulse", className)} />
-    );
-  }
 
   if (!renewalsWithDisplayState.length) {
     return (
@@ -90,19 +73,9 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
         <CardTitle>{m.analytics_upcomingRenewals_title()}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        {renewalsWithDisplayState.map((item) => (
-          <Item
-            key={`${item.id}-${item.nextPaymentDate}`}
-            size="sm"
-            variant="outline"
-            asChild
-            className="flex-nowrap"
-          >
-            <Link
-              to="/subscriptions/$id"
-              params={{ id: item.id }}
-              className="w-full"
-            >
+        {renewalsWithDisplayState.map((item) => {
+          const content = (
+            <>
               <ItemMedia>
                 <BrandfetchImage domain={item.brandDomain} />
               </ItemMedia>
@@ -128,9 +101,31 @@ export const UpcomingRenewals: FC<UpcomingRenewalsProps> = ({ className }) => {
               <ItemActions className="shrink-0">
                 <ChevronRight className="size-4" />
               </ItemActions>
-            </Link>
-          </Item>
-        ))}
+            </>
+          );
+
+          return (
+            <Item
+              key={`${item.id}-${item.nextPaymentDate}`}
+              size="sm"
+              variant="outline"
+              asChild
+              className="flex-nowrap"
+            >
+              {disableLinks ? (
+                <div className="w-full">{content}</div>
+              ) : (
+                <Link
+                  to="/subscriptions/$id"
+                  params={{ id: item.id }}
+                  className="w-full"
+                >
+                  {content}
+                </Link>
+              )}
+            </Item>
+          );
+        })}
       </CardContent>
     </Card>
   );

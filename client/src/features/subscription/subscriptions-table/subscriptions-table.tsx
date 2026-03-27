@@ -1,4 +1,12 @@
-import { FC, useMemo, useState, useCallback, useEffect, useRef } from "react";
+import {
+  FC,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  ReactNode,
+} from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,21 +28,20 @@ import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results
 import {
   subscriptionsQueryParsers,
   SubscriptionsSearch,
-  subscriptionsQuery,
   SubscriptionsFilter,
   CategoryFilterChips,
 } from "@/entities/subscription";
-import { categoriesQuery } from "@/entities/category";
-import { useAuth } from "@clerk/clerk-react";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { cn } from "@/shared/lib/classes-utils";
 import { useQueryStates } from "nuqs";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { SubscriptionSortField } from "shared";
+import {
+  SubscriptionSortField,
+  SubscriptionDto,
+  CategoryDto,
+  StatusFilter,
+} from "shared";
 import * as m from "@/i18n/messages";
 import { TableBodyLoader } from "@/shared/ui";
-import { SubscriptionsMonthlySpendCard } from "../../analytics";
 import { ArrowRightLeft } from "lucide-react";
 import {
   toggleSubscriptionSelection,
@@ -46,43 +53,28 @@ import { SubscriptionBulkActionBar } from "./ui/subscriptions-bulk-action-bar";
 import { openBulkDeleteSubscriptionsDialog } from "./ui/open-bulk-delete-subscriptions-dialog";
 import { openBulkAssignCategoryDialog } from "./ui/open-bulk-assign-category-dialog";
 
-const SubscriptionsTable: FC = () => {
+type SubscriptionsTableProps = {
+  subscriptions: SubscriptionDto[];
+  categories: CategoryDto[];
+  isLoading?: boolean;
+  monthlySpendSlot?: ReactNode;
+  rowActions?: FC<{ subscription: SubscriptionDto }>;
+  enableBulkActions?: boolean;
+};
+
+const SubscriptionsTable: FC<SubscriptionsTableProps> = ({
+  subscriptions,
+  categories,
+  isLoading,
+  monthlySpendSlot,
+  rowActions,
+  enableBulkActions = true,
+}) => {
   const [filters, setFilters] = useQueryStates(subscriptionsQueryParsers, {
     history: "replace",
   });
 
-  const { search, sortBy, direction, categoryId } = filters;
-
-  const queryParams = useMemo(() => {
-    const trimmedSearch = search.trim();
-
-    return {
-      sortBy,
-      direction,
-      status: filters.status,
-      ...(trimmedSearch ? { search: trimmedSearch } : {}),
-      ...(categoryId ? { categoryId } : {}),
-    };
-  }, [direction, search, sortBy, filters.status, categoryId]);
-
-  const { userId } = useAuth();
-  const { orgId } = useActiveSpace();
-  const { data: subscriptions = [], isLoading } = useQuery(
-    subscriptionsQuery({
-      params: {
-        userId: userId!,
-        orgId,
-        queryParams,
-      },
-      options: {
-        placeholderData: keepPreviousData,
-      },
-    }),
-  );
-
-  const { data: categories = [] } = useQuery(
-    categoriesQuery({ params: { userId: userId ?? "", orgId } }),
-  );
+  const { sortBy, direction, categoryId } = filters;
 
   const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState<
     Set<string>
@@ -160,6 +152,8 @@ const SubscriptionsTable: FC = () => {
 
   // Keyboard shortcuts
   useEffect(() => {
+    if (!enableBulkActions) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
         event.target instanceof HTMLInputElement ||
@@ -184,7 +178,7 @@ const SubscriptionsTable: FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [enableBulkActions]);
 
   const allVisibleSelected =
     visibleIds.length > 0 && selectedSubscriptionIds.size === visibleIds.length;
@@ -195,12 +189,14 @@ const SubscriptionsTable: FC = () => {
   );
 
   const columns = useColumns({
-    onToggleSelect,
-    isSelected,
-    allVisibleSelected,
-    onToggleAll,
+    onToggleSelect: enableBulkActions ? onToggleSelect : undefined,
+    isSelected: enableBulkActions ? isSelected : undefined,
+    allVisibleSelected: enableBulkActions ? allVisibleSelected : undefined,
+    onToggleAll: enableBulkActions ? onToggleAll : undefined,
+    enableSelection: enableBulkActions,
     showCategoryColumn,
     categories,
+    rowActions,
   });
 
   const sorting: SortingState = useMemo(
@@ -235,9 +231,9 @@ const SubscriptionsTable: FC = () => {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-2">
-        <SubscriptionsMonthlySpendCard />
-      </div>
+      {monthlySpendSlot && (
+        <div className="grid grid-cols-2 gap-2">{monthlySpendSlot}</div>
+      )}
 
       <div className="flex items-center gap-2">
         <SubscriptionsSearch
@@ -254,13 +250,16 @@ const SubscriptionsTable: FC = () => {
           </Button>
           <SubscriptionsFilter
             status={filters.status}
-            onStatusChange={(nextStatus) => setFilters({ status: nextStatus })}
+            onStatusChange={(nextStatus: StatusFilter) =>
+              void setFilters({ status: nextStatus })
+            }
           />
         </div>
       </div>
       <CategoryFilterChips
         value={categoryId}
         onChange={(id) => void setFilters({ categoryId: id })}
+        categories={categories}
       />
       <div className="relative overflow-hidden rounded-md border">
         <Table className={cn(isLoading && "pointer-events-none")}>
@@ -298,9 +297,13 @@ const SubscriptionsTable: FC = () => {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    onClick={() => onToggleSelect(row.original.id)}
+                    onClick={
+                      enableBulkActions
+                        ? () => onToggleSelect(row.original.id)
+                        : undefined
+                    }
                     className={cn(
-                      "cursor-pointer",
+                      enableBulkActions && "cursor-pointer",
                       isCancelled && "bg-muted/30 opacity-75",
                       isCancelledButActive && "bg-amber-500/5",
                     )}
@@ -326,13 +329,15 @@ const SubscriptionsTable: FC = () => {
         </Table>
       </div>
 
-      <SubscriptionBulkActionBar
-        selectedCount={selectedSubscriptionIds.size}
-        onSelectAll={onToggleAll}
-        onDeselectAll={onClearSelection}
-        onBulkDelete={onBulkDelete}
-        onBulkAssignCategory={onBulkAssignCategory}
-      />
+      {enableBulkActions && (
+        <SubscriptionBulkActionBar
+          selectedCount={selectedSubscriptionIds.size}
+          onSelectAll={onToggleAll}
+          onDeselectAll={onClearSelection}
+          onBulkDelete={onBulkDelete}
+          onBulkAssignCategory={onBulkAssignCategory}
+        />
+      )}
     </div>
   );
 };

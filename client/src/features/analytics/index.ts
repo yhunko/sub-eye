@@ -6,4 +6,5 @@ export { StatCards } from "./ui/stat-cards";
 export { UpcomingRenewals } from "./ui/upcoming-renewals";
 export { StatSummaryCard } from "./ui/stat-summary-card";
 export { SubscriptionsMonthlySpendCard } from "./ui/subscriptions-monthly-spend-card";
+export { SubscriptionsMonthlySpendCardConnected } from "./ui/subscriptions-monthly-spend-card-connected";
 export { EmptyDashboard } from "./ui/empty-dashboard";

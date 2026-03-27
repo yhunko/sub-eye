@@ -4,12 +4,14 @@ import { ActiveSubscriptionsCard } from "./stat-cards/active-subscriptions-card"
 import { YearlyCostCard } from "./stat-cards/yearly-cost-card";
 import { MostExpensiveSubscriptionCard } from "./stat-cards/most-expensive-subscription-card";
 import { RemainingThisMonthCard } from "./stat-cards/remaining-this-month-card";
+import type { DashboardAnalyticsDto } from "shared";
 
 type StatCardsProps = {
+  data: DashboardAnalyticsDto;
   className?: string;
 };
 
-export const StatCards: FC<StatCardsProps> = ({ className }) => {
+export const StatCards: FC<StatCardsProps> = ({ data, className }) => {
   return (
     <div
       className={cn(
@@ -17,10 +19,25 @@ export const StatCards: FC<StatCardsProps> = ({ className }) => {
         className,
       )}
     >
-      <ActiveSubscriptionsCard />
-      <MostExpensiveSubscriptionCard />
-      <RemainingThisMonthCard />
-      <YearlyCostCard />
+      <ActiveSubscriptionsCard
+        total={data.activeSubscriptionsTotal}
+        auto={data.activeSubscriptionsAuto}
+        manual={data.activeSubscriptionsManual}
+      />
+      <MostExpensiveSubscriptionCard
+        subscription={data.mostExpensiveSubscription}
+        currencyCode={data.preferredCurrencyCode}
+      />
+      <RemainingThisMonthCard
+        remainingThisMonth={data.remainingThisMonth}
+        nextMonthForecast={data.nextMonthForecast}
+        currencyCode={data.preferredCurrencyCode}
+      />
+      <YearlyCostCard
+        yearlyForecast={data.yearlyForecast}
+        monthlyBurnRate={data.monthlyBurnRate}
+        currencyCode={data.preferredCurrencyCode}
+      />
     </div>
   );
 };

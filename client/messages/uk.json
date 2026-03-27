@@ -793,5 +793,8 @@
   "family_settings_delete_confirm": "Ви впевнені, що хочете видалити цю сімейну групу? Всі спільні підписки стануть особистими. Цю дію неможливо скасувати.",
   "family_upgrade_title": "Розблокувати сімейні групи",
   "family_upgrade_description": "Оновіть до Plus, щоб створити сімейну групу та ділитися підписками з родиною. Кожен отримає свій простір, а ви зможете керувати спільними витратами разом.",
-  "settings_billing_plans_pro_features_familyGroup": "Сімейна група для спільних підписок"
+  "settings_billing_plans_pro_features_familyGroup": "Сімейна група для спільних підписок",
+  "demo_nav_dashboard": "Головна",
+  "demo_nav_subscriptions": "Підписки",
+  "demo_nav_signUp": "Зареєструватися"
 }

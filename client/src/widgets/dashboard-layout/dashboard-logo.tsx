@@ -13,7 +13,7 @@ export const DashboardLogo = () => {
         <img
           alt="logo"
           src={Logo}
-          className="h-auto w-10 object-contain transition-transform duration-300 ease-in-out will-change-transform not-motion-reduce:group-hover:scale-110"
+          className="h-8 w-auto object-contain transition-transform duration-300 ease-in-out will-change-transform not-motion-reduce:group-hover:scale-110"
         />
 
         <span className="hidden text-sm font-semibold tracking-tight md:inline-block md:text-base">

@@ -2,21 +2,17 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import * as m from "@/i18n/messages";
 import { CurrencyText } from "@/entities/currency";
 import { StatSummaryCard } from "./stat-summary-card";
-import { monthlySpendSummaryQuery } from "@/entities/analytics";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/clerk-react";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
+import type { MonthlySpendSummaryDto } from "shared";
+import { FC } from "react";
 
-export const SubscriptionsMonthlySpendCard = () => {
-  const { userId } = useAuth();
-  const { orgId } = useActiveSpace();
+type SubscriptionsMonthlySpendCardProps = {
+  data: MonthlySpendSummaryDto;
+  isLoading?: boolean;
+};
 
-  const { data, isLoading, isSuccess } = useQuery(
-    monthlySpendSummaryQuery({ userId: userId!, orgId }),
-  );
-
-  if (!isSuccess && !isLoading && !data) return null;
-
+export const SubscriptionsMonthlySpendCard: FC<
+  SubscriptionsMonthlySpendCardProps
+> = ({ data, isLoading }) => {
   const delta = data?.deltaPercentage ?? null;
   const deltaLabel =
     delta === null

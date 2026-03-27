@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
@@ -28,6 +29,10 @@ export const Route = createFileRoute("/(protected)/")({
 function Dashboard() {
   const { userId } = useAuth();
   const { orgId } = useActiveSpace();
+  const { user } = useUser();
+  const timezone =
+    (user?.publicMetadata as { preferredTimezone?: string } | undefined)
+      ?.preferredTimezone ?? "UTC";
 
   const { data: analytics } = useSuspenseQuery(
     dashboardAnalyticsQuery({
@@ -48,11 +53,29 @@ function Dashboard() {
   return (
     <DashboardLayout Navbar={<DashboardNavbar />}>
       <AnalyticsWidget>
-        <StatCards className="col-span-full" />
-        <CashFlowChart className="lg:col-span-7" />
-        <UpcomingRenewals className="h-full lg:col-span-5" />
-        <CategorySpendingChart className="lg:col-span-5" />
-        <MonthlySpendingTrendChart className="h-full lg:col-span-7" />
+        <StatCards data={analytics} className="col-span-full" />
+        <CashFlowChart
+          cashFlowForecast={analytics.cashFlowForecast}
+          totalUpcomingMonth={analytics.totalUpcomingMonth}
+          preferredCurrencyCode={analytics.preferredCurrencyCode}
+          timezone={timezone}
+          className="lg:col-span-7"
+        />
+        <UpcomingRenewals
+          upcomingRenewals={analytics.upcomingRenewals}
+          timezone={timezone}
+          className="h-full lg:col-span-5"
+        />
+        <CategorySpendingChart
+          categorySpending={analytics.categorySpending}
+          preferredCurrencyCode={analytics.preferredCurrencyCode}
+          className="lg:col-span-5"
+        />
+        <MonthlySpendingTrendChart
+          monthlyTrend={analytics.monthlyTrend}
+          preferredCurrencyCode={analytics.preferredCurrencyCode}
+          className="h-full lg:col-span-7"
+        />
       </AnalyticsWidget>
     </DashboardLayout>
   );
