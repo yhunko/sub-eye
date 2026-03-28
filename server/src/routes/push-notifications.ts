@@ -8,7 +8,7 @@ import { object } from "valibot";
 import { UserService } from "../domains/user/userService";
 import { PushNotificationContent } from "../domains/push-notification/pushNotificationContent";
 import { PushNotificationService } from "../domains/push-notification/pushNotificationService";
-import type { Bindings } from "../index";
+import type { Bindings } from "../env";
 
 export const pushNotificationRouter = new Hono<{ Bindings: Bindings }>()
   .post(

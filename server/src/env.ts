@@ -39,3 +39,6 @@ export const BindingsSchema = v.object({
   VAPID_PUBLIC_KEY: v.pipe(v.string(), v.minLength(1)),
   VAPID_PRIVATE_KEY: v.pipe(v.string(), v.minLength(1)),
 });
+
+/** Derived from BindingsSchema — keeps the type and schema in sync automatically. */
+export type Bindings = v.InferOutput<typeof BindingsSchema>;
