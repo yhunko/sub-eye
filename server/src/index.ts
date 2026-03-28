@@ -16,7 +16,7 @@ import {
   extractRequestContext,
 } from "./utils/analytics";
 
-type Bindings = {
+export type Bindings = {
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
   CLERK_WEBHOOK_SECRET: string;
@@ -33,9 +33,13 @@ type Bindings = {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_BOT_USERNAME: string;
   TELEGRAM_WEBHOOK_SECRET_TOKEN: string;
+  BASE_URL: string;
   CLIENT_ORIGIN: string;
   POSTHOG_KEY: string;
   PLANS_API_KEY: string;
+  VAPID_SUBJECT: string;
+  VAPID_PUBLIC_KEY: string;
+  VAPID_PRIVATE_KEY: string;
 };
 
 const corsOrigins = [process.env.CLIENT_ORIGIN];

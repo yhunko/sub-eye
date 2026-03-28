@@ -14,6 +14,7 @@ import {
 import { UserService } from "../user/userService";
 import { CurrencyService } from "../currency/currencyService";
 import { PushNotificationContent } from "../push-notification/pushNotificationContent";
+import { PushNotificationService } from "../push-notification/pushNotificationService";
 
 export type SubscriptionWorkflowPayload = {
   subscriptionId: string;
@@ -95,10 +96,12 @@ export class SubscriptionNotificationsWorkflow {
           },
         );
 
+        const vapidDetails = PushNotificationService.getVapidDetailsFromEnv();
+
         const report = await NotificationDeliveryService.sendNotification(
           subscription.userId,
           notificationPayload,
-          { locale: preferences.locale },
+          { locale: preferences.locale, vapidDetails },
         );
 
         if (report.failed > 0) {

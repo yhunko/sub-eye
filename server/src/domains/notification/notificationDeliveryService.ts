@@ -2,6 +2,7 @@ import type { PushNotificationPayload, TelegramSendReport } from "shared";
 import {
   PushNotificationService,
   type PushDeliveryReport,
+  type VapidDetails,
 } from "../push-notification/pushNotificationService";
 import { TelegramNotificationService } from "../telegram-notification/telegramNotificationService";
 
@@ -16,16 +17,17 @@ export type NotificationDeliveryReport = {
 
 type SendNotificationOptions = {
   locale?: string;
+  vapidDetails: VapidDetails;
 };
 
 export class NotificationDeliveryService {
   static async sendNotification(
     userId: string,
     payload: PushNotificationPayload,
-    options: SendNotificationOptions = {},
+    options: SendNotificationOptions,
   ): Promise<NotificationDeliveryReport> {
     const [push, telegram] = await Promise.all([
-      this.sendPushSafely(userId, payload),
+      this.sendPushSafely(userId, payload, options.vapidDetails),
       this.sendTelegramSafely(userId, payload, options.locale),
     ]);
 
@@ -51,9 +53,14 @@ export class NotificationDeliveryService {
   private static async sendPushSafely(
     userId: string,
     payload: PushNotificationPayload,
+    vapidDetails: VapidDetails,
   ): Promise<PushDeliveryReport> {
     try {
-      return await PushNotificationService.sendNotification(userId, payload);
+      return await PushNotificationService.sendNotification(
+        userId,
+        payload,
+        vapidDetails,
+      );
     } catch (error) {
       return {
         attempted: 0,

@@ -7,8 +7,10 @@ import { PushNotificationRepository } from "../domains/push-notification/pushNot
 import { object } from "valibot";
 import { UserService } from "../domains/user/userService";
 import { PushNotificationContent } from "../domains/push-notification/pushNotificationContent";
+import { PushNotificationService } from "../domains/push-notification/pushNotificationService";
+import type { Bindings } from "../index";
 
-export const pushNotificationRouter = new Hono()
+export const pushNotificationRouter = new Hono<{ Bindings: Bindings }>()
   .post(
     "/subscribe",
     protect,
@@ -49,12 +51,17 @@ export const pushNotificationRouter = new Hono()
   .post("/test", protect, async (context) => {
     const userId = requireUserId(context);
     const preferences = await UserService.getUserPreferences(userId);
-    const { PushNotificationService } =
-      await import("../domains/push-notification/pushNotificationService");
+
+    const vapidDetails = {
+      subject: context.env.VAPID_SUBJECT,
+      publicKey: context.env.VAPID_PUBLIC_KEY,
+      privateKey: context.env.VAPID_PRIVATE_KEY,
+    };
 
     const report = await PushNotificationService.sendNotification(
       userId,
       PushNotificationContent.buildTestPayload(preferences.locale),
+      vapidDetails,
     );
 
     if (report.attempted > 0 && report.delivered === 0) {
