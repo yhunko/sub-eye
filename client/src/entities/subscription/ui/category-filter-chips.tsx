@@ -1,28 +1,20 @@
-import { useAuth } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
-import { categoriesQuery } from "@/entities/category";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
 import { track } from "@/shared/lib/analytics";
+import type { CategoryDto } from "shared";
+import { FC } from "react";
 
 type CategoryFilterChipsProps = {
-  // "" means "no filter applied" (All); a UUID means a specific category is active.
+  categories: CategoryDto[];
   value: string;
   onChange: (categoryId: string) => void;
 };
 
-export const CategoryFilterChips = ({
+export const CategoryFilterChips: FC<CategoryFilterChipsProps> = ({
+  categories,
   value,
   onChange,
-}: CategoryFilterChipsProps) => {
-  const { userId } = useAuth();
-  const { data: categories = [] } = useQuery(
-    categoriesQuery({
-      params: { userId: userId ?? "" },
-      options: { enabled: !!userId },
-    }),
-  );
-
+}) => {
   if (categories.length === 0) return null;
 
   const handleChipClick = (categoryId: string) => {

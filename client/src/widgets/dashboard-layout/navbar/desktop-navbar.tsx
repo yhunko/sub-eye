@@ -2,17 +2,14 @@ import { UserDropdownMenu } from "@/features/auth";
 import { SpaceSwitcher } from "@/features/org/space-switcher";
 import { DashboardLogo } from "../dashboard-logo";
 import { Link, useLocation } from "@tanstack/react-router";
-import { cn } from "../../../shared/lib/classes-utils";
 import {
   NavigationMenu,
   NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  navigationMenuTriggerStyle,
+  NavItem,
   Button,
 } from "@/shared/components";
 import * as m from "@/i18n/messages";
-import { Plus } from "lucide-react";
+import { LayoutDashboard, List, Plus } from "lucide-react";
 import { m as motion, LazyMotion, domAnimation } from "motion/react";
 
 let hasAnimated = false;
@@ -38,22 +35,18 @@ export const DesktopNavbar = () => {
             <DashboardLogo />
             <NavigationMenu>
               <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to="/subscriptions"
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        "transition-colors",
-                        pathname === "/subscriptions"
-                          ? "bg-accent text-accent-foreground pointer-events-none"
-                          : "text-muted-foreground hover:text-foreground cursor-pointer bg-transparent",
-                      )}
-                    >
-                      {m.common_subscriptions()}
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+                <NavItem
+                  to="/"
+                  icon={LayoutDashboard}
+                  label={m.common_home()}
+                  isActive={pathname === "/"}
+                />
+                <NavItem
+                  to="/subscriptions"
+                  icon={List}
+                  label={m.common_subscriptions()}
+                  isActive={pathname === "/subscriptions"}
+                />
               </NavigationMenuList>
             </NavigationMenu>
           </div>

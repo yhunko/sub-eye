@@ -5,7 +5,7 @@ import {
 } from "./pushNotificationRepository";
 import type { PushNotificationPayload } from "shared";
 
-type VapidDetails = {
+export type VapidDetails = {
   subject: string;
   publicKey: string;
   privateKey: string;
@@ -37,6 +37,7 @@ export class PushNotificationService {
   static async sendNotification(
     userId: string,
     payload: PushNotificationPayload,
+    vapidDetails: VapidDetails,
   ): Promise<PushDeliveryReport> {
     const subscriptions = await PushNotificationRepository.findByUserId(userId);
 
@@ -50,7 +51,6 @@ export class PushNotificationService {
       };
     }
 
-    const vapidDetails = this.getVapidDetails();
     const payloadString = JSON.stringify(payload);
     const attempts = await Promise.all(
       subscriptions.map((subscription) =>
@@ -100,7 +100,7 @@ export class PushNotificationService {
     await PushNotificationRepository.deleteByUserId(userId);
   }
 
-  private static getVapidDetails(): VapidDetails {
+  static getVapidDetailsFromEnv(): VapidDetails {
     const subject = process.env.VAPID_SUBJECT;
     const publicKey = process.env.VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -228,7 +228,9 @@ export class PushNotificationService {
       reason.includes("unregistered") ||
       reason.includes("unauthorizedregistration") ||
       reason.includes("senderid mismatch") ||
-      reason.includes("mismatchsenderid")
+      reason.includes("mismatchsenderid") ||
+      reason.includes("vapid credentials") ||
+      reason.includes("vapid")
     );
   }
 }

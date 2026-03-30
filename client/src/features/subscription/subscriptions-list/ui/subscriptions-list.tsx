@@ -11,13 +11,14 @@ import { ListX } from "lucide-react";
 import { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
 
-interface SubscriptionsListSectionProps {
+interface SubscriptionsListProps {
   subscriptions: SubscriptionDto[];
   empty?: boolean;
+  disableLinks?: boolean;
 }
 
 export const SubscriptionsList = React.memo(
-  ({ subscriptions, empty }: SubscriptionsListSectionProps) => {
+  ({ subscriptions, empty, disableLinks = false }: SubscriptionsListProps) => {
     return (
       <ItemGroup className="gap-2">
         {empty && (
@@ -34,6 +35,7 @@ export const SubscriptionsList = React.memo(
           <SubscriptionListItem
             key={subscription.id}
             subscription={subscription}
+            disableLink={disableLinks}
           />
         ))}
       </ItemGroup>
@@ -41,4 +43,4 @@ export const SubscriptionsList = React.memo(
   },
 );
 
-SubscriptionsList.displayName = "SubscriptionsListSection";
+SubscriptionsList.displayName = "SubscriptionsList";

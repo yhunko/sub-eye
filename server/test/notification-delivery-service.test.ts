@@ -14,6 +14,12 @@ const samplePayload: PushNotificationPayload = {
   data: { url: "/subscriptions/sub_01" },
 };
 
+const mockVapidDetails = {
+  subject: "mailto:test@example.com",
+  publicKey: "mock-public-key",
+  privateKey: "mock-private-key",
+};
+
 afterEach(() => {
   (
     PushNotificationService as unknown as {
@@ -63,6 +69,7 @@ describe("NotificationDeliveryService.sendNotification", () => {
       samplePayload,
       {
         locale: "uk",
+        vapidDetails: mockVapidDetails,
       },
     );
 
@@ -96,6 +103,7 @@ describe("NotificationDeliveryService.sendNotification", () => {
     const report = await NotificationDeliveryService.sendNotification(
       "user_01",
       samplePayload,
+      { vapidDetails: mockVapidDetails },
     );
 
     expect(report.attempted).toBe(3);
@@ -128,6 +136,7 @@ describe("NotificationDeliveryService.sendNotification", () => {
     const report = await NotificationDeliveryService.sendNotification(
       "user_02",
       samplePayload,
+      { vapidDetails: mockVapidDetails },
     );
 
     expect(report.telegram.delivered).toBe(0);

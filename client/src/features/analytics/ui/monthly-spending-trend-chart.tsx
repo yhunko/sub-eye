@@ -1,7 +1,4 @@
 import { FC, Suspense, lazy, useMemo } from "react";
-import { useAuth } from "@clerk/clerk-react";
-import { dashboardAnalyticsQuery } from "@/entities/analytics";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { CurrenciesMap } from "shared";
 import {
   Card,
@@ -12,12 +9,12 @@ import {
 } from "@/shared/components/ui/card";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { addMonths, isSameMonth, parseISO } from "date-fns";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import type { MonthlyTrendPoint } from "shared";
 
 const MonthlySpendingTrendChartDesktop = lazy(
   () => import("./monthly-spending-trend-chart.desktop"),
@@ -27,29 +24,23 @@ const MonthlySpendingTrendChartMobile = lazy(
 );
 
 type MonthlySpendingTrendChartProps = {
+  monthlyTrend: MonthlyTrendPoint[];
+  preferredCurrencyCode: string;
   className?: string;
 };
 
 export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
+  monthlyTrend,
+  preferredCurrencyCode,
   className,
 }) => {
-  const { userId } = useAuth();
-  const { orgId } = useActiveSpace();
   const { locale } = useDateFnsLocale();
   const isDesktop = useBreakpoint("md");
 
-  const { data } = useSuspenseQuery(
-    dashboardAnalyticsQuery({
-      params: { userId: userId!, orgId },
-      options: { enabled: true },
-    }),
-  );
-
-  const currencySymbol =
-    CurrenciesMap.get(data.preferredCurrencyCode)?.symbol ?? "";
+  const currencySymbol = CurrenciesMap.get(preferredCurrencyCode)?.symbol ?? "";
 
   const yAxisWidth = useMemo(() => {
-    const maxAmount = Math.max(0, ...data.monthlyTrend.map((d) => d.amount));
+    const maxAmount = Math.max(0, ...monthlyTrend.map((d) => d.amount));
 
     const formatted = `${currencySymbol}${maxAmount.toLocaleString(undefined, {
       notation: "compact",
@@ -59,15 +50,15 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
     const charWidth = 7;
     const padding = 12;
     return Math.max(45, formatted.length * charWidth + padding);
-  }, [data.monthlyTrend, currencySymbol]);
+  }, [monthlyTrend, currencySymbol]);
 
   const monthComparisonBadge = useMemo(() => {
     const now = new Date();
-    const currentMonth = data.monthlyTrend.find((point) =>
+    const currentMonth = monthlyTrend.find((point) =>
       isSameMonth(parseISO(point.date), now),
     );
     const previousMonthDate = addMonths(now, -1);
-    const previousMonth = data.monthlyTrend.find((point) =>
+    const previousMonth = monthlyTrend.find((point) =>
       isSameMonth(parseISO(point.date), previousMonthDate),
     );
 
@@ -102,22 +93,11 @@ export const MonthlySpendingTrendChart: FC<MonthlySpendingTrendChartProps> = ({
       Icon:
         amountDelta === 0 ? Minus : amountDelta > 0 ? TrendingUp : TrendingDown,
     };
-  }, [data.monthlyTrend]);
-
-  if (!userId) {
-    return (
-      <div
-        className={cn(
-          "bg-muted h-full min-h-[22rem] w-full animate-pulse rounded-xl",
-          className,
-        )}
-      />
-    );
-  }
+  }, [monthlyTrend]);
 
   const variantProps: MonthlySpendingTrendVariantProps = {
-    monthlyTrend: data.monthlyTrend,
-    preferredCurrencyCode: data.preferredCurrencyCode,
+    monthlyTrend,
+    preferredCurrencyCode,
     currencySymbol,
     yAxisWidth,
     locale,

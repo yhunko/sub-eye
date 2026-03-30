@@ -23,6 +23,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "check-env": "bun ./scripts/check-env.ts",
     "db:generate": "drizzle-kit generate --custom",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

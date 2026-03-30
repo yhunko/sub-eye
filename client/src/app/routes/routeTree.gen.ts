@@ -9,8 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./../../pages/__root"
+import { Route as DemoRouteRouteImport } from "./../../pages/demo/route"
 import { Route as protectedRouteRouteImport } from "./../../pages/(protected)/route"
+import { Route as DemoIndexRouteImport } from "./../../pages/demo/index"
 import { Route as protectedIndexRouteImport } from "./../../pages/(protected)/index"
+import { Route as DemoSubscriptionsIndexRouteImport } from "./../../pages/demo/subscriptions/index"
 import { Route as protectedSubscriptionsIndexRouteImport } from "./../../pages/(protected)/subscriptions/index"
 import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(protected)/settings/index"
 import { Route as AuthSignUpSplatRouteImport } from "./../../pages/auth/sign-up/$"
@@ -27,14 +30,29 @@ import { Route as protectedSubscriptionsIdIndexRouteImport } from "./../../pages
 import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
 import { Route as protectedSettingsCategoriesGenerateRouteImport } from "./../../pages/(protected)/settings/categories/generate"
 
+const DemoRouteRoute = DemoRouteRouteImport.update({
+  id: "/demo",
+  path: "/demo",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const protectedRouteRoute = protectedRouteRouteImport.update({
   id: "/(protected)",
   getParentRoute: () => rootRouteImport,
+} as any)
+const DemoIndexRoute = DemoIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => DemoRouteRoute,
 } as any)
 const protectedIndexRoute = protectedIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => protectedRouteRoute,
+} as any)
+const DemoSubscriptionsIndexRoute = DemoSubscriptionsIndexRouteImport.update({
+  id: "/subscriptions/",
+  path: "/subscriptions/",
+  getParentRoute: () => DemoRouteRoute,
 } as any)
 const protectedSubscriptionsIndexRoute =
   protectedSubscriptionsIndexRouteImport.update({
@@ -125,7 +143,9 @@ const protectedSettingsCategoriesGenerateRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  "/demo": typeof DemoRouteRouteWithChildren
   "/": typeof protectedIndexRoute
+  "/demo/": typeof DemoIndexRoute
   "/settings/group": typeof protectedSettingsGroupRouteRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
@@ -138,12 +158,14 @@ export interface FileRoutesByFullPath {
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/settings/": typeof protectedSettingsIndexRoute
   "/subscriptions/": typeof protectedSubscriptionsIndexRoute
+  "/demo/subscriptions/": typeof DemoSubscriptionsIndexRoute
   "/settings/categories/generate": typeof protectedSettingsCategoriesGenerateRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof protectedIndexRoute
+  "/demo": typeof DemoIndexRoute
   "/settings/group": typeof protectedSettingsGroupRouteRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
@@ -156,6 +178,7 @@ export interface FileRoutesByTo {
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/settings": typeof protectedSettingsIndexRoute
   "/subscriptions": typeof protectedSubscriptionsIndexRoute
+  "/demo/subscriptions": typeof DemoSubscriptionsIndexRoute
   "/settings/categories/generate": typeof protectedSettingsCategoriesGenerateRoute
   "/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/subscriptions/$id": typeof protectedSubscriptionsIdIndexRoute
@@ -163,7 +186,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/(protected)": typeof protectedRouteRouteWithChildren
+  "/demo": typeof DemoRouteRouteWithChildren
   "/(protected)/": typeof protectedIndexRoute
+  "/demo/": typeof DemoIndexRoute
   "/(protected)/settings/group": typeof protectedSettingsGroupRouteRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/billing": typeof protectedSettingsBillingRoute
@@ -176,6 +201,7 @@ export interface FileRoutesById {
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
   "/(protected)/settings/": typeof protectedSettingsIndexRoute
   "/(protected)/subscriptions/": typeof protectedSubscriptionsIndexRoute
+  "/demo/subscriptions/": typeof DemoSubscriptionsIndexRoute
   "/(protected)/settings/categories/generate": typeof protectedSettingsCategoriesGenerateRoute
   "/(protected)/subscriptions/$id/edit": typeof protectedSubscriptionsIdEditRoute
   "/(protected)/subscriptions/$id/": typeof protectedSubscriptionsIdIndexRoute
@@ -183,7 +209,9 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | "/demo"
     | "/"
+    | "/demo/"
     | "/settings/group"
     | "/settings/account"
     | "/settings/billing"
@@ -196,12 +224,14 @@ export interface FileRouteTypes {
     | "/auth/sign-up/$"
     | "/settings/"
     | "/subscriptions/"
+    | "/demo/subscriptions/"
     | "/settings/categories/generate"
     | "/subscriptions/$id/edit"
     | "/subscriptions/$id/"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
+    | "/demo"
     | "/settings/group"
     | "/settings/account"
     | "/settings/billing"
@@ -214,13 +244,16 @@ export interface FileRouteTypes {
     | "/auth/sign-up/$"
     | "/settings"
     | "/subscriptions"
+    | "/demo/subscriptions"
     | "/settings/categories/generate"
     | "/subscriptions/$id/edit"
     | "/subscriptions/$id"
   id:
     | "__root__"
     | "/(protected)"
+    | "/demo"
     | "/(protected)/"
+    | "/demo/"
     | "/(protected)/settings/group"
     | "/(protected)/settings/account"
     | "/(protected)/settings/billing"
@@ -233,6 +266,7 @@ export interface FileRouteTypes {
     | "/auth/sign-up/$"
     | "/(protected)/settings/"
     | "/(protected)/subscriptions/"
+    | "/demo/subscriptions/"
     | "/(protected)/settings/categories/generate"
     | "/(protected)/subscriptions/$id/edit"
     | "/(protected)/subscriptions/$id/"
@@ -240,12 +274,20 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   protectedRouteRoute: typeof protectedRouteRouteWithChildren
+  DemoRouteRoute: typeof DemoRouteRouteWithChildren
   AuthSignInSplatRoute: typeof AuthSignInSplatRoute
   AuthSignUpSplatRoute: typeof AuthSignUpSplatRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/demo": {
+      id: "/demo"
+      path: "/demo"
+      fullPath: "/demo"
+      preLoaderRoute: typeof DemoRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/(protected)": {
       id: "/(protected)"
       path: ""
@@ -253,12 +295,26 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/demo/": {
+      id: "/demo/"
+      path: "/"
+      fullPath: "/demo/"
+      preLoaderRoute: typeof DemoIndexRouteImport
+      parentRoute: typeof DemoRouteRoute
+    }
     "/(protected)/": {
       id: "/(protected)/"
       path: "/"
       fullPath: "/"
       preLoaderRoute: typeof protectedIndexRouteImport
       parentRoute: typeof protectedRouteRoute
+    }
+    "/demo/subscriptions/": {
+      id: "/demo/subscriptions/"
+      path: "/subscriptions"
+      fullPath: "/demo/subscriptions/"
+      preLoaderRoute: typeof DemoSubscriptionsIndexRouteImport
+      parentRoute: typeof DemoRouteRoute
     }
     "/(protected)/subscriptions/": {
       id: "/(protected)/subscriptions/"
@@ -420,8 +476,23 @@ const protectedRouteRouteWithChildren = protectedRouteRoute._addFileChildren(
   protectedRouteRouteChildren,
 )
 
+interface DemoRouteRouteChildren {
+  DemoIndexRoute: typeof DemoIndexRoute
+  DemoSubscriptionsIndexRoute: typeof DemoSubscriptionsIndexRoute
+}
+
+const DemoRouteRouteChildren: DemoRouteRouteChildren = {
+  DemoIndexRoute: DemoIndexRoute,
+  DemoSubscriptionsIndexRoute: DemoSubscriptionsIndexRoute,
+}
+
+const DemoRouteRouteWithChildren = DemoRouteRoute._addFileChildren(
+  DemoRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   protectedRouteRoute: protectedRouteRouteWithChildren,
+  DemoRouteRoute: DemoRouteRouteWithChildren,
   AuthSignInSplatRoute: AuthSignInSplatRoute,
   AuthSignUpSplatRoute: AuthSignUpSplatRoute,
 }

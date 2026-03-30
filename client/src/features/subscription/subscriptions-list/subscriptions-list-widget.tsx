@@ -1,63 +1,46 @@
-import { useMemo } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { ReactNode, FC } from "react";
 import { useQueryStates } from "nuqs";
 import {
   subscriptionsQueryParsers,
-  subscriptionsQuery,
   CategoryFilterChips,
 } from "@/entities/subscription";
 import { SubscriptionsList } from "./ui/subscriptions-list";
 import { SubscriptionsListToolbar } from "./ui/subscriptions-list-toolbar";
-import { useAuth } from "@clerk/clerk-react";
-import { SubscriptionsMonthlySpendCard } from "../../analytics";
+import type { SubscriptionDto, CategoryDto } from "shared";
 
-const SubscriptionsListWidget = () => {
+type SubscriptionsListWidgetProps = {
+  subscriptions: SubscriptionDto[];
+  categories: CategoryDto[];
+  isLoading?: boolean;
+  monthlySpendSlot?: ReactNode;
+  disableLinks?: boolean;
+};
+
+const SubscriptionsListWidget: FC<SubscriptionsListWidgetProps> = ({
+  subscriptions,
+  categories,
+  isLoading,
+  monthlySpendSlot,
+  disableLinks = false,
+}) => {
   const [filters, setFilters] = useQueryStates(subscriptionsQueryParsers, {
     history: "replace",
   });
 
-  const { search, sortBy, direction, status, categoryId } = filters;
+  const { sortBy, direction, status, categoryId } = filters;
 
-  const queryParams = useMemo(() => {
-    const trimmedSearch = search.trim();
-
-    return {
-      sortBy,
-      direction,
-      status,
-      ...(trimmedSearch ? { search: trimmedSearch } : {}),
-      ...(categoryId ? { categoryId } : {}),
-    };
-  }, [direction, search, sortBy, status, categoryId]);
-
-  const { userId } = useAuth();
-  const {
-    data: subscriptions,
-    isLoading,
-    isSuccess,
-  } = useQuery(
-    subscriptionsQuery({
-      params: {
-        userId: userId!,
-        queryParams,
-      },
-      options: {
-        placeholderData: keepPreviousData,
-      },
-    }),
-  );
-
-  const isEmpty = isSuccess && subscriptions?.length === 0;
+  const isEmpty = !isLoading && subscriptions.length === 0;
 
   return (
     <div className="flex min-h-full flex-col gap-4 pb-6">
-      <div className="flex flex-col gap-1">
-        <SubscriptionsMonthlySpendCard />
-      </div>
+      {monthlySpendSlot && (
+        <div className="flex flex-col gap-1">{monthlySpendSlot}</div>
+      )}
 
       <CategoryFilterChips
         value={categoryId}
         onChange={(id) => void setFilters({ categoryId: id })}
+        categories={categories}
       />
 
       <SubscriptionsListToolbar
@@ -72,7 +55,11 @@ const SubscriptionsListWidget = () => {
           void setFilters({ status: newStatus });
         }}
       />
-      <SubscriptionsList subscriptions={subscriptions ?? []} empty={isEmpty} />
+      <SubscriptionsList
+        subscriptions={subscriptions}
+        empty={isEmpty}
+        disableLinks={disableLinks}
+      />
     </div>
   );
 };

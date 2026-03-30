@@ -1,7 +1,4 @@
 import { FC, useMemo } from "react";
-import { useAuth } from "@clerk/clerk-react";
-import { dashboardAnalyticsQuery } from "@/entities/analytics";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { CurrencyText } from "@/entities/currency";
 import type { CategorySpendingDto } from "shared";
 import { BrandfetchImage } from "@/features/brandfetch";
@@ -15,7 +12,6 @@ import {
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRechartsModule } from "./use-recharts-module";
 
 const CHART_COLORS = [
@@ -28,6 +24,8 @@ const CHART_COLORS = [
 const GOLDEN_ANGLE = 137.508;
 
 type CategorySpendingChartProps = {
+  categorySpending: CategorySpendingDto[];
+  preferredCurrencyCode: string;
   className?: string;
 };
 
@@ -69,23 +67,11 @@ function getCategoryColor(
 }
 
 export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
+  categorySpending,
+  preferredCurrencyCode,
   className,
 }) => {
   const Recharts = useRechartsModule();
-  const { userId } = useAuth();
-  const { orgId } = useActiveSpace();
-
-  const { data: analytics } = useSuspenseQuery(
-    dashboardAnalyticsQuery({
-      params: { userId: userId!, orgId },
-      options: { enabled: !!userId },
-    }),
-  );
-
-  const categorySpending = useMemo(
-    () => analytics.categorySpending ?? [],
-    [analytics.categorySpending],
-  );
 
   const total = useMemo(
     () => categorySpending.reduce((sum, item) => sum + item.amount, 0),
@@ -110,14 +96,6 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
       ),
     [categorySpending, colorsByCategory],
   );
-
-  if (!userId) {
-    return (
-      <div
-        className={cn("bg-muted h-full animate-pulse rounded-xl", className)}
-      />
-    );
-  }
 
   if (categorySpending.length === 0) {
     return (
@@ -164,7 +142,7 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
                           </span>
                           <CurrencyText
                             amount={item.amount}
-                            currencyCode={analytics.preferredCurrencyCode}
+                            currencyCode={preferredCurrencyCode}
                             className="text-xs font-medium tabular-nums"
                           />
                         </div>
@@ -185,7 +163,7 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
                                 </span>
                                 <CurrencyText
                                   amount={subscription.monthlyCost}
-                                  currencyCode={analytics.preferredCurrencyCode}
+                                  currencyCode={preferredCurrencyCode}
                                   className="text-muted-foreground text-xs tabular-nums"
                                 />
                               </div>
@@ -251,7 +229,7 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
                   </span>
                   <CurrencyText
                     amount={item.amount}
-                    currencyCode={analytics.preferredCurrencyCode}
+                    currencyCode={preferredCurrencyCode}
                     className="text-xs tabular-nums"
                   />
                 </div>

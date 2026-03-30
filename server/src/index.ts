@@ -15,28 +15,9 @@ import {
   captureServerException,
   extractRequestContext,
 } from "./utils/analytics";
+import type { Bindings } from "./env";
 
-type Bindings = {
-  CLERK_SECRET_KEY: string;
-  CLERK_PUBLISHABLE_KEY: string;
-  CLERK_WEBHOOK_SECRET: string;
-  PADDLE_WEBHOOK_SECRET: string;
-  PADDLE_API_KEY: string;
-  PADDLE_PLUS_PRODUCT_ID: string;
-  PADDLE_ENV: "sandbox" | "live";
-  GEMINI_API_KEY: string;
-  DATABASE_URL: string;
-  QSTASH_URL: string;
-  QSTASH_TOKEN: string;
-  QSTASH_CURRENT_SIGNING_KEY: string;
-  QSTASH_NEXT_SIGNING_KEY: string;
-  TELEGRAM_BOT_TOKEN: string;
-  TELEGRAM_BOT_USERNAME: string;
-  TELEGRAM_WEBHOOK_SECRET_TOKEN: string;
-  CLIENT_ORIGIN: string;
-  POSTHOG_KEY: string;
-  PLANS_API_KEY: string;
-};
+export type { Bindings };
 
 const corsOrigins = [process.env.CLIENT_ORIGIN];
 export const app = new Hono<{ Bindings: Bindings }>()
