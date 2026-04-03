@@ -1,11 +1,11 @@
-import { CurrencyUtils } from "shared";
-import { hasPlanFeature } from "shared";
-import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
-import { resolvePlanId } from "shared";
-import type { PlanId } from "shared";
-import type { UserPreferences } from "shared";
-import type { UpdateUserPublicMetadata } from "shared";
 import { clerkClient } from "@clerk/express";
+import type { PlanId, UpdateUserPublicMetadata, UserPreferences } from "shared";
+import {
+  CurrencyUtils,
+  hasPlanFeature,
+  NOTIFICATION_SCHEDULE_DEFAULTS,
+  resolvePlanId,
+} from "shared";
 
 export class UserService {
   private static readonly DEFAULT_TIME =
@@ -26,8 +26,8 @@ export class UserService {
     const normalized: Record<string, unknown> = { ...metadata };
 
     if (!hasPlanFeature(planId, "notificationSchedule")) {
-      normalized.notificationTime = this.DEFAULT_TIME;
-      normalized.notificationOffset = this.DEFAULT_OFFSET;
+      normalized.notificationTime = UserService.DEFAULT_TIME;
+      normalized.notificationOffset = UserService.DEFAULT_OFFSET;
     }
 
     return normalized;
@@ -42,16 +42,17 @@ export class UserService {
     }
 
     const patch: Partial<Record<string, unknown>> = {};
-    const hasTimeDefault = metadata.notificationTime === this.DEFAULT_TIME;
+    const hasTimeDefault =
+      metadata.notificationTime === UserService.DEFAULT_TIME;
     const hasOffsetDefault =
-      metadata.notificationOffset === this.DEFAULT_OFFSET;
+      metadata.notificationOffset === UserService.DEFAULT_OFFSET;
 
     if (!hasTimeDefault) {
-      patch.notificationTime = this.DEFAULT_TIME;
+      patch.notificationTime = UserService.DEFAULT_TIME;
     }
 
     if (!hasOffsetDefault) {
-      patch.notificationOffset = this.DEFAULT_OFFSET;
+      patch.notificationOffset = UserService.DEFAULT_OFFSET;
     }
 
     return Object.keys(patch).length > 0 ? patch : null;
@@ -62,8 +63,8 @@ export class UserService {
   ): Promise<{ metadata: Record<string, unknown>; planId: PlanId }> {
     const user = await clerkClient.users.getUser(userId);
     const metadata = (user.publicMetadata ?? {}) as Record<string, unknown>;
-    const planId = this.getPlanIdFromMetadata(metadata);
-    const patch = this.getNotificationScheduleNormalizationPatch(
+    const planId = UserService.getPlanIdFromMetadata(metadata);
+    const patch = UserService.getNotificationScheduleNormalizationPatch(
       metadata,
       planId,
     );
@@ -90,7 +91,7 @@ export class UserService {
     metadata?: Record<string, unknown> | null,
     planId: PlanId = "free",
   ): UserPreferences {
-    const normalizedMetadata = this.normalizeMetadataByPlan(
+    const normalizedMetadata = UserService.normalizeMetadataByPlan(
       metadata ?? {},
       planId,
     );
@@ -109,11 +110,11 @@ export class UserService {
       notificationTime:
         typeof normalizedMetadata.notificationTime === "string"
           ? normalizedMetadata.notificationTime
-          : this.DEFAULT_TIME,
+          : UserService.DEFAULT_TIME,
       notificationOffset:
         typeof normalizedMetadata.notificationOffset === "number"
           ? normalizedMetadata.notificationOffset
-          : this.DEFAULT_OFFSET,
+          : UserService.DEFAULT_OFFSET,
       locale:
         typeof normalizedMetadata.locale === "string"
           ? normalizedMetadata.locale
@@ -123,7 +124,7 @@ export class UserService {
 
   static async getPlanId(userId: string): Promise<PlanId> {
     try {
-      const { planId } = await this.getPlanScopedMetadata(userId);
+      const { planId } = await UserService.getPlanScopedMetadata(userId);
       return planId;
     } catch (error) {
       console.error(`Failed to get plan for ${userId}:`, error);
@@ -133,25 +134,26 @@ export class UserService {
 
   static async getUserPreferences(userId: string): Promise<UserPreferences> {
     try {
-      const { metadata, planId } = await this.getPlanScopedMetadata(userId);
-      return this.parseUserPreferences(metadata, planId);
+      const { metadata, planId } =
+        await UserService.getPlanScopedMetadata(userId);
+      return UserService.parseUserPreferences(metadata, planId);
     } catch (error) {
       // Fallback to defaults if user not found or other error
       console.error(`Failed to get user preferences for ${userId}:`, error);
-      return this.parseUserPreferences(null);
+      return UserService.parseUserPreferences(null);
     }
   }
 
   static async setPlanId(userId: string, planId: PlanId): Promise<void> {
     const user = await clerkClient.users.getUser(userId);
     const metadata = (user.publicMetadata ?? {}) as Record<string, unknown>;
-    const currentPlanId = this.getPlanIdFromMetadata(metadata);
+    const currentPlanId = UserService.getPlanIdFromMetadata(metadata);
 
     if (currentPlanId === planId) {
       return;
     }
 
-    const updatedMetadata = this.normalizeMetadataByPlan(
+    const updatedMetadata = UserService.normalizeMetadataByPlan(
       { ...metadata, planId },
       planId,
     );
@@ -166,8 +168,8 @@ export class UserService {
     metadata: UpdateUserPublicMetadata,
   ): Promise<UserPreferences> {
     const { metadata: currentMetadata, planId } =
-      await this.getPlanScopedMetadata(userId);
-    const updatedMetadata = this.normalizeMetadataByPlan(
+      await UserService.getPlanScopedMetadata(userId);
+    const updatedMetadata = UserService.normalizeMetadataByPlan(
       { ...currentMetadata, ...metadata },
       planId,
     );
@@ -176,7 +178,7 @@ export class UserService {
       publicMetadata: updatedMetadata,
     });
 
-    return this.parseUserPreferences(updatedMetadata, planId);
+    return UserService.parseUserPreferences(updatedMetadata, planId);
   }
 
   static async updateLocale(userId: string, locale: string): Promise<void> {

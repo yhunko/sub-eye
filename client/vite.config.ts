@@ -1,13 +1,13 @@
+import path from "node:path";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { serwist } from "@serwist/vite";
-import { defineConfig, loadEnv, type Plugin } from "vite";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import path from "node:path";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import mkcert from "vite-plugin-mkcert";
+import react from "@vitejs/plugin-react";
 import * as v from "valibot";
+import { defineConfig, loadEnv, type Plugin } from "vite";
+import mkcert from "vite-plugin-mkcert";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 import { version } from "../package.json";
 

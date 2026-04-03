@@ -1,17 +1,17 @@
+import { useAuth } from "@clerk/clerk-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
+import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components/ui/button";
+import { track } from "@/shared/lib/analytics";
+import { apiClient as client } from "../../../shared/api/client";
+import { usePushNotificationsSubscription } from "../api/hooks";
+import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
+import { NotificationTimeSelect } from "./notification-time-select";
 import { NotificationsButton } from "./notifications-button";
 import { NotificationsStatus } from "./notifications-status";
-import { NotificationTimeSelect } from "./notification-time-select";
 import { TelegramNotificationsCard } from "./telegram-notifications-card";
-import { Button } from "@/shared/components/ui/button";
-import { usePushNotificationsSubscription } from "../api/hooks";
-import { toast } from "sonner";
-import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiClient as client } from "../../../shared/api/client";
-import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
-import { useAuth } from "@clerk/clerk-react";
-import * as m from "@/i18n/messages";
-import { track } from "@/shared/lib/analytics";
 
 export const SettingsNotificationsForm = () => {
   const { userId } = useAuth();

@@ -1,10 +1,11 @@
+import { CalendarClock, Wallet } from "lucide-react";
 import type { FC } from "react";
 import {
-  CurrencyUtils,
   type ComparatorDeltaDto,
   type ComparatorResultDto,
+  CurrencyUtils,
 } from "shared";
-import { CalendarClock, Wallet } from "lucide-react";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -13,7 +14,6 @@ import {
   CardTitle,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 
 type SubscriptionComparatorReviewResultsProps = {
   result: ComparatorResultDto;

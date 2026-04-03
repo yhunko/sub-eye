@@ -1,15 +1,14 @@
 import { Check } from "lucide-react";
 import {
-  m as motion,
-  LazyMotion,
   AnimatePresence,
   domAnimation,
+  LazyMotion,
+  m as motion,
   useReducedMotion,
 } from "motion/react";
-
-import { Button, Spinner } from "@/shared/components";
 import { SubscriptionDeleteButton } from "@/features/subscription/delete-subscription";
 import * as m from "@/i18n/messages";
+import { Button, Spinner } from "@/shared/components";
 
 type SubscriptionFormHeaderActionProps = {
   isDirty: boolean;

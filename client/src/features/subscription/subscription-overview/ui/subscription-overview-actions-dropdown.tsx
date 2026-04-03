@@ -1,4 +1,3 @@
-import { FC } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRightLeft,
@@ -8,6 +7,8 @@ import {
   PencilIcon,
   Trash2,
 } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   Button,
   DropdownMenu,
@@ -17,9 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { openSubscriptionHistoryPanel } from "../../subscription-history";
 import { openSubscriptionDeleteDialog } from "../../delete-subscription";
-import * as m from "@/i18n/messages";
+import { openSubscriptionHistoryPanel } from "../../subscription-history";
 
 type SubscriptionOverviewActionsDropdownProps = {
   subscriptionId: string;

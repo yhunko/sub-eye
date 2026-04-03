@@ -1,16 +1,16 @@
-import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
+import { Hono } from "hono";
 import {
   UpdateTelegramMessageTemplateSchema,
   UpdateTelegramNotificationPreferencesSchema,
 } from "shared";
-import { protect } from "../middleware/auth";
-import { requireUserId } from "../utils/authUtils";
 import {
   TELEGRAM_TEMPLATE_NOT_LINKED_ERROR,
   TELEGRAM_TEMPLATE_PLUS_REQUIRED_ERROR,
   TelegramNotificationService,
 } from "../domains/telegram-notification/telegramNotificationService";
+import { protect } from "../middleware/auth";
+import { requireUserId } from "../utils/authUtils";
 
 export const telegramNotificationRouter = new Hono()
   .get("/status", protect, async (context) => {

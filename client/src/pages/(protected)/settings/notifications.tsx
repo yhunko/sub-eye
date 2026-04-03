@@ -1,9 +1,9 @@
-import * as m from "@/shared/lib/i18n/messages";
-import { SettingsNotificationsForm } from "@/features/push-notifications";
 import { createFileRoute } from "@tanstack/react-router";
-import { SettingsLayout } from "@/widgets/settings-layout";
 import { valibotValidator } from "@tanstack/valibot-adapter";
+import { SettingsNotificationsForm } from "@/features/push-notifications";
+import * as m from "@/shared/lib/i18n/messages";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
+import { SettingsLayout } from "@/widgets/settings-layout";
 
 export const Route = createFileRoute("/(protected)/settings/notifications")({
   component: SettingsNotificationsPage,

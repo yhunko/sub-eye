@@ -1,13 +1,13 @@
-import { CheckCheck, Trash2, FolderPen, X } from "lucide-react";
-import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
-import * as m from "@/i18n/messages";
+import { CheckCheck, FolderPen, Trash2, X } from "lucide-react";
 import {
   AnimatePresence,
+  domAnimation,
   LazyMotion,
   m as motion,
-  domAnimation,
 } from "motion/react";
+import * as m from "@/i18n/messages";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
 
 type SubscriptionBulkActionBarProps = {
   selectedCount: number;

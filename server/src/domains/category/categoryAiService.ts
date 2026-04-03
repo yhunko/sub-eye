@@ -1,29 +1,29 @@
-import { db } from "../../db";
-import { SubscriptionRepository } from "../subscription/subscriptionRepository";
-import { ComparatorRepository } from "../comparator/comparatorRepository";
-import { CategoryRepository } from "./categoryRepository";
-import { CategoryAiClient } from "./categoryAiClient";
-import { UserService } from "../user/userService";
-import { AiUsageService } from "../ai/aiUsageService";
 import {
-  DEFAULT_CATEGORY_EMOJI,
-  COMPARATOR_AI_MODEL,
+  type AiUsageQuota,
   CATEGORY_EMOJIS,
-  getPlanById,
   type CategoryAiApplyInput,
   type CategoryAiApplyResponse,
+  type CategoryAiOptimizationMerge,
+  type CategoryAiOptimizationReassignment,
   type CategoryAiOptimizeApplyInput,
   type CategoryAiOptimizeApplyResponse,
   type CategoryAiOptimizeSuggestResponse,
   type CategoryAiSuggestResponse,
-  type AiUsageQuota,
-  type CategoryAiOptimizationMerge,
-  type CategoryAiOptimizationReassignment,
+  COMPARATOR_AI_MODEL,
+  DEFAULT_CATEGORY_EMOJI,
+  getPlanById,
 } from "shared";
+import { db } from "../../db";
+import { AiUsageService } from "../ai/aiUsageService";
+import { ComparatorRepository } from "../comparator/comparatorRepository";
+import { SubscriptionRepository } from "../subscription/subscriptionRepository";
+import { UserService } from "../user/userService";
+import { CategoryAiClient } from "./categoryAiClient";
 import {
   CategoryAiQuotaExceededError,
   CategoryLimitReachedError,
 } from "./categoryErrors";
+import { CategoryRepository } from "./categoryRepository";
 
 type CategoryAiServiceDeps = {
   categoryRepository: typeof CategoryRepository;

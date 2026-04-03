@@ -1,19 +1,19 @@
-import { memo } from "react";
+import { MiddleTruncate } from "@re-dev/react-truncate";
 import { Link } from "@tanstack/react-router";
 import { Repeat } from "lucide-react";
-import { BrandfetchImage } from "../../../brandfetch";
+import { memo } from "react";
+import type { SubscriptionDto } from "shared";
+import { cn } from "@/shared/lib/classes-utils";
+import { CurrencyText } from "../../../../entities/currency";
 import {
   Item,
   ItemContent,
   ItemMedia,
   ItemTitle,
 } from "../../../../shared/components";
-import { SubscriptionDto } from "shared";
-import { CurrencyText } from "../../../../entities/currency";
+import { BrandfetchImage } from "../../../brandfetch";
 import { PeriodBadge } from "../../period";
-import { cn } from "@/shared/lib/classes-utils";
 import { SubscriptionListStatus } from "./subscription-list-status";
-import { MiddleTruncate } from "@re-dev/react-truncate";
 
 interface SubscriptionListItemProps {
   subscription: SubscriptionDto;

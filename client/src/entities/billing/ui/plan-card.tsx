@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import type { FC, ReactNode } from "react";
 import {
   Badge,
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components";
-import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
 
 type PlanFeatureItem = {

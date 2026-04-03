@@ -1,6 +1,6 @@
+import { addDays, addMonths } from "date-fns";
 import type { SubscriptionDto } from "shared";
 import { SubscriptionPeriod } from "shared";
-import { addDays, addMonths } from "date-fns";
 
 function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];

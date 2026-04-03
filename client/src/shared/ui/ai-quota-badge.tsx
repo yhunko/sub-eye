@@ -1,5 +1,8 @@
-import { type FC } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
+import type { FC } from "react";
 import { FREE_COMPARATOR_AI_MONTHLY_LIMIT, type MonthlyUsage } from "shared";
+import * as m from "@/i18n/messages";
 import {
   Badge,
   Popover,
@@ -15,10 +18,7 @@ import {
 } from "@/shared/components";
 import { track } from "@/shared/lib/analytics";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 import { AppleIntelligenceIcon } from "./apple-intelligence-icon";
-import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
 
 type AiQuotaBadgeProps = {
   usage: Pick<MonthlyUsage, "current" | "limit" | "remaining">;

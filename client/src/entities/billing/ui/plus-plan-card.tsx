@@ -1,13 +1,13 @@
 import type { FC } from "react";
 import { useCallback } from "react";
-import { Button, GlowEffect, Tilt } from "@/shared/components";
 import {
-  PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
-  FREE_PLAN,
-  PLUS_PLAN,
   type BillingFeatureKey,
+  FREE_PLAN,
+  PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
+  PLUS_PLAN,
 } from "shared";
 import * as m from "@/i18n/messages";
+import { Button, GlowEffect, Tilt } from "@/shared/components";
 import { PlanCard } from "./plan-card";
 
 type PlusPlanCardProps = {

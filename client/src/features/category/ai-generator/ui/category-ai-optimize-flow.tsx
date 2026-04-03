@@ -1,9 +1,16 @@
+import { Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import type {
   CategoryAiOptimizationMerge,
   CategoryAiOptimizationReassignment,
 } from "shared";
+import { toast } from "sonner";
+import { PlanFeatureLockCard } from "@/entities/billing";
+import {
+  useApplyCategoriesAiOptimization,
+  useSuggestCategoriesAiOptimization,
+} from "@/entities/category";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
@@ -16,14 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components";
-import {
-  useApplyCategoriesAiOptimization,
-  useSuggestCategoriesAiOptimization,
-} from "@/entities/category";
-import { PlanFeatureLockCard } from "@/entities/billing";
 import { AiQuotaBadge } from "@/shared/ui";
-import { Sparkles, WandSparkles } from "lucide-react";
-import * as m from "@/i18n/messages";
 import { useCategoryAiWorkbench } from "../model/category-ai-workbench-context";
 import {
   buildOptimizationApplyInput,
@@ -32,8 +32,8 @@ import {
   toggleOptimizationReassignmentEnabled,
 } from "../model/optimization-state";
 import { useLastGeneratedLabel } from "../model/use-last-generated-label";
-import { CategoryAiOptimizationReassignmentItem } from "./category-ai-optimization-reassignment-item";
 import { CategoryAiOptimizationMergeItem } from "./category-ai-optimization-merge-item";
+import { CategoryAiOptimizationReassignmentItem } from "./category-ai-optimization-reassignment-item";
 
 export const CategoryAiOptimizeFlow = () => {
   const {

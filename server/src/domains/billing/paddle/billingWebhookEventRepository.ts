@@ -1,4 +1,4 @@
-import { db } from "../../../db";
+import type { db } from "../../../db";
 import { billingWebhookEventsTable } from "../../../db/schema";
 
 export class BillingWebhookEventRepository {

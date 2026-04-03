@@ -1,6 +1,6 @@
 import { getTimeZones } from "@vvo/tzdb";
-import { formatGmtOffset } from "./format-gmt-offset";
 import { useMemo } from "react";
+import { formatGmtOffset } from "./format-gmt-offset";
 
 export type TimezoneOption = {
   value: string;

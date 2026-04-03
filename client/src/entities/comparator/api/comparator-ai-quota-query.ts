@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { ComparatorAiQuotaDto } from "shared";
-import type { QueryHook } from "@/shared/lib/react-query/types";
 import { apiClient } from "@/shared/api/client";
+import type { QueryHook } from "@/shared/lib/react-query/types";
 import { comparatorQueryKeys } from "../model/query-keys";
 
 type ComparatorAiQuotaParams = {

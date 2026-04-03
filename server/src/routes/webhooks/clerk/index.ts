@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { svixVerification } from "../../../middleware/svixVerification";
-import { handleUserDeleted } from "./handlers/userDeleted";
 import { handleOrganizationDeleted } from "./handlers/organizationDeleted";
 import { handleOrganizationMembershipDeleted } from "./handlers/organizationMembershipDeleted";
+import { handleUserDeleted } from "./handlers/userDeleted";
 import type { ClerkWebhookEnv } from "./types";
 
 /**

@@ -1,16 +1,16 @@
-import { db } from "../../db";
-import { SubscriptionHistoryRepository } from "./subscriptionHistoryRepository";
-import { SubscriptionRepository } from "./subscriptionRepository";
-import { UserService } from "../user/userService";
 import {
   FREE_SUBSCRIPTION_HISTORY_LIMIT,
   type SubscriptionAction,
   type SubscriptionHistoryDto,
 } from "shared";
+import { db } from "../../db";
+import { UserService } from "../user/userService";
 import {
   SubscriptionHistoryItemNotFoundError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
+import { SubscriptionHistoryRepository } from "./subscriptionHistoryRepository";
+import { SubscriptionRepository } from "./subscriptionRepository";
 
 type SubscriptionHistoryServiceDeps = {
   repository: typeof SubscriptionHistoryRepository;

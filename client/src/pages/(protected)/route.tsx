@@ -1,9 +1,9 @@
+import NiceModal from "@ebay/nice-modal-react";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { LocalizedDateFnsProvider } from "../../app/providers/localized-date-fns-provider";
 import { planUsageQuery } from "../../entities/billing";
 import { subscriptionsQuery } from "../../entities/subscription";
 import { RootErrorFallback } from "../../shared/ui";
-import NiceModal from "@ebay/nice-modal-react";
 
 export const Route = createFileRoute("/(protected)")({
   beforeLoad: async ({ context, location }) => {

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronsUpDown, Minimize2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { billingQueryKeys } from "@/entities/billing";
 import { subscriptionsQueryKeys } from "@/entities/subscription";
 import { Button, Card, CardContent } from "@/shared/components";

@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardTitle,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 import type { CompareMode } from "../subscription-comparator-wizard.types";
 
 type SubscriptionComparatorStepModeProps = {

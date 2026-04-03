@@ -1,5 +1,5 @@
-import { FC } from "react";
-import { SubscriptionPeriod } from "shared";
+import type { FC } from "react";
+import type { SubscriptionPeriod } from "shared";
 import { formatSubscriptionCycle } from "@/entities/subscription";
 
 type PeriodBadgeProps = {

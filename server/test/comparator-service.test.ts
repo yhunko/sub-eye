@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import {
-  SubscriptionPeriod,
   type CompareSubscriptionsInput,
   type SubscriptionDto,
+  SubscriptionPeriod,
 } from "shared";
 import { ComparatorService } from "../src/domains/comparator/comparatorService";
 

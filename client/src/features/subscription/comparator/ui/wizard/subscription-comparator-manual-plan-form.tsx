@@ -2,8 +2,8 @@ import type { FC } from "react";
 import { CurrencyInput, CurrencySelect } from "@/entities/currency";
 import { SubscriptionCycleInput } from "@/features/subscription/shared/ui/subscription-cycle-input";
 import * as m from "@/i18n/messages";
-import { sanitizePriceInput } from "@/shared/lib/price-input";
 import { CardDescription, CardTitle, Input, Label } from "@/shared/components";
+import { sanitizePriceInput } from "@/shared/lib/price-input";
 import type {
   ManualDraftChangeHandler,
   ManualPlanDraft,

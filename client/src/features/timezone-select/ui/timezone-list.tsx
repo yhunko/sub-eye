@@ -1,19 +1,19 @@
-import React, { FC } from "react";
-import { TimezoneOption, SharedProps } from "../model/props";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { Check, SearchX } from "lucide-react";
+import React, { type FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   Command,
   CommandInput,
+  CommandItem,
   CommandList,
   Empty,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-  CommandItem,
 } from "@/shared/components";
-import { SearchX, Check } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
+import type { SharedProps, TimezoneOption } from "../model/props";
 
 interface TimezoneListProps extends SharedProps {
   id?: string;

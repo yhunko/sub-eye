@@ -1,10 +1,10 @@
 import {
   any,
+  type InferOutput,
   nullable,
   picklist,
   strictObject,
   string,
-  type InferOutput,
 } from "valibot";
 
 export const FREE_SUBSCRIPTION_HISTORY_LIMIT = 3;

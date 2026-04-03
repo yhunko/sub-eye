@@ -1,6 +1,6 @@
 export {
-  toggleSelection as toggleSubscriptionSelection,
-  selectAll as selectAllSubscriptionIds,
   clearSelection as clearSubscriptionSelection,
   pruneSelection as pruneSubscriptionSelection,
+  selectAll as selectAllSubscriptionIds,
+  toggleSelection as toggleSubscriptionSelection,
 } from "@/shared/lib/selection";

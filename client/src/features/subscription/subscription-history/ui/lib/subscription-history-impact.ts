@@ -1,6 +1,6 @@
+import type { Locale } from "date-fns";
 import * as m from "@/i18n/messages";
-import { type Locale } from "date-fns";
-import { BudgetImpact } from "../../model/history-insights";
+import type { BudgetImpact } from "../../model/history-insights";
 import {
   formatAmount,
   formatHistoryDateLabel,

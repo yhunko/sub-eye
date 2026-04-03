@@ -1,21 +1,21 @@
-import { FC, useMemo } from "react";
-import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import NiceModal from "@ebay/nice-modal-react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate, useRouter } from "@tanstack/react-router";
+import { type FC, useMemo } from "react";
 
 import { DateTimezoneUtils } from "shared";
-import { subscriptionQuery } from "@/entities/subscription";
 import { categoriesQuery } from "@/entities/category";
+import { subscriptionQuery } from "@/entities/subscription";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
+import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
 import { SubscriptionBillingUtils } from "../../billing/lib/subscription-billing-utils";
-import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { useScheduledPriceChangeActions } from "../../schedule-price-change";
-import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
-import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
+import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
-import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
-import { useDateFormat } from "@/shared/hooks/use-date-format";
+import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
+import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -90,8 +90,9 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   };
 
   const handleOpenCancelDialog = async () => {
-    const { SubscriptionCancelDialog } =
-      await import("../../subscription-cancel-dialog");
+    const { SubscriptionCancelDialog } = await import(
+      "../../subscription-cancel-dialog"
+    );
 
     await NiceModal.show(SubscriptionCancelDialog, {
       subscriptionId,
@@ -101,8 +102,9 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   };
 
   const handleOpenRenewDialog = async () => {
-    const { SubscriptionRenewDialog } =
-      await import("../../subscription-renew-dialog");
+    const { SubscriptionRenewDialog } = await import(
+      "../../subscription-renew-dialog"
+    );
 
     await NiceModal.show(SubscriptionRenewDialog, {
       subscriptionId,

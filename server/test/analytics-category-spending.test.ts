@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import {
-  SubscriptionPeriod,
   type CategoryDto,
   type SubscriptionDto,
+  SubscriptionPeriod,
 } from "shared";
 import { AnalyticsCalculator } from "../src/domains/analytics/analyticsCalculator";
 

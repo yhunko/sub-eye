@@ -1,5 +1,5 @@
-import type { MonthlySpendSummaryDto } from "shared";
 import { addMonths, format } from "date-fns";
+import type { MonthlySpendSummaryDto } from "shared";
 
 function generateTrend(): MonthlySpendSummaryDto["trend"] {
   const now = new Date();

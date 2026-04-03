@@ -1,5 +1,7 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useCallback } from "react";
+import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
-import * as m from "@/i18n/messages";
 
 export const SubscriptionFormLeaveDialog = NiceModal.create(() => {
   const modal = useModal();

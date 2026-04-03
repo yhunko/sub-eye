@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import type { ErrorComponentProps } from "@tanstack/react-router";
+import { useEffect } from "react";
 import * as m from "@/i18n/messages";
 import { posthog } from "@/shared/lib/analytics";
 

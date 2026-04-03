@@ -1,8 +1,8 @@
-import { createRouter } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
-import { routeTree } from "./routes/routeTree.gen";
-import { RootErrorFallback } from "@/shared/ui";
+import { createRouter } from "@tanstack/react-router";
 import { posthog } from "@/shared/lib/analytics";
+import { RootErrorFallback } from "@/shared/ui";
+import { routeTree } from "./routes/routeTree.gen";
 
 export const router = createRouter({
   routeTree,

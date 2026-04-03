@@ -1,5 +1,5 @@
-import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
+import type * as React from "react";
 
 import { cn } from "../../lib/classes-utils";
 
@@ -101,9 +101,9 @@ function AvatarGroupCount({
 
 export {
   Avatar,
-  AvatarImage,
-  AvatarFallback,
   AvatarBadge,
+  AvatarFallback,
   AvatarGroup,
   AvatarGroupCount,
+  AvatarImage,
 };

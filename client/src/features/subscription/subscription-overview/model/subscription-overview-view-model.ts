@@ -1,6 +1,6 @@
-import * as m from "@/i18n/messages";
 import { format } from "date-fns";
 import type { CategoryDto, SubscriptionDto } from "shared";
+import * as m from "@/i18n/messages";
 import type { BillDisplayState } from "../../billing/lib/subscription-billing-utils";
 
 type SubscriptionOverviewSummaryRow = {

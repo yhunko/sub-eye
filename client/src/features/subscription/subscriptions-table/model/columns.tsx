@@ -1,17 +1,17 @@
-import { BrandfetchImage } from "@/features/brandfetch";
-import { useMemo, FC } from "react";
-import { ColumnDef } from "@tanstack/react-table";
-import { SubscriptionTableHead } from "../ui/subscriptions-table-head";
-import { Type, Calendar1, CreditCard, CalendarSync } from "lucide-react";
-import { SubscriptionDto, CategoryDto } from "shared";
-import { SubscriptionNextBill } from "../../billing";
-import { CurrencyBadge } from "@/entities/currency";
-import { PeriodBadge } from "../../period";
+import type { ColumnDef } from "@tanstack/react-table";
+import { Calendar1, CalendarSync, CreditCard, Type } from "lucide-react";
+import { type FC, useMemo } from "react";
+import type { CategoryDto, SubscriptionDto } from "shared";
 import { CategoryBadge } from "@/entities/category";
+import { CurrencyBadge } from "@/entities/currency";
+import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
-import { cn } from "@/shared/lib/classes-utils";
 import { Checkbox } from "@/shared/components/ui/checkbox";
+import { cn } from "@/shared/lib/classes-utils";
+import { SubscriptionNextBill } from "../../billing";
+import { PeriodBadge } from "../../period";
 import { DefaultSubscriptionRowActions } from "../ui/default-subscription-row-actions";
+import { SubscriptionTableHead } from "../ui/subscriptions-table-head";
 
 export type UseColumnsParams = {
   onToggleSelect?: (id: string) => void;

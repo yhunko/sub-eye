@@ -1,8 +1,8 @@
-import { FC, PropsWithChildren } from "react";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { get, set, del } from "idb-keyval";
+import { del, get, set } from "idb-keyval";
+import type { FC, PropsWithChildren } from "react";
 import { queryClient } from "./client";
 
 const asyncPersister = createAsyncStoragePersister({

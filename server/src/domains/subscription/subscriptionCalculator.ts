@@ -1,8 +1,5 @@
-import { CurrencyUtils } from "shared";
-import { DateTimezoneUtils } from "shared";
-import { RecurrenceUtils } from "shared";
-import type { SubscriptionBillingDetails } from "shared";
-import type { SubscriptionPeriod } from "shared";
+import type { SubscriptionBillingDetails, SubscriptionPeriod } from "shared";
+import { CurrencyUtils, DateTimezoneUtils, RecurrenceUtils } from "shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 export class SubscriptionCalculator {
@@ -11,7 +8,7 @@ export class SubscriptionCalculator {
     preferredCurrency: string,
     rates: Record<string, number>,
   ): SubscriptionBillingDetails {
-    return this.computeBillingDetails(
+    return SubscriptionCalculator.computeBillingDetails(
       Number(subscription.cost),
       subscription.currency,
       subscription.every,
@@ -36,7 +33,7 @@ export class SubscriptionCalculator {
     preferredCurrency: string,
     rates: Record<string, number>,
   ): SubscriptionBillingDetails {
-    return this.computeBillingDetails(
+    return SubscriptionCalculator.computeBillingDetails(
       amount,
       currency,
       every,
@@ -119,7 +116,7 @@ export class SubscriptionCalculator {
         amount: preferredAmount,
         monthly: preferredMonthly,
         yearly: preferredMonthly * 12,
-        exchangeRate: this.getExchangeRate(
+        exchangeRate: SubscriptionCalculator.getExchangeRate(
           originalCurrency,
           preferredCurrencyCode,
           rates,

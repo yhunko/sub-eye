@@ -1,7 +1,7 @@
-import { FC } from "react";
-import { StatCard } from "../stat-card";
+import type { FC } from "react";
 import { CurrencyText } from "@/entities/currency";
 import * as m from "@/i18n/messages";
+import { StatCard } from "../stat-card";
 
 type YearlyCostCardProps = {
   yearlyForecast: number;

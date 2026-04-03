@@ -1,17 +1,17 @@
 import { Hono } from "hono";
-import { BillingService } from "../domains/billing/billingService";
-import { PaddleBillingService } from "../domains/billing/paddle/paddleBillingService";
-import { requireUserId } from "../utils/authUtils";
-import { protect } from "../middleware/auth";
-import { handleServiceError } from "../utils/routeUtils";
 import {
-  PLANS,
-  PLAN_FEATURE_LABELS,
   FREE_COMPARATOR_AI_MONTHLY_LIMIT,
   FREE_COMPARATOR_MONTHLY_LIMIT,
+  PLAN_FEATURE_LABELS,
+  PLANS,
   PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
   type PlansResponse,
 } from "shared";
+import { BillingService } from "../domains/billing/billingService";
+import { PaddleBillingService } from "../domains/billing/paddle/paddleBillingService";
+import { protect } from "../middleware/auth";
+import { requireUserId } from "../utils/authUtils";
+import { handleServiceError } from "../utils/routeUtils";
 
 type BillingBindings = {
   PLANS_API_KEY: string;

@@ -1,9 +1,9 @@
 import {
-  CurrencyUtils,
   type ComparatorDeltaDto,
-  type ComparatorPlanMetricsDto,
   type ComparatorPlanInput,
+  type ComparatorPlanMetricsDto,
   type ComparatorPortfolioContextDto,
+  CurrencyUtils,
   type SubscriptionPeriod,
 } from "shared";
 

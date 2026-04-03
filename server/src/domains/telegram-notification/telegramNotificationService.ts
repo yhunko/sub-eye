@@ -19,8 +19,8 @@ import type { TelegramTemplateRenderContext } from "./telegramMessageTemplateSer
 import { TelegramMessageTemplateService } from "./telegramMessageTemplateService";
 import { getTelegramNotificationCopy } from "./telegramNotificationCopy";
 import {
-  TelegramNotificationRepository,
   type TelegramLinkRecord,
+  TelegramNotificationRepository,
 } from "./telegramNotificationRepository";
 
 const LINK_TOKEN_EXPIRATION_MINUTES = 15;
@@ -85,7 +85,10 @@ export class TelegramNotificationService {
       linked: true,
       enabled: link.isEnabled,
       botUsername: TelegramBotService.getBotUsername(),
-      accountLabel: this.buildAccountLabel(link.telegramUsername, link.chatId),
+      accountLabel: TelegramNotificationService.buildAccountLabel(
+        link.telegramUsername,
+        link.chatId,
+      ),
       messageTemplate: customTemplate ?? defaultMessageTemplate,
       defaultMessageTemplate,
       isCustomTemplate: customTemplate !== null,
@@ -169,7 +172,7 @@ export class TelegramNotificationService {
       enabled,
     );
 
-    return this.getStatus(userId);
+    return TelegramNotificationService.getStatus(userId);
   }
 
   static async updateMessageTemplate(
@@ -201,7 +204,7 @@ export class TelegramNotificationService {
       throw new Error(TELEGRAM_TEMPLATE_NOT_LINKED_ERROR);
     }
 
-    return this.getStatus(userId);
+    return TelegramNotificationService.getStatus(userId);
   }
 
   static async disconnectByUserId(userId: string): Promise<void> {
@@ -218,7 +221,7 @@ export class TelegramNotificationService {
       return false;
     }
 
-    await this.disconnectByUserId(link.userId);
+    await TelegramNotificationService.disconnectByUserId(link.userId);
     return true;
   }
 
@@ -241,12 +244,13 @@ export class TelegramNotificationService {
   ): Promise<TelegramSendReport> {
     const preferences = await UserService.getUserPreferences(userId);
     const copy = getTelegramNotificationCopy(preferences.locale);
-    const sampleContext = await this.buildSampleTemplateContext(userId);
+    const sampleContext =
+      await TelegramNotificationService.buildSampleTemplateContext(userId);
 
-    return this.sendMessageToLinkedUser(
+    return TelegramNotificationService.sendMessageToLinkedUser(
       userId,
       (link) =>
-        this.renderMessageFromActiveTemplate(
+        TelegramNotificationService.renderMessageFromActiveTemplate(
           userId,
           link,
           preferences.locale,
@@ -267,34 +271,40 @@ export class TelegramNotificationService {
       payload.data && typeof payload.data.url === "string"
         ? payload.data.url
         : null;
-    const linkUrl = this.resolveAbsoluteUrl(dataUrl);
+    const linkUrl = TelegramNotificationService.resolveAbsoluteUrl(dataUrl);
     const fallbackMessage = [payload.title, payload.body]
       .filter(Boolean)
       .join("\n");
 
-    const templateContext = this.extractTemplateContextFromPayload(payload);
+    const templateContext =
+      TelegramNotificationService.extractTemplateContextFromPayload(payload);
 
-    return this.sendMessageToLinkedUser(
+    return TelegramNotificationService.sendMessageToLinkedUser(
       userId,
       (link) => {
         if (!templateContext) {
           return fallbackMessage;
         }
 
-        return this.renderMessageFromActiveTemplate(userId, link, locale, {
-          subscriptionName: templateContext.subscriptionName,
-          renewalDate: templateContext.renewalDate,
-          referenceDate: DateTimezoneUtils.now(templateContext.timezone),
-          timezone: templateContext.timezone,
-          preferredPrice: {
-            amount: templateContext.preferredPrice.amount,
-            currencyCode: templateContext.preferredPrice.currencyCode,
+        return TelegramNotificationService.renderMessageFromActiveTemplate(
+          userId,
+          link,
+          locale,
+          {
+            subscriptionName: templateContext.subscriptionName,
+            renewalDate: templateContext.renewalDate,
+            referenceDate: DateTimezoneUtils.now(templateContext.timezone),
+            timezone: templateContext.timezone,
+            preferredPrice: {
+              amount: templateContext.preferredPrice.amount,
+              currencyCode: templateContext.preferredPrice.currencyCode,
+            },
+            originalPrice: {
+              amount: templateContext.originalPrice.amount,
+              currencyCode: templateContext.originalPrice.currencyCode,
+            },
           },
-          originalPrice: {
-            amount: templateContext.originalPrice.amount,
-            currencyCode: templateContext.originalPrice.currencyCode,
-          },
-        });
+        );
       },
       linkUrl,
       copy.openSubEyeButton,
@@ -388,8 +398,8 @@ export class TelegramNotificationService {
       typeof subscriptionName !== "string" ||
       typeof renewalDate !== "string" ||
       typeof timezone !== "string" ||
-      !this.isPriceValue(preferredPrice) ||
-      !this.isPriceValue(originalPrice)
+      !TelegramNotificationService.isPriceValue(preferredPrice) ||
+      !TelegramNotificationService.isPriceValue(originalPrice)
     ) {
       return null;
     }

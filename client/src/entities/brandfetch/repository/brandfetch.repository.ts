@@ -1,6 +1,6 @@
-import { BrandfetchSearchDto } from "../model/dtos";
-import { BrandfetchSearchParams } from "../model/params";
 import { BrandfetchUtils } from "../lib/brandfetch-utils";
+import type { BrandfetchSearchDto } from "../model/dtos";
+import type { BrandfetchSearchParams } from "../model/params";
 
 export class BrandfetchRepository {
   private readonly clientId = import.meta.env.VITE_BRANDFETCH_CLIENT_ID!;

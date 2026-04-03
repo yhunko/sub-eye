@@ -1,4 +1,5 @@
-import { FC } from "react";
+import { RefreshCw } from "lucide-react";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
 import {
   Button,
@@ -10,7 +11,6 @@ import {
   Skeleton,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { RefreshCw } from "lucide-react";
 
 export const SubscriptionHistoryInsightsLoadingState: FC = () => (
   <Card className="overflow-hidden py-0">

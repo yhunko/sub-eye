@@ -1,22 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useAuth } from "@clerk/clerk-react";
-import { useUser } from "@clerk/clerk-react";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { valibotValidator } from "@tanstack/valibot-adapter";
 import { dashboardAnalyticsQuery } from "@/entities/analytics";
 import {
   AnalyticsWidget,
   CashFlowChart,
   CategorySpendingChart,
+  EmptyDashboard,
   MonthlySpendingTrendChart,
   StatCards,
   UpcomingRenewals,
-  EmptyDashboard,
 } from "@/features/analytics";
-import { DashboardNavbar, DashboardLayout } from "@/widgets/dashboard-layout";
-import { SplashScreen } from "@/shared/ui";
-import { valibotValidator } from "@tanstack/valibot-adapter";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { dashboardSearchSchema } from "@/shared/lib/router/dashboard-search";
+import { SplashScreen } from "@/shared/ui";
+import { DashboardLayout, DashboardNavbar } from "@/widgets/dashboard-layout";
 
 export const Route = createFileRoute("/(protected)/")({
   component: Dashboard,
@@ -25,7 +24,6 @@ export const Route = createFileRoute("/(protected)/")({
   validateSearch: valibotValidator(dashboardSearchSchema),
 });
 
-// eslint-disable-next-line react-refresh/only-export-components
 function Dashboard() {
   const { userId } = useAuth();
   const { orgId } = useActiveSpace();

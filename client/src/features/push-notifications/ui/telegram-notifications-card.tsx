@@ -1,6 +1,8 @@
 import NiceModal from "@ebay/nice-modal-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import * as m from "@/i18n/messages";
+import { track } from "@/shared/lib/analytics";
 import {
   useDisconnectTelegramNotifications,
   useTelegramNotificationStatus,
@@ -8,13 +10,11 @@ import {
 } from "../api/hooks";
 import { openTelegramDisconnectDialog } from "../model/open-telegram-disconnect-dialog";
 import { pushNotificationsQueryKeys } from "../model/query-keys";
-import { TelegramConnectedCard } from "./telegram-connected-card";
 import { TelegramConnectDialog } from "./telegram-connect-dialog";
+import { TelegramConnectedCard } from "./telegram-connected-card";
 import { TelegramDisconnectedCard } from "./telegram-disconnected-card";
 import { TelegramErrorCard } from "./telegram-error-card";
 import { TelegramLoadingCard } from "./telegram-loading-card";
-import * as m from "@/i18n/messages";
-import { track } from "@/shared/lib/analytics";
 
 export const TelegramNotificationsCard = () => {
   const queryClient = useQueryClient();

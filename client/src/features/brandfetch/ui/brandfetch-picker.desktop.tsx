@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components";
 
 type BrandfetchPickerDesktopProps = {

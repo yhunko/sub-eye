@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
-import type { Serwist } from "@serwist/window";
 import { getSerwist } from "virtual:serwist";
+import type { Serwist } from "@serwist/window";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 export function SwUpdateManager() {

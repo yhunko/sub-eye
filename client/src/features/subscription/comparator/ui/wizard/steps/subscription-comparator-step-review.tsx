@@ -1,3 +1,4 @@
+import { Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type { FC } from "react";
 import type {
   AnalyzeComparatorResponseDto,
@@ -5,7 +6,7 @@ import type {
   ComparatorResultDto,
   MonthlyUsage,
 } from "shared";
-import { Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
@@ -15,15 +16,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
-import {
-  SubscriptionComparatorInsightTag,
-  type ComparatorInsightTag,
-} from "./components/subscription-comparator-insight-tag";
+import type { PlanPreview } from "../subscription-comparator-wizard.types";
 import { SubscriptionComparatorAiInsightsCard } from "./components/subscription-comparator-ai-insights-card";
+import {
+  type ComparatorInsightTag,
+  SubscriptionComparatorInsightTag,
+} from "./components/subscription-comparator-insight-tag";
 import { SubscriptionComparatorReviewPreview } from "./components/subscription-comparator-review-preview";
 import { SubscriptionComparatorReviewResults } from "./components/subscription-comparator-review-results";
-import type { PlanPreview } from "../subscription-comparator-wizard.types";
 
 type SubscriptionComparatorStepReviewProps = {
   currentPreview: PlanPreview;

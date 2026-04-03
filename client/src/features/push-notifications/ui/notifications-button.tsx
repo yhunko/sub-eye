@@ -1,18 +1,18 @@
 import {
-  Switch,
   Item,
   ItemActions,
   ItemContent,
-  ItemTitle,
   ItemDescription,
+  ItemTitle,
+  Switch,
 } from "@/shared/components";
+import * as m from "@/shared/lib/i18n/messages";
 import {
   usePushNotificationsSubscription,
   useSubscribeToPushNotifications,
   useUnsubscribeFromPushNotifications,
 } from "../api/hooks";
 import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
-import * as m from "@/shared/lib/i18n/messages";
 
 export const NotificationsButton = () => {
   const isSupported = usePushNotificationsSupport();

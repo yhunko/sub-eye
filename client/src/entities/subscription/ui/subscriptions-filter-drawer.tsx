@@ -1,9 +1,13 @@
-import { FC } from "react";
-import { Button } from "@/shared/components";
-import { ListFilter } from "lucide-react";
 import NiceModal from "@ebay/nice-modal-react";
-import { SubscriptionSortField, SortDirection, StatusFilter } from "shared";
+import { ListFilter } from "lucide-react";
+import type { FC } from "react";
+import type {
+  SortDirection,
+  StatusFilter,
+  SubscriptionSortField,
+} from "shared";
 import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components";
 
 interface SubscriptionsFilterDrawerProps {
   sortBy: SubscriptionSortField;
@@ -24,8 +28,9 @@ export const SubscriptionsFilterDrawer: FC<SubscriptionsFilterDrawerProps> = ({
   onStatusChange,
 }) => {
   const openFilters = async () => {
-    const { SubscriptionsFilterDialog } =
-      await import("./subscriptions-filter-dialog");
+    const { SubscriptionsFilterDialog } = await import(
+      "./subscriptions-filter-dialog"
+    );
 
     await NiceModal.show(SubscriptionsFilterDialog, {
       sortBy,

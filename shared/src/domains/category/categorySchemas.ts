@@ -2,6 +2,7 @@ import {
   array,
   boolean,
   check,
+  type InferOutput,
   maxLength,
   minLength,
   nullable,
@@ -12,7 +13,6 @@ import {
   strictObject,
   string,
   transform,
-  type InferOutput,
 } from "valibot";
 
 export const CategoryDtoSchema = object({
@@ -67,20 +67,7 @@ export const CATEGORY_EMOJI_GROUPS: readonly CategoryEmojiGroup[] = [
   },
   {
     label: "💻",
-    emojis: [
-      "💻",
-      "📱",
-      "🖥️",
-      "⌨️",
-      "🖱️",
-      "📡",
-      "☁️",
-      "🔌",
-      "📷",
-      "🔋",
-      "💾",
-      "🖨️",
-    ],
+    emojis: ["💻", "📱", "🖥️", "⌨️", "🖱️", "📡", "☁️", "🔌", "📷", "🔋", "💾", "🖨️"],
   },
   {
     label: "💰",

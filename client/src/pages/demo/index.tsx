@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AnalyticsWidget,
-  StatCards,
   CashFlowChart,
-  UpcomingRenewals,
   CategorySpendingChart,
   MonthlySpendingTrendChart,
+  StatCards,
+  UpcomingRenewals,
 } from "@/features/analytics";
 import { demoDashboardAnalytics } from "@/shared/lib/demo/data";
 

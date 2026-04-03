@@ -1,6 +1,7 @@
-import { FC } from "react";
 import { Link } from "@tanstack/react-router";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
+import { Check, ChevronDown, Plus, User, Users } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components";
-import { Check, ChevronDown, User, Users, Plus } from "lucide-react";
-import * as m from "@/i18n/messages";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 
 export const SpaceSwitcher: FC = () => {
   const {

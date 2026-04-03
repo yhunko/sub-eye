@@ -1,13 +1,13 @@
-import { useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { subscriptionsQuery } from "@/entities/subscription";
+import { useMemo } from "react";
 import { planUsageQuery } from "@/entities/billing";
 import {
   comparatorRatesQuery,
   useAnalyzeComparator,
   useCompareSubscriptions,
 } from "@/entities/comparator";
+import { subscriptionsQuery } from "@/entities/subscription";
 import type { SelectableSubscriptionOption } from "../ui/wizard/subscription-comparator-wizard.types";
 
 export const useComparatorQueries = (prefillSubscriptionId?: string) => {

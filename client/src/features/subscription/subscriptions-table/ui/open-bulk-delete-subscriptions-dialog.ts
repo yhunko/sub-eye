@@ -1,6 +1,6 @@
 import NiceModal from "@ebay/nice-modal-react";
-import type { BulkDeleteSubscriptionItem } from "./bulk-delete-subscriptions-dialog";
 import type { CategoryDto } from "shared";
+import type { BulkDeleteSubscriptionItem } from "./bulk-delete-subscriptions-dialog";
 
 type OpenBulkDeleteSubscriptionsDialogParams = {
   subscriptions: BulkDeleteSubscriptionItem[];
@@ -15,8 +15,9 @@ export const openBulkDeleteSubscriptionsDialog = async ({
   onSuccess,
   onClearSelection,
 }: OpenBulkDeleteSubscriptionsDialogParams) => {
-  const { BulkDeleteSubscriptionsDialog } =
-    await import("./bulk-delete-subscriptions-dialog");
+  const { BulkDeleteSubscriptionsDialog } = await import(
+    "./bulk-delete-subscriptions-dialog"
+  );
 
   await NiceModal.show(BulkDeleteSubscriptionsDialog, {
     subscriptions,

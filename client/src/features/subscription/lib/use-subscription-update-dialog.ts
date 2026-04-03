@@ -1,8 +1,8 @@
-import { useCallback, useState } from "react";
 import { useModal } from "@ebay/nice-modal-react";
+import { useCallback, useState } from "react";
+import { useUpdateSubscription } from "@/entities/subscription";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import { useUpdateSubscription } from "@/entities/subscription";
 
 export const useSubscriptionUpdateDialog = () => {
   const modal = useModal();

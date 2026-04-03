@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -8,7 +9,6 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
 import { CategoryAiWorkbenchProvider } from "./model/category-ai-workbench-context";
 import { CategoryAiGenerateFlow } from "./ui/category-ai-generate-flow";
 import { CategoryAiOptimizeFlow } from "./ui/category-ai-optimize-flow";

@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/express";
-import { resolvePlanId } from "shared";
 import type { PlanId } from "shared";
+import { resolvePlanId } from "shared";
 
 export class OrgService {
   static async getOrgPlanId(orgId: string): Promise<PlanId> {

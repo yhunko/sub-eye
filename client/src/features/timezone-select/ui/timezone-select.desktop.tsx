@@ -1,5 +1,5 @@
+import type { ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components";
-import { ReactNode } from "react";
 
 type TimezoneSelectDesktopProps = {
   open: boolean;

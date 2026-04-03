@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { BillingPortalResponse } from "shared";
-import { apiClient } from "@/shared/api/client";
 import { assertOk } from "@/shared/api/api-error";
-import { billingQueryKeys } from "../model/query-keys";
+import { apiClient } from "@/shared/api/client";
 import { track } from "@/shared/lib/analytics";
+import { billingQueryKeys } from "../model/query-keys";
 
 export const useCreateBillingPortal = () => {
   const queryClient = useQueryClient();

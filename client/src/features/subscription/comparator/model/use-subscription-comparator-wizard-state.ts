@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import type {
   AnalyzeComparatorResponseDto,
   CompareSubscriptionsInput,
@@ -10,9 +10,9 @@ import { CurrenciesMap, CurrencyUtils } from "shared";
 import * as m from "@/i18n/messages";
 import { getLocale } from "@/i18n/runtime";
 import {
-  parseManualPlanDraft,
   type ManualDraftChangeHandler,
   type ManualPlanDraft,
+  parseManualPlanDraft,
 } from "./comparator-form";
 import {
   buildCandidateExistingPreview,

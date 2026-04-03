@@ -3,11 +3,11 @@ import type {
   AnalyzeComparatorInput,
   AnalyzeComparatorResponseDto,
 } from "shared";
-import type { MutationHook } from "@/shared/lib/react-query/types";
-import { apiClient } from "@/shared/api/client";
 import { assertOk } from "@/shared/api/api-error";
-import { comparatorQueryKeys } from "../model/query-keys";
+import { apiClient } from "@/shared/api/client";
 import { track } from "@/shared/lib/analytics";
+import type { MutationHook } from "@/shared/lib/react-query/types";
+import { comparatorQueryKeys } from "../model/query-keys";
 
 const resolveFallbackReason = (
   reason: string | null,

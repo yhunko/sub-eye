@@ -1,20 +1,20 @@
-import { FC, Suspense, lazy, useMemo } from "react";
+import { addMonths, isSameMonth, parseISO } from "date-fns";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { type FC, lazy, Suspense, useMemo } from "react";
+import type { MonthlyTrendPoint } from "shared";
 import { CurrenciesMap } from "shared";
+import * as m from "@/i18n/messages";
 import {
   Card,
-  CardDescription,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
-import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import { cn } from "@/shared/lib/classes-utils";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
-import { addMonths, isSameMonth, parseISO } from "date-fns";
-import { Minus, TrendingDown, TrendingUp } from "lucide-react";
-import type { MonthlyTrendPoint } from "shared";
 
 const MonthlySpendingTrendChartDesktop = lazy(
   () => import("./monthly-spending-trend-chart.desktop"),

@@ -1,6 +1,6 @@
-import { Button } from "@/shared/components/ui/button";
 import { Trash2 } from "lucide-react";
 import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components/ui/button";
 import { openSubscriptionDeleteDialog } from "../model/open-subscription-delete-dialog";
 
 type SubscriptionDeleteButtonProps = {

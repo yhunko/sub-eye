@@ -1,8 +1,8 @@
-import { FormField, FormMessage } from "@/shared/components";
 import { useFormContext } from "react-hook-form";
-import { AddSubscriptionInput } from "../../model/schema";
-import * as m from "@/i18n/messages";
 import { BrandfetchPicker } from "@/features/brandfetch";
+import * as m from "@/i18n/messages";
+import { FormField, FormMessage } from "@/shared/components";
+import type { AddSubscriptionInput } from "../../model/schema";
 
 export const AddSubscriptionBrandImage = () => {
   const { control } = useFormContext<AddSubscriptionInput>();

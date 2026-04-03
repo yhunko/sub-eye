@@ -10,9 +10,11 @@ export class SubscriptionMapper {
     lastPaymentDate: string | null,
     scheduledPriceChange: SubscriptionDto["scheduledPriceChange"],
   ): SubscriptionDto {
-    const paymentDate = this.normalizeDate(subscription.paymentDate);
+    const paymentDate = SubscriptionMapper.normalizeDate(
+      subscription.paymentDate,
+    );
     const willBeCancelledAt = subscription.willBeCancelledAt
-      ? this.normalizeDate(subscription.willBeCancelledAt)
+      ? SubscriptionMapper.normalizeDate(subscription.willBeCancelledAt)
       : null;
 
     return {
@@ -27,8 +29,8 @@ export class SubscriptionMapper {
       autoPaid: subscription.autoPaid,
       categoryId: subscription.categoryId ?? null,
       notes: subscription.notes ?? null,
-      createdAt: this.normalizeDate(subscription.createdAt),
-      updatedAt: this.normalizeDate(subscription.updatedAt),
+      createdAt: SubscriptionMapper.normalizeDate(subscription.createdAt),
+      updatedAt: SubscriptionMapper.normalizeDate(subscription.updatedAt),
       qstashMessageId: subscription.qstashMessageId ?? null,
       brandDomain: subscription.brandDomain ?? null,
       billing,

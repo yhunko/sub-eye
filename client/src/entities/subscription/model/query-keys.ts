@@ -1,5 +1,5 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
-import { UseSubscriptionsParams } from "./params";
+import type { UseSubscriptionsParams } from "./params";
 
 export const subscriptionsQueryKeys = createQueryKeys("subscriptions", {
   list: (filters: UseSubscriptionsParams & { orgId?: string | null }) => [

@@ -1,12 +1,12 @@
 "use client";
-import { cn } from "@/shared/lib/classes-utils";
 import {
-  LazyMotion,
-  TargetAndTransition,
-  Transition,
   domAnimation,
+  LazyMotion,
   m as motion,
+  type TargetAndTransition,
+  type Transition,
 } from "motion/react";
+import { cn } from "@/shared/lib/classes-utils";
 
 export type GlowEffectProps = {
   className?: string;

@@ -1,9 +1,9 @@
-import { lazy, Suspense, useRef, useState, type KeyboardEvent } from "react";
+import { type KeyboardEvent, lazy, Suspense, useRef, useState } from "react";
 import { CATEGORY_EMOJIS } from "shared";
-import { Button } from "@/shared/components";
-import { cn } from "@/shared/lib/classes-utils";
 import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import { cn } from "@/shared/lib/classes-utils";
 import { EMOJI_GROUPS } from "../model/emoji-groups";
 import { resolveNextEmojiFocusIndex } from "../model/emoji-navigation";
 

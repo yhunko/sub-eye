@@ -1,12 +1,12 @@
 import { WandSparkles } from "lucide-react";
-import { Switch } from "@/shared/components/ui/switch";
+import type { TelegramNotificationStatus } from "shared";
+import * as m from "@/i18n/messages";
 import { Badge } from "@/shared/components/ui/badge";
 import { Item } from "@/shared/components/ui/item";
-import type { TelegramNotificationStatus } from "shared";
+import { Switch } from "@/shared/components/ui/switch";
 import { TelegramConnectionBadgeButton } from "./telegram-connection-badge-button";
 import { TelegramNotificationsCardShell } from "./telegram-notifications-card-shell";
 import { TelegramTemplateBuilderModal } from "./telegram-template-builder-modal";
-import * as m from "@/i18n/messages";
 
 type TelegramConnectedCardProps = {
   isDisconnecting: boolean;

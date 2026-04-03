@@ -1,9 +1,9 @@
+import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import type { CategoryAiOptimizationReassignment } from "shared";
-import { Badge } from "@/shared/components";
 import { BrandfetchImage } from "@/features/brandfetch";
-import { ArrowRight } from "lucide-react";
 import * as m from "@/i18n/messages";
+import { Badge } from "@/shared/components";
 import { SuggestionToggleButton } from "./suggestion-toggle-button";
 
 type CategoryAiOptimizationReassignmentItemProps = {

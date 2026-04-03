@@ -1,6 +1,6 @@
-import { FC, PropsWithChildren } from "react";
-import { DesktopNavbar } from "@/widgets/dashboard-layout/navbar/desktop-navbar";
+import type { FC, PropsWithChildren } from "react";
 import { cn } from "@/shared/lib/classes-utils";
+import { DesktopNavbar } from "@/widgets/dashboard-layout/navbar/desktop-navbar";
 
 const mainBaseClassName =
   "mx-auto flex min-h-0 w-full max-w-5xl flex-1 px-0 pt-1 pb-[env(safe-area-inset-bottom)] md:px-6 md:pt-6 md:pb-8";

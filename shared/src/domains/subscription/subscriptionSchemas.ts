@@ -2,20 +2,20 @@ import {
   array,
   boolean,
   check,
+  type InferOutput,
   integer,
   maxLength,
   minLength,
   minValue,
   nullable,
   number,
+  object,
   optional,
   picklist,
   pipe,
-  string,
   strictObject,
+  string,
   transform,
-  type InferOutput,
-  object,
 } from "valibot";
 import { SubscriptionPeriod } from "../../types";
 import { subscriptionLifecycleStatuses } from "./subscriptionLifecycle";

@@ -1,5 +1,5 @@
 import { parseAsString, parseAsStringLiteral } from "nuqs";
-import type { SubscriptionSortField, SortDirection } from "shared";
+import type { SortDirection, SubscriptionSortField } from "shared";
 import { statusFilters } from "shared";
 
 const sortFields: SubscriptionSortField[] = ["nextPaymentDate", "name", "cost"];

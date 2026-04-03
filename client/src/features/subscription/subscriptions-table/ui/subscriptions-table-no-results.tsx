@@ -1,6 +1,6 @@
-import { TableRow, TableCell } from "@/shared/components";
-import { FC } from "react";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
+import { TableCell, TableRow } from "@/shared/components";
 
 type SubscriptionsTableNoResultsProps = {
   loading?: boolean;

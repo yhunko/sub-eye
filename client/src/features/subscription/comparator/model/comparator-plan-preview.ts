@@ -6,11 +6,11 @@ import type {
 import { CurrencyUtils, RecurrenceUtils } from "shared";
 import { formatSubscriptionCycle } from "@/entities/subscription";
 import * as m from "@/i18n/messages";
-import { parseManualPlanDraft, type ManualPlanDraft } from "./comparator-form";
 import type {
   CompareMode,
   PlanPreview,
 } from "../ui/wizard/subscription-comparator-wizard.types";
+import { type ManualPlanDraft, parseManualPlanDraft } from "./comparator-form";
 
 const roundMoney = (value: number) => Number(value.toFixed(2));
 

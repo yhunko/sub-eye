@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MutationHook } from "@/shared/lib/react-query/types";
 import type { AddSubscriptionInput, SubscriptionDto } from "shared";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import { subscriptionsQueryKeys } from "../model/query-keys";
-import { analyticsQueryKeys } from "../../analytics";
 import { billingQueryKeys } from "@/entities/billing";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
 import { track } from "@/shared/lib/analytics";
+import type { MutationHook } from "@/shared/lib/react-query/types";
+import { analyticsQueryKeys } from "../../analytics";
+import { subscriptionsQueryKeys } from "../model/query-keys";
 
 export const useCreateSubscription = ({
   options,

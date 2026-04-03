@@ -1,24 +1,24 @@
-import { FC } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { format } from "date-fns";
+import { Calendar } from "lucide-react";
+import type { FC } from "react";
+import { DateFormatUtils } from "shared";
+import { useUpdateUserMetadata } from "@/entities/user";
+import * as m from "@/i18n/messages";
 import {
-  Spinner,
   Item,
-  ItemContent,
-  ItemTitle,
   ItemActions,
+  ItemContent,
   ItemMedia,
+  ItemTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Spinner,
 } from "@/shared/components";
-import { useUpdateUserMetadata } from "@/entities/user";
-import { Calendar } from "lucide-react";
-import { useUser } from "@clerk/clerk-react";
-import { DateFormatUtils } from "shared";
-import * as m from "@/i18n/messages";
 import { track } from "@/shared/lib/analytics";
-import { format } from "date-fns";
 
 const now = new Date();
 

@@ -1,10 +1,10 @@
+import { differenceInCalendarDays } from "date-fns";
 import {
   DateTimezoneUtils,
   TELEGRAM_TEMPLATE_VARIABLES,
-  TelegramMessageTemplateSchema,
   type TelegramMessageTemplate,
+  TelegramMessageTemplateSchema,
 } from "shared";
-import { differenceInCalendarDays } from "date-fns";
 import * as v from "valibot";
 
 const PLACEHOLDER_REGEX = /\{([a-z_]+)\}/g;
@@ -12,6 +12,7 @@ const ALLOWED_VARIABLES = new Set<string>(TELEGRAM_TEMPLATE_VARIABLES);
 const FALLBACK_LOCALE = "en";
 const DEFAULT_TIMEZONE = "UTC";
 const MAX_RENDERED_MESSAGE_LENGTH = 4096;
+const CONTROL_CHARACTERS_REGEX = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 type PriceValue = {
   amount: number;
@@ -44,7 +45,8 @@ const DEFAULT_TEMPLATE_BY_LOCALE: Record<string, string> = {
 
 export class TelegramMessageTemplateService {
   static getDefaultTemplate(locale?: string): TelegramMessageTemplate {
-    const normalizedLocale = this.normalizeLocale(locale);
+    const normalizedLocale =
+      TelegramMessageTemplateService.normalizeLocale(locale);
     const baseLocale = normalizedLocale.split("-")[0] ?? FALLBACK_LOCALE;
 
     return {
@@ -62,7 +64,9 @@ export class TelegramMessageTemplateService {
       return null;
     }
 
-    if (!this.isTemplateSafe(parsed.output.template)) {
+    if (
+      !TelegramMessageTemplateService.isTemplateSafe(parsed.output.template)
+    ) {
       return null;
     }
 
@@ -73,7 +77,9 @@ export class TelegramMessageTemplateService {
     valid: boolean;
     invalidVariables: string[];
   } {
-    const placeholders = this.extractVariables(messageTemplate.template);
+    const placeholders = TelegramMessageTemplateService.extractVariables(
+      messageTemplate.template,
+    );
     const invalidVariables = [...new Set(placeholders)].filter(
       (variable) => !ALLOWED_VARIABLES.has(variable),
     );
@@ -89,9 +95,10 @@ export class TelegramMessageTemplateService {
     context: TelegramTemplateRenderContext,
     locale?: string,
   ): string {
-    const normalizedLocale = this.normalizeLocale(locale);
+    const normalizedLocale =
+      TelegramMessageTemplateService.normalizeLocale(locale);
     const timezone = context.timezone?.trim() || DEFAULT_TIMEZONE;
-    const variables = this.buildVariableMap(
+    const variables = TelegramMessageTemplateService.buildVariableMap(
       context,
       normalizedLocale,
       timezone,
@@ -102,7 +109,7 @@ export class TelegramMessageTemplateService {
       (match, variable: string) => variables[variable] ?? match,
     );
 
-    return this.sanitizeRenderedMessage(rendered);
+    return TelegramMessageTemplateService.sanitizeRenderedMessage(rendered);
   }
 
   private static buildVariableMap(
@@ -128,9 +135,19 @@ export class TelegramMessageTemplateService {
       renewal_relative_day: new Intl.RelativeTimeFormat(locale, {
         numeric: "auto",
       }).format(dayOffset, "day"),
-      price_preferred: this.formatPrice(context.preferredPrice, locale),
-      price_original: this.formatPrice(context.originalPrice, locale),
-      renewal_date: this.formatDate(context.renewalDate, locale, timezone),
+      price_preferred: TelegramMessageTemplateService.formatPrice(
+        context.preferredPrice,
+        locale,
+      ),
+      price_original: TelegramMessageTemplateService.formatPrice(
+        context.originalPrice,
+        locale,
+      ),
+      renewal_date: TelegramMessageTemplateService.formatDate(
+        context.renewalDate,
+        locale,
+        timezone,
+      ),
     };
   }
 
@@ -150,7 +167,7 @@ export class TelegramMessageTemplateService {
   private static sanitizeRenderedMessage(input: string): string {
     const cleaned = input
       .replace(/\r\n?/g, "\n")
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+      .replace(CONTROL_CHARACTERS_REGEX, "")
       .trim();
 
     if (cleaned.length <= MAX_RENDERED_MESSAGE_LENGTH) {

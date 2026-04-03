@@ -1,21 +1,21 @@
+import { SignOutButton, useUser } from "@clerk/clerk-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { Cog, LogOut } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Item,
-  ItemTitle,
   ItemContent,
   ItemMedia,
-  DropdownMenuLabel,
+  ItemTitle,
 } from "@/shared/components";
-import { LogOut, Cog } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
-import { FC } from "react";
-import { SignOutButton, useUser } from "@clerk/clerk-react";
-import * as m from "@/i18n/messages";
-import { Link, useLocation } from "@tanstack/react-router";
 
 type UserDropdownMenuProps = {
   triggerId: string;

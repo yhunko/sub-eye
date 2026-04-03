@@ -1,5 +1,5 @@
-import { FC, useMemo } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { type FC, useMemo } from "react";
 import { DateTimezoneUtils } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import { SubscriptionBillingUtils } from "../lib/subscription-billing-utils";

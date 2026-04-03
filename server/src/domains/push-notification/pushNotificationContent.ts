@@ -48,9 +48,9 @@ export class PushNotificationContent {
   static buildRenewalPayload(
     input: BuildRenewalNotificationPayloadInput,
   ): PushNotificationPayload {
-    const locale = this.normalizeLocale(input.locale);
-    const copy = this.getCopy(locale);
-    const relativeLabel = this.getRelativeLabel({
+    const locale = PushNotificationContent.normalizeLocale(input.locale);
+    const copy = PushNotificationContent.getCopy(locale);
+    const relativeLabel = PushNotificationContent.getRelativeLabel({
       locale,
       timezone: input.timezone,
       paymentDate: input.paymentDate,
@@ -60,7 +60,7 @@ export class PushNotificationContent {
     return {
       title: copy.renewalTitle,
       body: copy.renewalBody(input.subscriptionName, relativeLabel),
-      icon: this.resolveSubscriptionIcon(input.brandDomain),
+      icon: PushNotificationContent.resolveSubscriptionIcon(input.brandDomain),
       badge: APP_NOTIFICATION_ICON,
       tag: `subscription-renewal:${input.subscriptionId}`,
       data: {
@@ -85,7 +85,9 @@ export class PushNotificationContent {
   }
 
   static buildTestPayload(locale?: string): PushNotificationPayload {
-    const copy = this.getCopy(this.normalizeLocale(locale));
+    const copy = PushNotificationContent.getCopy(
+      PushNotificationContent.normalizeLocale(locale),
+    );
 
     return {
       title: copy.testTitle,
@@ -123,12 +125,12 @@ export class PushNotificationContent {
   }
 
   private static resolveSubscriptionIcon(brandDomain?: string | null): string {
-    const domain = this.normalizeBrandDomain(brandDomain);
+    const domain = PushNotificationContent.normalizeBrandDomain(brandDomain);
     if (!domain) {
       return APP_NOTIFICATION_ICON;
     }
 
-    const clientId = this.getBrandfetchClientId();
+    const clientId = PushNotificationContent.getBrandfetchClientId();
     if (!clientId) {
       return APP_NOTIFICATION_ICON;
     }

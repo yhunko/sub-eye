@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import {
-  TelegramWebhookService,
   type TelegramUpdate,
+  TelegramWebhookService,
 } from "../../../domains/telegram-notification/telegramWebhookService";
 
 export const telegramWebhookRouter = new Hono<{

@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { SubscriptionHistoryDto } from "shared";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { QueryHook } from "@/shared/lib/react-query/types";
 import { subscriptionsQueryKeys } from "../model/query-keys";
 
 type SubscriptionHistoryQueryParams = {

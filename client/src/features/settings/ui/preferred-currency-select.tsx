@@ -1,18 +1,18 @@
-import { FC } from "react";
-import {
-  Spinner,
-  Item,
-  ItemContent,
-  ItemTitle,
-  ItemActions,
-  ItemMedia,
-} from "@/shared/components";
-import { useUpdateUserMetadata } from "@/entities/user";
-import { CurrencySelect } from "@/entities/currency";
-import { DollarSign } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
+import { DollarSign } from "lucide-react";
+import type { FC } from "react";
 import { CurrencyUtils } from "shared";
+import { CurrencySelect } from "@/entities/currency";
+import { useUpdateUserMetadata } from "@/entities/user";
 import * as m from "@/i18n/messages";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+  Spinner,
+} from "@/shared/components";
 import { track } from "@/shared/lib/analytics";
 
 export const PreferredCurrencySelect: FC = () => {

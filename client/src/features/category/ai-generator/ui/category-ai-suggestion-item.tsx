@@ -1,11 +1,11 @@
+import { Check } from "lucide-react";
 import { motion } from "motion/react";
 import type { CategoryAiSuggestion } from "shared";
+import { BrandfetchImage } from "@/features/brandfetch";
+import { EmojiPicker } from "@/features/category/manage-categories/ui/emoji-picker";
+import * as m from "@/i18n/messages";
 import { Input, Separator, Toggle } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
-import { EmojiPicker } from "@/features/category/manage-categories/ui/emoji-picker";
-import { BrandfetchImage } from "@/features/brandfetch";
-import { Check } from "lucide-react";
 import { SuggestionToggleButton } from "./suggestion-toggle-button";
 
 type CategoryAiSuggestionItemProps = {

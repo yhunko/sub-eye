@@ -1,14 +1,14 @@
-import { useCallback, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { valibotValidator } from "@tanstack/valibot-adapter";
-import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
+import { useCallback, useMemo } from "react";
 import {
-  restoreComparatorWizardPersistentState,
-  serializeComparatorWizardPersistentState,
-  SubscriptionComparatorWizard,
   type ComparatorWizardPersistentState,
+  restoreComparatorWizardPersistentState,
+  SubscriptionComparatorWizard,
+  serializeComparatorWizardPersistentState,
 } from "@/features/subscription/comparator";
 import { subscriptionComparatorSearchSchema } from "@/shared/lib/router/subscription-comparator-search";
+import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
 
 export const Route = createFileRoute("/(protected)/subscriptions/compare")({
   component: SubscriptionComparatorPage,

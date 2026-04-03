@@ -1,9 +1,9 @@
+import type { PushNotificationPayload } from "shared";
 import webpush from "web-push";
 import {
   PushNotificationRepository,
   type PushSubscriptionRecord,
 } from "./pushNotificationRepository";
-import type { PushNotificationPayload } from "shared";
 
 export type VapidDetails = {
   subject: string;
@@ -54,7 +54,11 @@ export class PushNotificationService {
     const payloadString = JSON.stringify(payload);
     const attempts = await Promise.all(
       subscriptions.map((subscription) =>
-        this.sendToSubscription(subscription, payloadString, vapidDetails),
+        PushNotificationService.sendToSubscription(
+          subscription,
+          payloadString,
+          vapidDetails,
+        ),
       ),
     );
 
@@ -66,7 +70,7 @@ export class PushNotificationService {
       .map((attempt) => attempt.failure);
 
     const staleFailures = failures.filter((failure) =>
-      this.isLikelyStaleSubscription(failure),
+      PushNotificationService.isLikelyStaleSubscription(failure),
     );
 
     if (staleFailures.length > 0) {
@@ -158,7 +162,7 @@ export class PushNotificationService {
           endpoint: subscription.endpoint,
           status: response.status,
           statusText: response.statusText,
-          reason: this.extractFailureReason(responseBody),
+          reason: PushNotificationService.extractFailureReason(responseBody),
         },
       };
     } catch (error) {

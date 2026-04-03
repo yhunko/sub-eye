@@ -1,4 +1,4 @@
 set -e
 
-echo "🎨 Running lint-staged (ESLint + Prettier)..."
+echo "🎨 Running lint-staged (Biome)..."
 bunx lint-staged

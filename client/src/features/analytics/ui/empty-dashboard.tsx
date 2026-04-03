@@ -1,9 +1,9 @@
-import { FC } from "react";
 import { Link } from "@tanstack/react-router";
 import { Plus, Settings, Sparkles } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
+import { domAnimation, LazyMotion, m as motion } from "motion/react";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
-import { LazyMotion, domAnimation, m as motion } from "motion/react";
+import { Button } from "@/shared/components/ui/button";
 
 type EmptyDashboardProps = {
   className?: string;

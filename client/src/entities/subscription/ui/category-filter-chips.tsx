@@ -1,8 +1,8 @@
-import { cn } from "@/shared/lib/classes-utils";
+import type { FC } from "react";
+import type { CategoryDto } from "shared";
 import * as m from "@/i18n/messages";
 import { track } from "@/shared/lib/analytics";
-import type { CategoryDto } from "shared";
-import { FC } from "react";
+import { cn } from "@/shared/lib/classes-utils";
 
 type CategoryFilterChipsProps = {
   categories: CategoryDto[];

@@ -1,9 +1,9 @@
+import { BadgeCheck, Sparkles } from "lucide-react";
 import type { FC } from "react";
 import { CurrencyUtils } from "shared";
-import { BadgeCheck, Sparkles } from "lucide-react";
+import * as m from "@/i18n/messages";
 import { Badge } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 import type {
   PlanStatusTone,
   PlanVisualState,

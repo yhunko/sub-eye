@@ -1,13 +1,13 @@
+import { Link } from "@tanstack/react-router";
+import { TriangleAlert } from "lucide-react";
 import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
 } from "@/shared/components";
-import { Link } from "@tanstack/react-router";
-import { TriangleAlert } from "lucide-react";
-import * as m from "@/i18n/messages";
 
 type SubscriptionLimitAlertProps = {
   current: number;

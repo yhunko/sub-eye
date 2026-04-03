@@ -1,11 +1,11 @@
-import { DashboardLogo } from "../dashboard-logo";
-import { UserDropdownMenu } from "@/features/auth";
-import { SpaceSwitcher } from "@/features/org/space-switcher";
-import { LazyMotion, m as motion, domAnimation } from "motion/react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { LayoutDashboard, List } from "lucide-react";
-import { Button } from "@/shared/components";
+import { domAnimation, LazyMotion, m as motion } from "motion/react";
+import { UserDropdownMenu } from "@/features/auth";
+import { SpaceSwitcher } from "@/features/org/space-switcher";
 import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components";
+import { DashboardLogo } from "../dashboard-logo";
 
 let hasAnimated = false;
 

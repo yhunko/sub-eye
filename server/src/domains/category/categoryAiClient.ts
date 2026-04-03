@@ -1,3 +1,4 @@
+import { CATEGORY_EMOJIS, COMPARATOR_AI_MODEL } from "shared";
 import {
   array,
   maxValue,
@@ -10,7 +11,6 @@ import {
   pipe,
   string,
 } from "valibot";
-import { COMPARATOR_AI_MODEL, CATEGORY_EMOJIS } from "shared";
 
 type GeminiGenerateContentResponse = {
   candidates?: Array<{
@@ -131,7 +131,7 @@ export class CategoryAiClient {
   }
 
   private static async generateModelJson(prompt: string): Promise<unknown> {
-    const apiKey = this.getApiKey();
+    const apiKey = CategoryAiClient.getApiKey();
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
@@ -229,7 +229,7 @@ export class CategoryAiClient {
       '[{"name":"Entertainment","emoji":"🎬","subscriptionIds":["sub_1","sub_3"]}]',
     ].join("\n");
 
-    const parsedJson = await this.generateModelJson(prompt);
+    const parsedJson = await CategoryAiClient.generateModelJson(prompt);
     return parse(GeneratedCategoriesSchema, parsedJson);
   }
 
@@ -267,7 +267,7 @@ export class CategoryAiClient {
       '{"reassignments":[{"subscriptionId":"sub_1","toCategoryId":"cat_2","reason":"Better match for streaming media","targetFit":0.86,"sourceFit":0.41}],"merges":[{"sourceCategoryId":"cat_old","targetCategoryId":"cat_main","reason":"Both represent the same spending domain"}]}',
     ].join("\n");
 
-    const parsedJson = await this.generateModelJson(prompt);
+    const parsedJson = await CategoryAiClient.generateModelJson(prompt);
     return parse(OptimizationSuggestionsSchema, parsedJson);
   }
 }

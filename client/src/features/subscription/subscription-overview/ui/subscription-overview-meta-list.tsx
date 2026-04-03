@@ -1,7 +1,7 @@
-import { FC } from "react";
 import { CalendarClock, CalendarSync, RotateCw, Tag } from "lucide-react";
-import { PeriodBadge } from "@/features/subscription/period";
+import type { FC } from "react";
 import { CategoryBadge } from "@/entities/category";
+import { PeriodBadge } from "@/features/subscription/period";
 import { cn } from "@/shared/lib/classes-utils";
 import type { SubscriptionOverviewMetaRow } from "../model/subscription-overview-view-model";
 

@@ -1,28 +1,28 @@
-import { FC, useMemo, useState } from "react";
 import {
-  isValid,
-  isSameDay,
   addYears,
   format,
-  parse,
-  isDate,
   isBefore,
+  isDate,
+  isSameDay,
+  isValid,
+  parse,
   startOfDay,
 } from "date-fns";
+import { XIcon } from "lucide-react";
+import { type FC, useMemo, useState } from "react";
+import { withMask } from "use-mask-input";
+import * as m from "@/i18n/messages";
 import {
   Calendar,
   Field,
   FieldLabel,
   InputGroup,
-  InputGroupInput,
   InputGroupAddon,
   InputGroupButton,
+  InputGroupInput,
 } from "@/shared/components";
-import { cn } from "@/shared/lib/classes-utils";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
-import * as m from "@/i18n/messages";
-import { withMask } from "use-mask-input";
-import { XIcon } from "lucide-react";
+import { cn } from "@/shared/lib/classes-utils";
 
 const endMonth = addYears(new Date(), 10);
 

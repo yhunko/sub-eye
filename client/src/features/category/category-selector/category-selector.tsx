@@ -1,11 +1,14 @@
-import { useId, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
+import { Check, ChevronDown, Plus } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { type CategoryDto, DEFAULT_CATEGORY_EMOJI } from "shared";
+import { toast } from "sonner";
+import { isAtLimit, planUsageQuery } from "@/entities/billing";
+import { categoriesQuery, useCreateCategory } from "@/entities/category";
+import * as m from "@/i18n/messages";
 import {
   Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -13,14 +16,11 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/shared/components";
-import { categoriesQuery, useCreateCategory } from "@/entities/category";
-import { isAtLimit, planUsageQuery } from "@/entities/billing";
-import { Check, ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
-import { toast } from "sonner";
-import { DEFAULT_CATEGORY_EMOJI, type CategoryDto } from "shared";
 
 type CategorySelectorProps = {
   value: string | null | undefined;

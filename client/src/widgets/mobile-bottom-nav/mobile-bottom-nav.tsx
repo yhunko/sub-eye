@@ -1,10 +1,10 @@
-import { FC } from "react";
-import { Button } from "../../shared/components";
 import { Link, useLocation } from "@tanstack/react-router";
-import { cn } from "../../shared/lib/classes-utils";
-import { LayoutDashboard, Plus, CreditCard } from "lucide-react";
+import { CreditCard, LayoutDashboard, Plus } from "lucide-react";
+import { domAnimation, LazyMotion, m as motion } from "motion/react";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
-import { LazyMotion, m as motion, domAnimation } from "motion/react";
+import { Button } from "../../shared/components";
+import { cn } from "../../shared/lib/classes-utils";
 
 let hasAnimated = false;
 

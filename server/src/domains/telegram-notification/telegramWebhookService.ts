@@ -1,10 +1,10 @@
+import { TelegramBotService } from "./telegramBotService";
+import { getTelegramNotificationCopy } from "./telegramNotificationCopy";
+import { TelegramNotificationService } from "./telegramNotificationService";
 import {
   parseTelegramWebhookCommand,
   type TelegramWebhookCommand,
 } from "./telegramWebhookCommand";
-import { TelegramBotService } from "./telegramBotService";
-import { getTelegramNotificationCopy } from "./telegramNotificationCopy";
-import { TelegramNotificationService } from "./telegramNotificationService";
 
 export type TelegramUpdate = {
   message?: {
@@ -78,7 +78,7 @@ export class TelegramWebhookService {
       const payloadPart = command.payload;
 
       if (payloadPart?.startsWith("link_")) {
-        await this.handleLinkStartCommand(
+        await TelegramWebhookService.handleLinkStartCommand(
           chatId,
           payload,
           payloadPart,

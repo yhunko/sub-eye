@@ -1,7 +1,8 @@
-import { FC, useMemo } from "react";
-import { CurrencyText } from "@/entities/currency";
+import { type FC, useMemo } from "react";
 import type { CategorySpendingDto } from "shared";
+import { CurrencyText } from "@/entities/currency";
 import { BrandfetchImage } from "@/features/brandfetch";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -11,7 +12,6 @@ import {
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 import { useRechartsModule } from "./use-recharts-module";
 
 const CHART_COLORS = [

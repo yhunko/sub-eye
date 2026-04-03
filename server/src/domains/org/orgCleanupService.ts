@@ -1,7 +1,7 @@
 import { db } from "../../db";
-import { SubscriptionService } from "../subscription/subscriptionService";
 import { CategoryService } from "../category/categoryService";
 import { SubscriptionHistoryRepository } from "../subscription/subscriptionHistoryRepository";
+import { SubscriptionService } from "../subscription/subscriptionService";
 
 /**
  * Handles cleanup when an organization is deleted.

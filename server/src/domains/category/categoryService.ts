@@ -1,18 +1,18 @@
-import { db } from "../../db";
 import type {
-  DeleteCategoriesResponse,
   CategoryDto,
   CreateCategoryInput,
+  DeleteCategoriesResponse,
   UpdateCategoryInput,
 } from "shared";
 import { getPlanById } from "shared";
-import { UserService } from "../user/userService";
+import { db } from "../../db";
 import { OrgService } from "../org/orgService";
-import { CategoryRepository } from "./categoryRepository";
+import { UserService } from "../user/userService";
 import {
   CategoryLimitReachedError,
   CategoryNotFoundError,
 } from "./categoryErrors";
+import { CategoryRepository } from "./categoryRepository";
 
 type CategoryServiceDeps = {
   repository: typeof CategoryRepository;
@@ -49,7 +49,7 @@ export class CategoryService {
     deps: CategoryServiceDeps = defaultDeps,
   ): Promise<CategoryDto[]> {
     const categories = await deps.repository.findByUserId(db, userId);
-    return categories.map(this.toDto);
+    return categories.map(CategoryService.toDto);
   }
 
   static async getCategoryById(
@@ -63,7 +63,7 @@ export class CategoryService {
       throw new CategoryNotFoundError();
     }
 
-    return this.toDto(category);
+    return CategoryService.toDto(category);
   }
 
   static async createCategory(
@@ -96,7 +96,7 @@ export class CategoryService {
       emoji: payload.emoji,
     });
 
-    return this.toDto(created);
+    return CategoryService.toDto(created);
   }
 
   static async updateCategory(
@@ -112,7 +112,7 @@ export class CategoryService {
     }
 
     const updated = await deps.repository.update(db, id, payload);
-    return this.toDto(updated);
+    return CategoryService.toDto(updated);
   }
 
   static async deleteCategory(
@@ -198,7 +198,7 @@ export class CategoryService {
     deps: CategoryServiceDeps = defaultDeps,
   ): Promise<CategoryDto[]> {
     const categories = await deps.repository.findByOrgId(db, orgId);
-    return categories.map(this.toDto);
+    return categories.map(CategoryService.toDto);
   }
 
   static async deleteAllForOrg(

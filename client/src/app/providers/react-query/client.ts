@@ -1,8 +1,8 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import * as m from "@/i18n/messages";
 import { ApiError } from "@/shared/api/api-error";
 import { posthog } from "@/shared/lib/analytics/posthog";
-import * as m from "@/i18n/messages";
 import { router } from "../../router";
 
 const queryCache = new QueryCache({

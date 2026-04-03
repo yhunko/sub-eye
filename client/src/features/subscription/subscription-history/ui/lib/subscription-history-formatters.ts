@@ -1,12 +1,12 @@
-import * as m from "@/i18n/messages";
-import { formatSubscriptionCycle } from "@/entities/subscription";
 import {
   format,
   formatDistanceToNowStrict,
   isValid,
   type Locale,
 } from "date-fns";
-import { CurrenciesMap, CurrencyUtils, SubscriptionPeriod } from "shared";
+import { CurrenciesMap, CurrencyUtils, type SubscriptionPeriod } from "shared";
+import { formatSubscriptionCycle } from "@/entities/subscription";
+import * as m from "@/i18n/messages";
 
 export const formatAmount = (amount: number, code: string): string => {
   const normalizedCode = CurrencyUtils.normalizeCode(code);

@@ -1,57 +1,57 @@
-import {
-  FC,
-  useMemo,
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  ReactNode,
-} from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  SortingState,
-  OnChangeFn,
-} from "@tanstack/react-table";
-import { useColumns } from "./model/columns";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-  Button,
-} from "@/shared/components";
-import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
-import {
-  subscriptionsQueryParsers,
-  SubscriptionsSearch,
-  SubscriptionsFilter,
-  CategoryFilterChips,
-} from "@/entities/subscription";
-import { cn } from "@/shared/lib/classes-utils";
-import { useQueryStates } from "nuqs";
 import { Link } from "@tanstack/react-router";
 import {
-  SubscriptionSortField,
-  SubscriptionDto,
+  flexRender,
+  getCoreRowModel,
+  type OnChangeFn,
+  type SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { ArrowRightLeft } from "lucide-react";
+import { useQueryStates } from "nuqs";
+import {
+  type FC,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type {
   CategoryDto,
   StatusFilter,
+  SubscriptionDto,
+  SubscriptionSortField,
 } from "shared";
-import * as m from "@/i18n/messages";
-import { TableBodyLoader } from "@/shared/ui";
-import { ArrowRightLeft } from "lucide-react";
 import {
-  toggleSubscriptionSelection,
-  selectAllSubscriptionIds,
+  CategoryFilterChips,
+  SubscriptionsFilter,
+  SubscriptionsSearch,
+  subscriptionsQueryParsers,
+} from "@/entities/subscription";
+import * as m from "@/i18n/messages";
+import {
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/components";
+import { cn } from "@/shared/lib/classes-utils";
+import { TableBodyLoader } from "@/shared/ui";
+import { useColumns } from "./model/columns";
+import {
   clearSubscriptionSelection,
   pruneSubscriptionSelection,
+  selectAllSubscriptionIds,
+  toggleSubscriptionSelection,
 } from "./model/selection";
-import { SubscriptionBulkActionBar } from "./ui/subscriptions-bulk-action-bar";
-import { openBulkDeleteSubscriptionsDialog } from "./ui/open-bulk-delete-subscriptions-dialog";
 import { openBulkAssignCategoryDialog } from "./ui/open-bulk-assign-category-dialog";
+import { openBulkDeleteSubscriptionsDialog } from "./ui/open-bulk-delete-subscriptions-dialog";
+import { SubscriptionBulkActionBar } from "./ui/subscriptions-bulk-action-bar";
+import { SubscriptionsTableNoResults } from "./ui/subscriptions-table-no-results";
 
 type SubscriptionsTableProps = {
   subscriptions: SubscriptionDto[];

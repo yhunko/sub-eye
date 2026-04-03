@@ -1,7 +1,7 @@
 import type { PushNotificationPayload, TelegramSendReport } from "shared";
 import {
-  PushNotificationService,
   type PushDeliveryReport,
+  PushNotificationService,
   type VapidDetails,
 } from "../push-notification/pushNotificationService";
 import { TelegramNotificationService } from "../telegram-notification/telegramNotificationService";
@@ -27,8 +27,16 @@ export class NotificationDeliveryService {
     options: SendNotificationOptions,
   ): Promise<NotificationDeliveryReport> {
     const [push, telegram] = await Promise.all([
-      this.sendPushSafely(userId, payload, options.vapidDetails),
-      this.sendTelegramSafely(userId, payload, options.locale),
+      NotificationDeliveryService.sendPushSafely(
+        userId,
+        payload,
+        options.vapidDetails,
+      ),
+      NotificationDeliveryService.sendTelegramSafely(
+        userId,
+        payload,
+        options.locale,
+      ),
     ]);
 
     const report: NotificationDeliveryReport = {

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../../db";
+import type { db } from "../../../db";
 import { billingAccountsTable } from "../../../db/schema";
 
 export type BillingAccountRecord = typeof billingAccountsTable.$inferSelect;
@@ -74,7 +74,7 @@ export class BillingAccountRepository {
       .onConflictDoUpdate({
         target: billingAccountsTable.userId,
         set: {
-          ...this.stripUndefined(values),
+          ...BillingAccountRepository.stripUndefined(values),
           updatedAt: now,
         },
       })

@@ -1,23 +1,23 @@
-import * as m from "@/i18n/messages";
 import { useUser } from "@clerk/clerk-react";
-import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
-import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
+import { Clock, Lock } from "lucide-react";
 import {
-  Field,
-  FieldLabel,
-  InputGroup,
-  InputGroupInput,
-  FieldDescription,
-  Spinner,
-  InputGroupAddon,
-} from "@/shared/components";
-import {
-  useState,
   type ChangeEventHandler,
   type KeyboardEventHandler,
+  useState,
 } from "react";
+import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
+import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
+import * as m from "@/i18n/messages";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  Spinner,
+} from "@/shared/components";
 import { NotificationOffsetSelect } from "./notification-offset-select";
-import { Clock, Lock } from "lucide-react";
 
 type NotificationTimeSelectProps = {
   scheduleLocked?: boolean;

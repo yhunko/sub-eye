@@ -1,8 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { categoriesQueryKeys } from "../model/query-keys";
-import { subscriptionsQueryKeys } from "@/entities/subscription/model/query-keys";
 import { analyticsQueryKeys } from "@/entities/analytics/model/query-keys";
 import { billingQueryKeys } from "@/entities/billing/model/query-keys";
+import { subscriptionsQueryKeys } from "@/entities/subscription/model/query-keys";
+import { categoriesQueryKeys } from "../model/query-keys";
 
 type Invalidator = Pick<QueryClient, "invalidateQueries">;
 

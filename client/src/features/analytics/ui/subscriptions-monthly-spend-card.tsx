@@ -1,9 +1,9 @@
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
-import * as m from "@/i18n/messages";
-import { CurrencyText } from "@/entities/currency";
-import { StatSummaryCard } from "./stat-summary-card";
+import type { FC } from "react";
 import type { MonthlySpendSummaryDto } from "shared";
-import { FC } from "react";
+import { CurrencyText } from "@/entities/currency";
+import * as m from "@/i18n/messages";
+import { StatSummaryCard } from "./stat-summary-card";
 
 type SubscriptionsMonthlySpendCardProps = {
   data: MonthlySpendSummaryDto;

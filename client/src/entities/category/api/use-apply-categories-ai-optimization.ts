@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import type { MutationHook } from "@/shared/lib/react-query/types";
 import type {
   CategoryAiOptimizeApplyInput,
   CategoryAiOptimizeApplyResponse,
 } from "shared";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { MutationHook } from "@/shared/lib/react-query/types";
 import { invalidateAfterCategoriesAiApply } from "./invalidate-after-categories-ai-apply";
 
 export const useApplyCategoriesAiOptimization = ({

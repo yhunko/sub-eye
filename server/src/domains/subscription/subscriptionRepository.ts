@@ -1,5 +1,5 @@
-import { and, eq, count, inArray, isNull } from "drizzle-orm";
-import { db } from "../../db";
+import { and, count, eq, inArray, isNull } from "drizzle-orm";
+import type { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";
 
 export type SubscriptionRecord = typeof subscriptionsTable.$inferSelect;

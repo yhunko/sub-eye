@@ -1,13 +1,13 @@
-import { FC } from "react";
 import { format } from "date-fns";
+import type { FC } from "react";
+import type { SubscriptionDto } from "shared";
 import { CurrencyText } from "@/entities/currency";
 import { BrandfetchImage } from "@/features/brandfetch";
 import { PeriodBadge } from "@/features/subscription/period";
-import { cn } from "@/shared/lib/classes-utils";
-import { useDateFormat } from "@/shared/hooks/use-date-format";
-import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import * as m from "@/i18n/messages";
-import type { SubscriptionDto } from "shared";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
+import { cn } from "@/shared/lib/classes-utils";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { SubscriptionOverviewScheduledPriceChangeAlert } from "./subscription-overview-scheduled-price-change-alert";
 
 type SubscriptionOverviewSummaryCardProps = {

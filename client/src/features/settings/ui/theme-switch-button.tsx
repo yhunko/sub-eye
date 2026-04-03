@@ -1,7 +1,20 @@
 "use client";
 
-import { Moon, Sun, MonitorCog, ChevronDown, LucideProps } from "lucide-react";
-
+import { useMounted } from "@mantine/hooks";
+import {
+  ChevronDown,
+  type LucideProps,
+  MonitorCog,
+  Moon,
+  Sun,
+} from "lucide-react";
+import {
+  type ForwardRefExoticComponent,
+  type RefAttributes,
+  useMemo,
+} from "react";
+import { useTheme } from "@/app/providers/theme-provider";
+import * as m from "@/i18n/messages";
 import {
   Button,
   DropdownMenu,
@@ -9,10 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/components";
-import { useMounted } from "@mantine/hooks";
-import { ForwardRefExoticComponent, RefAttributes, useMemo } from "react";
-import * as m from "@/i18n/messages";
-import { useTheme } from "@/app/providers/theme-provider";
 import { track } from "@/shared/lib/analytics";
 
 export const ThemeSwitchButton = () => {

@@ -1,7 +1,11 @@
-import { Avatar, AvatarImage, AvatarFallback } from "@/shared/components";
-import { forwardRef, ComponentRef, ComponentPropsWithoutRef } from "react";
 import { Image as ImageIcon } from "lucide-react";
+import {
+  type ComponentPropsWithoutRef,
+  type ComponentRef,
+  forwardRef,
+} from "react";
 import { BrandfetchUtils } from "@/entities/brandfetch/lib/brandfetch-utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 
 type BrandfetchImageProps = ComponentPropsWithoutRef<typeof Avatar> & {

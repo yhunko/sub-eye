@@ -1,25 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { valibotValidator } from "@tanstack/valibot-adapter";
 import {
-  Item,
-  ItemMedia,
-  ItemContent,
-  ItemTitle,
-  ItemActions,
-  ItemGroup,
-} from "@/shared/components";
-import {
-  Cog,
-  ChevronRight,
   BellRing,
-  User,
+  ChevronRight,
+  Cog,
   CreditCard,
   Tag,
+  User,
   Users,
 } from "lucide-react";
 import * as m from "@/i18n/messages";
-import { SettingsLayout } from "@/widgets/settings-layout";
-import { valibotValidator } from "@tanstack/valibot-adapter";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/shared/components";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
+import { SettingsLayout } from "@/widgets/settings-layout";
 
 export const Route = createFileRoute("/(protected)/settings/")({
   component: SettingsPage,

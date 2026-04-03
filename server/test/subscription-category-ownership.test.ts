@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "shared";
-import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
 import { SubscriptionCategoryNotFoundError } from "../src/domains/subscription/subscriptionErrors";
+import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
 
 const addPayload = {
   name: "Netflix",

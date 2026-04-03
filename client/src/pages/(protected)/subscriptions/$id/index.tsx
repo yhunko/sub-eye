@@ -1,19 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
+import { valibotValidator } from "@tanstack/valibot-adapter";
 import { Suspense } from "react";
 import {
   SubscriptionOverview,
   SubscriptionOverviewSkeleton,
 } from "@/features/subscription/subscription-overview";
-import { valibotValidator } from "@tanstack/valibot-adapter";
 import { subscriptionOverviewSearchSchema } from "@/shared/lib/router/subscription-overview-search";
+import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
 
 export const Route = createFileRoute("/(protected)/subscriptions/$id/")({
   component: SubscriptionPage,
   validateSearch: valibotValidator(subscriptionOverviewSearchSchema),
 });
 
-// eslint-disable-next-line react-refresh/only-export-components
 function SubscriptionPage() {
   const { id } = Route.useParams();
   const search = Route.useSearch();

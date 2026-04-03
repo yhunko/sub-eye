@@ -1,5 +1,7 @@
-import { FC } from "react";
 import { Check, ListFilter } from "lucide-react";
+import type { FC } from "react";
+import type { StatusFilter } from "shared";
+import * as m from "@/i18n/messages";
 import {
   Button,
   DropdownMenu,
@@ -11,8 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { StatusFilter } from "shared";
-import * as m from "@/i18n/messages";
 import { statusFilterOptions } from "../model/status-filter-options";
 
 interface SubscriptionsFilterProps {

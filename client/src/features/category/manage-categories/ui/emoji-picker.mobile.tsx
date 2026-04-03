@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import type { ReactNode } from "react";
 import {
   Drawer,
   DrawerContent,

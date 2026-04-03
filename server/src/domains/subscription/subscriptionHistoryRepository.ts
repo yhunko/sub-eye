@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../db";
+import type { db } from "../../db";
 import { subscriptionHistoryTable } from "../../db/schema";
 
 export type SubscriptionHistoryInsert =

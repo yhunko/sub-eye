@@ -1,10 +1,10 @@
-import { Button, ButtonGroup } from "@/shared/components";
-import { SubscriptionDto } from "shared";
-import { SubscriptionDeleteButton } from "../../delete-subscription";
 import { Link } from "@tanstack/react-router";
-import { EyeIcon, Edit } from "lucide-react";
+import { Edit, EyeIcon } from "lucide-react";
+import type { FC } from "react";
+import type { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
-import { FC } from "react";
+import { Button, ButtonGroup } from "@/shared/components";
+import { SubscriptionDeleteButton } from "../../delete-subscription";
 
 export const DefaultSubscriptionRowActions: FC<{
   subscription: SubscriptionDto;

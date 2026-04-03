@@ -1,4 +1,6 @@
-import { FC } from "react";
+import type { Locale } from "date-fns";
+import { Clock3, LineChart, Sparkles } from "lucide-react";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
 import {
   Badge,
@@ -10,24 +12,22 @@ import {
   CardTitle,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { Clock3, LineChart, Sparkles } from "lucide-react";
 import {
-  HistoryInsights,
+  type HistoryInsights,
   isPriceChangeEvent,
 } from "../../model/history-insights";
 import { getSubscriptionHistoryActionLabel } from "../lib/subscription-history-actions";
-import {
-  areBudgetImpactsEqual,
-  formatHistoryImpactLabel,
-  formatHistoryImpactTone,
-} from "../lib/subscription-history-impact";
 import {
   formatAmount,
   formatHistoryDateLabel,
   formatHistoryRelativeTime,
 } from "../lib/subscription-history-formatters";
+import {
+  areBudgetImpactsEqual,
+  formatHistoryImpactLabel,
+  formatHistoryImpactTone,
+} from "../lib/subscription-history-impact";
 import { SubscriptionHistoryInsightStat } from "./subscription-history-insight-stat";
-import { type Locale } from "date-fns";
 
 type SubscriptionHistoryInsightsCardProps = {
   insights: HistoryInsights;

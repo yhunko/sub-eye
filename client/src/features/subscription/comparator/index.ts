@@ -1,7 +1,7 @@
-export { SubscriptionComparatorWizard } from "./ui/subscription-comparator-wizard";
 export {
+  type ComparatorWizardPersistentState,
   createDefaultComparatorWizardPersistentState,
   restoreComparatorWizardPersistentState,
   serializeComparatorWizardPersistentState,
-  type ComparatorWizardPersistentState,
 } from "./model/comparator-wizard-persistence";
+export { SubscriptionComparatorWizard } from "./ui/subscription-comparator-wizard";

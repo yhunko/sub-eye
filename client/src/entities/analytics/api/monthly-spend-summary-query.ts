@@ -1,7 +1,7 @@
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { MonthlySpendSummaryDto } from "shared";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { QueryHook } from "@/shared/lib/react-query/types";
 import { analyticsQueryKeys } from "../model/query-keys";
 
 type MonthlySpendSummaryParams = { userId: string; orgId?: string | null };

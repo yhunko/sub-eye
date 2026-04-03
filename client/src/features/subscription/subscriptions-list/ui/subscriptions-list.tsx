@@ -1,15 +1,15 @@
+import { ListX } from "lucide-react";
 import * as React from "react";
-import { SubscriptionListItem } from "./subscription-list-item";
+import type { SubscriptionDto } from "shared";
+import * as m from "@/i18n/messages";
 import {
-  ItemGroup,
   Empty,
   EmptyHeader,
-  EmptyTitle,
   EmptyMedia,
+  EmptyTitle,
+  ItemGroup,
 } from "../../../../shared/components";
-import { ListX } from "lucide-react";
-import { SubscriptionDto } from "shared";
-import * as m from "@/i18n/messages";
+import { SubscriptionListItem } from "./subscription-list-item";
 
 interface SubscriptionsListProps {
   subscriptions: SubscriptionDto[];

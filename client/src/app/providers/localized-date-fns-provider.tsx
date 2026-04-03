@@ -1,13 +1,12 @@
-import { useEffect, useState, PropsWithChildren } from "react";
-import { setDefaultOptions, type Locale } from "date-fns";
+import { type Locale, setDefaultOptions } from "date-fns";
 import { enUS } from "date-fns/locale";
+import { type PropsWithChildren, useEffect, useState } from "react";
 import { getLocale } from "@/i18n/runtime";
 import { DateFnsLocaleContext } from "@/shared/lib/date-fns-context";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const localeMap: Record<string, () => Promise<any>> = {
-  en: () => import("date-fns/locale/en-US"),
-  uk: () => import("date-fns/locale/uk"),
+const localeMap: Record<string, () => Promise<Locale>> = {
+  en: async () => (await import("date-fns/locale/en-US")).enUS,
+  uk: async () => (await import("date-fns/locale/uk")).uk,
 };
 
 export function LocalizedDateFnsProvider({ children }: PropsWithChildren) {
@@ -20,7 +19,7 @@ export function LocalizedDateFnsProvider({ children }: PropsWithChildren) {
       const loader = localeMap[currentLanguage] || localeMap.en;
 
       try {
-        const { default: loadedLocale } = await loader();
+        const loadedLocale = await loader();
 
         setDefaultOptions({ locale: loadedLocale });
         setLocale(loadedLocale);

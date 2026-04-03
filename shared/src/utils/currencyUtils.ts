@@ -1,5 +1,5 @@
-import { SubscriptionPeriod } from "../types";
 import { CurrenciesMap } from "../domains/currency/constants";
+import { SubscriptionPeriod } from "../types";
 
 export class CurrencyUtils {
   public static readonly DEFAULT_CURRENCY_CODE = "uah";
@@ -30,7 +30,7 @@ export class CurrencyUtils {
   }
 
   static normalizeCode(code: string | undefined | null): string {
-    if (!code) return this.DEFAULT_CURRENCY_CODE.toLowerCase();
+    if (!code) return CurrencyUtils.DEFAULT_CURRENCY_CODE.toLowerCase();
     return code.trim().toLowerCase();
   }
 
@@ -40,8 +40,8 @@ export class CurrencyUtils {
     toCode: string,
     rates: Record<string, number>,
   ): number {
-    const from = this.normalizeCode(fromCode);
-    const to = this.normalizeCode(toCode);
+    const from = CurrencyUtils.normalizeCode(fromCode);
+    const to = CurrencyUtils.normalizeCode(toCode);
 
     if (from === to || amount === 0) return amount;
 
@@ -63,7 +63,7 @@ export class CurrencyUtils {
       maximumFractionDigits?: number;
     },
   ): string {
-    const normalized = this.normalizeCode(currencyCode);
+    const normalized = CurrencyUtils.normalizeCode(currencyCode);
     const currency = CurrenciesMap.get(normalized);
     const value = options?.absolute ? Math.abs(amount) : amount;
     const minimumFractionDigits = options?.minimumFractionDigits ?? 2;
@@ -83,6 +83,6 @@ export class CurrencyUtils {
 
   static formatSignedAmount(amount: number, currencyCode: string): string {
     const sign = amount > 0 ? "+" : amount < 0 ? "-" : "";
-    return `${sign}${this.formatAmount(Math.abs(amount), currencyCode)}`;
+    return `${sign}${CurrencyUtils.formatAmount(Math.abs(amount), currencyCode)}`;
   }
 }

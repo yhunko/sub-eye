@@ -1,7 +1,7 @@
 import type {
+  StatusFilter,
   SubscriptionDto,
   SubscriptionSortField,
-  StatusFilter,
 } from "shared";
 
 type FilterParams = {

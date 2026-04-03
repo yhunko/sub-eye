@@ -66,5 +66,5 @@ const BILLING_FEATURE_KEYS = [
 ] as const;
 
 const PLAN_IDS = ["free", "plus"] as const;
-export { PLAN_IDS };
-export { BILLING_FEATURE_KEYS };
+
+export { BILLING_FEATURE_KEYS, PLAN_IDS };

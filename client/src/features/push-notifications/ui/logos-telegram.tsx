@@ -1,4 +1,4 @@
-import { useId, type SVGProps } from "react";
+import { type SVGProps, useId } from "react";
 
 export function LogosTelegram(props: SVGProps<SVGSVGElement>) {
   const gradientId = useId();

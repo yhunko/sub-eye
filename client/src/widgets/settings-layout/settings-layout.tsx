@@ -1,10 +1,10 @@
-import { FC, PropsWithChildren, ReactNode } from "react";
-import { Button } from "../../shared/components";
-import { ChevronLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { ChevronLeft } from "lucide-react";
+import type { FC, PropsWithChildren, ReactNode } from "react";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import MobileBottomNav from "../mobile-bottom-nav";
+import { Button } from "../../shared/components";
 import { DesktopNavbar } from "../dashboard-layout/navbar/desktop-navbar";
+import MobileBottomNav from "../mobile-bottom-nav";
 
 type SettingsLayoutProps = {
   title?: string;

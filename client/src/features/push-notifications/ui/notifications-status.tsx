@@ -1,10 +1,10 @@
 import { Bell, BellOff, CheckCircle2, XCircle } from "lucide-react";
 import { Badge, Spinner } from "@/shared/components";
-import { usePushNotificationsSubscription } from "../api/hooks";
-import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
-import { useApplePushNotificationsSupport } from "../model/use-apple-push-notifications-support";
-import { AppleInstallPrompt } from "./apple-install-prompt";
 import * as m from "@/shared/lib/i18n/messages";
+import { usePushNotificationsSubscription } from "../api/hooks";
+import { useApplePushNotificationsSupport } from "../model/use-apple-push-notifications-support";
+import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
+import { AppleInstallPrompt } from "./apple-install-prompt";
 
 export const NotificationsStatus = () => {
   const isAppleSupported = useApplePushNotificationsSupport();

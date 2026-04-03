@@ -2,8 +2,8 @@ import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import type { QueryHook } from "@/shared/lib/react-query/types";
 import {
-  subscriptionHistoryQuery,
   type SubscriptionHistoryResponse,
+  subscriptionHistoryQuery,
 } from "./subscription-history-query";
 
 type Params = {

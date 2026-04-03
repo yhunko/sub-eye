@@ -1,10 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
-import { subscriptionsQueryKeys } from "../model/query-keys";
-import { apiClient } from "../../../shared/api/client";
-import { assertOk } from "../../../shared/api/api-error";
-import type { QueryHook } from "../../../shared/lib/react-query/types";
 import type { SubscriptionDto } from "shared";
-import { UseSubscriptionsParams } from "../model/params";
+import { assertOk } from "../../../shared/api/api-error";
+import { apiClient } from "../../../shared/api/client";
+import type { QueryHook } from "../../../shared/lib/react-query/types";
+import type { UseSubscriptionsParams } from "../model/params";
+import { subscriptionsQueryKeys } from "../model/query-keys";
 
 export const subscriptionsQuery = ({
   params,

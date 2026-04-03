@@ -1,5 +1,5 @@
-import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import type * as React from "react";
 
 import { cn } from "@/shared/lib/classes-utils";
 
@@ -81,10 +81,10 @@ function PopoverDescription({
 
 export {
   Popover,
-  PopoverTrigger,
-  PopoverContent,
   PopoverAnchor,
+  PopoverContent,
+  PopoverDescription,
   PopoverHeader,
   PopoverTitle,
-  PopoverDescription,
+  PopoverTrigger,
 };

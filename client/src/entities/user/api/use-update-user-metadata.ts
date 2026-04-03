@@ -1,12 +1,11 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MutationHook } from "@/shared/lib/react-query/types";
-import type { UserPreferences } from "shared";
-import type { UpdateUserPublicMetadata } from "shared";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import { subscriptionsQueryKeys } from "../../subscription";
-import { analyticsQueryKeys } from "../../analytics";
 import { useUser } from "@clerk/clerk-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { UpdateUserPublicMetadata, UserPreferences } from "shared";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { MutationHook } from "@/shared/lib/react-query/types";
+import { analyticsQueryKeys } from "../../analytics";
+import { subscriptionsQueryKeys } from "../../subscription";
 
 export const useUpdateUserMetadata = ({
   options,

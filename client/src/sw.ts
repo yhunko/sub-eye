@@ -1,10 +1,10 @@
 import { defaultCache } from "@serwist/vite/worker";
 import {
-  Serwist,
   NetworkOnly,
-  type SerwistGlobalConfig,
   type PrecacheEntry,
   type RuntimeCaching,
+  Serwist,
+  type SerwistGlobalConfig,
 } from "serwist";
 import { registerPushListeners } from "./features/push-notifications/worker";
 

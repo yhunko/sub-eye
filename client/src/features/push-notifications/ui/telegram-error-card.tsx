@@ -1,8 +1,8 @@
 import { RefreshCw, TriangleAlert } from "lucide-react";
+import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components/ui/button";
 import { Item } from "@/shared/components/ui/item";
 import { TelegramNotificationsCardShell } from "./telegram-notifications-card-shell";
-import * as m from "@/i18n/messages";
 
 type TelegramErrorCardProps = {
   onRetry: () => void;

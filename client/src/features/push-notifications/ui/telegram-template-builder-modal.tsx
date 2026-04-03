@@ -1,6 +1,8 @@
 import { FlaskConical } from "lucide-react";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
+import type { TelegramNotificationStatus } from "shared";
 import { toast } from "sonner";
+import * as m from "@/i18n/messages";
 import {
   Button,
   Dialog,
@@ -15,11 +17,9 @@ import {
   DrawerTitle,
 } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import type { TelegramNotificationStatus } from "shared";
+import { track } from "@/shared/lib/analytics";
 import { useSendTelegramTestNotification } from "../api/hooks";
 import { TelegramTemplateBuilderCard } from "./telegram-template-builder-card";
-import * as m from "@/i18n/messages";
-import { track } from "@/shared/lib/analytics";
 
 type TelegramTemplateBuilderModalProps = {
   status: TelegramNotificationStatus;

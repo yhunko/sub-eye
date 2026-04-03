@@ -1,12 +1,12 @@
-import type { FC } from "react";
-import { format, parseISO } from "date-fns";
 import type { Locale } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { List } from "lucide-react";
-import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
+import type { FC } from "react";
+import type { MonthlyTrendPoint } from "shared";
 import { CurrencyText } from "@/entities/currency";
 import * as m from "@/i18n/messages";
-import type { MonthlyTrendPoint } from "shared";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
 
 type SelectedMonthSummaryProps = {
   selectedMonth: MonthlyTrendPoint;

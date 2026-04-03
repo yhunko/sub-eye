@@ -1,16 +1,19 @@
-import { format, isAfter, isBefore, eachDayOfInterval } from "date-fns";
-import { RecurrenceUtils } from "shared";
-import { DateTimezoneUtils } from "shared";
-import type { CategoryDto, SubscriptionDto } from "shared";
-import { shouldIncludeOccurrence } from "shared";
-import type { SubscriptionPeriod } from "shared";
+import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
 import type {
+  CategoryDto,
   CategorySpendingDto,
   CategorySpendingSubscriptionDto,
   DashboardAnalyticsDto,
   MonthlyTrendPoint,
   MostExpensiveSubscriptionDto,
+  SubscriptionDto,
+  SubscriptionPeriod,
   UpcomingRenewalDto,
+} from "shared";
+import {
+  DateTimezoneUtils,
+  RecurrenceUtils,
+  shouldIncludeOccurrence,
 } from "shared";
 
 type PaymentOccurrence = {
@@ -60,7 +63,10 @@ export class AnalyticsCalculator {
         break;
       }
 
-      total += this.resolveOccurrenceAmount(subscription, occurrence);
+      total += AnalyticsCalculator.resolveOccurrenceAmount(
+        subscription,
+        occurrence,
+      );
       occurrence = RecurrenceUtils.addPeriod(
         occurrence,
         subscription.every,
@@ -86,7 +92,7 @@ export class AnalyticsCalculator {
       const mStart = DateTimezoneUtils.startOfMonth(monthRef, timezone);
       const mEnd = DateTimezoneUtils.endOfMonth(monthRef, timezone);
 
-      const payments = this.collectPaymentsInRange(
+      const payments = AnalyticsCalculator.collectPaymentsInRange(
         subscriptions,
         mStart,
         mEnd,
@@ -182,7 +188,10 @@ export class AnalyticsCalculator {
           name: subscription.name,
           brandDomain: subscription.brandDomain,
           provider: "Subscription",
-          amount: this.resolveOccurrenceAmount(subscription, projectionDate),
+          amount: AnalyticsCalculator.resolveOccurrenceAmount(
+            subscription,
+            projectionDate,
+          ),
           currencyCode: preferredCurrencyCode,
           nextPaymentDate: projectionDate.toISOString(),
           daysUntil,
@@ -219,7 +228,7 @@ export class AnalyticsCalculator {
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     // Collect all payment occurrences in the month
-    const monthPayments = this.collectPaymentsInRange(
+    const monthPayments = AnalyticsCalculator.collectPaymentsInRange(
       subscriptions,
       monthStart,
       monthEnd,
@@ -369,7 +378,13 @@ export class AnalyticsCalculator {
   ): number {
     return subscriptions.reduce(
       (sum, sub) =>
-        sum + this.calculateSpendInRange(sub, rangeStart, rangeEnd, timezone),
+        sum +
+        AnalyticsCalculator.calculateSpendInRange(
+          sub,
+          rangeStart,
+          rangeEnd,
+          timezone,
+        ),
       0,
     );
   }
@@ -429,7 +444,10 @@ export class AnalyticsCalculator {
 
         payments.push({
           date: occurrence,
-          amount: this.resolveOccurrenceAmount(subscription, occurrence),
+          amount: AnalyticsCalculator.resolveOccurrenceAmount(
+            subscription,
+            occurrence,
+          ),
           subscription,
         });
 

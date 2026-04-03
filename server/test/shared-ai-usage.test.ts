@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod, type SubscriptionDto } from "shared";
+import { type SubscriptionDto, SubscriptionPeriod } from "shared";
 import { AiUsageService } from "../src/domains/ai/aiUsageService";
 import { CategoryAiService } from "../src/domains/category/categoryAiService";
 import { ComparatorService } from "../src/domains/comparator/comparatorService";

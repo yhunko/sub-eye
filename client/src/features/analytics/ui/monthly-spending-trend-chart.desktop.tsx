@@ -1,11 +1,11 @@
-import { FC } from "react";
 import { format, parseISO } from "date-fns";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
-import { BrandfetchImage } from "@/features/brandfetch";
+import type { FC } from "react";
 import type { MonthlyTrendSubscription } from "shared";
+import { CurrencyBadge, CurrencyText } from "@/entities/currency";
+import { BrandfetchImage } from "@/features/brandfetch";
+import * as m from "@/i18n/messages";
+import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { cn } from "@/shared/lib/classes-utils";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { useRechartsModule } from "./use-recharts-module";
 

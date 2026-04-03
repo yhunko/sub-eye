@@ -1,17 +1,17 @@
+import { useFormContext, useWatch } from "react-hook-form";
+import { SubscriptionCycleInput } from "@/features/subscription/shared/ui/subscription-cycle-input";
+import * as m from "@/i18n/messages";
 import {
+  FieldDescription,
   FieldSet,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
-  FieldDescription,
 } from "@/shared/components";
-import { useFormContext, useWatch } from "react-hook-form";
-import { AddSubscriptionInput } from "../../model/schema";
+import type { AddSubscriptionInput } from "../../model/schema";
 import { SubscriptionDatePicker } from "../subscription-date-picker/subscription-date-picker";
-import { SubscriptionCycleInput } from "@/features/subscription/shared/ui/subscription-cycle-input";
-import * as m from "@/i18n/messages";
 
 export const SubscriptionFormBillingInfo = () => {
   const { control, setValue } = useFormContext<AddSubscriptionInput>();

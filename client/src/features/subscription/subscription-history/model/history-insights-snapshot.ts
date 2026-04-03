@@ -1,9 +1,12 @@
 import {
   CurrencyUtils,
-  SubscriptionHistoryDto,
+  type SubscriptionHistoryDto,
   SubscriptionPeriod,
 } from "shared";
-import { HistorySnapshot, RecurringAmount } from "./history-insights-types";
+import type {
+  HistorySnapshot,
+  RecurringAmount,
+} from "./history-insights-types";
 
 const VALID_PERIODS: SubscriptionPeriod[] = [
   SubscriptionPeriod.DAY,

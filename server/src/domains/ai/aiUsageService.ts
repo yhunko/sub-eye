@@ -1,13 +1,13 @@
+import type { ComparatorAiQuotaDto, PlanId } from "shared";
 import { db } from "../../db";
-import { ComparatorRepository } from "../comparator/comparatorRepository";
 import {
   getComparatorAiLimit,
   getComparatorQuotaWindow,
-  toComparatorAiQuotaDto,
   type QuotaWindow,
+  toComparatorAiQuotaDto,
 } from "../comparator/comparatorQuotaUtils";
+import { ComparatorRepository } from "../comparator/comparatorRepository";
 import { UserService } from "../user/userService";
-import type { ComparatorAiQuotaDto, PlanId } from "shared";
 
 type AiUsageServiceDeps = {
   comparatorRepository: typeof ComparatorRepository;

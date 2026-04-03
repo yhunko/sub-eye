@@ -1,7 +1,7 @@
 import {
-  SubscriptionPeriod,
-  CurrencyUtils,
   type CompareSubscriptionsInput,
+  CurrencyUtils,
+  SubscriptionPeriod,
 } from "shared";
 import { parsePriceInput } from "@/shared/lib/price-input";
 

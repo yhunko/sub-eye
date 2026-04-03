@@ -7,7 +7,7 @@ echo "🌎 Compiling i18n..."
 bun --cwd client run prepare
 
 echo "🔎 Running lint across the repo..."
-bun run lint --output-logs=errors-only
+bun run lint
 
 echo "🔎 Running type checks across the repo..."
 bun run type-check

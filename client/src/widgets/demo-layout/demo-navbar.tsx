@@ -1,15 +1,15 @@
-import { FC } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { LayoutDashboard, List } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import Logo from "@/shared/assets/logo.svg";
 import {
   Button,
+  NavItem,
   NavigationMenu,
   NavigationMenuList,
-  NavItem,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { LayoutDashboard, List } from "lucide-react";
 
 export const DemoNavbar: FC = () => {
   const isDesktop = useBreakpoint("md");

@@ -1,13 +1,13 @@
 import { useAuth } from "@clerk/clerk-react";
-import { RouterProvider } from "@tanstack/react-router";
-import { router } from "./app/router";
-import { queryClient } from "./app/providers/react-query";
-import { Toaster } from "@/shared/components";
-import { Suspense, lazy, useMemo, useState, useEffect } from "react";
 import { useIsRestoring } from "@tanstack/react-query";
-import { SplashScreen } from "./shared/ui";
+import { RouterProvider } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Toaster } from "@/shared/components";
+import { queryClient } from "./app/providers/react-query";
+import { router } from "./app/router";
 import { SwUpdateManager } from "./features/pwa/sw-update-manager";
 import { isLocalPlanSwitcherEnabled } from "./shared/lib/env/local-dev-runtime";
+import { SplashScreen } from "./shared/ui";
 
 const DevPlanSwitcher = import.meta.env.DEV
   ? lazy(() =>

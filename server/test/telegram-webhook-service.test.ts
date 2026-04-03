@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { parseTelegramWebhookCommand } from "../src/domains/telegram-notification/telegramWebhookCommand";
 import {
-  TelegramWebhookService,
   type TelegramUpdate,
+  TelegramWebhookService,
 } from "../src/domains/telegram-notification/telegramWebhookService";
 
 type TelegramWebhookDeps = NonNullable<

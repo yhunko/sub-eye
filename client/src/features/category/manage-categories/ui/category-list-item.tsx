@@ -1,11 +1,11 @@
+import NiceModal from "@ebay/nice-modal-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { FC } from "react";
 import type { CategoryDto } from "shared";
+import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { cn } from "@/shared/lib/classes-utils";
-import NiceModal from "@ebay/nice-modal-react";
-import { Pencil, Trash2 } from "lucide-react";
-import * as m from "@/i18n/messages";
 
 type CategoryListItemProps = {
   category: CategoryDto;
@@ -24,8 +24,9 @@ export const CategoryListItem: FC<CategoryListItemProps> = ({
   };
 
   const handleDelete = async () => {
-    const { DeleteCategoryConfirmDialog } =
-      await import("./delete-category-confirm-dialog");
+    const { DeleteCategoryConfirmDialog } = await import(
+      "./delete-category-confirm-dialog"
+    );
     void NiceModal.show(DeleteCategoryConfirmDialog, { category });
   };
 

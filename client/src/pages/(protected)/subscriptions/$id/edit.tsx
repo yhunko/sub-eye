@@ -1,5 +1,5 @@
-import { EditSubscriptionForm } from "@/features/subscription/edit-subscription";
 import { createFileRoute } from "@tanstack/react-router";
+import { EditSubscriptionForm } from "@/features/subscription/edit-subscription";
 import { SubscriptionNativeLayout } from "@/widgets/subscription-native-layout";
 
 export const Route = createFileRoute("/(protected)/subscriptions/$id/edit")({
