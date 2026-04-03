@@ -1,13 +1,13 @@
+import { Languages } from "lucide-react";
+import * as m from "@/i18n/messages";
 import {
   Item,
-  ItemMedia,
-  ItemContent,
-  ItemTitle,
   ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
 } from "@/shared/components";
-import { Languages } from "lucide-react";
 import { LocaleSwitcher } from "./locale-switcher";
-import * as m from "@/i18n/messages";
 
 export const LocaleSelect = () => {
   return (

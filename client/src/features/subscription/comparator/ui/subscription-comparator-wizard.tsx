@@ -1,4 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, type FC } from "react";
+import { CheckCircle2, ChevronLeft, Circle } from "lucide-react";
+import { type FC, lazy, Suspense, useEffect, useRef } from "react";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
@@ -11,15 +13,13 @@ import {
   CardTitle,
   Progress,
 } from "@/shared/components";
+import { track } from "@/shared/lib/analytics";
 import { cn } from "@/shared/lib/classes-utils";
 import { AiQuotaBadge } from "@/shared/ui";
-import * as m from "@/i18n/messages";
-import { CheckCircle2, ChevronLeft, Circle } from "lucide-react";
 import {
-  useSubscriptionComparatorWizardState,
   type SubscriptionComparatorWizardStateParams,
+  useSubscriptionComparatorWizardState,
 } from "../model/use-subscription-comparator-wizard-state";
-import { track } from "@/shared/lib/analytics";
 
 const StepMode = lazy(
   () => import("./wizard/steps/subscription-comparator-step-mode"),

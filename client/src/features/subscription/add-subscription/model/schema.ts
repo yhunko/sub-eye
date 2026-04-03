@@ -1,6 +1,6 @@
-import * as v from "valibot";
-import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { SubscriptionPeriod } from "shared";
+import * as v from "valibot";
+import type { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import * as m from "@/i18n/messages";
 import { parsePriceInput } from "@/shared/lib/price-input";
 

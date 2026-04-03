@@ -1,4 +1,22 @@
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { valibotValidator } from "@tanstack/valibot-adapter";
+import { useCallback, useEffect, useRef } from "react";
+import { FREE_PLAN, PLUS_PLAN } from "shared";
+import { toast } from "sonner";
+import {
+  billingQueryKeys,
+  getPaddle,
+  PlanCard,
+  PlusPlanCard,
+  planUsageQuery,
+  SubscriptionUsageCard,
+  subscribeToPaddleEvents,
+  useCreateBillingCheckout,
+  useCreateBillingPortal,
+} from "@/entities/billing";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -6,27 +24,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components";
-import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
-import {
-  PlanCard,
-  PlusPlanCard,
-  SubscriptionUsageCard,
-  billingQueryKeys,
-  getPaddle,
-  planUsageQuery,
-  subscribeToPaddleEvents,
-  useCreateBillingCheckout,
-  useCreateBillingPortal,
-} from "@/entities/billing";
-import { FREE_PLAN, PLUS_PLAN } from "shared";
-import * as m from "@/i18n/messages";
-import { valibotValidator } from "@tanstack/valibot-adapter";
-import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect } from "react";
 import { track } from "@/shared/lib/analytics";
-import { toast } from "sonner";
+import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
+import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
 
 export const Route = createFileRoute("/(protected)/settings/billing")({
   component: SettingsBillingPage,
@@ -55,6 +55,7 @@ function SettingsBillingPage() {
   );
   const createCheckout = useCreateBillingCheckout();
   const createPortal = useCreateBillingPortal();
+  const hasTrackedUpgradePrompt = useRef(false);
 
   useEffect(() => {
     return subscribeToPaddleEvents((event) => {
@@ -84,14 +85,16 @@ function SettingsBillingPage() {
   const isPlusPlan = usage?.planId === PLUS_PLAN.id;
 
   useEffect(() => {
-    if (usage && !isPlusPlan) {
-      track("upgrade_prompt_viewed", {
-        source: "settings_billing",
-        feature: "plus_plan",
-      });
+    if (!usage || isPlusPlan || hasTrackedUpgradePrompt.current) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Boolean(usage), isPlusPlan]);
+
+    track("upgrade_prompt_viewed", {
+      source: "settings_billing",
+      feature: "plus_plan",
+    });
+    hasTrackedUpgradePrompt.current = true;
+  }, [isPlusPlan, usage]);
   const isActionPending = createCheckout.isPending || createPortal.isPending;
   const checkoutEmail = user?.primaryEmailAddress?.emailAddress ?? null;
 

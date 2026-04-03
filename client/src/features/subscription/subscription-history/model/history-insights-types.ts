@@ -1,7 +1,7 @@
 import {
   FREE_SUBSCRIPTION_HISTORY_LIMIT,
-  SubscriptionHistoryDto,
-  SubscriptionPeriod,
+  type SubscriptionHistoryDto,
+  type SubscriptionPeriod,
 } from "shared";
 
 export const HISTORY_FREE_LIMIT = FREE_SUBSCRIPTION_HISTORY_LIMIT;

@@ -1,5 +1,5 @@
-import * as m from "@/i18n/messages";
 import { SubscriptionPeriod } from "shared";
+import * as m from "@/i18n/messages";
 
 const CYCLE_LABELS: Record<
   SubscriptionPeriod,

@@ -1,10 +1,10 @@
 import { Bot, WandSparkles } from "lucide-react";
 import type { TelegramNotificationStatus } from "shared";
+import * as m from "@/i18n/messages";
 import { Item } from "@/shared/components/ui/item";
 import { TelegramConnectionBadgeButton } from "./telegram-connection-badge-button";
 import { TelegramNotificationsCardShell } from "./telegram-notifications-card-shell";
 import { TelegramTemplateBuilderModal } from "./telegram-template-builder-modal";
-import * as m from "@/i18n/messages";
 
 type TelegramDisconnectedCardProps = {
   isBusy: boolean;

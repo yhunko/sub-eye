@@ -1,12 +1,12 @@
-import { ReactNode, FC } from "react";
 import { useQueryStates } from "nuqs";
+import type { FC, ReactNode } from "react";
+import type { CategoryDto, SubscriptionDto } from "shared";
 import {
-  subscriptionsQueryParsers,
   CategoryFilterChips,
+  subscriptionsQueryParsers,
 } from "@/entities/subscription";
 import { SubscriptionsList } from "./ui/subscriptions-list";
 import { SubscriptionsListToolbar } from "./ui/subscriptions-list-toolbar";
-import type { SubscriptionDto, CategoryDto } from "shared";
 
 type SubscriptionsListWidgetProps = {
   subscriptions: SubscriptionDto[];

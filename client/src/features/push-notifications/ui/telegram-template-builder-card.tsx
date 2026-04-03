@@ -1,8 +1,13 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState, type DragEventHandler } from "react";
+import { type DragEventHandler, useMemo, useRef, useState } from "react";
+import type {
+  TelegramNotificationStatus,
+  TelegramTemplateVariable,
+} from "shared";
 import { toast } from "sonner";
 import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
+import * as m from "@/i18n/messages";
 import {
   Badge,
   Button,
@@ -12,18 +17,13 @@ import {
   Textarea,
 } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import type {
-  TelegramNotificationStatus,
-  TelegramTemplateVariable,
-} from "shared";
+import { useUpdateTelegramMessageTemplate } from "../api/hooks";
 import {
   insertTokenAtSelection,
   renderTemplatePreview,
   TELEGRAM_TEMPLATE_MAX_LENGTH,
   validateTemplateDraft,
 } from "../lib/telegram-message-template.utils";
-import { useUpdateTelegramMessageTemplate } from "../api/hooks";
-import * as m from "@/i18n/messages";
 
 type TelegramTemplateBuilderCardProps = {
   status: TelegramNotificationStatus;

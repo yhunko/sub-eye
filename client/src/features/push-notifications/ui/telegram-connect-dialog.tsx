@@ -1,6 +1,7 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import * as m from "@/i18n/messages";
 import {
   Button,
   Dialog,
@@ -16,7 +17,6 @@ import {
   useTelegramNotificationStatus,
 } from "../api/hooks";
 import { TELEGRAM_CONNECT_TIMEOUT_MS } from "../lib/telegram-notifications.utils";
-import * as m from "@/i18n/messages";
 
 type LinkFlowState = {
   connectUrl: string | null;

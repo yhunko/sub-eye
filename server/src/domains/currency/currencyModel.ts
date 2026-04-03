@@ -1,5 +1,5 @@
 import { CurrenciesMap } from "shared";
-import { pipe, string, transform, check } from "valibot";
+import { check, pipe, string, transform } from "valibot";
 
 export const currencyBaseSchema = pipe(
   string(),

@@ -1,7 +1,12 @@
 import { clerkClient } from "@clerk/express";
+import type {
+  BillingCheckoutResponse,
+  BillingPortalResponse,
+  PlanId,
+} from "shared";
 import { db } from "../../../db";
-import { UserService } from "../../user/userService";
 import { OrgService } from "../../org/orgService";
+import { UserService } from "../../user/userService";
 import { BillingAccountRepository } from "./billingAccountRepository";
 import { BillingWebhookEventRepository } from "./billingWebhookEventRepository";
 import { PaddleApiClient } from "./paddleApiClient";
@@ -10,11 +15,6 @@ import type {
   PaddleSubscriptionStatus,
   PaddleWebhookEvent,
 } from "./paddleTypes";
-import type {
-  BillingCheckoutResponse,
-  BillingPortalResponse,
-  PlanId,
-} from "shared";
 
 const PAID_PLUS_STATUSES = new Set<PaddleSubscriptionStatus>([
   "trialing",
@@ -75,7 +75,7 @@ export class PaddleBillingService {
       db,
       userId,
     );
-    const priceId = await this.getPlusPriceId(env, deps);
+    const priceId = await PaddleBillingService.getPlusPriceId(env, deps);
     const paddleCustomerId = billingAccount?.paddleCustomerId ?? undefined;
 
     const transaction = await deps.apiClient.createTransaction({
@@ -109,7 +109,10 @@ export class PaddleBillingService {
     userId: string,
     deps: PaddleBillingDeps = defaultDeps,
   ): Promise<BillingPortalResponse> {
-    const customerId = await this.getOrCreateCustomerId(userId, deps);
+    const customerId = await PaddleBillingService.getOrCreateCustomerId(
+      userId,
+      deps,
+    );
     const portalSession =
       await deps.apiClient.createCustomerPortalSession(customerId);
 
@@ -138,7 +141,10 @@ export class PaddleBillingService {
       return;
     }
 
-    const resolvedContext = await this.resolveEventContext(event, deps);
+    const resolvedContext = await PaddleBillingService.resolveEventContext(
+      event,
+      deps,
+    );
 
     if (resolvedContext.kind === "unknown") {
       console.warn("[Paddle Webhook] Unable to resolve context for event", {
@@ -149,7 +155,7 @@ export class PaddleBillingService {
     }
 
     if (
-      this.isEventOlderThanLatest(
+      PaddleBillingService.isEventOlderThanLatest(
         event.occurred_at,
         resolvedContext.billingAccount?.lastEventOccurredAt,
       )
@@ -157,7 +163,8 @@ export class PaddleBillingService {
       return;
     }
 
-    const billingPatch = this.extractBillingPatchFromEvent(event);
+    const billingPatch =
+      PaddleBillingService.extractBillingPatchFromEvent(event);
 
     const billingAccount = await deps.billingAccountRepository.upsertByUserId(
       db,
@@ -182,7 +189,7 @@ export class PaddleBillingService {
       },
     );
 
-    const planId = this.resolvePlanIdForEvent(
+    const planId = PaddleBillingService.resolvePlanIdForEvent(
       event.event_type,
       billingAccount.paddleSubscriptionStatus,
       billingAccount.paddleSubscriptionId,
@@ -211,7 +218,8 @@ export class PaddleBillingService {
     event: PaddleWebhookEvent,
     deps: PaddleBillingDeps,
   ): Promise<ResolvedContext> {
-    const userIdFromCustomData = this.extractUserIdFromEvent(event);
+    const userIdFromCustomData =
+      PaddleBillingService.extractUserIdFromEvent(event);
 
     if (userIdFromCustomData) {
       const billingAccount = await deps.billingAccountRepository.findByUserId(
@@ -221,7 +229,7 @@ export class PaddleBillingService {
       return { kind: "user", userId: userIdFromCustomData, billingAccount };
     }
 
-    const customerId = this.extractCustomerId(event);
+    const customerId = PaddleBillingService.extractCustomerId(event);
     if (customerId) {
       const billingAccount =
         await deps.billingAccountRepository.findByPaddleCustomerId(
@@ -234,7 +242,7 @@ export class PaddleBillingService {
       }
     }
 
-    const subscriptionId = this.extractSubscriptionId(event);
+    const subscriptionId = PaddleBillingService.extractSubscriptionId(event);
     if (subscriptionId) {
       const billingAccount =
         await deps.billingAccountRepository.findByPaddleSubscriptionId(
@@ -257,11 +265,12 @@ export class PaddleBillingService {
     paddlePriceId?: string;
     paddleCurrentPeriodEnd?: string;
   } {
-    const customerId = this.extractCustomerId(event);
-    const subscriptionId = this.extractSubscriptionId(event);
-    const status = this.extractSubscriptionStatus(event);
-    const priceId = this.extractPriceId(event);
-    const currentPeriodEnd = this.extractCurrentPeriodEnd(event);
+    const customerId = PaddleBillingService.extractCustomerId(event);
+    const subscriptionId = PaddleBillingService.extractSubscriptionId(event);
+    const status = PaddleBillingService.extractSubscriptionStatus(event);
+    const priceId = PaddleBillingService.extractPriceId(event);
+    const currentPeriodEnd =
+      PaddleBillingService.extractCurrentPeriodEnd(event);
 
     return {
       ...(customerId ? { paddleCustomerId: customerId } : undefined),
@@ -279,64 +288,82 @@ export class PaddleBillingService {
   private static extractUserIdFromEvent(
     event: PaddleWebhookEvent,
   ): string | null {
-    const customData = this.getObject(event.data, "custom_data");
+    const customData = PaddleBillingService.getObject(
+      event.data,
+      "custom_data",
+    );
 
     if (!customData) {
       return null;
     }
 
     const userId =
-      this.getString(customData, "userId") ??
-      this.getString(customData, "user_id");
+      PaddleBillingService.getString(customData, "userId") ??
+      PaddleBillingService.getString(customData, "user_id");
 
     return userId ?? null;
   }
 
   private static extractCustomerId(event: PaddleWebhookEvent): string | null {
-    const directCustomerId = this.getString(event.data, "customer_id");
+    const directCustomerId = PaddleBillingService.getString(
+      event.data,
+      "customer_id",
+    );
 
     if (directCustomerId) {
       return directCustomerId;
     }
 
-    const customer = this.getObject(event.data, "customer");
-    return customer ? this.getString(customer, "id") : null;
+    const customer = PaddleBillingService.getObject(event.data, "customer");
+    return customer ? PaddleBillingService.getString(customer, "id") : null;
   }
 
   private static extractSubscriptionId(
     event: PaddleWebhookEvent,
   ): string | null {
     if (event.event_type.startsWith("subscription.")) {
-      return this.getString(event.data, "id");
+      return PaddleBillingService.getString(event.data, "id");
     }
 
-    const directSubscriptionId = this.getString(event.data, "subscription_id");
+    const directSubscriptionId = PaddleBillingService.getString(
+      event.data,
+      "subscription_id",
+    );
 
     if (directSubscriptionId) {
       return directSubscriptionId;
     }
 
-    const subscription = this.getObject(event.data, "subscription");
-    return subscription ? this.getString(subscription, "id") : null;
+    const subscription = PaddleBillingService.getObject(
+      event.data,
+      "subscription",
+    );
+    return subscription
+      ? PaddleBillingService.getString(subscription, "id")
+      : null;
   }
 
   private static extractSubscriptionStatus(
     event: PaddleWebhookEvent,
   ): PaddleSubscriptionStatus | null {
     if (event.event_type === "transaction.completed") {
-      return this.extractSubscriptionId(event) ? "active" : null;
+      return PaddleBillingService.extractSubscriptionId(event)
+        ? "active"
+        : null;
     }
 
     if (event.event_type === "transaction.payment_failed") {
-      return this.extractSubscriptionId(event) ? "past_due" : null;
+      return PaddleBillingService.extractSubscriptionId(event)
+        ? "past_due"
+        : null;
     }
 
-    const status = this.getString(event.data, "status");
+    const status = PaddleBillingService.getString(event.data, "status");
     return status ?? null;
   }
 
   private static extractPriceId(event: PaddleWebhookEvent): string | null {
-    const items = this.getArray(event.data, "items");
+    const items = PaddleBillingService.getArray(event.data, "items");
 
     if (!items.length) {
       return null;
@@ -348,7 +375,7 @@ export class PaddleBillingService {
       return null;
     }
 
-    const directPriceId = this.getString(
+    const directPriceId = PaddleBillingService.getString(
       firstItem as Record<string, unknown>,
       "price_id",
     );
@@ -357,33 +384,42 @@ export class PaddleBillingService {
       return directPriceId;
     }
 
-    const price = this.getObject(firstItem as Record<string, unknown>, "price");
-    return price ? this.getString(price, "id") : null;
+    const price = PaddleBillingService.getObject(
+      firstItem as Record<string, unknown>,
+      "price",
+    );
+    return price ? PaddleBillingService.getString(price, "id") : null;
   }
 
   private static extractCurrentPeriodEnd(
     event: PaddleWebhookEvent,
   ): string | null {
-    const currentPeriod = this.getObject(event.data, "current_billing_period");
+    const currentPeriod = PaddleBillingService.getObject(
+      event.data,
+      "current_billing_period",
+    );
 
     if (currentPeriod) {
-      const value = this.getString(currentPeriod, "ends_at");
+      const value = PaddleBillingService.getString(currentPeriod, "ends_at");
       if (value) {
         return value;
       }
     }
 
-    const subscription = this.getObject(event.data, "subscription");
+    const subscription = PaddleBillingService.getObject(
+      event.data,
+      "subscription",
+    );
     if (!subscription) {
       return null;
     }
 
-    const nestedCurrentPeriod = this.getObject(
+    const nestedCurrentPeriod = PaddleBillingService.getObject(
       subscription,
       "current_billing_period",
     );
     return nestedCurrentPeriod
-      ? this.getString(nestedCurrentPeriod, "ends_at")
+      ? PaddleBillingService.getString(nestedCurrentPeriod, "ends_at")
       : null;
   }
 
@@ -458,19 +494,19 @@ export class PaddleBillingService {
     env: { PADDLE_PLUS_PRODUCT_ID: string },
     deps: PaddleBillingDeps,
   ): Promise<string> {
-    const productId = this.getPlusProductId(env);
+    const productId = PaddleBillingService.getPlusProductId(env);
 
     if (
-      this.plusPriceCache &&
-      this.plusPriceCache.productId === productId &&
-      this.plusPriceCache.expiresAt > Date.now()
+      PaddleBillingService.plusPriceCache &&
+      PaddleBillingService.plusPriceCache.productId === productId &&
+      PaddleBillingService.plusPriceCache.expiresAt > Date.now()
     ) {
-      return this.plusPriceCache.priceId;
+      return PaddleBillingService.plusPriceCache.priceId;
     }
 
     const prices = await deps.apiClient.listActivePrices();
     const productPrices = prices.filter((price) =>
-      this.priceBelongsToProduct(price, productId),
+      PaddleBillingService.priceBelongsToProduct(price, productId),
     );
 
     if (!productPrices.length) {
@@ -478,7 +514,7 @@ export class PaddleBillingService {
     }
 
     const recurringPrices = productPrices.filter(
-      (price) => this.extractInterval(price) !== null,
+      (price) => PaddleBillingService.extractInterval(price) !== null,
     );
 
     if (!recurringPrices.length) {
@@ -489,7 +525,7 @@ export class PaddleBillingService {
 
     const monthlyRecurringPrice =
       recurringPrices.find(
-        (price) => this.extractInterval(price) === "month",
+        (price) => PaddleBillingService.extractInterval(price) === "month",
       ) ?? recurringPrices[0];
 
     if (!monthlyRecurringPrice?.id) {
@@ -498,7 +534,7 @@ export class PaddleBillingService {
       );
     }
 
-    this.plusPriceCache = {
+    PaddleBillingService.plusPriceCache = {
       productId,
       priceId: monthlyRecurringPrice.id,
       expiresAt: Date.now() + PRICE_CACHE_TTL_MS,

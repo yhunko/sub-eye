@@ -1,4 +1,4 @@
-import { FC, ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components";
 
 interface SubscriptionDatePickerDesktopProps {

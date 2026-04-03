@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CategoryDto, CreateCategoryInput } from "shared";
-import { apiClient } from "@/shared/api/client";
+import { billingQueryKeys } from "@/entities/billing";
 import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import { track } from "@/shared/lib/analytics";
 import type { MutationHook } from "@/shared/lib/react-query/types";
 import { categoriesQueryKeys } from "../model/query-keys";
-import { billingQueryKeys } from "@/entities/billing";
-import { track } from "@/shared/lib/analytics";
 
 type CreateCategoryOptions = MutationHook<CategoryDto, CreateCategoryInput> & {
   source?: "settings" | "subscription_form";

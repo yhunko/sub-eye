@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import * as m from "@/i18n/messages";
 import { Item } from "@/shared/components/ui/item";
 import { LogosTelegram } from "./logos-telegram";
-import * as m from "@/i18n/messages";
 
 type TelegramNotificationsCardShellProps = {
   children: ReactNode;

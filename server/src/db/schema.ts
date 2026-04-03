@@ -2,6 +2,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -10,7 +11,6 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-  jsonb,
 } from "drizzle-orm/pg-core";
 import { SubscriptionPeriod } from "shared";
 

@@ -15,7 +15,6 @@
         "vite.config.ts",
         "package.json",
         "bun.lock",
-        "eslint.config.js",
         "index.html"
       ],
       "outputs": ["dist/**", "build/**", ".turbo/**"],
@@ -35,22 +34,6 @@
         "package.json"
       ],
       "env": ["NODE_ENV", "PORT", "VITE_*"]
-    },
-    "lint": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "src/**/*.js",
-        "src/**/*.jsx",
-        "eslint.config.js",
-        ".eslintrc*",
-        "package.json",
-        "tsconfig.json",
-        "tsconfig.*.json"
-      ],
-      "outputs": [".eslintcache"],
-      "env": ["NODE_ENV"]
     },
     "type-check": {
       "dependsOn": ["^build"],

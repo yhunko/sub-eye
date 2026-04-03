@@ -1,8 +1,8 @@
 import { Bot, Link2Off } from "lucide-react";
+import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 
 type TelegramConnectionBadgeButtonProps = {
   disabled?: boolean;

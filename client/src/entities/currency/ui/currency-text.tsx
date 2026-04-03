@@ -1,4 +1,4 @@
-import { FC, useMemo } from "react";
+import { type FC, useMemo } from "react";
 import { CurrenciesMap, CurrencyUtils } from "shared";
 
 type CurrencyTextProps = {

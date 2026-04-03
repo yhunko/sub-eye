@@ -51,7 +51,9 @@ async function runConfigure(env) {
   const rl = createInterface({ input, output });
 
   try {
-    console.log(`\nConfiguring Telegram webhook for ${preset.label.toUpperCase()}\n`);
+    console.log(
+      `\nConfiguring Telegram webhook for ${preset.label.toUpperCase()}\n`,
+    );
     console.log(`  Base URL : ${preset.baseUrl}`);
     console.log(`  Bot      : @${preset.botUsername}`);
     console.log(`  Path     : ${WEBHOOK_PATH}`);
@@ -64,7 +66,9 @@ async function runConfigure(env) {
     );
     const secret = generateSecret(preset.label);
 
-    console.log(`\nWebhook secret token (auto-generated): ${maskSecret(secret)}`);
+    console.log(
+      `\nWebhook secret token (auto-generated): ${maskSecret(secret)}`,
+    );
 
     const proceed = await askYesNo(rl, "\nApply setWebhook now?", true);
     if (!proceed) {
@@ -172,7 +176,11 @@ async function telegramApi(token, method, body) {
 
 async function promptSecret(rl, label, envValue) {
   if (envValue?.trim()) {
-    const use = await askYesNo(rl, `Use ${label.split("(")[0].trim()} from environment?`, true);
+    const use = await askYesNo(
+      rl,
+      `Use ${label.split("(")[0].trim()} from environment?`,
+      true,
+    );
     if (use) return envValue.trim();
   }
   return promptValue(rl, `${label} (input visible)`);
@@ -189,7 +197,9 @@ async function promptValue(rl, label) {
 async function askYesNo(rl, question, defaultValue) {
   const hint = defaultValue ? "[Y/n]" : "[y/N]";
   while (true) {
-    const answer = (await rl.question(`${question} ${hint}: `)).trim().toLowerCase();
+    const answer = (await rl.question(`${question} ${hint}: `))
+      .trim()
+      .toLowerCase();
     if (!answer) return defaultValue;
     if (answer === "y" || answer === "yes") return true;
     if (answer === "n" || answer === "no") return false;

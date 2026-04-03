@@ -1,15 +1,11 @@
+import { getSerwist } from "virtual:serwist";
 import {
+  type UseMutationOptions,
+  type UseQueryOptions,
   useMutation,
   useQuery,
   useQueryClient,
-  UseQueryOptions,
-  UseMutationOptions,
 } from "@tanstack/react-query";
-import { pushNotificationsQueryKeys } from "../model/query-keys";
-import { track } from "@/shared/lib/analytics";
-import { PushNotificationsUtils } from "../lib/push-notifications.utils";
-import { apiClient as client } from "@/shared/api/client";
-import { getSerwist } from "virtual:serwist";
 import type {
   TelegramLinkStartResponse,
   TelegramNotificationStatus,
@@ -17,6 +13,10 @@ import type {
   UpdateTelegramMessageTemplate,
   UpdateTelegramNotificationPreferences,
 } from "shared";
+import { apiClient as client } from "@/shared/api/client";
+import { track } from "@/shared/lib/analytics";
+import { PushNotificationsUtils } from "../lib/push-notifications.utils";
+import { pushNotificationsQueryKeys } from "../model/query-keys";
 
 export const usePushNotificationsSubscription = (
   options: Partial<UseQueryOptions<PushSubscription | null>> = {},

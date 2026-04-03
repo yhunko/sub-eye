@@ -1,21 +1,20 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import type { Bindings } from "./env";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
-import { subscriptionRouter } from "./routes/subscriptions";
-import { comparatorRouter } from "./routes/comparator";
-import { pushNotificationRouter } from "./routes/push-notifications";
-import { userRouter } from "./routes/user";
-import { telegramNotificationRouter } from "./routes/telegram-notifications";
-
-import { webhookRouter } from "./routes/webhooks";
 import { billingRouter } from "./routes/billing";
 import { categoryRouter } from "./routes/categories";
+import { comparatorRouter } from "./routes/comparator";
+import { pushNotificationRouter } from "./routes/push-notifications";
+import { subscriptionRouter } from "./routes/subscriptions";
+import { telegramNotificationRouter } from "./routes/telegram-notifications";
+import { userRouter } from "./routes/user";
+import { webhookRouter } from "./routes/webhooks";
 import {
   captureServerException,
   extractRequestContext,
 } from "./utils/analytics";
-import type { Bindings } from "./env";
 
 export type { Bindings };
 

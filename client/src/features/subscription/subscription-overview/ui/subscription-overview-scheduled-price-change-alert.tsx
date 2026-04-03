@@ -1,10 +1,10 @@
-import { type ReactNode, useId, useState } from "react";
 import { CalendarDays, ChevronDown, MoveRight } from "lucide-react";
-import { LazyMotion, domAnimation, m as motion } from "motion/react";
-import { CurrencyText } from "@/entities/currency";
-import * as m from "@/i18n/messages";
+import { domAnimation, LazyMotion, m as motion } from "motion/react";
+import { type ReactNode, useId, useState } from "react";
 import type { SubscriptionDto } from "shared";
+import { CurrencyText } from "@/entities/currency";
 import { scheduledPriceChangeAlertStyles } from "@/features/subscription/lib/scheduled-price-change-alert-styles";
+import * as m from "@/i18n/messages";
 import { cn } from "@/shared/lib/classes-utils";
 
 type SubscriptionOverviewScheduledPriceChangeAlertProps = {

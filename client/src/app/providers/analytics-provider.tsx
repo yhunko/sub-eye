@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/clerk-react";
-import { useEffect, type PropsWithChildren } from "react";
+import { type PropsWithChildren, useEffect } from "react";
 import { initPostHog, posthog } from "@/shared/lib/analytics";
 
 export function AnalyticsProvider({ children }: PropsWithChildren) {

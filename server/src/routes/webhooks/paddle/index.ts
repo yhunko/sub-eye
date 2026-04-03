@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { PaddleBillingService } from "../../../domains/billing/paddle/paddleBillingService";
+import { captureServerException } from "../../../utils/analytics";
 import {
   isPaddleWebhookEvent,
   isValidPaddleOccurredAt,
 } from "./paddleWebhookValidators";
 import { verifyPaddleSignature } from "./verifyPaddleSignature";
-import { captureServerException } from "../../../utils/analytics";
 
 export const paddleWebhookRouter = new Hono<{
   Bindings: { PADDLE_WEBHOOK_SECRET: string };

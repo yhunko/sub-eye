@@ -1,9 +1,9 @@
-import { parse } from "valibot";
 import {
   COMPARATOR_AI_MODEL,
-  ComparatorAiInsightsDtoSchema,
   type ComparatorAiInsightsDto,
+  ComparatorAiInsightsDtoSchema,
 } from "shared";
+import { parse } from "valibot";
 
 export type ComparatorAiGenerateOptions = {
   model?: string;

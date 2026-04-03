@@ -1,4 +1,4 @@
-import { FC, useMemo } from "react";
+import { type FC, useMemo } from "react";
 import { useSubscriptionHistory } from "@/entities/subscription/api/use-subscription-history";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { buildHistoryInsights } from "../model/history-insights";

@@ -1,9 +1,9 @@
-import { FC } from "react";
+import type { Locale } from "date-fns";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
 import { Badge } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { type Locale } from "date-fns";
-import { HistoryEventInsight } from "../../model/history-insights";
+import type { HistoryEventInsight } from "../../model/history-insights";
 import {
   formatAmount,
   formatHistoryDateLabel,

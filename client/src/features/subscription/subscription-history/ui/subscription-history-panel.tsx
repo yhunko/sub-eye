@@ -1,6 +1,7 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
-import { FC, useCallback, useMemo } from "react";
 import { useRouter } from "@tanstack/react-router";
+import { type FC, useCallback, useMemo } from "react";
+import { useSubscriptionHistory } from "@/entities/subscription/api/use-subscription-history";
 import * as m from "@/i18n/messages";
 import {
   Dialog,
@@ -15,9 +16,8 @@ import {
   DrawerTitle,
 } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { buildHistoryInsights } from "../model/history-insights";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import { useSubscriptionHistory } from "@/entities/subscription/api/use-subscription-history";
+import { buildHistoryInsights } from "../model/history-insights";
 import { SubscriptionHistoryTimelineBody } from "./components/subscription-history-timeline-body";
 
 type SubscriptionHistoryPanelProps = {

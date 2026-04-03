@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
-import type { MutationHook } from "@/shared/lib/react-query/types";
 import { track } from "@/shared/lib/analytics";
+import type { MutationHook } from "@/shared/lib/react-query/types";
 import { invalidateAfterCategoryDelete } from "./invalidate-after-category-delete";
 
 export const useDeleteCategory = ({

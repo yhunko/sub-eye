@@ -1,13 +1,12 @@
-import { FC, useMemo, useCallback } from "react";
+import { type FC, useCallback, useMemo } from "react";
+import { CurrenciesMap, CurrencyUtils } from "shared";
+import * as m from "@/i18n/messages";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
 } from "@/shared/components";
-import { CurrenciesMap, CurrencyUtils } from "shared";
-
-import * as m from "@/i18n/messages";
 
 export interface CurrencySelectProps {
   id?: string;

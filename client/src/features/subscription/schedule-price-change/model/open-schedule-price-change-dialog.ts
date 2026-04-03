@@ -13,8 +13,9 @@ type OpenSchedulePriceChangeDialogParams = {
 export const openSchedulePriceChangeDialog = async (
   params: OpenSchedulePriceChangeDialogParams,
 ) => {
-  const { SubscriptionSchedulePriceChangeDialog } =
-    await import("../ui/subscription-schedule-price-change-dialog");
+  const { SubscriptionSchedulePriceChangeDialog } = await import(
+    "../ui/subscription-schedule-price-change-dialog"
+  );
 
   await NiceModal.show(SubscriptionSchedulePriceChangeDialog, params);
 };

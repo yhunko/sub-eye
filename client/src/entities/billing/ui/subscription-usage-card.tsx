@@ -1,5 +1,7 @@
-import type { FC } from "react";
 import { format, parseISO } from "date-fns";
+import type { FC } from "react";
+import type { PlanUsage } from "shared";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -8,8 +10,6 @@ import {
   Progress,
 } from "@/shared/components";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
-import * as m from "@/i18n/messages";
-import type { PlanUsage } from "shared";
 
 type SubscriptionUsageCardProps = {
   usage: PlanUsage;

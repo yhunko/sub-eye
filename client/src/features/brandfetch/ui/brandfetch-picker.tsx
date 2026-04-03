@@ -1,26 +1,25 @@
-import { FC, useState, lazy, Suspense, useMemo } from "react";
-import { Search, Check } from "lucide-react";
+import { useDebouncedState, useUncontrolled } from "@mantine/hooks";
+import { Check, Search } from "lucide-react";
+import { type FC, lazy, Suspense, useMemo, useState } from "react";
+import { useBrandfetchSearch } from "@/entities/brandfetch/api/hooks";
+import type { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
+import * as m from "@/i18n/messages";
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Button,
   Command,
-  CommandInput,
-  CommandList,
   CommandEmpty,
-  Spinner,
   CommandGroup,
+  CommandInput,
   CommandItem,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
+  CommandList,
+  Spinner,
 } from "@/shared/components";
-import { useDebouncedState, useUncontrolled } from "@mantine/hooks";
-import { useBrandfetchSearch } from "@/entities/brandfetch/api/hooks";
-import { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { BrandfetchImage } from "./brandfetch-image";
 import { cn } from "@/shared/lib/classes-utils";
-
-import * as m from "@/i18n/messages";
+import { BrandfetchImage } from "./brandfetch-image";
 
 const BrandfetchPickerDesktop = lazy(
   () => import("./brandfetch-picker.desktop"),

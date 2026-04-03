@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import type { TelegramNotificationStatus } from "shared";
-import { UserService } from "../src/domains/user/userService";
+import { TelegramNotificationRepository } from "../src/domains/telegram-notification/telegramNotificationRepository";
 import {
   TELEGRAM_TEMPLATE_NOT_LINKED_ERROR,
   TELEGRAM_TEMPLATE_PLUS_REQUIRED_ERROR,
   TelegramNotificationService,
 } from "../src/domains/telegram-notification/telegramNotificationService";
-import { TelegramNotificationRepository } from "../src/domains/telegram-notification/telegramNotificationRepository";
+import { UserService } from "../src/domains/user/userService";
 
 const originalGetPlanId = UserService.getPlanId;
 const originalUpdateMessageTemplateByUserId =

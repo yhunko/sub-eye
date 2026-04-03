@@ -1,26 +1,26 @@
-import type { FC, MouseEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import type { Locale } from "date-fns";
 import { ChevronRight, MoveHorizontal } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import {
   AnimatePresence,
-  LazyMotion,
   domAnimation,
+  LazyMotion,
   m as motion,
   useReducedMotion,
 } from "motion/react";
+import type { FC, MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { MonthlyTrendPoint } from "shared";
+import { CurrencyBadge, CurrencyText } from "@/entities/currency";
+import { BrandfetchImage } from "@/features/brandfetch";
+import * as m from "@/i18n/messages";
 import {
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/components/ui/drawer";
-import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
-import { BrandfetchImage } from "@/features/brandfetch";
-import type { MonthlyTrendPoint } from "shared";
 import { DrawerMonthNavigator } from "./drawer-month-navigator";
 import { useHorizontalSwipe } from "./use-horizontal-swipe";
 
@@ -78,10 +78,12 @@ export const DrawerSubscriptionsContent: FC<
     useState<MonthTransitionDirection>(1);
 
   useEffect(() => {
+    void selectedMonthIndex;
+
     if (subscriptionsListRef.current) {
       subscriptionsListRef.current.scrollTop = 0;
     }
-  }, [selectedMonth.date]);
+  }, [selectedMonthIndex]);
 
   const selectMonthWithTransition = (index: number) => {
     if (index === selectedMonthIndex) {

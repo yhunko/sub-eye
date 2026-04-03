@@ -1,14 +1,14 @@
-import * as m from "@/i18n/messages";
 import {
   Ban,
   Edit,
   IterationCw,
+  type LucideIcon,
   Plus,
   Trash2,
   Undo2,
-  type LucideIcon,
 } from "lucide-react";
-import { SubscriptionAction } from "shared";
+import type { SubscriptionAction } from "shared";
+import * as m from "@/i18n/messages";
 
 export const getSubscriptionHistoryActionLabel = (
   action: SubscriptionAction,

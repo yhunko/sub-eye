@@ -1,16 +1,18 @@
-import { SubscriptionService } from "../subscription/subscriptionService";
-import { UserService } from "../user/userService";
-import { CategoryService } from "../category/categoryService";
-import { endOfWeek, startOfWeek, eachDayOfInterval } from "date-fns";
-import { DateTimezoneUtils } from "shared";
-import { CurrencyUtils } from "shared";
-import { isCurrentlyActiveSubscription } from "shared";
+import { eachDayOfInterval, endOfWeek, startOfWeek } from "date-fns";
 import type {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
   WeeklyRenewalsSummaryDto,
 } from "shared";
+import {
+  CurrencyUtils,
+  DateTimezoneUtils,
+  isCurrentlyActiveSubscription,
+} from "shared";
+import { CategoryService } from "../category/categoryService";
+import { SubscriptionService } from "../subscription/subscriptionService";
+import { UserService } from "../user/userService";
 import { AnalyticsCalculator } from "./analyticsCalculator";
 
 type AnalyticsServiceDeps = {
@@ -39,7 +41,7 @@ export class AnalyticsService {
       { subscriptions, preferredCurrencyCode, now, timezone },
       categories,
     ] = await Promise.all([
-      this.getAnalyticsContext(userId, orgId, deps),
+      AnalyticsService.getAnalyticsContext(userId, orgId, deps),
       orgId
         ? deps.categoryService.getOrgCategories(orgId)
         : deps.categoryService.getCategories(userId),
@@ -139,7 +141,7 @@ export class AnalyticsService {
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<MonthlySpendSummaryDto> {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
-      await this.getAnalyticsContext(userId, orgId, deps);
+      await AnalyticsService.getAnalyticsContext(userId, orgId, deps);
 
     const monthOffsets = [-1, 0, 1, 2, 3, 4, 5, 6];
 
@@ -188,7 +190,7 @@ export class AnalyticsService {
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<WeeklyRenewalsSummaryDto> {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
-      await this.getAnalyticsContext(userId, orgId, deps);
+      await AnalyticsService.getAnalyticsContext(userId, orgId, deps);
 
     const nowZoned = DateTimezoneUtils.toZoned(now, timezone);
     const startOfCurrentWeek = DateTimezoneUtils.startOfDay(

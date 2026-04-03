@@ -1,5 +1,5 @@
-import { useCallback, useRef } from "react";
 import type { TouchEventHandler } from "react";
+import { useCallback, useRef } from "react";
 
 type UseHorizontalSwipeOptions = {
   onSwipeLeft: () => void;

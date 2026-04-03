@@ -1,6 +1,6 @@
-import { FC } from "react";
-import { Button } from "@/shared/components";
 import { EyeIcon } from "lucide-react";
+import type { FC } from "react";
+import { Button } from "@/shared/components";
 
 export const DemoSubscriptionRowActions: FC<{
   subscription: { id: string; name: string };

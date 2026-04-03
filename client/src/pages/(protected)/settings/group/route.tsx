@@ -1,14 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
-import * as m from "@/i18n/messages";
-import { valibotValidator } from "@tanstack/valibot-adapter";
-import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
 import {
-  useOrganization,
-  useOrganizationList,
   CreateOrganization,
   useAuth,
+  useOrganization,
+  useOrganizationList,
 } from "@clerk/clerk-react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { valibotValidator } from "@tanstack/valibot-adapter";
+import { ArrowRight, LogOut, Trash2, UserPlus, Users } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
+import * as m from "@/i18n/messages";
 import {
   Button,
   Card,
@@ -17,12 +20,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components";
-import { useState } from "react";
-import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Trash2, ArrowRight } from "lucide-react";
 import { useActiveSpace } from "@/shared/lib/org/use-active-space";
-import { useQuery } from "@tanstack/react-query";
-import { planUsageQuery, PlanFeatureLockCard } from "@/entities/billing";
+import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
+import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
 
 export const Route = createFileRoute("/(protected)/settings/group")({
   component: SettingsGroupPage,

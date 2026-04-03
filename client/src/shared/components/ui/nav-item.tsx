@@ -1,7 +1,7 @@
-import { type FC } from "react";
 import { Link } from "@tanstack/react-router";
-import { cn } from "@/shared/lib/classes-utils";
 import type { LucideIcon } from "lucide-react";
+import type { FC } from "react";
+import { cn } from "@/shared/lib/classes-utils";
 import {
   NavigationMenuItem,
   NavigationMenuLink,

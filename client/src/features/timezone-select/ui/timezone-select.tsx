@@ -1,15 +1,22 @@
-import { FC, ComponentProps, useState, lazy, Suspense, useId } from "react";
 import { ChevronsUpDown } from "lucide-react";
+import {
+  type ComponentProps,
+  type FC,
+  lazy,
+  Suspense,
+  useId,
+  useState,
+} from "react";
+import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import {
-  useTimezoneOptions,
-  TimezoneOption,
-} from "../lib/use-timezone-options";
-import { TimezoneList } from "./timezone-list";
-import { SharedProps } from "../model/props";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
+import {
+  type TimezoneOption,
+  useTimezoneOptions,
+} from "../lib/use-timezone-options";
+import type { SharedProps } from "../model/props";
+import { TimezoneList } from "./timezone-list";
 
 type TimezoneSelectTriggerProps = {
   open: boolean;

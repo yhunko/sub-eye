@@ -1,7 +1,7 @@
 "use client";
 
 import { useOs } from "@mantine/hooks";
-import { Share, Plus } from "lucide-react";
+import { Plus, Share } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/components";
 import * as m from "@/shared/lib/i18n/messages";
 import { useApplePushNotificationsSupport } from "../model/use-apple-push-notifications-support";

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
+import { TZDate } from "@date-fns/tz";
 import {
   DateTimezoneUtils,
   RecurrenceUtils,
-  SubscriptionPeriod,
   type SubscriptionDto,
+  SubscriptionPeriod,
 } from "shared";
-import { TZDate } from "@date-fns/tz";
 import { AnalyticsCalculator } from "../src/domains/analytics/analyticsCalculator";
 
 const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({

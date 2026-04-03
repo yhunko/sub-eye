@@ -1,12 +1,12 @@
+import { vValidator } from "@hono/valibot-validator";
 import type { Context, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
-import { vValidator } from "@hono/valibot-validator";
 import type {
   AnalyzeComparatorInput,
   AnalyzeComparatorResponseDto,
   ComparatorAiQuotaDto,
-  ComparatorRatesDto,
   ComparatorQuotaDto,
+  ComparatorRatesDto,
   CompareSubscriptionsInput,
   CompareSubscriptionsResponseDto,
 } from "shared";

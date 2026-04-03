@@ -13,15 +13,11 @@ const SOURCE_HEADER =
 const mirrorTargets = [
   {
     path: ".agent/rules/guidelines.md",
-    prefix:
-      "---\ntrigger: always_on\n---\n\n" +
-      SOURCE_HEADER,
+    prefix: "---\ntrigger: always_on\n---\n\n" + SOURCE_HEADER,
   },
   {
     path: ".junie/guidelines.md",
-    prefix:
-      "---\ntrigger: always_on\n---\n\n" +
-      SOURCE_HEADER,
+    prefix: "---\ntrigger: always_on\n---\n\n" + SOURCE_HEADER,
   },
   {
     path: "CLAUDE.md",

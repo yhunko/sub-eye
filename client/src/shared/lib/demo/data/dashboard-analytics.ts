@@ -1,17 +1,17 @@
-import type {
-  DashboardAnalyticsDto,
-  CashFlowPoint,
-  UpcomingRenewalDto,
-  MonthlyTrendPoint,
-  CategorySpendingDto,
-} from "shared";
 import {
   addDays,
+  eachDayOfInterval,
+  endOfMonth,
   format,
   startOfDay,
-  endOfMonth,
-  eachDayOfInterval,
 } from "date-fns";
+import type {
+  CashFlowPoint,
+  CategorySpendingDto,
+  DashboardAnalyticsDto,
+  MonthlyTrendPoint,
+  UpcomingRenewalDto,
+} from "shared";
 
 const MONTHLY_BURN_RATE = 142.44;
 const YEARLY_FORECAST = MONTHLY_BURN_RATE * 12;

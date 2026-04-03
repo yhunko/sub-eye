@@ -1,13 +1,13 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
-import { MutationHook } from "@/shared/lib/react-query/types";
-import type { BulkDeleteSubscriptionsInput, BulkDeleteResponse } from "shared";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import { subscriptionsQueryKeys } from "../model/query-keys";
-import { billingQueryKeys } from "@/entities/billing";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { BulkDeleteResponse, BulkDeleteSubscriptionsInput } from "shared";
 import { analyticsQueryKeys } from "@/entities/analytics";
+import { billingQueryKeys } from "@/entities/billing";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
 import { track } from "@/shared/lib/analytics";
+import type { MutationHook } from "@/shared/lib/react-query/types";
+import { subscriptionsQueryKeys } from "../model/query-keys";
 
 export const useBulkDeleteSubscriptions = ({
   options,

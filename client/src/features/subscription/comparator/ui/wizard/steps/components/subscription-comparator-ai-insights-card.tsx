@@ -1,22 +1,29 @@
-import { type FC, useState, useEffect } from "react";
 import {
   AlertTriangle,
-  ExternalLink,
-  HelpCircle,
-  Sparkles,
-  Lock,
-  TrendingDown,
-  TrendingUp,
-  Minus,
   Calendar,
-  DollarSign,
-  ShieldCheck,
-  Loader2,
   ChevronDown,
   ChevronUp,
+  DollarSign,
+  ExternalLink,
+  HelpCircle,
   Info,
+  Loader2,
+  Lock,
+  Minus,
   RotateCcw,
+  ShieldCheck,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
+import { type FC, useEffect, useState } from "react";
+import type {
+  AnalyzeComparatorResponseDto,
+  ComparatorAiRiskDto,
+  MonthlyUsage,
+} from "shared";
+import { PlanFeatureLockCard } from "@/entities/billing/ui/plan-feature-lock-card";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
@@ -33,15 +40,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/components";
-import { AiQuotaBadge } from "@/shared/ui";
-import { PlanFeatureLockCard } from "@/entities/billing/ui/plan-feature-lock-card";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
-import type {
-  AnalyzeComparatorResponseDto,
-  ComparatorAiRiskDto,
-  MonthlyUsage,
-} from "shared";
+import { AiQuotaBadge } from "@/shared/ui";
 
 type SubscriptionComparatorAiInsightsCardProps = {
   aiResult: AnalyzeComparatorResponseDto | undefined;

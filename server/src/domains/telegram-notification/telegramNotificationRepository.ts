@@ -140,8 +140,8 @@ export class TelegramNotificationRepository {
 
   static async deleteAllForUser(userId: string): Promise<void> {
     await Promise.all([
-      this.deleteLinkByUserId(userId),
-      this.deleteTokensByUserId(userId),
+      TelegramNotificationRepository.deleteLinkByUserId(userId),
+      TelegramNotificationRepository.deleteTokensByUserId(userId),
     ]);
   }
 

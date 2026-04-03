@@ -1,16 +1,19 @@
-import { FC, useMemo } from "react";
+import { format, parseISO, startOfDay } from "date-fns";
+import { type FC, useMemo } from "react";
 import {
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Area,
+  Bar,
+  CartesianGrid,
   ComposedChart,
   ReferenceLine,
+  XAxis,
+  YAxis,
 } from "recharts";
-import { format, parseISO, startOfDay } from "date-fns";
-import { CurrencyBadge, CurrencyText } from "@/entities/currency";
+import type { CashFlowPoint, CashFlowSubscription } from "shared";
 import { CurrenciesMap, DateTimezoneUtils } from "shared";
+import { CurrencyBadge, CurrencyText } from "@/entities/currency";
+import { BrandfetchImage } from "@/features/brandfetch";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -19,11 +22,8 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import { BrandfetchImage } from "@/features/brandfetch";
-import * as m from "@/i18n/messages";
 import { track } from "@/shared/lib/analytics";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import type { CashFlowPoint, CashFlowSubscription } from "shared";
 
 const HALF_DAY_MS = 12 * 60 * 60 * 1000;
 

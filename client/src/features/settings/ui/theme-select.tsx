@@ -1,13 +1,13 @@
-import { FC } from "react";
+import { SwatchBook } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
   Item,
-  ItemMedia,
-  ItemContent,
-  ItemTitle,
   ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
 } from "@/shared/components";
-import { SwatchBook } from "lucide-react";
-import * as m from "@/i18n/messages";
 import { ThemeSwitchButton } from "./theme-switch-button";
 
 export const ThemeSelect: FC = () => {

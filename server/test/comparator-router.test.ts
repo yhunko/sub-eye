@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { Hono } from "hono";
 import { SubscriptionPeriod } from "shared";
-import { createComparatorRouter } from "../src/routes/comparator";
 import {
   ComparatorQuotaExceededError,
   ComparatorSubscriptionNotFoundError,
 } from "../src/domains/comparator/comparatorErrors";
+import { createComparatorRouter } from "../src/routes/comparator";
 
 describe("comparator router", () => {
   it("returns 401 when middleware rejects request", async () => {

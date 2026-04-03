@@ -1,4 +1,7 @@
-import { UseQueryOptions, UseMutationOptions } from "@tanstack/react-query";
+import type {
+  UseMutationOptions,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 
 type QueryHookOptions<Data, Select = Data> = Omit<
   UseQueryOptions<Data, Error, Select>,

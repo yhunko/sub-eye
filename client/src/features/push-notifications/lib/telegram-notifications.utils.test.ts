@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
-  TELEGRAM_CONNECT_TIMEOUT_MS,
   isTelegramConnectTimedOut,
+  TELEGRAM_CONNECT_TIMEOUT_MS,
 } from "./telegram-notifications.utils";
 
 describe("telegram-notifications utils", () => {

@@ -1,14 +1,14 @@
-import { FC, useState } from "react";
+import type { Locale } from "date-fns";
+import { CalendarClock, Clock3, RefreshCw, Sparkles } from "lucide-react";
+import { type FC, useState } from "react";
 import { PlanFeatureLockCard } from "@/entities/billing";
 import { useDeleteSubscriptionHistoryItem } from "@/entities/subscription";
+import * as m from "@/i18n/messages";
 import { Button, Skeleton } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { CalendarClock, Clock3, RefreshCw, Sparkles } from "lucide-react";
-import { type Locale } from "date-fns";
-import * as m from "@/i18n/messages";
 import {
   HISTORY_FREE_LIMIT,
-  HistoryInsights,
+  type HistoryInsights,
 } from "../../model/history-insights";
 import { SubscriptionHistoryTimelineEvent } from "./subscription-history-timeline-event";
 

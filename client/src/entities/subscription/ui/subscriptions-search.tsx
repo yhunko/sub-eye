@@ -1,14 +1,14 @@
-import { useState } from "react";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { Search } from "lucide-react";
+import { useQueryStates } from "nuqs";
+import { useState } from "react";
 import {
   InputGroup,
-  InputGroupInput,
   InputGroupAddon,
+  InputGroupInput,
   Spinner,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import { useQueryStates } from "nuqs";
 import { subscriptionsQueryParsers } from "../model/query-parsers";
 
 interface SubscriptionsSearchProps {

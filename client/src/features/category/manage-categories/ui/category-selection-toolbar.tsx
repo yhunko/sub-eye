@@ -1,7 +1,7 @@
 import { CheckCheck, Trash2, X } from "lucide-react";
+import * as m from "@/i18n/messages";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import * as m from "@/i18n/messages";
 
 type CategorySelectionToolbarProps = {
   categoriesCount: number;

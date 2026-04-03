@@ -1,12 +1,12 @@
+import { SignedIn, SignedOut, useUser } from "@clerk/clerk-react";
+import { UserIcon } from "lucide-react";
+import type { ComponentProps, FC } from "react";
 import {
   Avatar,
-  AvatarImage,
   AvatarFallback,
+  AvatarImage,
   Spinner,
 } from "@/shared/components";
-import { useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
-import { UserIcon } from "lucide-react";
-import { FC, ComponentProps } from "react";
 
 type UserAvatarProps = ComponentProps<typeof Avatar>;
 export const UserAvatar: FC<UserAvatarProps> = (props) => {

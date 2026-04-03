@@ -1,11 +1,12 @@
 import { useAuth } from "@clerk/clerk-react";
+import NiceModal from "@ebay/nice-modal-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import NiceModal from "@ebay/nice-modal-react";
 import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { categoriesQuery } from "@/entities/category";
 import { isAtLimit, planUsageQuery } from "@/entities/billing";
+import { categoriesQuery } from "@/entities/category";
+import * as m from "@/i18n/messages";
 import {
   Empty,
   EmptyContent,
@@ -16,10 +17,6 @@ import {
   Spinner,
 } from "@/shared/components";
 import { Button } from "@/shared/components/ui/button";
-import { CategoryListItem } from "./ui/category-list-item";
-import { CategoryLimitAlert } from "./ui/category-limit-alert";
-import { CategorySelectionToolbar } from "./ui/category-selection-toolbar";
-import * as m from "@/i18n/messages";
 import {
   clearCategorySelection,
   pruneCategorySelection,
@@ -27,6 +24,9 @@ import {
   shouldShowBulkDeleteToolbar,
   toggleCategorySelection,
 } from "./model/selection";
+import { CategoryLimitAlert } from "./ui/category-limit-alert";
+import { CategoryListItem } from "./ui/category-list-item";
+import { CategorySelectionToolbar } from "./ui/category-selection-toolbar";
 
 type ManageCategoriesListProps = {
   from?: string;
@@ -109,8 +109,9 @@ export const ManageCategoriesList = ({ from }: ManageCategoriesListProps) => {
       return;
     }
 
-    const { DeleteCategoriesConfirmDialog } =
-      await import("./ui/delete-categories-confirm-dialog");
+    const { DeleteCategoriesConfirmDialog } = await import(
+      "./ui/delete-categories-confirm-dialog"
+    );
 
     void NiceModal.show(DeleteCategoriesConfirmDialog, {
       categoryIds: Array.from(selectedCategoryIds),

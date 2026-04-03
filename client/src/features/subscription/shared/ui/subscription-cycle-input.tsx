@@ -1,5 +1,6 @@
 import type { ComponentProps, FC } from "react";
 import { SubscriptionPeriod } from "shared";
+import * as m from "@/i18n/messages";
 import {
   AnimatedBackground,
   Input,
@@ -7,7 +8,6 @@ import {
   ToggleGroupItem,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 
 type SubscriptionCycleInputProps = {
   className?: string;

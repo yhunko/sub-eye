@@ -1,5 +1,6 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useCallback } from "react";
+import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import * as m from "@/i18n/messages";
 
 export const TelegramDisconnectDialog = NiceModal.create(() => {
   const modal = useModal();

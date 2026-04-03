@@ -1,17 +1,17 @@
-import { FC } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { Globe } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import {
-  Spinner,
   Item,
   ItemContent,
-  ItemTitle,
   ItemMedia,
+  ItemTitle,
+  Spinner,
 } from "@/shared/components";
-import { Globe } from "lucide-react";
-import { useUser } from "@clerk/clerk-react";
-import { TimezoneSelect } from "../../timezone-select";
-import { useUpdateUserMetadata } from "../../../entities/user";
-import * as m from "@/i18n/messages";
 import { track } from "@/shared/lib/analytics";
+import { useUpdateUserMetadata } from "../../../entities/user";
+import { TimezoneSelect } from "../../timezone-select";
 
 export const PreferredTimezoneSelect: FC = () => {
   const { user, isLoaded } = useUser();

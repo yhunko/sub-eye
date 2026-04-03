@@ -26,7 +26,7 @@ export class PaddleApiClient {
   }
 
   static isSandbox(): boolean {
-    return this.getEnvironment() === "sandbox";
+    return PaddleApiClient.getEnvironment() === "sandbox";
   }
 
   static async listActivePrices(): Promise<PaddlePrice[]> {
@@ -35,12 +35,11 @@ export class PaddleApiClient {
       per_page: "200",
     });
 
-    const response = await this.request<PaddleApiResponse<PaddlePrice[]>>(
-      `/prices?${query.toString()}`,
-      {
-        method: "GET",
-      },
-    );
+    const response = await PaddleApiClient.request<
+      PaddleApiResponse<PaddlePrice[]>
+    >(`/prices?${query.toString()}`, {
+      method: "GET",
+    });
 
     return response.data;
   }
@@ -49,16 +48,15 @@ export class PaddleApiClient {
     email: string;
     name?: string;
   }): Promise<PaddleCustomer> {
-    const response = await this.request<PaddleApiResponse<PaddleCustomer>>(
-      "/customers",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          email: input.email,
-          ...(input.name ? { name: input.name } : undefined),
-        }),
-      },
-    );
+    const response = await PaddleApiClient.request<
+      PaddleApiResponse<PaddleCustomer>
+    >("/customers", {
+      method: "POST",
+      body: JSON.stringify({
+        email: input.email,
+        ...(input.name ? { name: input.name } : undefined),
+      }),
+    });
 
     return response.data;
   }
@@ -91,13 +89,12 @@ export class PaddleApiClient {
       body.customer_id = input.customerId;
     }
 
-    const response = await this.request<PaddleApiResponse<PaddleTransaction>>(
-      "/transactions",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
-    );
+    const response = await PaddleApiClient.request<
+      PaddleApiResponse<PaddleTransaction>
+    >("/transactions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
 
     return response.data;
   }
@@ -105,18 +102,17 @@ export class PaddleApiClient {
   static async createCustomerPortalSession(
     customerId: string,
   ): Promise<PaddlePortalSession> {
-    const response = await this.request<PaddleApiResponse<PaddlePortalSession>>(
-      `/customers/${customerId}/portal-sessions`,
-      {
-        method: "POST",
-      },
-    );
+    const response = await PaddleApiClient.request<
+      PaddleApiResponse<PaddlePortalSession>
+    >(`/customers/${customerId}/portal-sessions`, {
+      method: "POST",
+    });
 
     return response.data;
   }
 
   private static getApiBaseUrl(): string {
-    return this.isSandbox()
+    return PaddleApiClient.isSandbox()
       ? "https://sandbox-api.paddle.com"
       : "https://api.paddle.com";
   }
@@ -139,7 +135,7 @@ export class PaddleApiClient {
       : apiKey.includes("_live_")
         ? "live"
         : null;
-    const configuredEnvironment = this.getEnvironment();
+    const configuredEnvironment = PaddleApiClient.getEnvironment();
 
     if (
       inferredKeyEnvironment &&
@@ -154,10 +150,10 @@ export class PaddleApiClient {
   }
 
   private static async request<T>(path: string, init: RequestInit): Promise<T> {
-    const response = await fetch(`${this.getApiBaseUrl()}${path}`, {
+    const response = await fetch(`${PaddleApiClient.getApiBaseUrl()}${path}`, {
       ...init,
       headers: {
-        Authorization: `Bearer ${this.getApiKey()}`,
+        Authorization: `Bearer ${PaddleApiClient.getApiKey()}`,
         "Content-Type": "application/json",
         ...(init.headers ?? {}),
       },

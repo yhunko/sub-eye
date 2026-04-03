@@ -1,13 +1,13 @@
-import { FC, ReactNode } from "react";
+import type { FC, ReactNode } from "react";
+import * as m from "@/i18n/messages";
 import {
   Drawer,
   DrawerContent,
-  DrawerTrigger,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  DrawerDescription,
+  DrawerTrigger,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
 
 interface SubscriptionDatePickerMobileProps {
   open: boolean;

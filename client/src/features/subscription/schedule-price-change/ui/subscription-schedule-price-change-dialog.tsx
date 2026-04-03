@@ -1,27 +1,8 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
-import { useEffect, useMemo, useState } from "react";
 import { addDays, format, isBefore, isSameDay, startOfDay } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
 import type { SchedulePriceChangeInput, SubscriptionDto } from "shared";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  FieldSet,
-  Label,
-  Spinner,
-  ToggleGroup,
-  ToggleGroupItem,
-  Separator,
-  Alert,
-  AlertDescription,
-} from "@/shared/components";
-import { SubscriptionDatePicker } from "../../add-subscription/ui/subscription-date-picker/subscription-date-picker";
-import { useDateFormat } from "@/shared/hooks/use-date-format";
-import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
+import { toast } from "sonner";
 import {
   CurrencyInput,
   CurrencySelect,
@@ -31,9 +12,28 @@ import {
   useCancelScheduledSubscriptionPriceChange,
   useScheduleSubscriptionPriceChange,
 } from "@/entities/subscription";
-import { toast } from "sonner";
 import * as m from "@/i18n/messages";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FieldSet,
+  Label,
+  Separator,
+  Spinner,
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/shared/components";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { parsePriceInput, sanitizePriceInput } from "@/shared/lib/price-input";
+import { SubscriptionDatePicker } from "../../add-subscription/ui/subscription-date-picker/subscription-date-picker";
 
 type PriceChangeMode = "nextOccurrence" | "customDate";
 

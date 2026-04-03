@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import type { QueryHook } from "@/shared/lib/react-query/types";
 import type { CategoryDto } from "shared";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { QueryHook } from "@/shared/lib/react-query/types";
 import { categoriesQueryKeys } from "../model/query-keys";
 
 export type CategoriesParams = { userId: string; orgId?: string | null };

@@ -1,5 +1,5 @@
-import type { FC } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { FC } from "react";
 import { Badge } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 

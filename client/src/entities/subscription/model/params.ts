@@ -1,4 +1,4 @@
-import { GetSubscriptionsParams } from "shared";
+import type { GetSubscriptionsParams } from "shared";
 
 export type UseSubscriptionsParams = {
   userId: string;

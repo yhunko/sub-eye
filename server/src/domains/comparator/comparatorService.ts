@@ -1,50 +1,50 @@
 import { createHash } from "node:crypto";
 import {
-  ComparatorQuotaExceededError,
-  ComparatorSubscriptionNotFoundError,
-} from "./comparatorErrors";
-import { parse } from "valibot";
-import { db } from "../../db";
-import { ComparatorCalculator } from "./comparatorCalculator";
-import {
-  ComparatorAiClient,
-  normalizeAiInsightsPayload,
-} from "./comparatorAiClient";
-import { ComparatorRepository } from "./comparatorRepository";
-import { AiUsageService } from "../ai/aiUsageService";
-import {
-  getComparatorQuotaWindow,
-  toComparatorAiQuotaDto,
-  toComparatorQuotaDto,
-  type QuotaWindow,
-} from "./comparatorQuotaUtils";
-import { UserService } from "../user/userService";
-import { CurrencyService } from "../currency/currencyService";
-import { SubscriptionService } from "../subscription/subscriptionService";
-import {
-  CurrenciesMap,
+  type AnalyzeComparatorInput,
+  type AnalyzeComparatorResponseDto,
   COMPARATOR_AI_MODEL,
   COMPARATOR_AI_MODEL_PLUS,
   COMPARATOR_AI_PROMPT_VERSION,
-  CurrencyUtils,
-  ComparatorAiInsightsDtoSchema,
-  FREE_COMPARATOR_MONTHLY_LIMIT,
-  isCurrentlyActiveSubscription,
-  type AnalyzeComparatorInput,
-  type AnalyzeComparatorResponseDto,
   type ComparatorAiInsightsDto,
+  ComparatorAiInsightsDtoSchema,
   type ComparatorAiQuotaDto,
   type ComparatorCoreInsightsDto,
   type ComparatorPlanInput,
-  type ComparatorRatesDto,
   type ComparatorQuotaDto,
+  type ComparatorRatesDto,
   type ComparatorResultDto,
   type CompareSubscriptionsInput,
   type CompareSubscriptionsResponseDto,
+  CurrenciesMap,
+  CurrencyUtils,
+  FREE_COMPARATOR_MONTHLY_LIMIT,
+  isCurrentlyActiveSubscription,
   type PlanId,
   type SubscriptionDto,
   type UserPreferences,
 } from "shared";
+import { parse } from "valibot";
+import { db } from "../../db";
+import { AiUsageService } from "../ai/aiUsageService";
+import { CurrencyService } from "../currency/currencyService";
+import { SubscriptionService } from "../subscription/subscriptionService";
+import { UserService } from "../user/userService";
+import {
+  ComparatorAiClient,
+  normalizeAiInsightsPayload,
+} from "./comparatorAiClient";
+import { ComparatorCalculator } from "./comparatorCalculator";
+import {
+  ComparatorQuotaExceededError,
+  ComparatorSubscriptionNotFoundError,
+} from "./comparatorErrors";
+import {
+  getComparatorQuotaWindow,
+  type QuotaWindow,
+  toComparatorAiQuotaDto,
+  toComparatorQuotaDto,
+} from "./comparatorQuotaUtils";
+import { ComparatorRepository } from "./comparatorRepository";
 
 type ComparatorServiceDeps = {
   repository: typeof ComparatorRepository;
@@ -217,7 +217,11 @@ export class ComparatorService {
     payload: CompareSubscriptionsInput,
     deps: ComparatorServiceDeps = defaultDeps,
   ): Promise<CompareSubscriptionsResponseDto> {
-    const context = await this.resolveComparisonContext(userId, payload, deps);
+    const context = await ComparatorService.resolveComparisonContext(
+      userId,
+      payload,
+      deps,
+    );
     const quotaWindow = getComparatorQuotaWindow(
       context.preferences.preferredTimezone,
     );
@@ -256,7 +260,7 @@ export class ComparatorService {
     deps: ComparatorServiceDeps = defaultDeps,
   ): Promise<AnalyzeComparatorResponseDto> {
     const aiUsageService = deps.aiUsageService ?? defaultDeps.aiUsageService;
-    const context = await this.resolveComparisonContext(
+    const context = await ComparatorService.resolveComparisonContext(
       userId,
       payload.comparison,
       deps,
@@ -281,14 +285,14 @@ export class ComparatorService {
       }
     }
 
-    const coreInsights = this.buildCoreInsights(
+    const coreInsights = ComparatorService.buildCoreInsights(
       context.result,
       effectiveLocale,
     );
-    const aiModel = this.resolveAiModel(context.planId);
+    const aiModel = ComparatorService.resolveAiModel(context.planId);
 
     if (used >= aiUsageContext.limit) {
-      return this.toFallbackAnalysisResponse({
+      return ComparatorService.toFallbackAnalysisResponse({
         reason: "quota_exceeded",
         planId: aiUsageContext.planId,
         used,
@@ -298,7 +302,7 @@ export class ComparatorService {
       });
     }
 
-    const requestHash = this.buildAiRequestHash({
+    const requestHash = ComparatorService.buildAiRequestHash({
       comparison: payload.comparison,
       userIntent: payload.userIntent ?? null,
       preferredCurrency: context.preferences.preferredCurrency,
@@ -320,10 +324,11 @@ export class ComparatorService {
           ComparatorAiInsightsDtoSchema,
           normalizeAiInsightsPayload(cached.response),
         );
-        const normalizedCachedInsights = this.normalizeInsightsCurrencyMentions(
-          cachedInsights,
-          context.result.preferredCurrencyCode,
-        );
+        const normalizedCachedInsights =
+          ComparatorService.normalizeInsightsCurrencyMentions(
+            cachedInsights,
+            context.result.preferredCurrencyCode,
+          );
 
         return {
           mode: "ai",
@@ -340,7 +345,7 @@ export class ComparatorService {
       }
     }
 
-    const prompt = this.buildAnalysisPrompt({
+    const prompt = ComparatorService.buildAnalysisPrompt({
       payload,
       compared: context.result,
       coreInsights,
@@ -353,7 +358,7 @@ export class ComparatorService {
       aiInsights = await deps.aiClient.generateInsights(prompt, {
         model: aiModel,
       });
-      aiInsights = await this.enforcePreferredCurrencyMentions({
+      aiInsights = await ComparatorService.enforcePreferredCurrencyMentions({
         aiInsights,
         preferredCurrencyCode: context.result.preferredCurrencyCode,
         locale: effectiveLocale,
@@ -364,7 +369,7 @@ export class ComparatorService {
       console.error("Comparator AI provider error", {
         message: error instanceof Error ? error.message : String(error),
       });
-      return this.toFallbackAnalysisResponse({
+      return ComparatorService.toFallbackAnalysisResponse({
         reason: "provider_unavailable",
         planId: aiUsageContext.planId,
         used,
@@ -384,7 +389,7 @@ export class ComparatorService {
     );
 
     if (!consumedContext) {
-      return this.toFallbackAnalysisResponse({
+      return ComparatorService.toFallbackAnalysisResponse({
         reason: "quota_exceeded",
         planId: aiUsageContext.planId,
         used,
@@ -439,7 +444,7 @@ export class ComparatorService {
     return {
       planId,
       preferences,
-      result: this.buildComparedResult({
+      result: ComparatorService.buildComparedResult({
         payload,
         subscriptions,
         preferredCurrencyCode: preferences.preferredCurrency,
@@ -459,12 +464,12 @@ export class ComparatorService {
     preferredCurrencyCode: string;
     rates: Record<string, number>;
   }): ComparatorResultDto {
-    const currentResolved = this.resolvePlanInput(
+    const currentResolved = ComparatorService.resolvePlanInput(
       payload.currentPlan,
       subscriptions,
       "Current plan",
     );
-    const candidateResolved = this.resolvePlanInput(
+    const candidateResolved = ComparatorService.resolvePlanInput(
       payload.candidatePlan,
       subscriptions,
       "Candidate plan",
@@ -544,7 +549,7 @@ export class ComparatorService {
     compared: ComparatorResultDto,
     locale: string,
   ): ComparatorCoreInsightsDto {
-    const normalizedLocale = this.normalizeLocale(locale);
+    const normalizedLocale = ComparatorService.normalizeLocale(locale);
     const language = normalizedLocale.split("-")[0];
     const monthlyDelta = compared.delta.monthlyDelta;
     const yearlyDelta = compared.delta.yearlyDelta;
@@ -635,13 +640,14 @@ export class ComparatorService {
     coreInsights: ComparatorCoreInsightsDto;
     locale: string;
   }): string {
-    const normalizedLocale = this.normalizeLocale(locale);
+    const normalizedLocale = ComparatorService.normalizeLocale(locale);
     const preferredCurrencyCode = CurrencyUtils.normalizeCode(
       compared.preferredCurrencyCode,
     ).toUpperCase();
     const preferredCurrencySymbol =
       CurrenciesMap.get(preferredCurrencyCode.toLowerCase())?.symbol ?? "";
-    const sameServiceContext = this.resolveSameServiceContext(compared);
+    const sameServiceContext =
+      ComparatorService.resolveSameServiceContext(compared);
 
     const promptPayload = {
       locale: normalizedLocale,
@@ -728,7 +734,7 @@ export class ComparatorService {
     preferredCurrencyCode: string;
     locale: string;
   }): string {
-    const normalizedLocale = this.normalizeLocale(locale);
+    const normalizedLocale = ComparatorService.normalizeLocale(locale);
     const normalizedPreferredCurrencyCode = CurrencyUtils.normalizeCode(
       preferredCurrencyCode,
     ).toUpperCase();
@@ -773,12 +779,14 @@ export class ComparatorService {
   private static resolveSameServiceContext(
     compared: ComparatorResultDto,
   ): SameServiceContext {
-    const normalizedCurrentName = this.normalizePlanNameForServiceMatch(
-      compared.currentPlan.name,
-    );
-    const normalizedCandidateName = this.normalizePlanNameForServiceMatch(
-      compared.candidatePlan.name,
-    );
+    const normalizedCurrentName =
+      ComparatorService.normalizePlanNameForServiceMatch(
+        compared.currentPlan.name,
+      );
+    const normalizedCandidateName =
+      ComparatorService.normalizePlanNameForServiceMatch(
+        compared.candidatePlan.name,
+      );
     const hasSubscriptionIdMatch =
       compared.currentPlan.subscriptionId !== null &&
       compared.currentPlan.subscriptionId ===
@@ -839,7 +847,8 @@ export class ComparatorService {
     const normalizedPreferredCurrencyCode = CurrencyUtils.normalizeCode(
       preferredCurrencyCode,
     ).toUpperCase();
-    const prose = this.getInsightsProseParts(aiInsights).join("\n");
+    const prose =
+      ComparatorService.getInsightsProseParts(aiInsights).join("\n");
 
     for (const [currencyCode, patterns] of Object.entries(
       CURRENCY_MENTION_PATTERNS,
@@ -901,7 +910,7 @@ export class ComparatorService {
       preferredCurrencyCode,
     ).toUpperCase();
 
-    return this.mapInsightsProse(aiInsights, (input) => {
+    return ComparatorService.mapInsightsProse(aiInsights, (input) => {
       let output = input;
 
       for (const [currencyCode, patterns] of Object.entries(
@@ -933,13 +942,18 @@ export class ComparatorService {
     aiClient: ComparatorServiceDeps["aiClient"];
     model: string;
   }): Promise<ComparatorAiInsightsDto> {
-    if (!this.hasForeignCurrencyMention(aiInsights, preferredCurrencyCode)) {
+    if (
+      !ComparatorService.hasForeignCurrencyMention(
+        aiInsights,
+        preferredCurrencyCode,
+      )
+    ) {
       return aiInsights;
     }
 
     try {
       const repaired = await aiClient.generateInsights(
-        this.buildCurrencyRepairPrompt({
+        ComparatorService.buildCurrencyRepairPrompt({
           aiInsights,
           preferredCurrencyCode,
           locale,
@@ -947,7 +961,12 @@ export class ComparatorService {
         { model },
       );
 
-      if (!this.hasForeignCurrencyMention(repaired, preferredCurrencyCode)) {
+      if (
+        !ComparatorService.hasForeignCurrencyMention(
+          repaired,
+          preferredCurrencyCode,
+        )
+      ) {
         return repaired;
       }
     } catch (error) {
@@ -956,7 +975,7 @@ export class ComparatorService {
       });
     }
 
-    return this.normalizeInsightsCurrencyMentions(
+    return ComparatorService.normalizeInsightsCurrencyMentions(
       aiInsights,
       preferredCurrencyCode,
     );

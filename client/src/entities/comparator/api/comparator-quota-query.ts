@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { ComparatorQuotaDto } from "shared";
-import type { QueryHook } from "@/shared/lib/react-query/types";
-import { apiClient } from "@/shared/api/client";
 import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { QueryHook } from "@/shared/lib/react-query/types";
 import { comparatorQueryKeys } from "../model/query-keys";
 
 type ComparatorQuotaParams = { userId: string };

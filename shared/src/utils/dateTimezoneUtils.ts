@@ -32,7 +32,7 @@ export class DateTimezoneUtils {
    * Returns start of day in the given timezone context.
    */
   static startOfDay(date: string | Date, timezone?: string): Date {
-    const zoned = this.toZoned(date, timezone);
+    const zoned = DateTimezoneUtils.toZoned(date, timezone);
     zoned.setHours(0, 0, 0, 0);
     return zoned;
   }
@@ -41,7 +41,7 @@ export class DateTimezoneUtils {
    * Returns end of day in the given timezone context.
    */
   static endOfDay(date: string | Date, timezone?: string): Date {
-    const zoned = this.toZoned(date, timezone);
+    const zoned = DateTimezoneUtils.toZoned(date, timezone);
     zoned.setHours(23, 59, 59, 999);
     return zoned;
   }
@@ -50,7 +50,7 @@ export class DateTimezoneUtils {
    * Returns start of month in the given timezone context.
    */
   static startOfMonth(date: string | Date, timezone?: string): Date {
-    const zoned = this.toZoned(date, timezone);
+    const zoned = DateTimezoneUtils.toZoned(date, timezone);
     zoned.setDate(1);
     zoned.setHours(0, 0, 0, 0);
     return zoned;
@@ -60,7 +60,7 @@ export class DateTimezoneUtils {
    * Returns end of month in the given timezone context.
    */
   static endOfMonth(date: string | Date, timezone?: string): Date {
-    const zoned = this.toZoned(date, timezone);
+    const zoned = DateTimezoneUtils.toZoned(date, timezone);
     zoned.setMonth(zoned.getMonth() + 1, 0);
     zoned.setHours(23, 59, 59, 999);
     return zoned;
@@ -74,7 +74,7 @@ export class DateTimezoneUtils {
     months: number,
     timezone?: string,
   ): Date {
-    const zoned = this.toZoned(date, timezone);
+    const zoned = DateTimezoneUtils.toZoned(date, timezone);
     return addMonths(zoned, months);
   }
 
@@ -87,8 +87,8 @@ export class DateTimezoneUtils {
     timezone?: string,
   ): boolean {
     return isSameDay(
-      this.toZoned(left, timezone),
-      this.toZoned(right, timezone),
+      DateTimezoneUtils.toZoned(left, timezone),
+      DateTimezoneUtils.toZoned(right, timezone),
     );
   }
 }

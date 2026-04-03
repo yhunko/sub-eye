@@ -1,11 +1,11 @@
 import { db } from "../../db";
-import { SubscriptionService } from "../subscription/subscriptionService";
-import { CategoryService } from "../category/categoryService";
-import { PushNotificationService } from "../push-notification/pushNotificationService";
-import { TelegramNotificationService } from "../telegram-notification/telegramNotificationService";
 import { BillingAccountRepository } from "../billing/paddle/billingAccountRepository";
+import { CategoryService } from "../category/categoryService";
 import { ComparatorRepository } from "../comparator/comparatorRepository";
+import { PushNotificationService } from "../push-notification/pushNotificationService";
 import { SubscriptionHistoryRepository } from "../subscription/subscriptionHistoryRepository";
+import { SubscriptionService } from "../subscription/subscriptionService";
+import { TelegramNotificationService } from "../telegram-notification/telegramNotificationService";
 
 export type CleanupDomain =
   | "subscriptions"

@@ -1,8 +1,8 @@
-import { PropsWithChildren } from "react";
 import { ClerkProvider } from "@clerk/clerk-react";
-import { shadcn } from "@clerk/themes";
-import { getLocale } from "@/i18n/runtime";
 import { enUS, ukUA } from "@clerk/localizations";
+import { shadcn } from "@clerk/themes";
+import type { PropsWithChildren } from "react";
+import { getLocale } from "@/i18n/runtime";
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 

@@ -1,9 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { DashboardAnalyticsDto } from "shared";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
 import type { QueryHook } from "@/shared/lib/react-query/types";
 import { analyticsQueryKeys } from "../model/query-keys";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
 
 type DashboardAnalyticsParams = { userId: string; orgId?: string | null };
 

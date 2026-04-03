@@ -1,12 +1,12 @@
-import { CurrencyUtils, SubscriptionAction } from "shared";
-import {
+import { CurrencyUtils, type SubscriptionAction } from "shared";
+import { getRecurringAmount } from "./history-insights-snapshot";
+import type {
   BudgetImpact,
   BudgetImpactReason,
   HistoryEventInsight,
   HistorySnapshot,
   RecurringAmount,
 } from "./history-insights-types";
-import { getRecurringAmount } from "./history-insights-snapshot";
 
 const toImpactFromDelta = (
   monthlyDelta: number,

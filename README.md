@@ -88,7 +88,9 @@ bun --cwd client run prepare   # compile Paraglide messages → src/shared/lib/i
 ### Quality checks
 
 ```bash
-bun run lint          # ESLint across all workspaces
+bun run lint          # Biome check across the repo
+bun run lint:fix      # Biome check with safe writes
+bun run format        # Biome formatter
 bun run type-check    # TypeScript across all workspaces
 bun run test          # Tests across all workspaces
 ```

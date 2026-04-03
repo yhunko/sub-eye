@@ -1,17 +1,17 @@
-import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
-import { object, string } from "valibot";
+import { Hono } from "hono";
 import {
-  CategoryAiOptimizeApplyInputSchema,
   CategoryAiApplyInputSchema,
+  CategoryAiOptimizeApplyInputSchema,
   CreateCategorySchema,
   DeleteCategoriesInputSchema,
   UpdateCategorySchema,
 } from "shared";
-import { CategoryService } from "../domains/category/categoryService";
+import { object, string } from "valibot";
 import { CategoryAiService } from "../domains/category/categoryAiService";
-import { requireUserId, getOrgId } from "../utils/authUtils";
+import { CategoryService } from "../domains/category/categoryService";
 import { protect } from "../middleware/auth";
+import { getOrgId, requireUserId } from "../utils/authUtils";
 import { handleServiceError } from "../utils/routeUtils";
 
 const idParamSchema = object({ id: string() });

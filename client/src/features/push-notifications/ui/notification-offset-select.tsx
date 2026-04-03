@@ -1,7 +1,8 @@
-import * as m from "@/i18n/messages";
 import { useUser } from "@clerk/clerk-react";
-import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
 import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
+import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
+import * as m from "@/i18n/messages";
+import { Spinner } from "@/shared/components";
 import {
   Select,
   SelectContent,
@@ -9,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { Spinner } from "@/shared/components";
 
 type NotificationOffsetSelectProps = {
   disabled?: boolean;

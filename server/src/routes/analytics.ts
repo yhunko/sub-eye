@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { AnalyticsController } from "../domains/analytics/analyticsController";
-import { requireUserId, getOrgId } from "../utils/authUtils";
 import { protect } from "../middleware/auth";
+import { getOrgId, requireUserId } from "../utils/authUtils";
 import { handleServiceError } from "../utils/routeUtils";
 
 export const analyticsRouter = new Hono()

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import {
-  TELEGRAM_LINK_PAYLOAD_PREFIX,
-  TELEGRAM_START_PAYLOAD_MAX_LENGTH,
   createTelegramLinkPayload,
   extractTelegramRawToken,
+  TELEGRAM_LINK_PAYLOAD_PREFIX,
+  TELEGRAM_START_PAYLOAD_MAX_LENGTH,
 } from "../src/domains/telegram-notification/telegramLinkPayload";
 
 describe("telegram link payload", () => {

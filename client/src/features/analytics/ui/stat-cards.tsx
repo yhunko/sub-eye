@@ -1,10 +1,10 @@
-import { FC } from "react";
+import type { FC } from "react";
+import type { DashboardAnalyticsDto } from "shared";
 import { cn } from "@/shared/lib/classes-utils";
 import { ActiveSubscriptionsCard } from "./stat-cards/active-subscriptions-card";
-import { YearlyCostCard } from "./stat-cards/yearly-cost-card";
 import { MostExpensiveSubscriptionCard } from "./stat-cards/most-expensive-subscription-card";
 import { RemainingThisMonthCard } from "./stat-cards/remaining-this-month-card";
-import type { DashboardAnalyticsDto } from "shared";
+import { YearlyCostCard } from "./stat-cards/yearly-cost-card";
 
 type StatCardsProps = {
   data: DashboardAnalyticsDto;

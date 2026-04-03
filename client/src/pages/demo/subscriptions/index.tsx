@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Suspense, useMemo, lazy } from "react";
 import { useQueryStates } from "nuqs";
+import { lazy, Suspense, useMemo } from "react";
 import { subscriptionsQueryParsers } from "@/entities/subscription";
-import {
-  demoSubscriptions,
-  demoCategories,
-  demoMonthlySpendSummary,
-} from "@/shared/lib/demo/data";
-import { filterSubscriptions } from "@/features/demo/lib/filter-subscriptions";
 import { SubscriptionsMonthlySpendCard } from "@/features/analytics";
+import { filterSubscriptions } from "@/features/demo/lib/filter-subscriptions";
 import { DemoSubscriptionRowActions } from "@/features/demo/ui/demo-subscription-row-actions";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import {
+  demoCategories,
+  demoMonthlySpendSummary,
+  demoSubscriptions,
+} from "@/shared/lib/demo/data";
 
 export const Route = createFileRoute("/demo/subscriptions/")({
   component: DemoSubscriptionsPage,
@@ -23,7 +23,9 @@ const SubscriptionsTable = lazy(
 
 const SubscriptionsListWidget = lazy(
   () =>
-    import("@/features/subscription/subscriptions-list/subscriptions-list-widget"),
+    import(
+      "@/features/subscription/subscriptions-list/subscriptions-list-widget"
+    ),
 );
 
 function DemoSubscriptionsPage() {

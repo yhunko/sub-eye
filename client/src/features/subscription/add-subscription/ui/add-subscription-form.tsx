@@ -1,30 +1,30 @@
-import { useCallback, useRef } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useAuth } from "@clerk/clerk-react";
+import NiceModal from "@ebay/nice-modal-react";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import {
-  AddSubscriptionInput,
-  AddSubscriptionOutput,
-  createAddSubscriptionFormSchema,
-} from "../model/schema";
-import { Form, Button, Spinner } from "@/shared/components";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
-import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
-import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
-import { SubscriptionFormHeaderAction } from "./form/subscription-form-header-action";
-import { SubscriptionPeriod, type SubscriptionDto } from "shared";
-import { cn } from "@/shared/lib/classes-utils";
+import { ChevronLeft } from "lucide-react";
+import { useCallback, useRef } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import { type SubscriptionDto, SubscriptionPeriod } from "shared";
+import { toast } from "sonner";
+import { planUsageQuery, SubscriptionLimitAlert } from "@/entities/billing";
 import {
   useCreateSubscription,
   useUpdateSubscriptionWithoutHistory,
 } from "@/entities/subscription";
-import { SubscriptionLimitAlert, planUsageQuery } from "@/entities/billing";
-import { useAuth } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
-import NiceModal from "@ebay/nice-modal-react";
 import * as m from "@/i18n/messages";
-import { ChevronLeft } from "lucide-react";
+import { Button, Form, Spinner } from "@/shared/components";
 import { track } from "@/shared/lib/analytics";
+import { cn } from "@/shared/lib/classes-utils";
+import {
+  type AddSubscriptionInput,
+  type AddSubscriptionOutput,
+  createAddSubscriptionFormSchema,
+} from "../model/schema";
+import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
+import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
+import { SubscriptionFormHeaderAction } from "./form/subscription-form-header-action";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -78,8 +78,9 @@ export const AddSubscriptionForm = ({
   const shouldBlockNavigation = formState.isDirty || isPending;
 
   const showLeaveDialog = useCallback(async () => {
-    const { SubscriptionFormLeaveDialog } =
-      await import("./subscription-form-leave-dialog");
+    const { SubscriptionFormLeaveDialog } = await import(
+      "./subscription-form-leave-dialog"
+    );
 
     const shouldDiscard = await NiceModal.show(SubscriptionFormLeaveDialog);
 

@@ -1,9 +1,9 @@
-import { FC } from "react";
 import { HistoryIcon } from "lucide-react";
+import type { FC } from "react";
+import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
 import { openSubscriptionHistoryPanel } from "../model/open-subscription-history-panel";
-import * as m from "@/i18n/messages";
 
 type SubscriptionHistoryTimelineTriggerProps = {
   subscriptionId: string;

@@ -1,6 +1,6 @@
-import { createContext, useContext } from "react";
-import { type Locale } from "date-fns";
+import type { Locale } from "date-fns";
 import { enUS } from "date-fns/locale";
+import { createContext, useContext } from "react";
 
 interface DateFnsLocaleContextValue {
   locale: Locale;

@@ -1,9 +1,9 @@
-import type { FC } from "react";
-import { format, parseISO } from "date-fns";
 import type { Locale } from "date-fns";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
-import * as m from "@/i18n/messages";
+import { format, parseISO } from "date-fns";
+import type { FC } from "react";
 import type { MonthlyTrendPoint } from "shared";
+import * as m from "@/i18n/messages";
+import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { useRechartsModule } from "./use-recharts-module";
 
 type TrendChartInteractionState = {

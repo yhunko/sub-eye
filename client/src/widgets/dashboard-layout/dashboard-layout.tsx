@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, JSX } from "react";
+import type { FC, JSX, PropsWithChildren } from "react";
 
 type DashboardLayoutProps = {
   Navbar: JSX.Element;

@@ -1,12 +1,12 @@
-import * as react from "react";
-import * as m from "@/i18n/messages";
-import { FC, PropsWithChildren, MouseEventHandler } from "react";
 import {
-  LucideProps,
-  ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  ChevronUp,
+  type LucideProps,
 } from "lucide-react";
+import type * as react from "react";
+import type { FC, MouseEventHandler, PropsWithChildren } from "react";
+import * as m from "@/i18n/messages";
 import { cn } from "@/shared/lib/classes-utils";
 
 type SubscriptionTableHeadProps = {

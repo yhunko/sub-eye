@@ -1,10 +1,10 @@
-import { FC } from "react";
+import { ChevronLeft } from "lucide-react";
+import type { FC } from "react";
 import type { SubscriptionDto } from "shared";
+import * as m from "@/i18n/messages";
+import { Button } from "../../../../shared/components";
 import { SubscriptionOverviewActionsDropdown } from "./subscription-overview-actions-dropdown";
 import { SubscriptionOverviewStatusSelector } from "./subscription-overview-status-selector";
-import * as m from "@/i18n/messages";
-import { ChevronLeft } from "lucide-react";
-import { Button } from "../../../../shared/components";
 
 type SubscriptionOverviewHeaderActionsProps = {
   subscriptionId: string;

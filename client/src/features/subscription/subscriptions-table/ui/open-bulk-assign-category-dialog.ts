@@ -11,8 +11,9 @@ export const openBulkAssignCategoryDialog = async ({
   onSuccess,
   onClearSelection,
 }: OpenBulkAssignCategoryDialogParams) => {
-  const { BulkAssignCategoryDialog } =
-    await import("./bulk-assign-category-dialog");
+  const { BulkAssignCategoryDialog } = await import(
+    "./bulk-assign-category-dialog"
+  );
 
   await NiceModal.show(BulkAssignCategoryDialog, {
     subscriptionIds,

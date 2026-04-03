@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import * as m from "@/i18n/messages";
 import {
   Drawer,
   DrawerContent,
@@ -6,8 +8,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
-import { ReactNode } from "react";
 
 type TimezoneSelectMobileProps = {
   open: boolean;

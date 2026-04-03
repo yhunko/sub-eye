@@ -1,8 +1,8 @@
+import { ArrowRight, Layers } from "lucide-react";
 import { motion } from "motion/react";
 import type { CategoryAiOptimizationMerge } from "shared";
-import { Badge } from "@/shared/components";
-import { ArrowRight, Layers } from "lucide-react";
 import * as m from "@/i18n/messages";
+import { Badge } from "@/shared/components";
 import { SuggestionToggleButton } from "./suggestion-toggle-button";
 
 type CategoryAiOptimizationMergeItemProps = {

@@ -1,16 +1,16 @@
+import { Link, useLocation } from "@tanstack/react-router";
+import { LayoutDashboard, List, Plus } from "lucide-react";
+import { domAnimation, LazyMotion, m as motion } from "motion/react";
 import { UserDropdownMenu } from "@/features/auth";
 import { SpaceSwitcher } from "@/features/org/space-switcher";
-import { DashboardLogo } from "../dashboard-logo";
-import { Link, useLocation } from "@tanstack/react-router";
+import * as m from "@/i18n/messages";
 import {
+  Button,
+  NavItem,
   NavigationMenu,
   NavigationMenuList,
-  NavItem,
-  Button,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
-import { LayoutDashboard, List, Plus } from "lucide-react";
-import { m as motion, LazyMotion, domAnimation } from "motion/react";
+import { DashboardLogo } from "../dashboard-logo";
 
 let hasAnimated = false;
 

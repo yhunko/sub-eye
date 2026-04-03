@@ -45,10 +45,10 @@ export class DateFormatUtils {
    * Get format configuration by format type
    */
   static getConfig(format?: string): DateFormatConfig {
-    if (format && format in this.FORMATS) {
-      return this.FORMATS[format as DateFormatType];
+    if (format && format in DateFormatUtils.FORMATS) {
+      return DateFormatUtils.FORMATS[format as DateFormatType];
     }
-    return this.FORMATS[this.DEFAULT_FORMAT];
+    return DateFormatUtils.FORMATS[DateFormatUtils.DEFAULT_FORMAT];
   }
 
   /**
@@ -74,25 +74,25 @@ export class DateFormatUtils {
     }
 
     // Default fallback
-    return this.DEFAULT_FORMAT;
+    return DateFormatUtils.DEFAULT_FORMAT;
   }
 
   /**
    * Get format with fallback chain: user preference -> browser locale -> default
    */
   static getPreferredFormat(userFormat?: string): DateFormatConfig {
-    if (userFormat && userFormat in this.FORMATS) {
-      return this.FORMATS[userFormat as DateFormatType];
+    if (userFormat && userFormat in DateFormatUtils.FORMATS) {
+      return DateFormatUtils.FORMATS[userFormat as DateFormatType];
     }
 
-    const browserFormat = this.detectBrowserFormat();
-    return this.FORMATS[browserFormat];
+    const browserFormat = DateFormatUtils.detectBrowserFormat();
+    return DateFormatUtils.FORMATS[browserFormat];
   }
 
   /**
    * Get all available formats for UI selection
    */
   static getAllFormats(): DateFormatConfig[] {
-    return Object.values(this.FORMATS);
+    return Object.values(DateFormatUtils.FORMATS);
   }
 }

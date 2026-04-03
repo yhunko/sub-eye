@@ -1,25 +1,25 @@
 import NiceModal from "@ebay/nice-modal-react";
-import { useCallback } from "react";
 import {
   createFileRoute,
   Link,
   Outlet,
   useLocation,
 } from "@tanstack/react-router";
+import { valibotValidator } from "@tanstack/valibot-adapter";
+import { Plus, Sparkles } from "lucide-react";
+import { useCallback } from "react";
+import { ManageCategoriesList } from "@/features/category/manage-categories/manage-categories-list";
+import * as m from "@/i18n/messages";
 import {
+  Button,
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  Button,
 } from "@/shared/components";
-import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
-import * as m from "@/i18n/messages";
-import { valibotValidator } from "@tanstack/valibot-adapter";
 import { settingsSearchSchema } from "@/shared/lib/router/settings-search";
-import { ManageCategoriesList } from "@/features/category/manage-categories/manage-categories-list";
-import { Plus, Sparkles } from "lucide-react";
+import { SettingsFormLayout, SettingsLayout } from "@/widgets/settings-layout";
 
 export const Route = createFileRoute("/(protected)/settings/categories")({
   component: SettingsCategoriesPage,
@@ -31,8 +31,9 @@ function SettingsCategoriesPage() {
   const { pathname } = useLocation();
 
   const handleOpenCreateDialog = useCallback(async () => {
-    const { EditCategoryDialog } =
-      await import("@/features/category/manage-categories/ui/edit-category-dialog");
+    const { EditCategoryDialog } = await import(
+      "@/features/category/manage-categories/ui/edit-category-dialog"
+    );
     void NiceModal.show(EditCategoryDialog, {});
   }, []);
 

@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import type { SubscriptionDto } from "shared";
+import { toast } from "sonner";
 import {
   useApplyScheduledSubscriptionPriceChangeNow,
   useCancelScheduledSubscriptionPriceChange,
 } from "@/entities/subscription";
-import { toast } from "sonner";
 import * as m from "@/i18n/messages";
 import { openSchedulePriceChangeDialog } from "./open-schedule-price-change-dialog";
 

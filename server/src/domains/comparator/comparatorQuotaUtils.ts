@@ -1,11 +1,11 @@
 import { format } from "date-fns";
 import {
+  type ComparatorAiQuotaDto,
+  type ComparatorQuotaDto,
   DateTimezoneUtils,
   FREE_COMPARATOR_AI_MONTHLY_LIMIT,
   FREE_COMPARATOR_MONTHLY_LIMIT,
   PLUS_COMPARATOR_AI_MONTHLY_LIMIT,
-  type ComparatorAiQuotaDto,
-  type ComparatorQuotaDto,
   type PlanId,
 } from "shared";
 

@@ -1,4 +1,4 @@
-import { FC } from "react";
+import type { FC } from "react";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
 

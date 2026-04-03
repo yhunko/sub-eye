@@ -1,4 +1,10 @@
-import { FC, ReactNode } from "react";
+import { format, isSameMonth, subMonths } from "date-fns";
+import type { LucideIcon } from "lucide-react";
+import type { FC, ReactNode } from "react";
+import { Area, AreaChart } from "recharts";
+import type { MonthlySpendTrendPoint } from "shared";
+import { CurrencyText } from "@/entities/currency";
+import * as m from "@/i18n/messages";
 import {
   Card,
   CardContent,
@@ -7,12 +13,6 @@ import {
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";
-import { CurrencyText } from "@/entities/currency";
-import { LucideIcon } from "lucide-react";
-import { Area, AreaChart } from "recharts";
-import { MonthlySpendTrendPoint } from "shared";
-import { format, isSameMonth, subMonths } from "date-fns";
-import * as m from "@/i18n/messages";
 
 type StatSummaryCardProps = {
   title: string;

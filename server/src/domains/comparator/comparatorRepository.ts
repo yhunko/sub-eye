@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../db";
+import type { db } from "../../db";
 import {
   comparatorAiCacheTable,
   comparatorAiUsageTable,

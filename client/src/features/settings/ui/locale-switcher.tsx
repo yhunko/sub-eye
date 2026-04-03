@@ -1,17 +1,17 @@
 "use client";
 
-import { FC, startTransition } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { type FC, startTransition } from "react";
+import { setLocale } from "@/i18n/runtime";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/shared/components";
-import { useUser } from "@clerk/clerk-react";
-import { useUpdateUserMetadata } from "../../../entities/user";
-import { setLocale } from "@/i18n/runtime";
 import { track } from "@/shared/lib/analytics";
+import { useUpdateUserMetadata } from "../../../entities/user";
 
 const supportedLocales = [
   { code: "en", label: "English", emoji: "🇺🇸" },

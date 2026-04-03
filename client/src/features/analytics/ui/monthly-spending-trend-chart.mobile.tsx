@@ -1,11 +1,11 @@
-import { FC, useCallback, useMemo } from "react";
-import { format, parseISO } from "date-fns";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Drawer } from "@/shared/components/ui/drawer";
+import { format, parseISO } from "date-fns";
+import { type FC, useCallback, useMemo } from "react";
 import { useWebHaptics } from "web-haptics/react";
-import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
-import { DrawerSubscriptionsContent } from "./drawer-subscriptions-content";
+import { Drawer } from "@/shared/components/ui/drawer";
 import { track } from "@/shared/lib/analytics";
+import { DrawerSubscriptionsContent } from "./drawer-subscriptions-content";
+import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { resolveSelectedMonthIndex } from "./monthly-spending-trend-mobile.utils";
 import { SelectedMonthSummary } from "./selected-month-summary";
 import { TrendLineChart } from "./trend-line-chart";

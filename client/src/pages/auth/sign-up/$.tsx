@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { SignUp } from "@clerk/clerk-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { valibotValidator } from "@tanstack/valibot-adapter";
-import { AuthLayout } from "@/widgets/auth-layout";
 import { authRedirectSearchSchema } from "@/shared/lib/router/auth-redirect-search";
+import { AuthLayout } from "@/widgets/auth-layout";
 
 export const Route = createFileRoute("/auth/sign-up/$")({
   validateSearch: valibotValidator(authRedirectSearchSchema),

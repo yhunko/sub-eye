@@ -1,6 +1,10 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useCallback } from "react";
 import type { DeleteCategoriesResponse } from "shared";
+import { toast } from "sonner";
+import { useDeleteCategories } from "@/entities/category";
+import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,10 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
-import { useDeleteCategories } from "@/entities/category";
-import * as m from "@/i18n/messages";
-import { toast } from "sonner";
 
 interface DeleteCategoriesConfirmDialogProps {
   categoryIds: string[];

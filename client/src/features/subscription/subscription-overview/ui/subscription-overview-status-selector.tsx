@@ -1,6 +1,7 @@
-import { FC } from "react";
 import { ChevronsUpDown } from "lucide-react";
+import type { FC } from "react";
 import type { SubscriptionDto } from "shared";
+import * as m from "@/i18n/messages";
 import {
   Button,
   DropdownMenu,
@@ -10,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components";
 import { cn } from "@/shared/lib/classes-utils";
-import * as m from "@/i18n/messages";
 
 type SubscriptionOverviewStatusSelectorProps = {
   status: SubscriptionDto["status"];

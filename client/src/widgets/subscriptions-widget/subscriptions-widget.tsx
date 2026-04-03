@@ -1,13 +1,15 @@
-import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
-import { lazy, Suspense, FC, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { subscriptionsQuery } from "@/entities/subscription";
-import { categoriesQuery } from "@/entities/category";
-import { SubscriptionsMonthlySpendCardConnected } from "@/features/analytics";
 import { useQueryStates } from "nuqs";
-import { subscriptionsQueryParsers } from "@/entities/subscription";
+import { type FC, lazy, Suspense, useMemo } from "react";
+import { categoriesQuery } from "@/entities/category";
+import {
+  subscriptionsQuery,
+  subscriptionsQueryParsers,
+} from "@/entities/subscription";
+import { SubscriptionsMonthlySpendCardConnected } from "@/features/analytics";
+import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
+import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 
 const SubscriptionsTable = lazy(
   () => import("../../features/subscription/subscriptions-table"),

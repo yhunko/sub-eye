@@ -1,5 +1,5 @@
-import { FC } from "react";
-import { TableCell, TableRow, Spinner } from "../components";
+import type { FC } from "react";
+import { Spinner, TableCell, TableRow } from "../components";
 import { cn } from "../lib/classes-utils";
 
 type TableBodyLoaderProps = {

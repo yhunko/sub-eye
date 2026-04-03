@@ -1,7 +1,7 @@
 import {
   addDays,
-  addWeeks,
   addMonths,
+  addWeeks,
   addYears,
   isBefore,
   isSameDay,
@@ -25,7 +25,10 @@ export class RecurrenceUtils {
     const shifted = addMonths(date, amount);
     const year = shifted.getFullYear();
     const month = shifted.getMonth();
-    const day = Math.min(anchorDay, this.getDaysInMonth(year, month));
+    const day = Math.min(
+      anchorDay,
+      RecurrenceUtils.getDaysInMonth(year, month),
+    );
 
     shifted.setDate(day);
     return shifted;
@@ -39,7 +42,10 @@ export class RecurrenceUtils {
   ): Date {
     const shifted = addYears(date, amount);
     const year = shifted.getFullYear();
-    const day = Math.min(anchorDay, this.getDaysInMonth(year, anchorMonth));
+    const day = Math.min(
+      anchorDay,
+      RecurrenceUtils.getDaysInMonth(year, anchorMonth),
+    );
 
     shifted.setMonth(anchorMonth, day);
     return shifted;
@@ -57,7 +63,7 @@ export class RecurrenceUtils {
     },
   ): Date {
     const anchor = options?.anchorDate
-      ? this.normalizeDateInput(options.anchorDate)
+      ? RecurrenceUtils.normalizeDateInput(options.anchorDate)
       : date;
 
     switch (period) {
@@ -66,9 +72,13 @@ export class RecurrenceUtils {
       case SubscriptionPeriod.WEEK:
         return addWeeks(date, amount);
       case SubscriptionPeriod.MONTH:
-        return this.addMonthsWithAnchor(date, amount, anchor.getDate());
+        return RecurrenceUtils.addMonthsWithAnchor(
+          date,
+          amount,
+          anchor.getDate(),
+        );
       case SubscriptionPeriod.YEAR:
-        return this.addYearsWithAnchor(
+        return RecurrenceUtils.addYearsWithAnchor(
           date,
           amount,
           anchor.getMonth(),
@@ -89,16 +99,18 @@ export class RecurrenceUtils {
     period: SubscriptionPeriod,
     relativeTo: Date = new Date(),
   ): Date {
-    let current = this.normalizeDateInput(startDate);
-    const anchorDate = this.normalizeDateInput(startDate);
-    const target = this.normalizeDateInput(relativeTo);
+    let current = RecurrenceUtils.normalizeDateInput(startDate);
+    const anchorDate = RecurrenceUtils.normalizeDateInput(startDate);
+    const target = RecurrenceUtils.normalizeDateInput(relativeTo);
 
     if (isBefore(target, current)) {
       return current;
     }
 
     while (isBefore(current, target) && !isSameDay(current, target)) {
-      current = this.addPeriod(current, every, period, { anchorDate });
+      current = RecurrenceUtils.addPeriod(current, every, period, {
+        anchorDate,
+      });
     }
 
     return current;
@@ -110,9 +122,9 @@ export class RecurrenceUtils {
     period: SubscriptionPeriod,
     relativeTo: Date = new Date(),
   ): Date | null {
-    const start = this.normalizeDateInput(startDate);
-    const anchorDate = this.normalizeDateInput(startDate);
-    const target = this.normalizeDateInput(relativeTo);
+    const start = RecurrenceUtils.normalizeDateInput(startDate);
+    const anchorDate = RecurrenceUtils.normalizeDateInput(startDate);
+    const target = RecurrenceUtils.normalizeDateInput(relativeTo);
 
     if (isBefore(target, start) || isSameDay(target, start)) {
       return null;
@@ -123,7 +135,9 @@ export class RecurrenceUtils {
 
     while (isBefore(current, target)) {
       previous = current;
-      current = this.addPeriod(current, every, period, { anchorDate });
+      current = RecurrenceUtils.addPeriod(current, every, period, {
+        anchorDate,
+      });
 
       if (isSameDay(current, target)) {
         return current;

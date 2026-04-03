@@ -1,22 +1,22 @@
 import { useFormContext, useWatch } from "react-hook-form";
+import type { SubscriptionDto } from "shared";
+import { CurrencyInput, CurrencySelect } from "@/entities/currency";
+import { CategorySelector } from "@/features/category/category-selector/category-selector";
+import * as m from "@/i18n/messages";
 import {
   FieldSet,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
   Input,
   Separator,
 } from "@/shared/components";
-import { CurrencyInput, CurrencySelect } from "@/entities/currency";
-import { AddSubscriptionInput } from "../../model/schema";
-import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
-import type { SubscriptionDto } from "shared";
-import * as m from "@/i18n/messages";
-import { SubscriptionFormScheduledPriceChangeCard } from "./subscription-form-scheduled-price-change-card";
 import { sanitizePriceInput } from "@/shared/lib/price-input";
-import { CategorySelector } from "@/features/category/category-selector/category-selector";
+import type { AddSubscriptionInput } from "../../model/schema";
+import { AddSubscriptionBrandImage } from "./add-subscription-brand-image";
+import { SubscriptionFormScheduledPriceChangeCard } from "./subscription-form-scheduled-price-change-card";
 
 type SubscriptionFormBasicInfoProps = {
   existingSubscription?: SubscriptionDto;

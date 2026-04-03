@@ -1,7 +1,7 @@
-import { FC } from "react";
-import { SubscriptionNextBill } from "../../billing";
-import { SubscriptionDto } from "shared";
+import type { FC } from "react";
+import type { SubscriptionDto } from "shared";
 import * as m from "@/i18n/messages";
+import { SubscriptionNextBill } from "../../billing";
 
 type SubscriptionListStatusProps = {
   subscription: SubscriptionDto;

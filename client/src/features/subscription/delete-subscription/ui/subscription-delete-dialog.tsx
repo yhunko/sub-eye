@@ -1,5 +1,9 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useCallback } from "react";
+import { toast } from "sonner";
+import { useDeleteSubscription } from "@/entities/subscription/api/use-delete-subscription";
+import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,10 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
-import { useDeleteSubscription } from "@/entities/subscription/api/use-delete-subscription";
-import * as m from "@/i18n/messages";
-import { toast } from "sonner";
 
 interface SubscriptionDeleteDialogProps {
   subscriptionId: string;

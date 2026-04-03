@@ -1,5 +1,5 @@
 import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
-import { db } from "../../db";
+import type { db } from "../../db";
 import { categoriesTable } from "../../db/schema";
 
 export type CategoryRecord = typeof categoriesTable.$inferSelect;

@@ -1,20 +1,20 @@
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useCallback } from "react";
+import type {
+  CategoryDto,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "shared";
+import { toast } from "sonner";
+import { useCreateCategory, useUpdateCategory } from "@/entities/category";
+import * as m from "@/i18n/messages";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import type {
-  CategoryDto,
-  CreateCategoryInput,
-  UpdateCategoryInput,
-} from "shared";
-import { useCreateCategory, useUpdateCategory } from "@/entities/category";
 import { CategoryForm } from "./category-form";
-import * as m from "@/i18n/messages";
-import { toast } from "sonner";
 
 interface EditCategoryDialogProps {
   category?: CategoryDto;

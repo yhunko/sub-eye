@@ -1,6 +1,6 @@
-import { FC } from "react";
-import { StatCard } from "../stat-card";
+import type { FC } from "react";
 import * as m from "@/i18n/messages";
+import { StatCard } from "../stat-card";
 
 type ActiveSubscriptionsCardProps = {
   total: number;

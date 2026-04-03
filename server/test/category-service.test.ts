@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
-import { CategoryService } from "../src/domains/category/categoryService";
 import { CategoryNotFoundError } from "../src/domains/category/categoryErrors";
+import { CategoryService } from "../src/domains/category/categoryService";
 
 describe("CategoryService.deleteCategories", () => {
   it("deletes all requested user-owned categories and deduplicates ids", async () => {

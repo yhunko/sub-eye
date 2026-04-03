@@ -1,5 +1,13 @@
+import { useAuth } from "@clerk/clerk-react";
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { useCallback } from "react";
+import { toast } from "sonner";
+import { categoriesQuery } from "@/entities/category";
+import { useBulkUpdateCategory } from "@/entities/subscription";
+import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,14 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
-import { useBulkUpdateCategory } from "@/entities/subscription";
-import * as m from "@/i18n/messages";
-import { toast } from "sonner";
-import { useAuth } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
-import { categoriesQuery } from "@/entities/category";
-import { Loader2 } from "lucide-react";
 
 interface BulkAssignCategoryDialogProps {
   subscriptionIds: string[];

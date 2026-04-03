@@ -20,7 +20,7 @@ export class SubscriptionBillingUtils {
 
     return {
       formattedDate: format(targetDate, "d MMMM, yyyy"),
-      ...this.getUrgencyStyles(targetDate, daysUntil),
+      ...SubscriptionBillingUtils.getUrgencyStyles(targetDate, daysUntil),
     };
   }
 

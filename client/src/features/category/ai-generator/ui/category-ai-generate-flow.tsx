@@ -1,6 +1,13 @@
+import { WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import type { CategoryAiSuggestion } from "shared";
+import { toast } from "sonner";
+import { PlanFeatureLockCard } from "@/entities/billing";
+import {
+  useApplyCategoriesAi,
+  useSuggestCategoriesAi,
+} from "@/entities/category";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
@@ -13,14 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components";
-import {
-  useApplyCategoriesAi,
-  useSuggestCategoriesAi,
-} from "@/entities/category";
 import { AiQuotaBadge } from "@/shared/ui";
-import { PlanFeatureLockCard } from "@/entities/billing";
-import { WandSparkles } from "lucide-react";
-import * as m from "@/i18n/messages";
+import { useCategoryAiWorkbench } from "../model/category-ai-workbench-context";
 import {
   hasDuplicateEnabledSuggestions,
   toggleSuggestionEnabled,
@@ -28,7 +29,6 @@ import {
   updateSuggestionEmoji,
   updateSuggestionName,
 } from "../model/suggestions-state";
-import { useCategoryAiWorkbench } from "../model/category-ai-workbench-context";
 import { useLastGeneratedLabel } from "../model/use-last-generated-label";
 import { CategoryAiSuggestionItem } from "./category-ai-suggestion-item";
 

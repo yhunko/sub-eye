@@ -1,7 +1,7 @@
-import * as m from "@/i18n/messages";
 import { format, type Locale } from "date-fns";
 import { SubscriptionPeriod } from "shared";
-import { HistoryEventInsight } from "../../model/history-insights";
+import * as m from "@/i18n/messages";
+import type { HistoryEventInsight } from "../../model/history-insights";
 import {
   formatAmount,
   formatHistoryCycle,

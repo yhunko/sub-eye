@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { SubscriptionComparatorManualPlanForm } from "../subscription-comparator-manual-plan-form";
+import * as m from "@/i18n/messages";
 import {
   Alert,
   AlertDescription,
@@ -13,11 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
 import type {
   ManualDraftChangeHandler,
   ManualPlanDraft,
 } from "../../../model/comparator-form";
+import { SubscriptionComparatorManualPlanForm } from "../subscription-comparator-manual-plan-form";
 import type {
   CompareMode,
   SelectableSubscriptionOption,

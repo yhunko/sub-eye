@@ -3,11 +3,11 @@ import type {
   CompareSubscriptionsInput,
   CompareSubscriptionsResponseDto,
 } from "shared";
-import type { MutationHook } from "@/shared/lib/react-query/types";
-import { apiClient } from "@/shared/api/client";
-import { assertOk } from "@/shared/api/api-error";
-import { comparatorQueryKeys } from "../model/query-keys";
 import { billingQueryKeys } from "@/entities/billing";
+import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { MutationHook } from "@/shared/lib/react-query/types";
+import { comparatorQueryKeys } from "../model/query-keys";
 
 export const useCompareSubscriptions = ({
   options,

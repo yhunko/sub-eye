@@ -1,22 +1,22 @@
-import { useForm } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
+import { useForm } from "react-hook-form";
 import {
+  type CreateCategoryInput,
   CreateCategorySchema,
   DEFAULT_CATEGORY_EMOJI,
-  type CreateCategoryInput,
 } from "shared";
+import * as m from "@/i18n/messages";
 import {
+  Button,
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
   Input,
-  Button,
   Spinner,
 } from "@/shared/components";
-import * as m from "@/i18n/messages";
 import { EmojiPicker } from "./emoji-picker";
 
 type CategoryFormProps = {

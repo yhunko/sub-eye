@@ -2,13 +2,13 @@ import { format } from "date-fns";
 import { CalendarDays, CheckIcon, PencilIcon, Trash2 } from "lucide-react";
 import type { SubscriptionDto } from "shared";
 import { CurrencyText } from "@/entities/currency";
-import * as m from "@/i18n/messages";
-import { Button, Separator } from "@/shared/components";
 import { scheduledPriceChangeAlertStyles } from "@/features/subscription/lib/scheduled-price-change-alert-styles";
 import { useScheduledPriceChangeActions } from "@/features/subscription/schedule-price-change";
+import * as m from "@/i18n/messages";
+import { Button, Separator } from "@/shared/components";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
-import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { cn } from "@/shared/lib/classes-utils";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 
 type SubscriptionFormScheduledPriceChangeCardProps = {
   subscription?: SubscriptionDto;

@@ -1,9 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
-import { MutationHook } from "@/shared/lib/react-query/types";
-import type { UpdateSubscriptionInput, SubscriptionDto } from "shared";
-import { apiClient } from "@/shared/api/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { SubscriptionDto, UpdateSubscriptionInput } from "shared";
 import { assertOk } from "@/shared/api/api-error";
+import { apiClient } from "@/shared/api/client";
+import type { MutationHook } from "@/shared/lib/react-query/types";
 import { handleSubscriptionMutationSuccess } from "../lib/handle-subscription-mutation-success";
 
 export type UpdateSubscriptionWithoutHistoryParams = {

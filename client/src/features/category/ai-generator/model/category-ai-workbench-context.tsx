@@ -1,16 +1,16 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type FC,
-  type PropsWithChildren,
-} from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { categoriesQuery } from "@/entities/category";
-import { planUsageQuery } from "@/entities/billing";
-import { subscriptionsQuery } from "@/entities/subscription";
+import {
+  createContext,
+  type FC,
+  type PropsWithChildren,
+  useContext,
+  useMemo,
+} from "react";
 import type { CategoryDto, PlanUsage, SubscriptionDto } from "shared";
+import { planUsageQuery } from "@/entities/billing";
+import { categoriesQuery } from "@/entities/category";
+import { subscriptionsQuery } from "@/entities/subscription";
 import { normalizeCategoryName } from "./suggestions-state";
 
 type SubscriptionMeta = {

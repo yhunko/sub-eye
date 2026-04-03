@@ -11,8 +11,9 @@ export const openSubscriptionDeleteDialog = async ({
   subscriptionName,
   onSuccess,
 }: OpenSubscriptionDeleteDialogParams) => {
-  const { SubscriptionDeleteDialog } =
-    await import("../ui/subscription-delete-dialog");
+  const { SubscriptionDeleteDialog } = await import(
+    "../ui/subscription-delete-dialog"
+  );
 
   await NiceModal.show(SubscriptionDeleteDialog, {
     subscriptionId,

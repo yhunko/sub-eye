@@ -1,9 +1,9 @@
-import { BrandfetchSearchParams } from "../model/params";
 import { useQuery } from "@tanstack/react-query";
-import { BrandfetchSearchDto } from "../model/dtos";
-import { BrandfetchRepository } from "../repository/brandfetch.repository";
-import { QueryHook } from "@/shared/lib/react-query/types";
+import type { QueryHook } from "@/shared/lib/react-query/types";
+import type { BrandfetchSearchDto } from "../model/dtos";
+import type { BrandfetchSearchParams } from "../model/params";
 import { brandfetchQueryKeys } from "../model/query-keys";
+import { BrandfetchRepository } from "../repository/brandfetch.repository";
 
 const brandfetchRepository = new BrandfetchRepository();
 

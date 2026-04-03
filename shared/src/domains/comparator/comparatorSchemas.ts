@@ -2,6 +2,7 @@ import {
   array,
   boolean,
   check,
+  type InferOutput,
   integer,
   literal,
   maxLength,
@@ -17,10 +18,9 @@ import {
   string,
   transform,
   union,
-  type InferOutput,
 } from "valibot";
-import { PLAN_IDS } from "../billing";
 import { SubscriptionPeriod } from "../../types";
+import { PLAN_IDS } from "../billing";
 
 export const FREE_COMPARATOR_MONTHLY_LIMIT = 10;
 export const FREE_COMPARATOR_AI_MONTHLY_LIMIT = 10;

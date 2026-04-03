@@ -1,11 +1,11 @@
-import type { FC, ReactNode } from "react";
-import { useEffect } from "react";
-import { Badge, Button } from "@/shared/components";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { cn } from "@/shared/lib/classes-utils";
+import type { FC, ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import * as m from "@/i18n/messages";
+import { Badge, Button } from "@/shared/components";
 import { track } from "@/shared/lib/analytics";
+import { cn } from "@/shared/lib/classes-utils";
 
 type UpgradePromptSource =
   | "subscription_limit"
@@ -40,15 +40,19 @@ export const PlanFeatureLockCard: FC<PlanFeatureLockCardProps> = ({
   analyticsSource,
   analyticsFeature,
 }) => {
+  const hasTrackedView = useRef(false);
+
   useEffect(() => {
-    if (analyticsSource) {
-      track("upgrade_prompt_viewed", {
-        source: analyticsSource,
-        feature: analyticsFeature ?? "plus_plan",
-      });
+    if (!analyticsSource || hasTrackedView.current) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    track("upgrade_prompt_viewed", {
+      source: analyticsSource,
+      feature: analyticsFeature ?? "plus_plan",
+    });
+    hasTrackedView.current = true;
+  }, [analyticsFeature, analyticsSource]);
 
   return (
     <div

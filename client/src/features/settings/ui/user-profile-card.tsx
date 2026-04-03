@@ -1,16 +1,16 @@
+import { useUser } from "@clerk/clerk-react";
+import { Link } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
+import type { FC } from "react";
 import {
   Item,
-  ItemMedia,
-  ItemContent,
-  ItemTitle,
-  ItemDescription,
   ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
 } from "@/shared/components";
-import { FC } from "react";
-import { useUser } from "@clerk/clerk-react";
 import { UserAvatar } from "../../auth";
-import { ChevronRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 
 export const UserProfileCard: FC = () => {
   const { user } = useUser();

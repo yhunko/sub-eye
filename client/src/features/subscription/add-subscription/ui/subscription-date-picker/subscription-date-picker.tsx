@@ -1,12 +1,12 @@
-import { FC, useState, lazy, Suspense } from "react";
+import { format } from "date-fns";
+import { CalendarIcon, ChevronDownIcon } from "lucide-react";
+import { type FC, lazy, Suspense, useState } from "react";
+import * as m from "@/i18n/messages";
+import { Button } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
-import { Button } from "@/shared/components";
-import { ChevronDownIcon, CalendarIcon } from "lucide-react";
-import { SubscriptionDatePickerContent } from "./subscription-date-picker-content";
-import * as m from "@/i18n/messages";
 import { cn } from "@/shared/lib/classes-utils";
-import { format } from "date-fns";
+import { SubscriptionDatePickerContent } from "./subscription-date-picker-content";
 
 const DesktopPicker = lazy(() => import("./subscription-date-picker.desktop"));
 const MobilePicker = lazy(() => import("./subscription-date-picker.mobile"));

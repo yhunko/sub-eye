@@ -1,18 +1,18 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import { MessageCircleWarningIcon } from "lucide-react";
-import { AddSubscriptionForm as SubscriptionForm } from "../../add-subscription/ui/add-subscription-form";
+import type { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
 import { subscriptionQuery } from "@/entities/subscription";
 import {
   Empty,
-  Spinner,
+  EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-  EmptyDescription,
+  Spinner,
 } from "@/shared/components";
 import type { AddSubscriptionInput } from "../../add-subscription/model/schema";
-import type { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
+import { AddSubscriptionForm as SubscriptionForm } from "../../add-subscription/ui/add-subscription-form";
 
 type EditSubscriptionFormProps = {
   subscriptionId: string;

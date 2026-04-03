@@ -3,7 +3,7 @@ export class BrandfetchUtils {
   static CDN_HOSTNAME = "cdn.brandfetch.io";
 
   static getImageUrl(domain: string, size: number = 256): string | undefined {
-    const normalizedDomain = this.normalizeDomain(domain);
+    const normalizedDomain = BrandfetchUtils.normalizeDomain(domain);
 
     if (!normalizedDomain) {
       return undefined;
@@ -12,7 +12,7 @@ export class BrandfetchUtils {
     const clientId = import.meta.env.VITE_BRANDFETCH_CLIENT_ID;
     const encodedDomain = encodeURIComponent(normalizedDomain);
 
-    return `https://${this.CDN_HOSTNAME}/${encodedDomain}/w/${size}/h/${size}/fallback/lettermark/type/icon?c=${clientId}`;
+    return `https://${BrandfetchUtils.CDN_HOSTNAME}/${encodedDomain}/w/${size}/h/${size}/fallback/lettermark/type/icon?c=${clientId}`;
   }
 
   static normalizeDomain(input: string): string | null {

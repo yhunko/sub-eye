@@ -38,7 +38,7 @@ export class SubscriptionPriceChangeWorkflow {
     }
 
     const workflowUrl = `${baseUrl}/api/subscriptions/price-change/workflow`;
-    const client = this.createClient();
+    const client = SubscriptionPriceChangeWorkflow.createClient();
     const result = await client.trigger({
       url: workflowUrl,
       body: payload,
@@ -48,7 +48,7 @@ export class SubscriptionPriceChangeWorkflow {
   }
 
   static async cancel(workflowRunId: string): Promise<void> {
-    const client = this.createClient();
+    const client = SubscriptionPriceChangeWorkflow.createClient();
     await client.cancel({ ids: workflowRunId });
   }
 

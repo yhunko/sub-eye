@@ -31,7 +31,8 @@ export class PushNotificationsUtils {
     // Convert ArrayBuffer to Base64url format for comparison with VAPID key
     // VAPID keys usually come as base64url (no padding, -_, etc) but let's normalize.
 
-    const serverKeyBase64 = this.arrayBufferToBase64(serverKeyBuffer);
+    const serverKeyBase64 =
+      PushNotificationsUtils.arrayBufferToBase64(serverKeyBuffer);
     if (!serverKeyBase64) return false;
 
     // Normalize both strings: remove padding, replace chars to match URL safe or standard
