@@ -1,20 +1,22 @@
 import { Client, type WorkflowContext } from "@upstash/workflow";
 import { serve } from "@upstash/workflow/hono";
 import { subDays } from "date-fns";
-import { CurrencyUtils } from "shared";
-import { DateTimezoneUtils } from "shared";
-import { RecurrenceUtils } from "shared";
-import { shouldIncludeOccurrence } from "shared";
 import type { UserPreferences } from "shared";
-import { db } from "../../db";
 import {
-  SubscriptionRepository,
-  type SubscriptionRecord,
-} from "./subscriptionRepository";
-import { UserService } from "../user/userService";
+  CurrencyUtils,
+  DateTimezoneUtils,
+  RecurrenceUtils,
+  shouldIncludeOccurrence,
+} from "shared";
+import { db } from "../../db";
 import { CurrencyService } from "../currency/currencyService";
 import { PushNotificationContent } from "../push-notification/pushNotificationContent";
 import { PushNotificationService } from "../push-notification/pushNotificationService";
+import { UserService } from "../user/userService";
+import {
+  type SubscriptionRecord,
+  SubscriptionRepository,
+} from "./subscriptionRepository";
 
 export type SubscriptionWorkflowPayload = {
   subscriptionId: string;
@@ -54,7 +56,7 @@ export class SubscriptionNotificationsWorkflow {
       const preferences = await UserService.getUserPreferences(
         subscription.userId,
       );
-      const notifyAt =
+      const { notifyAt, targetPaymentDate } =
         SubscriptionNotificationsWorkflow.calculateNotificationTime(
           subscription,
           preferences,
@@ -64,8 +66,9 @@ export class SubscriptionNotificationsWorkflow {
       await context.sleepUntil("wait-for-notification", notifyAt);
 
       await context.run("send-notification", async () => {
-        const { NotificationDeliveryService } =
-          await import("../../domains/notification/notificationDeliveryService");
+        const { NotificationDeliveryService } = await import(
+          "../../domains/notification/notificationDeliveryService"
+        );
         const originalPriceAmount = Number(subscription.cost);
         const originalPriceCurrencyCode = subscription.currency;
         const preferredPriceCurrencyCode = preferences.preferredCurrency;
@@ -82,7 +85,7 @@ export class SubscriptionNotificationsWorkflow {
           {
             locale: preferences.locale,
             timezone: preferences.preferredTimezone,
-            paymentDate,
+            paymentDate: targetPaymentDate,
             notificationDate: DateTimezoneUtils.now(
               preferences.preferredTimezone,
             ),
@@ -114,7 +117,10 @@ export class SubscriptionNotificationsWorkflow {
       });
 
       const nextPayment = RecurrenceUtils.addPeriod(
-        DateTimezoneUtils.toZoned(paymentDate, preferences.preferredTimezone),
+        DateTimezoneUtils.toZoned(
+          targetPaymentDate,
+          preferences.preferredTimezone,
+        ),
         subscription.every,
         subscription.period,
         {
@@ -163,7 +169,7 @@ export class SubscriptionNotificationsWorkflow {
     console.log("Running schedule");
 
     const workflowUrl = `${baseUrl}/api/subscriptions/notifications/workflow`;
-    const client = this.createClient();
+    const client = SubscriptionNotificationsWorkflow.createClient();
     const result = await client.trigger({
       url: workflowUrl,
       body: payload,
@@ -173,7 +179,7 @@ export class SubscriptionNotificationsWorkflow {
   }
 
   static async cancel(workflowRunId: string): Promise<void> {
-    const client = this.createClient();
+    const client = SubscriptionNotificationsWorkflow.createClient();
     await client.cancel({ ids: workflowRunId });
   }
 
@@ -181,7 +187,7 @@ export class SubscriptionNotificationsWorkflow {
     subscription: SubscriptionRecord,
     preferences: UserPreferences,
     paymentDate: string,
-  ): Date {
+  ): { notifyAt: Date; targetPaymentDate: string } {
     const timezone = preferences.preferredTimezone;
     const notificationTime = preferences.notificationTime;
     const notificationOffset = Math.max(0, preferences.notificationOffset);
@@ -196,8 +202,9 @@ export class SubscriptionNotificationsWorkflow {
       now,
     );
 
+    let targetPayment = nextPayment;
     let notifyDate = subDays(nextPayment, notificationOffset);
-    let notifyAt = this.applyNotificationTime(
+    let notifyAt = SubscriptionNotificationsWorkflow.applyNotificationTime(
       notifyDate,
       timezone,
       notificationTime,
@@ -215,15 +222,16 @@ export class SubscriptionNotificationsWorkflow {
           ),
         },
       );
+      targetPayment = nextPaymentAfter;
       notifyDate = subDays(nextPaymentAfter, notificationOffset);
-      notifyAt = this.applyNotificationTime(
+      notifyAt = SubscriptionNotificationsWorkflow.applyNotificationTime(
         notifyDate,
         timezone,
         notificationTime,
       );
     }
 
-    return notifyAt;
+    return { notifyAt, targetPaymentDate: targetPayment.toISOString() };
   }
 
   private static applyNotificationTime(
