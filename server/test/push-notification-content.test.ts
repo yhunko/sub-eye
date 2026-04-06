@@ -23,6 +23,40 @@ describe("PushNotificationContent.buildRenewalPayload", () => {
     restoreBrandfetchEnv();
   });
 
+  it("uses 'today' when the renewal is on the current notification day", () => {
+    const payload = PushNotificationContent.buildRenewalPayload({
+      locale: "en",
+      timezone: "UTC",
+      paymentDate: "2026-03-08T10:00:00.000Z",
+      notificationDate: new Date("2026-03-08T08:00:00.000Z"),
+      subscriptionId: "sub_01",
+      subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
+    });
+
+    expect(payload.body).toContain("renews today");
+  });
+
+  it("uses 'tomorrow' when the renewal is on the next notification day", () => {
+    const payload = PushNotificationContent.buildRenewalPayload({
+      locale: "en",
+      timezone: "UTC",
+      paymentDate: "2026-03-08T10:00:00.000Z",
+      notificationDate: new Date("2026-03-07T08:00:00.000Z"),
+      subscriptionId: "sub_01",
+      subscriptionName: "Netflix",
+      originalPriceAmount: 19.99,
+      originalPriceCurrencyCode: "usd",
+      preferredPriceAmount: 19.99,
+      preferredPriceCurrencyCode: "usd",
+    });
+
+    expect(payload.body).toContain("renews tomorrow");
+  });
+
   it("uses the Brandfetch client id from the server env", () => {
     process.env.BRANDFETCH_CLIENT_ID = "server_client_id";
     delete process.env.VITE_BRANDFETCH_CLIENT_ID;

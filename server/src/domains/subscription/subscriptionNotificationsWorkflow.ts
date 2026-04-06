@@ -193,14 +193,13 @@ export class SubscriptionNotificationsWorkflow {
     const notificationOffset = Math.max(0, preferences.notificationOffset);
 
     const now = DateTimezoneUtils.now(timezone);
-    const startDateZoned = DateTimezoneUtils.toZoned(paymentDate, timezone);
-
-    const nextPayment = RecurrenceUtils.getNextOccurrence(
-      startDateZoned,
-      subscription.every,
-      subscription.period,
-      now,
-    );
+    const nextPayment =
+      SubscriptionNotificationsWorkflow.resolveUpcomingPayment(
+        subscription,
+        paymentDate,
+        timezone,
+        now,
+      );
 
     let targetPayment = nextPayment;
     let notifyDate = subDays(nextPayment, notificationOffset);
@@ -211,27 +210,62 @@ export class SubscriptionNotificationsWorkflow {
     );
 
     if (notifyAt.getTime() <= now.getTime()) {
-      const nextPaymentAfter = RecurrenceUtils.addPeriod(
-        nextPayment,
-        subscription.every,
-        subscription.period,
-        {
-          anchorDate: DateTimezoneUtils.toZoned(
-            subscription.paymentDate,
-            timezone,
-          ),
-        },
-      );
-      targetPayment = nextPaymentAfter;
-      notifyDate = subDays(nextPaymentAfter, notificationOffset);
-      notifyAt = SubscriptionNotificationsWorkflow.applyNotificationTime(
-        notifyDate,
+      const targetPaymentDay = DateTimezoneUtils.startOfDay(
+        targetPayment,
         timezone,
-        notificationTime,
       );
+      const today = DateTimezoneUtils.startOfDay(now, timezone);
+
+      if (targetPaymentDay.getTime() >= today.getTime()) {
+        notifyAt = now;
+      } else {
+        const nextPaymentAfter = RecurrenceUtils.addPeriod(
+          nextPayment,
+          subscription.every,
+          subscription.period,
+          {
+            anchorDate: DateTimezoneUtils.toZoned(
+              subscription.paymentDate,
+              timezone,
+            ),
+          },
+        );
+        targetPayment = nextPaymentAfter;
+        notifyDate = subDays(nextPaymentAfter, notificationOffset);
+        notifyAt = SubscriptionNotificationsWorkflow.applyNotificationTime(
+          notifyDate,
+          timezone,
+          notificationTime,
+        );
+      }
     }
 
     return { notifyAt, targetPaymentDate: targetPayment.toISOString() };
+  }
+
+  private static resolveUpcomingPayment(
+    subscription: SubscriptionRecord,
+    paymentDate: string,
+    timezone: string,
+    now: Date,
+  ): Date {
+    const scheduledPayment = DateTimezoneUtils.toZoned(paymentDate, timezone);
+    const scheduledPaymentDay = DateTimezoneUtils.startOfDay(
+      scheduledPayment,
+      timezone,
+    );
+    const today = DateTimezoneUtils.startOfDay(now, timezone);
+
+    if (scheduledPaymentDay.getTime() >= today.getTime()) {
+      return scheduledPayment;
+    }
+
+    return RecurrenceUtils.getNextOccurrence(
+      scheduledPayment,
+      subscription.every,
+      subscription.period,
+      now,
+    );
   }
 
   private static applyNotificationTime(
