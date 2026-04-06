@@ -1,8 +1,17 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
+import type { MonthlySpendSummaryDto } from "shared";
 import { monthlySpendSummaryQuery } from "@/entities/analytics";
 import { useActiveSpace } from "@/shared/lib/org/use-active-space";
 import { SubscriptionsMonthlySpendCard } from "./subscriptions-monthly-spend-card";
+
+const EMPTY_MONTHLY_SPEND_SUMMARY: MonthlySpendSummaryDto = {
+  currencyCode: "USD",
+  currentMonthTotal: 0,
+  previousMonthTotal: 0,
+  deltaPercentage: null,
+  trend: [],
+};
 
 export const SubscriptionsMonthlySpendCardConnected = () => {
   const { userId } = useAuth();
@@ -12,7 +21,10 @@ export const SubscriptionsMonthlySpendCardConnected = () => {
     monthlySpendSummaryQuery({ userId: userId!, orgId }),
   );
 
-  if (!data) return null;
-
-  return <SubscriptionsMonthlySpendCard data={data} isLoading={isLoading} />;
+  return (
+    <SubscriptionsMonthlySpendCard
+      data={data ?? EMPTY_MONTHLY_SPEND_SUMMARY}
+      isLoading={!data && isLoading}
+    />
+  );
 };

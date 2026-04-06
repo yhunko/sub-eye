@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import { cn } from "@/shared/lib/classes-utils";
 
 type StatSummaryCardProps = {
@@ -48,19 +49,29 @@ export const StatSummaryCard: FC<StatSummaryCardProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div
-        className={cn(
-          "bg-muted h-40 w-full animate-pulse rounded-xl",
-          className,
-        )}
-      />
+      <Card className={cn("min-h-40", className)}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="size-6 rounded-full" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-1 flex-col space-y-3">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-3 w-40" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+            <Skeleton className="h-15 w-25 shrink-0 rounded-lg md:w-60" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   const DeltaIcon = delta?.icon;
 
   return (
-    <Card className={cn(className)}>
+    <Card className={cn("min-h-40", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-muted-foreground text-sm font-medium">
           {title}
