@@ -96,6 +96,14 @@ export default defineConfig({
     tsconfigPaths: true,
     alias: {
       "@server/client": path.resolve(__dirname, "../server/src/client"),
+      "@/i18n/messages": path.resolve(
+        __dirname,
+        "./src/shared/lib/i18n/messages/_index",
+      ),
+      "@/i18n/runtime": path.resolve(
+        __dirname,
+        "./src/shared/lib/i18n/runtime",
+      ),
     },
   },
 });
