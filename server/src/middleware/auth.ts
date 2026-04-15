@@ -1,4 +1,4 @@
-import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { clerkMiddleware, getAuth } from "@clerk/hono";
 import type { MiddlewareHandler } from "hono";
 
 const publicRoutePrefixes = ["/api/webhooks"];

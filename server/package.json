@@ -2,23 +2,23 @@
   "name": "server",
   "version": "0.0.1",
   "dependencies": {
-    "@clerk/express": "^2.0.1",
-    "@hono/clerk-auth": "^3.1.0",
+    "@clerk/express": "^2.1.2",
+    "@clerk/hono": "^0.1.13",
     "@hono/valibot-validator": "^0.6.1",
     "@neondatabase/serverless": "^1.0.2",
-    "@upstash/workflow": "^1.1.1",
+    "@upstash/workflow": "^1.2.0",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^0.45.1",
-    "hono": "^4.12.5",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.14",
     "shared": "workspace:*",
-    "svix": "^1.87.0",
-    "valibot": "^1.2.0",
+    "svix": "^1.90.0",
+    "valibot": "^1.3.1",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.10",
+    "@types/bun": "^1.3.12",
     "@types/web-push": "^3.6.4",
-    "drizzle-kit": "^0.31.9"
+    "drizzle-kit": "^0.31.10"
   },
   "main": "dist/index.js",
   "scripts": {
