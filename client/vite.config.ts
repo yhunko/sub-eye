@@ -7,7 +7,6 @@ import react from "@vitejs/plugin-react";
 import * as v from "valibot";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import mkcert from "vite-plugin-mkcert";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 import { version } from "../package.json";
 
@@ -47,12 +46,18 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom"],
-          "vendor-motion": ["motion/react"],
-          "vendor-query": ["@tanstack/react-query"],
-          "vendor-router": ["@tanstack/react-router"],
-          "vendor-clerk": ["@clerk/clerk-react"],
+        manualChunks(id) {
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/react-dom")
+          )
+            return "vendor-react";
+          if (id.includes("node_modules/motion")) return "vendor-motion";
+          if (id.includes("node_modules/@tanstack/react-query"))
+            return "vendor-query";
+          if (id.includes("node_modules/@tanstack/react-router"))
+            return "vendor-router";
+          if (id.includes("node_modules/@clerk")) return "vendor-clerk";
         },
       },
     },
@@ -86,11 +91,19 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
-    tsconfigPaths(),
   ],
   resolve: {
+    tsconfigPaths: true,
     alias: {
       "@server/client": path.resolve(__dirname, "../server/src/client"),
+      "@/i18n/messages": path.resolve(
+        __dirname,
+        "./src/shared/lib/i18n/messages/_index",
+      ),
+      "@/i18n/runtime": path.resolve(
+        __dirname,
+        "./src/shared/lib/i18n/runtime",
+      ),
     },
   },
 });

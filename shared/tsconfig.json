@@ -1,12 +1,15 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+
     // Environment setup
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "ESNext",
 
     // Output configuration
+    "rootDir": "./src",
     "declaration": true,
     "outDir": "./dist",
     "noEmit": false,
