@@ -69,8 +69,24 @@ export class SubscriptionNotificationsWorkflow {
         const { NotificationDeliveryService } = await import(
           "../../domains/notification/notificationDeliveryService"
         );
-        const originalPriceAmount = Number(subscription.cost);
-        const originalPriceCurrencyCode = subscription.currency;
+
+        const targetPayment = new Date(targetPaymentDate);
+        const scheduledEffectiveAt = subscription.scheduledEffectiveAt
+          ? new Date(subscription.scheduledEffectiveAt)
+          : null;
+        const hasScheduledPriceChange =
+          subscription.scheduledCost != null &&
+          subscription.scheduledCurrency != null &&
+          scheduledEffectiveAt != null &&
+          !Number.isNaN(scheduledEffectiveAt.getTime()) &&
+          scheduledEffectiveAt.getTime() <= targetPayment.getTime();
+
+        const originalPriceAmount = hasScheduledPriceChange
+          ? Number(subscription.scheduledCost)
+          : Number(subscription.cost);
+        const originalPriceCurrencyCode = hasScheduledPriceChange
+          ? subscription.scheduledCurrency!
+          : subscription.currency;
         const preferredPriceCurrencyCode = preferences.preferredCurrency;
         const rates = await CurrencyService.getRates(
           preferredPriceCurrencyCode,
