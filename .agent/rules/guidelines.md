@@ -138,6 +138,14 @@ Follow this pattern when adding new service methods.
 
 In development, `client/src/shared/lib/billing/local-plan-override.ts` lets developers simulate a Plus plan locally by writing a value to `localStorage`. The `planUsageQuery` applies this override on top of the real API response when `import.meta.env.DEV` is true.
 
+### Known architectural tech debt
+
+These existing deviations are accepted — do not auto-fix unless explicitly tasked:
+
+- `features/settings/ui/theme-switch-button.tsx` imports from `@/app/providers/theme-provider` — intentional FSD upward import (provider coupling)
+- `features/category/ai-generator` cross-imports `features/brandfetch` and uses a deep path into `features/category/manage-categories/ui/emoji-picker`
+- `server/src/domains/subscription/subscriptionService.ts` imports `{ db }` directly — some orchestration queries bypass the repository layer
+
 ## 4) Workspace-Specific Rules
 
 ### `client/`
@@ -202,6 +210,7 @@ Run the narrowest relevant checks first, then escalate for cross-workspace impac
 - When adding a new billing/usage metric, add it to `BillingService.getUsage` and surface it through `billingQueryKeys.usage` — do not create a parallel endpoint.
 - Start with the smallest relevant scope (workspace + feature/domain folder). Expand scope only when a change crosses package boundaries.
 - Validate assumptions against real code (imports, types, schemas, route handlers, service/repository calls) before editing.
+- For architecture-sensitive changes, invoke the relevant reviewer in `.claude/agents/`: `fsd-import-reviewer` (FSD boundaries), `layer-boundary-reviewer` (server layering), `cf-worker-reviewer` (CF Worker gotchas), `security-reviewer` (auth/webhook/billing).
 
 ## 9) Guideline Mirror Policy
 

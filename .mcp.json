@@ -23,6 +23,20 @@
         "/Users/yehor/Applications/WebStorm.app/Contents/plugins/mcpserver/lib/mcpserver-frontend.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/util-8.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.ktor.client.cio.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.ktor.client.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.ktor.network.tls.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.ktor.io.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.ktor.utils.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.kotlinx.io.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.kotlinx.serialization.core.jar:/Users/yehor/Applications/WebStorm.app/Contents/lib/module-intellij.libraries.kotlinx.serialization.json.jar",
         "com.intellij.mcpserver.stdio.McpStdioRunnerKt"
       ]
+    },
+    "neon": {
+      "command": "npx",
+      "args": ["-y", "@neondatabase/mcp-server-neon", "start"],
+      "env": {
+        "NEON_API_KEY": "${NEON_API_KEY}"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@github/mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
     }
   }
 }
