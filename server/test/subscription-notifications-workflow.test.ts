@@ -106,4 +106,60 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
       Date.parse("2026-05-04T10:00:00.000Z"),
     );
   });
+
+  it("ignores stale payload payment date and uses canonical subscription payment date", () => {
+    const now = new Date("2026-04-27T08:00:00.000Z");
+    (
+      DateTimezoneUtils as unknown as {
+        now: typeof DateTimezoneUtils.now;
+      }
+    ).now = () => now;
+
+    const result = (
+      SubscriptionNotificationsWorkflow as any
+    ).calculateNotificationTime(
+      createSubscription({
+        paymentDate: "2026-04-30T00:00:00.000Z",
+      }),
+      createPreferences(),
+      "2026-04-28T00:00:00.000Z",
+    ) as { notifyAt: Date; targetPaymentDate: string };
+
+    expect(Date.parse(result.targetPaymentDate)).toBe(
+      Date.parse("2026-04-30T00:00:00.000Z"),
+    );
+    expect(result.notifyAt.getTime()).toBe(
+      Date.parse("2026-04-29T10:00:00.000Z"),
+    );
+  });
+
+  it("schedules one-day reminder at local time in UTC+3", () => {
+    const now = new Date("2026-04-27T08:00:00.000Z");
+    (
+      DateTimezoneUtils as unknown as {
+        now: typeof DateTimezoneUtils.now;
+      }
+    ).now = () => now;
+
+    const result = (
+      SubscriptionNotificationsWorkflow as any
+    ).calculateNotificationTime(
+      createSubscription({
+        paymentDate: "2026-04-30T00:00:00.000Z",
+      }),
+      createPreferences({
+        preferredTimezone: "Europe/Kyiv",
+        notificationOffset: 1,
+        notificationTime: "10:00",
+      }),
+      "2026-04-30T00:00:00.000Z",
+    ) as { notifyAt: Date; targetPaymentDate: string };
+
+    expect(Date.parse(result.targetPaymentDate)).toBe(
+      Date.parse("2026-04-30T00:00:00.000Z"),
+    );
+    expect(result.notifyAt.getTime()).toBe(
+      Date.parse("2026-04-29T07:00:00.000Z"),
+    );
+  });
 });
