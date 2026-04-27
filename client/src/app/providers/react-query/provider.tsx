@@ -1,9 +1,16 @@
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { del, get, set } from "idb-keyval";
-import type { FC, PropsWithChildren } from "react";
+import { type FC, lazy, type PropsWithChildren, Suspense } from "react";
 import { queryClient } from "./client";
+
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@tanstack/react-query-devtools").then((module) => ({
+        default: module.ReactQueryDevtools,
+      })),
+    )
+  : null;
 
 const asyncPersister = createAsyncStoragePersister({
   storage: {
@@ -39,7 +46,14 @@ export const ReactQueryProvider: FC<PropsWithChildren> = ({ children }) => {
       onSuccess={handleSuccess}
     >
       {children}
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      {ReactQueryDevtools ? (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            buttonPosition="bottom-right"
+          />
+        </Suspense>
+      ) : null}
     </PersistQueryClientProvider>
   );
 };

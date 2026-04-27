@@ -7,22 +7,25 @@ import { AuthProvider } from "./app/providers/auth-provider";
 import { ReactQueryProvider } from "./app/providers/react-query";
 import { SpaceProvider } from "./app/providers/space-provider";
 import { ThemeProvider } from "./app/providers/theme-provider";
+import { AppErrorBoundary } from "./shared/ui";
 
 const rootElement = document.getElementById("root")!;
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <ReactQueryProvider>
-            <SpaceProvider>
-              <App />
-            </SpaceProvider>
-          </ReactQueryProvider>
-        </AnalyticsProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <AppErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <AnalyticsProvider>
+            <ReactQueryProvider>
+              <SpaceProvider>
+                <App />
+              </SpaceProvider>
+            </ReactQueryProvider>
+          </AnalyticsProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </AppErrorBoundary>
   </StrictMode>,
 );
