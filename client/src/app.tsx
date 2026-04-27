@@ -20,6 +20,7 @@ const DevPlanSwitcher = import.meta.env.DEV
 export function App() {
   const auth = useAuth();
   const isRestoring = useIsRestoring();
+  const [timedOut, setTimedOut] = useState(false);
   const shouldLoadDevPlanSwitcher =
     DevPlanSwitcher && isLocalPlanSwitcherEnabled();
   const [routerReady, setRouterReady] = useState(false);
@@ -30,6 +31,12 @@ export function App() {
     });
   }, []);
 
+  useEffect(() => {
+    if (auth.isLoaded && !isRestoring) return;
+    const id = setTimeout(() => setTimedOut(true), 8000);
+    return () => clearTimeout(id);
+  }, [auth.isLoaded, isRestoring]);
+
   const routerContext = useMemo(
     () => ({
       auth,
@@ -38,7 +45,7 @@ export function App() {
     [auth],
   );
 
-  if (!auth.isLoaded || isRestoring) {
+  if ((!auth.isLoaded || isRestoring) && !timedOut) {
     return <SplashScreen />;
   }
 

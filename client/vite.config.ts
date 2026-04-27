@@ -44,20 +44,33 @@ export default defineConfig({
     "import.meta.env.APP_VERSION": JSON.stringify(version),
   },
   build: {
+    chunkSizeWarningLimit: 600,
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (
-            id.includes("node_modules/react") ||
-            id.includes("node_modules/react-dom")
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
           )
             return "vendor-react";
-          if (id.includes("node_modules/motion")) return "vendor-motion";
-          if (id.includes("node_modules/@tanstack/react-query"))
+          if (id.includes("node_modules/motion/")) return "vendor-motion";
+          if (
+            id.includes("node_modules/@tanstack/react-query/") ||
+            id.includes("node_modules/@tanstack/query-core/")
+          )
             return "vendor-query";
-          if (id.includes("node_modules/@tanstack/react-router"))
+          if (
+            id.includes("node_modules/@tanstack/react-router/") ||
+            id.includes("node_modules/@tanstack/router-core/") ||
+            id.includes("node_modules/@tanstack/history/")
+          )
             return "vendor-router";
-          if (id.includes("node_modules/@clerk")) return "vendor-clerk";
+          if (id.includes("node_modules/@clerk/")) return "vendor-clerk";
+          if (id.includes("node_modules/@radix-ui/")) return "vendor-radix";
+          if (id.includes("node_modules/date-fns/")) return "vendor-date-fns";
+          if (id.includes("node_modules/recharts/")) return "vendor-recharts";
         },
       },
     },

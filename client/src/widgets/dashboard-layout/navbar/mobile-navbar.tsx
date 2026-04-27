@@ -1,19 +1,11 @@
-import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, List } from "lucide-react";
 import { domAnimation, LazyMotion, m as motion } from "motion/react";
 import { UserDropdownMenu } from "@/features/auth";
 import { SpaceSwitcher } from "@/features/org/space-switcher";
-import * as m from "@/i18n/messages";
-import { Button } from "@/shared/components";
 import { DashboardLogo } from "../dashboard-logo";
 
 let hasAnimated = false;
 
 export const MobileNavbar = () => {
-  const pathname = useLocation({
-    select: (l) => l.pathname,
-  });
-
   return (
     <>
       <LazyMotion features={domAnimation}>
@@ -33,31 +25,6 @@ export const MobileNavbar = () => {
           </div>
         </motion.header>
       </LazyMotion>
-
-      <nav className="bg-background/80 supports-backdrop-filter:bg-background/60 fixed right-0 bottom-0 left-0 z-40 flex justify-around border-t py-2 backdrop-blur md:hidden">
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            to="/"
-            className={`flex flex-col items-center gap-1 ${
-              pathname === "/" ? "bg-accent" : ""
-            }`}
-          >
-            <LayoutDashboard className="size-5" />
-            <span className="text-xs">{m.common_home()}</span>
-          </Link>
-        </Button>
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            to="/subscriptions"
-            className={`flex flex-col items-center gap-1 ${
-              pathname === "/subscriptions" ? "bg-accent" : ""
-            }`}
-          >
-            <List className="size-5" />
-            <span className="text-xs">{m.common_subscriptions()}</span>
-          </Link>
-        </Button>
-      </nav>
     </>
   );
 };
