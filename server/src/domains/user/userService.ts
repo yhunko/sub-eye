@@ -2,6 +2,8 @@ import { clerkClient } from "@clerk/express";
 import type { PlanId, UpdateUserPublicMetadata, UserPreferences } from "shared";
 import {
   CurrencyUtils,
+  DEFAULT_EXPIRY_NOTIFICATION_INTERVALS,
+  DEFAULT_EXPIRY_NOTIFICATIONS_ENABLED,
   hasPlanFeature,
   NOTIFICATION_SCHEDULE_DEFAULTS,
   resolvePlanId,
@@ -28,6 +30,14 @@ export class UserService {
     if (!hasPlanFeature(planId, "notificationSchedule")) {
       normalized.notificationTime = UserService.DEFAULT_TIME;
       normalized.notificationOffset = UserService.DEFAULT_OFFSET;
+    }
+
+    if (!hasPlanFeature(planId, "expiryNotifications")) {
+      normalized.expiryNotificationsEnabled =
+        DEFAULT_EXPIRY_NOTIFICATIONS_ENABLED;
+      normalized.expiryNotificationIntervals = [
+        ...DEFAULT_EXPIRY_NOTIFICATION_INTERVALS,
+      ];
     }
 
     return normalized;
@@ -115,6 +125,17 @@ export class UserService {
         typeof normalizedMetadata.notificationOffset === "number"
           ? normalizedMetadata.notificationOffset
           : UserService.DEFAULT_OFFSET,
+      expiryNotificationsEnabled:
+        typeof normalizedMetadata.expiryNotificationsEnabled === "boolean"
+          ? normalizedMetadata.expiryNotificationsEnabled
+          : DEFAULT_EXPIRY_NOTIFICATIONS_ENABLED,
+      expiryNotificationIntervals:
+        Array.isArray(normalizedMetadata.expiryNotificationIntervals) &&
+        normalizedMetadata.expiryNotificationIntervals.every(
+          (interval) => typeof interval === "number",
+        )
+          ? normalizedMetadata.expiryNotificationIntervals
+          : [...DEFAULT_EXPIRY_NOTIFICATION_INTERVALS],
       locale:
         typeof normalizedMetadata.locale === "string"
           ? normalizedMetadata.locale

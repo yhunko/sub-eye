@@ -1,6 +1,8 @@
 type TelegramNotificationCopy = {
   openSubEyeButton: string;
   openSettingsButton: string;
+  viewSubscriptionButton: string;
+  notificationSettingsButton: string;
   privateChatPrompt: string;
   connectInstructions: string;
   disconnected: string;
@@ -18,6 +20,8 @@ const COPY_BY_LOCALE: Record<string, TelegramNotificationCopy> = {
   en: {
     openSubEyeButton: "Open SubEye",
     openSettingsButton: "Open Notification Settings",
+    viewSubscriptionButton: "View Subscription",
+    notificationSettingsButton: "Notification Settings",
     privateChatPrompt:
       "Please message me in a private chat to connect your SubEye account.",
     connectInstructions:
@@ -37,6 +41,8 @@ const COPY_BY_LOCALE: Record<string, TelegramNotificationCopy> = {
   uk: {
     openSubEyeButton: "Відкрити SubEye",
     openSettingsButton: "Відкрити налаштування сповіщень",
+    viewSubscriptionButton: "Переглянути підписку",
+    notificationSettingsButton: "Налаштування сповіщень",
     privateChatPrompt:
       "Щоб підключити акаунт SubEye, напишіть мені в приватному чаті.",
     connectInstructions:

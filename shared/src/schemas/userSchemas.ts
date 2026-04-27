@@ -15,6 +15,13 @@ export const UpdateUserPublicMetadataSchema = v.object({
   notificationOffset: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(30)),
   ),
+  expiryNotificationsEnabled: v.optional(v.boolean()),
+  expiryNotificationIntervals: v.optional(
+    v.pipe(
+      v.array(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(30))),
+      v.maxLength(4),
+    ),
+  ),
   locale: v.optional(
     v.pipe(
       v.string(),

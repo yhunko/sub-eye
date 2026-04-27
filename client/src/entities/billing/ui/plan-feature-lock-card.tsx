@@ -13,6 +13,7 @@ type UpgradePromptSource =
   | "comparator_ai"
   | "category_ai"
   | "notification_schedule"
+  | "expiry_notifications"
   | "settings_billing";
 
 type PlanFeatureLockCardProps = {

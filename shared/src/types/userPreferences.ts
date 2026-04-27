@@ -3,5 +3,7 @@ export type UserPreferences = {
   preferredTimezone: string;
   notificationTime: string;
   notificationOffset: number;
+  expiryNotificationsEnabled: boolean;
+  expiryNotificationIntervals: number[];
   locale: string;
 };

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/(protected)/settings/notifications")({
   validateSearch: valibotValidator(settingsSearchSchema),
 });
 
-export function SettingsNotificationsPage() {
+function SettingsNotificationsPage() {
   const { from } = Route.useSearch();
 
   return (

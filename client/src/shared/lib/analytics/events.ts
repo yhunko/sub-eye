@@ -68,6 +68,7 @@ type EventMap = {
       | "comparator_ai"
       | "category_ai"
       | "notification_schedule"
+      | "expiry_notifications"
       | "settings_billing"
       | "category_limit";
     feature: string;

@@ -163,6 +163,7 @@ export const subscriptionsTable = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     qstashMessageId: text("qstash_message_id"),
+    cancellationQstashMessageId: text("cancellation_qstash_message_id"),
     priceChangeQstashMessageId: text("price_change_qstash_message_id"),
     brandDomain: text("brand_domain"),
     paymentDate: timestamp("payment_date", {

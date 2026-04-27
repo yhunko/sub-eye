@@ -57,6 +57,7 @@ const BILLING_FEATURE_KEYS = [
   "subscriptions",
   "analytics",
   "notifications",
+  "expiryNotifications",
   "notificationSchedule",
   "telegramMessageTemplate",
   "currency",

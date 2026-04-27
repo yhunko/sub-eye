@@ -1,7 +1,13 @@
 import { Bot, WandSparkles } from "lucide-react";
 import type { TelegramNotificationStatus } from "shared";
 import * as m from "@/i18n/messages";
-import { Item } from "@/shared/components/ui/item";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/shared/components";
 import { TelegramConnectionBadgeButton } from "./telegram-connection-badge-button";
 import { TelegramNotificationsCardShell } from "./telegram-notifications-card-shell";
 import { TelegramTemplateBuilderModal } from "./telegram-template-builder-modal";
@@ -35,20 +41,20 @@ export const TelegramDisconnectedCard = ({
         />
       }
     >
-      <Item variant="outline" className="items-center gap-3">
+      <Item className="items-center gap-3 p-0">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="text-muted-foreground bg-muted flex size-10 shrink-0 items-center justify-center rounded-2xl border shadow-xs">
+          <ItemMedia variant="icon" className="rounded-xl">
             <Bot className="size-4" />
-          </div>
+          </ItemMedia>
 
-          <div className="min-w-0">
-            <p className="text-sm font-medium">
+          <ItemContent className="min-w-0">
+            <ItemTitle>
               {m.settings_notifications_telegram_status_notConnected()}
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            </ItemTitle>
+            <ItemDescription className="text-xs leading-relaxed">
               {m.settings_notifications_telegram_description()}
-            </p>
-          </div>
+            </ItemDescription>
+          </ItemContent>
         </div>
       </Item>
     </TelegramNotificationsCardShell>

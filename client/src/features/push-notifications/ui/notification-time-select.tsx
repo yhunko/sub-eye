@@ -9,12 +9,13 @@ import { NOTIFICATION_SCHEDULE_DEFAULTS } from "shared";
 import { useUpdateUserMetadata } from "@/entities/user/api/use-update-user-metadata";
 import * as m from "@/i18n/messages";
 import {
-  Field,
-  FieldDescription,
-  FieldLabel,
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
   Spinner,
 } from "@/shared/components";
 import { NotificationOffsetSelect } from "./notification-offset-select";
@@ -64,11 +65,13 @@ export const NotificationTimeSelect = ({
   };
 
   return (
-    <Field>
-      <FieldLabel htmlFor="time-picker">
-        {m.settings_notifications_time_label()}
-        {isPending && <Spinner />}
-      </FieldLabel>
+    <Item variant="outline" className="flex-col items-stretch gap-3">
+      <ItemContent>
+        <ItemTitle className="gap-2">
+          {m.settings_notifications_time_label()}
+          {isPending && <Spinner />}
+        </ItemTitle>
+      </ItemContent>
       <InputGroup>
         <InputGroupAddon>
           {scheduleLocked ? <Lock /> : <Clock />}
@@ -91,11 +94,11 @@ export const NotificationTimeSelect = ({
           />
         </InputGroupAddon>
       </InputGroup>
-      <FieldDescription>
+      <ItemDescription className="line-clamp-none">
         {scheduleLocked
           ? m.settings_notifications_schedule_lockedDescription()
           : m.settings_notifications_time_desc()}
-      </FieldDescription>
-    </Field>
+      </ItemDescription>
+    </Item>
   );
 };

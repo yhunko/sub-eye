@@ -58,6 +58,43 @@ export class NotificationDeliveryService {
     return report;
   }
 
+  static async sendExpiryNotification(
+    userId: string,
+    payload: PushNotificationPayload,
+    options: SendNotificationOptions,
+  ): Promise<NotificationDeliveryReport> {
+    const [push, telegram] = await Promise.all([
+      NotificationDeliveryService.sendPushSafely(
+        userId,
+        payload,
+        options.vapidDetails,
+      ),
+      NotificationDeliveryService.sendExpiryTelegramSafely(
+        userId,
+        payload,
+        options.locale,
+      ),
+    ]);
+
+    const report: NotificationDeliveryReport = {
+      push,
+      telegram,
+      attempted: push.attempted + telegram.attempted,
+      delivered: push.delivered + telegram.delivered,
+      failed: push.failed + telegram.failed,
+      skipped: telegram.skipped,
+    };
+
+    if (report.failed > 0) {
+      console.error("Expiry notification delivery had failures", {
+        userId,
+        report,
+      });
+    }
+
+    return report;
+  }
+
   private static async sendPushSafely(
     userId: string,
     payload: PushNotificationPayload,
@@ -108,6 +145,31 @@ export class NotificationDeliveryService {
           error instanceof Error
             ? error.message
             : "Unknown telegram delivery error",
+      };
+    }
+  }
+
+  private static async sendExpiryTelegramSafely(
+    userId: string,
+    payload: PushNotificationPayload,
+    locale?: string,
+  ): Promise<TelegramSendReport> {
+    try {
+      return await TelegramNotificationService.sendExpiryNotification(
+        userId,
+        payload,
+        locale,
+      );
+    } catch (error) {
+      return {
+        attempted: 1,
+        delivered: 0,
+        failed: 1,
+        skipped: 0,
+        reason:
+          error instanceof Error
+            ? error.message
+            : "Unknown telegram expiry delivery error",
       };
     }
   }

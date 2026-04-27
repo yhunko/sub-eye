@@ -56,6 +56,11 @@ type TelegramTemplateContextPayload = {
   };
 };
 
+type TelegramActionButton = {
+  text: string;
+  url: string;
+};
+
 export class TelegramNotificationService {
   static async getStatus(userId: string): Promise<TelegramNotificationStatus> {
     const [link, preferences] = await Promise.all([
@@ -311,6 +316,44 @@ export class TelegramNotificationService {
     );
   }
 
+  static async sendExpiryNotification(
+    userId: string,
+    payload: PushNotificationPayload,
+    locale?: string,
+  ): Promise<TelegramSendReport> {
+    const copy = getTelegramNotificationCopy(locale);
+    const dataUrl =
+      payload.data && typeof payload.data.url === "string"
+        ? payload.data.url
+        : null;
+    const subscriptionUrl =
+      TelegramNotificationService.resolveAbsoluteUrl(dataUrl);
+    const settingsUrl = TelegramBotService.getSettingsUrl();
+    const messageText = [payload.title, payload.body]
+      .filter(Boolean)
+      .join("\n");
+
+    const buttons: TelegramActionButton[] = [];
+    if (subscriptionUrl) {
+      buttons.push({
+        text: copy.viewSubscriptionButton,
+        url: subscriptionUrl,
+      });
+    }
+    if (settingsUrl) {
+      buttons.push({
+        text: copy.notificationSettingsButton,
+        url: settingsUrl,
+      });
+    }
+
+    return TelegramNotificationService.sendMessageWithButtons(
+      userId,
+      messageText,
+      buttons,
+    );
+  }
+
   private static async buildSampleTemplateContext(
     userId: string,
   ): Promise<TelegramTemplateRenderContext> {
@@ -438,6 +481,22 @@ export class TelegramNotificationService {
     buttonUrl: string | null,
     buttonText: string,
   ): Promise<TelegramSendReport> {
+    const buttons: TelegramActionButton[] =
+      buttonUrl && buttonText ? [{ text: buttonText, url: buttonUrl }] : [];
+    return TelegramNotificationService.sendMessageWithButtons(
+      userId,
+      messageText,
+      buttons,
+    );
+  }
+
+  private static async sendMessageWithButtons(
+    userId: string,
+    messageText:
+      | string
+      | ((link: TelegramLinkRecord) => string | Promise<string>),
+    buttons: TelegramActionButton[],
+  ): Promise<TelegramSendReport> {
     const link = await TelegramNotificationRepository.findLinkByUserId(userId);
 
     if (!link) {
@@ -467,7 +526,7 @@ export class TelegramNotificationService {
       link.chatId,
       resolvedMessage,
       {
-        buttons: buttonUrl ? [{ text: buttonText, url: buttonUrl }] : [],
+        buttons,
       },
     );
 
