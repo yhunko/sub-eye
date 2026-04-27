@@ -1,8 +1,8 @@
 import { WandSparkles } from "lucide-react";
 import type { TelegramNotificationStatus } from "shared";
 import * as m from "@/i18n/messages";
+import { Item, ItemActions, ItemContent, ItemTitle } from "@/shared/components";
 import { Badge } from "@/shared/components/ui/badge";
-import { Item } from "@/shared/components/ui/item";
 import { Switch } from "@/shared/components/ui/switch";
 import { TelegramConnectionBadgeButton } from "./telegram-connection-badge-button";
 import { TelegramNotificationsCardShell } from "./telegram-notifications-card-shell";
@@ -46,23 +46,23 @@ export const TelegramConnectedCard = ({
         />
       }
     >
-      <Item variant="outline" className="items-center gap-3">
-        <div className="min-w-0 flex-1">
+      <Item className="items-center gap-3 p-0">
+        <ItemContent className="min-w-0">
           <Badge
             variant="outline"
             className="max-w-full rounded-full px-3 py-1"
           >
             <span className="truncate">{accountLabel}</span>
           </Badge>
-        </div>
+        </ItemContent>
 
-        <div className="ml-auto flex items-center gap-2">
+        <ItemActions className="ml-auto">
           <div className="flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-xs">
-            <span className="text-xs font-medium whitespace-nowrap">
+            <ItemTitle className="text-xs whitespace-nowrap">
               {status.enabled
                 ? m.settings_notifications_telegram_status_enabled()
                 : m.settings_notifications_telegram_status_disabled()}
-            </span>
+            </ItemTitle>
             <Switch
               id="telegram-notification-toggle"
               checked={status.enabled}
@@ -71,7 +71,7 @@ export const TelegramConnectedCard = ({
               aria-label={m.settings_notifications_telegram_toggleAria()}
             />
           </div>
-        </div>
+        </ItemActions>
       </Item>
     </TelegramNotificationsCardShell>
   );

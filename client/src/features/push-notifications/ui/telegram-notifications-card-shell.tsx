@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import * as m from "@/i18n/messages";
-import { Item } from "@/shared/components/ui/item";
+import {
+  Item,
+  ItemDescription,
+  ItemHeader,
+  ItemMedia,
+  ItemTitle,
+} from "@/shared/components";
 import { LogosTelegram } from "./logos-telegram";
 
 type TelegramNotificationsCardShellProps = {
@@ -16,24 +22,22 @@ export const TelegramNotificationsCardShell = ({
 }: TelegramNotificationsCardShellProps) => {
   return (
     <Item variant="outline" className="flex-col items-stretch gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <ItemHeader className="flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="bg-muted text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-xl border">
+          <ItemMedia variant="icon" className="rounded-xl">
             <LogosTelegram className="size-5" />
-          </div>
+          </ItemMedia>
 
           <div className="min-w-0 space-y-1">
-            <h3 className="text-sm leading-tight font-medium">
-              {m.settings_notifications_telegram_title()}
-            </h3>
-            <p className="text-muted-foreground max-w-xl text-sm leading-normal">
+            <ItemTitle>{m.settings_notifications_telegram_title()}</ItemTitle>
+            <ItemDescription className="max-w-xl">
               {m.settings_notifications_telegram_description()}
-            </p>
+            </ItemDescription>
           </div>
         </div>
 
         {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
-      </div>
+      </ItemHeader>
 
       <div>{children}</div>
 

@@ -4,15 +4,16 @@ import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
 import { useUpdateUserMetadata } from "@/entities/user";
 import * as m from "@/i18n/messages";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/components/ui/card";
-import { Checkbox } from "@/shared/components/ui/checkbox";
-import { Label } from "@/shared/components/ui/label";
-import { Switch } from "@/shared/components/ui/switch";
+  Checkbox,
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+  Label,
+} from "@/shared/components";
+import { cn } from "@/shared/lib/classes-utils";
+import { LoadingSwitch } from "./loading-switch";
 
 const AVAILABLE_INTERVALS = [14, 7, 3, 1] as const;
 const DEFAULT_INTERVALS = [7, 3] as number[];
@@ -81,62 +82,69 @@ export const ExpiryNotificationsCard = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{m.settings_notifications_expiry_title()}</CardTitle>
-        <CardDescription>
-          {m.settings_notifications_expiry_description()}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!canUseExpiryNotifications && (
-          <PlanFeatureLockCard
-            title={m.settings_notifications_expiry_lockTitle()}
-            description={m.settings_notifications_expiry_lockDescription()}
-            analyticsSource="expiry_notifications"
-          />
-        )}
-
-        <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              {m.settings_notifications_expiry_toggle_label()}
-            </p>
-          </div>
-          <Switch
+    <div className="space-y-3">
+      <Item variant="outline">
+        <ItemContent>
+          <ItemTitle>{m.settings_notifications_expiry_title()}</ItemTitle>
+          <ItemDescription>
+            {m.settings_notifications_expiry_description()}
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <LoadingSwitch
+            id="expiry-notifications-toggle"
             checked={expiryEnabled}
             disabled={!canUseExpiryNotifications || !isLoaded || isPending}
+            isLoading={isPending}
             onCheckedChange={handleToggle}
             aria-label={m.settings_notifications_expiry_toggle_label()}
           />
-        </div>
+        </ItemActions>
+      </Item>
 
-        {expiryEnabled && canUseExpiryNotifications && (
-          <div className="space-y-3 rounded-lg border p-3">
-            <p className="text-sm font-medium">
-              {m.settings_notifications_expiry_intervals_label()}
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {AVAILABLE_INTERVALS.map((interval) => {
-                const checkboxId = `expiry-notification-${interval}`;
-                return (
-                  <div key={interval} className="flex items-center gap-2">
-                    <Checkbox
-                      id={checkboxId}
-                      checked={selectedIntervals.includes(interval)}
-                      disabled={isPending}
-                      onCheckedChange={() => handleIntervalToggle(interval)}
-                    />
-                    <Label htmlFor={checkboxId}>
-                      {getIntervalLabel(interval)}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
+      {!canUseExpiryNotifications && (
+        <PlanFeatureLockCard
+          title={m.settings_notifications_expiry_lockTitle()}
+          description={m.settings_notifications_expiry_lockDescription()}
+          analyticsSource="expiry_notifications"
+        />
+      )}
+
+      {canUseExpiryNotifications && (
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-sm">
+            {m.settings_notifications_expiry_intervals_label()}
+          </p>
+          <div
+            className={cn(
+              "grid grid-cols-2 gap-2 transition-opacity",
+              !expiryEnabled && "opacity-50",
+            )}
+          >
+            {AVAILABLE_INTERVALS.map((interval) => {
+              const checkboxId = `expiry-notification-${interval}`;
+              return (
+                <Item
+                  key={interval}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Checkbox
+                    id={checkboxId}
+                    checked={selectedIntervals.includes(interval)}
+                    disabled={!expiryEnabled || isPending}
+                    onCheckedChange={() => handleIntervalToggle(interval)}
+                  />
+                  <Label htmlFor={checkboxId}>
+                    {getIntervalLabel(interval)}
+                  </Label>
+                </Item>
+              );
+            })}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 };
