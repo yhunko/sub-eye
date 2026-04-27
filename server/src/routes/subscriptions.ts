@@ -11,6 +11,7 @@ import {
   updateSubscriptionQuerySchema,
 } from "shared";
 import { object, string } from "valibot";
+import { SubscriptionCancellationWorkflow } from "../domains/subscription/subscriptionCancellationWorkflow";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
 import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscriptionPriceChangeWorkflow";
@@ -282,4 +283,8 @@ export const subscriptionRouter = new Hono()
     }
   })
   .post("/notifications/workflow", SubscriptionNotificationsWorkflow.handler)
+  .post(
+    "/cancellation-notifications/workflow",
+    SubscriptionCancellationWorkflow.handler,
+  )
   .post("/price-change/workflow", SubscriptionPriceChangeWorkflow.handler);

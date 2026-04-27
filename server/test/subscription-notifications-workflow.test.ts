@@ -39,6 +39,7 @@ const createSubscription = (
     createdAt: new Date("2026-03-01T00:00:00.000Z"),
     updatedAt: new Date("2026-03-01T00:00:00.000Z"),
     qstashMessageId: null,
+    cancellationQstashMessageId: null,
     priceChangeQstashMessageId: null,
     brandDomain: "apple.com",
     paymentDate: "2026-03-07T00:00:00.000Z",

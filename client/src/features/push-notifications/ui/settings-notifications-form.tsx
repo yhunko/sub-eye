@@ -8,6 +8,7 @@ import { track } from "@/shared/lib/analytics";
 import { apiClient as client } from "../../../shared/api/client";
 import { usePushNotificationsSubscription } from "../api/hooks";
 import { usePushNotificationsSupport } from "../model/use-push-notifications-support";
+import { ExpiryNotificationsCard } from "./expiry-notifications-card";
 import { NotificationTimeSelect } from "./notification-time-select";
 import { NotificationsButton } from "./notifications-button";
 import { NotificationsStatus } from "./notifications-status";
@@ -29,6 +30,7 @@ export const SettingsNotificationsForm = () => {
         <NotificationsStatus />
         <NotificationsButton />
         <TelegramNotificationsCard />
+        <ExpiryNotificationsCard />
       </div>
 
       <div className="flex flex-col gap-4">

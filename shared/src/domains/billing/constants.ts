@@ -15,6 +15,10 @@ export const PLAN_FEATURE_LABELS: Record<
     en: "Renewal notifications",
     uk: "Нагадування про продовження",
   },
+  expiryNotifications: {
+    en: "Expiry notifications",
+    uk: "Сповіщення про закінчення",
+  },
   notificationSchedule: {
     en: "Custom notification schedule",
     uk: "Гнучкий графік сповіщень",
@@ -34,6 +38,8 @@ export const PLAN_FEATURE_LABELS: Record<
 
 export const DEFAULT_NOTIFICATION_TIME = "10:00" as const;
 export const DEFAULT_NOTIFICATION_OFFSET = 1 as const;
+export const DEFAULT_EXPIRY_NOTIFICATIONS_ENABLED = false;
+export const DEFAULT_EXPIRY_NOTIFICATION_INTERVALS = [7, 3] as number[];
 
 export const NOTIFICATION_SCHEDULE_DEFAULTS = {
   notificationTime: DEFAULT_NOTIFICATION_TIME,
@@ -50,6 +56,7 @@ export const FREE_PLAN: Plan = {
     { key: "subscriptions", included: true },
     { key: "analytics", included: true },
     { key: "notifications", included: true },
+    { key: "expiryNotifications", included: false },
     { key: "notificationSchedule", included: false },
     { key: "telegramMessageTemplate", included: false },
     { key: "currency", included: true },
@@ -70,6 +77,7 @@ export const PLUS_PLAN: Plan = {
     { key: "subscriptions", included: true },
     { key: "analytics", included: true },
     { key: "notifications", included: true },
+    { key: "expiryNotifications", included: true },
     { key: "notificationSchedule", included: true },
     { key: "telegramMessageTemplate", included: true },
     { key: "currency", included: true },

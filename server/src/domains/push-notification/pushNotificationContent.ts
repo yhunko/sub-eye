@@ -7,6 +7,8 @@ const BRANDFETCH_CDN_HOSTNAME = "cdn.brandfetch.io";
 type StaticNotificationCopy = {
   renewalTitle: string;
   renewalBody: (subscriptionName: string, relativeLabel: string) => string;
+  expiryTitle: string;
+  expiryBody: (subscriptionName: string, relativeLabel: string) => string;
   testTitle: string;
   testBody: string;
 };
@@ -16,6 +18,9 @@ const COPY_BY_LOCALE: Record<string, StaticNotificationCopy> = {
     renewalTitle: "Subscription Renewal",
     renewalBody: (subscriptionName, relativeLabel) =>
       `Your subscription for ${subscriptionName} renews ${relativeLabel}.`,
+    expiryTitle: "Subscription Expiry",
+    expiryBody: (subscriptionName, relativeLabel) =>
+      `Your ${subscriptionName} subscription expires ${relativeLabel}.`,
     testTitle: "Test Notification",
     testBody: "If you see this, push notifications are working!",
   },
@@ -23,6 +28,9 @@ const COPY_BY_LOCALE: Record<string, StaticNotificationCopy> = {
     renewalTitle: "Поновлення підписки",
     renewalBody: (subscriptionName, relativeLabel) =>
       `Підписка ${subscriptionName} поновиться ${relativeLabel}.`,
+    expiryTitle: "Закінчення підписки",
+    expiryBody: (subscriptionName, relativeLabel) =>
+      `Підписка ${subscriptionName} закінчується ${relativeLabel}.`,
     testTitle: "Тестове сповіщення",
     testBody: "Якщо ви бачите це, push-сповіщення працюють.",
   },
@@ -39,6 +47,16 @@ type BuildRenewalNotificationPayloadInput = {
   originalPriceCurrencyCode: string;
   preferredPriceAmount: number;
   preferredPriceCurrencyCode: string;
+  brandDomain?: string | null;
+};
+
+type BuildExpiryPayloadInput = {
+  locale?: string;
+  timezone: string;
+  cancellationDate: string;
+  notificationDate: Date;
+  subscriptionId: string;
+  subscriptionName: string;
   brandDomain?: string | null;
 };
 
@@ -80,6 +98,32 @@ export class PushNotificationContent {
             currencyCode: input.originalPriceCurrencyCode,
           },
         },
+      },
+    };
+  }
+
+  static buildExpiryPayload(
+    input: BuildExpiryPayloadInput,
+  ): PushNotificationPayload {
+    const locale = PushNotificationContent.normalizeLocale(input.locale);
+    const copy = PushNotificationContent.getCopy(locale);
+    const relativeLabel = PushNotificationContent.getRelativeLabel({
+      locale,
+      timezone: input.timezone,
+      paymentDate: input.cancellationDate,
+      notificationDate: input.notificationDate,
+    });
+
+    return {
+      title: copy.expiryTitle,
+      body: copy.expiryBody(input.subscriptionName, relativeLabel),
+      icon: PushNotificationContent.resolveSubscriptionIcon(input.brandDomain),
+      badge: APP_NOTIFICATION_ICON,
+      tag: `subscription-expiry:${input.subscriptionId}`,
+      data: {
+        kind: "expiry",
+        url: `/subscriptions/${input.subscriptionId}`,
+        subscriptionId: input.subscriptionId,
       },
     };
   }

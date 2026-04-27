@@ -23,6 +23,7 @@ import { CurrencyService } from "../currency/currencyService";
 import { OrgService } from "../org/orgService";
 import { UserService } from "../user/userService";
 import { SubscriptionCalculator } from "./subscriptionCalculator";
+import { SubscriptionCancellationWorkflow } from "./subscriptionCancellationWorkflow";
 import {
   CannotScheduleCancelledError,
   CustomDateRequiredError,
@@ -57,6 +58,7 @@ type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
   currencyService: typeof CurrencyService;
   workflow: typeof SubscriptionNotificationsWorkflow;
+  cancellationWorkflow: typeof SubscriptionCancellationWorkflow;
   priceChangeWorkflow: PriceChangeWorkflowApi;
   userService: typeof UserService;
   orgService: typeof OrgService;
@@ -83,6 +85,7 @@ const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
   currencyService: CurrencyService,
   workflow: SubscriptionNotificationsWorkflow,
+  cancellationWorkflow: SubscriptionCancellationWorkflow,
   get priceChangeWorkflow() {
     return getPriceChangeWorkflow();
   },
@@ -181,9 +184,19 @@ export class SubscriptionService {
       SubscriptionService.toInsertPayload(userId, effectiveOrgId, payload),
     );
 
-    const result = SubscriptionService.shouldScheduleWorkflow(created)
+    const withRenewalWorkflow = SubscriptionService.shouldScheduleWorkflow(
+      created,
+    )
       ? await SubscriptionService.tryScheduleWorkflow(created, deps)
       : created;
+    const result = SubscriptionService.shouldScheduleCancellationWorkflow(
+      withRenewalWorkflow,
+    )
+      ? await SubscriptionService.tryScheduleCancellationWorkflow(
+          withRenewalWorkflow,
+          deps,
+        )
+      : withRenewalWorkflow;
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
@@ -230,6 +243,12 @@ export class SubscriptionService {
         deps,
       );
     }
+    if (existing.cancellationQstashMessageId) {
+      await SubscriptionService.tryCancelCancellationWorkflow(
+        existing.cancellationQstashMessageId,
+        deps,
+      );
+    }
 
     const shouldClearScheduledPriceChange =
       SubscriptionService.shouldClearScheduledPriceChange(existing, payload);
@@ -247,6 +266,7 @@ export class SubscriptionService {
     const updated = await deps.repository.update(db, id, {
       ...SubscriptionService.toUpdatePayload(payload),
       qstashMessageId: null,
+      cancellationQstashMessageId: null,
       ...(shouldClearScheduledPriceChange
         ? {
             scheduledCost: null,
@@ -257,9 +277,19 @@ export class SubscriptionService {
         : undefined),
     });
 
-    const result = SubscriptionService.shouldScheduleWorkflow(updated)
+    const withRenewalWorkflow = SubscriptionService.shouldScheduleWorkflow(
+      updated,
+    )
       ? await SubscriptionService.tryScheduleWorkflow(updated, deps)
       : updated;
+    const result = SubscriptionService.shouldScheduleCancellationWorkflow(
+      withRenewalWorkflow,
+    )
+      ? await SubscriptionService.tryScheduleCancellationWorkflow(
+          withRenewalWorkflow,
+          deps,
+        )
+      : withRenewalWorkflow;
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
@@ -564,6 +594,12 @@ export class SubscriptionService {
         deps,
       );
     }
+    if (existing.cancellationQstashMessageId) {
+      await SubscriptionService.tryCancelCancellationWorkflow(
+        existing.cancellationQstashMessageId,
+        deps,
+      );
+    }
 
     if (existing.priceChangeQstashMessageId) {
       await SubscriptionService.tryCancelPriceChangeWorkflow(
@@ -624,6 +660,7 @@ export class SubscriptionService {
     const updated = await deps.repository.update(db, id, {
       willBeCancelledAt: new Date(nextPaymentDate),
       qstashMessageId: null,
+      cancellationQstashMessageId: null,
       scheduledCost: null,
       scheduledCurrency: null,
       scheduledEffectiveAt: null,
@@ -636,6 +673,12 @@ export class SubscriptionService {
         deps,
       );
     }
+    if (existing.cancellationQstashMessageId) {
+      await SubscriptionService.tryCancelCancellationWorkflow(
+        existing.cancellationQstashMessageId,
+        deps,
+      );
+    }
 
     if (existing.priceChangeQstashMessageId) {
       await SubscriptionService.tryCancelPriceChangeWorkflow(
@@ -644,10 +687,16 @@ export class SubscriptionService {
       );
     }
 
+    const finalRecord = SubscriptionService.shouldScheduleCancellationWorkflow(
+      updated,
+    )
+      ? await SubscriptionService.tryScheduleCancellationWorkflow(updated, deps)
+      : updated;
+
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
 
-    const dto = SubscriptionService.mapToDto(updated, preferences, rates);
+    const dto = SubscriptionService.mapToDto(finalRecord, preferences, rates);
 
     await SubscriptionService.logHistoryAction(
       {
@@ -674,6 +723,12 @@ export class SubscriptionService {
         if (subscription.qstashMessageId) {
           await SubscriptionService.tryCancelWorkflow(
             subscription.qstashMessageId,
+            deps,
+          );
+        }
+        if (subscription.cancellationQstashMessageId) {
+          await SubscriptionService.tryCancelCancellationWorkflow(
+            subscription.cancellationQstashMessageId,
             deps,
           );
         }
@@ -711,6 +766,12 @@ export class SubscriptionService {
         if (sub?.qstashMessageId) {
           await SubscriptionService.tryCancelWorkflow(
             sub.qstashMessageId,
+            deps,
+          );
+        }
+        if (sub?.cancellationQstashMessageId) {
+          await SubscriptionService.tryCancelCancellationWorkflow(
+            sub.cancellationQstashMessageId,
             deps,
           );
         }
@@ -818,11 +879,29 @@ export class SubscriptionService {
             deps,
           );
         }
+        if (subscription.cancellationQstashMessageId) {
+          await SubscriptionService.tryCancelCancellationWorkflow(
+            subscription.cancellationQstashMessageId,
+            deps,
+          );
+        }
         if (SubscriptionService.shouldScheduleWorkflow(subscription)) {
           await SubscriptionService.tryScheduleWorkflow(subscription, deps);
         } else if (subscription.qstashMessageId !== null) {
           await deps.repository.update(db, subscription.id, {
             qstashMessageId: null,
+          });
+        }
+        if (
+          SubscriptionService.shouldScheduleCancellationWorkflow(subscription)
+        ) {
+          await SubscriptionService.tryScheduleCancellationWorkflow(
+            subscription,
+            deps,
+          );
+        } else if (subscription.cancellationQstashMessageId !== null) {
+          await deps.repository.update(db, subscription.id, {
+            cancellationQstashMessageId: null,
           });
         }
       }),
@@ -987,6 +1066,42 @@ export class SubscriptionService {
     }
   }
 
+  private static async scheduleCancellationWorkflow(
+    subscription: SubscriptionRecord,
+    deps: SubscriptionServiceDeps,
+  ): Promise<SubscriptionRecord> {
+    const workflowRunId = await deps.cancellationWorkflow.schedule({
+      subscriptionId: subscription.id,
+      cancellationDate: new Date(subscription.willBeCancelledAt!).toISOString(),
+    });
+
+    return await deps.repository.update(db, subscription.id, {
+      cancellationQstashMessageId: workflowRunId,
+    });
+  }
+
+  private static async tryScheduleCancellationWorkflow(
+    subscription: SubscriptionRecord,
+    deps: SubscriptionServiceDeps,
+  ): Promise<SubscriptionRecord> {
+    try {
+      return await SubscriptionService.scheduleCancellationWorkflow(
+        subscription,
+        deps,
+      );
+    } catch (error) {
+      console.error(
+        "Failed to schedule subscription cancellation notifications",
+        {
+          subscriptionId: subscription.id,
+          error,
+        },
+      );
+
+      return subscription;
+    }
+  }
+
   private static async tryCancelWorkflow(
     workflowRunId: string,
     deps: SubscriptionServiceDeps,
@@ -1012,6 +1127,23 @@ export class SubscriptionService {
         workflowRunId,
         error,
       });
+    }
+  }
+
+  private static async tryCancelCancellationWorkflow(
+    workflowRunId: string,
+    deps: SubscriptionServiceDeps,
+  ): Promise<void> {
+    try {
+      await deps.cancellationWorkflow.cancel(workflowRunId);
+    } catch (error) {
+      console.error(
+        "Failed to cancel subscription cancellation notifications",
+        {
+          workflowRunId,
+          error,
+        },
+      );
     }
   }
 
@@ -1054,6 +1186,27 @@ export class SubscriptionService {
       cancellationDate &&
       new Date(paymentDate).getTime() >= new Date(cancellationDate).getTime()
     ) {
+      return false;
+    }
+
+    const status = getSubscriptionLifecycleStatus({
+      willBeCancelledAt: cancellationDate,
+    });
+
+    return status !== "cancelled";
+  }
+
+  private static shouldScheduleCancellationWorkflow(
+    subscription: SubscriptionRecord,
+  ): boolean {
+    const cancellationDate = SubscriptionService.normalizeDate(
+      subscription.willBeCancelledAt,
+    );
+    if (!cancellationDate) {
+      return false;
+    }
+
+    if (Date.parse(cancellationDate) <= Date.now()) {
       return false;
     }
 
@@ -1539,6 +1692,12 @@ export class SubscriptionService {
         if (subscription.priceChangeQstashMessageId) {
           await SubscriptionService.tryCancelPriceChangeWorkflow(
             subscription.priceChangeQstashMessageId,
+            deps,
+          );
+        }
+        if (subscription.cancellationQstashMessageId) {
+          await SubscriptionService.tryCancelCancellationWorkflow(
+            subscription.cancellationQstashMessageId,
             deps,
           );
         }
