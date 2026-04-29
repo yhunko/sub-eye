@@ -13,9 +13,11 @@ import { Route as DemoRouteRouteImport } from "./../../pages/demo/route"
 import { Route as protectedRouteRouteImport } from "./../../pages/(protected)/route"
 import { Route as DemoIndexRouteImport } from "./../../pages/demo/index"
 import { Route as protectedIndexRouteImport } from "./../../pages/(protected)/index"
+import { Route as protectedDevRouteRouteImport } from "./../../pages/(protected)/dev/route"
 import { Route as DemoSubscriptionsIndexRouteImport } from "./../../pages/demo/subscriptions/index"
 import { Route as protectedSubscriptionsIndexRouteImport } from "./../../pages/(protected)/subscriptions/index"
 import { Route as protectedSettingsIndexRouteImport } from "./../../pages/(protected)/settings/index"
+import { Route as protectedDevIndexRouteImport } from "./../../pages/(protected)/dev/index"
 import { Route as AuthSignUpSplatRouteImport } from "./../../pages/auth/sign-up/$"
 import { Route as AuthSignInSplatRouteImport } from "./../../pages/auth/sign-in/$"
 import { Route as protectedSubscriptionsCompareRouteImport } from "./../../pages/(protected)/subscriptions/compare"
@@ -25,6 +27,7 @@ import { Route as protectedSettingsGeneralRouteImport } from "./../../pages/(pro
 import { Route as protectedSettingsCategoriesRouteImport } from "./../../pages/(protected)/settings/categories"
 import { Route as protectedSettingsBillingRouteImport } from "./../../pages/(protected)/settings/billing"
 import { Route as protectedSettingsAccountRouteImport } from "./../../pages/(protected)/settings/account"
+import { Route as protectedDevNotificationsRouteImport } from "./../../pages/(protected)/dev/notifications"
 import { Route as protectedSettingsGroupRouteRouteImport } from "./../../pages/(protected)/settings/group/route"
 import { Route as protectedSubscriptionsIdIndexRouteImport } from "./../../pages/(protected)/subscriptions/$id/index"
 import { Route as protectedSubscriptionsIdEditRouteImport } from "./../../pages/(protected)/subscriptions/$id/edit"
@@ -49,6 +52,11 @@ const protectedIndexRoute = protectedIndexRouteImport.update({
   path: "/",
   getParentRoute: () => protectedRouteRoute,
 } as any)
+const protectedDevRouteRoute = protectedDevRouteRouteImport.update({
+  id: "/dev",
+  path: "/dev",
+  getParentRoute: () => protectedRouteRoute,
+} as any)
 const DemoSubscriptionsIndexRoute = DemoSubscriptionsIndexRouteImport.update({
   id: "/subscriptions/",
   path: "/subscriptions/",
@@ -64,6 +72,11 @@ const protectedSettingsIndexRoute = protectedSettingsIndexRouteImport.update({
   id: "/settings/",
   path: "/settings/",
   getParentRoute: () => protectedRouteRoute,
+} as any)
+const protectedDevIndexRoute = protectedDevIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => protectedDevRouteRoute,
 } as any)
 const AuthSignUpSplatRoute = AuthSignUpSplatRouteImport.update({
   id: "/auth/sign-up/$",
@@ -117,6 +130,12 @@ const protectedSettingsAccountRoute =
     path: "/settings/account",
     getParentRoute: () => protectedRouteRoute,
   } as any)
+const protectedDevNotificationsRoute =
+  protectedDevNotificationsRouteImport.update({
+    id: "/notifications",
+    path: "/notifications",
+    getParentRoute: () => protectedDevRouteRoute,
+  } as any)
 const protectedSettingsGroupRouteRoute =
   protectedSettingsGroupRouteRouteImport.update({
     id: "/settings/group",
@@ -144,9 +163,11 @@ const protectedSettingsCategoriesGenerateRoute =
 
 export interface FileRoutesByFullPath {
   "/demo": typeof DemoRouteRouteWithChildren
+  "/dev": typeof protectedDevRouteRouteWithChildren
   "/": typeof protectedIndexRoute
   "/demo/": typeof DemoIndexRoute
   "/settings/group": typeof protectedSettingsGroupRouteRoute
+  "/dev/notifications": typeof protectedDevNotificationsRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
   "/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
@@ -156,6 +177,7 @@ export interface FileRoutesByFullPath {
   "/subscriptions/compare": typeof protectedSubscriptionsCompareRoute
   "/auth/sign-in/$": typeof AuthSignInSplatRoute
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
+  "/dev/": typeof protectedDevIndexRoute
   "/settings/": typeof protectedSettingsIndexRoute
   "/subscriptions/": typeof protectedSubscriptionsIndexRoute
   "/demo/subscriptions/": typeof DemoSubscriptionsIndexRoute
@@ -167,6 +189,7 @@ export interface FileRoutesByTo {
   "/": typeof protectedIndexRoute
   "/demo": typeof DemoIndexRoute
   "/settings/group": typeof protectedSettingsGroupRouteRoute
+  "/dev/notifications": typeof protectedDevNotificationsRoute
   "/settings/account": typeof protectedSettingsAccountRoute
   "/settings/billing": typeof protectedSettingsBillingRoute
   "/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
@@ -176,6 +199,7 @@ export interface FileRoutesByTo {
   "/subscriptions/compare": typeof protectedSubscriptionsCompareRoute
   "/auth/sign-in/$": typeof AuthSignInSplatRoute
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
+  "/dev": typeof protectedDevIndexRoute
   "/settings": typeof protectedSettingsIndexRoute
   "/subscriptions": typeof protectedSubscriptionsIndexRoute
   "/demo/subscriptions": typeof DemoSubscriptionsIndexRoute
@@ -187,9 +211,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/(protected)": typeof protectedRouteRouteWithChildren
   "/demo": typeof DemoRouteRouteWithChildren
+  "/(protected)/dev": typeof protectedDevRouteRouteWithChildren
   "/(protected)/": typeof protectedIndexRoute
   "/demo/": typeof DemoIndexRoute
   "/(protected)/settings/group": typeof protectedSettingsGroupRouteRoute
+  "/(protected)/dev/notifications": typeof protectedDevNotificationsRoute
   "/(protected)/settings/account": typeof protectedSettingsAccountRoute
   "/(protected)/settings/billing": typeof protectedSettingsBillingRoute
   "/(protected)/settings/categories": typeof protectedSettingsCategoriesRouteWithChildren
@@ -199,6 +225,7 @@ export interface FileRoutesById {
   "/(protected)/subscriptions/compare": typeof protectedSubscriptionsCompareRoute
   "/auth/sign-in/$": typeof AuthSignInSplatRoute
   "/auth/sign-up/$": typeof AuthSignUpSplatRoute
+  "/(protected)/dev/": typeof protectedDevIndexRoute
   "/(protected)/settings/": typeof protectedSettingsIndexRoute
   "/(protected)/subscriptions/": typeof protectedSubscriptionsIndexRoute
   "/demo/subscriptions/": typeof DemoSubscriptionsIndexRoute
@@ -210,9 +237,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | "/demo"
+    | "/dev"
     | "/"
     | "/demo/"
     | "/settings/group"
+    | "/dev/notifications"
     | "/settings/account"
     | "/settings/billing"
     | "/settings/categories"
@@ -222,6 +251,7 @@ export interface FileRouteTypes {
     | "/subscriptions/compare"
     | "/auth/sign-in/$"
     | "/auth/sign-up/$"
+    | "/dev/"
     | "/settings/"
     | "/subscriptions/"
     | "/demo/subscriptions/"
@@ -233,6 +263,7 @@ export interface FileRouteTypes {
     | "/"
     | "/demo"
     | "/settings/group"
+    | "/dev/notifications"
     | "/settings/account"
     | "/settings/billing"
     | "/settings/categories"
@@ -242,6 +273,7 @@ export interface FileRouteTypes {
     | "/subscriptions/compare"
     | "/auth/sign-in/$"
     | "/auth/sign-up/$"
+    | "/dev"
     | "/settings"
     | "/subscriptions"
     | "/demo/subscriptions"
@@ -252,9 +284,11 @@ export interface FileRouteTypes {
     | "__root__"
     | "/(protected)"
     | "/demo"
+    | "/(protected)/dev"
     | "/(protected)/"
     | "/demo/"
     | "/(protected)/settings/group"
+    | "/(protected)/dev/notifications"
     | "/(protected)/settings/account"
     | "/(protected)/settings/billing"
     | "/(protected)/settings/categories"
@@ -264,6 +298,7 @@ export interface FileRouteTypes {
     | "/(protected)/subscriptions/compare"
     | "/auth/sign-in/$"
     | "/auth/sign-up/$"
+    | "/(protected)/dev/"
     | "/(protected)/settings/"
     | "/(protected)/subscriptions/"
     | "/demo/subscriptions/"
@@ -309,6 +344,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedIndexRouteImport
       parentRoute: typeof protectedRouteRoute
     }
+    "/(protected)/dev": {
+      id: "/(protected)/dev"
+      path: "/dev"
+      fullPath: "/dev"
+      preLoaderRoute: typeof protectedDevRouteRouteImport
+      parentRoute: typeof protectedRouteRoute
+    }
     "/demo/subscriptions/": {
       id: "/demo/subscriptions/"
       path: "/subscriptions"
@@ -329,6 +371,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/settings/"
       preLoaderRoute: typeof protectedSettingsIndexRouteImport
       parentRoute: typeof protectedRouteRoute
+    }
+    "/(protected)/dev/": {
+      id: "/(protected)/dev/"
+      path: "/"
+      fullPath: "/dev/"
+      preLoaderRoute: typeof protectedDevIndexRouteImport
+      parentRoute: typeof protectedDevRouteRoute
     }
     "/auth/sign-up/$": {
       id: "/auth/sign-up/$"
@@ -393,6 +442,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof protectedSettingsAccountRouteImport
       parentRoute: typeof protectedRouteRoute
     }
+    "/(protected)/dev/notifications": {
+      id: "/(protected)/dev/notifications"
+      path: "/notifications"
+      fullPath: "/dev/notifications"
+      preLoaderRoute: typeof protectedDevNotificationsRouteImport
+      parentRoute: typeof protectedDevRouteRoute
+    }
     "/(protected)/settings/group": {
       id: "/(protected)/settings/group"
       path: "/settings/group"
@@ -424,6 +480,19 @@ declare module "@tanstack/react-router" {
   }
 }
 
+interface protectedDevRouteRouteChildren {
+  protectedDevNotificationsRoute: typeof protectedDevNotificationsRoute
+  protectedDevIndexRoute: typeof protectedDevIndexRoute
+}
+
+const protectedDevRouteRouteChildren: protectedDevRouteRouteChildren = {
+  protectedDevNotificationsRoute: protectedDevNotificationsRoute,
+  protectedDevIndexRoute: protectedDevIndexRoute,
+}
+
+const protectedDevRouteRouteWithChildren =
+  protectedDevRouteRoute._addFileChildren(protectedDevRouteRouteChildren)
+
 interface protectedSettingsCategoriesRouteChildren {
   protectedSettingsCategoriesGenerateRoute: typeof protectedSettingsCategoriesGenerateRoute
 }
@@ -440,6 +509,7 @@ const protectedSettingsCategoriesRouteWithChildren =
   )
 
 interface protectedRouteRouteChildren {
+  protectedDevRouteRoute: typeof protectedDevRouteRouteWithChildren
   protectedIndexRoute: typeof protectedIndexRoute
   protectedSettingsGroupRouteRoute: typeof protectedSettingsGroupRouteRoute
   protectedSettingsAccountRoute: typeof protectedSettingsAccountRoute
@@ -456,6 +526,7 @@ interface protectedRouteRouteChildren {
 }
 
 const protectedRouteRouteChildren: protectedRouteRouteChildren = {
+  protectedDevRouteRoute: protectedDevRouteRouteWithChildren,
   protectedIndexRoute: protectedIndexRoute,
   protectedSettingsGroupRouteRoute: protectedSettingsGroupRouteRoute,
   protectedSettingsAccountRoute: protectedSettingsAccountRoute,

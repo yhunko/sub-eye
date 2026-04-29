@@ -43,7 +43,7 @@ export class SubscriptionCancellationWorkflow {
       const intervals = [...preferences.expiryNotificationIntervals].sort(
         (a, b) => b - a,
       );
-      const now = DateTimezoneUtils.now(preferences.preferredTimezone);
+      const startedAt = await context.run("init", async () => Date.now());
 
       for (const interval of intervals) {
         const notifyAt = SubscriptionCancellationWorkflow.buildNotifyAt(
@@ -53,7 +53,7 @@ export class SubscriptionCancellationWorkflow {
           preferences.notificationTime,
         );
 
-        if (notifyAt.getTime() <= now.getTime()) {
+        if (notifyAt.getTime() <= startedAt) {
           continue;
         }
 
