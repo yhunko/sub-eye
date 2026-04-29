@@ -6,7 +6,7 @@ import { subscriptionsQuery } from "../../entities/subscription";
 import { RootErrorFallback } from "../../shared/ui";
 
 export const Route = createFileRoute("/(protected)")({
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: ({ context, location }) => {
     const userId = context.auth.userId;
 
     if (context.auth.isLoaded && !userId) {
@@ -18,14 +18,16 @@ export const Route = createFileRoute("/(protected)")({
       });
     }
 
-    await Promise.all([
-      context.queryClient.prefetchQuery(
-        planUsageQuery({ params: { userId: userId! } }),
-      ),
-      context.queryClient.prefetchQuery(
-        subscriptionsQuery({ params: { userId: userId! } }),
-      ),
-    ]);
+    if (!userId) return;
+
+    void context.queryClient.prefetchQuery(
+      planUsageQuery({ params: { userId } }),
+    );
+    void context.queryClient.prefetchQuery(
+      subscriptionsQuery({
+        params: { userId, orgId: context.auth.orgId ?? null },
+      }),
+    );
   },
   errorComponent: RootErrorFallback,
   component: () => (

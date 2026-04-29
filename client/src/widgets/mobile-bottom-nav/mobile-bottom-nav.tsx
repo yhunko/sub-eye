@@ -45,20 +45,23 @@ const MobileBottomNav: FC = () => {
         }}
         className="bg-background/80 supports-backdrop-filter:bg-background/40 pb-safe fixed right-2 bottom-4 left-2 z-50 block rounded-full border border-t backdrop-blur-xs sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 md:hidden"
       >
-        <div className="flex h-16 items-center justify-around px-2">
+        <div className="grid h-16 grid-cols-3 items-center px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
 
             if (item.isPrimary) {
               return (
-                <div key={item.href} className="relative -top-5">
+                <div
+                  key={item.href}
+                  className="relative -top-5 flex justify-center"
+                >
                   <Button
                     asChild
                     size="icon"
-                    className="size-12 rounded-full shadow-lg"
+                    className="size-14 touch-manipulation rounded-full shadow-lg"
                     aria-label={item.label}
                   >
-                    <Link to={item.href}>
+                    <Link to={item.href} preload="render">
                       <Icon className="size-6" />
                       <span className="sr-only">{item.label}</span>
                     </Link>
@@ -71,8 +74,9 @@ const MobileBottomNav: FC = () => {
               <Link
                 key={item.href}
                 to={item.href}
+                preload="render"
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 p-2 text-xs transition-colors",
+                  "flex min-h-14 touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-xs transition-colors select-none active:bg-accent/70",
                   item.isActive
                     ? "text-primary font-medium"
                     : "text-muted-foreground hover:text-foreground",
