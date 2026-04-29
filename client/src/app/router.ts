@@ -13,7 +13,8 @@ export const router = createRouter({
   defaultPreload: "intent",
   scrollRestoration: true,
   defaultStructuralSharing: true,
-  defaultPreloadStaleTime: 1000,
+  // TanStack Query owns data freshness; route preloads should always reach query cache.
+  defaultPreloadStaleTime: 0,
   defaultErrorComponent: RootErrorFallback,
 });
 
