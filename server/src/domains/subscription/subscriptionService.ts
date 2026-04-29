@@ -95,6 +95,10 @@ const defaultDeps: SubscriptionServiceDeps = {
   categoryRepository: CategoryRepository,
 };
 
+// Prevent overlapping reschedules from request bursts (e.g. preference saves)
+// in the same server instance.
+const rescheduleUserNotificationsLocks = new Map<string, Promise<void>>();
+
 export class SubscriptionService {
   static async getSubscriptions(
     userId: string,
@@ -869,32 +873,56 @@ export class SubscriptionService {
     userId: string,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<void> {
-    const subscriptions = await deps.repository.findByUserId(db, userId);
+    const previous = rescheduleUserNotificationsLocks.get(userId);
 
-    await Promise.all(
-      subscriptions.map(async (subscription) => {
+    const run = async (): Promise<void> => {
+      const subscriptions = await deps.repository.findByUserId(db, userId);
+
+      // Important: keep rescheduling sequential per user. This reduces
+      // overlapping cancel+schedule races during request bursts.
+      for (const subscription of subscriptions) {
+        const shouldScheduleRenewal =
+          SubscriptionService.shouldScheduleWorkflow(subscription);
+
+        let cancelledRenewal = true;
         if (subscription.qstashMessageId) {
-          await SubscriptionService.tryCancelWorkflow(
+          cancelledRenewal = await SubscriptionService.tryCancelWorkflow(
             subscription.qstashMessageId,
             deps,
           );
         }
-        if (subscription.cancellationQstashMessageId) {
-          await SubscriptionService.tryCancelCancellationWorkflow(
-            subscription.cancellationQstashMessageId,
-            deps,
-          );
-        }
-        if (SubscriptionService.shouldScheduleWorkflow(subscription)) {
-          await SubscriptionService.tryScheduleWorkflow(subscription, deps);
+
+        if (shouldScheduleRenewal) {
+          // If we couldn't cancel the previous workflow run, avoid creating
+          // a second run chain.
+          if (cancelledRenewal || !subscription.qstashMessageId) {
+            await SubscriptionService.tryScheduleWorkflow(subscription, deps);
+          }
         } else if (subscription.qstashMessageId !== null) {
           await deps.repository.update(db, subscription.id, {
             qstashMessageId: null,
           });
         }
-        if (
-          SubscriptionService.shouldScheduleCancellationWorkflow(subscription)
-        ) {
+
+        const shouldScheduleCancellation =
+          SubscriptionService.shouldScheduleCancellationWorkflow(subscription);
+
+        if (subscription.cancellationQstashMessageId) {
+          const cancelledCancellation =
+            await SubscriptionService.tryCancelCancellationWorkflow(
+              subscription.cancellationQstashMessageId,
+              deps,
+            );
+
+          // If we couldn't cancel the previous workflow run chain, avoid
+          // scheduling a second one.
+          if (shouldScheduleCancellation && !cancelledCancellation) {
+            // Intentionally do not mutate cancellationQstashMessageId.
+            continue;
+          }
+        }
+
+        if (shouldScheduleCancellation) {
           await SubscriptionService.tryScheduleCancellationWorkflow(
             subscription,
             deps,
@@ -904,8 +932,19 @@ export class SubscriptionService {
             cancellationQstashMessageId: null,
           });
         }
-      }),
-    );
+      }
+    };
+
+    const next = (previous ?? Promise.resolve()).then(run);
+    rescheduleUserNotificationsLocks.set(userId, next);
+
+    try {
+      await next;
+    } finally {
+      if (rescheduleUserNotificationsLocks.get(userId) === next) {
+        rescheduleUserNotificationsLocks.delete(userId);
+      }
+    }
   }
 
   private static mapToDto(
@@ -1105,14 +1144,16 @@ export class SubscriptionService {
   private static async tryCancelWorkflow(
     workflowRunId: string,
     deps: SubscriptionServiceDeps,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       await deps.workflow.cancel(workflowRunId);
+      return true;
     } catch (error) {
       console.error("Failed to cancel subscription notifications", {
         workflowRunId,
         error,
       });
+      return false;
     }
   }
 
@@ -1133,9 +1174,10 @@ export class SubscriptionService {
   private static async tryCancelCancellationWorkflow(
     workflowRunId: string,
     deps: SubscriptionServiceDeps,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       await deps.cancellationWorkflow.cancel(workflowRunId);
+      return true;
     } catch (error) {
       console.error(
         "Failed to cancel subscription cancellation notifications",
@@ -1144,6 +1186,7 @@ export class SubscriptionService {
           error,
         },
       );
+      return false;
     }
   }
 

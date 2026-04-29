@@ -22,6 +22,8 @@ the files listed below.
 
 ## QStash workflow invariants — read before touching workflows
 
+Previous notification spam incidents were caused by duplicate workflow runs coexisting during reschedule races. The active protection is implemented in `subscriptionNotificationsWorkflow.ts` + `subscriptionService.ts`.
+
 QStash **replays the entire handler function from the top** each time a step
 wakes up. Every `context.run()` and `context.sleepUntil()` call is tracked by
 **sequence index** (0, 1, 2, …). The SDK matches each call to the stored step
@@ -67,6 +69,19 @@ DB reads at the top of the handler (fetching subscription, preferences, plan)
 run on every QStash replay. Keep them cheap and idempotent. Never perform
 side-effects (writes, external calls) outside a `context.run()` step.
 
+### Rule: renewal sends must be gated by authoritative run ownership
+
+For renewal workflows, only the run whose id matches the current
+`subscriptions.qstash_message_id` may send notifications or schedule next cycle.
+Always check:
+
+```ts
+latest.qstashMessageId === context.workflowRunId
+```
+
+If false, exit without send/schedule. This prevents stale duplicated runs from
+spamming push + Telegram.
+
 ---
 
 ## Reschedule guard — `src/routes/user.ts`
@@ -93,6 +108,13 @@ const NOTIFICATION_RELEVANT_FIELDS = [
 Currency, locale, date-format, and other preference changes must **not**
 trigger a reschedule. If you add a new preference field, decide explicitly
 whether it affects scheduling and update this list accordingly.
+
+Additionally, `SubscriptionService.rescheduleUserNotifications(userId)` must be
+serialized per user in-process. Overlapping reschedules for the same user are
+not allowed because they can duplicate active QStash runs.
+
+If a workflow cancel operation fails, do not schedule a replacement in the same
+pass. Keep the old run as authoritative and retry on the next reschedule.
 
 ---
 

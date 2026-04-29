@@ -164,3 +164,35 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
     );
   });
 });
+
+describe("SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun", () => {
+  it("returns true when the workflow run id matches the stored qstashMessageId", () => {
+    expect(
+      SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(
+        "wfr_1",
+        "wfr_1",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false when the workflow run id does not match the stored qstashMessageId", () => {
+    expect(
+      SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(
+        "wfr_old",
+        "wfr_new",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false when the stored qstashMessageId is null/undefined", () => {
+    expect(
+      SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(null, "wfr_1"),
+    ).toBe(false);
+    expect(
+      SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(
+        undefined,
+        "wfr_1",
+      ),
+    ).toBe(false);
+  });
+});
