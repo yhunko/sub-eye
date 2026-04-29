@@ -123,6 +123,7 @@
 
   body {
     @apply bg-background text-foreground font-nunito;
+    touch-action: manipulation;
   }
 
   ::-webkit-scrollbar {
