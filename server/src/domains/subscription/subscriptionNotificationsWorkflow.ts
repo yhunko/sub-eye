@@ -326,48 +326,101 @@ export class SubscriptionNotificationsWorkflow {
       subscription.paymentDate,
       timezone,
     );
+    const today = DateTimezoneUtils.startOfDay(now, timezone);
+    const canonicalNext =
+      SubscriptionNotificationsWorkflow.resolveCanonicalUpcomingPayment(
+        subscription,
+        canonicalPayment,
+        timezone,
+        now,
+        today,
+      );
+
+    const payloadPayment = DateTimezoneUtils.toZoned(paymentDate, timezone);
+    const nextAfterCanonical = SubscriptionNotificationsWorkflow.nextPayment(
+      subscription,
+      canonicalNext,
+      timezone,
+    );
+
+    if (
+      SubscriptionNotificationsWorkflow.isAcceptedPayloadPayment(
+        payloadPayment,
+        canonicalNext,
+        nextAfterCanonical,
+        timezone,
+        today,
+      )
+    ) {
+      return { date: payloadPayment };
+    }
+
+    console.warn(
+      "Ignoring stale workflow payload payment date for subscription notification scheduling",
+      {
+        subscriptionId: subscription.id,
+        payloadPaymentDate: paymentDate,
+        canonicalNextPaymentDate: canonicalNext.toISOString(),
+        nextAcceptedPaymentDate: nextAfterCanonical.toISOString(),
+        timezone,
+      },
+    );
+
+    return { date: canonicalNext };
+  }
+
+  private static resolveCanonicalUpcomingPayment(
+    subscription: SubscriptionRecord,
+    canonicalPayment: Date,
+    timezone: string,
+    now: Date,
+    today: Date,
+  ): Date {
     const canonicalPaymentDay = DateTimezoneUtils.startOfDay(
       canonicalPayment,
       timezone,
     );
-    const today = DateTimezoneUtils.startOfDay(now, timezone);
 
     if (canonicalPaymentDay.getTime() >= today.getTime()) {
-      return { date: canonicalPayment };
+      return canonicalPayment;
     }
 
-    const canonicalNext = RecurrenceUtils.getNextOccurrence(
+    return RecurrenceUtils.getNextOccurrence(
       canonicalPayment,
       subscription.every,
       subscription.period,
       now,
     );
+  }
 
-    const payloadPayment = DateTimezoneUtils.toZoned(paymentDate, timezone);
+  private static isAcceptedPayloadPayment(
+    payloadPayment: Date,
+    canonicalNext: Date,
+    nextAfterCanonical: Date,
+    timezone: string,
+    today: Date,
+  ): boolean {
     const payloadPaymentDay = DateTimezoneUtils.startOfDay(
       payloadPayment,
       timezone,
     );
+    if (payloadPaymentDay.getTime() < today.getTime()) {
+      return false;
+    }
+
     const canonicalNextDay = DateTimezoneUtils.startOfDay(
       canonicalNext,
       timezone,
     );
+    const nextAfterCanonicalDay = DateTimezoneUtils.startOfDay(
+      nextAfterCanonical,
+      timezone,
+    );
 
-    if (payloadPaymentDay.getTime() === canonicalNextDay.getTime()) {
-      return { date: payloadPayment };
-    } else {
-      console.warn(
-        "Ignoring stale workflow payload payment date for subscription notification scheduling",
-        {
-          subscriptionId: subscription.id,
-          payloadPaymentDate: paymentDate,
-          canonicalNextPaymentDate: canonicalNext.toISOString(),
-          timezone,
-        },
-      );
-    }
-
-    return { date: canonicalNext };
+    return (
+      payloadPaymentDay.getTime() === canonicalNextDay.getTime() ||
+      payloadPaymentDay.getTime() === nextAfterCanonicalDay.getTime()
+    );
   }
 
   private static resolveSchedule(

@@ -9,6 +9,22 @@ import type { SubscriptionRecord } from "../src/domains/subscription/subscriptio
 
 const originalNow = DateTimezoneUtils.now;
 
+type NotificationTimeResult = {
+  notifyAt: Date;
+  targetPaymentDate: string;
+};
+
+type SubscriptionNotificationsWorkflowTestApi = {
+  calculateNotificationTime: (
+    subscription: SubscriptionRecord,
+    preferences: UserPreferences,
+    paymentDate: string,
+  ) => NotificationTimeResult;
+};
+
+const workflowTestApi =
+  SubscriptionNotificationsWorkflow as unknown as SubscriptionNotificationsWorkflowTestApi;
+
 const createPreferences = (
   overrides: Partial<UserPreferences> = {},
 ): UserPreferences => ({
@@ -66,20 +82,70 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
       }
     ).now = () => now;
 
-    const result = (
-      SubscriptionNotificationsWorkflow as any
-    ).calculateNotificationTime(
+    const result = workflowTestApi.calculateNotificationTime(
       createSubscription({
         paymentDate: "2026-03-07T00:00:00.000Z",
       }),
       createPreferences(),
       "2026-04-07T00:00:00.000Z",
-    ) as { notifyAt: Date; targetPaymentDate: string };
+    );
 
     expect(Date.parse(result.targetPaymentDate)).toBe(
       Date.parse("2026-04-07T00:00:00.000Z"),
     );
     expect(result.notifyAt.getTime()).toBe(now.getTime());
+  });
+
+  it("uses the next-cycle payload after a catch-up notification instead of looping on tomorrow", () => {
+    const now = new Date("2026-04-29T08:30:00.000Z");
+    (
+      DateTimezoneUtils as unknown as {
+        now: typeof DateTimezoneUtils.now;
+      }
+    ).now = () => now;
+
+    const result = workflowTestApi.calculateNotificationTime(
+      createSubscription({
+        paymentDate: "2026-04-30T00:00:00.000Z",
+      }),
+      createPreferences({
+        preferredTimezone: "Europe/Kyiv",
+        notificationOffset: 1,
+        notificationTime: "10:00",
+      }),
+      "2026-05-30T00:00:00.000Z",
+    );
+
+    expect(Date.parse(result.targetPaymentDate)).toBe(
+      Date.parse("2026-05-30T00:00:00.000Z"),
+    );
+    expect(result.notifyAt.getTime()).toBe(
+      Date.parse("2026-05-29T07:00:00.000Z"),
+    );
+  });
+
+  it("uses the next-cycle payload when canonical next is tomorrow from a past anchor", () => {
+    const now = new Date("2026-04-29T15:00:00.000Z");
+    (
+      DateTimezoneUtils as unknown as {
+        now: typeof DateTimezoneUtils.now;
+      }
+    ).now = () => now;
+
+    const result = workflowTestApi.calculateNotificationTime(
+      createSubscription({
+        paymentDate: "2026-03-30T00:00:00.000Z",
+      }),
+      createPreferences(),
+      "2026-05-30T00:00:00.000Z",
+    );
+
+    expect(Date.parse(result.targetPaymentDate)).toBe(
+      Date.parse("2026-05-30T00:00:00.000Z"),
+    );
+    expect(result.notifyAt.getTime()).toBe(
+      Date.parse("2026-05-29T10:00:00.000Z"),
+    );
   });
 
   it("advances to the next cycle when the occurrence has already passed", () => {
@@ -90,15 +156,13 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
       }
     ).now = () => now;
 
-    const result = (
-      SubscriptionNotificationsWorkflow as any
-    ).calculateNotificationTime(
+    const result = workflowTestApi.calculateNotificationTime(
       createSubscription({
         paymentDate: "2026-03-05T00:00:00.000Z",
       }),
       createPreferences(),
       "2026-04-05T00:00:00.000Z",
-    ) as { notifyAt: Date; targetPaymentDate: string };
+    );
 
     expect(Date.parse(result.targetPaymentDate)).toBe(
       Date.parse("2026-05-05T00:00:00.000Z"),
@@ -116,15 +180,13 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
       }
     ).now = () => now;
 
-    const result = (
-      SubscriptionNotificationsWorkflow as any
-    ).calculateNotificationTime(
+    const result = workflowTestApi.calculateNotificationTime(
       createSubscription({
         paymentDate: "2026-04-30T00:00:00.000Z",
       }),
       createPreferences(),
       "2026-04-28T00:00:00.000Z",
-    ) as { notifyAt: Date; targetPaymentDate: string };
+    );
 
     expect(Date.parse(result.targetPaymentDate)).toBe(
       Date.parse("2026-04-30T00:00:00.000Z"),
@@ -142,9 +204,7 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
       }
     ).now = () => now;
 
-    const result = (
-      SubscriptionNotificationsWorkflow as any
-    ).calculateNotificationTime(
+    const result = workflowTestApi.calculateNotificationTime(
       createSubscription({
         paymentDate: "2026-04-30T00:00:00.000Z",
       }),
@@ -154,7 +214,7 @@ describe("SubscriptionNotificationsWorkflow.calculateNotificationTime", () => {
         notificationTime: "10:00",
       }),
       "2026-04-30T00:00:00.000Z",
-    ) as { notifyAt: Date; targetPaymentDate: string };
+    );
 
     expect(Date.parse(result.targetPaymentDate)).toBe(
       Date.parse("2026-04-30T00:00:00.000Z"),
