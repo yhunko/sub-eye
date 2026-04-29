@@ -33,6 +33,13 @@ type NotificationSchedule = {
 };
 
 export class SubscriptionNotificationsWorkflow {
+  static isAuthoritativeQstashRun(
+    latestQstashMessageId: string | null | undefined,
+    workflowRunId: string,
+  ): boolean {
+    return latestQstashMessageId === workflowRunId;
+  }
+
   static handler = serve<SubscriptionWorkflowPayload>(
     async (context: WorkflowContext<SubscriptionWorkflowPayload>) => {
       const { subscriptionId, paymentDate } = context.requestPayload;
@@ -66,36 +73,92 @@ export class SubscriptionNotificationsWorkflow {
       );
 
       if (!shouldSendNotification) {
-        await SubscriptionRepository.update(db, subscription.id, {
-          qstashMessageId: null,
-        });
+        // If this workflow run is not authoritative anymore, do not mutate
+        // subscription state. QStash can replay and multiple runs can exist.
+        const isAuthoritative = await context.run(
+          "authorize-clear-qstash-id",
+          async () => {
+            const latest = await SubscriptionRepository.findById(
+              db,
+              subscriptionId,
+            );
+            return SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(
+              latest?.qstashMessageId,
+              context.workflowRunId,
+            );
+          },
+        );
+
+        if (isAuthoritative) {
+          await SubscriptionRepository.update(db, subscription.id, {
+            qstashMessageId: null,
+          });
+        }
         return;
       }
 
       await context.sleepUntil("wait-for-notification", notifyAt);
+
+      const isAuthoritative = await context.run(
+        "authorize-send-renewal-notification",
+        async () => {
+          const latest = await SubscriptionRepository.findById(
+            db,
+            subscriptionId,
+          );
+          return SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(
+            latest?.qstashMessageId,
+            context.workflowRunId,
+          );
+        },
+      );
+
+      // Stale/duplicate workflow run: do not send and do not schedule next.
+      if (!isAuthoritative) {
+        return;
+      }
 
       await context.run("send-notification", async () => {
         const { NotificationDeliveryService } = await import(
           "../../domains/notification/notificationDeliveryService"
         );
 
-        const scheduledEffectiveAt = subscription.scheduledEffectiveAt
-          ? new Date(subscription.scheduledEffectiveAt)
+        const latest = await SubscriptionRepository.findById(
+          db,
+          subscriptionId,
+        );
+
+        if (
+          !latest ||
+          !SubscriptionNotificationsWorkflow.isAuthoritativeQstashRun(
+            latest.qstashMessageId,
+            context.workflowRunId,
+          )
+        ) {
+          return;
+        }
+
+        const latestPreferences = await UserService.getUserPreferences(
+          latest.userId,
+        );
+
+        const scheduledEffectiveAt = latest.scheduledEffectiveAt
+          ? new Date(latest.scheduledEffectiveAt)
           : null;
         const hasScheduledPriceChange =
-          subscription.scheduledCost != null &&
-          subscription.scheduledCurrency != null &&
+          latest.scheduledCost != null &&
+          latest.scheduledCurrency != null &&
           scheduledEffectiveAt != null &&
           !Number.isNaN(scheduledEffectiveAt.getTime()) &&
           scheduledEffectiveAt.getTime() <= targetPayment.getTime();
 
         const originalPriceAmount = hasScheduledPriceChange
-          ? Number(subscription.scheduledCost)
-          : Number(subscription.cost);
+          ? Number(latest.scheduledCost)
+          : Number(latest.cost);
         const originalPriceCurrencyCode = hasScheduledPriceChange
-          ? subscription.scheduledCurrency!
-          : subscription.currency;
-        const preferredPriceCurrencyCode = preferences.preferredCurrency;
+          ? latest.scheduledCurrency!
+          : latest.currency;
+        const preferredPriceCurrencyCode = latestPreferences.preferredCurrency;
         const rates = await CurrencyService.getRates(
           preferredPriceCurrencyCode,
         );
@@ -107,76 +170,89 @@ export class SubscriptionNotificationsWorkflow {
         );
         const notificationPayload = PushNotificationContent.buildRenewalPayload(
           {
-            locale: preferences.locale,
-            timezone: preferences.preferredTimezone,
+            locale: latestPreferences.locale,
+            timezone: latestPreferences.preferredTimezone,
             paymentDate: targetPaymentDate,
             notificationDate: DateTimezoneUtils.now(
-              preferences.preferredTimezone,
+              latestPreferences.preferredTimezone,
             ),
-            subscriptionId: subscription.id,
-            subscriptionName: subscription.name,
+            subscriptionId: latest.id,
+            subscriptionName: latest.name,
             originalPriceAmount,
             originalPriceCurrencyCode,
             preferredPriceAmount,
             preferredPriceCurrencyCode,
-            brandDomain: subscription.brandDomain,
+            brandDomain: latest.brandDomain,
           },
         );
 
         const vapidDetails = PushNotificationService.getVapidDetailsFromEnv();
 
         const report = await NotificationDeliveryService.sendNotification(
-          subscription.userId,
+          latest.userId,
           notificationPayload,
-          { locale: preferences.locale, vapidDetails },
+          { locale: latestPreferences.locale, vapidDetails },
         );
 
         if (report.failed > 0) {
           console.error("Scheduled push delivery had failures", {
-            subscriptionId: subscription.id,
-            userId: subscription.userId,
+            subscriptionId: latest.id,
+            userId: latest.userId,
             report,
           });
         }
       });
 
-      const nextPayment = RecurrenceUtils.addPeriod(
-        DateTimezoneUtils.toZoned(
-          targetPaymentDate,
-          preferences.preferredTimezone,
-        ),
-        subscription.every,
-        subscription.period,
-        {
-          anchorDate: DateTimezoneUtils.toZoned(
-            subscription.paymentDate,
-            preferences.preferredTimezone,
-          ),
-        },
-      );
-
       await context.run("schedule-next-cycle", async () => {
+        const latest = await SubscriptionRepository.findById(
+          db,
+          subscriptionId,
+        );
+
+        if (!latest || latest.qstashMessageId !== context.workflowRunId) {
+          return;
+        }
+
+        const latestPreferences = await UserService.getUserPreferences(
+          latest.userId,
+        );
+
+        const nextPayment = RecurrenceUtils.addPeriod(
+          DateTimezoneUtils.toZoned(
+            targetPaymentDate,
+            latestPreferences.preferredTimezone,
+          ),
+          latest.every,
+          latest.period,
+          {
+            anchorDate: DateTimezoneUtils.toZoned(
+              latest.paymentDate,
+              latestPreferences.preferredTimezone,
+            ),
+          },
+        );
+
         if (
           !shouldIncludeOccurrence(
             {
               willBeCancelledAt: this.normalizeTimestamp(
-                subscription.willBeCancelledAt,
+                latest.willBeCancelledAt,
               ),
             },
             nextPayment,
           )
         ) {
-          await SubscriptionRepository.update(db, subscription.id, {
+          await SubscriptionRepository.update(db, latest.id, {
             qstashMessageId: null,
           });
           return;
         }
 
         const workflowRunId = await SubscriptionNotificationsWorkflow.schedule({
-          subscriptionId: subscription.id,
+          subscriptionId: latest.id,
           paymentDate: nextPayment.toISOString(),
         });
-        await SubscriptionRepository.update(db, subscription.id, {
+        await SubscriptionRepository.update(db, latest.id, {
           qstashMessageId: workflowRunId,
         });
       });

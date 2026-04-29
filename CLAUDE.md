@@ -130,6 +130,26 @@ Follow this pattern when adding new service methods.
 
 **Hono inline `.use()` middleware must be `async` when it can return either `next()` or a `Response`.** A synchronous function that sometimes returns `next()` (`Promise<void>`) and sometimes returns a `Response` produces a mixed return type TypeScript rejects. Declaring the function `async` unifies both branches under `Promise<void | Response>`.
 
+### Notification scheduling anti-spam invariants (post-regression fix)
+
+Duplicate renewal workflows can cause repeated push + Telegram sends when preference updates overlap or cancellation/scheduling races occur.
+
+**Always enforce authoritative-run checks in renewal workflows.**
+
+- In `server/src/domains/subscription/subscriptionNotificationsWorkflow.ts`, treat the active DB `qstashMessageId` as source of truth.
+- Before sending or scheduling next cycle, verify the current run is authoritative: `latest.qstashMessageId === context.workflowRunId`.
+- If not authoritative, exit without sending and without scheduling follow-up steps.
+
+**Always serialize user-level reschedules.**
+
+- In `server/src/domains/subscription/subscriptionService.ts`, `rescheduleUserNotifications(userId)` must be serialized per `userId` (no overlapping reschedule runs for the same user in-process).
+- Keep per-subscription cancel → schedule order deterministic; avoid broad `Promise.all` fan-out for reschedules.
+
+**If cancellation fails, do not schedule a replacement run in the same pass.**
+
+- A failed cancel can leave the old workflow active. Scheduling a new one risks duplicate run chains and notification spam.
+- Log cancellation failures with `workflowRunId` context for operations follow-up.
+
 ### Dev plan override
 
 In development, `client/src/shared/lib/billing/local-plan-override.ts` lets developers simulate a Plus plan locally by writing a value to `localStorage`. The `planUsageQuery` applies this override on top of the real API response when `import.meta.env.DEV` is true.
