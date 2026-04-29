@@ -7,6 +7,14 @@ import { UserService } from "../domains/user/userService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
 
+const NOTIFICATION_RELEVANT_FIELDS = [
+  "notificationTime",
+  "notificationOffset",
+  "preferredTimezone",
+  "expiryNotificationsEnabled",
+  "expiryNotificationIntervals",
+] as const;
+
 const handleServiceError = (context: Context, error: unknown) => {
   if (error instanceof Error) {
     if (error.message === "User not found") {
@@ -38,9 +46,13 @@ export const userRouter = new Hono().patch(
         payload,
       );
 
-      // Reschedule notifications if relevant preferences changed
-      // For now, we reschedule on any update to be safe
-      await SubscriptionService.rescheduleUserNotifications(userId);
+      const needsReschedule = NOTIFICATION_RELEVANT_FIELDS.some(
+        (field) => payload[field] !== undefined,
+      );
+
+      if (needsReschedule) {
+        await SubscriptionService.rescheduleUserNotifications(userId);
+      }
 
       return context.json(preferences);
     } catch (error) {
