@@ -1,7 +1,7 @@
 import { type FC, useMemo } from "react";
 import type { CategorySpendingDto } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import {
   Card,

@@ -11,8 +11,8 @@ import {
 } from "recharts";
 import type { CashFlowPoint, CashFlowSubscription } from "shared";
 import { CurrenciesMap, DateTimezoneUtils } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import {
   Card,

@@ -2,7 +2,7 @@ import { vValidator } from "@hono/valibot-validator";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { UpdateUserPublicMetadataSchema } from "shared";
-import { SubscriptionService } from "../domains/subscription/subscriptionService";
+import { SubscriptionSchedulingService } from "../domains/subscription/subscriptionSchedulingService";
 import { UserService } from "../domains/user/userService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
@@ -51,7 +51,7 @@ export const userRouter = new Hono().patch(
       );
 
       if (needsReschedule) {
-        await SubscriptionService.rescheduleUserNotifications(userId);
+        await SubscriptionSchedulingService.rescheduleUserNotifications(userId);
       }
 
       return context.json(preferences);

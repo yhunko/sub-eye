@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import { MessageCircleWarningIcon } from "lucide-react";
-import type { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
+import type { BrandfetchSearchDto } from "@/entities/brandfetch";
 import { subscriptionQuery } from "@/entities/subscription";
 import {
   Empty,

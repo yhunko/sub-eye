@@ -11,8 +11,8 @@ import {
 import type { FC, MouseEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { MonthlyTrendPoint } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import {
   DrawerContent,

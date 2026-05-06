@@ -67,26 +67,26 @@ describe('Paddle Webhook Signature Verification', () => {
   it('should return true for valid signature', () => {
     const payload = '{"event_type":"test"}';
     const signature = generatePaddleSignature(payload, webhookSecret);
-
+    
     expect(verifyPaddleSignature(payload, signature, webhookSecret)).toBe(true);
   });
 
   it('should return false for invalid signature', () => {
     const payload = '{"event_type":"test"}';
     const signature = 'ts=123;h1=invalid_signature';
-
+    
     expect(verifyPaddleSignature(payload, signature, webhookSecret)).toBe(false);
   });
 
   it('should return false for missing signature header', () => {
     const payload = '{"event_type":"test"}';
-
+    
     expect(verifyPaddleSignature(payload, null, webhookSecret)).toBe(false);
   });
 
   it('should return false for malformed signature header', () => {
     const payload = '{"event_type":"test"}';
-
+    
     expect(verifyPaddleSignature(payload, 'invalid', webhookSecret)).toBe(false);
     expect(verifyPaddleSignature(payload, 'ts=123', webhookSecret)).toBe(false);
   });
@@ -95,7 +95,7 @@ describe('Paddle Webhook Signature Verification', () => {
     const originalPayload = '{"event_type":"test","data":{"id":"123"}}';
     const tamperedPayload = '{"event_type":"test","data":{"id":"456"}}';
     const signature = generatePaddleSignature(originalPayload, webhookSecret);
-
+    
     expect(verifyPaddleSignature(tamperedPayload, signature, webhookSecret)).toBe(false);
   });
 
@@ -103,15 +103,15 @@ describe('Paddle Webhook Signature Verification', () => {
     const payload = '{"event_type":"test"}';
     const timestamp = Math.floor(Date.now() / 1000);
     const signedPayload = `${timestamp}:${payload}`;
-
+    
     const validSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(signedPayload)
       .digest('hex');
-
+    
     // Include an old invalid signature and a new valid one
     const signature = `ts=${timestamp};h1=old_invalid_signature;h1=${validSignature}`;
-
+    
     expect(verifyPaddleSignature(payload, signature, webhookSecret)).toBe(true);
   });
 });

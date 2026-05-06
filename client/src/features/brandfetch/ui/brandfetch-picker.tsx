@@ -1,8 +1,11 @@
 import { useDebouncedState, useUncontrolled } from "@mantine/hooks";
 import { Check, Search } from "lucide-react";
 import { type FC, lazy, Suspense, useMemo, useState } from "react";
-import { useBrandfetchSearch } from "@/entities/brandfetch/api/hooks";
-import type { BrandfetchSearchDto } from "@/entities/brandfetch/model/dtos";
+import {
+  BrandfetchImage,
+  type BrandfetchSearchDto,
+  useBrandfetchSearch,
+} from "@/entities/brandfetch";
 import * as m from "@/i18n/messages";
 import {
   Avatar,
@@ -19,7 +22,6 @@ import {
 } from "@/shared/components";
 import { useBreakpoint } from "@/shared/hooks/use-breakpoint";
 import { cn } from "@/shared/lib/classes-utils";
-import { BrandfetchImage } from "./brandfetch-image";
 
 const BrandfetchPickerDesktop = lazy(
   () => import("./brandfetch-picker.desktop"),

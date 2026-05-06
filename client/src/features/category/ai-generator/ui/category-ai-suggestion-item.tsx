@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { motion } from "motion/react";
 import type { CategoryAiSuggestion } from "shared";
-import { BrandfetchImage } from "@/features/brandfetch";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { EmojiPicker } from "@/features/category/manage-categories/ui/emoji-picker";
 import * as m from "@/i18n/messages";
 import { Input, Separator, Toggle } from "@/shared/components";

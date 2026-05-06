@@ -1,8 +1,8 @@
 import { format, parseISO } from "date-fns";
 import type { FC } from "react";
 import type { MonthlyTrendSubscription } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";

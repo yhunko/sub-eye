@@ -157,6 +157,7 @@ In development, `client/src/shared/lib/billing/local-plan-override.ts` lets deve
 These existing deviations are accepted — do not auto-fix unless explicitly tasked:
 
 - `features/settings/ui/theme-switch-button.tsx` imports from `@/app/providers/theme-provider` — intentional FSD upward import (provider coupling)
+- `features/subscription/add-subscription` imports `BrandfetchPicker` from `features/brandfetch` — cross-slice import, accepted (picker is feature-level and used by only one consumer)
 - `features/category/ai-generator` cross-imports `features/brandfetch` and uses a deep path into `features/category/manage-categories/ui/emoji-picker`
 - `server/src/domains/subscription/subscriptionService.ts` imports `{ db }` directly — some orchestration queries bypass the repository layer
 

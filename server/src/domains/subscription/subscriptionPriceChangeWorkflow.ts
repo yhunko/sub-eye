@@ -23,8 +23,12 @@ export class SubscriptionPriceChangeWorkflow {
       await context.sleepUntil("wait-for-effective-at", effectiveAt);
 
       await context.run("apply-scheduled-price-change", async () => {
-        const { SubscriptionService } = await import("./subscriptionService");
-        await SubscriptionService.applyScheduledPriceChangeByWorkflow(payload);
+        const { SubscriptionPriceChangeService } = await import(
+          "./subscriptionPriceChangeService"
+        );
+        await SubscriptionPriceChangeService.applyScheduledPriceChangeByWorkflow(
+          payload,
+        );
       });
     },
   );

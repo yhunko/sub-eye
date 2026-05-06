@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "shared";
 import type { SubscriptionRecord } from "../src/domains/subscription/subscriptionRepository";
-import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
+import { SubscriptionSchedulingService } from "../src/domains/subscription/subscriptionSchedulingService";
 
-describe("SubscriptionService.rescheduleUserNotifications", () => {
+describe("SubscriptionSchedulingService.rescheduleUserNotifications", () => {
   it("serializes concurrent calls for the same user", async () => {
     const userId = "user_1";
 
@@ -89,7 +89,7 @@ describe("SubscriptionService.rescheduleUserNotifications", () => {
       categoryRepository: {} as any,
     };
 
-    const p1 = SubscriptionService.rescheduleUserNotifications(
+    const p1 = SubscriptionSchedulingService.rescheduleUserNotifications(
       userId,
       deps as any,
     );
@@ -97,7 +97,7 @@ describe("SubscriptionService.rescheduleUserNotifications", () => {
     // Allow p1 to start and reach cancel (it will block there).
     await cancelReached;
 
-    const p2 = SubscriptionService.rescheduleUserNotifications(
+    const p2 = SubscriptionSchedulingService.rescheduleUserNotifications(
       userId,
       deps as any,
     );

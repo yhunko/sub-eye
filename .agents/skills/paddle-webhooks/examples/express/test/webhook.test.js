@@ -26,27 +26,27 @@ describe('Paddle Webhook Endpoint', () => {
     it('should return true for valid signature', () => {
       const payload = '{"event_type":"test"}';
       const signature = generatePaddleSignature(payload, webhookSecret);
-
+      
       expect(verifyPaddleSignature(payload, signature, webhookSecret)).toBe(true);
     });
 
     it('should return false for invalid signature', () => {
       const payload = '{"event_type":"test"}';
       const signature = 'ts=123;h1=invalid_signature';
-
+      
       expect(verifyPaddleSignature(payload, signature, webhookSecret)).toBe(false);
     });
 
     it('should return false for missing signature header', () => {
       const payload = '{"event_type":"test"}';
-
+      
       expect(verifyPaddleSignature(payload, null, webhookSecret)).toBe(false);
       expect(verifyPaddleSignature(payload, undefined, webhookSecret)).toBe(false);
     });
 
     it('should return false for malformed signature header', () => {
       const payload = '{"event_type":"test"}';
-
+      
       expect(verifyPaddleSignature(payload, 'invalid', webhookSecret)).toBe(false);
       expect(verifyPaddleSignature(payload, 'ts=123', webhookSecret)).toBe(false);
     });
@@ -86,7 +86,7 @@ describe('Paddle Webhook Endpoint', () => {
         event_type: 'subscription.created',
         data: { id: 'sub_test_123' }
       });
-
+      
       // Sign with original payload but send different payload
       const signature = generatePaddleSignature(originalPayload, webhookSecret);
       const tamperedPayload = JSON.stringify({
@@ -156,7 +156,7 @@ describe('Paddle Webhook Endpoint', () => {
   describe('GET /health', () => {
     it('should return health status', async () => {
       const response = await request(app).get('/health');
-
+      
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ status: 'ok' });
     });

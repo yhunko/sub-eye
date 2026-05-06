@@ -1,6 +1,6 @@
 # TODO - Known Issues and Improvements
 
-_Last updated: 2026-02-04_
+*Last updated: 2026-02-04*
 
 These items were identified during review. Most SDK-related issues have been fixed.
 
@@ -17,3 +17,4 @@ These items were identified during review. Most SDK-related issues have been fix
 
 - [ ] **FastAPI SDK support**: The Python SDK's `Verifier` class is designed for Flask/Django. Consider adding native FastAPI support in future.
 - [ ] **Version constraints**: Consider tightening FastAPI version constraint from `>=0.100.0` to `>=0.128.0`
+

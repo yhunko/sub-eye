@@ -14,6 +14,7 @@ import {
   AnalyzeComparatorInputSchema,
   CompareSubscriptionsInputSchema,
 } from "shared";
+import { ComparatorAiService } from "../domains/comparator/comparatorAiService";
 import { ComparatorService } from "../domains/comparator/comparatorService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
@@ -40,7 +41,15 @@ type ComparatorRouterDeps = {
 };
 
 export const createComparatorRouter = (deps: ComparatorRouterDeps = {}) => {
-  const service = deps.service ?? ComparatorService;
+  const service = deps.service ?? {
+    getQuota: (userId: string) => ComparatorService.getQuota(userId),
+    getRates: (userId: string) => ComparatorService.getRates(userId),
+    compare: (userId: string, payload: CompareSubscriptionsInput) =>
+      ComparatorService.compare(userId, payload),
+    getAiQuota: (userId: string) => ComparatorAiService.getAiQuota(userId),
+    analyze: (userId: string, payload: AnalyzeComparatorInput) =>
+      ComparatorAiService.analyze(userId, payload),
+  };
   const protectMiddleware = deps.protectMiddleware ?? protect;
   const getUserId = deps.getUserId ?? requireUserId;
 

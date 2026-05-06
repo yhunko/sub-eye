@@ -3,9 +3,9 @@ import { Loader2 } from "lucide-react";
 import { useCallback } from "react";
 import type { CategoryDto } from "shared";
 import { toast } from "sonner";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CategoryBadge } from "@/entities/category";
 import { useBulkDeleteSubscriptions } from "@/entities/subscription";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { Button } from "@/shared/components/ui/button";
 import {

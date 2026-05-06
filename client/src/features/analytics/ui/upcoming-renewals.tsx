@@ -3,8 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { type FC, useMemo } from "react";
 import type { UpcomingRenewalDto } from "shared";
 import { DateTimezoneUtils } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyBadge } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import { SubscriptionBillingUtils } from "@/features/subscription/billing/lib/subscription-billing-utils";
 import * as m from "@/i18n/messages";
 import {

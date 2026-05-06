@@ -8,7 +8,6 @@ Paddle signs every webhook request using HMAC SHA-256. The signature is included
 2. A signature (`h1`) - HMAC SHA-256 of `timestamp:payload` using your webhook secret
 
 Example header:
-
 ```
 Paddle-Signature: ts=1671552777;h1=eb4d0dc8853be92b7f063b9f3ba5233eb920a09459b6e6b2c26705b4364db151
 ```
@@ -22,39 +21,30 @@ The `h1` signature is the current version. There may be multiple `h1` signatures
 The official Paddle SDKs handle signature verification automatically:
 
 **Node.js (`@paddle/paddle-node-sdk` v3.5.0+):**
-
 ```javascript
 import { Paddle, EventName } from "@paddle/paddle-node-sdk";
 
 const paddle = new Paddle(process.env.PADDLE_API_KEY);
 
 // Express middleware example
-app.post(
-  "/webhooks/paddle",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    const signature = req.headers["paddle-signature"];
-    const rawBody = req.body.toString();
-    const secretKey = process.env.PADDLE_WEBHOOK_SECRET;
+app.post('/webhooks/paddle', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['paddle-signature'];
+  const rawBody = req.body.toString();
+  const secretKey = process.env.PADDLE_WEBHOOK_SECRET;
 
-    try {
-      // The SDK handles verification and parsing in one step
-      // Method signature: paddle.webhooks.unmarshal(requestBody, secretKey, signature)
-      const event = await paddle.webhooks.unmarshal(
-        rawBody,
-        secretKey,
-        signature,
-      );
+  try {
+    // The SDK handles verification and parsing in one step
+    // Method signature: paddle.webhooks.unmarshal(requestBody, secretKey, signature)
+    const event = await paddle.webhooks.unmarshal(rawBody, secretKey, signature);
 
-      // Handle event - note: SDK returns camelCase properties
-      console.log(`Received event: ${event.eventType}`);
-      res.json({ received: true });
-    } catch (err) {
-      console.error("Webhook verification failed:", err.message);
-      res.status(400).send("Invalid signature");
-    }
-  },
-);
+    // Handle event - note: SDK returns camelCase properties
+    console.log(`Received event: ${event.eventType}`);
+    res.json({ received: true });
+  } catch (err) {
+    console.error('Webhook verification failed:', err.message);
+    res.status(400).send('Invalid signature');
+  }
+});
 ```
 
 **Python (`paddle-billing` v1.13.0+):**
@@ -68,14 +58,14 @@ from paddle_billing.Notifications import Secret, Verifier
 @app.route("/webhooks/paddle", methods=["POST"])
 def paddle_webhook():
     webhook_secret = os.environ['PADDLE_WEBHOOK_SECRET']
-
+    
     # The Verifier handles signature verification
     # Method signature: Verifier().verify(request, Secret(secret))
     is_valid = Verifier().verify(request, Secret(webhook_secret))
-
+    
     if not is_valid:
         return "Invalid signature", 400
-
+    
     # Parse and handle event
     event = request.get_json()
     print(f"Received event: {event['event_type']}")
@@ -89,36 +79,34 @@ def paddle_webhook():
 If you need to verify manually:
 
 **Node.js:**
-
 ```javascript
-const crypto = require("crypto");
+const crypto = require('crypto');
 
 function verifyPaddleSignature(payload, signatureHeader, secret) {
   // Parse the signature header
-  const parts = signatureHeader.split(";");
-  const timestamp = parts.find((p) => p.startsWith("ts=")).slice(3);
+  const parts = signatureHeader.split(';');
+  const timestamp = parts.find(p => p.startsWith('ts=')).slice(3);
   const signatures = parts
-    .filter((p) => p.startsWith("h1="))
-    .map((p) => p.slice(3));
+    .filter(p => p.startsWith('h1='))
+    .map(p => p.slice(3));
 
   // Build the signed payload (timestamp:rawBody)
   const signedPayload = `${timestamp}:${payload}`;
 
   // Compute the expected signature
   const expectedSignature = crypto
-    .createHmac("sha256", secret)
+    .createHmac('sha256', secret)
     .update(signedPayload)
-    .digest("hex");
+    .digest('hex');
 
   // Check if any signature matches (handles rotation)
-  return signatures.some((sig) =>
-    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSignature)),
+  return signatures.some(sig =>
+    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSignature))
   );
 }
 ```
 
 **Python:**
-
 ```python
 import hmac
 import hashlib
@@ -159,7 +147,6 @@ def verify_paddle_signature(payload: str, signature_header: str, secret: str) ->
 The most common cause of verification failures is using a parsed JSON body instead of the raw request body.
 
 **Express:**
-
 ```javascript
 // WRONG - body is already parsed
 app.use(express.json());
@@ -209,12 +196,12 @@ function isTimestampValid(timestamp, toleranceSeconds = 5) {
 Paddle requires a response within **5 seconds**. Respond before doing any processing, then handle the event asynchronously.
 
 ```javascript
-app.post("/webhooks/paddle", async (req, res) => {
+app.post('/webhooks/paddle', async (req, res) => {
   // Verify signature...
-
+  
   // Respond immediately
   res.json({ received: true });
-
+  
   // Then process asynchronously
   processEventAsync(event);
 });
@@ -231,20 +218,13 @@ app.post("/webhooks/paddle", async (req, res) => {
 ### Logging for Debugging
 
 ```javascript
-app.post(
-  "/webhooks/paddle",
-  express.raw({ type: "application/json" }),
-  (req, res) => {
-    console.log("Body type:", typeof req.body);
-    console.log(
-      "Body (first 100 chars):",
-      req.body.toString().substring(0, 100),
-    );
-    console.log("Signature header:", req.headers["paddle-signature"]);
-
-    // Verify...
-  },
-);
+app.post('/webhooks/paddle', express.raw({ type: 'application/json' }), (req, res) => {
+  console.log('Body type:', typeof req.body);
+  console.log('Body (first 100 chars):', req.body.toString().substring(0, 100));
+  console.log('Signature header:', req.headers['paddle-signature']);
+  
+  // Verify...
+});
 ```
 
 ## Retry Behavior

@@ -10,13 +10,11 @@ Minimal example of receiving Paddle webhooks with signature verification.
 ## Setup
 
 1. Install dependencies:
-
    ```bash
    npm install
    ```
 
 2. Copy environment variables:
-
    ```bash
    cp .env.example .env
    ```

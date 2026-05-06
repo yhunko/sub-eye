@@ -3,7 +3,6 @@ import { Hono } from "hono";
 import { PushSubscriptionSchema } from "shared";
 import { object } from "valibot";
 import { PushNotificationContent } from "../domains/push-notification/pushNotificationContent";
-import { PushNotificationRepository } from "../domains/push-notification/pushNotificationRepository";
 import { PushNotificationService } from "../domains/push-notification/pushNotificationService";
 import { UserService } from "../domains/user/userService";
 import type { Bindings } from "../env";
@@ -19,12 +18,12 @@ export const pushNotificationRouter = new Hono<{ Bindings: Bindings }>()
       const userId = requireUserId(context);
       const { endpoint, keys } = context.req.valid("json");
 
-      await PushNotificationRepository.create({
+      await PushNotificationService.subscribe(
         userId,
         endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth,
-      });
+        keys.p256dh,
+        keys.auth,
+      );
 
       return context.json({ success: true }, 201);
     },
@@ -41,10 +40,7 @@ export const pushNotificationRouter = new Hono<{ Bindings: Bindings }>()
     async (context) => {
       const userId = requireUserId(context);
       const { endpoint } = context.req.valid("json");
-      await PushNotificationRepository.deleteByUserAndEndpoint(
-        userId,
-        endpoint,
-      );
+      await PushNotificationService.unsubscribe(userId, endpoint);
       return context.json({ success: true });
     },
   )

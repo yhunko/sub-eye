@@ -25,62 +25,61 @@ metadata:
 ### Express Webhook Handler
 
 ```javascript
-const express = require("express");
-const crypto = require("crypto");
+const express = require('express');
+const crypto = require('crypto');
 
 const app = express();
 
 // CRITICAL: Use express.raw() for webhook endpoint - Paddle needs raw body
-app.post(
-  "/webhooks/paddle",
-  express.raw({ type: "application/json" }),
+app.post('/webhooks/paddle',
+  express.raw({ type: 'application/json' }),
   async (req, res) => {
-    const signature = req.headers["paddle-signature"];
-
+    const signature = req.headers['paddle-signature'];
+    
     if (!signature) {
-      return res.status(400).send("Missing Paddle-Signature header");
+      return res.status(400).send('Missing Paddle-Signature header');
     }
 
     // Verify signature
     const isValid = verifyPaddleSignature(
       req.body.toString(),
       signature,
-      process.env.PADDLE_WEBHOOK_SECRET, // From Paddle dashboard
+      process.env.PADDLE_WEBHOOK_SECRET  // From Paddle dashboard
     );
 
     if (!isValid) {
-      console.error("Paddle signature verification failed");
-      return res.status(400).send("Invalid signature");
+      console.error('Paddle signature verification failed');
+      return res.status(400).send('Invalid signature');
     }
 
     const event = JSON.parse(req.body.toString());
 
     // Handle the event
     switch (event.event_type) {
-      case "subscription.created":
-        console.log("Subscription created:", event.data.id);
+      case 'subscription.created':
+        console.log('Subscription created:', event.data.id);
         break;
-      case "subscription.canceled":
-        console.log("Subscription canceled:", event.data.id);
+      case 'subscription.canceled':
+        console.log('Subscription canceled:', event.data.id);
         break;
-      case "transaction.completed":
-        console.log("Transaction completed:", event.data.id);
+      case 'transaction.completed':
+        console.log('Transaction completed:', event.data.id);
         break;
       default:
-        console.log("Unhandled event:", event.event_type);
+        console.log('Unhandled event:', event.event_type);
     }
 
     // IMPORTANT: Respond within 5 seconds
     res.json({ received: true });
-  },
+  }
 );
 
 function verifyPaddleSignature(payload, signature, secret) {
-  const parts = signature.split(";");
-  const ts = parts.find((p) => p.startsWith("ts="))?.slice(3);
+  const parts = signature.split(';');
+  const ts = parts.find(p => p.startsWith('ts='))?.slice(3);
   const signatures = parts
-    .filter((p) => p.startsWith("h1="))
-    .map((p) => p.slice(3));
+    .filter(p => p.startsWith('h1='))
+    .map(p => p.slice(3));
 
   if (!ts || signatures.length === 0) {
     return false;
@@ -88,13 +87,16 @@ function verifyPaddleSignature(payload, signature, secret) {
 
   const signedPayload = `${ts}:${payload}`;
   const expectedSignature = crypto
-    .createHmac("sha256", secret)
+    .createHmac('sha256', secret)
     .update(signedPayload)
-    .digest("hex");
+    .digest('hex');
 
   // Check if any signature matches (handles secret rotation)
-  return signatures.some((sig) =>
-    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSignature)),
+  return signatures.some(sig =>
+    crypto.timingSafeEqual(
+      Buffer.from(sig),
+      Buffer.from(expectedSignature)
+    )
   );
 }
 ```
@@ -113,13 +115,13 @@ webhook_secret = os.environ.get("PADDLE_WEBHOOK_SECRET")
 async def paddle_webhook(request: Request):
     payload = await request.body()
     signature = request.headers.get("paddle-signature")
-
+    
     if not signature:
         raise HTTPException(status_code=400, detail="Missing signature")
-
+    
     if not verify_paddle_signature(payload.decode(), signature, webhook_secret):
         raise HTTPException(status_code=400, detail="Invalid signature")
-
+    
     event = await request.json()
     # Handle event...
     return {"received": True}
@@ -148,24 +150,23 @@ def verify_paddle_signature(payload, signature, secret):
 ```
 
 > **For complete working examples with tests**, see:
->
 > - [examples/express/](examples/express/) - Full Express implementation
-> - [examples/nextjs/](examples/nextjs/) - Next.js App Router implementation
+> - [examples/nextjs/](examples/nextjs/) - Next.js App Router implementation  
 > - [examples/fastapi/](examples/fastapi/) - Python FastAPI implementation
 
 ## Common Event Types
 
-| Event                        | Description                             |
-| ---------------------------- | --------------------------------------- |
-| `subscription.created`       | New subscription created                |
-| `subscription.activated`     | Subscription now active (first payment) |
-| `subscription.canceled`      | Subscription canceled                   |
-| `subscription.paused`        | Subscription paused                     |
-| `subscription.resumed`       | Subscription resumed from pause         |
-| `transaction.completed`      | Transaction completed successfully      |
-| `transaction.payment_failed` | Payment attempt failed                  |
-| `customer.created`           | New customer created                    |
-| `customer.updated`           | Customer details updated                |
+| Event | Description |
+|-------|-------------|
+| `subscription.created` | New subscription created |
+| `subscription.activated` | Subscription now active (first payment) |
+| `subscription.canceled` | Subscription canceled |
+| `subscription.paused` | Subscription paused |
+| `subscription.resumed` | Subscription resumed from pause |
+| `transaction.completed` | Transaction completed successfully |
+| `transaction.payment_failed` | Payment attempt failed |
+| `customer.created` | New customer created |
+| `customer.updated` | Customer details updated |
 
 > **For full event reference**, see [Paddle Webhook Events](https://developer.paddle.com/webhooks/overview)
 
