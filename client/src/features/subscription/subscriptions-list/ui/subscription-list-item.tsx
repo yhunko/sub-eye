@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Repeat } from "lucide-react";
 import { memo } from "react";
 import type { SubscriptionDto } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { cn } from "@/shared/lib/classes-utils";
 import { CurrencyText } from "../../../../entities/currency";
 import {
@@ -11,7 +12,6 @@ import {
   ItemMedia,
   ItemTitle,
 } from "../../../../shared/components";
-import { BrandfetchImage } from "../../../brandfetch";
 import { PeriodBadge } from "../../period";
 import { SubscriptionListStatus } from "./subscription-list-status";
 

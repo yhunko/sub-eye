@@ -4,6 +4,7 @@ import {
   type SubscriptionDto,
   SubscriptionPeriod,
 } from "shared";
+import { ComparatorAiService } from "../src/domains/comparator/comparatorAiService";
 import { ComparatorService } from "../src/domains/comparator/comparatorService";
 
 const createSubscription = (
@@ -190,9 +191,9 @@ describe("ComparatorService.getQuota", () => {
   });
 });
 
-describe("ComparatorService.analyze", () => {
+describe("ComparatorAiService.analyze", () => {
   it("returns fallback mode when AI quota is exhausted", async () => {
-    const response = await ComparatorService.analyze(
+    const response = await ComparatorAiService.analyze(
       "user_1",
       { comparison: comparePayload },
       {
@@ -238,7 +239,7 @@ describe("ComparatorService.analyze", () => {
   });
 
   it("returns cached AI analysis without consuming quota", async () => {
-    const response = await ComparatorService.analyze(
+    const response = await ComparatorAiService.analyze(
       "user_1",
       { comparison: comparePayload },
       {
@@ -322,7 +323,7 @@ describe("ComparatorService.analyze", () => {
   it("marks same-service billing cadence comparisons in AI prompt context", async () => {
     let capturedPrompt = "";
 
-    const response = await ComparatorService.analyze(
+    const response = await ComparatorAiService.analyze(
       "user_1",
       {
         comparison: {
@@ -431,7 +432,7 @@ describe("ComparatorService.analyze", () => {
   it("uses preferred currency in AI prose when provider returns foreign currency mentions", async () => {
     let aiCalls = 0;
 
-    const response = await ComparatorService.analyze(
+    const response = await ComparatorAiService.analyze(
       "user_1",
       { comparison: comparePayload },
       {

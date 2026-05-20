@@ -1,8 +1,8 @@
 import { format, parseISO } from "date-fns";
 import type { FC } from "react";
 import type { MonthlyTrendSubscription } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";
@@ -85,7 +85,7 @@ const MonthlySpendingTrendChartDesktop: FC<
               strokeDasharray: "0",
             }}
             content={({ active, payload }) => {
-              if (active && payload && payload.length) {
+              if (active && payload?.length) {
                 const item = payload[0].payload as {
                   date: string;
                   amount: number;
@@ -152,6 +152,7 @@ const MonthlySpendingTrendChartDesktop: FC<
             fill="url(#fillAmount)"
             fillOpacity={0.7}
             dot={false}
+            isAnimationActive={false}
             activeDot={{
               r: 6,
               fill: "var(--background)",

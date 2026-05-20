@@ -31,6 +31,24 @@ type DeliveryAttemptResult =
   | { ok: false; failure: PushDeliveryFailure };
 
 export class PushNotificationService {
+  static async subscribe(
+    userId: string,
+    endpoint: string,
+    p256dh: string,
+    auth: string,
+  ): Promise<void> {
+    await PushNotificationRepository.create({
+      userId,
+      endpoint,
+      p256dh,
+      auth,
+    });
+  }
+
+  static async unsubscribe(userId: string, endpoint: string): Promise<void> {
+    await PushNotificationRepository.deleteByUserAndEndpoint(userId, endpoint);
+  }
+
   /**
    * Send a notification to all devices of a user and report per-device results.
    */

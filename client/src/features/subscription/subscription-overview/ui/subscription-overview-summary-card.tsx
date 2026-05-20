@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import type { FC } from "react";
 import type { SubscriptionDto } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import { PeriodBadge } from "@/features/subscription/period";
 import * as m from "@/i18n/messages";
 import { useDateFormat } from "@/shared/hooks/use-date-format";

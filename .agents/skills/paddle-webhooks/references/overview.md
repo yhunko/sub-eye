@@ -8,20 +8,20 @@ When something notable occurs in your system, Paddle creates an event entity wit
 
 ## Common Event Types
 
-| Event                        | Triggered When                                  | Common Use Cases                         |
-| ---------------------------- | ----------------------------------------------- | ---------------------------------------- |
-| `subscription.created`       | New subscription is created                     | Welcome emails, initial provisioning     |
-| `subscription.activated`     | Subscription becomes active after first payment | Provision access, start trial conversion |
-| `subscription.updated`       | Subscription details change                     | Update entitlements, sync billing info   |
-| `subscription.canceled`      | Subscription is canceled                        | Revoke access, retention emails          |
-| `subscription.paused`        | Subscription is paused                          | Limit access, send pause confirmation    |
-| `subscription.resumed`       | Subscription is resumed                         | Restore access, welcome back emails      |
-| `transaction.completed`      | Transaction completes successfully              | Fulfill orders, send receipts            |
-| `transaction.payment_failed` | Payment attempt fails                           | Dunning emails, retry notifications      |
-| `customer.created`           | New customer is created                         | Welcome sequence, CRM sync               |
-| `customer.updated`           | Customer details are updated                    | Update records, sync changes             |
-| `address.created`            | New address is added                            | Update shipping, tax calculations        |
-| `business.created`           | Business entity is created                      | B2B workflow triggers                    |
+| Event | Triggered When | Common Use Cases |
+|-------|----------------|------------------|
+| `subscription.created` | New subscription is created | Welcome emails, initial provisioning |
+| `subscription.activated` | Subscription becomes active after first payment | Provision access, start trial conversion |
+| `subscription.updated` | Subscription details change | Update entitlements, sync billing info |
+| `subscription.canceled` | Subscription is canceled | Revoke access, retention emails |
+| `subscription.paused` | Subscription is paused | Limit access, send pause confirmation |
+| `subscription.resumed` | Subscription is resumed | Restore access, welcome back emails |
+| `transaction.completed` | Transaction completes successfully | Fulfill orders, send receipts |
+| `transaction.payment_failed` | Payment attempt fails | Dunning emails, retry notifications |
+| `customer.created` | New customer is created | Welcome sequence, CRM sync |
+| `customer.updated` | Customer details are updated | Update records, sync changes |
+| `address.created` | New address is added | Update shipping, tax calculations |
+| `business.created` | Business entity is created | B2B workflow triggers |
 
 ## Event Payload Structure
 
@@ -45,7 +45,6 @@ All Paddle webhook events share a common structure:
 ```
 
 Key fields:
-
 - `event_type` - The event type (e.g., `subscription.created`)
 - `data` - The full Paddle entity that triggered the event
 - `occurred_at` - When the event occurred (ISO 8601 timestamp)

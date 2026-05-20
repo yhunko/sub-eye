@@ -63,7 +63,6 @@ The response includes `endpoint_secret_key`.
 ## Recommended Events for Common Use Cases
 
 **Subscriptions:**
-
 - `subscription.created`
 - `subscription.activated`
 - `subscription.updated`
@@ -72,13 +71,11 @@ The response includes `endpoint_secret_key`.
 - `subscription.resumed`
 
 **Transactions:**
-
 - `transaction.completed`
 - `transaction.payment_failed`
 - `transaction.billed`
 
 **Customers:**
-
 - `customer.created`
 - `customer.updated`
 
@@ -90,7 +87,6 @@ Paddle maintains separate environments:
 - **Live**: Production environment with real transactions.
 
 Each environment has:
-
 - Different API endpoints (`sandbox-api.paddle.com` vs `api.paddle.com`)
 - Different webhook IP addresses (allowlist accordingly)
 - Separate notification destinations and secrets
@@ -100,7 +96,6 @@ Each environment has:
 For security, you should allowlist Paddle's webhook IP addresses:
 
 **Sandbox:**
-
 ```
 34.194.127.46
 54.234.237.108
@@ -111,7 +106,6 @@ For security, you should allowlist Paddle's webhook IP addresses:
 ```
 
 **Live:**
-
 ```
 34.232.58.13
 34.195.105.136

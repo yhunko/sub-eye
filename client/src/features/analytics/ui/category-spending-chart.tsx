@@ -1,7 +1,7 @@
 import { type FC, useMemo } from "react";
 import type { CategorySpendingDto } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import {
   Card,
@@ -127,7 +127,7 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
             <Recharts.PieChart>
               <ChartTooltip
                 content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
+                  if (active && payload?.length) {
                     const item = payload[0].payload as CategorySpendingDto;
                     const percentage = ((item.amount / total) * 100).toFixed(1);
                     const subscriptions = item.subscriptions ?? [];
@@ -186,6 +186,7 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
                 outerRadius="80%"
                 paddingAngle={2}
                 strokeWidth={0}
+                isAnimationActive={false}
               >
                 {categorySpending.map((item, index) => (
                   <Recharts.Cell

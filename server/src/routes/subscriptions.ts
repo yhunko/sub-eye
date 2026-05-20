@@ -14,6 +14,7 @@ import { object, string } from "valibot";
 import { SubscriptionCancellationWorkflow } from "../domains/subscription/subscriptionCancellationWorkflow";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
+import { SubscriptionPriceChangeService } from "../domains/subscription/subscriptionPriceChangeService";
 import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscriptionPriceChangeWorkflow";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { protect } from "../middleware/auth";
@@ -192,11 +193,12 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const payload = context.req.valid("json");
-        const subscription = await SubscriptionService.schedulePriceChange(
-          id,
-          userId,
-          payload,
-        );
+        const subscription =
+          await SubscriptionPriceChangeService.schedulePriceChange(
+            id,
+            userId,
+            payload,
+          );
         return context.json(subscription);
       } catch (error) {
         return handleServiceError(context, error);
@@ -213,7 +215,10 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const subscription =
-          await SubscriptionService.cancelScheduledPriceChange(id, userId);
+          await SubscriptionPriceChangeService.cancelScheduledPriceChange(
+            id,
+            userId,
+          );
         return context.json(subscription);
       } catch (error) {
         return handleServiceError(context, error);
@@ -230,7 +235,10 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const subscription =
-          await SubscriptionService.applyScheduledPriceChangeNow(id, userId);
+          await SubscriptionPriceChangeService.applyScheduledPriceChangeNow(
+            id,
+            userId,
+          );
         return context.json(subscription);
       } catch (error) {
         return handleServiceError(context, error);

@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "shared";
 import { SubscriptionCancellationWorkflow } from "../src/domains/subscription/subscriptionCancellationWorkflow";
 import type { SubscriptionRecord } from "../src/domains/subscription/subscriptionRepository";
-import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
+import { SubscriptionSchedulingService } from "../src/domains/subscription/subscriptionSchedulingService";
 
 const createSubscription = (
   overrides: Partial<SubscriptionRecord> = {},
@@ -52,10 +52,10 @@ describe("SubscriptionCancellationWorkflow.buildNotifyAt", () => {
   });
 });
 
-describe("SubscriptionService.shouldScheduleCancellationWorkflow", () => {
+describe("SubscriptionSchedulingService.shouldScheduleCancellationWorkflow", () => {
   it("returns true for future cancellation dates", () => {
     const shouldSchedule = (
-      SubscriptionService as unknown as {
+      SubscriptionSchedulingService as unknown as {
         shouldScheduleCancellationWorkflow: (
           subscription: SubscriptionRecord,
         ) => boolean;
@@ -71,7 +71,7 @@ describe("SubscriptionService.shouldScheduleCancellationWorkflow", () => {
 
   it("returns false when cancellation date is missing", () => {
     const shouldSchedule = (
-      SubscriptionService as unknown as {
+      SubscriptionSchedulingService as unknown as {
         shouldScheduleCancellationWorkflow: (
           subscription: SubscriptionRecord,
         ) => boolean;

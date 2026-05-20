@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import type { CategoryAiOptimizationReassignment } from "shared";
-import { BrandfetchImage } from "@/features/brandfetch";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import * as m from "@/i18n/messages";
 import { Badge } from "@/shared/components";
 import { SuggestionToggleButton } from "./suggestion-toggle-button";

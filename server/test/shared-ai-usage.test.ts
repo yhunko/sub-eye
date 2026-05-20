@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { type SubscriptionDto, SubscriptionPeriod } from "shared";
 import { AiUsageService } from "../src/domains/ai/aiUsageService";
 import { CategoryAiService } from "../src/domains/category/categoryAiService";
-import { ComparatorService } from "../src/domains/comparator/comparatorService";
+import { ComparatorAiService } from "../src/domains/comparator/comparatorAiService";
 
 const createSubscription = (
   overrides: Partial<SubscriptionDto> = {},
@@ -104,7 +104,7 @@ describe("shared AI usage quota", () => {
       },
     };
 
-    const compareResponse = await ComparatorService.analyze(
+    const compareResponse = await ComparatorAiService.analyze(
       "user_1",
       { comparison: comparePayload },
       {

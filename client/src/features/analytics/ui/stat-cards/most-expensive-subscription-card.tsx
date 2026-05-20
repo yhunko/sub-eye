@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import type { MostExpensiveSubscriptionDto } from "shared";
+import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyText } from "@/entities/currency";
-import { BrandfetchImage } from "@/features/brandfetch";
 import * as m from "@/i18n/messages";
 import { StatCard } from "../stat-card";
 import { StatCardSkeleton } from "../stat-card-skeleton";
