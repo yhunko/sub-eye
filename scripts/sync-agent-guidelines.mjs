@@ -16,10 +16,6 @@ const mirrorTargets = [
     prefix: "---\ntrigger: always_on\n---\n\n" + SOURCE_HEADER,
   },
   {
-    path: ".junie/guidelines.md",
-    prefix: "---\ntrigger: always_on\n---\n\n" + SOURCE_HEADER,
-  },
-  {
     path: "CLAUDE.md",
     prefix: SOURCE_HEADER,
   },

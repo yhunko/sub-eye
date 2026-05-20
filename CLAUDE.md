@@ -205,7 +205,7 @@ These existing deviations are accepted — do not auto-fix unless explicitly tas
 | ----------------------------------------------------------------- | ------------------------------------------ |
 | `client/src/app/routes/routeTree.gen.ts`                          | TanStack Router Vite plugin                |
 | `client/src/shared/lib/i18n/**`                                   | Paraglide (`bun --cwd client run prepare`) |
-| `CLAUDE.md`, `.agent/rules/guidelines.md`, `.junie/guidelines.md` | `bun run guidelines:sync`                  |
+| `CLAUDE.md`, `.agent/rules/guidelines.md`                         | `bun run guidelines:sync`                  |
 | `**/dist/**`, `**/.turbo/**`                                      | Build tools                                |
 
 Edit source inputs and rerun the appropriate tool instead of hand-editing these.
@@ -234,7 +234,6 @@ Run the narrowest relevant checks first, then escalate for cross-workspace impac
 - Canonical source: `AGENTS.md` (this file).
 - Generated mirrors:
   - `.agent/rules/guidelines.md`
-  - `.junie/guidelines.md`
   - `CLAUDE.md`
 - Do not hand-edit generated mirrors.
 - Use:
