@@ -62,14 +62,13 @@ export const TrendLineChart: FC<TrendLineChartProps> = ({
           color: "var(--chart-1)",
         },
       }}
-      className="aspect-auto h-64 w-full [-webkit-tap-highlight-color:transparent] sm:h-72 [&_*:focus]:outline-none [&_*:focus-visible]:outline-none [&_.recharts-surface]:outline-none [&_.recharts-surface]:focus:outline-none [&_.recharts-surface]:focus-visible:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-wrapper]:focus:outline-none [&_.recharts-wrapper]:focus-visible:outline-none"
+      className="aspect-auto h-64 w-full [-webkit-tap-highlight-color:transparent] sm:h-72"
     >
       {Recharts ? (
         <Recharts.AreaChart
           data={monthlyTrend}
           margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
           accessibilityLayer={false}
-          style={{ outline: "none" }}
           onMouseMove={handleInteraction}
           onTouchMove={handleInteraction}
           onClick={handleInteraction}
@@ -136,6 +135,7 @@ export const TrendLineChart: FC<TrendLineChartProps> = ({
             fill="url(#fillAmount)"
             fillOpacity={0.7}
             dot={false}
+            isAnimationActive={false}
             activeDot={{
               r: 6,
               fill: "var(--background)",

@@ -85,7 +85,7 @@ const MonthlySpendingTrendChartDesktop: FC<
               strokeDasharray: "0",
             }}
             content={({ active, payload }) => {
-              if (active && payload && payload.length) {
+              if (active && payload?.length) {
                 const item = payload[0].payload as {
                   date: string;
                   amount: number;
@@ -152,6 +152,7 @@ const MonthlySpendingTrendChartDesktop: FC<
             fill="url(#fillAmount)"
             fillOpacity={0.7}
             dot={false}
+            isAnimationActive={false}
             activeDot={{
               r: 6,
               fill: "var(--background)",

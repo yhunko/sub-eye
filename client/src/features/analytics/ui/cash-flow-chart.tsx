@@ -1,14 +1,5 @@
 import { format, parseISO, startOfDay } from "date-fns";
 import { type FC, useMemo } from "react";
-import {
-  Area,
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  ReferenceLine,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { CashFlowPoint, CashFlowSubscription } from "shared";
 import { CurrenciesMap, DateTimezoneUtils } from "shared";
 import { BrandfetchImage } from "@/entities/brandfetch";
@@ -24,6 +15,7 @@ import {
 import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
 import { track } from "@/shared/lib/analytics";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
+import { useRechartsModule } from "./use-recharts-module";
 
 const HALF_DAY_MS = 12 * 60 * 60 * 1000;
 
@@ -43,6 +35,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({
   className,
 }) => {
   const { locale } = useDateFnsLocale();
+  const Recharts = useRechartsModule();
 
   const todayTimestamp = useMemo(() => {
     return startOfDay(DateTimezoneUtils.now(timezone)).getTime();
@@ -110,163 +103,169 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({
           }}
           className="h-full min-h-80 w-full md:min-h-72"
         >
-          <ComposedChart
-            data={chartData}
-            onClick={() => track("chart_cashflow_interacted")}
-          >
-            <defs>
-              <linearGradient id="fillCumulative" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-cumulative)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-cumulative)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              vertical
-              horizontal
-              strokeDasharray="4 4"
-              stroke="var(--border)"
-            />
-            <XAxis
-              dataKey="timestamp"
-              type="number"
-              scale="time"
-              domain={xDomain}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={10}
-              minTickGap={10}
-              tickFormatter={(val: number) => format(val, "dd", { locale })}
-            />
-            <YAxis
-              domain={[0, "auto"]}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              width={yAxisWidth}
-              className="text-muted-foreground font-mono text-[10px] font-medium"
-              tickFormatter={(value: number) => `${currencySymbol}${value}`}
-            />
-            <ChartTooltip
-              cursor
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const item = payload[0].payload as {
-                    date: string;
-                    amount: number;
-                    cumulative: number;
-                    subscriptions: CashFlowSubscription[];
-                  };
-                  return (
-                    <div className="bg-background/95 w-52 rounded-lg border p-3 shadow-md backdrop-blur-sm">
-                      <p className="text-muted-foreground mb-2 text-xs font-medium">
-                        {format(parseISO(item.date), "MMM dd, yyyy", {
-                          locale,
-                        })}
-                      </p>
-                      {item.subscriptions.length > 0 && (
-                        <div className="mb-2 space-y-1.5">
-                          {item.subscriptions.map((sub, idx) => (
-                            <div
-                              key={`${sub.name}-${idx}`}
-                              className="flex items-center gap-2"
-                            >
-                              <BrandfetchImage
-                                domain={sub.brandDomain}
-                                className="size-5 text-[8px]"
-                              />
-                              <span className="flex-1 truncate text-xs">
-                                {sub.name}
-                              </span>
-                              <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                                <CurrencyText
-                                  amount={sub.amount}
-                                  currencyCode={preferredCurrencyCode}
+          {Recharts ? (
+            <Recharts.ComposedChart
+              data={chartData}
+              onClick={() => track("chart_cashflow_interacted")}
+            >
+              <defs>
+                <linearGradient id="fillCumulative" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-cumulative)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-cumulative)"
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+              </defs>
+              <Recharts.CartesianGrid
+                vertical
+                horizontal
+                strokeDasharray="4 4"
+                stroke="var(--border)"
+              />
+              <Recharts.XAxis
+                dataKey="timestamp"
+                type="number"
+                scale="time"
+                domain={xDomain}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={10}
+                minTickGap={10}
+                tickFormatter={(val: number) => format(val, "dd", { locale })}
+              />
+              <Recharts.YAxis
+                domain={[0, "auto"]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={yAxisWidth}
+                className="text-muted-foreground font-mono text-[10px] font-medium"
+                tickFormatter={(value: number) => `${currencySymbol}${value}`}
+              />
+              <ChartTooltip
+                cursor
+                content={({ active, payload }) => {
+                  if (active && payload?.length) {
+                    const item = payload[0].payload as {
+                      date: string;
+                      amount: number;
+                      cumulative: number;
+                      subscriptions: CashFlowSubscription[];
+                    };
+                    return (
+                      <div className="bg-background/95 w-52 rounded-lg border p-3 shadow-md backdrop-blur-sm">
+                        <p className="text-muted-foreground mb-2 text-xs font-medium">
+                          {format(parseISO(item.date), "MMM dd, yyyy", {
+                            locale,
+                          })}
+                        </p>
+                        {item.subscriptions.length > 0 && (
+                          <div className="mb-2 space-y-1.5">
+                            {item.subscriptions.map((sub) => (
+                              <div
+                                key={`${sub.name}-${sub.brandDomain ?? "none"}-${sub.amount}`}
+                                className="flex items-center gap-2"
+                              >
+                                <BrandfetchImage
+                                  domain={sub.brandDomain}
+                                  className="size-5 text-[8px]"
                                 />
+                                <span className="flex-1 truncate text-xs">
+                                  {sub.name}
+                                </span>
+                                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                                  <CurrencyText
+                                    amount={sub.amount}
+                                    currencyCode={preferredCurrencyCode}
+                                  />
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="space-y-1 border-t pt-2">
+                          {item.subscriptions.length > 1 && (
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs font-medium">
+                                {m.analytics_charts_cashFlow_labels_dailyAmount()}
                               </span>
+                              <CurrencyBadge
+                                amount={item.amount}
+                                currencyCode={preferredCurrencyCode}
+                              />
                             </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="space-y-1 border-t pt-2">
-                        {item.subscriptions.length > 1 && (
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-xs font-medium">
-                              {m.analytics_charts_cashFlow_labels_dailyAmount()}
+                          )}
+                          <div
+                            className={`flex items-center justify-between gap-4 ${
+                              item.subscriptions.length > 1
+                                ? "mt-1 border-t pt-2"
+                                : ""
+                            }`}
+                          >
+                            <span className="text-xs font-bold">
+                              {m.analytics_charts_cashFlow_labels_totalNeededLabel()}
                             </span>
                             <CurrencyBadge
-                              amount={item.amount}
+                              amount={item.cumulative}
                               currencyCode={preferredCurrencyCode}
                             />
                           </div>
-                        )}
-                        <div
-                          className={`flex items-center justify-between gap-4 ${
-                            item.subscriptions.length > 1
-                              ? "mt-1 border-t pt-2"
-                              : ""
-                          }`}
-                        >
-                          <span className="text-xs font-bold">
-                            {m.analytics_charts_cashFlow_labels_totalNeededLabel()}
-                          </span>
-                          <CurrencyBadge
-                            amount={item.cumulative}
-                            currencyCode={preferredCurrencyCode}
-                          />
                         </div>
                       </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Bar
-              dataKey="amount"
-              fill="var(--color-amount)"
-              radius={[4, 4, 0, 0]}
-              barSize={20}
-            />
-            <Area
-              type="monotone"
-              dataKey="cumulative"
-              fill="url(#fillCumulative)"
-              fillOpacity={0.7}
-              stroke="var(--color-cumulative)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{
-                r: 6,
-                fill: "var(--background)",
-                stroke: "var(--color-cumulative)",
-                strokeWidth: 2,
-              }}
-            />
-            {todayTimestamp && (
-              <ReferenceLine
-                x={todayTimestamp}
-                stroke="var(--primary)"
-                strokeWidth={2.5}
-                strokeOpacity={0.7}
-                label={{
-                  value: m.analytics_charts_cashFlow_todayLabel(),
-                  position: "insideTopRight",
-                  fill: "var(--primary)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  offset: 8,
+                    );
+                  }
+                  return null;
                 }}
               />
-            )}
-          </ComposedChart>
+              <Recharts.Bar
+                dataKey="amount"
+                fill="var(--color-amount)"
+                radius={[4, 4, 0, 0]}
+                barSize={20}
+                isAnimationActive={false}
+              />
+              <Recharts.Area
+                type="monotone"
+                dataKey="cumulative"
+                fill="url(#fillCumulative)"
+                fillOpacity={0.7}
+                stroke="var(--color-cumulative)"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+                activeDot={{
+                  r: 6,
+                  fill: "var(--background)",
+                  stroke: "var(--color-cumulative)",
+                  strokeWidth: 2,
+                }}
+              />
+              {todayTimestamp && (
+                <Recharts.ReferenceLine
+                  x={todayTimestamp}
+                  stroke="var(--primary)"
+                  strokeWidth={2.5}
+                  strokeOpacity={0.7}
+                  label={{
+                    value: m.analytics_charts_cashFlow_todayLabel(),
+                    position: "insideTopRight",
+                    fill: "var(--primary)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    offset: 8,
+                  }}
+                />
+              )}
+            </Recharts.ComposedChart>
+          ) : (
+            <div className="h-full w-full" />
+          )}
         </ChartContainer>
       </CardContent>
     </Card>
