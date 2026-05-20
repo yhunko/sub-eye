@@ -1,13 +1,13 @@
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Toaster } from "@/shared/components";
-import { queryClient } from "./app/providers/react-query";
+import { queryClient } from "./app/providers/react-query/client";
 import { router } from "./app/router";
 import { SwUpdateManager } from "./features/pwa/sw-update-manager";
 import { isLocalPlanSwitcherEnabled } from "./shared/lib/env/local-dev-runtime";
-import { SplashScreen } from "./shared/ui";
+import { SplashScreen } from "./shared/ui/splash-screen";
 
 const DevPlanSwitcher = import.meta.env.DEV
   ? lazy(() =>
@@ -19,6 +19,7 @@ const DevPlanSwitcher = import.meta.env.DEV
 
 export function App() {
   const auth = useAuth();
+  const { isLoaded: isUserLoaded } = useUser();
   const isRestoring = useIsRestoring();
   const [timedOut, setTimedOut] = useState(false);
   const shouldLoadDevPlanSwitcher =
@@ -32,10 +33,10 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (auth.isLoaded && !isRestoring) return;
+    if (auth.isLoaded && isUserLoaded && !isRestoring) return;
     const id = setTimeout(() => setTimedOut(true), 8000);
     return () => clearTimeout(id);
-  }, [auth.isLoaded, isRestoring]);
+  }, [auth.isLoaded, isUserLoaded, isRestoring]);
 
   const routerContext = useMemo(
     () => ({
@@ -45,7 +46,7 @@ export function App() {
     [auth],
   );
 
-  if ((!auth.isLoaded || isRestoring) && !timedOut) {
+  if ((!auth.isLoaded || !isUserLoaded || isRestoring) && !timedOut) {
     return <SplashScreen />;
   }
 

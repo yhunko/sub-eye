@@ -119,11 +119,11 @@
     @apply border-border outline-ring/50;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
+    touch-action: manipulation;
   }
 
   body {
     @apply bg-background text-foreground font-nunito;
-    touch-action: manipulation;
   }
 
   ::-webkit-scrollbar {
