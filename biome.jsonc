@@ -9,24 +9,17 @@
     "ignoreUnknown": true,
     "includes": [
       "**",
-      "!client/src/app/routes/routeTree.gen.ts",
-      "!client/src/shared/lib/i18n",
-      "!server/drizzle/meta",
-      "!!.agent",
-      "!!.agents",
-      "!!.ai",
+      "!apps/client/src/app/routes/routeTree.gen.ts",
+      "!apps/client/src/shared/lib/i18n",
+      "!apps/server/drizzle/meta",
       "!!.claude",
-      "!!.gemini",
       "!!.git",
       "!!.idea",
-      "!!.junie",
-      "!!.vibe",
       "!!.wrangler",
       "!!**/dist",
       "!!**/build",
       "!!**/.turbo",
-      "!!**/node_modules",
-      "!!mobile"
+      "!!**/node_modules"
     ]
   },
   "formatter": {

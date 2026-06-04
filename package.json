@@ -12,6 +12,7 @@
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "bun-types": "^1.3.12",
+    "dependency-cruiser": "^17.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "madge": "^8.0.0",
@@ -37,11 +38,12 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
-    "build:client": "turbo build --filter=client",
-    "build:server": "turbo build --filter=server",
+    "build:client": "turbo build --filter=@subeye/client",
+    "build:server": "turbo build --filter=@subeye/server",
+    "check:boundaries": "depcruise --config dependency-cruiser.cjs apps packages",
     "check:circular": "bun run check:circular:client && bun run check:circular:server",
-    "check:circular:client": "madge --circular --extensions ts,tsx --ts-config client/tsconfig.app.json client/src",
-    "check:circular:server": "madge --circular --extensions ts,tsx server/src",
+    "check:circular:client": "madge --circular --extensions ts,tsx --ts-config apps/client/tsconfig.app.json apps/client/src",
+    "check:circular:server": "madge --circular --extensions ts,tsx apps/server/src",
     "deploy:dev": "turbo build && wrangler -c dev.wrangler.jsonc deploy --minify",
     "deps:fix": "syncpack fix",
     "deps:format": "syncpack format",
@@ -50,22 +52,18 @@
     "deps:update": "bun x npm-check-updates --workspaces --root --target minor -u && bun install && bun run deps:fix",
     "deps:up": "bun x npm-check-updates --workspaces --root --interactive",
     "dev": "turbo dev",
-    "dev:client": "turbo dev --filter=client",
-    "dev:server": "turbo dev --filter=server",
+    "dev:client": "turbo dev --filter=@subeye/client",
+    "dev:server": "turbo dev --filter=@subeye/server",
     "format": "biome format --write .",
-    "guidelines:check": "bun scripts/sync-agent-guidelines.mjs --check",
-    "guidelines:sync": "bun scripts/sync-agent-guidelines.mjs",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "postinstall": "turbo build --filter=shared --filter=server",
     "prepare": "husky",
-    "react-doctor": "bun x react-doctor@latest . --yes --project client --diff --offline --fail-on warning --verbose",
+    "react-doctor": "bun x react-doctor@latest . --yes --project apps/client --diff --offline --fail-on warning --verbose",
     "test": "turbo test",
     "type-check": "turbo type-check"
   },
   "workspaces": [
-    "./server",
-    "./client",
-    "./shared"
+    "apps/*",
+    "packages/*"
   ]
 }

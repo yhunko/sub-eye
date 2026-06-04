@@ -1,0 +1,37 @@
+import { CurrenciesMap, CurrencyUtils } from "@subeye/shared";
+import { type FC, useMemo } from "react";
+
+type CurrencyTextProps = {
+  currencyCode?: string;
+  amount: number;
+  className?: string;
+};
+
+export const CurrencyText: FC<CurrencyTextProps> = ({
+  currencyCode,
+  amount,
+  className,
+}) => {
+  const currencyMetadata = useMemo(() => {
+    return CurrenciesMap.get(CurrencyUtils.normalizeCode(currencyCode));
+  }, [currencyCode]);
+
+  if (!currencyMetadata) return null;
+
+  const { symbol } = currencyMetadata;
+  const formattedAmount = CurrencyUtils.formatAmount(
+    amount,
+    currencyCode,
+  ).replace(symbol, "");
+
+  return (
+    <div className={className}>
+      <span className="font-bold text-slate-600 dark:text-slate-300">
+        {symbol}
+      </span>
+      <span className="font-semibold text-slate-700 dark:text-slate-200">
+        {formattedAmount}
+      </span>
+    </div>
+  );
+};
