@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, List, Plus } from "lucide-react";
+import { ArrowLeftRight, LayoutDashboard, List, Plus } from "lucide-react";
 import { domAnimation, LazyMotion, m as motion } from "motion/react";
 import { UserDropdownMenu } from "@/features/auth";
 import { SpaceSwitcher } from "@/features/org/space-switcher";
@@ -46,6 +46,12 @@ export const DesktopNavbar = () => {
                   icon={List}
                   label={m.common_subscriptions()}
                   isActive={pathname === "/subscriptions"}
+                />
+                <NavItem
+                  to="/subscriptions/compare"
+                  icon={ArrowLeftRight}
+                  label={m.common_compare()}
+                  isActive={pathname === "/subscriptions/compare"}
                 />
               </NavigationMenuList>
             </NavigationMenu>

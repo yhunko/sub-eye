@@ -29,7 +29,7 @@ export const NavItem: FC<NavItemProps> = ({
           navigationMenuTriggerStyle(),
           "flex items-center gap-2 transition-colors",
           isActive
-            ? "bg-accent text-accent-foreground pointer-events-none"
+            ? "border border-blue-500 text-accent-foreground pointer-events-none rounded-full bg-transparent"
             : "text-muted-foreground hover:text-foreground cursor-pointer bg-transparent",
         )}
       >
