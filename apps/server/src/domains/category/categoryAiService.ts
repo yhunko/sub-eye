@@ -13,7 +13,6 @@ import {
   DEFAULT_CATEGORY_EMOJI,
   getPlanById,
 } from "@subeye/shared";
-import type { db } from "../../db";
 import { AiUsageService } from "../ai/aiUsageService";
 import { ComparatorRepository } from "../comparator/comparatorRepository";
 import { SubscriptionRepository } from "../subscription/subscriptionRepository";
@@ -32,7 +31,6 @@ type CategoryAiServiceDeps = {
   categoryAiClient: typeof CategoryAiClient;
   userService: typeof UserService;
   aiUsageService: typeof AiUsageService;
-  runInTransaction?: <T>(run: (tx: unknown) => Promise<T>) => Promise<T>;
 };
 
 const defaultDeps: CategoryAiServiceDeps = {
@@ -42,7 +40,6 @@ const defaultDeps: CategoryAiServiceDeps = {
   categoryAiClient: CategoryAiClient,
   userService: UserService,
   aiUsageService: AiUsageService,
-  runInTransaction: (run) => CategoryRepository.runInTransaction(run),
 };
 
 const ALLOWED_EMOJIS = new Set(CATEGORY_EMOJIS);
@@ -615,39 +612,32 @@ export class CategoryAiService {
     let reassignedCount = 0;
     let deletedEmptyCategoriesCount = 0;
 
-    const runInTransaction =
-      deps.runInTransaction ?? defaultDeps.runInTransaction!;
-
-    await runInTransaction(async (tx) => {
-      for (const subscription of subscriptions) {
-        const nextCategoryId =
-          nextCategoryBySubscriptionId.get(subscription.id) ?? null;
-        if (nextCategoryId === subscription.categoryId) {
-          continue;
-        }
-
-        await deps.subscriptionRepository.update(subscription.id, {
-          categoryId: nextCategoryId,
-        });
-        reassignedCount += 1;
+    // neon-http has no interactive transactions; the reassignments and the
+    // follow-up empty-category deletes are applied sequentially. Reassignments
+    // run first, so a category is only deleted once nothing references it.
+    for (const subscription of subscriptions) {
+      const nextCategoryId =
+        nextCategoryBySubscriptionId.get(subscription.id) ?? null;
+      if (nextCategoryId === subscription.categoryId) {
+        continue;
       }
 
-      const assignedCategoryIds = new Set(
-        nextCategoryBySubscriptionId.values(),
-      );
+      await deps.subscriptionRepository.update(subscription.id, {
+        categoryId: nextCategoryId,
+      });
+      reassignedCount += 1;
+    }
 
-      for (const sourceCategoryId of mergeTargetBySource.keys()) {
-        if (assignedCategoryIds.has(sourceCategoryId)) {
-          continue;
-        }
+    const assignedCategoryIds = new Set(nextCategoryBySubscriptionId.values());
 
-        await deps.categoryRepository.delete(
-          sourceCategoryId,
-          tx as unknown as typeof db,
-        );
-        deletedEmptyCategoriesCount += 1;
+    for (const sourceCategoryId of mergeTargetBySource.keys()) {
+      if (assignedCategoryIds.has(sourceCategoryId)) {
+        continue;
       }
-    });
+
+      await deps.categoryRepository.delete(sourceCategoryId);
+      deletedEmptyCategoriesCount += 1;
+    }
 
     return {
       reassignedCount,

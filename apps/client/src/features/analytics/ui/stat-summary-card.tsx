@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { ChartContainer } from "@/shared/components/ui/chart";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { cn } from "@/shared/lib/classes-utils";
 import { useRechartsModule } from "./use-recharts-module";
@@ -101,6 +101,7 @@ export const StatSummaryCard: FC<StatSummaryCardProps> = ({
             <div className="h-15 w-25 text-xs md:w-60">
               <ChartContainer
                 config={chartConfig}
+                recharts={Recharts}
                 className="aspect-auto h-full w-full"
               >
                 <Recharts.AreaChart
@@ -127,7 +128,7 @@ export const StatSummaryCard: FC<StatSummaryCardProps> = ({
                       />
                     </linearGradient>
                   </defs>
-                  <ChartTooltip
+                  <Recharts.Tooltip
                     cursor={false}
                     position={{ y: -50 }}
                     wrapperStyle={{ zIndex: 50, overflow: "visible" }}

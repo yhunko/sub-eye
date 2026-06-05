@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { ChartContainer } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";
 import { useRechartsModule } from "./use-recharts-module";
 
@@ -121,11 +121,12 @@ export const CategorySpendingChart: FC<CategorySpendingChartProps> = ({
       <CardContent className="flex flex-col gap-4">
         <ChartContainer
           config={chartConfig}
+          recharts={Recharts}
           className="mx-auto h-48 w-full max-w-xs"
         >
           {Recharts ? (
             <Recharts.PieChart>
-              <ChartTooltip
+              <Recharts.Tooltip
                 content={({ active, payload }) => {
                   if (active && payload?.length) {
                     const item = payload[0].payload as CategorySpendingDto;

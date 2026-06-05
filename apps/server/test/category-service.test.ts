@@ -23,7 +23,6 @@ describe("CategoryService.deleteCategories", () => {
           deleteByIdsForUser,
         } as never,
         userService: {} as never,
-        runInTransaction: async (run) => run({}),
       },
     );
 
@@ -44,7 +43,6 @@ describe("CategoryService.deleteCategories", () => {
           deleteByIdsForUser,
         } as never,
         userService: {} as never,
-        runInTransaction: async (run) => run({}),
       }),
     ).rejects.toBeInstanceOf(CategoryNotFoundError);
 
@@ -60,35 +58,7 @@ describe("CategoryService.deleteCategories", () => {
           deleteByIdsForUser: async () => 1,
         } as never,
         userService: {} as never,
-        runInTransaction: async (run) => run({}),
       }),
     ).rejects.toBeInstanceOf(CategoryNotFoundError);
-  });
-
-  it("falls back to non-transaction path when transactions are unsupported", async () => {
-    const findByIdsForUser = mock(async (userId: string, ids: string[]) =>
-      ids.map((id) => ({
-        id,
-        userId,
-      })),
-    );
-    const deleteByIdsForUser = mock(
-      async (_userId: string, ids: string[]) => ids.length,
-    );
-
-    const result = await CategoryService.deleteCategories(["cat_1"], "user_1", {
-      repository: {
-        findByIdsForUser,
-        deleteByIdsForUser,
-      } as never,
-      userService: {} as never,
-      runInTransaction: async () => {
-        throw new Error("Transactions are not supported by neon-http");
-      },
-    });
-
-    expect(result).toEqual({ deletedCount: 1 });
-    expect(findByIdsForUser).toHaveBeenCalledTimes(1);
-    expect(deleteByIdsForUser).toHaveBeenCalledTimes(1);
   });
 });

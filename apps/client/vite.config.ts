@@ -43,6 +43,9 @@ export default defineConfig({
   define: {
     "import.meta.env.APP_VERSION": JSON.stringify(version),
   },
+  server: {
+    port: 5174,
+  },
   build: {
     chunkSizeWarningLimit: 600,
     reportCompressedSize: false,
@@ -70,7 +73,13 @@ export default defineConfig({
           if (id.includes("node_modules/@clerk/")) return "vendor-clerk";
           if (id.includes("node_modules/@radix-ui/")) return "vendor-radix";
           if (id.includes("node_modules/date-fns/")) return "vendor-date-fns";
-          if (id.includes("node_modules/recharts/")) return "vendor-recharts";
+          // recharts is intentionally NOT manual-chunked: it is loaded only via
+          // the dynamic `import("recharts")` in `use-recharts-module`, so the
+          // dynamic import owns the async boundary. Forcing it into a named
+          // chunk made the bundler co-locate tiny shared utils (pulled by the
+          // always-loaded dialog/router chunks) inside it, dragging the ~520 KB
+          // recharts payload into the initial preload. Letting it split
+          // naturally keeps it off the initial route.
         },
       },
     },
@@ -92,6 +101,13 @@ export default defineConfig({
       globDirectory: "dist",
       injectionPoint: "self.__SW_MANIFEST",
       rollupFormat: "iife",
+      // Keep the largest, lazily-loaded chunks (notably the ~510 KB analytics
+      // recharts chunk) out of the precache so every SW install/update doesn't
+      // download code most users never reach. They are still runtime-cached on
+      // first use (content-hashed → no staleness risk); the precache stays the
+      // app shell + small route chunks. Raise/lower to trade install size for
+      // offline-before-first-visit coverage.
+      maximumFileSizeToCacheInBytes: 400 * 1024,
     }),
     // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
     tanstackRouter({

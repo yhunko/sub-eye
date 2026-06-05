@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { ChartContainer } from "@/shared/components/ui/chart";
 import { track } from "@/shared/lib/analytics";
 import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import { useRechartsModule } from "./use-recharts-module";
@@ -101,6 +101,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({
               color: "var(--chart-2)",
             },
           }}
+          recharts={Recharts}
           className="h-full min-h-80 w-full md:min-h-72"
         >
           {Recharts ? (
@@ -148,7 +149,7 @@ export const CashFlowChart: FC<CashFlowChartProps> = ({
                 className="text-muted-foreground font-mono text-[10px] font-medium"
                 tickFormatter={(value: number) => `${currencySymbol}${value}`}
               />
-              <ChartTooltip
+              <Recharts.Tooltip
                 cursor
                 content={({ active, payload }) => {
                   if (active && payload?.length) {

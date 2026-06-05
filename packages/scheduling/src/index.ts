@@ -29,6 +29,24 @@ function createWorkflowClient(): Client {
   return new Client({ token });
 }
 
+/**
+ * Resolve an absolute workflow endpoint URL from the runtime `BASE_URL`.
+ *
+ * Reads `process.env.BASE_URL` at call time (request scope), never at module
+ * load, so it is safe under the Cloudflare Worker runtime. Pass the route path
+ * (e.g. `/api/subscriptions/notifications/workflow`); the per-workflow suffix
+ * stays local to each workflow.
+ */
+export function resolveWorkflowUrl(path: string): string {
+  const baseUrl = process.env.BASE_URL;
+
+  if (!baseUrl) {
+    throw new Error("Base URL is not set");
+  }
+
+  return `${baseUrl}${path}`;
+}
+
 /** Trigger a workflow run at the given URL with a JSON body. */
 export async function triggerWorkflow<TBody>(options: {
   url: string;

@@ -4,7 +4,7 @@ import type { FC } from "react";
 import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyBadge, CurrencyText } from "@/entities/currency";
 import * as m from "@/i18n/messages";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { ChartContainer } from "@/shared/components/ui/chart";
 import { cn } from "@/shared/lib/classes-utils";
 import type { MonthlySpendingTrendVariantProps } from "./monthly-spending-trend-chart.types";
 import { useRechartsModule } from "./use-recharts-module";
@@ -28,6 +28,7 @@ const MonthlySpendingTrendChartDesktop: FC<
           color: "var(--chart-1)",
         },
       }}
+      recharts={Recharts}
       className="h-full min-h-[18rem] w-full"
     >
       {Recharts ? (
@@ -78,7 +79,7 @@ const MonthlySpendingTrendChartDesktop: FC<
               })}`
             }
           />
-          <ChartTooltip
+          <Recharts.Tooltip
             cursor={{
               stroke: "var(--border)",
               strokeWidth: 1,

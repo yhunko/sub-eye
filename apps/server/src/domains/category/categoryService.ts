@@ -5,7 +5,6 @@ import type {
   UpdateCategoryInput,
 } from "@subeye/shared";
 import { getPlanById } from "@subeye/shared";
-import type { db } from "../../db";
 import { OrgService } from "../org/orgService";
 import { UserService } from "../user/userService";
 import {
@@ -18,29 +17,12 @@ type CategoryServiceDeps = {
   repository: typeof CategoryRepository;
   userService: typeof UserService;
   orgService: typeof OrgService;
-  runInTransaction?: <T>(run: (tx: unknown) => Promise<T>) => Promise<T>;
 };
 
 const defaultDeps: CategoryServiceDeps = {
   repository: CategoryRepository,
   userService: UserService,
   orgService: OrgService,
-  runInTransaction: (run) => CategoryRepository.runInTransaction(run),
-};
-
-const isUnsupportedTransactionError = (error: unknown): boolean => {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const message = error.message.toLowerCase();
-
-  return (
-    message.includes("transaction") &&
-    (message.includes("not support") ||
-      message.includes("unsupported") ||
-      message.includes("neon-http"))
-  );
 };
 
 export class CategoryService {
@@ -142,48 +124,27 @@ export class CategoryService {
       throw new CategoryNotFoundError();
     }
 
-    const executeDelete = async (executor?: typeof db) => {
-      const existingCategories = await deps.repository.findByIdsForUser(
-        userId,
-        uniqueIds,
-        executor,
-      );
+    // neon-http has no interactive transactions, so validate-then-delete runs
+    // sequentially. The delete itself is a single `IN (...)` statement.
+    const existingCategories = await deps.repository.findByIdsForUser(
+      userId,
+      uniqueIds,
+    );
 
-      if (existingCategories.length !== uniqueIds.length) {
-        throw new CategoryNotFoundError();
-      }
-
-      const deletedCount = await deps.repository.deleteByIdsForUser(
-        userId,
-        uniqueIds,
-        executor,
-      );
-
-      if (deletedCount !== uniqueIds.length) {
-        throw new CategoryNotFoundError();
-      }
-
-      return { deletedCount };
-    };
-
-    const runInTransaction =
-      deps.runInTransaction ?? defaultDeps.runInTransaction;
-
-    if (!runInTransaction) {
-      return executeDelete();
+    if (existingCategories.length !== uniqueIds.length) {
+      throw new CategoryNotFoundError();
     }
 
-    try {
-      return await runInTransaction(async (tx) =>
-        executeDelete(tx as unknown as typeof db),
-      );
-    } catch (error) {
-      if (isUnsupportedTransactionError(error)) {
-        return executeDelete();
-      }
+    const deletedCount = await deps.repository.deleteByIdsForUser(
+      userId,
+      uniqueIds,
+    );
 
-      throw error;
+    if (deletedCount !== uniqueIds.length) {
+      throw new CategoryNotFoundError();
     }
+
+    return { deletedCount };
   }
 
   static async deleteAllForUser(

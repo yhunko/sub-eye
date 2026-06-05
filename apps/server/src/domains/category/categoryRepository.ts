@@ -6,12 +6,6 @@ export type CategoryRecord = typeof categoriesTable.$inferSelect;
 export type CategoryInsert = typeof categoriesTable.$inferInsert;
 
 export class CategoryRepository {
-  static async runInTransaction<T>(
-    run: (tx: unknown) => Promise<T>,
-  ): Promise<T> {
-    return db.transaction((tx) => run(tx));
-  }
-
   static async findByUserId(
     userId: string,
     database: typeof db = db,

@@ -607,7 +607,6 @@ describe("CategoryAiService.applyOptimization", () => {
         comparatorRepository: {} as never,
         categoryAiClient: {} as never,
         userService: {} as never,
-        runInTransaction: async (run) => run({}),
         aiUsageService: createAiUsageServiceMock({
           context: {
             planId: "free",
@@ -686,7 +685,6 @@ describe("CategoryAiService.applyOptimization", () => {
         comparatorRepository: {} as never,
         categoryAiClient: {} as never,
         userService: {} as never,
-        runInTransaction: async (run) => run({}),
         aiUsageService: createAiUsageServiceMock({
           context: {
             planId: "free",

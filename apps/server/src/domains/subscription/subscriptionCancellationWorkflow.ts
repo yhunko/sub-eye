@@ -1,5 +1,6 @@
 import {
   cancelWorkflow,
+  resolveWorkflowUrl,
   serve,
   triggerWorkflow,
   type WorkflowContext,
@@ -112,12 +113,9 @@ export class SubscriptionCancellationWorkflow {
   static async schedule(
     payload: SubscriptionCancellationWorkflowPayload,
   ): Promise<string> {
-    const baseUrl = process.env.BASE_URL;
-    if (!baseUrl) {
-      throw new Error("Base URL is not set");
-    }
-
-    const workflowUrl = `${baseUrl}/api/subscriptions/cancellation-notifications/workflow`;
+    const workflowUrl = resolveWorkflowUrl(
+      "/api/subscriptions/cancellation-notifications/workflow",
+    );
     const result = await triggerWorkflow({ url: workflowUrl, body: payload });
 
     return result.workflowRunId;

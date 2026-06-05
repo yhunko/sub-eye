@@ -7,9 +7,17 @@ export function AnalyticsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const key = import.meta.env.VITE_POSTHOG_KEY;
-    if (key) {
-      initPostHog(key);
+    if (!key) return;
+
+    // Defer the posthog-js download to first idle so it never competes with
+    // hydration or initial interactions.
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(() => initPostHog(key));
+      return () => window.cancelIdleCallback(handle);
     }
+
+    const handle = window.setTimeout(() => initPostHog(key), 1);
+    return () => window.clearTimeout(handle);
   }, []);
 
   useEffect(() => {

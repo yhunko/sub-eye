@@ -3,7 +3,7 @@ import type { Locale } from "date-fns";
 import { format, parseISO } from "date-fns";
 import type { FC } from "react";
 import * as m from "@/i18n/messages";
-import { ChartContainer, ChartTooltip } from "@/shared/components/ui/chart";
+import { ChartContainer } from "@/shared/components/ui/chart";
 import { useRechartsModule } from "./use-recharts-module";
 
 type TrendChartInteractionState = {
@@ -62,6 +62,7 @@ export const TrendLineChart: FC<TrendLineChartProps> = ({
           color: "var(--chart-1)",
         },
       }}
+      recharts={Recharts}
       className="aspect-auto h-64 w-full [-webkit-tap-highlight-color:transparent] sm:h-72"
     >
       {Recharts ? (
@@ -116,7 +117,7 @@ export const TrendLineChart: FC<TrendLineChartProps> = ({
               })}`
             }
           />
-          <ChartTooltip cursor={false} content={() => null} />
+          <Recharts.Tooltip cursor={false} content={() => null} />
           {selectedMonth && (
             <Recharts.ReferenceDot
               x={selectedMonth.date}

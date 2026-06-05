@@ -1,5 +1,6 @@
 import {
   cancelWorkflow,
+  resolveWorkflowUrl,
   serve,
   triggerWorkflow,
   type WorkflowContext,
@@ -40,12 +41,9 @@ export class SubscriptionPriceChangeWorkflow {
   static async schedule(
     payload: SubscriptionPriceChangeWorkflowPayload,
   ): Promise<string> {
-    const baseUrl = process.env.BASE_URL;
-    if (!baseUrl) {
-      throw new Error("Base URL is not set");
-    }
-
-    const workflowUrl = `${baseUrl}/api/subscriptions/price-change/workflow`;
+    const workflowUrl = resolveWorkflowUrl(
+      "/api/subscriptions/price-change/workflow",
+    );
     const result = await triggerWorkflow({ url: workflowUrl, body: payload });
 
     return result.workflowRunId;
