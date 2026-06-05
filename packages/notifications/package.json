@@ -1,0 +1,20 @@
+{
+  "name": "@subeye/notifications",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./push": "./src/push.ts",
+    "./telegram": "./src/telegram.ts"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/web-push": "^3.6.4"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "type-check": "tsc --noEmit --pretty"
+  }
+}

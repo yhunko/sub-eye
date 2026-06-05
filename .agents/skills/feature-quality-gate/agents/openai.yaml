@@ -1,4 +1,0 @@
-interface:
-  display_name: "Feature Quality Gate"
-  short_description: "Pre-commit architecture, performance, and quality gate"
-  default_prompt: "Use $feature-quality-gate to review current uncommitted feature changes and enforce FE/BE architecture, caching, performance, and maintainability standards before commit."

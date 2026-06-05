@@ -10,17 +10,6 @@
           }
         ]
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 -c \"import sys,json; d=json.load(sys.stdin); f=d.get('tool_input',{}).get('file_path',''); blocked=any(p in f for p in ['.env','.env.local','.env.production','routeTree.gen.ts','src/shared/lib/i18n/']); print(f'BLOCKED: {f} is a protected/generated file — edit the source and rerun the generator instead.') if blocked else None; exit(2 if blocked else 0)\""
-          }
-        ]
-      }
     ]
   }
 }

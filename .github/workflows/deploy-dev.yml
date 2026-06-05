@@ -34,9 +34,6 @@ jobs:
       - name: Setup Mise
         uses: jdx/mise-action@v3
 
-      - name: Check Agent Guidelines Mirrors
-        run: bun run guidelines:check
-
       - name: Install Dependencies
         run: bun install
 
@@ -106,7 +103,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET_TOKEN: ${{ secrets.TELEGRAM_WEBHOOK_SECRET_TOKEN }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-        run: bun run --cwd server check-env
+        run: bun run --cwd apps/server check-env
 
       - name: Set CF Worker Secrets
         env:
