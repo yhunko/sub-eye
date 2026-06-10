@@ -1,4 +1,8 @@
 import { useUser } from "@clerk/clerk-react";
+import {
+  DEFAULT_EXPIRY_NOTIFICATION_INTERVALS,
+  EXPIRY_NOTIFICATION_INTERVAL_OPTIONS,
+} from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { PlanFeatureLockCard, planUsageQuery } from "@/entities/billing";
 import { useUpdateUserMetadata } from "@/entities/user";
@@ -15,10 +19,9 @@ import {
 import { cn } from "@/shared/lib/classes-utils";
 import { LoadingSwitch } from "./loading-switch";
 
-const AVAILABLE_INTERVALS = [14, 7, 3, 1] as const;
-const DEFAULT_INTERVALS = [7, 3] as number[];
-
-const getIntervalLabel = (interval: (typeof AVAILABLE_INTERVALS)[number]) => {
+const getIntervalLabel = (
+  interval: (typeof EXPIRY_NOTIFICATION_INTERVAL_OPTIONS)[number],
+) => {
   switch (interval) {
     case 14:
       return m.settings_notifications_expiry_interval_14days();
@@ -54,7 +57,7 @@ export const ExpiryNotificationsCard = () => {
     Array.isArray(selectedIntervalsRaw) &&
     selectedIntervalsRaw.every((value) => typeof value === "number")
       ? selectedIntervalsRaw
-      : DEFAULT_INTERVALS;
+      : DEFAULT_EXPIRY_NOTIFICATION_INTERVALS;
 
   const handleToggle = (nextEnabled: boolean) => {
     if (!canUseExpiryNotifications) {
@@ -64,7 +67,7 @@ export const ExpiryNotificationsCard = () => {
   };
 
   const handleIntervalToggle = (
-    interval: (typeof AVAILABLE_INTERVALS)[number],
+    interval: (typeof EXPIRY_NOTIFICATION_INTERVAL_OPTIONS)[number],
   ) => {
     if (!canUseExpiryNotifications || !expiryEnabled) {
       return;
@@ -74,7 +77,9 @@ export const ExpiryNotificationsCard = () => {
       ? selectedIntervals.filter((value) => value !== interval)
       : [...selectedIntervals, interval];
     const normalizedIntervals =
-      nextIntervals.length > 0 ? nextIntervals : [...DEFAULT_INTERVALS];
+      nextIntervals.length > 0
+        ? nextIntervals
+        : [...DEFAULT_EXPIRY_NOTIFICATION_INTERVALS];
 
     mutate({
       expiryNotificationIntervals: normalizedIntervals.sort((a, b) => b - a),
@@ -121,7 +126,7 @@ export const ExpiryNotificationsCard = () => {
               !expiryEnabled && "opacity-50",
             )}
           >
-            {AVAILABLE_INTERVALS.map((interval) => {
+            {EXPIRY_NOTIFICATION_INTERVAL_OPTIONS.map((interval) => {
               const checkboxId = `expiry-notification-${interval}`;
               return (
                 <Item

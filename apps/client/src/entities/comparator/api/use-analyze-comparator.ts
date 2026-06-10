@@ -3,6 +3,7 @@ import type {
   AnalyzeComparatorResponseDto,
 } from "@subeye/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { billingQueryKeys } from "@/entities/billing";
 import { assertOk } from "@/shared/api/api-error";
 import { apiClient } from "@/shared/api/client";
 import { track } from "@/shared/lib/analytics";
@@ -44,7 +45,7 @@ export const useAnalyzeComparator = ({
         queryKey: comparatorQueryKeys.aiQuota._def,
       });
       void queryClient.invalidateQueries({
-        queryKey: ["billing"],
+        queryKey: billingQueryKeys._def,
       });
     },
     ...options,

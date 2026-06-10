@@ -4,6 +4,22 @@ import {
   TelegramWebhookService,
 } from "../../../domains/telegram-notification/telegramWebhookService";
 
+const timingSafeEqual = (a: string, b: string): boolean => {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+
+  if (aBytes.length !== bBytes.length) {
+    return false;
+  }
+
+  let diff = 0;
+  for (let i = 0; i < aBytes.length; i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return diff === 0;
+};
+
 export const telegramWebhookRouter = new Hono<{
   Bindings: { TELEGRAM_WEBHOOK_SECRET_TOKEN: string };
 }>().post("/", async (context) => {
@@ -17,7 +33,7 @@ export const telegramWebhookRouter = new Hono<{
     return context.text("Error: Missing webhook secret", 500);
   }
 
-  if (!providedSecret || providedSecret !== expectedSecret) {
+  if (!providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
     return context.text("Error: Invalid webhook secret token", 400);
   }
 

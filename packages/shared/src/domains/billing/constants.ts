@@ -39,6 +39,7 @@ export const PLAN_FEATURE_LABELS: Record<
 export const DEFAULT_NOTIFICATION_TIME = "10:00" as const;
 export const DEFAULT_NOTIFICATION_OFFSET = 1 as const;
 export const DEFAULT_EXPIRY_NOTIFICATIONS_ENABLED = false;
+export const EXPIRY_NOTIFICATION_INTERVAL_OPTIONS = [14, 7, 3, 1] as const;
 export const DEFAULT_EXPIRY_NOTIFICATION_INTERVALS = [7, 3] as number[];
 
 export const NOTIFICATION_SCHEDULE_DEFAULTS = {

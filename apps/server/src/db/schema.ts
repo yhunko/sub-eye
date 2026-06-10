@@ -177,7 +177,10 @@ export const subscriptionsTable = pgTable(
     willBeCancelledAt: timestamp("cancelled_at"),
     orgId: text("org_id"),
   },
-  (t) => [index("subscriptions_org_id_idx").on(t.orgId)],
+  (t) => [
+    index("subscriptions_user_id_idx").on(t.userId),
+    index("subscriptions_org_id_idx").on(t.orgId),
+  ],
 );
 
 export const subscriptionHistoryTable = pgTable(

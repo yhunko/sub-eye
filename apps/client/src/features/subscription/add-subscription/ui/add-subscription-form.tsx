@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { planUsageQuery, SubscriptionLimitAlert } from "@/entities/billing";
 import {
   useCreateSubscription,
-  useUpdateSubscriptionWithoutHistory,
+  useUpdateSubscription,
 } from "@/entities/subscription";
 import * as m from "@/i18n/messages";
 import { Button, Form, Spinner } from "@/shared/components";
@@ -63,12 +63,10 @@ export const AddSubscriptionForm = ({
   );
   const { mutate: addSubscription, isPending: isAddPending } =
     useCreateSubscription();
-  const {
-    mutate: updateSubscriptionWithoutHistory,
-    isPending: isEditWithoutHistoryPending,
-  } = useUpdateSubscriptionWithoutHistory();
+  const { mutate: updateSubscription, isPending: isEditPending } =
+    useUpdateSubscription();
 
-  const isPending = isAddPending || isEditWithoutHistoryPending;
+  const isPending = isAddPending || isEditPending;
   const isEditMode = !!subscriptionId;
   const isLimitReached =
     !isEditMode &&
@@ -154,10 +152,11 @@ export const AddSubscriptionForm = ({
     };
 
     if (isEditMode && subscriptionId) {
-      updateSubscriptionWithoutHistory(
+      updateSubscription(
         {
           id: subscriptionId,
           payload: basePayload,
+          trackHistory: false,
         },
         {
           onSuccess() {

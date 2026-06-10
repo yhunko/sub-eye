@@ -10,6 +10,7 @@ import { handleSubscriptionMutationSuccess } from "../lib/handle-subscription-mu
 export type UpdateSubscriptionParams = {
   id: string;
   payload: UpdateSubscriptionInput;
+  trackHistory?: boolean;
 };
 
 export const useUpdateSubscription = ({
@@ -20,17 +21,19 @@ export const useUpdateSubscription = ({
 
   return useMutation({
     ...options,
-    mutationFn: async ({ id, payload }) => {
+    mutationFn: async ({ id, payload, trackHistory }) => {
       const res = await apiClient.api.subscriptions[":id"].$patch({
         param: { id },
-        query: {},
+        query: trackHistory === false ? { trackHistory: "false" } : {},
         json: payload,
       });
       assertOk(res);
       return res.json();
     },
     onSuccess: async (_data, variables) => {
-      track("subscription_updated");
+      if (variables.trackHistory !== false) {
+        track("subscription_updated");
+      }
       await handleSubscriptionMutationSuccess({
         queryClient,
         userId,

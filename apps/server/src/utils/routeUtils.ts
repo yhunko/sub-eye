@@ -31,9 +31,5 @@ export const handleServiceError = (context: Context, error: unknown) => {
     });
   }
 
-  if (error instanceof Error) {
-    return context.json({ error: error.message }, 500);
-  }
-
   return context.json({ error: "Internal Server Error" }, 500);
 };

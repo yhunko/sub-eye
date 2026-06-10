@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { type Theme, ThemeProviderContext } from "@/shared/lib/theme";
 
 type ThemeProviderProps = {
@@ -35,13 +41,18 @@ export function ThemeProvider({
     root.classList.add(theme);
   }, [theme]);
 
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
+  const setStoredTheme = useCallback(
+    (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
     },
-  };
+    [storageKey],
+  );
+
+  const value = useMemo(
+    () => ({ theme, setTheme: setStoredTheme }),
+    [theme, setStoredTheme],
+  );
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>

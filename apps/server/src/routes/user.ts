@@ -1,11 +1,11 @@
 import { vValidator } from "@hono/valibot-validator";
 import { UpdateUserPublicMetadataSchema } from "@subeye/shared";
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { SubscriptionSchedulingService } from "../domains/subscription/subscriptionSchedulingService";
 import { UserService } from "../domains/user/userService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
+import { handleServiceError } from "../utils/routeUtils";
 
 const NOTIFICATION_RELEVANT_FIELDS = [
   "notificationTime",
@@ -14,23 +14,6 @@ const NOTIFICATION_RELEVANT_FIELDS = [
   "expiryNotificationsEnabled",
   "expiryNotificationIntervals",
 ] as const;
-
-const handleServiceError = (context: Context, error: unknown) => {
-  if (error instanceof Error) {
-    if (error.message === "User not found") {
-      return context.json({ error: error.message }, 404);
-    }
-  }
-
-  if (error instanceof Error) {
-    return context.json(
-      { error: "Database Error", message: error.message },
-      500,
-    );
-  }
-
-  return context.json({ error: "Internal Server Error" }, 500);
-};
 
 export const userRouter = new Hono().patch(
   "/public-metadata",

@@ -11,7 +11,6 @@ export { useDeleteSubscription } from "./api/use-delete-subscription";
 export { useDeleteSubscriptionHistoryItem } from "./api/use-delete-subscription-history-item";
 export { useScheduleSubscriptionPriceChange } from "./api/use-schedule-subscription-price-change";
 export { useUpdateSubscription } from "./api/use-update-subscription";
-export { useUpdateSubscriptionWithoutHistory } from "./api/use-update-subscription-without-history";
 export { formatSubscriptionCycle } from "./lib/format-subscription-cycle";
 export {
   type BillDisplayState,
