@@ -28,7 +28,7 @@
       "source": "feature-sliced/skills",
       "sourceType": "github",
       "skillPath": "feature-sliced-design/SKILL.md",
-      "computedHash": "512b9390be8738170e72fc166c9d9ebf9fa152c152b17235534b5c58da316c28"
+      "computedHash": "c57a32d524addae35b41b07bbfdd35eea3d85b3d0bd8f4779032eb31b62e5ce9"
     },
     "find-skills": {
       "source": "vercel-labs/skills",
@@ -39,7 +39,7 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
     },
     "neon-postgres": {
       "source": "neondatabase/agent-skills",
