@@ -22,6 +22,7 @@ import {
   SubscriptionCategoryNotFoundError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
+import type { EmbeddedCategory } from "./subscriptionMapper";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { SubscriptionPhaseService } from "./subscriptionPhaseService";
 import type { PricePhaseRecord } from "./subscriptionPricePhaseRepository";
@@ -110,13 +111,21 @@ export class SubscriptionService {
       limit: params.limit ?? 50,
     });
 
-    const [rates, phasesById] = await Promise.all([
+    const [rates, phasesById, categories] = await Promise.all([
       deps.currencyService.getRates(preferences.preferredCurrency),
       SubscriptionPhaseService.loadPhasesFor(
         rows.map((row) => row.id),
         deps,
       ),
+      deps.categoryRepository.findByUserId(userId),
     ]);
+
+    const categoriesById = new Map(
+      categories.map((category) => [
+        category.id,
+        { id: category.id, name: category.name, emoji: category.emoji },
+      ]),
+    );
 
     const items = rows
       .map((row) =>
@@ -125,6 +134,7 @@ export class SubscriptionService {
           preferences,
           rates,
           phasesById.get(row.id) ?? [],
+          row.categoryId ? (categoriesById.get(row.categoryId) ?? null) : null,
         ),
       )
       .sort((a, b) => {
@@ -162,9 +172,12 @@ export class SubscriptionService {
 
     const subscription = (await deps.repository.findById(id)) ?? existing;
     const preferences = await deps.userService.getUserPreferences(userId);
-    const [rates, phases] = await Promise.all([
+    const [rates, phases, category] = await Promise.all([
       deps.currencyService.getRates(preferences.preferredCurrency),
       deps.phaseRepository.findBySubscriptionId(id),
+      subscription.categoryId
+        ? deps.categoryRepository.findById(subscription.categoryId)
+        : null,
     ]);
 
     return SubscriptionService.mapToDto(
@@ -172,6 +185,9 @@ export class SubscriptionService {
       preferences,
       rates,
       phases,
+      category
+        ? { id: category.id, name: category.name, emoji: category.emoji }
+        : null,
     );
   }
 
@@ -536,6 +552,7 @@ export class SubscriptionService {
     preferences: UserPreferences,
     rates: Record<string, number>,
     phases: PricePhaseRecord[] = [],
+    category: EmbeddedCategory | null = null,
   ): SubscriptionDto {
     const billing = SubscriptionCalculator.calculateBillingDetails(
       subscription,
@@ -561,6 +578,7 @@ export class SubscriptionService {
       nextPaymentDate,
       lastPaymentDate,
       projection,
+      category,
     );
   }
 

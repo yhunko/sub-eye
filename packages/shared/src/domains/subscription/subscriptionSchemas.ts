@@ -209,7 +209,6 @@ const scheduledPriceChangeSchema = strictObject({
 
 export const SubscriptionDtoSchema = strictObject({
   id: string(),
-  userId: string(),
   name: string(),
   cost: number(),
   currency: string(),
@@ -234,6 +233,9 @@ export const SubscriptionDtoSchema = strictObject({
   pausedAt: nullable(string()),
   resumeAt: nullable(string()),
   allowedActions: array(picklist(subscriptionAllowedActions)),
+  category: nullable(
+    strictObject({ id: string(), name: string(), emoji: string() }),
+  ),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;

@@ -9,6 +9,9 @@ import type { SubscriptionRecord } from "./subscriptionRepository";
 /** @deprecated Alias kept so existing imports resolve; use `PhaseProjection`. */
 export type SubscriptionPhaseProjection = PhaseProjection;
 
+/** The category, embedded on the DTO so the client renders a chip without a second request. */
+export type EmbeddedCategory = { id: string; name: string; emoji: string };
+
 export class SubscriptionMapper {
   static toDto(
     subscription: SubscriptionRecord,
@@ -16,6 +19,7 @@ export class SubscriptionMapper {
     nextPaymentDate: string,
     lastPaymentDate: string | null,
     phases: SubscriptionPhaseProjection,
+    category: EmbeddedCategory | null,
   ): SubscriptionDto {
     const paymentDate = SubscriptionMapper.normalizeDate(
       subscription.paymentDate,
@@ -36,7 +40,6 @@ export class SubscriptionMapper {
 
     return {
       id: subscription.id,
-      userId: subscription.userId,
       name: subscription.name,
       cost: Number(subscription.cost),
       currency: subscription.currency,
@@ -64,6 +67,7 @@ export class SubscriptionMapper {
         status,
         hasPendingPhase: phases.upcomingPhase !== null,
       }),
+      category,
     };
   }
 

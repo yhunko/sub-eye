@@ -102,3 +102,40 @@ describe("SubscriptionService.getSubscriptionsPage", () => {
     expect(args.search).toBeUndefined();
   });
 });
+
+describe("SubscriptionDto shape", () => {
+  it("embeds the category and omits userId and qstashMessageId", async () => {
+    const deps = {
+      repository: {
+        findPageByUserId: async () => ({
+          rows: [record({ id: "a", categoryId: "cat_1" })],
+          nextCursor: null,
+        }),
+      },
+      phaseRepository: { findBySubscriptionIds: async () => [] },
+      currencyService: { getRates: async () => ({}) },
+      userService: { getUserPreferences: async () => preferences },
+      categoryRepository: {
+        findByUserId: async () => [
+          { id: "cat_1", userId: "user_1", name: "Streaming", emoji: "📺" },
+        ],
+      },
+    };
+
+    const page = await SubscriptionService.getSubscriptionsPage(
+      "user_1",
+      {},
+      deps as never,
+    );
+    const dto = page.items[0] as Record<string, unknown>;
+
+    // The client should not need a second request to render a category chip.
+    expect(dto.category).toEqual({
+      id: "cat_1",
+      name: "Streaming",
+      emoji: "📺",
+    });
+    expect(dto).not.toHaveProperty("userId");
+    expect(dto).not.toHaveProperty("qstashMessageId");
+  });
+});

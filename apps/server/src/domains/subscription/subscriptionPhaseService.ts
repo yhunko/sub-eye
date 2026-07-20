@@ -28,6 +28,7 @@ import {
   ScheduledDateMustBeFutureError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
+import type { EmbeddedCategory } from "./subscriptionMapper";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import type {
   PricePhaseRecord,
@@ -380,6 +381,7 @@ export class SubscriptionPhaseService {
     phases: PricePhaseRecord[],
     preferences: UserPreferences,
     rates: Record<string, number>,
+    category: EmbeddedCategory | null = null,
   ): SubscriptionDto {
     const billing = SubscriptionCalculator.calculateBillingDetails(
       subscription,
@@ -403,6 +405,7 @@ export class SubscriptionPhaseService {
       nextPaymentDate,
       lastPaymentDate,
       projection,
+      category,
     );
   }
 
