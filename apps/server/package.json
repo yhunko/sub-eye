@@ -26,7 +26,9 @@
   },
   "scripts": {
     "check-env": "bun ./scripts/check-env.ts",
-    "db:generate": "drizzle-kit generate --custom",
+    "db:generate": "drizzle-kit generate",
+    "db:generate:custom": "drizzle-kit generate --custom",
+    "db:reset-ledger": "bun --env-file=.env ./scripts/db-reset-ledger.ts",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:sql": "bun --env-file=.env ./scripts/db-sql.ts",
