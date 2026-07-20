@@ -27,13 +27,14 @@ export class SubscriptionPriceChangeWorkflow {
 
       await context.sleepUntil("wait-for-effective-at", effectiveAt);
 
+      // Legacy bridge: in-flight runs scheduled before the pricing-phases
+      // migration land here. The price change is now modelled as a pending
+      // phase (backfilled), so apply any due phases for the subscription.
       await context.run("apply-scheduled-price-change", async () => {
-        const { SubscriptionPriceChangeService } = await import(
-          "./subscriptionPriceChangeService"
+        const { SubscriptionPhaseService } = await import(
+          "./subscriptionPhaseService"
         );
-        await SubscriptionPriceChangeService.applyScheduledPriceChangeByWorkflow(
-          payload,
-        );
+        await SubscriptionPhaseService.applyDuePhases(payload.subscriptionId);
       });
     },
   );

@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/clerk-react";
-import type { CancelSubscriptionMode, SubscriptionDto } from "@subeye/shared";
+import type { AddIntroDiscountInput, SubscriptionDto } from "@subeye/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { assertOk } from "@/shared/api/api-error";
 import { apiClient } from "@/shared/api/client";
@@ -7,29 +7,31 @@ import { track } from "@/shared/lib/analytics";
 import type { MutationHook } from "@/shared/lib/react-query/types";
 import { handleSubscriptionMutationSuccess } from "../lib/handle-subscription-mutation-success";
 
-export type CancelSubscriptionParams = {
+export type AddIntroDiscountParams = {
   id: string;
-  mode?: CancelSubscriptionMode;
+  payload: AddIntroDiscountInput;
 };
 
-export const useCancelSubscription = ({
+export const useAddIntroDiscount = ({
   options,
-}: MutationHook<SubscriptionDto, CancelSubscriptionParams> = {}) => {
+}: MutationHook<SubscriptionDto, AddIntroDiscountParams> = {}) => {
   const queryClient = useQueryClient();
   const { userId } = useAuth();
 
   return useMutation({
     ...options,
-    mutationFn: async ({ id, mode = "periodEnd" }) => {
-      const res = await apiClient.api.subscriptions[":id"].cancel.$post({
+    mutationFn: async ({ id, payload }) => {
+      const res = await apiClient.api.subscriptions[":id"][
+        "intro-discount"
+      ].$post({
         param: { id },
-        json: { mode },
+        json: payload,
       });
       assertOk(res);
       return res.json();
     },
     onSuccess: async (_data, variables) => {
-      track("subscription_canceled");
+      track("intro_discount_added");
       await handleSubscriptionMutationSuccess({
         queryClient,
         userId,

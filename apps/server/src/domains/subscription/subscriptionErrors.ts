@@ -77,3 +77,19 @@ export class NoScheduledPriceChangeError extends Error {
     this.name = "NoScheduledPriceChangeError";
   }
 }
+
+export class PhaseNotFoundError extends Error {
+  readonly status = 404 as const;
+  constructor() {
+    super("Price phase not found");
+    this.name = "PhaseNotFoundError";
+  }
+}
+
+export class PhaseAlreadyAppliedError extends Error {
+  readonly status = 400 as const;
+  constructor() {
+    super("Price phase has already been applied");
+    this.name = "PhaseAlreadyAppliedError";
+  }
+}

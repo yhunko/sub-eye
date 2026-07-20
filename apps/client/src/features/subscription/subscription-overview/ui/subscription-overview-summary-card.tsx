@@ -1,32 +1,24 @@
 import type { SubscriptionDto } from "@subeye/shared";
-import { format } from "date-fns";
 import type { FC } from "react";
 import { BrandfetchImage } from "@/entities/brandfetch";
 import { CurrencyText } from "@/entities/currency";
 import { PeriodBadge } from "@/features/subscription/period";
 import * as m from "@/i18n/messages";
-import { useDateFormat } from "@/shared/hooks/use-date-format";
 import { cn } from "@/shared/lib/classes-utils";
-import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
-import { SubscriptionOverviewScheduledPriceChangeAlert } from "./subscription-overview-scheduled-price-change-alert";
+import { SubscriptionOverviewStatusChip } from "./subscription-overview-status-chip";
 
 type SubscriptionOverviewSummaryCardProps = {
   subscription: SubscriptionDto;
+  formatDate?: (iso: string) => string;
 };
 
 export const SubscriptionOverviewSummaryCard: FC<
   SubscriptionOverviewSummaryCardProps
-> = ({ subscription }) => {
-  const { dateFnsFormat } = useDateFormat();
-  const { locale } = useDateFnsLocale();
-
-  const scheduledDateLabel = subscription.scheduledPriceChange
-    ? format(
-        new Date(subscription.scheduledPriceChange.effectiveAt),
-        dateFnsFormat,
-        { locale },
-      )
-    : null;
+> = ({ subscription, formatDate }) => {
+  const showStandardPriceNote =
+    (subscription.effectivePhaseKind === "trial" ||
+      subscription.effectivePhaseKind === "intro") &&
+    subscription.upcomingPhase != null;
 
   return (
     <div className="space-y-4">
@@ -39,10 +31,14 @@ export const SubscriptionOverviewSummaryCard: FC<
             subscription.status === "cancelled" && "grayscale",
           )}
         />
-        <div className="space-y-1">
+        <div className="space-y-2">
           <h1 className="max-w-full text-3xl leading-tight font-semibold tracking-tight wrap-break-word">
             {subscription.name}
           </h1>
+          <SubscriptionOverviewStatusChip
+            subscription={subscription}
+            formatDate={formatDate}
+          />
           <div className="text-muted-foreground inline-flex items-center gap-2 text-sm">
             <PeriodBadge
               every={subscription.every}
@@ -58,6 +54,9 @@ export const SubscriptionOverviewSummaryCard: FC<
       </div>
 
       <div className="bg-card rounded-2xl border p-4">
+        <h2 className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
+          {m.subscription_overview_currentPrice()}
+        </h2>
         <div className="grid gap-2">
           <div className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground text-sm">
@@ -88,10 +87,19 @@ export const SubscriptionOverviewSummaryCard: FC<
           </div>
         </div>
 
-        <SubscriptionOverviewScheduledPriceChangeAlert
-          subscription={subscription}
-          scheduledDateLabel={scheduledDateLabel}
-        />
+        {showStandardPriceNote && subscription.upcomingPhase && (
+          <p className="text-muted-foreground mt-3 border-t pt-3 text-xs">
+            {m.subscription_overview_standardPriceNote({
+              price: "",
+            })}{" "}
+            <CurrencyText
+              currencyCode={
+                subscription.upcomingPhase.billing.preferred.currencyCode
+              }
+              amount={subscription.upcomingPhase.billing.preferred.amount}
+            />
+          </p>
+        )}
       </div>
     </div>
   );

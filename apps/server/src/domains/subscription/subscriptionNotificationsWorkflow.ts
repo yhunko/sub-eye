@@ -9,6 +9,7 @@ import type { UserPreferences } from "@subeye/shared";
 import {
   CurrencyUtils,
   DateTimezoneUtils,
+  getEffectivePhase,
   RecurrenceUtils,
   shouldIncludeOccurrence,
 } from "@subeye/shared";
@@ -17,6 +18,7 @@ import { CurrencyService } from "../currency/currencyService";
 import { PushNotificationContent } from "../push-notification/pushNotificationContent";
 import { PushNotificationService } from "../push-notification/pushNotificationService";
 import { UserService } from "../user/userService";
+import { SubscriptionPricePhaseRepository } from "./subscriptionPricePhaseRepository";
 import {
   type SubscriptionRecord,
   SubscriptionRepository,
@@ -136,21 +138,20 @@ export class SubscriptionNotificationsWorkflow {
           latest.userId,
         );
 
-        const scheduledEffectiveAt = latest.scheduledEffectiveAt
-          ? new Date(latest.scheduledEffectiveAt)
-          : null;
-        const hasScheduledPriceChange =
-          latest.scheduledCost != null &&
-          latest.scheduledCurrency != null &&
-          scheduledEffectiveAt != null &&
-          !Number.isNaN(scheduledEffectiveAt.getTime()) &&
-          scheduledEffectiveAt.getTime() <= targetPayment.getTime();
+        // Quote the price in effect at the payment date. If a pricing-phase
+        // boundary (trial end, intro end, scheduled change) falls between now
+        // and the payment, the upcoming phase price is what will be charged.
+        const phases =
+          await SubscriptionPricePhaseRepository.findBySubscriptionId(
+            latest.id,
+          );
+        const phaseAtPayment = getEffectivePhase(phases, targetPayment);
 
-        const originalPriceAmount = hasScheduledPriceChange
-          ? Number(latest.scheduledCost)
+        const originalPriceAmount = phaseAtPayment
+          ? Number(phaseAtPayment.cost)
           : Number(latest.cost);
-        const originalPriceCurrencyCode = hasScheduledPriceChange
-          ? latest.scheduledCurrency!
+        const originalPriceCurrencyCode = phaseAtPayment
+          ? phaseAtPayment.currency
           : latest.currency;
         const preferredPriceCurrencyCode = latestPreferences.preferredCurrency;
         const rates = await CurrencyService.getRates(

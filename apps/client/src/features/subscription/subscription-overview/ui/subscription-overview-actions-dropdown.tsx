@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRightLeft,
-  CalendarArrowUp,
   Ellipsis,
   HistoryIcon,
   PencilIcon,
@@ -24,8 +23,6 @@ import { openSubscriptionHistoryPanel } from "../../subscription-history";
 type SubscriptionOverviewActionsDropdownProps = {
   subscriptionId: string;
   subscriptionName: string;
-  hasScheduledPriceChange: boolean;
-  onSchedulePriceChange: () => void;
   onDeleteSuccess: () => Promise<void> | void;
   triggerClassName?: string;
 };
@@ -46,8 +43,6 @@ export const SubscriptionOverviewActionsDropdown: FC<
 > = ({
   subscriptionId,
   subscriptionName,
-  hasScheduledPriceChange,
-  onSchedulePriceChange,
   onDeleteSuccess,
   triggerClassName,
 }) => {
@@ -77,16 +72,6 @@ export const SubscriptionOverviewActionsDropdown: FC<
             <PencilIcon className="size-4" aria-hidden />
             {m.common_actions_edit()}
           </Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onSelect={onSchedulePriceChange}
-        >
-          <CalendarArrowUp className="size-4" aria-hidden />
-          {hasScheduledPriceChange
-            ? m.subscription_priceChange_action_edit()
-            : m.subscription_priceChange_action_schedule()}
         </DropdownMenuItem>
 
         <DropdownMenuItem

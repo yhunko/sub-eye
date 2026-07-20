@@ -30,6 +30,13 @@ export const subscriptionActionEnum = pgEnum("subscription_action", [
   "uncancelled",
 ]);
 
+export const pricePhaseKindEnum = pgEnum("price_phase_kind", [
+  "trial",
+  "intro",
+  "scheduledChange",
+  "standard",
+]);
+
 export const pushNotificationsTable = pgTable(
   "push_subscriptions",
   {
@@ -204,6 +211,41 @@ export const subscriptionHistoryTable = pgTable(
       table.createdAt,
     ),
     index("subscription_history_org_id_idx").on(table.orgId),
+  ],
+);
+
+export const subscriptionPricePhasesTable = pgTable(
+  "subscription_price_phases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    subscriptionId: uuid("subscription_id")
+      .notNull()
+      .references(() => subscriptionsTable.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    orgId: text("org_id"),
+    kind: pricePhaseKindEnum("kind").notNull(),
+    cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
+    currency: text("currency").notNull(),
+    startsAt: timestamp("starts_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true, mode: "string" }),
+    // Set when the boundary fired and the price was copied onto the
+    // subscription row. `null` = pending; this is the idempotency anchor.
+    appliedAt: timestamp("applied_at", { withTimezone: true, mode: "string" }),
+    // The boundary-transition QStash workflow run that owns this phase.
+    qstashMessageId: text("qstash_message_id"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("price_phases_subscription_idx").on(t.subscriptionId),
+    index("price_phases_user_idx").on(t.userId),
+    index("price_phases_subscription_starts_at_idx").on(
+      t.subscriptionId,
+      t.startsAt,
+    ),
   ],
 );
 

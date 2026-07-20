@@ -44,6 +44,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(nextWeek, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -79,6 +82,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(nextTwoWeeks, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -114,6 +120,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(nextWeek, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -149,6 +158,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(addDays(now, 25), -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -184,6 +196,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(now, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -219,6 +234,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(now, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -254,6 +272,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(now, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -289,6 +310,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(now, -1)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "active",
   },
   {
@@ -324,6 +348,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(now, -1)),
     willBeCancelledAt: formatDate(addMonths(now, 2)),
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "cancelledButActive",
   },
   {
@@ -359,6 +386,9 @@ export const demoSubscriptions: SubscriptionDto[] = [
     lastPaymentDate: formatDate(addMonths(now, -2)),
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
     status: "cancelled",
   },
 ];

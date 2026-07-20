@@ -9,7 +9,7 @@ import type {
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
-import { getPlanById } from "@subeye/shared";
+import { getPlanById, getSubscriptionLifecycleStatus } from "@subeye/shared";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
 import { OrgService } from "../org/orgService";
@@ -17,6 +17,7 @@ import { UserService } from "../user/userService";
 import { SubscriptionCalculator } from "./subscriptionCalculator";
 import { SubscriptionCancellationWorkflow } from "./subscriptionCancellationWorkflow";
 import {
+  ScheduledDateMustBeFutureError,
   SubscriptionCategoryNotFoundError,
   SubscriptionLimitReachedError,
   SubscriptionNotFoundError,
@@ -24,7 +25,9 @@ import {
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
-import { SubscriptionPriceChangeService } from "./subscriptionPriceChangeService";
+import { SubscriptionPhaseService } from "./subscriptionPhaseService";
+import type { PricePhaseRecord } from "./subscriptionPricePhaseRepository";
+import { SubscriptionPricePhaseRepository } from "./subscriptionPricePhaseRepository";
 import type {
   SubscriptionInsert,
   SubscriptionRecord,
@@ -32,22 +35,22 @@ import type {
 import { SubscriptionRepository } from "./subscriptionRepository";
 import { SubscriptionSchedulingService } from "./subscriptionSchedulingService";
 
-export type PriceChangeWorkflowApi = {
+export type PhaseTransitionWorkflowApi = {
   schedule: (payload: {
     subscriptionId: string;
-    effectiveAt: string;
-    scheduledCost: number;
-    scheduledCurrency: string;
+    phaseId: string;
+    startsAt: string;
   }) => Promise<string>;
   cancel: (workflowRunId: string) => Promise<void>;
 };
 
 export type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
+  phaseRepository: typeof SubscriptionPricePhaseRepository;
   currencyService: typeof CurrencyService;
   workflow: typeof SubscriptionNotificationsWorkflow;
   cancellationWorkflow: typeof SubscriptionCancellationWorkflow;
-  priceChangeWorkflow: PriceChangeWorkflowApi;
+  phaseWorkflow: PhaseTransitionWorkflowApi;
   userService: typeof UserService;
   orgService: typeof OrgService;
   historyService: typeof SubscriptionHistoryService;
@@ -58,24 +61,26 @@ type UpdateSubscriptionOptions = {
   trackHistory?: boolean;
 };
 
-// Lazy-loaded module reference to avoid circular dependency
-let priceChangeWorkflowModule: PriceChangeWorkflowApi | undefined;
-export const getPriceChangeWorkflow = (): PriceChangeWorkflowApi => {
-  if (!priceChangeWorkflowModule) {
-    // Dynamic import is safe here - module will be loaded on first access
-    priceChangeWorkflowModule =
-      require("./subscriptionPriceChangeWorkflow").SubscriptionPriceChangeWorkflow;
+type CancellationMode = "periodEnd" | "immediate";
+
+// Lazy module reference to avoid a circular import with the workflow handler.
+let phaseTransitionWorkflowModule: PhaseTransitionWorkflowApi | undefined;
+export const getPhaseWorkflow = (): PhaseTransitionWorkflowApi => {
+  if (!phaseTransitionWorkflowModule) {
+    phaseTransitionWorkflowModule =
+      require("./subscriptionPhaseTransitionWorkflow").SubscriptionPhaseTransitionWorkflow;
   }
-  return priceChangeWorkflowModule!;
+  return phaseTransitionWorkflowModule as PhaseTransitionWorkflowApi;
 };
 
 export const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
+  phaseRepository: SubscriptionPricePhaseRepository,
   currencyService: CurrencyService,
   workflow: SubscriptionNotificationsWorkflow,
   cancellationWorkflow: SubscriptionCancellationWorkflow,
-  get priceChangeWorkflow() {
-    return getPriceChangeWorkflow();
+  get phaseWorkflow() {
+    return getPhaseWorkflow();
   },
   userService: UserService,
   orgService: OrgService,
@@ -93,18 +98,20 @@ export class SubscriptionService {
       deps.repository.findByUserId(userId),
       deps.userService.getUserPreferences(userId),
     ]);
-    const reconciledSubscriptions =
-      await SubscriptionPriceChangeService.reconcileScheduledPriceChanges(
-        subscriptions,
-        deps,
-      );
+    const { subscriptions: reconciledSubscriptions, phasesBySubscriptionId } =
+      await SubscriptionPhaseService.reconcilePhases(subscriptions, deps);
 
     const rates = await deps.currencyService.getRates(
       preferences.preferredCurrency,
     );
 
     const dtos = reconciledSubscriptions.map((subscription) =>
-      SubscriptionService.mapToDto(subscription, preferences, rates),
+      SubscriptionService.mapToDto(
+        subscription,
+        preferences,
+        rates,
+        phasesBySubscriptionId.get(subscription.id) ?? [],
+      ),
     );
 
     return SubscriptionService.applyFilters(dtos, params);
@@ -120,11 +127,9 @@ export class SubscriptionService {
     if (!subscription || subscription.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-    const [reconciledSubscription] =
-      await SubscriptionPriceChangeService.reconcileScheduledPriceChanges(
-        [subscription],
-        deps,
-      );
+    const { subscriptions, phasesBySubscriptionId } =
+      await SubscriptionPhaseService.reconcilePhases([subscription], deps);
+    const [reconciledSubscription] = subscriptions;
 
     const preferences = await deps.userService.getUserPreferences(userId);
     const rates = await deps.currencyService.getRates(
@@ -135,6 +140,7 @@ export class SubscriptionService {
       reconciledSubscription ?? subscription,
       preferences,
       rates,
+      phasesBySubscriptionId.get(id) ?? [],
     );
   }
 
@@ -167,8 +173,19 @@ export class SubscriptionService {
       throw new SubscriptionLimitReachedError();
     }
 
+    // Validate the starting offer before any write so we never create a
+    // subscription and then fail to attach its trial/intro.
+    const { intro, ...createPayload } = payload;
+    if (intro && Date.parse(intro.endsAt) <= Date.now()) {
+      throw new ScheduledDateMustBeFutureError();
+    }
+
     const created = await deps.repository.create(
-      SubscriptionService.toInsertPayload(userId, effectiveOrgId, payload),
+      SubscriptionService.toInsertPayload(
+        userId,
+        effectiveOrgId,
+        createPayload,
+      ),
     );
 
     const withRenewalWorkflow =
@@ -188,7 +205,7 @@ export class SubscriptionService {
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
 
-    const dto = SubscriptionService.mapToDto(result, preferences, rates);
+    const dto = SubscriptionService.mapToDto(result, preferences, rates, []);
 
     await SubscriptionService.logHistoryAction(
       {
@@ -200,6 +217,38 @@ export class SubscriptionService {
       },
       deps,
     );
+
+    // Start the subscription on its trial / intro offer (the standard price is
+    // the cost just created). Returns the DTO with the resulting price phases.
+    if (intro) {
+      const standardCost = Number(result.cost);
+      if (intro.kind === "trial") {
+        return SubscriptionPhaseService.startTrial(
+          result.id,
+          userId,
+          {
+            trialCost: intro.promoCost,
+            trialCurrency: result.currency,
+            endsAt: intro.endsAt,
+            standardCost,
+            standardCurrency: result.currency,
+          },
+          deps,
+        );
+      }
+      return SubscriptionPhaseService.addIntroDiscount(
+        result.id,
+        userId,
+        {
+          introCost: intro.promoCost,
+          introCurrency: result.currency,
+          endsAt: intro.endsAt,
+          standardCost,
+          standardCurrency: result.currency,
+        },
+        deps,
+      );
+    }
 
     return dto;
   }
@@ -214,7 +263,7 @@ export class SubscriptionService {
     const existing = await deps.repository.findById(id);
 
     if (!existing || existing.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
 
     await SubscriptionService.assertCategoryBelongsToSpace(
@@ -223,6 +272,8 @@ export class SubscriptionService {
       payload.categoryId,
       deps,
     );
+
+    const phasesBefore = await deps.phaseRepository.findBySubscriptionId(id);
 
     if (existing.qstashMessageId) {
       await SubscriptionSchedulingService.tryCancelWorkflow(
@@ -237,31 +288,15 @@ export class SubscriptionService {
       );
     }
 
-    const shouldClearScheduledPriceChange =
-      SubscriptionService.shouldClearScheduledPriceChange(existing, payload);
-
-    if (
-      shouldClearScheduledPriceChange &&
-      existing.priceChangeQstashMessageId
-    ) {
-      await SubscriptionPriceChangeService.tryCancelPriceChangeWorkflow(
-        existing.priceChangeQstashMessageId,
-        deps,
-      );
+    // A direct price/currency edit supersedes any pending pricing schedule.
+    if (SubscriptionService.isDirectPriceChange(existing, payload)) {
+      await SubscriptionPhaseService.clearPendingPhases(id, deps);
     }
 
     const updated = await deps.repository.update(id, {
       ...SubscriptionService.toUpdatePayload(payload),
       qstashMessageId: null,
       cancellationQstashMessageId: null,
-      ...(shouldClearScheduledPriceChange
-        ? {
-            scheduledCost: null,
-            scheduledCurrency: null,
-            scheduledEffectiveAt: null,
-            priceChangeQstashMessageId: null,
-          }
-        : undefined),
     });
 
     const withRenewalWorkflow =
@@ -285,8 +320,15 @@ export class SubscriptionService {
       existing,
       preferences,
       rates,
+      phasesBefore,
     );
-    const dto = SubscriptionService.mapToDto(result, preferences, rates);
+    const phasesAfter = await deps.phaseRepository.findBySubscriptionId(id);
+    const dto = SubscriptionService.mapToDto(
+      result,
+      preferences,
+      rates,
+      phasesAfter,
+    );
 
     if (options.trackHistory !== false) {
       await SubscriptionService.logHistoryAction(
@@ -315,7 +357,7 @@ export class SubscriptionService {
     const existing = await deps.repository.findById(id);
 
     if (!existing || existing.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
 
     if (existing.qstashMessageId) {
@@ -331,22 +373,19 @@ export class SubscriptionService {
       );
     }
 
-    if (existing.priceChangeQstashMessageId) {
-      await SubscriptionPriceChangeService.tryCancelPriceChangeWorkflow(
-        existing.priceChangeQstashMessageId,
-        deps,
-      );
-    }
+    await SubscriptionPhaseService.clearPendingPhases(id, deps);
 
     let historySnapshot: unknown = existing;
 
     try {
       const { preferences, rates } =
         await SubscriptionService.getPreferencesAndRates(userId, deps);
+      const phases = await deps.phaseRepository.findBySubscriptionId(id);
       historySnapshot = SubscriptionService.mapToDto(
         existing,
         preferences,
         rates,
+        phases,
       );
     } catch (error) {
       console.error("Failed to prepare delete history snapshot", {
@@ -370,31 +409,54 @@ export class SubscriptionService {
     await deps.repository.delete(id);
   }
 
+  /** Cancel at the end of the current paid period (access kept until then). */
   static async cancelSubscription(
     id: string,
     userId: string,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
+    return SubscriptionService.applyCancellation(id, userId, "periodEnd", deps);
+  }
+
+  /** Cancel right away — access ends now. */
+  static async cancelSubscriptionImmediately(
+    id: string,
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    return SubscriptionService.applyCancellation(id, userId, "immediate", deps);
+  }
+
+  private static async applyCancellation(
+    id: string,
+    userId: string,
+    mode: CancellationMode,
+    deps: SubscriptionServiceDeps,
+  ): Promise<SubscriptionDto> {
     const existing = await deps.repository.findById(id);
 
     if (!existing || existing.userId !== userId) {
-      throw new Error("Subscription not found");
+      throw new SubscriptionNotFoundError();
     }
 
     const userPreferences = await deps.userService.getUserPreferences(userId);
-    const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
-      existing,
-      userPreferences.preferredTimezone,
-    );
+    const willBeCancelledAt =
+      mode === "immediate"
+        ? new Date()
+        : new Date(
+            SubscriptionCalculator.calculatePaymentDates(
+              existing,
+              userPreferences.preferredTimezone,
+            ).nextPaymentDate,
+          );
+
+    // A cancelled subscription should never fire a future pricing transition.
+    await SubscriptionPhaseService.clearPendingPhases(id, deps);
 
     const updated = await deps.repository.update(id, {
-      willBeCancelledAt: new Date(nextPaymentDate),
+      willBeCancelledAt,
       qstashMessageId: null,
       cancellationQstashMessageId: null,
-      scheduledCost: null,
-      scheduledCurrency: null,
-      scheduledEffectiveAt: null,
-      priceChangeQstashMessageId: null,
     });
 
     if (existing.qstashMessageId) {
@@ -410,13 +472,6 @@ export class SubscriptionService {
       );
     }
 
-    if (existing.priceChangeQstashMessageId) {
-      await SubscriptionPriceChangeService.tryCancelPriceChangeWorkflow(
-        existing.priceChangeQstashMessageId,
-        deps,
-      );
-    }
-
     const finalRecord =
       SubscriptionSchedulingService.shouldScheduleCancellationWorkflow(updated)
         ? await SubscriptionSchedulingService.tryScheduleCancellationWorkflow(
@@ -427,8 +482,14 @@ export class SubscriptionService {
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
+    const phases = await deps.phaseRepository.findBySubscriptionId(id);
 
-    const dto = SubscriptionService.mapToDto(finalRecord, preferences, rates);
+    const dto = SubscriptionService.mapToDto(
+      finalRecord,
+      preferences,
+      rates,
+      phases,
+    );
 
     await SubscriptionService.logHistoryAction(
       {
@@ -436,6 +497,79 @@ export class SubscriptionService {
         userId,
         orgId: existing.orgId,
         action: "cancelled",
+        snapshot: dto,
+      },
+      deps,
+    );
+
+    return dto;
+  }
+
+  /** Resume a cancelling/cancelled subscription (clears the cancellation). */
+  static async renewSubscription(
+    id: string,
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(id);
+
+    if (!existing || existing.userId !== userId) {
+      throw new SubscriptionNotFoundError();
+    }
+
+    const wasFullyCancelled =
+      getSubscriptionLifecycleStatus({
+        willBeCancelledAt: SubscriptionService.normalizeDate(
+          existing.willBeCancelledAt,
+        ),
+      }) === "cancelled";
+
+    if (existing.qstashMessageId) {
+      await SubscriptionSchedulingService.tryCancelWorkflow(
+        existing.qstashMessageId,
+        deps,
+      );
+    }
+    if (existing.cancellationQstashMessageId) {
+      await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
+        existing.cancellationQstashMessageId,
+        deps,
+      );
+    }
+
+    const updated = await deps.repository.update(id, {
+      willBeCancelledAt: null,
+      qstashMessageId: null,
+      cancellationQstashMessageId: null,
+    });
+
+    const withRenewalWorkflow =
+      SubscriptionSchedulingService.shouldScheduleWorkflow(updated)
+        ? await SubscriptionSchedulingService.tryScheduleWorkflow(updated, deps)
+        : updated;
+
+    const { subscriptions, phasesBySubscriptionId } =
+      await SubscriptionPhaseService.reconcilePhases(
+        [withRenewalWorkflow],
+        deps,
+      );
+    const [reconciled] = subscriptions;
+
+    const { preferences, rates } =
+      await SubscriptionService.getPreferencesAndRates(userId, deps);
+    const dto = SubscriptionService.mapToDto(
+      reconciled ?? withRenewalWorkflow,
+      preferences,
+      rates,
+      phasesBySubscriptionId.get(id) ?? [],
+    );
+
+    await SubscriptionService.logHistoryAction(
+      {
+        subscriptionId: dto.id,
+        userId,
+        orgId: existing.orgId,
+        action: wasFullyCancelled ? "renewed" : "uncancelled",
         snapshot: dto,
       },
       deps,
@@ -465,12 +599,10 @@ export class SubscriptionService {
           );
         }
 
-        if (subscription.priceChangeQstashMessageId) {
-          await SubscriptionPriceChangeService.tryCancelPriceChangeWorkflow(
-            subscription.priceChangeQstashMessageId,
-            deps,
-          );
-        }
+        await SubscriptionPhaseService.clearPendingPhases(
+          subscription.id,
+          deps,
+        );
       }),
     );
 
@@ -507,11 +639,8 @@ export class SubscriptionService {
             deps,
           );
         }
-        if (sub?.priceChangeQstashMessageId) {
-          await SubscriptionPriceChangeService.tryCancelPriceChangeWorkflow(
-            sub.priceChangeQstashMessageId,
-            deps,
-          );
+        if (sub) {
+          await SubscriptionPhaseService.clearPendingPhases(sub.id, deps);
         }
       }),
     );
@@ -597,6 +726,7 @@ export class SubscriptionService {
     subscription: SubscriptionRecord,
     preferences: UserPreferences,
     rates: Record<string, number>,
+    phases: PricePhaseRecord[] = [],
   ): SubscriptionDto {
     const billing = SubscriptionCalculator.calculateBillingDetails(
       subscription,
@@ -609,8 +739,9 @@ export class SubscriptionService {
         preferences.preferredTimezone,
       );
 
-    const scheduledPriceChange = SubscriptionService.toScheduledPriceChange(
+    const projection = SubscriptionPhaseService.buildPhaseProjection(
       subscription,
+      phases,
       preferences,
       rates,
     );
@@ -620,48 +751,8 @@ export class SubscriptionService {
       billing,
       nextPaymentDate,
       lastPaymentDate,
-      scheduledPriceChange,
+      projection,
     );
-  }
-
-  private static toScheduledPriceChange(
-    subscription: SubscriptionRecord,
-    preferences: UserPreferences,
-    rates: Record<string, number>,
-  ): SubscriptionDto["scheduledPriceChange"] {
-    if (
-      !subscription.scheduledCost ||
-      !subscription.scheduledCurrency ||
-      !subscription.scheduledEffectiveAt
-    ) {
-      return null;
-    }
-
-    const amount = Number(subscription.scheduledCost);
-
-    if (!Number.isFinite(amount)) {
-      return null;
-    }
-
-    const billing = SubscriptionCalculator.calculateBillingDetailsForPricing(
-      {
-        amount,
-        currency: subscription.scheduledCurrency,
-        every: subscription.every,
-        period: subscription.period,
-      },
-      preferences.preferredCurrency,
-      rates,
-    );
-
-    return {
-      cost: amount,
-      currency: subscription.scheduledCurrency,
-      effectiveAt: SubscriptionService.normalizeDate(
-        subscription.scheduledEffectiveAt,
-      )!,
-      billing,
-    };
   }
 
   private static toInsertPayload(
@@ -894,14 +985,10 @@ export class SubscriptionService {
     return "before" in snapshot && "after" in snapshot;
   }
 
-  private static shouldClearScheduledPriceChange(
+  private static isDirectPriceChange(
     subscription: SubscriptionRecord,
     payload: UpdateSubscriptionInput,
   ): boolean {
-    if (!subscription.scheduledCost || !subscription.scheduledEffectiveAt) {
-      return false;
-    }
-
     if (payload.cost === undefined && payload.currency === undefined) {
       return false;
     }
@@ -933,18 +1020,20 @@ export class SubscriptionService {
       deps.repository.findByOrgId(orgId),
       deps.userService.getUserPreferences(userId),
     ]);
-    const reconciledSubscriptions =
-      await SubscriptionPriceChangeService.reconcileScheduledPriceChanges(
-        subscriptions,
-        deps,
-      );
+    const { subscriptions: reconciledSubscriptions, phasesBySubscriptionId } =
+      await SubscriptionPhaseService.reconcilePhases(subscriptions, deps);
 
     const rates = await deps.currencyService.getRates(
       preferences.preferredCurrency,
     );
 
     const dtos = reconciledSubscriptions.map((subscription) =>
-      SubscriptionService.mapToDto(subscription, preferences, rates),
+      SubscriptionService.mapToDto(
+        subscription,
+        preferences,
+        rates,
+        phasesBySubscriptionId.get(subscription.id) ?? [],
+      ),
     );
 
     return SubscriptionService.applyFilters(dtos, params);
@@ -965,12 +1054,11 @@ export class SubscriptionService {
           );
         }
 
-        if (subscription.priceChangeQstashMessageId) {
-          await SubscriptionPriceChangeService.tryCancelPriceChangeWorkflow(
-            subscription.priceChangeQstashMessageId,
-            deps,
-          );
-        }
+        await SubscriptionPhaseService.clearPendingPhases(
+          subscription.id,
+          deps,
+        );
+
         if (subscription.cancellationQstashMessageId) {
           await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
             subscription.cancellationQstashMessageId,

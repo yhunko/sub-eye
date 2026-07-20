@@ -1,11 +1,14 @@
 import { vValidator } from "@hono/valibot-validator";
 import {
+  AddIntroDiscountSchema,
   AddSubscriptionSchema,
   BulkDeleteSubscriptionsSchema,
   BulkUpdateCategorySchema,
+  CancelSubscriptionSchema,
   idQuerySchema,
   listQuerySchema,
   SchedulePriceChangeSchema,
+  StartTrialSchema,
   UpdateSubscriptionSchema,
   updateSubscriptionQuerySchema,
 } from "@subeye/shared";
@@ -14,7 +17,8 @@ import { object, string } from "valibot";
 import { SubscriptionCancellationWorkflow } from "../domains/subscription/subscriptionCancellationWorkflow";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
 import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
-import { SubscriptionPriceChangeService } from "../domains/subscription/subscriptionPriceChangeService";
+import { SubscriptionPhaseService } from "../domains/subscription/subscriptionPhaseService";
+import { SubscriptionPhaseTransitionWorkflow } from "../domains/subscription/subscriptionPhaseTransitionWorkflow";
 import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscriptionPriceChangeWorkflow";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { protect } from "../middleware/auth";
@@ -24,6 +28,11 @@ import { handleServiceError } from "../utils/routeUtils";
 const historyIdParamSchema = object({
   id: string(),
   historyId: string(),
+});
+
+const phaseIdParamSchema = object({
+  id: string(),
+  phaseId: string(),
 });
 
 export const subscriptionRouter = new Hono()
@@ -193,12 +202,11 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const payload = context.req.valid("json");
-        const subscription =
-          await SubscriptionPriceChangeService.schedulePriceChange(
-            id,
-            userId,
-            payload,
-          );
+        const subscription = await SubscriptionPhaseService.schedulePriceChange(
+          id,
+          userId,
+          payload,
+        );
         return context.json(subscription);
       } catch (error) {
         return handleServiceError(context, error);
@@ -215,10 +223,7 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const subscription =
-          await SubscriptionPriceChangeService.cancelScheduledPriceChange(
-            id,
-            userId,
-          );
+          await SubscriptionPhaseService.cancelScheduledPriceChange(id, userId);
         return context.json(subscription);
       } catch (error) {
         return handleServiceError(context, error);
@@ -235,7 +240,7 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const subscription =
-          await SubscriptionPriceChangeService.applyScheduledPriceChangeNow(
+          await SubscriptionPhaseService.applyScheduledPriceChangeNow(
             id,
             userId,
           );
@@ -246,7 +251,137 @@ export const subscriptionRouter = new Hono()
     },
   )
   .post(
+    "/:id/trial",
+    protect,
+    vValidator("param", idQuerySchema),
+    vValidator("json", StartTrialSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const payload = context.req.valid("json");
+        const subscription = await SubscriptionPhaseService.startTrial(
+          id,
+          userId,
+          payload,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/intro-discount",
+    protect,
+    vValidator("param", idQuerySchema),
+    vValidator("json", AddIntroDiscountSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const payload = context.req.valid("json");
+        const subscription = await SubscriptionPhaseService.addIntroDiscount(
+          id,
+          userId,
+          payload,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/phases/schedule-change",
+    protect,
+    vValidator("param", idQuerySchema),
+    vValidator("json", SchedulePriceChangeSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const payload = context.req.valid("json");
+        const subscription = await SubscriptionPhaseService.schedulePriceChange(
+          id,
+          userId,
+          payload,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .delete(
+    "/:id/phases/:phaseId",
+    protect,
+    vValidator("param", phaseIdParamSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id, phaseId } = context.req.valid("param");
+        const subscription = await SubscriptionPhaseService.cancelPhase(
+          id,
+          userId,
+          phaseId,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/phases/:phaseId/apply-now",
+    protect,
+    vValidator("param", phaseIdParamSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id, phaseId } = context.req.valid("param");
+        const subscription = await SubscriptionPhaseService.applyPhaseNow(
+          id,
+          userId,
+          phaseId,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
     "/:id/cancel",
+    protect,
+    vValidator("param", idQuerySchema),
+    vValidator("json", CancelSubscriptionSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const { mode } = context.req.valid("json");
+        const subscription =
+          mode === "immediate"
+            ? await SubscriptionService.cancelSubscriptionImmediately(
+                id,
+                userId,
+              )
+            : await SubscriptionService.cancelSubscription(id, userId);
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/renew",
     protect,
     vValidator("param", idQuerySchema),
     async (context) => {
@@ -254,7 +389,7 @@ export const subscriptionRouter = new Hono()
 
       try {
         const { id } = context.req.valid("param");
-        const subscription = await SubscriptionService.cancelSubscription(
+        const subscription = await SubscriptionService.renewSubscription(
           id,
           userId,
         );
@@ -295,4 +430,9 @@ export const subscriptionRouter = new Hono()
     "/cancellation-notifications/workflow",
     SubscriptionCancellationWorkflow.handler,
   )
-  .post("/price-change/workflow", SubscriptionPriceChangeWorkflow.handler);
+  // Legacy route kept registered for QStash runs in flight at deploy time.
+  .post("/price-change/workflow", SubscriptionPriceChangeWorkflow.handler)
+  .post(
+    "/phase-transition/workflow",
+    SubscriptionPhaseTransitionWorkflow.handler,
+  );

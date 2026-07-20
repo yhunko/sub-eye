@@ -8,6 +8,7 @@ import {
   minValue,
   number,
   object,
+  picklist,
   pipe,
   string,
 } from "valibot";
@@ -39,6 +40,11 @@ const expiryPayloadSchema = object({
     integer(),
     minValue(0),
   ),
+});
+
+const phaseChangePayloadSchema = object({
+  subscriptionId: string(),
+  kind: picklist(["trial", "intro", "scheduledChange", "standard"]),
 });
 
 const isLocalDevRequest = (requestUrlString: string) => {
@@ -157,6 +163,46 @@ export const devRouter = new Hono()
           brandDomain: subscription.brandDomain,
         });
         const report = await NotificationDeliveryService.sendExpiryNotification(
+          userId,
+          notificationPayload,
+          {
+            locale: preferences.locale,
+            vapidDetails: PushNotificationService.getVapidDetailsFromEnv(),
+          },
+        );
+
+        return context.json({ report });
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/notifications/test-phase-change",
+    protect,
+    vValidator("json", phaseChangePayloadSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const payload = context.req.valid("json");
+        const [subscription, preferences] = await Promise.all([
+          SubscriptionService.getSubscriptionById(
+            payload.subscriptionId,
+            userId,
+          ),
+          UserService.getUserPreferences(userId),
+        ]);
+
+        const notificationPayload =
+          PushNotificationContent.buildPhaseChangePayload({
+            locale: preferences.locale,
+            subscriptionId: subscription.id,
+            subscriptionName: subscription.name,
+            brandDomain: subscription.brandDomain,
+            kind: payload.kind,
+          });
+        const report = await NotificationDeliveryService.sendNotification(
           userId,
           notificationPayload,
           {

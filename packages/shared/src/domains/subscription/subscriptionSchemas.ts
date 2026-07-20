@@ -18,6 +18,8 @@ import {
   transform,
 } from "valibot";
 import { SubscriptionPeriod } from "../../types";
+import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
+import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
 import { subscriptionLifecycleStatuses } from "./subscriptionLifecycle";
 
 const currencyCodeSchema = pipe(
@@ -51,6 +53,18 @@ export type UpdateSubscriptionQuery = InferOutput<
   typeof updateSubscriptionQuerySchema
 >;
 
+/**
+ * Optional "starting offer" set up at creation time: begin the subscription on
+ * a free trial or an intro discount. `cost` on the parent payload is the
+ * standard price the offer reverts to; `promoCost` is the price paid until
+ * `endsAt` (0 for a free trial).
+ */
+export const addSubscriptionIntroSchema = strictObject({
+  kind: picklist(["trial", "intro"] as const),
+  promoCost: pipe(number(), minValue(0)),
+  endsAt: isoDateSchema,
+});
+
 export const AddSubscriptionSchema = strictObject({
   name: pipe(
     string(),
@@ -83,6 +97,7 @@ export const AddSubscriptionSchema = strictObject({
     null,
   ),
   willBeCancelledAt: optional(nullable(isoDateSchema), null),
+  intro: optional(nullable(addSubscriptionIntroSchema)),
 });
 
 export const UpdateSubscriptionSchema = strictObject({
@@ -136,18 +151,34 @@ export const SchedulePriceChangeSchema = strictObject({
   customDate: optional(nullable(isoDateSchema)),
 });
 
-const subscriptionBillingDetailsSchema = strictObject({
-  original: strictObject({
-    currencyCode: string(),
-    monthly: number(),
-  }),
-  preferred: strictObject({
-    currencyCode: string(),
-    amount: number(),
-    monthly: number(),
-    yearly: number(),
-    exchangeRate: number(),
-  }),
+const positiveCostSchema = pipe(
+  number(),
+  check((value) => value > 0, "Cost must be greater than zero"),
+);
+
+/** Start a free (or reduced) trial that reverts to the standard price on `endsAt`. */
+export const StartTrialSchema = strictObject({
+  trialCost: optional(pipe(number(), minValue(0)), 0),
+  trialCurrency: optional(currencyCodeSchema),
+  endsAt: isoDateSchema,
+  standardCost: positiveCostSchema,
+  standardCurrency: optional(currencyCodeSchema),
+});
+
+/** Add a time-limited intro discount that reverts to the standard price on `endsAt`. */
+export const AddIntroDiscountSchema = strictObject({
+  introCost: positiveCostSchema,
+  introCurrency: optional(currencyCodeSchema),
+  endsAt: isoDateSchema,
+  standardCost: positiveCostSchema,
+  standardCurrency: optional(currencyCodeSchema),
+});
+
+export const cancelSubscriptionModes = ["periodEnd", "immediate"] as const;
+export type CancelSubscriptionMode = (typeof cancelSubscriptionModes)[number];
+
+export const CancelSubscriptionSchema = strictObject({
+  mode: optional(picklist(cancelSubscriptionModes), "periodEnd"),
 });
 
 const scheduledPriceChangeSchema = strictObject({
@@ -178,6 +209,9 @@ export const SubscriptionDtoSchema = strictObject({
   lastPaymentDate: nullable(string()),
   willBeCancelledAt: nullable(string()),
   scheduledPriceChange: nullable(scheduledPriceChangeSchema),
+  pricePhases: array(PricePhaseDtoSchema),
+  effectivePhaseKind: picklist(pricePhaseKinds),
+  upcomingPhase: nullable(PricePhaseDtoSchema),
   status: picklist(subscriptionLifecycleStatuses),
 });
 
@@ -188,8 +222,10 @@ export type UpdateSubscriptionInput = InferOutput<
 export type SchedulePriceChangeInput = InferOutput<
   typeof SchedulePriceChangeSchema
 >;
-export type SubscriptionBillingDetails = InferOutput<
-  typeof subscriptionBillingDetailsSchema
+export type StartTrialInput = InferOutput<typeof StartTrialSchema>;
+export type AddIntroDiscountInput = InferOutput<typeof AddIntroDiscountSchema>;
+export type CancelSubscriptionInput = InferOutput<
+  typeof CancelSubscriptionSchema
 >;
 export type SubscriptionDto = InferOutput<typeof SubscriptionDtoSchema>;
 

@@ -17,6 +17,7 @@ import * as m from "@/i18n/messages";
 import { Button, Form, Spinner } from "@/shared/components";
 import { track } from "@/shared/lib/analytics";
 import { cn } from "@/shared/lib/classes-utils";
+import { parsePriceInput } from "@/shared/lib/price-input";
 import {
   type AddSubscriptionInput,
   type AddSubscriptionOutput,
@@ -25,6 +26,7 @@ import {
 import { SubscriptionFormBasicInfo } from "./form/subscription-form-basic-info";
 import { SubscriptionFormBillingInfo } from "./form/subscription-form-billing-info";
 import { SubscriptionFormHeaderAction } from "./form/subscription-form-header-action";
+import { SubscriptionFormStartingOffer } from "./form/subscription-form-starting-offer";
 
 type SubscriptionFormProps = {
   defaultValues?: Partial<AddSubscriptionInput>;
@@ -46,6 +48,9 @@ export const AddSubscriptionForm = ({
       every: "1",
       period: SubscriptionPeriod.MONTH,
       currency: "usd",
+      introMode: "none",
+      introCost: "",
+      introEndsAt: null,
       ...defaultValues,
     },
   });
@@ -133,14 +138,29 @@ export const AddSubscriptionForm = ({
       });
     }
 
+    // Form-only fields — stripped before hitting the (strict) API schema.
+    const { introMode, introCost, introEndsAt, ...rest } = data;
+
     const basePayload = {
-      ...data,
+      ...rest,
       paymentDate: paymentDateIso,
       autoPaid: false,
       categoryId,
       notes: null,
       brandDomain: data.brandDomain ?? null,
     };
+
+    const intro =
+      introMode && introMode !== "none" && introEndsAt
+        ? {
+            kind: introMode,
+            promoCost:
+              introMode === "intro"
+                ? (parsePriceInput(introCost ?? "") ?? 0)
+                : 0,
+            endsAt: new Date(introEndsAt).toISOString(),
+          }
+        : null;
 
     const onSuccess = (message: string) => {
       reset(getValues());
@@ -171,6 +191,7 @@ export const AddSubscriptionForm = ({
       {
         ...basePayload,
         willBeCancelledAt: null,
+        intro,
       },
       {
         onSuccess() {
@@ -238,6 +259,7 @@ export const AddSubscriptionForm = ({
                 existingSubscription={existingSubscription}
               />
               <SubscriptionFormBillingInfo />
+              {!isEditMode && <SubscriptionFormStartingOffer />}
             </fieldset>
           </div>
         </div>

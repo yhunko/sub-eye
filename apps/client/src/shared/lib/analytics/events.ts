@@ -11,6 +11,8 @@ type EventMap = {
   };
   price_change_canceled: Record<string, never>;
   price_change_applied_now: Record<string, never>;
+  trial_started: Record<string, never>;
+  intro_discount_added: Record<string, never>;
   comparator_opened: Record<string, never>;
   comparator_step_completed: {
     step: 1 | 2 | 3 | 4;

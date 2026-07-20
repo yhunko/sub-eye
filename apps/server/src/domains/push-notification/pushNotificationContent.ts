@@ -12,6 +12,12 @@ type StaticNotificationCopy = {
   renewalBody: (subscriptionName: string, relativeLabel: string) => string;
   expiryTitle: string;
   expiryBody: (subscriptionName: string, relativeLabel: string) => string;
+  trialEndTitle: string;
+  trialEndBody: (subscriptionName: string) => string;
+  discountEndTitle: string;
+  discountEndBody: (subscriptionName: string) => string;
+  priceChangeTitle: string;
+  priceChangeBody: (subscriptionName: string) => string;
   testTitle: string;
   testBody: string;
 };
@@ -24,6 +30,15 @@ const COPY_BY_LOCALE: Record<string, StaticNotificationCopy> = {
     expiryTitle: "Subscription Expiry",
     expiryBody: (subscriptionName, relativeLabel) =>
       `Your ${subscriptionName} subscription expires ${relativeLabel}.`,
+    trialEndTitle: "Free trial ended",
+    trialEndBody: (subscriptionName) =>
+      `Your ${subscriptionName} free trial has ended — the standard price now applies.`,
+    discountEndTitle: "Discount ended",
+    discountEndBody: (subscriptionName) =>
+      `Your ${subscriptionName} discount has ended — the standard price now applies.`,
+    priceChangeTitle: "Price changed",
+    priceChangeBody: (subscriptionName) =>
+      `The price for ${subscriptionName} has changed.`,
     testTitle: "Test Notification",
     testBody: "If you see this, push notifications are working!",
   },
@@ -34,6 +49,15 @@ const COPY_BY_LOCALE: Record<string, StaticNotificationCopy> = {
     expiryTitle: "Закінчення підписки",
     expiryBody: (subscriptionName, relativeLabel) =>
       `Підписка ${subscriptionName} закінчується ${relativeLabel}.`,
+    trialEndTitle: "Пробний період завершено",
+    trialEndBody: (subscriptionName) =>
+      `Безкоштовний пробний період ${subscriptionName} завершився — діє стандартна ціна.`,
+    discountEndTitle: "Знижку завершено",
+    discountEndBody: (subscriptionName) =>
+      `Знижку для ${subscriptionName} завершено — діє стандартна ціна.`,
+    priceChangeTitle: "Ціну змінено",
+    priceChangeBody: (subscriptionName) =>
+      `Ціна для ${subscriptionName} змінилася.`,
     testTitle: "Тестове сповіщення",
     testBody: "Якщо ви бачите це, push-сповіщення працюють.",
   },
@@ -125,6 +149,38 @@ export class PushNotificationContent {
       tag: `subscription-expiry:${input.subscriptionId}`,
       data: {
         kind: "expiry",
+        url: `/subscriptions/${input.subscriptionId}`,
+        subscriptionId: input.subscriptionId,
+      },
+    };
+  }
+
+  static buildPhaseChangePayload(input: {
+    locale?: string;
+    subscriptionId: string;
+    subscriptionName: string;
+    brandDomain?: string | null;
+    kind: "trial" | "intro" | "scheduledChange" | "standard";
+  }): PushNotificationPayload {
+    const copy = PushNotificationContent.getCopy(
+      PushNotificationContent.normalizeLocale(input.locale),
+    );
+
+    const { title, body } =
+      input.kind === "trial"
+        ? { title: copy.trialEndTitle, body: copy.trialEndBody }
+        : input.kind === "intro"
+          ? { title: copy.discountEndTitle, body: copy.discountEndBody }
+          : { title: copy.priceChangeTitle, body: copy.priceChangeBody };
+
+    return {
+      title,
+      body: body(input.subscriptionName),
+      icon: PushNotificationContent.resolveSubscriptionIcon(input.brandDomain),
+      badge: APP_NOTIFICATION_ICON,
+      tag: `subscription-price-change:${input.subscriptionId}`,
+      data: {
+        kind: "priceChange",
         url: `/subscriptions/${input.subscriptionId}`,
         subscriptionId: input.subscriptionId,
       },

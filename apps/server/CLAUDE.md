@@ -15,6 +15,7 @@ the files listed below.
 | `src/domains/push-notification/pushNotificationService.ts`      | Device tokens + per-user delivery (web-push transport in `@subeye/notifications/push`) |
 | `src/domains/subscription/subscriptionNotificationsWorkflow.ts` | QStash workflow — renewal notifications                       |
 | `src/domains/subscription/subscriptionCancellationWorkflow.ts`  | QStash workflow — expiry/cancellation notifications           |
+| `src/domains/subscription/subscriptionPhaseTransitionWorkflow.ts` | QStash workflow — pricing-phase boundaries (trial/intro/scheduled-change → standard); applies the next phase + notifies |
 | `src/routes/user.ts`                                            | Calls `rescheduleUserNotifications` when preferences change   |
 | `src/routes/dev.ts`                                             | Dev-only test endpoints that bypass QStash                    |
 
@@ -120,6 +121,32 @@ pass. Keep the old run as authoritative and retry on the next reschedule.
 
 ---
 
+## Pricing-phase transitions — `subscriptionPhaseTransitionWorkflow.ts`
+
+A subscription's price over time is a schedule of ordered phases
+(`subscription_price_phases`); the transition workflow fires **one run per phase
+boundary** to copy the next phase's price onto the subscription row and notify.
+Key invariants (mirroring the renewal workflow):
+
+- **Authoritative-run gating is per phase**, not per subscription:
+  `phase.qstashMessageId === context.workflowRunId && phase.appliedAt == null`
+  (`isAuthoritativePhaseRun`). A stale duplicate exits without applying.
+- **`appliedAt` is the idempotency anchor.** `applyPhaseByWorkflow` /
+  `applyBoundaryBatch` are no-ops once `appliedAt` is set, so the reconciler
+  (`reconcilePhases`, run on every fetch) and the workflow can both fire safely.
+- **One boundary per run, no loops** — the boundary comes from the immutable
+  `startsAt` payload, so there is no `Date.now()`-skip hazard. Each run schedules
+  the *next* pending boundary inside a `context.run` step.
+- **Phase boundaries are deliberately NOT in `rescheduleUserNotifications`.** A
+  trial ends on a fixed date regardless of notification preferences, so a
+  preference save must not cancel/reschedule them. Do not add phase fields to
+  `NOTIFICATION_RELEVANT_FIELDS`.
+- `db.batch` is used only in `applyBoundaryBatch` (neon-http has no interactive
+  transactions). The legacy `/price-change/workflow` route stays registered to
+  drain in-flight runs and bridges to `applyDuePhases`.
+
+---
+
 ## Notification delivery — `NotificationDeliveryService`
 
 `NotificationDeliveryService.sendNotification()` sends push + Telegram in
@@ -136,7 +163,7 @@ and never throw. They return a report even on partial failure.
 
 ## Dev testing — bypass QStash to test immediately
 
-Two endpoints exist for local testing only. They are guarded by a request-time
+These endpoints exist for local testing only. They are guarded by a request-time
 check (URL hostname + `NODE_ENV`) — they 404 in deployed builds.
 
 ```
@@ -145,6 +172,9 @@ Body: { subscriptionId: string; daysUntilPayment: number }
 
 POST /api/dev/notifications/test-expiry
 Body: { subscriptionId: string; daysUntilExpiry: number }
+
+POST /api/dev/notifications/test-phase-change
+Body: { subscriptionId: string; kind: "trial" | "intro" | "scheduledChange" | "standard" }
 ```
 
 Both require a valid Clerk Bearer token and ownership of the subscription.

@@ -5,13 +5,20 @@ import type {
 import { getSubscriptionLifecycleStatus } from "@subeye/shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
+export type SubscriptionPhaseProjection = {
+  scheduledPriceChange: SubscriptionDto["scheduledPriceChange"];
+  pricePhases: SubscriptionDto["pricePhases"];
+  effectivePhaseKind: SubscriptionDto["effectivePhaseKind"];
+  upcomingPhase: SubscriptionDto["upcomingPhase"];
+};
+
 export class SubscriptionMapper {
   static toDto(
     subscription: SubscriptionRecord,
     billing: SubscriptionBillingDetails,
     nextPaymentDate: string,
     lastPaymentDate: string | null,
-    scheduledPriceChange: SubscriptionDto["scheduledPriceChange"],
+    phases: SubscriptionPhaseProjection,
   ): SubscriptionDto {
     const paymentDate = SubscriptionMapper.normalizeDate(
       subscription.paymentDate,
@@ -40,7 +47,10 @@ export class SubscriptionMapper {
       nextPaymentDate,
       lastPaymentDate,
       willBeCancelledAt,
-      scheduledPriceChange,
+      scheduledPriceChange: phases.scheduledPriceChange,
+      pricePhases: phases.pricePhases,
+      effectivePhaseKind: phases.effectivePhaseKind,
+      upcomingPhase: phases.upcomingPhase,
       status: getSubscriptionLifecycleStatus({
         willBeCancelledAt,
       }),

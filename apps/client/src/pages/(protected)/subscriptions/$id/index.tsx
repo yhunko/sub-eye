@@ -18,7 +18,7 @@ function SubscriptionPage() {
   const search = Route.useSearch();
 
   return (
-    <SubscriptionNativeLayout surface="plain">
+    <SubscriptionNativeLayout surface="plain" contentClassName="lg:max-w-5xl">
       <div className="flex w-full flex-1 flex-col">
         <Suspense fallback={<SubscriptionOverviewSkeleton />}>
           <SubscriptionOverview subscriptionId={id} returnSearch={search} />

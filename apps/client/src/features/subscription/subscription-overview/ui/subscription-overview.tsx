@@ -1,22 +1,24 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
-import NiceModal from "@ebay/nice-modal-react";
 import { DateTimezoneUtils } from "@subeye/shared";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { type FC, useMemo } from "react";
+import { format } from "date-fns";
+import { type FC, useCallback, useMemo } from "react";
 import { categoriesQuery } from "@/entities/category";
 import {
   SubscriptionBillingUtils,
   subscriptionQuery,
 } from "@/entities/subscription";
 import { useDateFormat } from "@/shared/hooks/use-date-format";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 import type { SubscriptionOverviewSearch } from "@/shared/lib/router/subscription-overview-search";
-import { useScheduledPriceChangeActions } from "../../schedule-price-change";
 import { buildSubscriptionOverviewViewModel } from "../model/subscription-overview-view-model";
 import { SubscriptionOverviewHeaderActions } from "./subscription-overview-header-actions";
 import { subscriptionOverviewFloatingCardClassName } from "./subscription-overview-layout-classnames";
+import { SubscriptionOverviewManageActions } from "./subscription-overview-manage-actions";
 import { SubscriptionOverviewMetaList } from "./subscription-overview-meta-list";
 import { SubscriptionOverviewSummaryCard } from "./subscription-overview-summary-card";
+import { SubscriptionPricingTimeline } from "./subscription-pricing-timeline";
 
 type SubscriptionOverviewProps = {
   subscriptionId: string;
@@ -32,6 +34,7 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
   const { user, isLoaded } = useUser();
   const { userId } = useAuth();
   const { dateFnsFormat } = useDateFormat();
+  const { locale } = useDateFnsLocale();
 
   const { data: subscription } = useSuspenseQuery(
     subscriptionQuery({
@@ -43,9 +46,15 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
     categoriesQuery({ params: { userId: userId ?? "" } }),
   );
 
-  const { openScheduleDialog } = useScheduledPriceChangeActions({
-    subscription,
-  });
+  const formatDate = useCallback(
+    (iso: string) => {
+      const parsed = new Date(iso);
+      return Number.isNaN(parsed.getTime())
+        ? iso
+        : format(parsed, dateFnsFormat, { locale });
+    },
+    [dateFnsFormat, locale],
+  );
 
   const displayState = useMemo(() => {
     if (!subscription || !isLoaded) return null;
@@ -55,12 +64,9 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
       | undefined;
 
     const targetDate =
-      subscription.status === "cancelledButActive" &&
-      subscription.willBeCancelledAt
+      subscription.status !== "active" && subscription.willBeCancelledAt
         ? subscription.willBeCancelledAt
-        : subscription.status === "cancelled" && subscription.willBeCancelledAt
-          ? subscription.willBeCancelledAt
-          : subscription.nextPaymentDate;
+        : subscription.nextPaymentDate;
 
     const zonedDate = DateTimezoneUtils.toZoned(targetDate, timezone);
 
@@ -88,37 +94,6 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
 
   const handleDeleteSuccess = async () => {
     await navigate({ to: "/subscriptions" });
-  };
-
-  const handleOpenCancelDialog = async () => {
-    const { SubscriptionCancelDialog } = await import(
-      "../../subscription-cancel-dialog"
-    );
-
-    await NiceModal.show(SubscriptionCancelDialog, {
-      subscriptionId,
-      subscriptionName: subscription.name,
-      defaultCancelledAt: subscription.nextPaymentDate,
-    });
-  };
-
-  const handleOpenRenewDialog = async () => {
-    const { SubscriptionRenewDialog } = await import(
-      "../../subscription-renew-dialog"
-    );
-
-    await NiceModal.show(SubscriptionRenewDialog, {
-      subscriptionId,
-      subscriptionName: subscription.name,
-    });
-  };
-
-  const handleMarkAsCanceled = () => {
-    void handleOpenCancelDialog();
-  };
-
-  const handleRenew = () => {
-    void handleOpenRenewDialog();
   };
 
   const handleBack = async () => {
@@ -149,18 +124,29 @@ export const SubscriptionOverview: FC<SubscriptionOverviewProps> = ({
         <SubscriptionOverviewHeaderActions
           subscriptionId={subscription.id}
           subscriptionName={subscription.name}
-          hasScheduledPriceChange={Boolean(subscription.scheduledPriceChange)}
-          onSchedulePriceChange={openScheduleDialog}
           onDeleteSuccess={handleDeleteSuccess}
-          status={subscription.status}
-          onMarkAsCanceled={handleMarkAsCanceled}
-          onRenew={handleRenew}
           onBack={handleBack}
         />
 
-        <SubscriptionOverviewSummaryCard subscription={subscription} />
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <div className="lg:sticky lg:top-20">
+            <SubscriptionOverviewSummaryCard
+              subscription={subscription}
+              formatDate={formatDate}
+            />
+          </div>
 
-        <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
+          <div className="flex flex-col gap-6">
+            <SubscriptionPricingTimeline
+              subscription={subscription}
+              formatDate={formatDate}
+            />
+
+            <SubscriptionOverviewMetaList rows={viewModel.metaRows} />
+
+            <SubscriptionOverviewManageActions subscription={subscription} />
+          </div>
+        </div>
       </section>
     </div>
   );

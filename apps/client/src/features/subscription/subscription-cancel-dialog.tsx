@@ -1,8 +1,12 @@
-import NiceModal from "@ebay/nice-modal-react";
-import { useEffect } from "react";
+import NiceModal, { useModal } from "@ebay/nice-modal-react";
+import { format } from "date-fns";
+import { useState } from "react";
 import { toast } from "sonner";
+import { useCancelSubscription } from "@/entities/subscription";
 import * as m from "@/i18n/messages";
 import {
+  Alert,
+  AlertDescription,
   Button,
   Dialog,
   DialogContent,
@@ -10,88 +14,57 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Label,
   Spinner,
 } from "@/shared/components";
-import { SubscriptionDatePicker } from "./add-subscription/ui/subscription-date-picker/subscription-date-picker";
-import { useConfirmableSubscriptionDate } from "./lib/use-confirmable-subscription-date";
-import { useSubscriptionUpdateDialog } from "./lib/use-subscription-update-dialog";
+import { useDateFormat } from "@/shared/hooks/use-date-format";
+import { useDateFnsLocale } from "@/shared/lib/date-fns-context";
 
 interface SubscriptionCancelDialogProps {
   subscriptionId: string;
   subscriptionName: string;
-  defaultCancelledAt: string;
+  /** The next billing date — access is kept until then for a period-end cancel. */
+  nextBillingDate: string;
 }
-
-const toValidDate = (value: string): Date | undefined => {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-};
 
 export const SubscriptionCancelDialog =
   NiceModal.create<SubscriptionCancelDialogProps>(
-    ({ subscriptionId, subscriptionName, defaultCancelledAt }) => {
-      const {
-        modal,
-        dateFnsFormat,
-        locale,
-        selectedDate,
-        setSelectedDate,
-        validationError,
-        setValidationError,
-        updateSubscription,
-        isPending,
-        closeModal,
-        handleDateChange,
-      } = useSubscriptionUpdateDialog();
+    ({ subscriptionId, subscriptionName, nextBillingDate }) => {
+      const modal = useModal();
+      const { dateFnsFormat } = useDateFormat();
+      const { locale } = useDateFnsLocale();
+      const [confirmingImmediate, setConfirmingImmediate] = useState(false);
+      const { mutate: cancelSubscription, isPending } = useCancelSubscription();
 
-      useEffect(() => {
-        if (modal.visible) {
-          setSelectedDate(toValidDate(defaultCancelledAt) ?? new Date());
-          setValidationError(null);
-        }
-      }, [
-        defaultCancelledAt,
-        modal.visible,
-        setSelectedDate,
-        setValidationError,
-      ]);
+      const closeModal = async () => {
+        await modal.hide();
+        modal.remove();
+      };
 
-      const { handleConfirm } = useConfirmableSubscriptionDate({
-        selectedDate,
-        dateFnsFormat,
-        locale,
-        requiredMessage: m.validation_required(),
-        setValidationError,
-        onConfirm: (cancelledAtIso) => {
-          updateSubscription(
-            {
-              id: subscriptionId,
-              payload: {
-                paymentDate: cancelledAtIso,
-                willBeCancelledAt: cancelledAtIso,
-              },
+      const dateLabel = (() => {
+        const parsed = new Date(nextBillingDate);
+        return Number.isNaN(parsed.getTime())
+          ? null
+          : format(parsed, dateFnsFormat, { locale });
+      })();
+
+      const runCancel = (mode: "periodEnd" | "immediate") => {
+        cancelSubscription(
+          { id: subscriptionId, mode },
+          {
+            onSuccess: async () => {
+              toast.success(m.messages_updated());
+              await closeModal();
             },
-            {
-              onSuccess: async () => {
-                toast.success(m.messages_updated());
-                await closeModal();
-              },
-              onError: () => {
-                toast.error(m.messages_error());
-              },
-            },
-          );
-        },
-      });
+            onError: () => toast.error(m.messages_error()),
+          },
+        );
+      };
 
       return (
         <Dialog
           open={modal.visible}
           onOpenChange={(open) => {
-            if (!open) {
-              void closeModal();
-            }
+            if (!open) void closeModal();
           }}
         >
           <DialogContent className="sm:max-w-130">
@@ -100,29 +73,23 @@ export const SubscriptionCancelDialog =
                 {m.subscription_cancel_title({ name: subscriptionName })}
               </DialogTitle>
               <DialogDescription>
-                {m.subscription_cancel_description()}
+                {dateLabel
+                  ? m.subscription_cancel_periodEnd_description({
+                      date: dateLabel,
+                    })
+                  : m.subscription_cancel_periodEnd_noDate()}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  {m.form_billingInfo_willBeCancelledAt_label()}
-                </Label>
-                <SubscriptionDatePicker
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                />
-                <p className="text-muted-foreground text-xs">
-                  {m.subscription_cancel_paymentDateReset()}
-                </p>
-                {validationError && (
-                  <p className="text-destructive text-xs">{validationError}</p>
-                )}
-              </div>
-            </div>
+            {confirmingImmediate && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {m.subscription_cancel_immediate_confirm()}
+                </AlertDescription>
+              </Alert>
+            )}
 
-            <DialogFooter>
+            <DialogFooter className="gap-2 [&>button]:w-full sm:[&>button]:w-auto">
               <Button
                 variant="outline"
                 disabled={isPending}
@@ -130,14 +97,34 @@ export const SubscriptionCancelDialog =
               >
                 {m.common_actions_cancel()}
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleConfirm}
-                disabled={isPending}
-              >
-                {isPending && <Spinner />}
-                {m.common_actions_confirm()}
-              </Button>
+              {confirmingImmediate ? (
+                <Button
+                  variant="destructive"
+                  disabled={isPending}
+                  onClick={() => runCancel("immediate")}
+                >
+                  {isPending && <Spinner />}
+                  {m.subscription_cancel_immediate()}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    disabled={isPending}
+                    onClick={() => setConfirmingImmediate(true)}
+                  >
+                    {m.subscription_cancel_immediate()}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={isPending}
+                    onClick={() => runCancel("periodEnd")}
+                  >
+                    {isPending && <Spinner />}
+                    {m.subscription_cancel_confirm()}
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
