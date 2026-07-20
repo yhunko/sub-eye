@@ -1,4 +1,12 @@
-import { buildPhaseProjection, getUpcomingPhase } from "@subeye/pricing";
+import {
+  buildPhaseProjection,
+  getUpcomingPhase,
+  normalizeAmount,
+  normalizeIsoDate,
+  resolveScheduledEffectiveAt,
+  selectDuePhases,
+  toStartOfDayInTimezone,
+} from "@subeye/pricing";
 import type {
   AddIntroDiscountInput,
   PricePhaseDto,
@@ -9,13 +17,8 @@ import type {
   SubscriptionDto,
   UserPreferences,
 } from "@subeye/shared";
-import {
-  DateTimezoneUtils,
-  getSubscriptionLifecycleStatus,
-  RecurrenceUtils,
-} from "@subeye/shared";
+import { getSubscriptionLifecycleStatus } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
-import { isSameDay } from "date-fns";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";
 import {
@@ -130,11 +133,12 @@ export class SubscriptionPhaseService {
       deps,
     );
 
-    const effectiveAt = SubscriptionPhaseService.resolveScheduledEffectiveAt(
+    const effectiveAt = resolveScheduledEffectiveAt(
       existing,
       payload,
       preferences.preferredTimezone,
     );
+    if (effectiveAt === null) throw new CustomDateRequiredError();
     SubscriptionPhaseService.assertPhaseWindow(existing, effectiveAt);
 
     const scheduledCurrency = payload.scheduledCurrency ?? existing.currency;
@@ -147,7 +151,7 @@ export class SubscriptionPhaseService {
         userId: existing.userId,
         orgId: existing.orgId,
         kind: "scheduledChange",
-        cost: SubscriptionPhaseService.normalizeAmount(payload.scheduledCost),
+        cost: normalizeAmount(payload.scheduledCost),
         currency: scheduledCurrency,
         startsAt: effectiveAt,
         endsAt: null,
@@ -250,10 +254,7 @@ export class SubscriptionPhaseService {
   ): Promise<void> {
     const pending =
       await deps.phaseRepository.findPendingBySubscriptionId(subscriptionId);
-    const now = Date.now();
-    const due = pending
-      .filter((p) => Date.parse(p.startsAt) <= now)
-      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    const due = selectDuePhases(pending, Date.now());
 
     for (const phase of due) {
       await SubscriptionPhaseService.applyPhaseByWorkflow(
@@ -348,7 +349,7 @@ export class SubscriptionPhaseService {
       deps,
     );
 
-    const endsAt = SubscriptionPhaseService.toStartOfDayInTimezone(
+    const endsAt = toStartOfDayInTimezone(
       args.endsAt,
       preferences.preferredTimezone,
     );
@@ -364,7 +365,7 @@ export class SubscriptionPhaseService {
 
     // The override price is what the user pays right now.
     await deps.repository.update(id, {
-      cost: SubscriptionPhaseService.normalizeAmount(args.overrideCost),
+      cost: normalizeAmount(args.overrideCost),
       currency: overrideCurrency,
     });
 
@@ -374,7 +375,7 @@ export class SubscriptionPhaseService {
         userId: existing.userId,
         orgId: existing.orgId,
         kind: args.overrideKind,
-        cost: SubscriptionPhaseService.normalizeAmount(args.overrideCost),
+        cost: normalizeAmount(args.overrideCost),
         currency: overrideCurrency,
         startsAt,
         endsAt,
@@ -385,7 +386,7 @@ export class SubscriptionPhaseService {
         userId: existing.userId,
         orgId: existing.orgId,
         kind: "standard",
-        cost: SubscriptionPhaseService.normalizeAmount(args.standardCost),
+        cost: normalizeAmount(args.standardCost),
         currency: standardCurrency,
         startsAt: endsAt,
         endsAt: null,
@@ -419,7 +420,7 @@ export class SubscriptionPhaseService {
     const appliedAt = new Date().toISOString();
     await deps.phaseRepository.applyBoundaryBatch({
       subscriptionId: subscription.id,
-      cost: SubscriptionPhaseService.normalizeAmount(Number(phase.cost)),
+      cost: normalizeAmount(Number(phase.cost)),
       currency: phase.currency,
       phaseId: phase.id,
       appliedAt,
@@ -600,91 +601,11 @@ export class SubscriptionPhaseService {
     }
   }
 
-  private static resolveScheduledEffectiveAt(
-    subscription: SubscriptionRecord,
-    payload: SchedulePriceChangeInput,
-    timezone?: string,
-  ): string {
-    if (payload.mode === "nextOccurrence") {
-      return SubscriptionPhaseService.resolveNextOccurrenceEffectiveAt(
-        subscription,
-        timezone,
-      );
-    }
-    if (!payload.customDate) throw new CustomDateRequiredError();
-
-    const customEffectiveAt = SubscriptionPhaseService.toStartOfDayInTimezone(
-      payload.customDate,
-      timezone,
-    );
-    const nextOccurrenceEffectiveAt =
-      SubscriptionPhaseService.resolveNextOccurrenceEffectiveAt(
-        subscription,
-        timezone,
-      );
-    if (
-      SubscriptionPhaseService.isSameCalendarDayInTimezone(
-        customEffectiveAt,
-        nextOccurrenceEffectiveAt,
-        timezone,
-      )
-    ) {
-      return nextOccurrenceEffectiveAt;
-    }
-    return customEffectiveAt;
-  }
-
-  private static resolveNextOccurrenceEffectiveAt(
-    subscription: SubscriptionRecord,
-    timezone?: string,
-  ): string {
-    const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
-      subscription,
-      timezone,
-    );
-    if (Date.parse(nextPaymentDate) > Date.now()) return nextPaymentDate;
-
-    const nextOccurrence = RecurrenceUtils.addPeriod(
-      DateTimezoneUtils.toZoned(nextPaymentDate, timezone),
-      subscription.every,
-      subscription.period,
-      {
-        anchorDate: DateTimezoneUtils.toZoned(
-          subscription.paymentDate,
-          timezone,
-        ),
-      },
-    );
-    return nextOccurrence.toISOString();
-  }
-
-  private static toStartOfDayInTimezone(
-    date: string,
-    timezone?: string,
-  ): string {
-    const zoned = DateTimezoneUtils.toZoned(date, timezone);
-    zoned.setHours(0, 0, 0, 0);
-    return zoned.toISOString();
-  }
-
-  private static isSameCalendarDayInTimezone(
-    left: string | Date,
-    right: string | Date,
-    timezone?: string,
-  ): boolean {
-    return isSameDay(
-      DateTimezoneUtils.toZoned(left, timezone),
-      DateTimezoneUtils.toZoned(right, timezone),
-    );
-  }
-
   private static assertPhaseWindow(
     subscription: SubscriptionRecord,
     boundary: string,
   ): void {
-    const willBeCancelledAt = SubscriptionPhaseService.normalizeDate(
-      subscription.willBeCancelledAt,
-    );
+    const willBeCancelledAt = normalizeIsoDate(subscription.willBeCancelledAt);
     const status = getSubscriptionLifecycleStatus({ willBeCancelledAt });
     if (status === "cancelled") throw new CannotScheduleCancelledError();
 
@@ -698,16 +619,5 @@ export class SubscriptionPhaseService {
     if (!Number.isNaN(cancellationTime) && boundaryTime >= cancellationTime) {
       throw new ScheduledDateBeforeCancellationError();
     }
-  }
-
-  private static normalizeDate(value?: string | Date | null): string | null {
-    if (!value) return null;
-    return value instanceof Date
-      ? value.toISOString()
-      : new Date(value).toISOString();
-  }
-
-  private static normalizeAmount(value: number): string {
-    return value.toFixed(2);
   }
 }
