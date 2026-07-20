@@ -17,8 +17,7 @@
     },
     "android": {
       "package": "cc.subeye.app",
-      "predictiveBackGestureEnabled": true,
-      "edgeToEdgeEnabled": true
+      "predictiveBackGestureEnabled": true
     },
     "locales": {
       "en": "./locales/en.json",
