@@ -56,6 +56,53 @@ module.exports = {
         path: "^apps/client/src/(app/|pages/|widgets/|features/|entities/)",
       },
     },
+    // --- apps/mobile FSD: app → widgets → entities → shared (NO features layer)
+    //
+    // These match the ALIAS STRING (`@/widgets/…`), not a resolved path: the
+    // root tsconfig declares no `paths`, so `@/…` specifiers stay unresolved and
+    // dependency-cruiser keeps the raw specifier in `resolved`. Mobile code
+    // imports across layers exclusively through `@/…`, so this covers every
+    // cross-layer edge.
+    {
+      name: "mobile-fsd-no-widgets-upward",
+      comment:
+        "apps/mobile FSD: widgets may import entities/shared only, never the app (routing) layer.",
+      severity: "error",
+      from: { path: "^apps/mobile/src/widgets" },
+      to: { path: "^@/app/" },
+    },
+    {
+      name: "mobile-fsd-no-entities-upward",
+      comment:
+        "apps/mobile FSD: entities may import shared only, never widgets or the app layer.",
+      severity: "error",
+      from: { path: "^apps/mobile/src/entities" },
+      to: { path: "^@/(app|widgets)/" },
+    },
+    {
+      name: "mobile-fsd-no-shared-upward",
+      comment:
+        "apps/mobile FSD: shared is the bottom layer and must not depend on any layer above it.",
+      severity: "error",
+      from: { path: "^apps/mobile/src/shared" },
+      to: { path: "^@/(app|widgets|entities)/" },
+    },
+    {
+      name: "mobile-no-features-layer",
+      comment:
+        "apps/mobile has NO features layer by design — seven screens make it ceremony. Page composition belongs in widgets/, domain data in entities/.",
+      severity: "error",
+      from: { path: "^apps/mobile/src/" },
+      to: { path: "^(@/features/|apps/mobile/src/features/)" },
+    },
+    {
+      name: "mobile-no-web-client-import",
+      comment:
+        "apps/mobile must never import the retired web client (apps/client is deleted in Plan 8).",
+      severity: "error",
+      from: { path: "^apps/mobile/" },
+      to: { path: "^apps/client/" },
+    },
     {
       name: "server-repository-is-leaf",
       comment:
