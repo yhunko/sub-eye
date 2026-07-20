@@ -15,6 +15,11 @@ import { colors } from "./theme";
 export const nativeHeaderChrome = {
   headerTintColor: colors.text,
   headerTitleStyle: { color: colors.text },
+  // Dark screen surface. The root Stack sets this too, but it does not cascade
+  // into the per-tab nested Stacks — without it here, tab screens fall back to
+  // React Navigation's light default and the translucent glass chrome reflects
+  // white (near-invisible light-on-light header title).
+  contentStyle: { backgroundColor: colors.bg },
   ...(Platform.OS === "ios"
     ? ({ headerTransparent: true, scrollEdgeEffects: { top: "soft" } } as const)
     : ({

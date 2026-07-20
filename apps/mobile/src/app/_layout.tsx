@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { tokenCache, useClerkTokenBridge } from "@/shared/auth";
 import { env } from "@/shared/config/env";
 import { useAppLocale } from "@/shared/i18n";
@@ -32,6 +33,8 @@ export default function RootLayout() {
       tokenCache={tokenCache}
     >
       <TokenBridge />
+      {/* Dark-only app: force light status-bar icons regardless of OS appearance. */}
+      <StatusBar style="light" />
       <PersistQueryClientProvider
         client={queryClient}
         persistOptions={persistOptions}
