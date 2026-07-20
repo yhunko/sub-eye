@@ -70,14 +70,6 @@ export class ScheduledDateBeforeCancellationError extends Error {
   }
 }
 
-export class NoScheduledPriceChangeError extends Error {
-  readonly status = 400 as const;
-  constructor() {
-    super("No scheduled price change");
-    this.name = "NoScheduledPriceChangeError";
-  }
-}
-
 export class PhaseNotFoundError extends Error {
   readonly status = 404 as const;
   constructor() {

@@ -22,7 +22,6 @@ import {
   CannotScheduleCancelledError,
   CustomDateRequiredError,
   InvalidScheduledDateError,
-  NoScheduledPriceChangeError,
   PhaseAlreadyAppliedError,
   PhaseNotFoundError,
   ScheduledDateBeforeCancellationError,
@@ -160,46 +159,6 @@ export class SubscriptionPhaseService {
       before: beforeDto,
       change: { type: "priceChangeScheduled", mode: payload.mode },
     });
-  }
-
-  /** Cancel the pending scheduled price change (back-compat for the old route). */
-  static async cancelScheduledPriceChange(
-    id: string,
-    userId: string,
-    deps: SubscriptionPhaseServiceDeps = defaultDeps,
-  ): Promise<SubscriptionDto> {
-    await SubscriptionPhaseService.requireSubscription(id, userId, deps);
-    const pending = await deps.phaseRepository.findPendingBySubscriptionId(id);
-    const scheduledChange = pending.find((p) => p.kind === "scheduledChange");
-    if (!scheduledChange) {
-      throw new NoScheduledPriceChangeError();
-    }
-    return SubscriptionPhaseService.cancelPhase(
-      id,
-      userId,
-      scheduledChange.id,
-      deps,
-    );
-  }
-
-  /** Apply the pending scheduled price change now (back-compat for the old route). */
-  static async applyScheduledPriceChangeNow(
-    id: string,
-    userId: string,
-    deps: SubscriptionPhaseServiceDeps = defaultDeps,
-  ): Promise<SubscriptionDto> {
-    await SubscriptionPhaseService.requireSubscription(id, userId, deps);
-    const pending = await deps.phaseRepository.findPendingBySubscriptionId(id);
-    const scheduledChange = pending.find((p) => p.kind === "scheduledChange");
-    if (!scheduledChange) {
-      throw new NoScheduledPriceChangeError();
-    }
-    return SubscriptionPhaseService.applyPhaseNow(
-      id,
-      userId,
-      scheduledChange.id,
-      deps,
-    );
   }
 
   /** Remove a pending phase (e.g. an upcoming scheduled change) before it fires. */

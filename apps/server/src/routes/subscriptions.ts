@@ -188,65 +188,6 @@ export const subscriptionRouter = new Hono()
     },
   )
   .post(
-    "/:id/price-change/schedule",
-    protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", SchedulePriceChangeSchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id } = context.req.valid("param");
-        const payload = context.req.valid("json");
-        const subscription = await SubscriptionPhaseService.schedulePriceChange(
-          id,
-          userId,
-          payload,
-        );
-        return context.json(subscription);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .delete(
-    "/:id/price-change/schedule",
-    protect,
-    vValidator("param", idQuerySchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id } = context.req.valid("param");
-        const subscription =
-          await SubscriptionPhaseService.cancelScheduledPriceChange(id, userId);
-        return context.json(subscription);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .post(
-    "/:id/price-change/apply-now",
-    protect,
-    vValidator("param", idQuerySchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id } = context.req.valid("param");
-        const subscription =
-          await SubscriptionPhaseService.applyScheduledPriceChangeNow(
-            id,
-            userId,
-          );
-        return context.json(subscription);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .post(
     "/:id/trial",
     protect,
     vValidator("param", idQuerySchema),
