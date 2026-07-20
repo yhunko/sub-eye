@@ -1,4 +1,4 @@
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod, subscriptionStatuses } from "@subeye/shared";
 import {
   boolean,
   index,
@@ -7,10 +7,8 @@ import {
   numeric,
   pgEnum,
   pgTable,
-  serial,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -28,98 +26,31 @@ export const pricePhaseKindEnum = pgEnum("price_phase_kind", [
   "standard",
 ]);
 
-export const pushNotificationsTable = pgTable(
-  "push_subscriptions",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    endpoint: text("endpoint").notNull(),
-    p256dh: text("p256dh").notNull(),
-    auth: text("auth").notNull(),
-    createdAt: timestamp("created_at").defaultNow(),
-  },
-  (t) => [uniqueIndex("unique_endpoint_idx").on(t.userId, t.endpoint)],
-);
+/**
+ * Persisted lifecycle status. Before v4 this was derived in JS on every read
+ * from `subscriptions.cancelled_at`, which made SQL-side filtering impossible.
+ * The member order must match `subscriptionStatuses` in @subeye/shared.
+ */
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  ...subscriptionStatuses,
+]);
 
-export const telegramLinksTable = pgTable(
-  "telegram_links",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    chatId: text("chat_id").notNull(),
-    telegramUserId: text("telegram_user_id").notNull(),
-    telegramUsername: text("telegram_username"),
-    isEnabled: boolean("is_enabled").notNull().default(true),
-    messageTemplate: jsonb("message_template"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("telegram_links_user_id_idx").on(table.userId),
-    uniqueIndex("telegram_links_chat_id_idx").on(table.chatId),
-  ],
-);
-
-export const telegramLinkTokensTable = pgTable(
-  "telegram_link_tokens",
-  {
-    id: serial("id").primaryKey(),
-    token: text("token").notNull(),
-    userId: text("user_id").notNull(),
-    expiresAt: timestamp("expires_at", {
-      withTimezone: true,
-      mode: "string",
-    }).notNull(),
-    consumedAt: timestamp("consumed_at", {
-      withTimezone: true,
-      mode: "string",
-    }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("telegram_link_tokens_token_idx").on(table.token),
-    index("telegram_link_tokens_user_id_idx").on(table.userId),
-  ],
-);
-
-export const billingAccountsTable = pgTable(
-  "billing_accounts",
-  {
-    userId: text("user_id").primaryKey(),
-    paddleCustomerId: text("paddle_customer_id"),
-    paddleSubscriptionId: text("paddle_subscription_id"),
-    paddleSubscriptionStatus: text("paddle_subscription_status"),
-    paddlePriceId: text("paddle_price_id"),
-    paddleCurrentPeriodEnd: timestamp("paddle_current_period_end", {
-      withTimezone: true,
-      mode: "string",
-    }),
-    lastEventOccurredAt: timestamp("last_event_occurred_at", {
-      withTimezone: true,
-      mode: "string",
-    }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("billing_accounts_paddle_customer_id_idx").on(
-      table.paddleCustomerId,
-    ),
-    uniqueIndex("billing_accounts_paddle_subscription_id_idx").on(
-      table.paddleSubscriptionId,
-    ),
-  ],
-);
-
-export const billingWebhookEventsTable = pgTable("billing_webhook_events", {
-  eventId: text("event_id").primaryKey(),
-  eventType: text("event_type").notNull(),
-  occurredAt: timestamp("occurred_at", {
-    withTimezone: true,
-    mode: "string",
-  }).notNull(),
-  payload: jsonb("payload").notNull(),
-  processedAt: timestamp("processed_at").notNull().defaultNow(),
+/**
+ * User preferences, keyed by Clerk user id. Before v4 these lived in Clerk
+ * `publicMetadata`, so every request needing a timezone made an external Clerk
+ * round-trip — and the metadata reader could issue a *write* back to Clerk
+ * during a plain read. Clerk remains the identity provider; it is no longer the
+ * preference store.
+ */
+export const usersTable = pgTable("users", {
+  id: text("id").primaryKey(),
+  preferredCurrency: text("preferred_currency").notNull().default("uah"),
+  timezone: text("timezone").notNull().default("UTC"),
+  dateFormat: text("date_format").notNull().default("DD/MM/YYYY"),
+  locale: text("locale").notNull().default("en"),
+  theme: text("theme").notNull().default("system"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const categoriesTable = pgTable(
@@ -131,12 +62,8 @@ export const categoriesTable = pgTable(
     emoji: text("emoji").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
-    orgId: text("org_id"),
   },
-  (table) => [
-    index("categories_user_id_idx").on(table.userId),
-    index("categories_org_id_idx").on(table.orgId),
-  ],
+  (table) => [index("categories_user_id_idx").on(table.userId)],
 );
 
 export const subscriptionsTable = pgTable(
@@ -146,41 +73,43 @@ export const subscriptionsTable = pgTable(
     userId: text("user_id").notNull(),
     name: text("name").notNull(),
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
-    scheduledCost: numeric("scheduled_cost", { precision: 10, scale: 2 }),
     currency: text("currency").notNull(),
-    scheduledCurrency: text("scheduled_currency"),
     every: integer("every").notNull().default(1),
     period: subscriptionPeriodEnum("period")
       .notNull()
       .default(SubscriptionPeriod.MONTH),
+    status: subscriptionStatusEnum("status").notNull().default("active"),
     autoPaid: boolean("auto_paid").notNull().default(false),
     categoryId: uuid("category_id").references(() => categoriesTable.id, {
       onDelete: "set null",
     }),
     notes: text("notes"),
+    brandDomain: text("brand_domain"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
-    qstashMessageId: text("qstash_message_id"),
-    cancellationQstashMessageId: text("cancellation_qstash_message_id"),
-    priceChangeQstashMessageId: text("price_change_qstash_message_id"),
-    brandDomain: text("brand_domain"),
     paymentDate: timestamp("payment_date", {
       withTimezone: true,
       mode: "string",
     }).notNull(),
-    scheduledEffectiveAt: timestamp("scheduled_effective_at", {
-      withTimezone: true,
-      mode: "string",
-    }),
+    // NOTE: the SQL column is `cancelled_at`, the property is `willBeCancelledAt`.
+    // It is a naive timestamp — compare it against `now() at time zone 'utc'`.
+    // Kept in v4: `status = 'cancelling'` needs the date the period ends.
     willBeCancelledAt: timestamp("cancelled_at"),
-    orgId: text("org_id"),
+    pausedAt: timestamp("paused_at", { withTimezone: true, mode: "string" }),
+    resumeAt: timestamp("resume_at", { withTimezone: true, mode: "string" }),
   },
   (t) => [
     index("subscriptions_user_id_idx").on(t.userId),
-    index("subscriptions_org_id_idx").on(t.orgId),
+    index("subscriptions_user_status_idx").on(t.userId, t.status),
   ],
 );
 
+/**
+ * A subscription's price over time, as ordered windows. The subscription row's
+ * own cost/currency stay authoritative for "what you pay now"; phases describe
+ * the transitions around it. `appliedAt` is set when the boundary fired and the
+ * price was copied onto the subscription row — `null` means pending.
+ */
 export const subscriptionPricePhasesTable = pgTable(
   "subscription_price_phases",
   {
@@ -189,7 +118,6 @@ export const subscriptionPricePhasesTable = pgTable(
       .notNull()
       .references(() => subscriptionsTable.id, { onDelete: "cascade" }),
     userId: text("user_id").notNull(),
-    orgId: text("org_id"),
     kind: pricePhaseKindEnum("kind").notNull(),
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
     currency: text("currency").notNull(),
@@ -198,11 +126,7 @@ export const subscriptionPricePhasesTable = pgTable(
       mode: "string",
     }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true, mode: "string" }),
-    // Set when the boundary fired and the price was copied onto the
-    // subscription row. `null` = pending; this is the idempotency anchor.
     appliedAt: timestamp("applied_at", { withTimezone: true, mode: "string" }),
-    // The boundary-transition QStash workflow run that owns this phase.
-    qstashMessageId: text("qstash_message_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -216,66 +140,20 @@ export const subscriptionPricePhasesTable = pgTable(
   ],
 );
 
-export const comparatorUsageTable = pgTable(
-  "comparator_usage",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    periodKey: text("period_key").notNull(),
-    comparisonsCount: integer("comparisons_count").notNull().default(0),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("comparator_usage_user_period_idx").on(
-      table.userId,
-      table.periodKey,
-    ),
-  ],
-);
-
-export const comparatorAiUsageTable = pgTable(
-  "comparator_ai_usage",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    periodKey: text("period_key").notNull(),
-    analysesCount: integer("analyses_count").notNull().default(0),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("comparator_ai_usage_user_period_idx").on(
-      table.userId,
-      table.periodKey,
-    ),
-  ],
-);
-
-export const comparatorAiCacheTable = pgTable(
-  "comparator_ai_cache",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    periodKey: text("period_key").notNull(),
-    requestHash: text("request_hash").notNull(),
-    model: text("model").notNull(),
-    promptVersion: text("prompt_version").notNull(),
-    response: jsonb("response").notNull(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("comparator_ai_cache_unique_idx").on(
-      table.userId,
-      table.periodKey,
-      table.requestHash,
-      table.model,
-      table.promptVersion,
-    ),
-    index("comparator_ai_cache_user_period_idx").on(
-      table.userId,
-      table.periodKey,
-    ),
-  ],
-);
+/**
+ * Daily FX snapshot, one row per base currency. `rates` maps a lowercase
+ * currency code to "how many units of that code equal one unit of `base`".
+ * Refreshed by the Worker cron from a pinned CDN build — no request ever waits
+ * on an external fetch.
+ */
+export const fxRatesTable = pgTable("fx_rates", {
+  base: text("base").primaryKey(),
+  rates: jsonb("rates").$type<Record<string, number>>().notNull(),
+  rateDate: text("rate_date").notNull(),
+  fetchedAt: timestamp("fetched_at", {
+    withTimezone: true,
+    mode: "string",
+  })
+    .notNull()
+    .defaultNow(),
+});
