@@ -146,6 +146,16 @@
         "valibot": "^1.3.1",
       },
     },
+    "packages/spend": {
+      "name": "@subeye/spend",
+      "version": "0.0.1",
+      "dependencies": {
+        "@date-fns/tz": "^1.4.1",
+        "@subeye/currency": "workspace:*",
+        "@subeye/shared": "workspace:*",
+        "date-fns": "^4.1.0",
+      },
+    },
   },
   "packages": {
     "@actions/core": ["@actions/core@2.0.3", "", { "dependencies": { "@actions/exec": "^2.0.0", "@actions/http-client": "^3.0.2" } }, "sha512-Od9Thc3T1mQJYddvVPM4QGiLUewdh+3txmDYHHxoNdkqysR1MbCT+rFOtNUxYAz+7+6RIsqipVahY2GJqGPyxA=="],
@@ -747,6 +757,8 @@
     "@subeye/server": ["@subeye/server@workspace:apps/server"],
 
     "@subeye/shared": ["@subeye/shared@workspace:packages/shared"],
+
+    "@subeye/spend": ["@subeye/spend@workspace:packages/spend"],
 
     "@tabby_ai/hijri-converter": ["@tabby_ai/hijri-converter@1.0.5", "", {}, "sha512-r5bClKrcIusDoo049dSL8CawnHR6mRdDwhlQuIgZRNty68q0x8k3Lf1BtPAMxRf/GgnHBnIO4ujd3+GQdLWzxQ=="],
 
