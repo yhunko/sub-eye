@@ -78,7 +78,7 @@ export class AnalyticsService {
     );
 
     const allUpcomingPayments = AnalyticsCalculator.projectUpcomingPayments(
-      subscriptions,
+      currentlyActiveSubscriptions,
       today,
       oneYearFromNow,
       preferredCurrencyCode,
@@ -94,14 +94,14 @@ export class AnalyticsService {
       remainingThisMonth,
       totalUpcomingMonth,
     } = AnalyticsCalculator.buildCashFlowForecast(
-      subscriptions,
+      currentlyActiveSubscriptions,
       today,
       timezone,
     );
 
     const monthlyTrendStartOffset = -1;
     const monthlyTrend = AnalyticsCalculator.buildMonthlyTrend(
-      subscriptions,
+      currentlyActiveSubscriptions,
       DateTimezoneUtils.shiftMonths(today, monthlyTrendStartOffset, timezone),
       12,
       timezone,
@@ -114,10 +114,23 @@ export class AnalyticsService {
       categories,
     );
 
+    // yearlyForecast counts the occurrences that actually land in the next 12
+    // months — NOT monthlyBurnRate * 12. A cancelling subscription that lapses
+    // mid-year, or (once pause lands) a paused one, keeps a full monthly
+    // run-rate but contributes fewer charges to the year.
+    const yearlyForecast = Number(
+      AnalyticsCalculator.sumSpendInRange(
+        currentlyActiveSubscriptions,
+        today,
+        oneYearFromNow,
+        timezone,
+      ).toFixed(2),
+    );
+
     return {
       preferredCurrencyCode,
       monthlyBurnRate,
-      yearlyForecast: monthlyBurnRate * 12,
+      yearlyForecast,
       remainingThisMonth,
       nextMonthForecast,
       activeSubscriptionsTotal: currentlyActiveSubscriptions.length,
