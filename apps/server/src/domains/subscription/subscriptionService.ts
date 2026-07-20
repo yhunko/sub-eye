@@ -1,3 +1,4 @@
+import { buildPhaseProjection } from "@subeye/pricing";
 import type {
   AddSubscriptionInput,
   BulkDeleteSubscriptionsInput,
@@ -594,10 +595,10 @@ export class SubscriptionService {
         preferences.preferredTimezone,
       );
 
-    const projection = SubscriptionPhaseService.buildPhaseProjection(
-      subscription,
+    const projection = buildPhaseProjection(
+      { every: subscription.every, period: subscription.period },
       phases,
-      preferences,
+      preferences.preferredCurrency,
       rates,
     );
 

@@ -1,4 +1,4 @@
-import { getUpcomingPhase } from "@subeye/pricing";
+import { buildPhaseProjection, getUpcomingPhase } from "@subeye/pricing";
 import type {
   AddIntroDiscountInput,
   PricePhaseDto,
@@ -319,47 +319,6 @@ export class SubscriptionPhaseService {
     await deps.phaseRepository.deletePendingBySubscriptionId(subscriptionId);
   }
 
-  /** Build the phase projection used by the DTO mapper (also on the main service). */
-  static buildPhaseProjection(
-    subscription: SubscriptionRecord,
-    phases: PricePhaseRecord[],
-    preferences: UserPreferences,
-    rates: Record<string, number>,
-    now: Date = new Date(),
-  ): SubscriptionPhaseProjection {
-    const phaseDtos = phases
-      .map((phase) =>
-        SubscriptionPhaseService.toPhaseDto(
-          phase,
-          subscription,
-          preferences,
-          rates,
-          now,
-        ),
-      )
-      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
-
-    const activeOverride = phaseDtos.find(
-      (p) => p.isActive && (p.kind === "trial" || p.kind === "intro"),
-    );
-    const upcoming = getUpcomingPhase(phaseDtos, now);
-    const scheduledPriceChange = upcoming
-      ? {
-          cost: upcoming.cost,
-          currency: upcoming.currency,
-          effectiveAt: upcoming.startsAt,
-          billing: upcoming.billing,
-        }
-      : null;
-
-    return {
-      pricePhases: phaseDtos,
-      effectivePhaseKind: activeOverride?.kind ?? "standard",
-      upcomingPhase: upcoming,
-      scheduledPriceChange,
-    };
-  }
-
   private static async startPricingSchedule(
     id: string,
     userId: string,
@@ -535,10 +494,10 @@ export class SubscriptionPhaseService {
         subscription,
         preferences.preferredTimezone,
       );
-    const projection = SubscriptionPhaseService.buildPhaseProjection(
-      subscription,
+    const projection = buildPhaseProjection(
+      { every: subscription.every, period: subscription.period },
       phases,
-      preferences,
+      preferences.preferredCurrency,
       rates,
     );
     return SubscriptionMapper.toDto(
@@ -548,48 +507,6 @@ export class SubscriptionPhaseService {
       lastPaymentDate,
       projection,
     );
-  }
-
-  private static toPhaseDto(
-    phase: PricePhaseRecord,
-    subscription: SubscriptionRecord,
-    preferences: UserPreferences,
-    rates: Record<string, number>,
-    now: Date,
-  ): PricePhaseDto {
-    const cost = Number(phase.cost);
-    const billing = SubscriptionCalculator.calculateBillingDetailsForPricing(
-      {
-        amount: Number.isFinite(cost) ? cost : 0,
-        currency: phase.currency,
-        every: subscription.every,
-        period: subscription.period,
-      },
-      preferences.preferredCurrency,
-      rates,
-    );
-    const startsAt =
-      SubscriptionPhaseService.normalizeDate(phase.startsAt) ?? "";
-    const endsAt = phase.endsAt
-      ? SubscriptionPhaseService.normalizeDate(phase.endsAt)
-      : null;
-    const startTime = Date.parse(startsAt);
-    const endTime = endsAt ? Date.parse(endsAt) : null;
-    const isActive =
-      !Number.isNaN(startTime) &&
-      startTime <= now.getTime() &&
-      (endTime === null || endTime > now.getTime());
-
-    return {
-      id: phase.id,
-      kind: phase.kind,
-      cost: Number.isFinite(cost) ? cost : 0,
-      currency: phase.currency,
-      startsAt,
-      endsAt,
-      isActive,
-      billing,
-    };
   }
 
   private static async reloadDto(

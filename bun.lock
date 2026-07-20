@@ -143,6 +143,7 @@
       "name": "@subeye/pricing",
       "version": "0.0.1",
       "dependencies": {
+        "@subeye/currency": "workspace:*",
         "@subeye/shared": "workspace:*",
         "@subeye/spend": "workspace:*",
         "date-fns": "^4.1.0",

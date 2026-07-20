@@ -1,3 +1,4 @@
+import type { PhaseProjection } from "@subeye/pricing";
 import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
@@ -5,12 +6,8 @@ import type {
 import { getSubscriptionLifecycleStatus } from "@subeye/shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
-export type SubscriptionPhaseProjection = {
-  scheduledPriceChange: SubscriptionDto["scheduledPriceChange"];
-  pricePhases: SubscriptionDto["pricePhases"];
-  effectivePhaseKind: SubscriptionDto["effectivePhaseKind"];
-  upcomingPhase: SubscriptionDto["upcomingPhase"];
-};
+/** @deprecated Alias kept so existing imports resolve; use `PhaseProjection`. */
+export type SubscriptionPhaseProjection = PhaseProjection;
 
 export class SubscriptionMapper {
   static toDto(
