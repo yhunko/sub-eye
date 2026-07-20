@@ -189,8 +189,8 @@ export class SubscriptionService {
     // Validate the starting offer before any write. `neon-http` has no
     // interactive transactions, so a late throw leaves an orphan row behind.
     // The offer boundary is floored to midnight in the USER'S timezone — the
-    // same flooring startTrial/addIntroDiscount apply — so "ends later today"
-    // must be rejected here, not after the insert.
+    // same flooring startPhase applies — so "ends later today" must be
+    // rejected here, not after the insert.
     const { intro, ...createPayload } = payload;
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
@@ -213,30 +213,15 @@ export class SubscriptionService {
     // Start the subscription on its trial / intro offer (the standard price is
     // the cost just created). Returns the DTO with the resulting price phases.
     if (intro && introEndsAt) {
-      const standardCost = Number(result.cost);
-      if (intro.kind === "trial") {
-        return SubscriptionPhaseService.startTrial(
-          result.id,
-          userId,
-          {
-            trialCost: intro.promoCost,
-            trialCurrency: result.currency,
-            endsAt: introEndsAt,
-            standardCost,
-            standardCurrency: result.currency,
-          },
-          deps,
-        );
-      }
-      return SubscriptionPhaseService.addIntroDiscount(
+      return SubscriptionPhaseService.startPhase(
         result.id,
         userId,
         {
-          introCost: intro.promoCost,
-          introCurrency: result.currency,
-          endsAt: intro.endsAt,
-          standardCost,
-          standardCurrency: result.currency,
+          kind: intro.kind,
+          promoCost: intro.promoCost,
+          currency: result.currency,
+          endsAt: introEndsAt,
+          standardCost: Number(result.cost),
         },
         deps,
       );

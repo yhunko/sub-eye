@@ -78,20 +78,16 @@ function buildDeps() {
   return { deps, updateCalls, insertManyCalls };
 }
 
-describe("SubscriptionPhaseService.startTrial", () => {
-  it("sets the trial price now and lays down two phases", async () => {
+describe("SubscriptionPhaseService.startPhase", () => {
+  it("routes kind=trial to the trial schedule: sets the price now and lays down two phases", async () => {
     const { deps, updateCalls, insertManyCalls } = buildDeps();
 
     const endsAt = new Date(Date.now() + 60 * 86_400_000).toISOString();
 
-    await SubscriptionPhaseService.startTrial(
+    await SubscriptionPhaseService.startPhase(
       "sub_1",
       "user_1",
-      {
-        trialCost: 0,
-        endsAt,
-        standardCost: 12,
-      },
+      { kind: "trial", promoCost: 0, endsAt, standardCost: 12 },
       deps as never,
     );
 
@@ -111,12 +107,44 @@ describe("SubscriptionPhaseService.startTrial", () => {
       cost: string;
       appliedAt: string | null;
     }>;
-    expect(rows).toHaveLength(2);
-    expect(rows[0]?.kind).toBe("trial");
+    expect(rows.map((row) => row.kind)).toEqual(["trial", "standard"]);
     expect(rows[0]?.cost).toBe("0.00");
     expect(rows[0]?.appliedAt).not.toBeNull();
-    expect(rows[1]?.kind).toBe("standard");
     expect(rows[1]?.cost).toBe("12.00");
     expect(rows[1]?.appliedAt).toBeNull();
+  });
+
+  it("routes kind=intro to the intro schedule", async () => {
+    const { deps, insertManyCalls } = buildDeps();
+    const endsAt = new Date(Date.now() + 60 * 86_400_000).toISOString();
+
+    await SubscriptionPhaseService.startPhase(
+      "sub_1",
+      "user_1",
+      { kind: "intro", promoCost: 5, endsAt, standardCost: 12 },
+      deps as never,
+    );
+
+    const rows = insertManyCalls[0]?.args[0] as Array<{ kind: string }>;
+    expect(rows.map((row) => row.kind)).toEqual(["intro", "standard"]);
+  });
+
+  it("routes kind=scheduledChange to a single future phase", async () => {
+    const { deps, insertManyCalls } = buildDeps();
+
+    await SubscriptionPhaseService.startPhase(
+      "sub_1",
+      "user_1",
+      { kind: "scheduledChange", cost: 20, mode: "nextOccurrence" },
+      deps as never,
+    );
+
+    const rows = insertManyCalls[0]?.args[0] as Array<{
+      kind: string;
+      cost: string;
+    }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.kind).toBe("scheduledChange");
+    expect(rows[0]?.cost).toBe("20.00");
   });
 });

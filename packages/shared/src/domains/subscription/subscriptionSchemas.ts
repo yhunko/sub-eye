@@ -4,6 +4,7 @@ import {
   check,
   type InferOutput,
   integer,
+  literal,
   maxLength,
   minLength,
   minValue,
@@ -16,6 +17,7 @@ import {
   strictObject,
   string,
   transform,
+  variant,
 } from "valibot";
 import { SubscriptionPeriod } from "../../types";
 import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
@@ -149,23 +151,36 @@ const positiveCostSchema = pipe(
   check((value) => value > 0, "Cost must be greater than zero"),
 );
 
-/** Start a free (or reduced) trial that reverts to the standard price on `endsAt`. */
-export const StartTrialSchema = strictObject({
-  trialCost: optional(pipe(number(), minValue(0)), 0),
-  trialCurrency: optional(currencyCodeSchema),
-  endsAt: isoDateSchema,
-  standardCost: positiveCostSchema,
-  standardCurrency: optional(currencyCodeSchema),
-});
-
-/** Add a time-limited intro discount that reverts to the standard price on `endsAt`. */
-export const AddIntroDiscountSchema = strictObject({
-  introCost: positiveCostSchema,
-  introCurrency: optional(currencyCodeSchema),
-  endsAt: isoDateSchema,
-  standardCost: positiveCostSchema,
-  standardCurrency: optional(currencyCodeSchema),
-});
+/**
+ * One payload for every way of putting a price on the timeline:
+ *  - `trial` / `intro` start an override now that reverts to `standardCost`
+ *    on `endsAt`;
+ *  - `scheduledChange` replaces the standard price on a future date.
+ */
+export const StartPhaseSchema = variant("kind", [
+  strictObject({
+    kind: literal("trial"),
+    promoCost: pipe(number(), minValue(0)),
+    currency: optional(currencyCodeSchema),
+    endsAt: isoDateSchema,
+    standardCost: positiveCostSchema,
+  }),
+  strictObject({
+    kind: literal("intro"),
+    promoCost: positiveCostSchema,
+    currency: optional(currencyCodeSchema),
+    endsAt: isoDateSchema,
+    standardCost: positiveCostSchema,
+  }),
+  strictObject({
+    kind: literal("scheduledChange"),
+    cost: positiveCostSchema,
+    currency: optional(currencyCodeSchema),
+    mode: picklist(scheduledPriceChangeModes),
+    customDate: optional(nullable(isoDateSchema)),
+  }),
+]);
+export type StartPhaseInput = InferOutput<typeof StartPhaseSchema>;
 
 export const cancelSubscriptionModes = ["periodEnd", "immediate"] as const;
 export type CancelSubscriptionMode = (typeof cancelSubscriptionModes)[number];
@@ -224,8 +239,6 @@ export type UpdateSubscriptionInput = InferOutput<
 export type SchedulePriceChangeInput = InferOutput<
   typeof SchedulePriceChangeSchema
 >;
-export type StartTrialInput = InferOutput<typeof StartTrialSchema>;
-export type AddIntroDiscountInput = InferOutput<typeof AddIntroDiscountSchema>;
 export type CancelSubscriptionInput = InferOutput<
   typeof CancelSubscriptionSchema
 >;

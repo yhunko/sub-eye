@@ -8,10 +8,9 @@ import {
   toStartOfDayInTimezone,
 } from "@subeye/pricing";
 import type {
-  AddIntroDiscountInput,
   PricePhaseKind,
   SchedulePriceChangeInput,
-  StartTrialInput,
+  StartPhaseInput,
   SubscriptionDto,
   UserPreferences,
 } from "@subeye/shared";
@@ -54,50 +53,44 @@ const defaultDeps: SubscriptionPhaseServiceDeps = {
 
 export class SubscriptionPhaseService {
   /**
-   * Start a free (or reduced) trial: set the trial price on the row now, lay
-   * down a `trial` phase (active) plus the following `standard` phase that the
-   * boundary workflow applies when the trial ends.
+   * Put a price on the timeline. One entry point for all three shapes — the
+   * three old routes (`/trial`, `/intro-discount`, `/phases/schedule-change`)
+   * were three names for the same private schedule builders.
+   *  - `trial` / `intro` set the override price on the row now, lay down the
+   *    override phase (applied) plus the following `standard` revert phase;
+   *  - `scheduledChange` replaces the standard price on a future date.
    */
-  static async startTrial(
+  static async startPhase(
     id: string,
     userId: string,
-    payload: StartTrialInput,
+    payload: StartPhaseInput,
     deps: SubscriptionPhaseServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    return SubscriptionPhaseService.startPricingSchedule(
-      id,
-      userId,
-      {
-        overrideKind: "trial",
-        overrideCost: payload.trialCost,
-        overrideCurrency: payload.trialCurrency,
-        endsAt: payload.endsAt,
-        standardCost: payload.standardCost,
-        standardCurrency: payload.standardCurrency,
-        changeType: "trialStarted",
-      },
-      deps,
-    );
-  }
+    if (payload.kind === "scheduledChange") {
+      return SubscriptionPhaseService.schedulePriceChange(
+        id,
+        userId,
+        {
+          mode: payload.mode,
+          scheduledCost: payload.cost,
+          scheduledCurrency: payload.currency,
+          customDate: payload.customDate ?? null,
+        },
+        deps,
+      );
+    }
 
-  /** Add a time-limited intro discount that reverts to the standard price. */
-  static async addIntroDiscount(
-    id: string,
-    userId: string,
-    payload: AddIntroDiscountInput,
-    deps: SubscriptionPhaseServiceDeps = defaultDeps,
-  ): Promise<SubscriptionDto> {
     return SubscriptionPhaseService.startPricingSchedule(
       id,
       userId,
       {
-        overrideKind: "intro",
-        overrideCost: payload.introCost,
-        overrideCurrency: payload.introCurrency,
+        overrideKind: payload.kind,
+        overrideCost: payload.promoCost,
+        overrideCurrency: payload.currency,
         endsAt: payload.endsAt,
         standardCost: payload.standardCost,
-        standardCurrency: payload.standardCurrency,
-        changeType: "introAdded",
+        standardCurrency: payload.currency,
+        changeType: payload.kind === "trial" ? "trialStarted" : "introAdded",
       },
       deps,
     );

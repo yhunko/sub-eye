@@ -1,6 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
 import {
-  AddIntroDiscountSchema,
   AddSubscriptionSchema,
   BulkDeleteSubscriptionsSchema,
   BulkUpdateCategorySchema,
@@ -8,8 +7,7 @@ import {
   idQuerySchema,
   listQuerySchema,
   PauseSubscriptionSchema,
-  SchedulePriceChangeSchema,
-  StartTrialSchema,
+  StartPhaseSchema,
   UpdateSubscriptionSchema,
 } from "@subeye/shared";
 import { Hono } from "hono";
@@ -134,61 +132,17 @@ export const subscriptionRouter = new Hono()
     },
   )
   .post(
-    "/:id/trial",
+    "/:id/phases",
     protect,
     vValidator("param", idQuerySchema),
-    vValidator("json", StartTrialSchema),
+    vValidator("json", StartPhaseSchema),
     async (context) => {
       const userId = requireUserId(context);
 
       try {
         const { id } = context.req.valid("param");
         const payload = context.req.valid("json");
-        const subscription = await SubscriptionPhaseService.startTrial(
-          id,
-          userId,
-          payload,
-        );
-        return context.json(subscription);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .post(
-    "/:id/intro-discount",
-    protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", AddIntroDiscountSchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id } = context.req.valid("param");
-        const payload = context.req.valid("json");
-        const subscription = await SubscriptionPhaseService.addIntroDiscount(
-          id,
-          userId,
-          payload,
-        );
-        return context.json(subscription);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .post(
-    "/:id/phases/schedule-change",
-    protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", SchedulePriceChangeSchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id } = context.req.valid("param");
-        const payload = context.req.valid("json");
-        const subscription = await SubscriptionPhaseService.schedulePriceChange(
+        const subscription = await SubscriptionPhaseService.startPhase(
           id,
           userId,
           payload,
