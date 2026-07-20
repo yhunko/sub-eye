@@ -1,0 +1,20 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "tabs_home": "Home",
+  "tabs_subscriptions": "Subscriptions",
+  "tabs_settings": "Settings",
+  "home_title": "Home",
+  "home_monthlyBurnRate": "Monthly",
+  "home_yearlyForecast": "Yearly",
+  "home_remainingThisMonth": "Left this month",
+  "home_loadError": "Could not load your numbers.",
+  "subscriptions_title": "Subscriptions",
+  "settings_title": "Settings",
+  "settings_signOut": "Sign out",
+  "auth_signInTitle": "Sign in",
+  "auth_email": "Email",
+  "auth_password": "Password",
+  "auth_signInAction": "Continue",
+  "auth_signInError": "Could not sign in. Check your email and password.",
+  "common_retry": "Retry"
+}

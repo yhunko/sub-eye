@@ -11,6 +11,7 @@
       "**",
       "!apps/client/src/app/routes/routeTree.gen.ts",
       "!apps/client/src/shared/lib/i18n",
+      "!apps/mobile/src/shared/i18n/paraglide",
       "!apps/server/drizzle/meta",
       "!!.claude",
       "!!.git",

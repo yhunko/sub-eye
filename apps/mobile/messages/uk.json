@@ -1,0 +1,20 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "tabs_home": "Головна",
+  "tabs_subscriptions": "Підписки",
+  "tabs_settings": "Налаштування",
+  "home_title": "Головна",
+  "home_monthlyBurnRate": "За місяць",
+  "home_yearlyForecast": "За рік",
+  "home_remainingThisMonth": "Залишилось цього місяця",
+  "home_loadError": "Не вдалося завантажити ваші суми.",
+  "subscriptions_title": "Підписки",
+  "settings_title": "Налаштування",
+  "settings_signOut": "Вийти",
+  "auth_signInTitle": "Вхід",
+  "auth_email": "Емейл",
+  "auth_password": "Пароль",
+  "auth_signInAction": "Продовжити",
+  "auth_signInError": "Не вдалося увійти. Перевірте емейл і пароль.",
+  "common_retry": "Спробувати ще"
+}
