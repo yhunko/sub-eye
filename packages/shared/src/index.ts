@@ -1,4 +1,5 @@
 export * from "./domains/analytics";
+export * from "./domains/apiError";
 export * from "./domains/billing";
 export * from "./domains/category";
 export * from "./domains/comparator";
