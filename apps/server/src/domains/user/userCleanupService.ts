@@ -1,12 +1,10 @@
 import { CategoryService } from "../category/categoryService";
-import { PushNotificationService } from "../push-notification/pushNotificationService";
 import { SubscriptionHistoryRepository } from "../subscription/subscriptionHistoryRepository";
 import { SubscriptionService } from "../subscription/subscriptionService";
 
 export type CleanupDomain =
   | "subscriptions"
   | "categories"
-  | "push_notifications"
   | "subscription_history";
 
 export type CleanupResult = {
@@ -31,14 +29,12 @@ export async function cleanupUserData(
   const settledResults = await Promise.allSettled([
     SubscriptionService.deleteAllForUser(userId),
     CategoryService.deleteAllForUser(userId),
-    PushNotificationService.deleteAllForUser(userId),
     SubscriptionHistoryRepository.deleteByUserId(userId),
   ]);
 
   const domains: CleanupDomain[] = [
     "subscriptions",
     "categories",
-    "push_notifications",
     "subscription_history",
   ];
 

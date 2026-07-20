@@ -4,7 +4,6 @@ import type { Bindings } from "./env";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
 import { categoryRouter } from "./routes/categories";
-import { pushNotificationRouter } from "./routes/push-notifications";
 import { subscriptionRouter } from "./routes/subscriptions";
 import { userRouter } from "./routes/user";
 import { webhookRouter } from "./routes/webhooks";
@@ -34,7 +33,6 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .route("/categories", categoryRouter)
   .route("/analytics", analyticsRouter)
   .route("/subscriptions", subscriptionRouter)
-  .route("/push-notifications", pushNotificationRouter)
   .route("/user", userRouter)
   .onError((err, ctx) => {
     console.error("[Unhandled Error]", err);
