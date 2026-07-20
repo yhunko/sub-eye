@@ -6,18 +6,24 @@ Subscription-management SaaS. **Bun** monorepo, orchestrated by **Turbo**.
 - `apps/server` (`@subeye/server`) — **Hono** API deployed as a **single Cloudflare Worker** that serves both the API and the built client assets.
 - `packages/*` — scoped `@subeye/*` libraries, separated **by concern**, consumed as **source** (see below).
 
-**External services:** Clerk (auth — JWT per request, Svix webhooks for `user.deleted`) · Neon Postgres + Drizzle (`apps/server/src/db/schema.ts`) · Paddle (billing webhooks → `billing_accounts`) · Upstash QStash (scheduled renewal/expiry/price-change workflows) · Google Gemini (AI) · Web Push + Telegram (notifications).
+**External services:** Clerk (auth — JWT per request, Svix webhooks for `user.deleted`) · Neon Postgres + Drizzle (`apps/server/src/db/schema.ts`) · a public FX-rate CDN (`apps/server/src/domains/currency/currencyRepository.ts`, replaced by an `fx_rates` table in Plan 3).
+
+Paddle, Upstash QStash, Google Gemini, Web Push and Telegram were **removed from the server in v4 Plan 1**. `apps/client` still references some of them and does not type-check until Plan 8 deletes it.
 
 ## Packages — source-only, by concern
 
 | Package | Responsibility |
 | --- | --- |
 | `@subeye/shared` | Environment-agnostic contracts: types, Valibot schemas, enums, pure utils. Used by client **and** server. |
-| `@subeye/scheduling` | QStash adapter — `serve` (re-exported unchanged), `triggerWorkflow`, `cancelWorkflow`. |
-| `@subeye/notifications` | Transport only: `./push` (web-push) + `./telegram` (Bot API). |
-| `@subeye/ai` | Gemini `generateContent` client + `normalizeModelJson`. |
+| `@subeye/currency` | Rate-table contract + `RateProvider` seam. **Invariants: `packages/currency/CLAUDE.md`.** |
+| `@subeye/spend` | Occurrence engine: spend in a range, monthly/yearly normalization, payment dates. **Invariants: `packages/spend/CLAUDE.md`.** |
+| `@subeye/pricing` | Phase model: effective/upcoming/due phase selection, timeline assembly, boundary date math. **Invariants: `packages/pricing/CLAUDE.md`.** |
 
 **Source-only packaging (DX rule):** every package's `exports` points at `./src/index.ts` — **no `dist`, no build step, no `postinstall`**. Wrangler/esbuild and Vite compile package TS source directly. Edit source and it's live; never add a build step or import a `dist/` path. The root `tsconfig.json` is flat (no path aliases / project references).
+
+**Package layering:** `pricing → spend → currency → shared`, and any package may depend on `shared` directly. Nothing depends back on `shared`. Enforced by `bun run check:circular:packages`. The pure/impure split is forced by dependency-cruiser's `no-package-to-app` rule: repositories, IO-owning services and route handlers stay in `apps/server`; packages take structurally-typed inputs instead of Drizzle row types.
+
+**New package tsconfig:** copy `packages/currency/tsconfig.json`, **not** `packages/shared/tsconfig.json`. Shared carries `"ignoreDeprecations": "6.0"` and only compiles because it resolves a nested TypeScript 6.0.2; a new package gets the hoisted 5.9.3 and fails with `TS5103`.
 
 ## Import boundaries (enforced by `bun run check:boundaries`)
 
@@ -57,11 +63,14 @@ bun run deploy:dev                # build + wrangler -c dev.wrangler.jsonc deplo
 - **Generated — never hand-edit:** `apps/client/src/app/routes/routeTree.gen.ts` (TanStack Router), `apps/client/src/shared/lib/i18n/**` (Paraglide). Edit source + rerun the generator.
 - Dev Plus-plan simulation: `apps/client/src/shared/lib/billing/local-plan-override.ts` (DEV only).
 
-## Pricing phases — read before touching
+## Scoped guidelines — read before touching
 
-`apps/server/CLAUDE.md` documents the pricing-phase invariants (`appliedAt` idempotency, lazy apply-on-read, `db.batch` over `db.transaction`). Read it before editing any phase or subscription-pricing code.
+- **Pricing phases (server side)** — `apps/server/CLAUDE.md`: `appliedAt` idempotency, lazy apply-on-read, `db.batch` over `db.transaction`, and the stale columns Plan 3 drops.
+- **Pricing phases (pure logic)** — `packages/pricing/CLAUDE.md`: phase-kind semantics, half-open windows, due-phase ordering, the `customDate` mode literal, TZDate offset strings.
+- **Spend / occurrences** — `packages/spend/CLAUDE.md`: anchored recurrence, timezone threading, cancellation gating, per-occurrence amount resolution.
+- **Currency** — `packages/currency/CLAUDE.md`: the rate-table contract and its degradation rules.
 
-> **v4 migration in progress.** Plan 1 deleted the server's comparator/category AI, QStash workflows, Telegram, Web Push, Paddle billing and organizations, along with `packages/{ai,notifications,scheduling}`. The **External services** and **Packages** sections above still describe the pre-v4 shape and are corrected in Plan 8, together with the removal of `apps/client`. `apps/client` does not type-check until then — that is intended.
+> **v4 migration in progress.** `apps/client` does not type-check and is deleted in Plan 8 — that is intended. Verify with the scoped commands below, never the root `bun run type-check`.
 
 ## Quality gates by scope
 
