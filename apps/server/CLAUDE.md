@@ -4,13 +4,6 @@ The pricing-phase model is the core of the server. It decides what a user is
 charged and when, so bugs here are silently wrong money. Read this before
 touching `subscriptionPhaseService.ts` or `subscriptionPricePhaseRepository.ts`.
 
-> **History note.** This file used to document a QStash-based notification
-> system (renewal/expiry/phase-boundary workflows, web-push, Telegram, and the
-> `/api/dev/*` test harness). All of it was deleted in v4 Plan 1 — reminders
-> become device-local via `expo-notifications` in the Expo client. If you are
-> looking for the workflow-replay invariants, they no longer apply to any code
-> in this repo.
-
 ---
 
 ## The model
@@ -45,16 +38,17 @@ and never clear it.
 
 ### Phases are applied lazily, on read
 
-There is no scheduler. `reconcilePhases` runs on every subscription fetch,
-finds phases whose `startsAt` has passed and whose `appliedAt` is null, and
-calls `applyDuePhases` → `applyPhaseByWorkflow` to settle them.
+There is no scheduler. The list read (`GET /subscriptions`) is pure: it loads
+phase rows via `loadPhasesFor` and never writes. The single-subscription read
+(`GET /subscriptions/:id`) is the one read allowed to write — it calls
+`applyDuePhases`, which finds phases whose `startsAt` has passed and whose
+`appliedAt` is null (`selectDuePhases`) and settles them via
+`applyPhaseByWorkflow`.
 
-This means **a phase boundary fires the next time the user reads the
+This means **a phase boundary fires the next time the user opens that
 subscription, not at the instant it comes due.** That is the intended v4
-behaviour. Do not reintroduce a scheduler for it.
-
-`reconcilePhases` currently issues DB writes from a read path. That is a known
-performance problem and is Plan 4's work — do not paper over it by caching.
+behaviour. Do not reintroduce a scheduler, and do not move writes onto the
+list read.
 
 ### `db.batch`, never `db.transaction`
 
@@ -66,21 +60,10 @@ Any new multi-statement group that must be atomic uses `db.batch([...])`.
 ### Services take a `deps` param; repositories own `db`
 
 `SubscriptionPhaseServiceDeps` is
-`{ repository, phaseRepository, currencyService, userService, historyService }`,
+`{ repository, phaseRepository, currencyService, userService }`,
 defaulting to the real implementations. Tests pass fakes. Services must not
 import `db` directly — that is the repository's job, and repositories are
 leaves (they never import a service).
-
----
-
-## Known-stale columns (Plan 3 drops them)
-
-`schema.ts` still declares `qstash_message_id`, `cancellation_qstash_message_id`,
-`price_change_qstash_message_id`, the legacy `scheduled_*` columns, and every
-`org_id`. Nothing schedules anything anymore, so the services write `null` to
-the qstash columns and the org branches fall back to the owning user. **Leave
-them alone** — they are removed in one baseline migration in Plan 3, not
-piecemeal.
 
 ---
 
@@ -90,6 +73,6 @@ piecemeal.
    Valibot schema in `packages/shared/.../pricePhaseSchemas.ts`.
 2. Decide how `startPricingSchedule` lays it down — most kinds are "override
    phase now + `standard` phase after `endsAt`".
-3. Make sure `reconcilePhases` can settle it: it must have a `startsAt` and a
+3. Make sure `applyDuePhases` can settle it: it must have a `startsAt` and a
    null `appliedAt`.
 4. Add a case to `test/subscription-phase-service.test.ts`.

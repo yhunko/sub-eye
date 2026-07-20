@@ -6,7 +6,7 @@ Subscription-management SaaS. **Bun** monorepo, orchestrated by **Turbo**.
 - `apps/server` (`@subeye/server`) — **Hono** API deployed as a **single Cloudflare Worker** that serves both the API and the built client assets.
 - `packages/*` — scoped `@subeye/*` libraries, separated **by concern**, consumed as **source** (see below).
 
-**External services:** Clerk (auth — JWT per request, Svix webhooks for `user.deleted`) · Neon Postgres + Drizzle (`apps/server/src/db/schema.ts`) · a public FX-rate CDN (`apps/server/src/domains/currency/currencyRepository.ts`, replaced by an `fx_rates` table in Plan 3).
+**External services:** Clerk (auth — JWT per request, Svix webhooks for `user.deleted`) · Neon Postgres + Drizzle (`apps/server/src/db/schema.ts`) · FX rates in an `fx_rates` table, refreshed daily from a public FX-rate CDN by the Worker `scheduled` cron (`apps/server/src/domains/currency/currencyService.ts`).
 
 Paddle, Upstash QStash, Google Gemini, Web Push and Telegram were **removed from the server in v4 Plan 1**. `apps/client` still references some of them and does not type-check until Plan 8 deletes it.
 
@@ -19,7 +19,9 @@ Paddle, Upstash QStash, Google Gemini, Web Push and Telegram were **removed from
 | `@subeye/spend` | Occurrence engine: spend in a range, monthly/yearly normalization, payment dates. **Invariants: `packages/spend/CLAUDE.md`.** |
 | `@subeye/pricing` | Phase model: effective/upcoming/due phase selection, timeline assembly, boundary date math. **Invariants: `packages/pricing/CLAUDE.md`.** |
 
-**Source-only packaging (DX rule):** every package's `exports` points at `./src/index.ts` — **no `dist`, no build step, no `postinstall`**. Wrangler/esbuild and Vite compile package TS source directly. Edit source and it's live; never add a build step or import a `dist/` path. The root `tsconfig.json` is flat (no path aliases / project references).
+**Source-only packaging (DX rule):** every package under `packages/*` points its `exports` at `./src/index.ts` — **no `dist`, no build step, no `postinstall`**. Wrangler/esbuild and Vite compile package TS source directly. Edit source and it's live; never add a build step or import a `dist/` path inside `packages/*`. The root `tsconfig.json` is flat (no path aliases / project references).
+
+**Explicit exception — `apps/server`'s client export.** `@subeye/server/client` resolves to `apps/server/dist/src/client.d.ts` (emitted by `bun run --cwd apps/server build`, which the server's `type-check` also runs). Metro is not Vite: source-only dragged the whole server program into the Expo app's typecheck and only compiled because `@types/node` leaked in to supply `process` for the module-scope `process.env.DATABASE_URL` read in `src/db/index.ts`. The Vite path is unchanged — `apps/client` aliases `@subeye/server/client` back to `apps/server/src/client.ts` in both `vite.config.ts` and `tsconfig.app.json`. `apps/server/dist` is gitignored.
 
 **Package layering:** `pricing → spend → currency → shared`, and any package may depend on `shared` directly. Nothing depends back on `shared`. Enforced by `bun run check:circular:packages`. The pure/impure split is forced by dependency-cruiser's `no-package-to-app` rule: repositories, IO-owning services and route handlers stay in `apps/server`; packages take structurally-typed inputs instead of Drizzle row types.
 
@@ -51,8 +53,14 @@ bun run deploy:dev                # build + wrangler -c dev.wrangler.jsonc deplo
 ## Conventions
 
 - **Client:** all user-facing copy via Paraglide (`import * as m from "@/i18n/messages"`) — no hardcoded strings. Dialogs via `NiceModal.show(...)`. Query keys via `@lukemorales/query-key-factory` in each slice's `model/query-keys.ts`. TanStack Query is persisted to IndexedDB — invalidate explicitly, avoid ad-hoc `setQueryData`. Lazy-load heavy components (recharts loads via `features/analytics/ui/use-recharts-module.ts`). File names `kebab-case`.
-- **Server:** validate every payload at the route with `@hono/valibot-validator`. `protect`/`clerkAuth` on authenticated routes; never re-derive identity in services. Webhook routes (`/api/webhooks/**`) skip auth and verify Svix/Paddle signatures. QStash workflows are triggered from services, not routes. Services accept an optional `deps` param (defaults to real impls) for testability. File names `camelCase` (modules) / `kebab-case` (route resources). DB identifiers `snake_case`.
+- **Server:** validate every payload at the route with `@hono/valibot-validator`. `protect`/`clerkAuth` on authenticated routes; never re-derive identity in services. Webhook routes (`/api/webhooks/**`) skip auth and verify Svix signatures. Services accept an optional `deps` param (defaults to real impls) for testability. File names `camelCase` (modules) / `kebab-case` (route resources). DB identifiers `snake_case`.
 - **Billing usage:** `GET /api/billing/usage` (`BillingService.getUsage`) + client `billingQueryKeys.usage` are the **single source of truth** for plan/quota data. Do not add parallel usage endpoints or keys.
+- **Lifecycle status** is a real column (`subscriptions.status`: `active | paused | cancelling | cancelled`), kept current by the pause/cancel writes. `deriveSubscriptionStatus` in `@subeye/shared` reconciles it on read — a `cancelling` row past its date reads `cancelled`, a pause past its `resume_at` reads `active` — so there is no status cron. Legal next actions ride on `SubscriptionDto.allowedActions` (`getAllowedActions`), so the client renders affordances instead of re-deriving them.
+- **Reads must not write.** `GET /subscriptions` is pure; `GET /subscriptions/:id` is the one read allowed to write, and only via `applyDuePhases` for a phase boundary that has genuinely passed.
+- **FX rates** come from the `fx_rates` table; no request path fetches rates inline. The daily refresh runs in the Worker `scheduled` cron export (`CurrencyService.refreshRates`).
+- **User preferences** come from the `users` table, never from Clerk `publicMetadata`.
+- **Every route error** returns `{ success: false, error: { code, message } }`; codes live in `@subeye/shared` (`apiErrorCodes`).
+- **Pause is per-occurrence**, not per-subscription: `isOccurrencePaused` in `@subeye/spend` skips charges inside `[paused_at, resume_at)` and **includes** the first at or after `resume_at`.
 
 ## Gotchas
 
@@ -65,7 +73,7 @@ bun run deploy:dev                # build + wrangler -c dev.wrangler.jsonc deplo
 
 ## Scoped guidelines — read before touching
 
-- **Pricing phases (server side)** — `apps/server/CLAUDE.md`: `appliedAt` idempotency, lazy apply-on-read, `db.batch` over `db.transaction`, and the stale columns Plan 3 drops.
+- **Pricing phases (server side)** — `apps/server/CLAUDE.md`: `appliedAt` idempotency, lazy apply-on-read via `applyDuePhases`, and `db.batch` over `db.transaction`.
 - **Pricing phases (pure logic)** — `packages/pricing/CLAUDE.md`: phase-kind semantics, half-open windows, due-phase ordering, the `customDate` mode literal, TZDate offset strings.
 - **Spend / occurrences** — `packages/spend/CLAUDE.md`: anchored recurrence, timezone threading, cancellation gating, per-occurrence amount resolution.
 - **Currency** — `packages/currency/CLAUDE.md`: the rate-table contract and its degradation rules.
