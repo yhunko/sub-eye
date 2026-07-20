@@ -1,9 +1,25 @@
+import {
+  extractRateTable,
+  type RateProvider,
+  type RateTable,
+} from "@subeye/currency";
 import { CurrencyRepository } from "./currencyRepository";
 
-export class CurrencyService {
-  static async getRates(baseCurrency: string): Promise<Record<string, number>> {
-    const ratesDto = await CurrencyRepository.getRates(baseCurrency);
+export type CurrencyServiceDeps = {
+  provider: RateProvider;
+};
 
-    return ratesDto?.[baseCurrency.toLowerCase()] ?? {};
+const defaultDeps: CurrencyServiceDeps = {
+  provider: CurrencyRepository,
+};
+
+export class CurrencyService {
+  static async getRates(
+    baseCurrency: string,
+    deps: CurrencyServiceDeps = defaultDeps,
+  ): Promise<RateTable> {
+    const response = await deps.provider.getRates(baseCurrency);
+
+    return extractRateTable(response, baseCurrency);
   }
 }

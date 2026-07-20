@@ -116,6 +116,7 @@
         "@clerk/hono": "^0.1.13",
         "@hono/valibot-validator": "^0.6.1",
         "@neondatabase/serverless": "^1.0.2",
+        "@subeye/currency": "workspace:*",
         "@subeye/shared": "workspace:*",
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.45.2",

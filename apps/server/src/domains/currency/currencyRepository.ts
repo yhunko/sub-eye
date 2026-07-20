@@ -1,7 +1,7 @@
-import type { CurrencyRatesDto } from "@subeye/shared";
+import type { CurrencyRatesResponse } from "@subeye/currency";
 
 export class CurrencyRepository {
-  private static cache = new Map<string, CurrencyRatesDto>();
+  private static cache = new Map<string, CurrencyRatesResponse>();
   private static lastFetchTime = new Map<string, number>();
   private static readonly CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -10,7 +10,7 @@ export class CurrencyRepository {
   private static readonly FALLBACK_BASE_URL =
     "https://latest.currency-api.pages.dev/v1";
 
-  static async getRates(base: string): Promise<CurrencyRatesDto | null> {
+  static async getRates(base: string): Promise<CurrencyRatesResponse | null> {
     const now = Date.now();
     const lastFetch = CurrencyRepository.lastFetchTime.get(base) ?? 0;
     const isCacheFresh = now - lastFetch < CurrencyRepository.CACHE_TTL;
@@ -57,7 +57,7 @@ export class CurrencyRepository {
     }
   }
 
-  private static async fetchRates(url: string): Promise<CurrencyRatesDto> {
+  private static async fetchRates(url: string): Promise<CurrencyRatesResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -68,7 +68,7 @@ export class CurrencyRepository {
         throw new Error(`Currency API responded with ${response.status}`);
       }
 
-      return (await response.json()) as CurrencyRatesDto;
+      return (await response.json()) as CurrencyRatesResponse;
     } finally {
       clearTimeout(timeoutId);
     }
@@ -76,7 +76,7 @@ export class CurrencyRepository {
 
   private static updateCache(
     base: string,
-    data: CurrencyRatesDto,
+    data: CurrencyRatesResponse,
     timestamp: number,
   ): void {
     CurrencyRepository.cache.set(base, data);
