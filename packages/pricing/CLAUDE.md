@@ -34,9 +34,13 @@ the current charge.
 3. **Due phases apply oldest-first.** Each apply overwrites the subscription's cost. Applying
    out of order leaves the row holding a price from the middle of the timeline.
    `selectDuePhases` sorts; do not re-sort or re-filter downstream.
-4. **`effectivePhaseKind` reports `trial`/`intro` only while such a window is OPEN**, otherwise
-   `standard`. A pending `scheduledChange` sitting in the future must never colour it — the user
-   is not on the new price yet.
+4. **`effectivePhaseKind` is the kind of whichever phase is effective right now** —
+   `getEffectivePhase(phases, now)?.kind ?? "standard"`. It and each phase DTO's `isActive`
+   derive from the same half-open window rule, so they can never disagree. A pending
+   `scheduledChange` sitting in the future is not effective yet, so it stays `standard` until its
+   window opens — the user is not on the new price yet. (Before v4 Plan 4 this was a hand-rolled
+   scan for an active `trial`/`intro`, which silently reported `standard` for an in-force
+   `scheduledChange` and could disagree with `isActive` when windows overlapped.)
 5. **A pure function reports a caller error by returning `null`, never by throwing.**
    `resolveScheduledEffectiveAt` returns `null` for `mode: "customDate"` with no `customDate`;
    the server caller converts that into `CustomDateRequiredError`. Do not import server error

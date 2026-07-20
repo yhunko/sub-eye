@@ -6,7 +6,7 @@ import type {
   SubscriptionPeriod,
 } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
-import { getUpcomingPhase } from "./phaseSelection";
+import { getEffectivePhase, getUpcomingPhase } from "./phaseSelection";
 
 /** The minimum shape of a stored pricing-phase row. A DB row satisfies it. */
 export type PricePhaseInput = {
@@ -84,9 +84,11 @@ export const toPricePhaseDto = (
 /**
  * Assembles the pricing timeline.
  *
- * `effectivePhaseKind` reports `trial` or `intro` ONLY while such a window is
- * open; otherwise `standard`. A pending `scheduledChange` in the future does
- * not change what the user is paying today and must not colour this field.
+ * `effectivePhaseKind` is the kind of whichever phase is effective right now —
+ * `getEffectivePhase(phases, now)?.kind ?? "standard"` — so it can never
+ * disagree with the per-phase `isActive` flag (both encode the same half-open
+ * window). A pending `scheduledChange` sitting in the future is not effective
+ * yet, so it stays `standard` until its window opens.
  */
 export const buildPhaseProjection = (
   recurrence: PhaseRecurrence,
@@ -101,9 +103,7 @@ export const buildPhaseProjection = (
     )
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 
-  const activeOverride = phaseDtos.find(
-    (p) => p.isActive && (p.kind === "trial" || p.kind === "intro"),
-  );
+  const effective = getEffectivePhase(phaseDtos, now);
   const upcoming = getUpcomingPhase(phaseDtos, now);
   const scheduledPriceChange = upcoming
     ? {
@@ -116,7 +116,7 @@ export const buildPhaseProjection = (
 
   return {
     pricePhases: phaseDtos,
-    effectivePhaseKind: activeOverride?.kind ?? "standard",
+    effectivePhaseKind: effective?.kind ?? "standard",
     upcomingPhase: upcoming,
     scheduledPriceChange,
   };

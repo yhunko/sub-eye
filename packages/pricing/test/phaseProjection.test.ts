@@ -113,4 +113,45 @@ describe("buildPhaseProjection", () => {
     expect(projection.upcomingPhase).toBeNull();
     expect(projection.scheduledPriceChange).toBeNull();
   });
+
+  // Bug 1b: effectivePhaseKind is derived from getEffectivePhase, so a
+  // scheduledChange whose window has already opened is reported as the effective
+  // kind. The old hand-rolled scan only looked for an active trial/intro and
+  // silently returned "standard" here, disagreeing with the phase's own
+  // isActive flag.
+  it("reports scheduledChange once its window has opened", () => {
+    const projection = buildPhaseProjection(
+      recurrence,
+      [
+        {
+          id: "trial",
+          kind: "trial",
+          cost: "0.00",
+          currency: "usd",
+          startsAt: "2026-06-01T00:00:00.000Z",
+          endsAt: "2026-06-10T00:00:00.000Z",
+        },
+        {
+          id: "sc",
+          kind: "scheduledChange",
+          cost: "18.00",
+          currency: "usd",
+          startsAt: "2026-06-10T00:00:00.000Z",
+          endsAt: null,
+        },
+      ],
+      "usd",
+      {},
+      now,
+    );
+
+    // now = 2026-06-15: the trial ended on 06-10 and the scheduledChange has
+    // been in force since. Nothing starts in the future, so nothing is upcoming.
+    expect(projection.effectivePhaseKind).toBe("scheduledChange");
+    expect(projection.pricePhases.find((p) => p.id === "sc")?.isActive).toBe(
+      true,
+    );
+    expect(projection.upcomingPhase).toBeNull();
+    expect(projection.scheduledPriceChange).toBeNull();
+  });
 });
