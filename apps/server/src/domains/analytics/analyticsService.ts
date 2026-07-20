@@ -127,6 +127,27 @@ export class AnalyticsService {
       ).toFixed(2),
     );
 
+    // A pause you forgot about is a charge you did not plan for. Only pauses
+    // with a known resume date can be surfaced — an indefinite pause has no
+    // date to warn about.
+    const resumingSoon = subscriptions
+      .filter(
+        (subscription) =>
+          subscription.status === "paused" && subscription.resumeAt,
+      )
+      .sort(
+        (a, b) =>
+          Date.parse(a.resumeAt as string) - Date.parse(b.resumeAt as string),
+      )
+      .map((subscription) => ({
+        id: subscription.id,
+        name: subscription.name,
+        brandDomain: subscription.brandDomain,
+        resumeAt: subscription.resumeAt as string,
+        amount: subscription.billing.preferred.amount,
+        currencyCode: subscription.billing.preferred.currencyCode,
+      }));
+
     return {
       preferredCurrencyCode,
       monthlyBurnRate,
@@ -142,6 +163,8 @@ export class AnalyticsService {
       totalUpcomingMonth,
       monthlyTrend,
       categorySpending,
+      timezone,
+      resumingSoon,
     };
   }
 

@@ -94,3 +94,56 @@ describe("AnalyticsService.getDashboardStats", () => {
     expect(stats.remainingThisMonth).toBeLessThanOrEqual(stats.yearlyForecast);
   });
 });
+
+describe("AnalyticsService.getDashboardStats — resuming soon", () => {
+  it("returns the resolved timezone and every paused sub with a resume date, soonest first", async () => {
+    const later = makeSub({
+      id: "later",
+      status: "paused",
+      pausedAt: new Date(Date.now() - 86_400_000).toISOString(),
+      resumeAt: new Date(Date.now() + 60 * 86_400_000).toISOString(),
+    });
+    const sooner = makeSub({
+      id: "sooner",
+      status: "paused",
+      pausedAt: new Date(Date.now() - 86_400_000).toISOString(),
+      resumeAt: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+    });
+    const indefinite = makeSub({
+      id: "indefinite",
+      status: "paused",
+      pausedAt: new Date(Date.now() - 86_400_000).toISOString(),
+      resumeAt: null,
+    });
+
+    const deps = {
+      subscriptionService: {
+        getSubscriptions: async () => [later, sooner, indefinite],
+      },
+      userService: {
+        getUserPreferences: async () => ({
+          preferredCurrency: "usd",
+          preferredTimezone: "Europe/Kyiv",
+          locale: "en",
+          notificationOffset: 0,
+          notificationTime: "10:00",
+        }),
+      },
+      categoryService: { getCategories: async () => [] },
+    };
+
+    const stats = await AnalyticsService.getDashboardStats(
+      "user_1",
+      deps as never,
+    );
+
+    // The client must stop re-deriving the timezone from the device.
+    expect(stats.timezone).toBe("Europe/Kyiv");
+
+    // An indefinite pause has no date to surface, so it is not "resuming soon".
+    expect(stats.resumingSoon.map((entry) => entry.id)).toEqual([
+      "sooner",
+      "later",
+    ]);
+  });
+});
