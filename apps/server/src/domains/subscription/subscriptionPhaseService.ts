@@ -40,43 +40,20 @@ import { SubscriptionPricePhaseRepository as PhaseRepository } from "./subscript
 import type { SubscriptionRecord } from "./subscriptionRepository";
 import { SubscriptionRepository } from "./subscriptionRepository";
 
-type PhaseTransitionWorkflowApi = {
-  schedule: (payload: {
-    subscriptionId: string;
-    phaseId: string;
-    startsAt: string;
-  }) => Promise<string>;
-  cancel: (workflowRunId: string) => Promise<void>;
-};
-
 export type SubscriptionPhaseServiceDeps = {
   repository: typeof SubscriptionRepository;
   phaseRepository: typeof SubscriptionPricePhaseRepository;
   currencyService: typeof CurrencyService;
-  phaseWorkflow: PhaseTransitionWorkflowApi;
   userService: typeof UserService;
   historyService: typeof SubscriptionHistoryService;
 };
 
 type HistoryChange = Record<string, unknown>;
 
-// Lazy module reference to avoid a circular import with the workflow handler.
-let phaseTransitionWorkflowModule: PhaseTransitionWorkflowApi | undefined;
-const getPhaseTransitionWorkflow = (): PhaseTransitionWorkflowApi => {
-  if (!phaseTransitionWorkflowModule) {
-    phaseTransitionWorkflowModule =
-      require("./subscriptionPhaseTransitionWorkflow").SubscriptionPhaseTransitionWorkflow;
-  }
-  return phaseTransitionWorkflowModule as PhaseTransitionWorkflowApi;
-};
-
 const defaultDeps: SubscriptionPhaseServiceDeps = {
   repository: SubscriptionRepository,
   phaseRepository: PhaseRepository,
   currencyService: CurrencyService,
-  get phaseWorkflow() {
-    return getPhaseTransitionWorkflow();
-  },
   userService: UserService,
   historyService: SubscriptionHistoryService,
 };
@@ -165,7 +142,7 @@ export class SubscriptionPhaseService {
 
     await SubscriptionPhaseService.clearPendingPhases(id, deps);
 
-    const [phase] = await deps.phaseRepository.insertMany([
+    await deps.phaseRepository.insertMany([
       {
         subscriptionId: id,
         userId: existing.userId,
@@ -178,9 +155,6 @@ export class SubscriptionPhaseService {
         appliedAt: null,
       },
     ]);
-    if (phase) {
-      await SubscriptionPhaseService.scheduleBoundary(phase, deps);
-    }
 
     return SubscriptionPhaseService.reloadDto(id, userId, deps, {
       before: beforeDto,
@@ -257,12 +231,6 @@ export class SubscriptionPhaseService {
       deps,
     );
 
-    if (phase.qstashMessageId) {
-      await SubscriptionPhaseService.tryCancelBoundaryWorkflow(
-        phase.qstashMessageId,
-        deps,
-      );
-    }
     await deps.phaseRepository.deleteById(phaseId);
 
     return SubscriptionPhaseService.reloadDto(id, userId, deps, {
@@ -291,12 +259,6 @@ export class SubscriptionPhaseService {
       throw new PhaseAlreadyAppliedError();
     }
 
-    if (phase.qstashMessageId) {
-      await SubscriptionPhaseService.tryCancelBoundaryWorkflow(
-        phase.qstashMessageId,
-        deps,
-      );
-    }
     await SubscriptionPhaseService.applyPhase(existing, phase, deps);
 
     const { preferences, rates } =
@@ -383,23 +345,6 @@ export class SubscriptionPhaseService {
         );
       }
 
-      const needsSchedule = phases.filter(
-        (p) =>
-          !p.appliedAt &&
-          !p.qstashMessageId &&
-          Date.parse(p.startsAt) > Date.now(),
-      );
-      if (needsSchedule.length > 0) {
-        await Promise.all(
-          needsSchedule.map((p) =>
-            SubscriptionPhaseService.scheduleBoundary(p, deps),
-          ),
-        );
-        phases = await deps.phaseRepository.findBySubscriptionId(
-          subscription.id,
-        );
-      }
-
       refreshed.push(currentSub);
       phasesBySubscriptionId.set(subscription.id, phases);
     }
@@ -412,18 +357,6 @@ export class SubscriptionPhaseService {
     subscriptionId: string,
     deps: SubscriptionPhaseServiceDeps = defaultDeps,
   ): Promise<void> {
-    const pending =
-      await deps.phaseRepository.findPendingBySubscriptionId(subscriptionId);
-    await Promise.all(
-      pending.map(async (phase) => {
-        if (phase.qstashMessageId) {
-          await SubscriptionPhaseService.tryCancelBoundaryWorkflow(
-            phase.qstashMessageId,
-            deps,
-          );
-        }
-      }),
-    );
     await deps.phaseRepository.deletePendingBySubscriptionId(subscriptionId);
   }
 
@@ -542,11 +475,6 @@ export class SubscriptionPhaseService {
       },
     ]);
 
-    const standardPhase = inserted.find((p) => p.kind === "standard");
-    if (standardPhase) {
-      await SubscriptionPhaseService.scheduleBoundary(standardPhase, deps);
-    }
-
     return SubscriptionPhaseService.reloadDto(id, userId, deps, {
       before: beforeDto,
       change: { type: args.changeType },
@@ -601,23 +529,6 @@ export class SubscriptionPhaseService {
       },
       deps,
     );
-  }
-
-  private static async scheduleBoundary(
-    phase: PricePhaseRecord,
-    deps: SubscriptionPhaseServiceDeps,
-  ): Promise<void> {
-    const runId = await SubscriptionPhaseService.tryScheduleBoundaryWorkflow(
-      {
-        subscriptionId: phase.subscriptionId,
-        phaseId: phase.id,
-        startsAt: phase.startsAt,
-      },
-      deps,
-    );
-    if (runId) {
-      await deps.phaseRepository.update(phase.id, { qstashMessageId: runId });
-    }
   }
 
   private static async requireSubscription(
@@ -910,42 +821,6 @@ export class SubscriptionPhaseService {
       : Number.NaN;
     if (!Number.isNaN(cancellationTime) && boundaryTime >= cancellationTime) {
       throw new ScheduledDateBeforeCancellationError();
-    }
-  }
-
-  private static async tryScheduleBoundaryWorkflow(
-    payload: { subscriptionId: string; phaseId: string; startsAt: string },
-    deps: SubscriptionPhaseServiceDeps,
-  ): Promise<string | null> {
-    try {
-      return await deps.phaseWorkflow.schedule({
-        subscriptionId: payload.subscriptionId,
-        phaseId: payload.phaseId,
-        startsAt:
-          SubscriptionPhaseService.normalizeDate(payload.startsAt) ??
-          payload.startsAt,
-      });
-    } catch (error) {
-      console.error("Failed to schedule phase-transition workflow", {
-        subscriptionId: payload.subscriptionId,
-        phaseId: payload.phaseId,
-        error,
-      });
-      return null;
-    }
-  }
-
-  static async tryCancelBoundaryWorkflow(
-    workflowRunId: string,
-    deps: SubscriptionPhaseServiceDeps,
-  ): Promise<void> {
-    try {
-      await deps.phaseWorkflow.cancel(workflowRunId);
-    } catch (error) {
-      console.error("Failed to cancel phase-transition workflow", {
-        workflowRunId,
-        error,
-      });
     }
   }
 

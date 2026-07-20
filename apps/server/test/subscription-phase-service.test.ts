@@ -40,7 +40,6 @@ type Call = { args: unknown[] };
 function buildDeps() {
   const updateCalls: Call[] = [];
   const insertManyCalls: Call[] = [];
-  const scheduleCalls: Call[] = [];
   const historyCalls: Call[] = [];
 
   const deps = {
@@ -75,13 +74,6 @@ function buildDeps() {
     userService: {
       getUserPreferences: async () => preferences,
     },
-    phaseWorkflow: {
-      schedule: async (payload: unknown) => {
-        scheduleCalls.push({ args: [payload] });
-        return "run_phase";
-      },
-      cancel: async () => {},
-    },
     historyService: {
       logAction: async (...args: unknown[]) => {
         historyCalls.push({ args });
@@ -89,13 +81,12 @@ function buildDeps() {
     },
   };
 
-  return { deps, updateCalls, insertManyCalls, scheduleCalls, historyCalls };
+  return { deps, updateCalls, insertManyCalls, historyCalls };
 }
 
 describe("SubscriptionPhaseService.startTrial", () => {
-  it("sets the trial price now, lays down two phases, and schedules one boundary", async () => {
-    const { deps, updateCalls, insertManyCalls, scheduleCalls, historyCalls } =
-      buildDeps();
+  it("sets the trial price now and lays down two phases", async () => {
+    const { deps, updateCalls, insertManyCalls, historyCalls } = buildDeps();
 
     const endsAt = new Date(Date.now() + 60 * 86_400_000).toISOString();
 
@@ -133,9 +124,6 @@ describe("SubscriptionPhaseService.startTrial", () => {
     expect(rows[1]?.kind).toBe("standard");
     expect(rows[1]?.cost).toBe("12.00");
     expect(rows[1]?.appliedAt).toBeNull();
-
-    // Exactly one boundary workflow scheduled (the trial → standard transition).
-    expect(scheduleCalls).toHaveLength(1);
 
     // History logs the change with the trial-started discriminator.
     const trialHistory = historyCalls.find(

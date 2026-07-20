@@ -15,7 +15,6 @@ import { CurrencyService } from "../currency/currencyService";
 import { OrgService } from "../org/orgService";
 import { UserService } from "../user/userService";
 import { SubscriptionCalculator } from "./subscriptionCalculator";
-import { SubscriptionCancellationWorkflow } from "./subscriptionCancellationWorkflow";
 import {
   ScheduledDateMustBeFutureError,
   SubscriptionCategoryNotFoundError,
@@ -24,7 +23,6 @@ import {
 } from "./subscriptionErrors";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import { SubscriptionMapper } from "./subscriptionMapper";
-import { SubscriptionNotificationsWorkflow } from "./subscriptionNotificationsWorkflow";
 import { SubscriptionPhaseService } from "./subscriptionPhaseService";
 import type { PricePhaseRecord } from "./subscriptionPricePhaseRepository";
 import { SubscriptionPricePhaseRepository } from "./subscriptionPricePhaseRepository";
@@ -33,24 +31,11 @@ import type {
   SubscriptionRecord,
 } from "./subscriptionRepository";
 import { SubscriptionRepository } from "./subscriptionRepository";
-import { SubscriptionSchedulingService } from "./subscriptionSchedulingService";
-
-export type PhaseTransitionWorkflowApi = {
-  schedule: (payload: {
-    subscriptionId: string;
-    phaseId: string;
-    startsAt: string;
-  }) => Promise<string>;
-  cancel: (workflowRunId: string) => Promise<void>;
-};
 
 export type SubscriptionServiceDeps = {
   repository: typeof SubscriptionRepository;
   phaseRepository: typeof SubscriptionPricePhaseRepository;
   currencyService: typeof CurrencyService;
-  workflow: typeof SubscriptionNotificationsWorkflow;
-  cancellationWorkflow: typeof SubscriptionCancellationWorkflow;
-  phaseWorkflow: PhaseTransitionWorkflowApi;
   userService: typeof UserService;
   orgService: typeof OrgService;
   historyService: typeof SubscriptionHistoryService;
@@ -63,25 +48,10 @@ type UpdateSubscriptionOptions = {
 
 type CancellationMode = "periodEnd" | "immediate";
 
-// Lazy module reference to avoid a circular import with the workflow handler.
-let phaseTransitionWorkflowModule: PhaseTransitionWorkflowApi | undefined;
-export const getPhaseWorkflow = (): PhaseTransitionWorkflowApi => {
-  if (!phaseTransitionWorkflowModule) {
-    phaseTransitionWorkflowModule =
-      require("./subscriptionPhaseTransitionWorkflow").SubscriptionPhaseTransitionWorkflow;
-  }
-  return phaseTransitionWorkflowModule as PhaseTransitionWorkflowApi;
-};
-
 export const defaultDeps: SubscriptionServiceDeps = {
   repository: SubscriptionRepository,
   phaseRepository: SubscriptionPricePhaseRepository,
   currencyService: CurrencyService,
-  workflow: SubscriptionNotificationsWorkflow,
-  cancellationWorkflow: SubscriptionCancellationWorkflow,
-  get phaseWorkflow() {
-    return getPhaseWorkflow();
-  },
   userService: UserService,
   orgService: OrgService,
   historyService: SubscriptionHistoryService,
@@ -188,19 +158,7 @@ export class SubscriptionService {
       ),
     );
 
-    const withRenewalWorkflow =
-      SubscriptionSchedulingService.shouldScheduleWorkflow(created)
-        ? await SubscriptionSchedulingService.tryScheduleWorkflow(created, deps)
-        : created;
-    const result =
-      SubscriptionSchedulingService.shouldScheduleCancellationWorkflow(
-        withRenewalWorkflow,
-      )
-        ? await SubscriptionSchedulingService.tryScheduleCancellationWorkflow(
-            withRenewalWorkflow,
-            deps,
-          )
-        : withRenewalWorkflow;
+    const result = created;
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
@@ -275,19 +233,6 @@ export class SubscriptionService {
 
     const phasesBefore = await deps.phaseRepository.findBySubscriptionId(id);
 
-    if (existing.qstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelWorkflow(
-        existing.qstashMessageId,
-        deps,
-      );
-    }
-    if (existing.cancellationQstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-        existing.cancellationQstashMessageId,
-        deps,
-      );
-    }
-
     // A direct price/currency edit supersedes any pending pricing schedule.
     if (SubscriptionService.isDirectPriceChange(existing, payload)) {
       await SubscriptionPhaseService.clearPendingPhases(id, deps);
@@ -299,19 +244,7 @@ export class SubscriptionService {
       cancellationQstashMessageId: null,
     });
 
-    const withRenewalWorkflow =
-      SubscriptionSchedulingService.shouldScheduleWorkflow(updated)
-        ? await SubscriptionSchedulingService.tryScheduleWorkflow(updated, deps)
-        : updated;
-    const result =
-      SubscriptionSchedulingService.shouldScheduleCancellationWorkflow(
-        withRenewalWorkflow,
-      )
-        ? await SubscriptionSchedulingService.tryScheduleCancellationWorkflow(
-            withRenewalWorkflow,
-            deps,
-          )
-        : withRenewalWorkflow;
+    const result = updated;
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
@@ -358,19 +291,6 @@ export class SubscriptionService {
 
     if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
-    }
-
-    if (existing.qstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelWorkflow(
-        existing.qstashMessageId,
-        deps,
-      );
-    }
-    if (existing.cancellationQstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-        existing.cancellationQstashMessageId,
-        deps,
-      );
     }
 
     await SubscriptionPhaseService.clearPendingPhases(id, deps);
@@ -459,26 +379,7 @@ export class SubscriptionService {
       cancellationQstashMessageId: null,
     });
 
-    if (existing.qstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelWorkflow(
-        existing.qstashMessageId,
-        deps,
-      );
-    }
-    if (existing.cancellationQstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-        existing.cancellationQstashMessageId,
-        deps,
-      );
-    }
-
-    const finalRecord =
-      SubscriptionSchedulingService.shouldScheduleCancellationWorkflow(updated)
-        ? await SubscriptionSchedulingService.tryScheduleCancellationWorkflow(
-            updated,
-            deps,
-          )
-        : updated;
+    const finalRecord = updated;
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
@@ -524,29 +425,13 @@ export class SubscriptionService {
         ),
       }) === "cancelled";
 
-    if (existing.qstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelWorkflow(
-        existing.qstashMessageId,
-        deps,
-      );
-    }
-    if (existing.cancellationQstashMessageId) {
-      await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-        existing.cancellationQstashMessageId,
-        deps,
-      );
-    }
-
     const updated = await deps.repository.update(id, {
       willBeCancelledAt: null,
       qstashMessageId: null,
       cancellationQstashMessageId: null,
     });
 
-    const withRenewalWorkflow =
-      SubscriptionSchedulingService.shouldScheduleWorkflow(updated)
-        ? await SubscriptionSchedulingService.tryScheduleWorkflow(updated, deps)
-        : updated;
+    const withRenewalWorkflow = updated;
 
     const { subscriptions, phasesBySubscriptionId } =
       await SubscriptionPhaseService.reconcilePhases(
@@ -586,19 +471,6 @@ export class SubscriptionService {
 
     await Promise.all(
       existing.map(async (subscription) => {
-        if (subscription.qstashMessageId) {
-          await SubscriptionSchedulingService.tryCancelWorkflow(
-            subscription.qstashMessageId,
-            deps,
-          );
-        }
-        if (subscription.cancellationQstashMessageId) {
-          await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-            subscription.cancellationQstashMessageId,
-            deps,
-          );
-        }
-
         await SubscriptionPhaseService.clearPendingPhases(
           subscription.id,
           deps,
@@ -627,18 +499,6 @@ export class SubscriptionService {
     await Promise.all(
       userSubscriptionIds.map(async (id) => {
         const sub = subscriptions.find((s) => s.id === id);
-        if (sub?.qstashMessageId) {
-          await SubscriptionSchedulingService.tryCancelWorkflow(
-            sub.qstashMessageId,
-            deps,
-          );
-        }
-        if (sub?.cancellationQstashMessageId) {
-          await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-            sub.cancellationQstashMessageId,
-            deps,
-          );
-        }
         if (sub) {
           await SubscriptionPhaseService.clearPendingPhases(sub.id, deps);
         }
@@ -1047,24 +907,10 @@ export class SubscriptionService {
 
     await Promise.all(
       existing.map(async (subscription) => {
-        if (subscription.qstashMessageId) {
-          await SubscriptionSchedulingService.tryCancelWorkflow(
-            subscription.qstashMessageId,
-            deps,
-          );
-        }
-
         await SubscriptionPhaseService.clearPendingPhases(
           subscription.id,
           deps,
         );
-
-        if (subscription.cancellationQstashMessageId) {
-          await SubscriptionSchedulingService.tryCancelCancellationWorkflow(
-            subscription.cancellationQstashMessageId,
-            deps,
-          );
-        }
       }),
     );
 

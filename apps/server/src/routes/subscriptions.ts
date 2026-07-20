@@ -14,12 +14,8 @@ import {
 } from "@subeye/shared";
 import { Hono } from "hono";
 import { object, string } from "valibot";
-import { SubscriptionCancellationWorkflow } from "../domains/subscription/subscriptionCancellationWorkflow";
 import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
-import { SubscriptionNotificationsWorkflow } from "../domains/subscription/subscriptionNotificationsWorkflow";
 import { SubscriptionPhaseService } from "../domains/subscription/subscriptionPhaseService";
-import { SubscriptionPhaseTransitionWorkflow } from "../domains/subscription/subscriptionPhaseTransitionWorkflow";
-import { SubscriptionPriceChangeWorkflow } from "../domains/subscription/subscriptionPriceChangeWorkflow";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { protect } from "../middleware/auth";
 import { getOrgId, requireUserId } from "../utils/authUtils";
@@ -424,15 +420,4 @@ export const subscriptionRouter = new Hono()
     } catch (error) {
       return handleServiceError(context, error);
     }
-  })
-  .post("/notifications/workflow", SubscriptionNotificationsWorkflow.handler)
-  .post(
-    "/cancellation-notifications/workflow",
-    SubscriptionCancellationWorkflow.handler,
-  )
-  // Legacy route kept registered for QStash runs in flight at deploy time.
-  .post("/price-change/workflow", SubscriptionPriceChangeWorkflow.handler)
-  .post(
-    "/phase-transition/workflow",
-    SubscriptionPhaseTransitionWorkflow.handler,
-  );
+  });
