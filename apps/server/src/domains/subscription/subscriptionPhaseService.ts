@@ -231,51 +231,23 @@ export class SubscriptionPhaseService {
   }
 
   /**
-   * Lazy reconciliation: apply due phases and (re)schedule any pending future
-   * boundary missing a workflow. Returns refreshed records plus their phases so
-   * callers can map DTOs without re-querying.
+   * Load the phase rows for a set of subscriptions, grouped by subscription id.
+   * Pure read — no writes, no external calls. This is what the list and detail
+   * reads use in place of the old reconciler.
    */
-  static async reconcilePhases(
-    subscriptions: SubscriptionRecord[],
+  static async loadPhasesFor(
+    ids: string[],
     deps: SubscriptionPhaseServiceDeps = defaultDeps,
-  ): Promise<{
-    subscriptions: SubscriptionRecord[];
-    phasesBySubscriptionId: Map<string, PricePhaseRecord[]>;
-  }> {
-    const ids = subscriptions.map((s) => s.id);
-    const allPhases = await deps.phaseRepository.findBySubscriptionIds(ids);
+  ): Promise<Map<string, PricePhaseRecord[]>> {
     const byId = new Map<string, PricePhaseRecord[]>();
-    for (const phase of allPhases) {
+    if (ids.length === 0) return byId;
+
+    for (const phase of await deps.phaseRepository.findBySubscriptionIds(ids)) {
       const list = byId.get(phase.subscriptionId) ?? [];
       list.push(phase);
       byId.set(phase.subscriptionId, list);
     }
-
-    const now = Date.now();
-    const refreshed: SubscriptionRecord[] = [];
-    const phasesBySubscriptionId = new Map<string, PricePhaseRecord[]>();
-
-    for (const subscription of subscriptions) {
-      let phases = byId.get(subscription.id) ?? [];
-      let currentSub = subscription;
-
-      const due = phases.filter(
-        (p) => !p.appliedAt && Date.parse(p.startsAt) <= now,
-      );
-      if (due.length > 0) {
-        await SubscriptionPhaseService.applyDuePhases(subscription.id, deps);
-        currentSub =
-          (await deps.repository.findById(subscription.id)) ?? subscription;
-        phases = await deps.phaseRepository.findBySubscriptionId(
-          subscription.id,
-        );
-      }
-
-      refreshed.push(currentSub);
-      phasesBySubscriptionId.set(subscription.id, phases);
-    }
-
-    return { subscriptions: refreshed, phasesBySubscriptionId };
+    return byId;
   }
 
   /** Cancel + delete all pending phases for a subscription (cancel/edit paths). */

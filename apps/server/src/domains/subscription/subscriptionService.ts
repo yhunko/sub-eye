@@ -56,19 +56,21 @@ export class SubscriptionService {
       deps.repository.findByUserId(userId),
       deps.userService.getUserPreferences(userId),
     ]);
-    const { subscriptions: reconciledSubscriptions, phasesBySubscriptionId } =
-      await SubscriptionPhaseService.reconcilePhases(subscriptions, deps);
 
-    const rates = await deps.currencyService.getRates(
-      preferences.preferredCurrency,
-    );
+    const [rates, phasesById] = await Promise.all([
+      deps.currencyService.getRates(preferences.preferredCurrency),
+      SubscriptionPhaseService.loadPhasesFor(
+        subscriptions.map((s) => s.id),
+        deps,
+      ),
+    ]);
 
-    const dtos = reconciledSubscriptions.map((subscription) =>
+    const dtos = subscriptions.map((subscription) =>
       SubscriptionService.mapToDto(
         subscription,
         preferences,
         rates,
-        phasesBySubscriptionId.get(subscription.id) ?? [],
+        phasesById.get(subscription.id) ?? [],
       ),
     );
 
@@ -80,25 +82,28 @@ export class SubscriptionService {
     userId: string,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    const subscription = await deps.repository.findById(id);
-
-    if (!subscription || subscription.userId !== userId) {
+    const existing = await deps.repository.findById(id);
+    if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-    const { subscriptions, phasesBySubscriptionId } =
-      await SubscriptionPhaseService.reconcilePhases([subscription], deps);
-    const [reconciledSubscription] = subscriptions;
 
+    // Lazy write-on-read, scoped to ONE subscription: if a phase boundary has
+    // passed, apply it now so the row and the timeline agree. This is the only
+    // read that may write, and only when there is genuinely something due.
+    await SubscriptionPhaseService.applyDuePhases(id, deps);
+
+    const subscription = (await deps.repository.findById(id)) ?? existing;
     const preferences = await deps.userService.getUserPreferences(userId);
-    const rates = await deps.currencyService.getRates(
-      preferences.preferredCurrency,
-    );
+    const [rates, phases] = await Promise.all([
+      deps.currencyService.getRates(preferences.preferredCurrency),
+      deps.phaseRepository.findBySubscriptionId(id),
+    ]);
 
     return SubscriptionService.mapToDto(
-      reconciledSubscription ?? subscription,
+      subscription,
       preferences,
       rates,
-      phasesBySubscriptionId.get(id) ?? [],
+      phases,
     );
   }
 
@@ -304,20 +309,14 @@ export class SubscriptionService {
 
     const withRenewalWorkflow = updated;
 
-    const { subscriptions, phasesBySubscriptionId } =
-      await SubscriptionPhaseService.reconcilePhases(
-        [withRenewalWorkflow],
-        deps,
-      );
-    const [reconciled] = subscriptions;
-
+    const phases = await deps.phaseRepository.findBySubscriptionId(id);
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
     return SubscriptionService.mapToDto(
-      reconciled ?? withRenewalWorkflow,
+      withRenewalWorkflow,
       preferences,
       rates,
-      phasesBySubscriptionId.get(id) ?? [],
+      phases,
     );
   }
 
