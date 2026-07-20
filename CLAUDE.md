@@ -57,9 +57,11 @@ bun run deploy:dev                # build + wrangler -c dev.wrangler.jsonc deplo
 - **Generated — never hand-edit:** `apps/client/src/app/routes/routeTree.gen.ts` (TanStack Router), `apps/client/src/shared/lib/i18n/**` (Paraglide). Edit source + rerun the generator.
 - Dev Plus-plan simulation: `apps/client/src/shared/lib/billing/local-plan-override.ts` (DEV only).
 
-## Notifications — read before touching
+## Pricing phases — read before touching
 
-`apps/server/CLAUDE.md` documents the QStash workflow-replay invariants and anti-spam rules (authoritative-run gating, per-user reschedule serialization). Read it before editing any notification/workflow code.
+`apps/server/CLAUDE.md` documents the pricing-phase invariants (`appliedAt` idempotency, lazy apply-on-read, `db.batch` over `db.transaction`). Read it before editing any phase or subscription-pricing code.
+
+> **v4 migration in progress.** Plan 1 deleted the server's comparator/category AI, QStash workflows, Telegram, Web Push, Paddle billing and organizations, along with `packages/{ai,notifications,scheduling}`. The **External services** and **Packages** sections above still describe the pre-v4 shape and are corrected in Plan 8, together with the removal of `apps/client`. `apps/client` does not type-check until then — that is intended.
 
 ## Quality gates by scope
 
