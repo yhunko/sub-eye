@@ -278,10 +278,8 @@ export class AnalyticsService {
     userId: string,
     deps: AnalyticsServiceDeps,
   ) {
-    const subscriptions = await deps.subscriptionService.getSubscriptions(
-      userId,
-      { status: "all" },
-    );
+    const subscriptions =
+      await deps.subscriptionService.getSubscriptions(userId);
     const metadata = await deps.userService.getUserPreferences(userId);
 
     const normalizedCurrency = CurrencyUtils.normalizeCode(

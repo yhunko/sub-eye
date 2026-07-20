@@ -10,7 +10,13 @@ export type SubscriptionSortField = (typeof subscriptionSortFields)[number];
 export const sortDirections = ["asc", "desc"] as const;
 export type SortDirection = (typeof sortDirections)[number];
 
-export const statusFilters = ["active", "cancelled", "all"] as const;
+export const statusFilters = [
+  "active",
+  "paused",
+  "cancelling",
+  "cancelled",
+  "all",
+] as const;
 export type StatusFilter = (typeof statusFilters)[number];
 
 export type GetSubscriptionsParams = {
@@ -19,6 +25,8 @@ export type GetSubscriptionsParams = {
   search?: string;
   status?: StatusFilter;
   categoryId?: string;
+  cursor?: string;
+  limit?: number;
 };
 
 export const listQuerySchema = object({
@@ -27,4 +35,11 @@ export const listQuerySchema = object({
   search: optional(string()),
   status: optional(picklist(statusFilters)),
   categoryId: optional(string()),
+  cursor: optional(string()),
+  limit: optional(string()),
 });
+
+export type SubscriptionListPageDto<TItem> = {
+  items: TItem[];
+  nextCursor: string | null;
+};

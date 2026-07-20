@@ -71,7 +71,7 @@ describe("GET /subscriptions read path", () => {
       categoryRepository: { findByUserId: async () => [] },
     };
 
-    await SubscriptionService.getSubscriptions("user_1", {}, deps as never);
+    await SubscriptionService.getSubscriptions("user_1", deps as never);
 
     // The whole point: a read must not mutate. If reconcilePhases is still on
     // this path it will call applyBoundaryBatch for the overdue phase.

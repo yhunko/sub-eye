@@ -31,11 +31,11 @@ export const subscriptionRouter = new Hono()
 
     try {
       const params = context.req.valid("query");
-      const subscriptions = await SubscriptionService.getSubscriptions(
-        userId,
-        params,
-      );
-      return context.json(subscriptions);
+      const page = await SubscriptionService.getSubscriptionsPage(userId, {
+        ...params,
+        limit: params.limit ? Number(params.limit) : undefined,
+      });
+      return context.json(page);
     } catch (error) {
       return handleServiceError(context, error);
     }

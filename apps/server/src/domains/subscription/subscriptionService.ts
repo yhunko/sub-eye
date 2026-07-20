@@ -7,7 +7,6 @@ import type {
   PauseSubscriptionInput,
   SubscriptionDto,
   SubscriptionPeriod,
-  SubscriptionStatus,
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
@@ -52,9 +51,13 @@ export const defaultDeps: SubscriptionServiceDeps = {
 };
 
 export class SubscriptionService {
+  /**
+   * The full, unfiltered mapped list. Used by analytics, which needs every
+   * subscription regardless of status. The filtered/paged list read is
+   * `getSubscriptionsPage`, which pushes filtering into SQL.
+   */
   static async getSubscriptions(
     userId: string,
-    params?: GetSubscriptionsParams,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto[]> {
     const [subscriptions, preferences] = await Promise.all([
@@ -70,7 +73,7 @@ export class SubscriptionService {
       ),
     ]);
 
-    const dtos = subscriptions.map((subscription) =>
+    return subscriptions.map((subscription) =>
       SubscriptionService.mapToDto(
         subscription,
         preferences,
@@ -78,8 +81,68 @@ export class SubscriptionService {
         phasesById.get(subscription.id) ?? [],
       ),
     );
+  }
 
-    return SubscriptionService.applyFilters(dtos, params);
+  /**
+   * Paged list read. Filtering, sorting and pagination happen in SQL; the page
+   * is then re-sorted with the converted amounts and the computed next payment
+   * dates, which SQL cannot produce. Ordering is exact within a page and
+   * approximate across pages (see `findPageByUserId`).
+   */
+  static async getSubscriptionsPage(
+    userId: string,
+    params: GetSubscriptionsParams,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<{ items: SubscriptionDto[]; nextCursor: string | null }> {
+    const search = params.search?.trim().toLowerCase();
+    const sortBy = params.sortBy ?? "nextPaymentDate";
+    const direction = params.direction ?? "asc";
+
+    const preferences = await deps.userService.getUserPreferences(userId);
+    const { rows, nextCursor } = await deps.repository.findPageByUserId({
+      userId,
+      search: search && search.length > 0 ? search : undefined,
+      status: params.status ?? "active",
+      categoryId: params.categoryId,
+      sortBy,
+      direction,
+      cursor: params.cursor,
+      limit: params.limit ?? 50,
+    });
+
+    const [rates, phasesById] = await Promise.all([
+      deps.currencyService.getRates(preferences.preferredCurrency),
+      SubscriptionPhaseService.loadPhasesFor(
+        rows.map((row) => row.id),
+        deps,
+      ),
+    ]);
+
+    const items = rows
+      .map((row) =>
+        SubscriptionService.mapToDto(
+          row,
+          preferences,
+          rates,
+          phasesById.get(row.id) ?? [],
+        ),
+      )
+      .sort((a, b) => {
+        const multiplier = direction === "asc" ? 1 : -1;
+        if (sortBy === "name") return a.name.localeCompare(b.name) * multiplier;
+        if (sortBy === "cost") {
+          return (
+            (a.billing.preferred.monthly - b.billing.preferred.monthly) *
+            multiplier
+          );
+        }
+        return (
+          (Date.parse(a.nextPaymentDate) - Date.parse(b.nextPaymentDate)) *
+          multiplier
+        );
+      });
+
+    return { items, nextCursor };
   }
 
   static async getSubscriptionById(
@@ -600,62 +663,6 @@ export class SubscriptionService {
     if (category.userId !== userId) {
       throw new SubscriptionCategoryNotFoundError();
     }
-  }
-
-  private static applyFilters(
-    dtos: SubscriptionDto[],
-    params?: GetSubscriptionsParams,
-  ): SubscriptionDto[] {
-    const search = params?.search?.trim().toLowerCase();
-    const sortBy = params?.sortBy ?? "nextPaymentDate";
-    const direction = params?.direction ?? "asc";
-    const status = params?.status ?? "active";
-
-    let filtered = dtos;
-
-    if (status !== "all") {
-      filtered = filtered.filter((dto) => {
-        if (status === "active")
-          return SubscriptionService.isActiveFilterMatch(dto.status);
-        if (status === "cancelled") {
-          return dto.status === "cancelled";
-        }
-        return true;
-      });
-    }
-
-    if (params?.categoryId) {
-      filtered = filtered.filter((dto) => dto.categoryId === params.categoryId);
-    }
-
-    if (search) {
-      filtered = filtered.filter((dto) =>
-        dto.name.toLowerCase().includes(search),
-      );
-    }
-
-    return [...filtered].sort((a, b) => {
-      const multiplier = direction === "asc" ? 1 : -1;
-
-      if (sortBy === "name") {
-        return a.name.localeCompare(b.name) * multiplier;
-      }
-
-      if (sortBy === "cost") {
-        return (
-          (a.billing.preferred.monthly - b.billing.preferred.monthly) *
-          multiplier
-        );
-      }
-
-      const aTime = Date.parse(a.nextPaymentDate);
-      const bTime = Date.parse(b.nextPaymentDate);
-      return (aTime - bTime) * multiplier;
-    });
-  }
-
-  private static isActiveFilterMatch(status: SubscriptionStatus): boolean {
-    return status === "active" || status === "cancelling";
   }
 
   private static normalizeTimestamp(
