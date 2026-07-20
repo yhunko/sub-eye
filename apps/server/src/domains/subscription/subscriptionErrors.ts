@@ -6,14 +6,6 @@ export class SubscriptionNotFoundError extends Error {
   }
 }
 
-export class SubscriptionHistoryItemNotFoundError extends Error {
-  readonly status = 404 as const;
-  constructor() {
-    super("Subscription history item not found");
-    this.name = "SubscriptionHistoryItemNotFoundError";
-  }
-}
-
 export class SubscriptionLimitReachedError extends Error {
   readonly status = 403 as const;
   constructor() {

@@ -21,15 +21,6 @@ export const subscriptionPeriodEnum = pgEnum("period", [
   SubscriptionPeriod.YEAR,
 ]);
 
-export const subscriptionActionEnum = pgEnum("subscription_action", [
-  "created",
-  "updated",
-  "cancelled",
-  "renewed",
-  "deleted",
-  "uncancelled",
-]);
-
 export const pricePhaseKindEnum = pgEnum("price_phase_kind", [
   "trial",
   "intro",
@@ -187,30 +178,6 @@ export const subscriptionsTable = pgTable(
   (t) => [
     index("subscriptions_user_id_idx").on(t.userId),
     index("subscriptions_org_id_idx").on(t.orgId),
-  ],
-);
-
-export const subscriptionHistoryTable = pgTable(
-  "subscription_history",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    subscriptionId: uuid("subscription_id").references(
-      () => subscriptionsTable.id,
-      { onDelete: "set null" },
-    ),
-    userId: text("user_id").notNull(),
-    action: subscriptionActionEnum("action").notNull(),
-    snapshot: jsonb("snapshot").notNull(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    orgId: text("org_id"),
-  },
-  (table) => [
-    index("subscription_history_subscription_user_created_at_idx").on(
-      table.subscriptionId,
-      table.userId,
-      table.createdAt,
-    ),
-    index("subscription_history_org_id_idx").on(table.orgId),
   ],
 );
 

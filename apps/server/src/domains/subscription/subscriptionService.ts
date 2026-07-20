@@ -4,13 +4,12 @@ import type {
   BulkDeleteSubscriptionsInput,
   BulkUpdateCategoryInput,
   GetSubscriptionsParams,
-  SubscriptionAction,
   SubscriptionDto,
   SubscriptionLifecycleStatus,
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
-import { getPlanById, getSubscriptionLifecycleStatus } from "@subeye/shared";
+import { getPlanById } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
@@ -21,7 +20,6 @@ import {
   SubscriptionLimitReachedError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
-import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import { SubscriptionPhaseService } from "./subscriptionPhaseService";
 import type { PricePhaseRecord } from "./subscriptionPricePhaseRepository";
@@ -37,12 +35,7 @@ export type SubscriptionServiceDeps = {
   phaseRepository: typeof SubscriptionPricePhaseRepository;
   currencyService: typeof CurrencyService;
   userService: typeof UserService;
-  historyService: typeof SubscriptionHistoryService;
   categoryRepository: typeof CategoryRepository;
-};
-
-type UpdateSubscriptionOptions = {
-  trackHistory?: boolean;
 };
 
 type CancellationMode = "periodEnd" | "immediate";
@@ -52,7 +45,6 @@ export const defaultDeps: SubscriptionServiceDeps = {
   phaseRepository: SubscriptionPricePhaseRepository,
   currencyService: CurrencyService,
   userService: UserService,
-  historyService: SubscriptionHistoryService,
   categoryRepository: CategoryRepository,
 };
 
@@ -161,17 +153,6 @@ export class SubscriptionService {
 
     const dto = SubscriptionService.mapToDto(result, preferences, rates, []);
 
-    await SubscriptionService.logHistoryAction(
-      {
-        subscriptionId: dto.id,
-        userId,
-        orgId: effectiveOrgId,
-        action: "created",
-        snapshot: dto,
-      },
-      deps,
-    );
-
     // Start the subscription on its trial / intro offer (the standard price is
     // the cost just created). Returns the DTO with the resulting price phases.
     if (intro) {
@@ -211,7 +192,6 @@ export class SubscriptionService {
     id: string,
     userId: string,
     payload: UpdateSubscriptionInput,
-    options: UpdateSubscriptionOptions = {},
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
     const existing = await deps.repository.findById(id);
@@ -226,8 +206,6 @@ export class SubscriptionService {
       payload.categoryId,
       deps,
     );
-
-    const phasesBefore = await deps.phaseRepository.findBySubscriptionId(id);
 
     // A direct price/currency edit supersedes any pending pricing schedule.
     if (SubscriptionService.isDirectPriceChange(existing, payload)) {
@@ -245,37 +223,14 @@ export class SubscriptionService {
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
 
-    const previousDto = SubscriptionService.mapToDto(
-      existing,
-      preferences,
-      rates,
-      phasesBefore,
-    );
     const phasesAfter = await deps.phaseRepository.findBySubscriptionId(id);
-    const dto = SubscriptionService.mapToDto(
+
+    return SubscriptionService.mapToDto(
       result,
       preferences,
       rates,
       phasesAfter,
     );
-
-    if (options.trackHistory !== false) {
-      await SubscriptionService.logHistoryAction(
-        {
-          subscriptionId: dto.id,
-          userId,
-          orgId: existing.orgId,
-          action: "updated",
-          snapshot: {
-            before: previousDto,
-            after: dto,
-          },
-        },
-        deps,
-      );
-    }
-
-    return dto;
   }
 
   static async deleteSubscription(
@@ -290,37 +245,6 @@ export class SubscriptionService {
     }
 
     await SubscriptionPhaseService.clearPendingPhases(id, deps);
-
-    let historySnapshot: unknown = existing;
-
-    try {
-      const { preferences, rates } =
-        await SubscriptionService.getPreferencesAndRates(userId, deps);
-      const phases = await deps.phaseRepository.findBySubscriptionId(id);
-      historySnapshot = SubscriptionService.mapToDto(
-        existing,
-        preferences,
-        rates,
-        phases,
-      );
-    } catch (error) {
-      console.error("Failed to prepare delete history snapshot", {
-        subscriptionId: id,
-        userId,
-        error,
-      });
-    }
-
-    await SubscriptionService.logHistoryAction(
-      {
-        subscriptionId: id,
-        userId,
-        orgId: existing.orgId,
-        action: "deleted",
-        snapshot: historySnapshot,
-      },
-      deps,
-    );
 
     await deps.repository.delete(id);
   }
@@ -381,25 +305,12 @@ export class SubscriptionService {
       await SubscriptionService.getPreferencesAndRates(userId, deps);
     const phases = await deps.phaseRepository.findBySubscriptionId(id);
 
-    const dto = SubscriptionService.mapToDto(
+    return SubscriptionService.mapToDto(
       finalRecord,
       preferences,
       rates,
       phases,
     );
-
-    await SubscriptionService.logHistoryAction(
-      {
-        subscriptionId: dto.id,
-        userId,
-        orgId: existing.orgId,
-        action: "cancelled",
-        snapshot: dto,
-      },
-      deps,
-    );
-
-    return dto;
   }
 
   /** Resume a cancelling/cancelled subscription (clears the cancellation). */
@@ -413,13 +324,6 @@ export class SubscriptionService {
     if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-
-    const wasFullyCancelled =
-      getSubscriptionLifecycleStatus({
-        willBeCancelledAt: SubscriptionService.normalizeDate(
-          existing.willBeCancelledAt,
-        ),
-      }) === "cancelled";
 
     const updated = await deps.repository.update(id, {
       willBeCancelledAt: null,
@@ -438,25 +342,12 @@ export class SubscriptionService {
 
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
-    const dto = SubscriptionService.mapToDto(
+    return SubscriptionService.mapToDto(
       reconciled ?? withRenewalWorkflow,
       preferences,
       rates,
       phasesBySubscriptionId.get(id) ?? [],
     );
-
-    await SubscriptionService.logHistoryAction(
-      {
-        subscriptionId: dto.id,
-        userId,
-        orgId: existing.orgId,
-        action: wasFullyCancelled ? "renewed" : "uncancelled",
-        snapshot: dto,
-      },
-      deps,
-    );
-
-    return dto;
   }
 
   static async deleteAllForUser(
@@ -498,46 +389,6 @@ export class SubscriptionService {
         if (sub) {
           await SubscriptionPhaseService.clearPendingPhases(sub.id, deps);
         }
-      }),
-    );
-
-    let prefsAndRates: Awaited<
-      ReturnType<typeof this.getPreferencesAndRates>
-    > | null = null;
-    try {
-      prefsAndRates = await SubscriptionService.getPreferencesAndRates(
-        userId,
-        deps,
-      );
-    } catch (error) {
-      console.error("Failed to prepare delete history snapshots", {
-        userId,
-        error,
-      });
-    }
-
-    await Promise.all(
-      userSubscriptionIds.map(async (id) => {
-        const sub = subscriptions.find((s) => s.id === id);
-        const historySnapshot =
-          sub && prefsAndRates
-            ? SubscriptionService.mapToDto(
-                sub,
-                prefsAndRates.preferences,
-                prefsAndRates.rates,
-              )
-            : null;
-
-        await SubscriptionService.logHistoryAction(
-          {
-            subscriptionId: id,
-            userId,
-            orgId: sub?.orgId,
-            action: "deleted",
-            snapshot: historySnapshot,
-          },
-          deps,
-        );
       }),
     );
 
@@ -708,50 +559,6 @@ export class SubscriptionService {
     }
   }
 
-  static async logHistoryAction(
-    {
-      subscriptionId,
-      userId,
-      orgId,
-      action,
-      snapshot,
-    }: {
-      subscriptionId: string | null;
-      userId: string;
-      orgId: string | null | undefined;
-      action: SubscriptionAction;
-      snapshot: unknown;
-    },
-    deps: SubscriptionServiceDeps,
-  ): Promise<void> {
-    try {
-      const preparedSnapshot =
-        action === "updated" &&
-        !SubscriptionService.isUpdateDiffSnapshot(snapshot)
-          ? { before: null, after: snapshot }
-          : snapshot;
-
-      await deps.historyService.logAction(
-        subscriptionId,
-        userId,
-        action,
-        preparedSnapshot,
-        orgId ?? null,
-      );
-    } catch (error) {
-      console.error("Failed to log subscription history", {
-        subscriptionId,
-        userId,
-        action,
-        error,
-      });
-
-      if (process.env.NODE_ENV !== "production") {
-        throw error;
-      }
-    }
-  }
-
   private static applyFilters(
     dtos: SubscriptionDto[],
     params?: GetSubscriptionsParams,
@@ -829,16 +636,6 @@ export class SubscriptionService {
     return value instanceof Date
       ? value.toISOString()
       : new Date(value).toISOString();
-  }
-
-  private static isUpdateDiffSnapshot(
-    snapshot: unknown,
-  ): snapshot is { before: unknown; after: unknown } {
-    if (!snapshot || typeof snapshot !== "object") {
-      return false;
-    }
-
-    return "before" in snapshot && "after" in snapshot;
   }
 
   private static isDirectPriceChange(

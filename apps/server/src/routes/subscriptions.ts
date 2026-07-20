@@ -10,21 +10,14 @@ import {
   SchedulePriceChangeSchema,
   StartTrialSchema,
   UpdateSubscriptionSchema,
-  updateSubscriptionQuerySchema,
 } from "@subeye/shared";
 import { Hono } from "hono";
 import { object, string } from "valibot";
-import { SubscriptionHistoryService } from "../domains/subscription/subscriptionHistoryService";
 import { SubscriptionPhaseService } from "../domains/subscription/subscriptionPhaseService";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { protect } from "../middleware/auth";
 import { getOrgId, requireUserId } from "../utils/authUtils";
 import { handleServiceError } from "../utils/routeUtils";
-
-const historyIdParamSchema = object({
-  id: string(),
-  historyId: string(),
-});
 
 const phaseIdParamSchema = object({
   id: string(),
@@ -98,47 +91,6 @@ export const subscriptionRouter = new Hono()
       return handleServiceError(context, error);
     }
   })
-  .get(
-    "/:id/history",
-    protect,
-    vValidator("param", idQuerySchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id } = context.req.valid("param");
-        const historyData =
-          await SubscriptionHistoryService.getHistoryForSubscription(
-            id,
-            userId,
-          );
-        return context.json(historyData);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .delete(
-    "/:id/history/:historyId",
-    protect,
-    vValidator("param", historyIdParamSchema),
-    async (context) => {
-      const userId = requireUserId(context);
-
-      try {
-        const { id, historyId } = context.req.valid("param");
-        await SubscriptionHistoryService.deleteHistoryItem({
-          subscriptionId: id,
-          historyId,
-          userId,
-        });
-
-        return context.json({ success: true });
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
   .post(
     "/",
     protect,
@@ -164,22 +116,17 @@ export const subscriptionRouter = new Hono()
     "/:id",
     protect,
     vValidator("param", idQuerySchema),
-    vValidator("query", updateSubscriptionQuerySchema),
     vValidator("json", UpdateSubscriptionSchema),
     async (context) => {
       const userId = requireUserId(context);
 
       try {
         const { id } = context.req.valid("param");
-        const query = context.req.valid("query");
         const payload = context.req.valid("json");
         const subscription = await SubscriptionService.updateSubscription(
           id,
           userId,
           payload,
-          {
-            trackHistory: query.trackHistory !== "false",
-          },
         );
         return context.json(subscription);
       } catch (error) {

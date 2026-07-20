@@ -40,7 +40,6 @@ type Call = { args: unknown[] };
 function buildDeps() {
   const updateCalls: Call[] = [];
   const insertManyCalls: Call[] = [];
-  const historyCalls: Call[] = [];
 
   const deps = {
     repository: {
@@ -74,19 +73,14 @@ function buildDeps() {
     userService: {
       getUserPreferences: async () => preferences,
     },
-    historyService: {
-      logAction: async (...args: unknown[]) => {
-        historyCalls.push({ args });
-      },
-    },
   };
 
-  return { deps, updateCalls, insertManyCalls, historyCalls };
+  return { deps, updateCalls, insertManyCalls };
 }
 
 describe("SubscriptionPhaseService.startTrial", () => {
   it("sets the trial price now and lays down two phases", async () => {
-    const { deps, updateCalls, insertManyCalls, historyCalls } = buildDeps();
+    const { deps, updateCalls, insertManyCalls } = buildDeps();
 
     const endsAt = new Date(Date.now() + 60 * 86_400_000).toISOString();
 
@@ -124,14 +118,5 @@ describe("SubscriptionPhaseService.startTrial", () => {
     expect(rows[1]?.kind).toBe("standard");
     expect(rows[1]?.cost).toBe("12.00");
     expect(rows[1]?.appliedAt).toBeNull();
-
-    // History logs the change with the trial-started discriminator.
-    const trialHistory = historyCalls.find(
-      (call) =>
-        (call.args[3] as { change?: { type?: string } })?.change?.type ===
-        "trialStarted",
-    );
-    expect(trialHistory).toBeDefined();
-    expect(trialHistory?.args[2]).toBe("updated");
   });
 });

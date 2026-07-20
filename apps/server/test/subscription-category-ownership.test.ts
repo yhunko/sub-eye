@@ -46,7 +46,6 @@ describe("SubscriptionService category ownership validation", () => {
         "sub_1",
         "user_1",
         { categoryId: "cat_missing" },
-        {},
         {
           repository: {
             findById: async () => ({

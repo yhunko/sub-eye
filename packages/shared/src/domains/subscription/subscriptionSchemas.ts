@@ -46,13 +46,6 @@ export const idQuerySchema = object({
 });
 export type IdParam = InferOutput<typeof idQuerySchema>;
 
-export const updateSubscriptionQuerySchema = object({
-  trackHistory: optional(picklist(["true", "false"])),
-});
-export type UpdateSubscriptionQuery = InferOutput<
-  typeof updateSubscriptionQuerySchema
->;
-
 /**
  * Optional "starting offer" set up at creation time: begin the subscription on
  * a free trial or an intro discount. `cost` on the parent payload is the

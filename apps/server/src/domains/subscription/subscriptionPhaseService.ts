@@ -11,7 +11,6 @@ import type {
   PricePhaseKind,
   SchedulePriceChangeInput,
   StartTrialInput,
-  SubscriptionAction,
   SubscriptionDto,
   UserPreferences,
 } from "@subeye/shared";
@@ -29,7 +28,6 @@ import {
   ScheduledDateMustBeFutureError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
-import { SubscriptionHistoryService } from "./subscriptionHistoryService";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import type {
   PricePhaseRecord,
@@ -44,17 +42,13 @@ export type SubscriptionPhaseServiceDeps = {
   phaseRepository: typeof SubscriptionPricePhaseRepository;
   currencyService: typeof CurrencyService;
   userService: typeof UserService;
-  historyService: typeof SubscriptionHistoryService;
 };
-
-type HistoryChange = Record<string, unknown>;
 
 const defaultDeps: SubscriptionPhaseServiceDeps = {
   repository: SubscriptionRepository,
   phaseRepository: PhaseRepository,
   currencyService: CurrencyService,
   userService: UserService,
-  historyService: SubscriptionHistoryService,
 };
 
 export class SubscriptionPhaseService {
@@ -121,15 +115,8 @@ export class SubscriptionPhaseService {
       deps,
     );
 
-    const { preferences, rates } =
+    const { preferences } =
       await SubscriptionPhaseService.getPreferencesAndRates(userId, deps);
-    const beforeDto = await SubscriptionPhaseService.toCurrentDto(
-      existing,
-      preferences,
-      rates,
-      deps,
-    );
-
     const effectiveAt = resolveScheduledEffectiveAt(
       existing,
       payload,
@@ -156,10 +143,7 @@ export class SubscriptionPhaseService {
       },
     ]);
 
-    return SubscriptionPhaseService.reloadDto(id, userId, deps, {
-      before: beforeDto,
-      change: { type: "priceChangeScheduled", mode: payload.mode },
-    });
+    return SubscriptionPhaseService.reloadDto(id, userId, deps);
   }
 
   /** Remove a pending phase (e.g. an upcoming scheduled change) before it fires. */
@@ -182,21 +166,11 @@ export class SubscriptionPhaseService {
       throw new PhaseAlreadyAppliedError();
     }
 
-    const { preferences, rates } =
+    const { preferences } =
       await SubscriptionPhaseService.getPreferencesAndRates(userId, deps);
-    const beforeDto = await SubscriptionPhaseService.toCurrentDto(
-      existing,
-      preferences,
-      rates,
-      deps,
-    );
-
     await deps.phaseRepository.deleteById(phaseId);
 
-    return SubscriptionPhaseService.reloadDto(id, userId, deps, {
-      before: beforeDto,
-      change: { type: "phaseCancelled", phaseId, kind: phase.kind },
-    });
+    return SubscriptionPhaseService.reloadDto(id, userId, deps);
   }
 
   /** Apply a pending phase immediately (e.g. "end trial now", "apply now"). */
@@ -223,7 +197,7 @@ export class SubscriptionPhaseService {
 
     const { preferences, rates } =
       await SubscriptionPhaseService.getPreferencesAndRates(userId, deps);
-    return SubscriptionPhaseService.reloadDto(id, userId, deps, null, {
+    return SubscriptionPhaseService.reloadDto(id, userId, deps, {
       preferences,
       rates,
     });
@@ -337,14 +311,8 @@ export class SubscriptionPhaseService {
       deps,
     );
 
-    const { preferences, rates } =
+    const { preferences } =
       await SubscriptionPhaseService.getPreferencesAndRates(userId, deps);
-    const beforeDto = await SubscriptionPhaseService.toCurrentDto(
-      existing,
-      preferences,
-      rates,
-      deps,
-    );
 
     const endsAt = toStartOfDayInTimezone(
       args.endsAt,
@@ -391,10 +359,7 @@ export class SubscriptionPhaseService {
       },
     ]);
 
-    return SubscriptionPhaseService.reloadDto(id, userId, deps, {
-      before: beforeDto,
-      change: { type: args.changeType },
-    });
+    return SubscriptionPhaseService.reloadDto(id, userId, deps);
   }
 
   private static async applyPhase(
@@ -402,18 +367,6 @@ export class SubscriptionPhaseService {
     phase: PricePhaseRecord,
     deps: SubscriptionPhaseServiceDeps,
   ): Promise<void> {
-    const { preferences, rates } =
-      await SubscriptionPhaseService.getPreferencesAndRates(
-        subscription.userId,
-        deps,
-      );
-    const beforeDto = await SubscriptionPhaseService.toCurrentDto(
-      subscription,
-      preferences,
-      rates,
-      deps,
-    );
-
     const appliedAt = new Date().toISOString();
     await deps.phaseRepository.applyBoundaryBatch({
       subscriptionId: subscription.id,
@@ -422,29 +375,6 @@ export class SubscriptionPhaseService {
       phaseId: phase.id,
       appliedAt,
     });
-
-    const updatedSub = await deps.repository.findById(subscription.id);
-    const afterDto = await SubscriptionPhaseService.toCurrentDto(
-      updatedSub ?? subscription,
-      preferences,
-      rates,
-      deps,
-    );
-
-    await SubscriptionPhaseService.logHistoryAction(
-      {
-        subscriptionId: subscription.id,
-        userId: subscription.userId,
-        orgId: subscription.orgId,
-        action: "updated",
-        snapshot: {
-          before: beforeDto,
-          after: afterDto,
-          change: { type: "phaseApplied", phaseId: phase.id, kind: phase.kind },
-        },
-      },
-      deps,
-    );
   }
 
   private static async requireSubscription(
@@ -511,7 +441,6 @@ export class SubscriptionPhaseService {
     id: string,
     userId: string,
     deps: SubscriptionPhaseServiceDeps,
-    history: { before: SubscriptionDto; change: HistoryChange } | null,
     prefetched?: {
       preferences: UserPreferences;
       rates: Record<string, number>;
@@ -525,31 +454,12 @@ export class SubscriptionPhaseService {
       throw new SubscriptionNotFoundError();
     }
     const phases = await deps.phaseRepository.findBySubscriptionId(id);
-    const dto = SubscriptionPhaseService.mapToDto(
+    return SubscriptionPhaseService.mapToDto(
       subscription,
       phases,
       preferences,
       rates,
     );
-
-    if (history) {
-      await SubscriptionPhaseService.logHistoryAction(
-        {
-          subscriptionId: dto.id,
-          userId,
-          orgId: subscription.orgId,
-          action: "updated",
-          snapshot: {
-            before: history.before,
-            after: dto,
-            change: history.change,
-          },
-        },
-        deps,
-      );
-    }
-
-    return dto;
   }
 
   private static async getPreferencesAndRates(
@@ -561,41 +471,6 @@ export class SubscriptionPhaseService {
       preferences.preferredCurrency,
     );
     return { preferences, rates };
-  }
-
-  private static async logHistoryAction(
-    {
-      subscriptionId,
-      userId,
-      orgId,
-      action,
-      snapshot,
-    }: {
-      subscriptionId: string | null;
-      userId: string;
-      orgId: string | null | undefined;
-      action: SubscriptionAction;
-      snapshot: unknown;
-    },
-    deps: SubscriptionPhaseServiceDeps,
-  ): Promise<void> {
-    try {
-      await deps.historyService.logAction(
-        subscriptionId,
-        userId,
-        action,
-        snapshot,
-        orgId ?? null,
-      );
-    } catch (error) {
-      console.error("Failed to log subscription history", {
-        subscriptionId,
-        userId,
-        action,
-        error,
-      });
-      if (process.env.NODE_ENV !== "production") throw error;
-    }
   }
 
   private static assertPhaseWindow(
