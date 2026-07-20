@@ -11,6 +11,7 @@
     "@hono/valibot-validator": "^0.6.1",
     "@neondatabase/serverless": "^1.0.2",
     "@subeye/currency": "workspace:*",
+    "@subeye/pricing": "workspace:*",
     "@subeye/shared": "workspace:*",
     "@subeye/spend": "workspace:*",
     "date-fns": "^4.1.0",

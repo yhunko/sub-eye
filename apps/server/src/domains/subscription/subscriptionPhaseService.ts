@@ -1,3 +1,4 @@
+import { getUpcomingPhase } from "@subeye/pricing";
 import type {
   AddIntroDiscountInput,
   PricePhaseDto,
@@ -11,7 +12,6 @@ import type {
 import {
   DateTimezoneUtils,
   getSubscriptionLifecycleStatus,
-  getUpcomingPhase,
   RecurrenceUtils,
 } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
