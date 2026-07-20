@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { clerkWebhookRouter } from "./clerk";
-import { paddleWebhookRouter } from "./paddle";
 import { telegramWebhookRouter } from "./telegram";
 
 /**
@@ -16,5 +15,4 @@ import { telegramWebhookRouter } from "./telegram";
 export const webhookRouter = new Hono();
 
 webhookRouter.route("/clerk", clerkWebhookRouter);
-webhookRouter.route("/paddle", paddleWebhookRouter);
 webhookRouter.route("/telegram", telegramWebhookRouter);

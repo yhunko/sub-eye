@@ -1,4 +1,3 @@
-import { BillingAccountRepository } from "../billing/paddle/billingAccountRepository";
 import { CategoryService } from "../category/categoryService";
 import { ComparatorRepository } from "../comparator/comparatorRepository";
 import { PushNotificationService } from "../push-notification/pushNotificationService";
@@ -11,7 +10,6 @@ export type CleanupDomain =
   | "categories"
   | "push_notifications"
   | "telegram_notifications"
-  | "billing_accounts"
   | "comparator"
   | "subscription_history";
 
@@ -39,7 +37,6 @@ export async function cleanupUserData(
     CategoryService.deleteAllForUser(userId),
     PushNotificationService.deleteAllForUser(userId),
     TelegramNotificationService.deleteAllForUser(userId),
-    BillingAccountRepository.deleteByUserId(userId),
     ComparatorRepository.deleteAllForUser(userId),
     SubscriptionHistoryRepository.deleteByUserId(userId),
   ]);
@@ -49,7 +46,6 @@ export async function cleanupUserData(
     "categories",
     "push_notifications",
     "telegram_notifications",
-    "billing_accounts",
     "comparator",
     "subscription_history",
   ];

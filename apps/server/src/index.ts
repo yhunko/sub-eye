@@ -3,7 +3,6 @@ import { cors } from "hono/cors";
 import type { Bindings } from "./env";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
-import { billingRouter } from "./routes/billing";
 import { categoryRouter } from "./routes/categories";
 import { comparatorRouter } from "./routes/comparator";
 import { devRouter } from "./routes/dev";
@@ -38,7 +37,6 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .route("/categories", categoryRouter)
   .route("/analytics", analyticsRouter)
   .route("/comparator", comparatorRouter)
-  .route("/billing", billingRouter)
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)
   .route("/telegram-notifications", telegramNotificationRouter)
