@@ -22,8 +22,10 @@ export function setTokenGetter(getter: TokenGetter): void {
 // @subeye/server/client is a TYPES-ONLY build — it exports ServerRpcType, not a
 // runtime factory.
 //
-// The server sets .basePath("/api") and has no version segment, so the base URL
-// is env.API_URL + "/api".
-export const apiClient = hc<ServerRpcType>(`${env.API_URL}/api`, {
+// The server's .basePath("/api") is reflected by Hono RPC as the `.api` accessor
+// at call sites (apiClient.api.analytics.…), so the base URL is the bare origin.
+// Appending "/api" here would double the prefix and every request would 404 at
+// /api/api/….
+export const apiClient = hc<ServerRpcType>(env.API_URL, {
   fetch: createAuthFetch({ getToken: () => getToken() }),
 });

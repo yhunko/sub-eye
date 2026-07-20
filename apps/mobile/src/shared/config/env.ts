@@ -9,9 +9,9 @@ function required(name: string, value: string | undefined): string {
 }
 
 export const env = {
-  // Origin of the SubEye Worker, WITHOUT a trailing slash and WITHOUT /api —
-  // shared/api/client.ts appends `/api` (the server's basePath; there is no
-  // version segment).
+  // Origin of the SubEye Worker, WITHOUT a trailing slash and WITHOUT /api — the
+  // server's basePath("/api") rides on the Hono RPC `.api` accessor, so
+  // shared/api/client.ts passes this origin to `hc` verbatim.
   API_URL: required("EXPO_PUBLIC_API_URL", process.env.EXPO_PUBLIC_API_URL),
   CLERK_PUBLISHABLE_KEY: required(
     "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
