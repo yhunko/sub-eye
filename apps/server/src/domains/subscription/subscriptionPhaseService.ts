@@ -1,6 +1,5 @@
 import {
   buildPhaseProjection,
-  getUpcomingPhase,
   normalizeAmount,
   normalizeIsoDate,
   resolveScheduledEffectiveAt,
@@ -9,7 +8,6 @@ import {
 } from "@subeye/pricing";
 import type {
   AddIntroDiscountInput,
-  PricePhaseDto,
   PricePhaseKind,
   SchedulePriceChangeInput,
   StartTrialInput,
@@ -32,7 +30,6 @@ import {
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
 import { SubscriptionHistoryService } from "./subscriptionHistoryService";
-import type { SubscriptionPhaseProjection } from "./subscriptionMapper";
 import { SubscriptionMapper } from "./subscriptionMapper";
 import type {
   PricePhaseRecord,
