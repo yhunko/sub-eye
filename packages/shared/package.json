@@ -13,6 +13,7 @@
   },
   "scripts": {
     "lint": "biome check .",
+    "test": "bun test ./test",
     "type-check": "tsc --noEmit --pretty"
   }
 }

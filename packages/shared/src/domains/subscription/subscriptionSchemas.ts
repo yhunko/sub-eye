@@ -46,6 +46,15 @@ const isoDateSchema = pipe(
   check((value) => !Number.isNaN(Date.parse(value)), "Invalid date"),
 );
 
+/** An ISO date that must still be ahead of us. Enforced on both clients. */
+const futureIsoDateSchema = pipe(
+  isoDateSchema,
+  check(
+    (value) => Date.parse(value) > Date.now(),
+    "Date must be in the future",
+  ),
+);
+
 export const idQuerySchema = object({
   id: string(),
 });
@@ -57,11 +66,19 @@ export type IdParam = InferOutput<typeof idQuerySchema>;
  * standard price the offer reverts to; `promoCost` is the price paid until
  * `endsAt` (0 for a free trial).
  */
-export const addSubscriptionIntroSchema = strictObject({
-  kind: picklist(["trial", "intro"] as const),
-  promoCost: pipe(number(), minValue(0)),
-  endsAt: isoDateSchema,
-});
+export const addSubscriptionIntroSchema = pipe(
+  strictObject({
+    kind: picklist(["trial", "intro"] as const),
+    promoCost: pipe(number(), minValue(0)),
+    endsAt: futureIsoDateSchema,
+  }),
+  // A "discount" of zero is a free trial. Forcing the distinction keeps the
+  // timeline honest about what the user actually signed up for.
+  check(
+    (value) => value.kind !== "intro" || value.promoCost > 0,
+    "An intro discount must cost more than zero",
+  ),
+);
 
 export const AddSubscriptionSchema = strictObject({
   name: pipe(
@@ -165,14 +182,14 @@ export const StartPhaseSchema = variant("kind", [
     kind: literal("trial"),
     promoCost: pipe(number(), minValue(0)),
     currency: optional(currencyCodeSchema),
-    endsAt: isoDateSchema,
+    endsAt: futureIsoDateSchema,
     standardCost: positiveCostSchema,
   }),
   strictObject({
     kind: literal("intro"),
     promoCost: positiveCostSchema,
     currency: optional(currencyCodeSchema),
-    endsAt: isoDateSchema,
+    endsAt: futureIsoDateSchema,
     standardCost: positiveCostSchema,
   }),
   strictObject({
