@@ -47,25 +47,32 @@ const phaseChangePayloadSchema = object({
   kind: picklist(["trial", "intro", "scheduledChange", "standard"]),
 });
 
-const isLocalDevRequest = (requestUrlString: string) => {
-  if (process.env.NODE_ENV === "development") {
-    return true;
-  }
+/**
+ * The endpoints below send REAL web-push and Telegram messages. They must be
+ * unreachable in production.
+ *
+ * The previous guard sniffed `context.req.url`'s hostname for "localhost".
+ * In a Cloudflare Worker that URL is reconstructed from the client-supplied
+ * `Host` header, so `Host: localhost` against production defeated it. Gate on
+ * an explicit binding instead.
+ *
+ * `context.env` is the bindings object under Wrangler. Local dev runs plain
+ * Bun (`bun --watch run src/index.ts`), where `context.env` is Bun's Server
+ * object, so fall back to `process.env` — read per request, never at module
+ * scope, because Worker module scope has no env.
+ */
+export const devRoutesEnabled = (env: unknown): boolean => {
+  const bindings = env as Record<string, unknown> | null | undefined;
 
-  const requestUrl = new URL(requestUrlString);
-  if (
-    requestUrl.hostname === "localhost" ||
-    requestUrl.hostname === "127.0.0.1"
-  ) {
-    return true;
-  }
-
-  return false;
+  return (
+    bindings?.ENABLE_DEV_ROUTES === "true" ||
+    process.env.ENABLE_DEV_ROUTES === "true"
+  );
 };
 
 export const devRouter = new Hono()
   .use("*", async (context, next) => {
-    if (!isLocalDevRequest(context.req.url)) {
+    if (!devRoutesEnabled(context.env)) {
       return context.json({ error: "Not Found" }, 404 as const);
     }
 

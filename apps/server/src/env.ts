@@ -38,6 +38,13 @@ export const BindingsSchema = v.object({
   VAPID_SUBJECT: v.pipe(v.string(), v.minLength(1)),
   VAPID_PUBLIC_KEY: v.pipe(v.string(), v.minLength(1)),
   VAPID_PRIVATE_KEY: v.pipe(v.string(), v.minLength(1)),
+  /**
+   * Opt-in flag for /api/dev/*. Set to the exact string "true" in
+   * dev.wrangler.jsonc only. Optional and ABSENT in production — its absence
+   * is what keeps the notification test endpoints unreachable there, so
+   * `bun run check-env` must not require it.
+   */
+  ENABLE_DEV_ROUTES: v.optional(v.string()),
 });
 
 /** Derived from BindingsSchema — keeps the type and schema in sync automatically. */

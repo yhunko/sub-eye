@@ -163,8 +163,19 @@ and never throw. They return a report even on partial failure.
 
 ## Dev testing — bypass QStash to test immediately
 
-These endpoints exist for local testing only. They are guarded by a request-time
-check (URL hostname + `NODE_ENV`) — they 404 in deployed builds.
+These endpoints send REAL web-push and Telegram messages. They are gated on the
+`ENABLE_DEV_ROUTES` binding (`devRoutesEnabled` in `src/routes/dev.ts`) and
+return 404 unless it equals the exact string `"true"`. The var is set in
+`dev.wrangler.jsonc` and in `apps/server/.env`; it is deliberately ABSENT from
+`prod.wrangler.jsonc`. Never add it there.
+
+The previous guard sniffed the request hostname for `localhost`. That value comes
+from the client-supplied `Host` header in a Worker and was trivially spoofable.
+Do not reintroduce hostname-based gating anywhere in this codebase.
+
+Because `bun test` auto-loads `apps/server/.env`, any test asserting the gate is
+closed must clear `process.env.ENABLE_DEV_ROUTES` itself — see
+`test/dev-routes-env-gate.test.ts`.
 
 ```
 POST /api/dev/notifications/test-renewal
