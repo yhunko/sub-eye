@@ -312,32 +312,3 @@ export const comparatorAiCacheTable = pgTable(
     ),
   ],
 );
-
-export const orgBillingAccountsTable = pgTable(
-  "org_billing_accounts",
-  {
-    orgId: text("org_id").primaryKey(),
-    adminUserId: text("admin_user_id").notNull(),
-    paddleCustomerId: text("paddle_customer_id"),
-    paddleSubscriptionId: text("paddle_subscription_id"),
-    paddleSubscriptionStatus: text("paddle_subscription_status"),
-    paddlePriceId: text("paddle_price_id"),
-    paddleCurrentPeriodEnd: timestamp("paddle_current_period_end", {
-      withTimezone: true,
-      mode: "string",
-    }),
-    lastEventOccurredAt: timestamp("last_event_occurred_at", {
-      withTimezone: true,
-      mode: "string",
-    }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (t) => [
-    uniqueIndex("org_billing_paddle_customer_id_idx").on(t.paddleCustomerId),
-    uniqueIndex("org_billing_paddle_subscription_id_idx").on(
-      t.paddleSubscriptionId,
-    ),
-    index("org_billing_admin_user_id_idx").on(t.adminUserId),
-  ],
-);
