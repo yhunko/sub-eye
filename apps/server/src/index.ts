@@ -6,7 +6,6 @@ import { analyticsRouter } from "./routes/analytics";
 import { categoryRouter } from "./routes/categories";
 import { pushNotificationRouter } from "./routes/push-notifications";
 import { subscriptionRouter } from "./routes/subscriptions";
-import { telegramNotificationRouter } from "./routes/telegram-notifications";
 import { userRouter } from "./routes/user";
 import { webhookRouter } from "./routes/webhooks";
 import {
@@ -36,7 +35,6 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .route("/analytics", analyticsRouter)
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)
-  .route("/telegram-notifications", telegramNotificationRouter)
   .route("/user", userRouter)
   .onError((err, ctx) => {
     console.error("[Unhandled Error]", err);

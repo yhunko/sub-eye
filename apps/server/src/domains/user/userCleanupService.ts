@@ -2,13 +2,11 @@ import { CategoryService } from "../category/categoryService";
 import { PushNotificationService } from "../push-notification/pushNotificationService";
 import { SubscriptionHistoryRepository } from "../subscription/subscriptionHistoryRepository";
 import { SubscriptionService } from "../subscription/subscriptionService";
-import { TelegramNotificationService } from "../telegram-notification/telegramNotificationService";
 
 export type CleanupDomain =
   | "subscriptions"
   | "categories"
   | "push_notifications"
-  | "telegram_notifications"
   | "subscription_history";
 
 export type CleanupResult = {
@@ -34,7 +32,6 @@ export async function cleanupUserData(
     SubscriptionService.deleteAllForUser(userId),
     CategoryService.deleteAllForUser(userId),
     PushNotificationService.deleteAllForUser(userId),
-    TelegramNotificationService.deleteAllForUser(userId),
     SubscriptionHistoryRepository.deleteByUserId(userId),
   ]);
 
@@ -42,7 +39,6 @@ export async function cleanupUserData(
     "subscriptions",
     "categories",
     "push_notifications",
-    "telegram_notifications",
     "subscription_history",
   ];
 
