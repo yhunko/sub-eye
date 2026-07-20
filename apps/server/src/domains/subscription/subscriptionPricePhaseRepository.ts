@@ -133,7 +133,6 @@ export class SubscriptionPricePhaseRepository {
         .update(subscriptionPricePhasesTable)
         .set({
           appliedAt: args.appliedAt,
-          qstashMessageId: null,
           updatedAt: new Date(),
         })
         .where(eq(subscriptionPricePhasesTable.id, args.phaseId)),

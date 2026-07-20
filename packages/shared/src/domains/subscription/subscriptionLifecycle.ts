@@ -1,3 +1,5 @@
+import type { SubscriptionStatus } from "./subscriptionStatus";
+
 export const subscriptionLifecycleStatuses = [
   "active",
   "cancelledButActive",
@@ -47,9 +49,14 @@ export const getSubscriptionLifecycleStatus = (
   return "cancelled";
 };
 
+/**
+ * Is the subscription still billing right now? `cancelling` still is — it keeps
+ * access until the paid period ends. `paused` is not: occurrences inside a
+ * pause window contribute nothing to spend.
+ */
 export const isCurrentlyActiveSubscription = (
-  status: SubscriptionLifecycleStatus,
-): boolean => status === "active" || status === "cancelledButActive";
+  status: SubscriptionStatus,
+): boolean => status === "active" || status === "cancelling";
 
 export const shouldIncludeOccurrence = (
   input: LifecycleInput,

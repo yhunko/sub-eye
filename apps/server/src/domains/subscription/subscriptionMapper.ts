@@ -3,7 +3,7 @@ import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
 } from "@subeye/shared";
-import { getSubscriptionLifecycleStatus } from "@subeye/shared";
+import { deriveSubscriptionStatus } from "@subeye/shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 /** @deprecated Alias kept so existing imports resolve; use `PhaseProjection`. */
@@ -38,18 +38,25 @@ export class SubscriptionMapper {
       notes: subscription.notes ?? null,
       createdAt: SubscriptionMapper.normalizeDate(subscription.createdAt),
       updatedAt: SubscriptionMapper.normalizeDate(subscription.updatedAt),
-      qstashMessageId: subscription.qstashMessageId ?? null,
       brandDomain: subscription.brandDomain ?? null,
       billing,
       nextPaymentDate,
       lastPaymentDate,
       willBeCancelledAt,
+      pausedAt: subscription.pausedAt ?? null,
+      resumeAt: subscription.resumeAt ?? null,
       scheduledPriceChange: phases.scheduledPriceChange,
       pricePhases: phases.pricePhases,
       effectivePhaseKind: phases.effectivePhaseKind,
       upcomingPhase: phases.upcomingPhase,
-      status: getSubscriptionLifecycleStatus({
+      // Derived from the date columns on every read: the `status` column is a
+      // materialized cache that the pause/cancel writes keep current, so a
+      // pause whose `resume_at` has passed, or a `cancelling` row whose
+      // `cancelled_at` has elapsed, still reads correctly in between.
+      status: deriveSubscriptionStatus({
         willBeCancelledAt,
+        pausedAt: subscription.pausedAt,
+        resumeAt: subscription.resumeAt,
       }),
     };
   }

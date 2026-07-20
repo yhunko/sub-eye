@@ -20,7 +20,7 @@ import {
 import { SubscriptionPeriod } from "../../types";
 import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
 import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
-import { subscriptionLifecycleStatuses } from "./subscriptionLifecycle";
+import { subscriptionStatuses } from "./subscriptionStatus";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -195,7 +195,6 @@ export const SubscriptionDtoSchema = strictObject({
   notes: nullable(string()),
   createdAt: string(),
   updatedAt: string(),
-  qstashMessageId: nullable(string()),
   brandDomain: nullable(string()),
   billing: subscriptionBillingDetailsSchema,
   nextPaymentDate: string(),
@@ -205,7 +204,9 @@ export const SubscriptionDtoSchema = strictObject({
   pricePhases: array(PricePhaseDtoSchema),
   effectivePhaseKind: picklist(pricePhaseKinds),
   upcomingPhase: nullable(PricePhaseDtoSchema),
-  status: picklist(subscriptionLifecycleStatuses),
+  status: picklist(subscriptionStatuses),
+  pausedAt: nullable(string()),
+  resumeAt: nullable(string()),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;

@@ -5,7 +5,7 @@ import type {
   BulkUpdateCategoryInput,
   GetSubscriptionsParams,
   SubscriptionDto,
-  SubscriptionLifecycleStatus,
+  SubscriptionStatus,
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
@@ -191,8 +191,6 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(id, {
       ...SubscriptionService.toUpdatePayload(payload),
-      qstashMessageId: null,
-      cancellationQstashMessageId: null,
     });
 
     const result = updated;
@@ -272,8 +270,6 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(id, {
       willBeCancelledAt,
-      qstashMessageId: null,
-      cancellationQstashMessageId: null,
     });
 
     const finalRecord = updated;
@@ -304,8 +300,6 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(id, {
       willBeCancelledAt: null,
-      qstashMessageId: null,
-      cancellationQstashMessageId: null,
     });
 
     const withRenewalWorkflow = updated;
@@ -574,10 +568,8 @@ export class SubscriptionService {
     });
   }
 
-  private static isActiveFilterMatch(
-    status: SubscriptionLifecycleStatus,
-  ): boolean {
-    return status === "active" || status === "cancelledButActive";
+  private static isActiveFilterMatch(status: SubscriptionStatus): boolean {
+    return status === "active" || status === "cancelling";
   }
 
   private static normalizeTimestamp(
