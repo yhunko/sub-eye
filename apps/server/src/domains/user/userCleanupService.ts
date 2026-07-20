@@ -1,7 +1,8 @@
 import { CategoryService } from "../category/categoryService";
 import { SubscriptionService } from "../subscription/subscriptionService";
+import { UserRepository } from "./userRepository";
 
-export type CleanupDomain = "subscriptions" | "categories";
+export type CleanupDomain = "subscriptions" | "categories" | "users";
 
 export type CleanupResult = {
   domain: CleanupDomain;
@@ -25,9 +26,10 @@ export async function cleanupUserData(
   const settledResults = await Promise.allSettled([
     SubscriptionService.deleteAllForUser(userId),
     CategoryService.deleteAllForUser(userId),
+    UserRepository.deleteById(userId),
   ]);
 
-  const domains: CleanupDomain[] = ["subscriptions", "categories"];
+  const domains: CleanupDomain[] = ["subscriptions", "categories", "users"];
 
   const results: CleanupResult[] = settledResults.map((result, index) => {
     const domain = domains[index]!;
