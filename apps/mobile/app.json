@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "SubEye",
+    "slug": "sub-eye",
+    "scheme": "subeye",
+    "version": "4.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0f1115",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "cc.subeye.app",
+      "backgroundColor": "#0f1115",
+      "config": { "usesNonExemptEncryption": false },
+      "infoPlist": { "CFBundleAllowMixedLocalizations": true }
+    },
+    "android": {
+      "package": "cc.subeye.app",
+      "predictiveBackGestureEnabled": true,
+      "edgeToEdgeEnabled": true
+    },
+    "locales": {
+      "en": "./locales/en.json",
+      "uk": "./locales/uk.json"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-localization",
+        { "supportedLocales": { "ios": ["en", "uk"], "android": ["en", "uk"] } }
+      ],
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        { "resizeMode": "contain", "backgroundColor": "#0f1115" }
+      ]
+    ],
+    "experiments": { "reactCompiler": true },
+    "extra": { "router": {} }
+  }
+}
