@@ -74,3 +74,47 @@ export const deriveSubscriptionStatus = (
 
   return "paused";
 };
+
+export const subscriptionAllowedActions = [
+  "edit",
+  "pause",
+  "resume",
+  "cancel",
+  "renew",
+  "delete",
+  "addPhase",
+  "applyPhaseNow",
+  "cancelPhase",
+] as const;
+
+export type SubscriptionAllowedAction =
+  (typeof subscriptionAllowedActions)[number];
+
+/**
+ * The single source of truth for which lifecycle actions are legal. Returned
+ * on every SubscriptionDto so the client renders affordances instead of
+ * re-deriving the rules and getting them subtly wrong.
+ *
+ * Order is stable and meaningful: the client renders them in this order.
+ */
+export const getAllowedActions = (input: {
+  status: SubscriptionStatus;
+  hasPendingPhase: boolean;
+}): SubscriptionAllowedAction[] => {
+  switch (input.status) {
+    case "active": {
+      const actions: SubscriptionAllowedAction[] = ["edit", "addPhase"];
+      if (input.hasPendingPhase) actions.push("applyPhaseNow", "cancelPhase");
+      actions.push("pause", "cancel", "delete");
+      return actions;
+    }
+    // A paused sub has no live billing to schedule a price change against.
+    case "paused":
+      return ["edit", "resume", "cancel", "delete"];
+    // Cancellation is pending: un-cancel is the meaningful move, not pause.
+    case "cancelling":
+      return ["edit", "renew", "delete"];
+    case "cancelled":
+      return ["renew", "delete"];
+  }
+};

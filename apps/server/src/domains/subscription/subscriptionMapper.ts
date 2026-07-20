@@ -3,7 +3,7 @@ import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
 } from "@subeye/shared";
-import { deriveSubscriptionStatus } from "@subeye/shared";
+import { deriveSubscriptionStatus, getAllowedActions } from "@subeye/shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 /** @deprecated Alias kept so existing imports resolve; use `PhaseProjection`. */
@@ -23,6 +23,16 @@ export class SubscriptionMapper {
     const willBeCancelledAt = subscription.willBeCancelledAt
       ? SubscriptionMapper.normalizeDate(subscription.willBeCancelledAt)
       : null;
+
+    // Derived from the date columns on every read: the `status` column is a
+    // materialized cache that the pause/cancel writes keep current, so a
+    // pause whose `resume_at` has passed, or a `cancelling` row whose
+    // `cancelled_at` has elapsed, still reads correctly in between.
+    const status = deriveSubscriptionStatus({
+      willBeCancelledAt,
+      pausedAt: subscription.pausedAt,
+      resumeAt: subscription.resumeAt,
+    });
 
     return {
       id: subscription.id,
@@ -49,14 +59,10 @@ export class SubscriptionMapper {
       pricePhases: phases.pricePhases,
       effectivePhaseKind: phases.effectivePhaseKind,
       upcomingPhase: phases.upcomingPhase,
-      // Derived from the date columns on every read: the `status` column is a
-      // materialized cache that the pause/cancel writes keep current, so a
-      // pause whose `resume_at` has passed, or a `cancelling` row whose
-      // `cancelled_at` has elapsed, still reads correctly in between.
-      status: deriveSubscriptionStatus({
-        willBeCancelledAt,
-        pausedAt: subscription.pausedAt,
-        resumeAt: subscription.resumeAt,
+      status,
+      allowedActions: getAllowedActions({
+        status,
+        hasPendingPhase: phases.upcomingPhase !== null,
       }),
     };
   }

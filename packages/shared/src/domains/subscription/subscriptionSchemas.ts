@@ -22,7 +22,10 @@ import {
 import { SubscriptionPeriod } from "../../types";
 import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
 import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
-import { subscriptionStatuses } from "./subscriptionStatus";
+import {
+  subscriptionAllowedActions,
+  subscriptionStatuses,
+} from "./subscriptionStatus";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -230,6 +233,7 @@ export const SubscriptionDtoSchema = strictObject({
   status: picklist(subscriptionStatuses),
   pausedAt: nullable(string()),
   resumeAt: nullable(string()),
+  allowedActions: array(picklist(subscriptionAllowedActions)),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;
