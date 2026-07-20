@@ -3,11 +3,6 @@
   "name": "subeye-dev",
   "main": "./apps/server/src/index.ts",
   "compatibility_date": "2025-05-25",
-  // Opens /api/dev/* (real push + Telegram sends) on the dev worker only.
-  // Deliberately ABSENT from prod.wrangler.jsonc — never add it there.
-  "vars": {
-    "ENABLE_DEV_ROUTES": "true"
-  },
   "route": {
     "pattern": "dev.subeye.cc",
     "custom_domain": true
