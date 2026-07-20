@@ -16,7 +16,7 @@ import { object, string } from "valibot";
 import { SubscriptionPhaseService } from "../domains/subscription/subscriptionPhaseService";
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { protect } from "../middleware/auth";
-import { getOrgId, requireUserId } from "../utils/authUtils";
+import { requireUserId } from "../utils/authUtils";
 import { handleServiceError } from "../utils/routeUtils";
 
 const phaseIdParamSchema = object({
@@ -27,13 +27,13 @@ const phaseIdParamSchema = object({
 export const subscriptionRouter = new Hono()
   .get("/", protect, vValidator("query", listQuerySchema), async (context) => {
     const userId = requireUserId(context);
-    const orgId = getOrgId(context);
 
     try {
       const params = context.req.valid("query");
-      const subscriptions = orgId
-        ? await SubscriptionService.getOrgSubscriptions(orgId, userId, params)
-        : await SubscriptionService.getSubscriptions(userId, params);
+      const subscriptions = await SubscriptionService.getSubscriptions(
+        userId,
+        params,
+      );
       return context.json(subscriptions);
     } catch (error) {
       return handleServiceError(context, error);
@@ -97,14 +97,12 @@ export const subscriptionRouter = new Hono()
     vValidator("json", AddSubscriptionSchema),
     async (context) => {
       const userId = requireUserId(context);
-      const orgId = getOrgId(context);
 
       try {
         const payload = context.req.valid("json");
         const subscription = await SubscriptionService.addSubscription(
           userId,
           payload,
-          orgId,
         );
         return context.json(subscription, 201);
       } catch (error) {

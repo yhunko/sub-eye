@@ -18,7 +18,6 @@ import {
 export const CategoryDtoSchema = object({
   id: string(),
   userId: string(),
-  orgId: nullable(string()),
   name: string(),
   emoji: string(),
   createdAt: string(),

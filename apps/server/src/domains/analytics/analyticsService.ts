@@ -34,17 +34,14 @@ const defaultDeps: AnalyticsServiceDeps = {
 export class AnalyticsService {
   static async getDashboardStats(
     userId: string,
-    orgId?: string | null,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<DashboardAnalyticsDto> {
     const [
       { subscriptions, preferredCurrencyCode, now, timezone },
       categories,
     ] = await Promise.all([
-      AnalyticsService.getAnalyticsContext(userId, orgId, deps),
-      orgId
-        ? deps.categoryService.getOrgCategories(orgId)
-        : deps.categoryService.getCategories(userId),
+      AnalyticsService.getAnalyticsContext(userId, deps),
+      deps.categoryService.getCategories(userId),
     ]);
 
     const today = DateTimezoneUtils.startOfDay(now, timezone);
@@ -137,11 +134,10 @@ export class AnalyticsService {
 
   static async getMonthlySpendSummary(
     userId: string,
-    orgId?: string | null,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<MonthlySpendSummaryDto> {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
-      await AnalyticsService.getAnalyticsContext(userId, orgId, deps);
+      await AnalyticsService.getAnalyticsContext(userId, deps);
 
     const monthOffsets = [-1, 0, 1, 2, 3, 4, 5, 6];
 
@@ -186,11 +182,10 @@ export class AnalyticsService {
 
   static async getWeeklyRenewalsSummary(
     userId: string,
-    orgId?: string | null,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<WeeklyRenewalsSummaryDto> {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
-      await AnalyticsService.getAnalyticsContext(userId, orgId, deps);
+      await AnalyticsService.getAnalyticsContext(userId, deps);
 
     const nowZoned = DateTimezoneUtils.toZoned(now, timezone);
     const startOfCurrentWeek = DateTimezoneUtils.startOfDay(
@@ -245,16 +240,12 @@ export class AnalyticsService {
 
   private static async getAnalyticsContext(
     userId: string,
-    orgId: string | null | undefined,
     deps: AnalyticsServiceDeps,
   ) {
-    const subscriptions = orgId
-      ? await deps.subscriptionService.getOrgSubscriptions(orgId, userId, {
-          status: "all",
-        })
-      : await deps.subscriptionService.getSubscriptions(userId, {
-          status: "all",
-        });
+    const subscriptions = await deps.subscriptionService.getSubscriptions(
+      userId,
+      { status: "all" },
+    );
     const metadata = await deps.userService.getUserPreferences(userId);
 
     const normalizedCurrency = CurrencyUtils.normalizeCode(

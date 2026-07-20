@@ -20,8 +20,6 @@ export const protect: MiddlewareHandler = async (context, next) => {
   }
 
   context.set("userId", auth.userId);
-  context.set("orgId", auth.orgId ?? null);
-  context.set("orgRole", auth.orgRole ?? null);
 
   return next();
 };

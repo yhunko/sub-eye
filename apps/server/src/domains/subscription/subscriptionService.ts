@@ -9,7 +9,6 @@ import type {
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
-import { getPlanById } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
@@ -17,7 +16,6 @@ import { UserService } from "../user/userService";
 import {
   ScheduledDateMustBeFutureError,
   SubscriptionCategoryNotFoundError,
-  SubscriptionLimitReachedError,
   SubscriptionNotFoundError,
 } from "./subscriptionErrors";
 import { SubscriptionMapper } from "./subscriptionMapper";
@@ -107,29 +105,13 @@ export class SubscriptionService {
   static async addSubscription(
     userId: string,
     payload: AddSubscriptionInput,
-    orgId?: string | null,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    const effectiveOrgId = orgId ?? null;
-
-    await SubscriptionService.assertCategoryBelongsToSpace(
+    await SubscriptionService.assertCategoryBelongsToUser(
       userId,
-      effectiveOrgId,
       payload.categoryId,
       deps,
     );
-
-    const [currentCount, planId] = await Promise.all([
-      effectiveOrgId
-        ? deps.repository.countByOrgId(effectiveOrgId)
-        : deps.repository.countByUserId(userId),
-      deps.userService.getPlanId(userId),
-    ]);
-    const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
-
-    if (maxSubscriptions !== null && currentCount >= maxSubscriptions) {
-      throw new SubscriptionLimitReachedError();
-    }
 
     // Validate the starting offer before any write so we never create a
     // subscription and then fail to attach its trial/intro.
@@ -139,11 +121,7 @@ export class SubscriptionService {
     }
 
     const created = await deps.repository.create(
-      SubscriptionService.toInsertPayload(
-        userId,
-        effectiveOrgId,
-        createPayload,
-      ),
+      SubscriptionService.toInsertPayload(userId, createPayload),
     );
 
     const result = created;
@@ -200,9 +178,8 @@ export class SubscriptionService {
       throw new SubscriptionNotFoundError();
     }
 
-    await SubscriptionService.assertCategoryBelongsToSpace(
+    await SubscriptionService.assertCategoryBelongsToUser(
       userId,
-      existing.orgId,
       payload.categoryId,
       deps,
     );
@@ -402,11 +379,8 @@ export class SubscriptionService {
     input: BulkUpdateCategoryInput,
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<{ updatedCount: number }> {
-    // For bulk update, we check category ownership in personal space
-    // Individual subscriptions already have their orgId set from creation
-    await SubscriptionService.assertCategoryBelongsToSpace(
+    await SubscriptionService.assertCategoryBelongsToUser(
       userId,
-      null,
       input.categoryId,
       deps,
     );
@@ -464,7 +438,6 @@ export class SubscriptionService {
 
   private static toInsertPayload(
     userId: string,
-    orgId: string | null,
     payload: AddSubscriptionInput,
   ): SubscriptionInsert {
     const willBeCancelledAt = SubscriptionService.normalizeTimestamp(
@@ -473,7 +446,6 @@ export class SubscriptionService {
 
     return {
       userId,
-      orgId,
       ...SubscriptionService.toDbPayload(payload),
       willBeCancelledAt: willBeCancelledAt ?? undefined,
     } as SubscriptionInsert;
@@ -531,9 +503,8 @@ export class SubscriptionService {
     return { preferences, rates };
   }
 
-  private static async assertCategoryBelongsToSpace(
+  private static async assertCategoryBelongsToUser(
     userId: string,
-    orgId: string | null,
     categoryId: string | null | undefined,
     deps: SubscriptionServiceDeps,
   ): Promise<void> {
@@ -546,16 +517,8 @@ export class SubscriptionService {
       throw new SubscriptionCategoryNotFoundError();
     }
 
-    // For org space, category must belong to the org
-    // For personal space, category must belong to the user (no org)
-    if (orgId) {
-      if (category.orgId !== orgId) {
-        throw new SubscriptionCategoryNotFoundError();
-      }
-    } else {
-      if (category.userId !== userId || category.orgId !== null) {
-        throw new SubscriptionCategoryNotFoundError();
-      }
+    if (category.userId !== userId) {
+      throw new SubscriptionCategoryNotFoundError();
     }
   }
 
@@ -661,52 +624,5 @@ export class SubscriptionService {
 
   static normalizeAmount(value: number): string {
     return value.toFixed(2);
-  }
-
-  static async getOrgSubscriptions(
-    orgId: string,
-    userId: string,
-    params?: GetSubscriptionsParams,
-    deps: SubscriptionServiceDeps = defaultDeps,
-  ): Promise<SubscriptionDto[]> {
-    const [subscriptions, preferences] = await Promise.all([
-      deps.repository.findByOrgId(orgId),
-      deps.userService.getUserPreferences(userId),
-    ]);
-    const { subscriptions: reconciledSubscriptions, phasesBySubscriptionId } =
-      await SubscriptionPhaseService.reconcilePhases(subscriptions, deps);
-
-    const rates = await deps.currencyService.getRates(
-      preferences.preferredCurrency,
-    );
-
-    const dtos = reconciledSubscriptions.map((subscription) =>
-      SubscriptionService.mapToDto(
-        subscription,
-        preferences,
-        rates,
-        phasesBySubscriptionId.get(subscription.id) ?? [],
-      ),
-    );
-
-    return SubscriptionService.applyFilters(dtos, params);
-  }
-
-  static async deleteAllForOrg(
-    orgId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
-  ): Promise<void> {
-    const existing = await deps.repository.findByOrgId(orgId);
-
-    await Promise.all(
-      existing.map(async (subscription) => {
-        await SubscriptionPhaseService.clearPendingPhases(
-          subscription.id,
-          deps,
-        );
-      }),
-    );
-
-    await deps.repository.deleteByOrgId(orgId);
   }
 }

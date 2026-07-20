@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";
 
@@ -10,12 +10,7 @@ export class SubscriptionRepository {
     return db
       .select()
       .from(subscriptionsTable)
-      .where(
-        and(
-          eq(subscriptionsTable.userId, userId),
-          isNull(subscriptionsTable.orgId),
-        ),
-      );
+      .where(eq(subscriptionsTable.userId, userId));
   }
 
   static async findById(id: string): Promise<SubscriptionRecord | null> {
@@ -65,12 +60,7 @@ export class SubscriptionRepository {
     const [result] = await db
       .select({ count: count() })
       .from(subscriptionsTable)
-      .where(
-        and(
-          eq(subscriptionsTable.userId, userId),
-          isNull(subscriptionsTable.orgId),
-        ),
-      );
+      .where(eq(subscriptionsTable.userId, userId));
 
     return result?.count ?? 0;
   }
@@ -78,12 +68,7 @@ export class SubscriptionRepository {
   static async deleteByUserId(userId: string): Promise<void> {
     await db
       .delete(subscriptionsTable)
-      .where(
-        and(
-          eq(subscriptionsTable.userId, userId),
-          isNull(subscriptionsTable.orgId),
-        ),
-      );
+      .where(eq(subscriptionsTable.userId, userId));
   }
 
   static async deleteMany(ids: string[]): Promise<number> {
@@ -119,41 +104,5 @@ export class SubscriptionRepository {
       .select()
       .from(subscriptionsTable)
       .where(inArray(subscriptionsTable.id, ids));
-  }
-
-  static async findByOrgId(orgId: string): Promise<SubscriptionRecord[]> {
-    return db
-      .select()
-      .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.orgId, orgId));
-  }
-
-  static async countByOrgId(orgId: string): Promise<number> {
-    const [result] = await db
-      .select({ count: count() })
-      .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.orgId, orgId));
-
-    return result?.count ?? 0;
-  }
-
-  static async deleteByOrgId(orgId: string): Promise<void> {
-    await db
-      .delete(subscriptionsTable)
-      .where(eq(subscriptionsTable.orgId, orgId));
-  }
-
-  static async findByIdForOrg(
-    id: string,
-    orgId: string,
-  ): Promise<SubscriptionRecord | null> {
-    const [result] = await db
-      .select()
-      .from(subscriptionsTable)
-      .where(
-        and(eq(subscriptionsTable.id, id), eq(subscriptionsTable.orgId, orgId)),
-      );
-
-    return result ?? null;
   }
 }

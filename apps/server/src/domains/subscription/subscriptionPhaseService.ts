@@ -133,7 +133,6 @@ export class SubscriptionPhaseService {
       {
         subscriptionId: id,
         userId: existing.userId,
-        orgId: existing.orgId,
         kind: "scheduledChange",
         cost: normalizeAmount(payload.scheduledCost),
         currency: scheduledCurrency,
@@ -153,11 +152,9 @@ export class SubscriptionPhaseService {
     phaseId: string,
     deps: SubscriptionPhaseServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
-    const existing = await SubscriptionPhaseService.requireSubscription(
-      id,
-      userId,
-      deps,
-    );
+    // Ownership check — throws if the subscription is not this user's.
+    await SubscriptionPhaseService.requireSubscription(id, userId, deps);
+
     const phase = await deps.phaseRepository.findById(phaseId);
     if (!phase || phase.subscriptionId !== id) {
       throw new PhaseNotFoundError();
@@ -166,8 +163,6 @@ export class SubscriptionPhaseService {
       throw new PhaseAlreadyAppliedError();
     }
 
-    const { preferences } =
-      await SubscriptionPhaseService.getPreferencesAndRates(userId, deps);
     await deps.phaseRepository.deleteById(phaseId);
 
     return SubscriptionPhaseService.reloadDto(id, userId, deps);
@@ -338,7 +333,6 @@ export class SubscriptionPhaseService {
       {
         subscriptionId: id,
         userId: existing.userId,
-        orgId: existing.orgId,
         kind: args.overrideKind,
         cost: normalizeAmount(args.overrideCost),
         currency: overrideCurrency,
@@ -349,7 +343,6 @@ export class SubscriptionPhaseService {
       {
         subscriptionId: id,
         userId: existing.userId,
-        orgId: existing.orgId,
         kind: "standard",
         cost: normalizeAmount(args.standardCost),
         currency: standardCurrency,
@@ -387,23 +380,6 @@ export class SubscriptionPhaseService {
       throw new SubscriptionNotFoundError();
     }
     return existing;
-  }
-
-  private static async toCurrentDto(
-    subscription: SubscriptionRecord,
-    preferences: UserPreferences,
-    rates: Record<string, number>,
-    deps: SubscriptionPhaseServiceDeps,
-  ): Promise<SubscriptionDto> {
-    const phases = await deps.phaseRepository.findBySubscriptionId(
-      subscription.id,
-    );
-    return SubscriptionPhaseService.mapToDto(
-      subscription,
-      phases,
-      preferences,
-      rates,
-    );
   }
 
   private static mapToDto(
