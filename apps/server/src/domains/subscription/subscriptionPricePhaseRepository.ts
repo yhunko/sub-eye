@@ -108,10 +108,14 @@ export class SubscriptionPricePhaseRepository {
   }
 
   /**
-   * Atomically apply a phase boundary: copy the phase price onto the
-   * subscription row and stamp the phase as applied. `neon-http` has no
-   * interactive transactions, so this is the one place `db.batch` is used to
-   * keep the two writes together.
+   * Atomically apply a phase boundary:
+   *  1. copy the phase price onto the subscription row,
+   *  2. stamp the phase applied AND move its `startsAt` to the apply moment,
+   *  3. close the phase it displaces at that same moment.
+   *
+   * Steps 2 and 3 are what keep `getEffectivePhase` / `getUpcomingPhase`
+   * honest after an early "apply now". `neon-http` has no interactive
+   * transactions, so this is the one place `db.batch` is used.
    */
   static async applyBoundaryBatch(args: {
     subscriptionId: string;
@@ -119,8 +123,10 @@ export class SubscriptionPricePhaseRepository {
     currency: string;
     phaseId: string;
     appliedAt: string;
+    startsAt: string;
+    precedingPhaseId: string | null;
   }): Promise<void> {
-    await db.batch([
+    const statements = [
       db
         .update(subscriptionsTable)
         .set({
@@ -133,9 +139,23 @@ export class SubscriptionPricePhaseRepository {
         .update(subscriptionPricePhasesTable)
         .set({
           appliedAt: args.appliedAt,
+          startsAt: args.startsAt,
           updatedAt: new Date(),
         })
         .where(eq(subscriptionPricePhasesTable.id, args.phaseId)),
-    ]);
+    ];
+
+    if (args.precedingPhaseId) {
+      statements.push(
+        db
+          .update(subscriptionPricePhasesTable)
+          .set({ endsAt: args.appliedAt, updatedAt: new Date() })
+          .where(eq(subscriptionPricePhasesTable.id, args.precedingPhaseId)),
+      );
+    }
+
+    await db.batch(
+      statements as [(typeof statements)[number], ...typeof statements],
+    );
   }
 }

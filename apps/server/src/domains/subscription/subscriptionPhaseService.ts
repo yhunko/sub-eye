@@ -1,5 +1,6 @@
 import {
   buildPhaseProjection,
+  getEffectivePhase,
   normalizeAmount,
   normalizeIsoDate,
   resolveScheduledEffectiveAt,
@@ -333,12 +334,39 @@ export class SubscriptionPhaseService {
     deps: SubscriptionPhaseServiceDeps,
   ): Promise<void> {
     const appliedAt = new Date().toISOString();
+    const appliedAtDate = new Date(appliedAt);
+
+    // The phase this one displaces: whichever sibling phase's window contains
+    // the apply moment. Its endsAt must be closed here or getEffectivePhase
+    // keeps returning the old price after an early "apply now".
+    const siblings = (
+      await deps.phaseRepository.findBySubscriptionId(subscription.id)
+    ).filter((candidate) => candidate.id !== phase.id);
+    const preceding = getEffectivePhase(
+      siblings.map((candidate) => ({
+        id: candidate.id,
+        startsAt: normalizeIsoDate(candidate.startsAt) ?? "",
+        endsAt: normalizeIsoDate(candidate.endsAt),
+      })),
+      appliedAtDate,
+    );
+
+    // The applied phase's own window starts now — an early apply must not leave
+    // a future startsAt behind for getUpcomingPhase to keep reporting.
+    const phaseStartsAt = normalizeIsoDate(phase.startsAt);
+    const startsAt =
+      phaseStartsAt && Date.parse(phaseStartsAt) > appliedAtDate.getTime()
+        ? appliedAt
+        : (phaseStartsAt ?? appliedAt);
+
     await deps.phaseRepository.applyBoundaryBatch({
       subscriptionId: subscription.id,
       cost: normalizeAmount(Number(phase.cost)),
       currency: phase.currency,
       phaseId: phase.id,
       appliedAt,
+      startsAt,
+      precedingPhaseId: preceding?.id ?? null,
     });
   }
 
