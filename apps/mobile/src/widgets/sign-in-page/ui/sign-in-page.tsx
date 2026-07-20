@@ -28,16 +28,30 @@ export function SignInPage() {
     if (!isLoaded || busy) return;
     setBusy(true);
     setError(null);
+    // The sign-in modal is reached via the auth gate's <Redirect>, which replaces
+    // rather than pushes — so router.back() can be a no-op. Fall back to replacing
+    // the stack root, which the (now signed-in) gate resolves to the tabs.
+    const enterApp = () => {
+      if (router.canGoBack()) router.back();
+      else router.replace("/");
+    };
     try {
       const attempt = await signIn.create({ identifier: email, password });
       if (attempt.status === "complete") {
         await setActive({ session: attempt.createdSessionId });
-        router.back();
+        enterApp();
       } else {
         setError(m.auth_signInError());
       }
-    } catch {
-      setError(m.auth_signInError());
+    } catch (err) {
+      const first = (err as { errors?: { code?: string; message?: string }[] })
+        .errors?.[0];
+      // A prior attempt already established the session; just enter the app.
+      if (first?.code === "session_exists") {
+        enterApp();
+        return;
+      }
+      setError(first?.message ?? m.auth_signInError());
     } finally {
       setBusy(false);
     }
