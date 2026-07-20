@@ -14,10 +14,10 @@ import {
   getUpcomingPhase,
   RecurrenceUtils,
 } from "@subeye/shared";
+import { SubscriptionCalculator } from "@subeye/spend";
 import { isSameDay } from "date-fns";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";
-import { SubscriptionCalculator } from "./subscriptionCalculator";
 import {
   CannotScheduleCancelledError,
   CustomDateRequiredError,

@@ -10,10 +10,10 @@ import type {
   UserPreferences,
 } from "@subeye/shared";
 import { getPlanById, getSubscriptionLifecycleStatus } from "@subeye/shared";
+import { SubscriptionCalculator } from "@subeye/spend";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";
-import { SubscriptionCalculator } from "./subscriptionCalculator";
 import {
   ScheduledDateMustBeFutureError,
   SubscriptionCategoryNotFoundError,

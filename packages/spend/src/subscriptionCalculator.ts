@@ -1,3 +1,4 @@
+import type { RateTable } from "@subeye/currency";
 import type {
   SubscriptionBillingDetails,
   SubscriptionPeriod,
@@ -7,13 +8,27 @@ import {
   DateTimezoneUtils,
   RecurrenceUtils,
 } from "@subeye/shared";
-import type { SubscriptionRecord } from "./subscriptionRepository";
+
+/** The minimum shape needed to price a subscription. A DB row satisfies it. */
+export type BillableSubscription = {
+  cost: string | number;
+  currency: string;
+  every: number;
+  period: SubscriptionPeriod;
+};
+
+/** The minimum shape needed to walk a subscription's recurrence. */
+export type RecurringSubscription = {
+  every: number;
+  period: SubscriptionPeriod;
+  paymentDate: string | Date;
+};
 
 export class SubscriptionCalculator {
   static calculateBillingDetails(
-    subscription: SubscriptionRecord,
+    subscription: BillableSubscription,
     preferredCurrency: string,
-    rates: Record<string, number>,
+    rates: RateTable,
   ): SubscriptionBillingDetails {
     return SubscriptionCalculator.computeBillingDetails(
       Number(subscription.cost),
@@ -38,7 +53,7 @@ export class SubscriptionCalculator {
       period: SubscriptionPeriod;
     },
     preferredCurrency: string,
-    rates: Record<string, number>,
+    rates: RateTable,
   ): SubscriptionBillingDetails {
     return SubscriptionCalculator.computeBillingDetails(
       amount,
@@ -51,7 +66,7 @@ export class SubscriptionCalculator {
   }
 
   static calculatePaymentDates(
-    subscription: SubscriptionRecord,
+    subscription: RecurringSubscription,
     timezone?: string,
     relativeTo: Date = DateTimezoneUtils.now(timezone),
   ): { nextPaymentDate: string; lastPaymentDate: string | null } {
@@ -84,7 +99,7 @@ export class SubscriptionCalculator {
   private static getExchangeRate(
     from: string,
     to: string,
-    rates: Record<string, number>,
+    rates: RateTable,
   ): number {
     if (from === to) return 1;
     const rate = rates[from];
@@ -98,7 +113,7 @@ export class SubscriptionCalculator {
     every: number,
     period: SubscriptionPeriod,
     preferredCurrencyCode: string,
-    rates: Record<string, number>,
+    rates: RateTable,
   ): SubscriptionBillingDetails {
     const originalMonthly = CurrencyUtils.toMonthly(amount, every, period);
     const preferredAmount = CurrencyUtils.convert(

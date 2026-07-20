@@ -118,6 +118,7 @@
         "@neondatabase/serverless": "^1.0.2",
         "@subeye/currency": "workspace:*",
         "@subeye/shared": "workspace:*",
+        "@subeye/spend": "workspace:*",
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.14",
