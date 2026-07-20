@@ -16,20 +16,24 @@ bug in currency code — read it twice before touching a conversion.
    `extractRateTable` lowercases the base before the lookup so callers may pass either case.
    Anything that indexes a `RateTable` must lowercase first (`CurrencyUtils.normalizeCode` in
    `@subeye/shared` does this).
-2. **A missing rate is not an error.** `extractRateTable` returns `{}` for a `null` response or
-   an absent base key, and `CurrencyUtils.convert` returns the amount unchanged on a miss. The
-   product decision behind this: a dashboard that shows unconverted amounts is better than a
+2. **A missing rate is not an error.** `CurrencyService.getRates` returns `{}` when the
+   `fx_rates` row is absent, and `CurrencyUtils.convert` returns the amount unchanged on a miss.
+   The product decision behind this: a dashboard that shows unconverted amounts is better than a
    dashboard that shows an error. Do not make any of this throw.
-3. **`RateProvider` is the only seam.** Anything that produces rates — the CDN repository, the
-   `fx_rates` table — implements `getRates(base): Promise<CurrencyRatesResponse | null>` and is
-   injected. Never import a provider from here.
+3. **Rates come from the `fx_rates` table, not from this package.** This package owns only the
+   `RateTable` shape (consumed by `@subeye/spend` and `@subeye/pricing`). The IO — reading the
+   table, deriving cross-rates, refreshing from the CDN — lives in
+   `apps/server/src/domains/currency` (`FxRateRepository` + `CurrencyService`). Never add a
+   provider seam or a `fetch` here.
 
 ## What lives elsewhere, deliberately
 
 - `CurrencyUtils` (`convert`, `toMonthly`, `formatAmount`, `normalizeCode`) and `CurrenciesMap`
   are in **`@subeye/shared`**. They are consumed by ~30 files across client and server; moving
   them buys nothing. Do not duplicate them here.
-- `CurrencyRepository` (CDN `fetch` + module-level `Map` cache) is in **`apps/server`**.
+- Rate IO is in **`apps/server/src/domains/currency`**: `FxRateRepository` (owns `db`) reads
+  and upserts the `fx_rates` table, and `CurrencyService` derives any base's cross-rates from
+  the stored USD document and refreshes it from a pinned CDN build on a daily Worker cron.
 
 ## Known defect, unfixed on purpose
 

@@ -15,7 +15,7 @@ Paddle, Upstash QStash, Google Gemini, Web Push and Telegram were **removed from
 | Package | Responsibility |
 | --- | --- |
 | `@subeye/shared` | Environment-agnostic contracts: types, Valibot schemas, enums, pure utils. Used by client **and** server. |
-| `@subeye/currency` | Rate-table contract + `RateProvider` seam. **Invariants: `packages/currency/CLAUDE.md`.** |
+| `@subeye/currency` | Rate-table contract (`RateTable`). Rate IO lives in `apps/server/src/domains/currency`. **Invariants: `packages/currency/CLAUDE.md`.** |
 | `@subeye/spend` | Occurrence engine: spend in a range, monthly/yearly normalization, payment dates. **Invariants: `packages/spend/CLAUDE.md`.** |
 | `@subeye/pricing` | Phase model: effective/upcoming/due phase selection, timeline assembly, boundary date math. **Invariants: `packages/pricing/CLAUDE.md`.** |
 
