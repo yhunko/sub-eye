@@ -128,6 +128,14 @@
         "drizzle-kit": "^0.31.10",
       },
     },
+    "packages/currency": {
+      "name": "@subeye/currency",
+      "version": "0.0.1",
+      "dependencies": {
+        "@subeye/shared": "workspace:*",
+        "valibot": "^1.3.1",
+      },
+    },
     "packages/shared": {
       "name": "@subeye/shared",
       "version": "0.0.1",
@@ -732,6 +740,8 @@
     "@standard-schema/utils": ["@standard-schema/utils@0.3.0", "", {}, "sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g=="],
 
     "@subeye/client": ["@subeye/client@workspace:apps/client"],
+
+    "@subeye/currency": ["@subeye/currency@workspace:packages/currency"],
 
     "@subeye/server": ["@subeye/server@workspace:apps/server"],
 
