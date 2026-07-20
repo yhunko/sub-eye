@@ -77,3 +77,19 @@ export class PhaseAlreadyAppliedError extends Error {
     this.name = "PhaseAlreadyAppliedError";
   }
 }
+
+export class AlreadyPausedError extends Error {
+  readonly status = 400 as const;
+  constructor() {
+    super("Subscription is already paused");
+    this.name = "AlreadyPausedError";
+  }
+}
+
+export class NotPausedError extends Error {
+  readonly status = 400 as const;
+  constructor() {
+    super("Subscription is not paused");
+    this.name = "NotPausedError";
+  }
+}

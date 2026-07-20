@@ -4,16 +4,21 @@ import type {
   BulkDeleteSubscriptionsInput,
   BulkUpdateCategoryInput,
   GetSubscriptionsParams,
+  PauseSubscriptionInput,
   SubscriptionDto,
+  SubscriptionPeriod,
   SubscriptionStatus,
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";
 import {
+  AlreadyPausedError,
+  NotPausedError,
   ScheduledDateMustBeFutureError,
   SubscriptionCategoryNotFoundError,
   SubscriptionNotFoundError,
@@ -324,6 +329,82 @@ export class SubscriptionService {
       rates,
       phases,
     );
+  }
+
+  /**
+   * Pause billing. Spend is skipped per occurrence from `pausedAt` until
+   * `resumeAt` (exclusive); an omitted `resumeAt` pauses indefinitely.
+   */
+  static async pauseSubscription(
+    id: string,
+    userId: string,
+    payload: PauseSubscriptionInput,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(id);
+    if (!existing || existing.userId !== userId) {
+      throw new SubscriptionNotFoundError();
+    }
+    if (existing.status === "paused") {
+      throw new AlreadyPausedError();
+    }
+
+    const updated = await deps.repository.update(id, {
+      status: "paused",
+      pausedAt: new Date().toISOString(),
+      resumeAt: payload.resumeAt ?? null,
+    });
+
+    const { preferences, rates } =
+      await SubscriptionService.getPreferencesAndRates(userId, deps);
+    const phases = await deps.phaseRepository.findBySubscriptionId(id);
+
+    return SubscriptionService.mapToDto(updated, preferences, rates, phases);
+  }
+
+  /**
+   * Resume billing: clear the pause and roll `payment_date` forward to the next
+   * occurrence in the future. Without the roll-forward the anchor still points
+   * at a date inside the pause and the dashboard shows a charge that never
+   * happened.
+   */
+  static async resumeSubscription(
+    id: string,
+    userId: string,
+    deps: SubscriptionServiceDeps = defaultDeps,
+  ): Promise<SubscriptionDto> {
+    const existing = await deps.repository.findById(id);
+    if (!existing || existing.userId !== userId) {
+      throw new SubscriptionNotFoundError();
+    }
+    if (existing.status !== "paused") {
+      throw new NotPausedError();
+    }
+
+    const preferences = await deps.userService.getUserPreferences(userId);
+    const nextOccurrence = RecurrenceUtils.getNextOccurrence(
+      DateTimezoneUtils.toZoned(
+        existing.paymentDate,
+        preferences.preferredTimezone,
+      ),
+      existing.every,
+      existing.period as SubscriptionPeriod,
+      new Date(),
+    );
+
+    const updated = await deps.repository.update(id, {
+      status: "active",
+      pausedAt: null,
+      resumeAt: null,
+      paymentDate: nextOccurrence.toISOString(),
+    });
+
+    const rates = await deps.currencyService.getRates(
+      preferences.preferredCurrency,
+    );
+    const phases = await deps.phaseRepository.findBySubscriptionId(id);
+
+    return SubscriptionService.mapToDto(updated, preferences, rates, phases);
   }
 
   static async deleteAllForUser(

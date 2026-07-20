@@ -174,6 +174,14 @@ export const CancelSubscriptionSchema = strictObject({
   mode: optional(picklist(cancelSubscriptionModes), "periodEnd"),
 });
 
+/** Pause a subscription, optionally until a known resume date. */
+export const PauseSubscriptionSchema = strictObject({
+  resumeAt: optional(nullable(isoDateSchema), null),
+});
+export type PauseSubscriptionInput = InferOutput<
+  typeof PauseSubscriptionSchema
+>;
+
 const scheduledPriceChangeSchema = strictObject({
   cost: number(),
   currency: string(),
