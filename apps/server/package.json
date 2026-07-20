@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
-    "./client": "./src/client.ts"
+    "./client": {
+      "types": "./dist/src/client.d.ts",
+      "default": "./dist/src/client.js"
+    }
   },
   "dependencies": {
     "@clerk/express": "^2.1.2",
@@ -33,9 +36,10 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:sql": "bun --env-file=.env ./scripts/db-sql.ts",
+    "build": "tsc -p tsconfig.json",
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "lint": "biome check .",
     "test": "bun test ./test",
-    "type-check": "tsc --noEmit --pretty"
+    "type-check": "tsc -p tsconfig.json --pretty"
   }
 }

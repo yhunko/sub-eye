@@ -49,3 +49,7 @@ bun.lockb
 
 # Neon dry-run branch connection string (Plan 3 Task 1)
 .env.branch
+
+# Server types-only build output (@subeye/server/client)
+apps/server/dist
+apps/server/tsconfig.tsbuildinfo
