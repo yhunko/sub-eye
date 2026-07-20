@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { CurrencyService } from "./domains/currency/currencyService";
 import type { Bindings } from "./env";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
@@ -48,4 +49,26 @@ export const app = new Hono<{ Bindings: Bindings }>()
     return ctx.json({ error: "Internal Server Error" }, 500);
   });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  /**
+   * Daily FX refresh. Keeping this on a cron is what allows GET /subscriptions
+   * and the analytics endpoints to read rates from Postgres instead of waiting
+   * on an outbound CDN fetch.
+   */
+  scheduled: async (
+    _event: { cron: string },
+    _env: Bindings,
+    ctx: { waitUntil: (promise: Promise<unknown>) => void },
+  ) => {
+    ctx.waitUntil(
+      CurrencyService.refreshRates()
+        .then((result) =>
+          console.log(
+            `[cron] fx refreshed: ${result.codes} codes for ${result.rateDate}`,
+          ),
+        )
+        .catch((error) => console.error("[cron] fx refresh failed", error)),
+    );
+  },
+};
