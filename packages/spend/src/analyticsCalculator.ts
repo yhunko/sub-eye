@@ -159,90 +159,71 @@ export class AnalyticsCalculator {
   }
 
   /**
-   * Projects all upcoming payment occurrences within a time horizon.
+   * One entry per subscription: its NEXT charge, soonest first. The old
+   * `projectUpcomingPayments` walked a full year of occurrences across every
+   * subscription and threw away more than 95% of them to show five rows — a
+   * weekly sub alone produced 52 objects to discard 51.
    */
-  static projectUpcomingPayments(
+  static nextOccurrenceRenewals(
     subscriptions: SubscriptionDto[],
     today: Date,
-    horizon: Date,
     preferredCurrencyCode: string,
     timezone?: string,
   ): UpcomingRenewalDto[] {
-    const payments: UpcomingRenewalDto[] = [];
+    const renewals: UpcomingRenewalDto[] = [];
+    const todayStart = DateTimezoneUtils.startOfDay(today, timezone).getTime();
 
     for (const subscription of subscriptions) {
       const paymentDateZoned = DateTimezoneUtils.toZoned(
         subscription.paymentDate,
         timezone,
       );
-
-      let projectionDate = RecurrenceUtils.getNextOccurrence(
+      const occurrence = RecurrenceUtils.getNextOccurrence(
         paymentDateZoned,
         subscription.every,
         subscription.period as SubscriptionPeriod,
         today,
       );
 
-      while (isBefore(projectionDate, horizon)) {
-        if (
-          !shouldIncludeOccurrence(
-            {
-              willBeCancelledAt: subscription.willBeCancelledAt,
-            },
-            projectionDate,
-          )
-        ) {
-          break;
-        }
-
-        // Pause skips this occurrence but the horizon walk continues.
-        if (
-          isOccurrencePaused(
-            {
-              pausedAt: subscription.pausedAt,
-              resumeAt: subscription.resumeAt,
-            },
-            projectionDate,
-          )
-        ) {
-          projectionDate = RecurrenceUtils.addPeriod(
-            projectionDate,
-            subscription.every,
-            subscription.period as SubscriptionPeriod,
-            { anchorDate: paymentDateZoned },
-          );
-          continue;
-        }
-
-        const daysUntil = Math.round(
-          (DateTimezoneUtils.startOfDay(projectionDate, timezone).getTime() -
-            DateTimezoneUtils.startOfDay(today, timezone).getTime()) /
-            (24 * 60 * 60 * 1000),
-        );
-        payments.push({
-          id: subscription.id,
-          name: subscription.name,
-          brandDomain: subscription.brandDomain,
-          provider: "Subscription",
-          amount: AnalyticsCalculator.resolveOccurrenceAmount(
-            subscription,
-            projectionDate,
-          ),
-          currencyCode: preferredCurrencyCode,
-          nextPaymentDate: projectionDate.toISOString(),
-          daysUntil,
-        });
-
-        projectionDate = RecurrenceUtils.addPeriod(
-          projectionDate,
-          subscription.every,
-          subscription.period as SubscriptionPeriod,
-          { anchorDate: paymentDateZoned },
-        );
+      if (
+        !shouldIncludeOccurrence(
+          { willBeCancelledAt: subscription.willBeCancelledAt },
+          occurrence,
+        )
+      ) {
+        continue;
       }
+      // A charge that lands inside the pause window will not happen — showing
+      // it as "upcoming" is a lie, so drop the subscription from the list.
+      if (
+        isOccurrencePaused(
+          { pausedAt: subscription.pausedAt, resumeAt: subscription.resumeAt },
+          occurrence,
+        )
+      ) {
+        continue;
+      }
+
+      renewals.push({
+        id: subscription.id,
+        name: subscription.name,
+        brandDomain: subscription.brandDomain,
+        provider: "Subscription",
+        amount: AnalyticsCalculator.resolveOccurrenceAmount(
+          subscription,
+          occurrence,
+        ),
+        currencyCode: preferredCurrencyCode,
+        nextPaymentDate: occurrence.toISOString(),
+        daysUntil: Math.round(
+          (DateTimezoneUtils.startOfDay(occurrence, timezone).getTime() -
+            todayStart) /
+            (24 * 60 * 60 * 1000),
+        ),
+      });
     }
 
-    return payments;
+    return renewals.sort((a, b) => a.daysUntil - b.daysUntil);
   }
 
   /**

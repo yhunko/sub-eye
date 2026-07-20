@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "@subeye/shared";
+import { AnalyticsCalculator } from "@subeye/spend";
 import { AnalyticsService } from "../src/domains/analytics/analyticsService";
 
 const billing = (monthly: number) => ({
@@ -145,5 +146,54 @@ describe("AnalyticsService.getDashboardStats — resuming soon", () => {
       "sooner",
       "later",
     ]);
+  });
+});
+
+describe("AnalyticsCalculator.nextOccurrenceRenewals", () => {
+  it("emits exactly one entry per subscription, soonest first", () => {
+    const weekly = makeSub({
+      id: "weekly",
+      period: SubscriptionPeriod.WEEK,
+      paymentDate: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+    });
+    const monthly = makeSub({
+      id: "monthly",
+      paymentDate: new Date(Date.now() - 25 * 86_400_000).toISOString(),
+    });
+
+    const renewals = AnalyticsCalculator.nextOccurrenceRenewals(
+      [monthly, weekly] as never,
+      new Date(),
+      "usd",
+      "UTC",
+    );
+
+    // One per subscription — not 52 for the weekly one.
+    expect(renewals).toHaveLength(2);
+    expect(renewals[0]?.id).toBe("weekly");
+    expect(renewals[1]?.id).toBe("monthly");
+    expect(renewals[0]?.daysUntil).toBeLessThanOrEqual(
+      renewals[1]?.daysUntil ?? 0,
+    );
+  });
+
+  it("skips a subscription whose next occurrence falls inside its pause window", () => {
+    const paused = makeSub({
+      id: "paused",
+      status: "paused",
+      pausedAt: new Date(Date.now() - 86_400_000).toISOString(),
+      resumeAt: new Date(Date.now() + 90 * 86_400_000).toISOString(),
+      paymentDate: new Date(Date.now() - 25 * 86_400_000).toISOString(),
+    });
+
+    const renewals = AnalyticsCalculator.nextOccurrenceRenewals(
+      [paused] as never,
+      new Date(),
+      "usd",
+      "UTC",
+    );
+
+    // The charge in ~5 days will not happen — showing it is a lie.
+    expect(renewals).toEqual([]);
   });
 });

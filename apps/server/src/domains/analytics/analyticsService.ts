@@ -77,17 +77,12 @@ export class AnalyticsService {
       currentlyActiveSubscriptions,
     );
 
-    const allUpcomingPayments = AnalyticsCalculator.projectUpcomingPayments(
+    const upcomingRenewals = AnalyticsCalculator.nextOccurrenceRenewals(
       currentlyActiveSubscriptions,
       today,
-      oneYearFromNow,
       preferredCurrencyCode,
       timezone,
-    );
-
-    const upcomingRenewals = [...allUpcomingPayments]
-      .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 5);
+    ).slice(0, 5);
 
     const {
       forecast: cashFlowForecast,
