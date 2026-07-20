@@ -1,3 +1,5 @@
+import { useAuth } from "@clerk/clerk-expo";
+import { Redirect } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
@@ -14,6 +16,13 @@ import { colors } from "@/shared/ui/theme";
 // minimizeBehavior="onScrollDown": the iOS 26 pill tab bar collapses as a list
 // scrolls down and re-expands on scroll up.
 export default function TabsLayout() {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  // Hold the splash until Clerk has restored the session from SecureStore,
+  // otherwise a signed-in user is bounced to sign-in on every cold start.
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Redirect href="/sign-in" />;
+
   return (
     <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
       <NativeTabs.Trigger name="(home)">
