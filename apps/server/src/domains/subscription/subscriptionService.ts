@@ -1,4 +1,4 @@
-import { buildPhaseProjection } from "@subeye/pricing";
+import { buildPhaseProjection, toStartOfDayInTimezone } from "@subeye/pricing";
 import type {
   AddSubscriptionInput,
   BulkDeleteSubscriptionsInput,
@@ -118,10 +118,19 @@ export class SubscriptionService {
       deps,
     );
 
-    // Validate the starting offer before any write so we never create a
-    // subscription and then fail to attach its trial/intro.
+    // Validate the starting offer before any write. `neon-http` has no
+    // interactive transactions, so a late throw leaves an orphan row behind.
+    // The offer boundary is floored to midnight in the USER'S timezone — the
+    // same flooring startTrial/addIntroDiscount apply — so "ends later today"
+    // must be rejected here, not after the insert.
     const { intro, ...createPayload } = payload;
-    if (intro && Date.parse(intro.endsAt) <= Date.now()) {
+    const { preferences, rates } =
+      await SubscriptionService.getPreferencesAndRates(userId, deps);
+
+    const introEndsAt = intro
+      ? toStartOfDayInTimezone(intro.endsAt, preferences.preferredTimezone)
+      : null;
+    if (introEndsAt && Date.parse(introEndsAt) <= Date.now()) {
       throw new ScheduledDateMustBeFutureError();
     }
 
@@ -131,14 +140,11 @@ export class SubscriptionService {
 
     const result = created;
 
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
-
     const dto = SubscriptionService.mapToDto(result, preferences, rates, []);
 
     // Start the subscription on its trial / intro offer (the standard price is
     // the cost just created). Returns the DTO with the resulting price phases.
-    if (intro) {
+    if (intro && introEndsAt) {
       const standardCost = Number(result.cost);
       if (intro.kind === "trial") {
         return SubscriptionPhaseService.startTrial(
@@ -147,7 +153,7 @@ export class SubscriptionService {
           {
             trialCost: intro.promoCost,
             trialCurrency: result.currency,
-            endsAt: intro.endsAt,
+            endsAt: introEndsAt,
             standardCost,
             standardCurrency: result.currency,
           },
