@@ -270,9 +270,9 @@ export class SubscriptionService {
             ).nextPaymentDate,
           );
 
-    // A cancelled subscription should never fire a future pricing transition.
-    await SubscriptionPhaseService.clearPendingPhases(id, deps);
-
+    // Cancelling does NOT delete the pending pricing schedule: nothing fires it
+    // automatically any more, and keeping the rows is what lets renew restore
+    // the real reversion price instead of stranding the user on the trial cost.
     const updated = await deps.repository.update(id, {
       willBeCancelledAt,
     });
