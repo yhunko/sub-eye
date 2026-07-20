@@ -15,6 +15,7 @@ import {
   shouldIncludeOccurrence,
 } from "@subeye/shared";
 import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
+import { isOccurrencePaused } from "./pause";
 
 /**
  * One projected payment event: a concrete date, the amount charged that day,
@@ -68,10 +69,21 @@ export class AnalyticsCalculator {
         break;
       }
 
-      total += AnalyticsCalculator.resolveOccurrenceAmount(
-        subscription,
-        occurrence,
-      );
+      // Cancellation BREAKS above (nothing later can land). Pause SKIPS this
+      // one occurrence but the projection continues — the first occurrence at
+      // or after resume_at is charged in full.
+      if (
+        !isOccurrencePaused(
+          { pausedAt: subscription.pausedAt, resumeAt: subscription.resumeAt },
+          occurrence,
+        )
+      ) {
+        total += AnalyticsCalculator.resolveOccurrenceAmount(
+          subscription,
+          occurrence,
+        );
+      }
+
       occurrence = RecurrenceUtils.addPeriod(
         occurrence,
         subscription.every,
@@ -181,6 +193,25 @@ export class AnalyticsCalculator {
           )
         ) {
           break;
+        }
+
+        // Pause skips this occurrence but the horizon walk continues.
+        if (
+          isOccurrencePaused(
+            {
+              pausedAt: subscription.pausedAt,
+              resumeAt: subscription.resumeAt,
+            },
+            projectionDate,
+          )
+        ) {
+          projectionDate = RecurrenceUtils.addPeriod(
+            projectionDate,
+            subscription.every,
+            subscription.period as SubscriptionPeriod,
+            { anchorDate: paymentDateZoned },
+          );
+          continue;
         }
 
         const daysUntil = Math.round(
@@ -446,6 +477,25 @@ export class AnalyticsCalculator {
         );
 
         if (!include) break;
+
+        // Pause skips this occurrence but the range walk continues.
+        if (
+          isOccurrencePaused(
+            {
+              pausedAt: subscription.pausedAt,
+              resumeAt: subscription.resumeAt,
+            },
+            occurrence,
+          )
+        ) {
+          occurrence = RecurrenceUtils.addPeriod(
+            occurrence,
+            subscription.every,
+            subscription.period as SubscriptionPeriod,
+            { anchorDate: paymentDateZoned },
+          );
+          continue;
+        }
 
         payments.push({
           date: occurrence,
