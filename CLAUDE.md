@@ -2,6 +2,7 @@
 
 Subscription-management SaaS. **Bun** monorepo, orchestrated by **Turbo**.
 
+- `apps/mobile` (`@subeye/mobile`) — **the v4 client.** Expo + expo-router, FSD without a `features` layer. See `apps/mobile/CLAUDE.md` before touching it.
 - `apps/client` (`@subeye/client`) — React 19 + Vite PWA, **Feature-Sliced Design**.
 - `apps/server` (`@subeye/server`) — **Hono** API deployed as a **single Cloudflare Worker** that serves both the API and the built client assets.
 - `packages/*` — scoped `@subeye/*` libraries, separated **by concern**, consumed as **source** (see below).
