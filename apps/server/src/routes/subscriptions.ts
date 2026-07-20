@@ -7,6 +7,7 @@ import {
   CancelSubscriptionSchema,
   idQuerySchema,
   listQuerySchema,
+  PauseSubscriptionSchema,
   SchedulePriceChangeSchema,
   StartTrialSchema,
   UpdateSubscriptionSchema,
@@ -272,6 +273,47 @@ export const subscriptionRouter = new Hono()
       try {
         const { id } = context.req.valid("param");
         const subscription = await SubscriptionService.renewSubscription(
+          id,
+          userId,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/pause",
+    protect,
+    vValidator("param", idQuerySchema),
+    vValidator("json", PauseSubscriptionSchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const payload = context.req.valid("json");
+        const subscription = await SubscriptionService.pauseSubscription(
+          id,
+          userId,
+          payload,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
+  .post(
+    "/:id/resume",
+    protect,
+    vValidator("param", idQuerySchema),
+    async (context) => {
+      const userId = requireUserId(context);
+
+      try {
+        const { id } = context.req.valid("param");
+        const subscription = await SubscriptionService.resumeSubscription(
           id,
           userId,
         );
