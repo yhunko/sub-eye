@@ -1,14 +1,11 @@
 import { vValidator } from "@hono/valibot-validator";
 import {
-  CategoryAiApplyInputSchema,
-  CategoryAiOptimizeApplyInputSchema,
   CreateCategorySchema,
   DeleteCategoriesInputSchema,
   UpdateCategorySchema,
 } from "@subeye/shared";
 import { Hono } from "hono";
 import { object, string } from "valibot";
-import { CategoryAiService } from "../domains/category/categoryAiService";
 import { CategoryService } from "../domains/category/categoryService";
 import { protect } from "../middleware/auth";
 import { getOrgId, requireUserId } from "../utils/authUtils";
@@ -60,60 +57,6 @@ export const categoryRouter = new Hono()
         const response = await CategoryService.deleteCategories(
           payload.ids,
           userId,
-        );
-        return context.json(response);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .post("/ai/suggest", protect, async (context) => {
-    const userId = requireUserId(context);
-    try {
-      const response = await CategoryAiService.suggestCategories(userId);
-      return context.json(response);
-    } catch (error) {
-      return handleServiceError(context, error);
-    }
-  })
-  .post("/ai/optimize/suggest", protect, async (context) => {
-    const userId = requireUserId(context);
-    try {
-      const response = await CategoryAiService.suggestOptimization(userId);
-      return context.json(response);
-    } catch (error) {
-      return handleServiceError(context, error);
-    }
-  })
-  .post(
-    "/ai/optimize/apply",
-    protect,
-    vValidator("json", CategoryAiOptimizeApplyInputSchema),
-    async (context) => {
-      const userId = requireUserId(context);
-      try {
-        const payload = context.req.valid("json");
-        const response = await CategoryAiService.applyOptimization(
-          userId,
-          payload,
-        );
-        return context.json(response);
-      } catch (error) {
-        return handleServiceError(context, error);
-      }
-    },
-  )
-  .post(
-    "/ai/apply",
-    protect,
-    vValidator("json", CategoryAiApplyInputSchema),
-    async (context) => {
-      const userId = requireUserId(context);
-      try {
-        const payload = context.req.valid("json");
-        const response = await CategoryAiService.applyCategories(
-          userId,
-          payload,
         );
         return context.json(response);
       } catch (error) {

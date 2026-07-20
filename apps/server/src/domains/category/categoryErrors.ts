@@ -13,11 +13,3 @@ export class CategoryLimitReachedError extends Error {
     this.name = "CategoryLimitReachedError";
   }
 }
-
-export class CategoryAiQuotaExceededError extends Error {
-  readonly status = 403 as const;
-  constructor() {
-    super("AI quota exceeded");
-    this.name = "CategoryAiQuotaExceededError";
-  }
-}

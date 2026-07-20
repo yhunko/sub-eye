@@ -4,7 +4,6 @@ import type { Bindings } from "./env";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
 import { categoryRouter } from "./routes/categories";
-import { comparatorRouter } from "./routes/comparator";
 import { devRouter } from "./routes/dev";
 import { pushNotificationRouter } from "./routes/push-notifications";
 import { subscriptionRouter } from "./routes/subscriptions";
@@ -36,7 +35,6 @@ export const app = new Hono<{ Bindings: Bindings }>()
   // For per-route protection: .get("/api/private", protect, handler)
   .route("/categories", categoryRouter)
   .route("/analytics", analyticsRouter)
-  .route("/comparator", comparatorRouter)
   .route("/subscriptions", subscriptionRouter)
   .route("/push-notifications", pushNotificationRouter)
   .route("/telegram-notifications", telegramNotificationRouter)
