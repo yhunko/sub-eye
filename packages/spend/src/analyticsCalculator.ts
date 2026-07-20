@@ -16,7 +16,12 @@ import {
 } from "@subeye/shared";
 import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
 
-type PaymentOccurrence = {
+/**
+ * One projected payment event: a concrete date, the amount charged that day,
+ * and the subscription it belongs to. A weekly subscription produces four or
+ * five of these in a single month and every one of them counts toward spend.
+ */
+export type PaymentOccurrence = {
   date: Date;
   amount: number;
   subscription: SubscriptionDto;
@@ -414,7 +419,7 @@ export class AnalyticsCalculator {
   /**
    * Collects individual payment occurrences for all subscriptions in a range.
    */
-  private static collectPaymentsInRange(
+  static collectPaymentsInRange(
     subscriptions: SubscriptionDto[],
     rangeStart: Date,
     rangeEnd: Date,
@@ -463,7 +468,7 @@ export class AnalyticsCalculator {
     return payments;
   }
 
-  private static resolveOccurrenceAmount(
+  static resolveOccurrenceAmount(
     subscription: SubscriptionDto,
     occurrence: Date,
   ): number {

@@ -6,7 +6,7 @@ import {
   type SubscriptionDto,
   SubscriptionPeriod,
 } from "@subeye/shared";
-import { AnalyticsCalculator } from "../src/domains/analytics/analyticsCalculator";
+import { AnalyticsCalculator } from "../src/analyticsCalculator";
 
 const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({
   id: "sub_31st",

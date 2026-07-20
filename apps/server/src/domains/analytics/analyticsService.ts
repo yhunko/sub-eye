@@ -9,11 +9,11 @@ import {
   DateTimezoneUtils,
   isCurrentlyActiveSubscription,
 } from "@subeye/shared";
+import { AnalyticsCalculator } from "@subeye/spend";
 import { eachDayOfInterval, endOfWeek, startOfWeek } from "date-fns";
 import { CategoryService } from "../category/categoryService";
 import { SubscriptionService } from "../subscription/subscriptionService";
 import { UserService } from "../user/userService";
-import { AnalyticsCalculator } from "./analyticsCalculator";
 
 type AnalyticsServiceDeps = {
   subscriptionService: typeof SubscriptionService;
