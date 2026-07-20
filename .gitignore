@@ -46,3 +46,6 @@ bun.lockb
 
 # Cloudflare Workers local dev secrets
 .dev.vars
+
+# Neon dry-run branch connection string (Plan 3 Task 1)
+.env.branch
