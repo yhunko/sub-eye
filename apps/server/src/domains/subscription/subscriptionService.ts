@@ -12,7 +12,6 @@ import type {
 import { getPlanById, getSubscriptionLifecycleStatus } from "@subeye/shared";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
-import { OrgService } from "../org/orgService";
 import { UserService } from "../user/userService";
 import { SubscriptionCalculator } from "./subscriptionCalculator";
 import {
@@ -37,7 +36,6 @@ export type SubscriptionServiceDeps = {
   phaseRepository: typeof SubscriptionPricePhaseRepository;
   currencyService: typeof CurrencyService;
   userService: typeof UserService;
-  orgService: typeof OrgService;
   historyService: typeof SubscriptionHistoryService;
   categoryRepository: typeof CategoryRepository;
 };
@@ -53,7 +51,6 @@ export const defaultDeps: SubscriptionServiceDeps = {
   phaseRepository: SubscriptionPricePhaseRepository,
   currencyService: CurrencyService,
   userService: UserService,
-  orgService: OrgService,
   historyService: SubscriptionHistoryService,
   categoryRepository: CategoryRepository,
 };
@@ -133,9 +130,7 @@ export class SubscriptionService {
       effectiveOrgId
         ? deps.repository.countByOrgId(effectiveOrgId)
         : deps.repository.countByUserId(userId),
-      effectiveOrgId
-        ? deps.orgService.getOrgPlanId(effectiveOrgId)
-        : deps.userService.getPlanId(userId),
+      deps.userService.getPlanId(userId),
     ]);
     const maxSubscriptions = getPlanById(planId).limits.maxSubscriptions;
 

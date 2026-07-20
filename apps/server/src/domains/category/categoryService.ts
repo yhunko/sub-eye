@@ -5,7 +5,6 @@ import type {
   UpdateCategoryInput,
 } from "@subeye/shared";
 import { getPlanById } from "@subeye/shared";
-import { OrgService } from "../org/orgService";
 import { UserService } from "../user/userService";
 import {
   CategoryLimitReachedError,
@@ -16,13 +15,11 @@ import { CategoryRepository } from "./categoryRepository";
 type CategoryServiceDeps = {
   repository: typeof CategoryRepository;
   userService: typeof UserService;
-  orgService: typeof OrgService;
 };
 
 const defaultDeps: CategoryServiceDeps = {
   repository: CategoryRepository,
   userService: UserService,
-  orgService: OrgService,
 };
 
 export class CategoryService {
@@ -60,9 +57,7 @@ export class CategoryService {
       effectiveOrgId
         ? deps.repository.countByOrgId(effectiveOrgId)
         : deps.repository.countByUserId(userId),
-      effectiveOrgId
-        ? deps.orgService.getOrgPlanId(effectiveOrgId)
-        : deps.userService.getPlanId(userId),
+      deps.userService.getPlanId(userId),
     ]);
 
     const maxCategories = getPlanById(planId).limits.maxCategories;
