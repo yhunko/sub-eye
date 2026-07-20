@@ -409,7 +409,7 @@ export class SubscriptionPhaseService {
       currency: overrideCurrency,
     });
 
-    const inserted = await deps.phaseRepository.insertMany([
+    await deps.phaseRepository.insertMany([
       {
         subscriptionId: id,
         userId: existing.userId,
