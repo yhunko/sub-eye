@@ -3,8 +3,9 @@
  *
  * Encodes three invariants:
  *  1. Packages never depend on apps.
- *  2. Client Feature-Sliced Design layering: app → pages → widgets → features →
- *     entities → shared (a layer may only import from lower layers).
+ *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
+ *     (a layer may only import from lower layers). There is no `features`
+ *     layer — seven screens do not justify one.
  *  3. Server layering: repositories are leaves (never import services).
  *
  * @type {import('dependency-cruiser').IConfiguration}
@@ -18,43 +19,6 @@ module.exports = {
       severity: "error",
       from: { path: "^packages/" },
       to: { path: "^apps/" },
-    },
-    {
-      name: "fsd-no-pages-upward",
-      comment: "FSD: pages may import widgets/features/entities/shared only.",
-      severity: "error",
-      from: { path: "^apps/client/src/pages" },
-      to: { path: "^apps/client/src/app/" },
-    },
-    {
-      name: "fsd-no-widgets-upward",
-      comment: "FSD: widgets may import features/entities/shared only.",
-      severity: "error",
-      from: { path: "^apps/client/src/widgets" },
-      to: { path: "^apps/client/src/(app/|pages/)" },
-    },
-    {
-      name: "fsd-no-features-upward",
-      comment: "FSD: features may import entities/shared only.",
-      severity: "error",
-      from: { path: "^apps/client/src/features" },
-      to: { path: "^apps/client/src/(app/|pages/|widgets/)" },
-    },
-    {
-      name: "fsd-no-entities-upward",
-      comment: "FSD: entities may import shared only.",
-      severity: "error",
-      from: { path: "^apps/client/src/entities" },
-      to: { path: "^apps/client/src/(app/|pages/|widgets/|features/)" },
-    },
-    {
-      name: "fsd-no-shared-upward",
-      comment: "FSD: shared must not depend on any higher layer.",
-      severity: "error",
-      from: { path: "^apps/client/src/shared" },
-      to: {
-        path: "^apps/client/src/(app/|pages/|widgets/|features/|entities/)",
-      },
     },
     // --- apps/mobile FSD: app → widgets → entities → shared (NO features layer)
     //
@@ -96,14 +60,6 @@ module.exports = {
       to: { path: "^(@/features/|apps/mobile/src/features/)" },
     },
     {
-      name: "mobile-no-web-client-import",
-      comment:
-        "apps/mobile must never import the retired web client (apps/client is deleted in Plan 8).",
-      severity: "error",
-      from: { path: "^apps/mobile/" },
-      to: { path: "^apps/client/" },
-    },
-    {
       name: "server-repository-is-leaf",
       comment:
         "Server layering: repositories own DB access and must not depend on services (Route → Service → Repository).",
@@ -122,7 +78,7 @@ module.exports = {
   options: {
     tsConfig: { fileName: "tsconfig.json" },
     exclude: {
-      path: "(^node_modules)|(/dist/)|(/coverage/)|(routeTree\\.gen\\.ts)|(/shared/lib/i18n/)",
+      path: "(^node_modules)|(/dist/)|(/coverage/)",
     },
     doNotFollow: { path: "node_modules" },
   },
