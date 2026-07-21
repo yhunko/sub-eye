@@ -1,13 +1,23 @@
 import { useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, PixelRatio, StyleSheet, Text, View } from "react-native";
 import { colors } from "./theme";
 
 // ponytail: Google's favicon endpoint rather than a logo SDK or a bundled asset
 // set — one URL, no API key, no dependency, and it already serves every domain the
-// user can type into the brandDomain field. Swap in a real logo CDN only if the
-// quality complaint ever materialises.
-const logoUrl = (domain: string, size: number) =>
-  `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size * 2}`;
+// user can type into the brandDomain field.
+//
+// The endpoint serves only these discrete sizes. Asking for anything else (this
+// used to pass size*2) is rounded DOWN and then upscaled by the view, which is
+// what made the logos look soft: a 44pt row is 132 physical px on a 3x screen,
+// but we were requesting 88 and being handed 64. Ask for the smallest bucket
+// that still covers the box's real pixel size.
+const FAVICON_SIZES = [16, 32, 64, 128, 256];
+
+const logoUrl = (domain: string, size: number) => {
+  const physical = PixelRatio.getPixelSizeForLayoutSize(size);
+  const bucket = FAVICON_SIZES.find((value) => value >= physical) ?? 256;
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${bucket}`;
+};
 
 export function BrandLogo({
   name,
