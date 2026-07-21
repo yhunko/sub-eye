@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { SubscriptionPeriod } from "@subeye/shared";
 import {
   makeInitialFormValues,
   type SubscriptionFormValues,
@@ -10,7 +11,7 @@ const base: SubscriptionFormValues = {
   cost: "299",
   currency: "uah",
   every: "1",
-  period: "month",
+  period: SubscriptionPeriod.MONTH,
   paymentDate: new Date("2026-09-01T00:00:00.000Z"),
   categoryId: null,
   offerMode: "none",
@@ -38,7 +39,7 @@ describe("makeInitialFormValues", () => {
         cost: 149.5,
         currency: "usd",
         every: 3,
-        period: "month",
+        period: SubscriptionPeriod.MONTH,
         paymentDate: "2026-08-15T00:00:00.000Z",
         categoryId: "cat-1",
       },

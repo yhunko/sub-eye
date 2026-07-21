@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -42,6 +43,16 @@ export function SubscriptionsPage() {
       <Stack.Screen
         options={{
           title: m.subscriptions_title(),
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push("/subscriptions/new")}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.subs_add()}
+            >
+              <Text style={styles.add}>+</Text>
+            </Pressable>
+          ),
           // iOS 26: a collapsed search button on the nav bar's trailing edge that
           // expands into a field on tap ("integratedButton"). Styling stays
           // minimal so the native liquid-glass button owns its own appearance —
@@ -118,9 +129,9 @@ export function SubscriptionsPage() {
         renderItem={({ item }) => (
           <SubscriptionRow
             item={item}
-            // No setQueryData here: the detail screen reads the row straight out
-            // of the list cache via useCachedSubscriptionRow(id), so navigation
-            // paints instantly without writing a half-shaped detail object.
+            // No setQueryData here: subscriptionDetailQuery seeds itself from
+            // this list cache, so navigation paints instantly without writing a
+            // half-shaped detail object on the way out.
             onPress={() =>
               router.push({
                 pathname: "/subscriptions/[id]",
@@ -155,5 +166,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.muted,
     textAlign: "center",
+  },
+  // A glyph, not an icon dependency: the header has no icon set wired up and a
+  // "+" is the one affordance that needs no legend.
+  add: {
+    fontSize: 28,
+    lineHeight: 30,
+    fontWeight: "300",
+    color: colors.accent,
   },
 });

@@ -5,6 +5,10 @@ export {
   subscriptionsQuery,
   useCachedSubscriptionRow,
 } from "./api/list";
+export {
+  type CreateSubscriptionVars,
+  useCreateSubscription,
+} from "./api/use-create-subscription";
 export { useDeleteSubscription } from "./api/use-delete-subscription";
 export {
   type CancelSubscriptionVars,

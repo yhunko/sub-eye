@@ -1,4 +1,9 @@
-export type SubscriptionPeriodValue = "day" | "week" | "month" | "year";
+import { SubscriptionPeriod } from "@subeye/shared";
+
+// The shared enum, not a parallel string union: SubscriptionPeriod is a TS
+// string enum and therefore nominal, so a bare "month" is not assignable to it
+// and every hand-off to the API would need a cast.
+export type SubscriptionPeriodValue = SubscriptionPeriod;
 
 export type SubscriptionFormValues = {
   name: string;
@@ -77,7 +82,7 @@ export function makeInitialFormValues({
     // The stored preference, not a hardcoded "usd" — the defect this replaces.
     currency: subscription?.currency ?? preferredCurrency,
     every: subscription ? String(subscription.every) : "1",
-    period: subscription?.period ?? "month",
+    period: subscription?.period ?? SubscriptionPeriod.MONTH,
     paymentDate: subscription ? new Date(subscription.paymentDate) : new Date(),
     categoryId: subscription?.categoryId ?? null,
     // An offer is a creation-time concept; editing one is what the
