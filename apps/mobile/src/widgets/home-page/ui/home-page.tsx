@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,32 +9,16 @@ import {
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
 import { m } from "@/shared/i18n";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { RenewalRow } from "./renewal-row";
+import { ResumingRow } from "./resuming-row";
+import { StatTrio } from "./stat-trio";
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text
-        style={styles.statLabel}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {label}
-      </Text>
-      <Text
-        style={styles.statValue}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-// Foundation smoke screen: renders the three server-computed numbers so a
-// successful round trip is visible on device. Plan 6 replaces this with the real
-// Home (adds "Next up" and "Resuming soon").
+// Three server-computed numbers, then what is coming. No charts — that is a
+// product decision, not an omission: the v3 web client spent 2,526 LOC on charts
+// nobody used, and every number here is already calculated server-side.
 export function HomePage() {
-  const { data, isPending, isError, refetch } = useDashboard();
+  const { data, isPending, isError, isRefetching, refetch } = useDashboard();
 
   if (isPending) {
     return (
@@ -54,48 +39,86 @@ export function HomePage() {
     );
   }
 
-  const money = (amount: number) =>
-    `${Math.round(amount)} ${data.preferredCurrencyCode.toUpperCase()}`;
-
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={() => void refetch()}
+          tintColor={colors.muted}
+        />
+      }
     >
-      <Stat
-        label={m.home_monthlyBurnRate()}
-        value={money(data.monthlyBurnRate)}
+      <StatTrio
+        currency={data.preferredCurrencyCode}
+        yearlyForecast={data.yearlyForecast}
+        monthlyBurnRate={data.monthlyBurnRate}
+        remainingThisMonth={data.remainingThisMonth}
+        labels={{
+          yearly: m.home_yearlyForecast(),
+          monthly: m.home_monthlyBurnRate(),
+          remaining: m.home_remainingThisMonth(),
+        }}
       />
-      <Stat
-        label={m.home_yearlyForecast()}
-        value={money(data.yearlyForecast)}
-      />
-      <Stat
-        label={m.home_remainingThisMonth()}
-        value={money(data.remainingThisMonth)}
-      />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{m.home_nextUp()}</Text>
+        {data.upcomingRenewals.length ? (
+          data.upcomingRenewals.map((item) => (
+            <RenewalRow
+              key={`${item.id}-${item.nextPaymentDate}`}
+              item={item}
+            />
+          ))
+        ) : (
+          <Text style={styles.empty}>{m.home_nextUpEmpty()}</Text>
+        )}
+      </View>
+
+      {/* Rendered only when something is actually resuming — an always-present
+          empty "Resuming soon" block trains the user to stop reading it. */}
+      {data.resumingSoon.length ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{m.home_resumingSoon()}</Text>
+          {data.resumingSoon.map((item) => (
+            <ResumingRow key={item.id} item={item} />
+          ))}
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 24, gap: 12 },
+  content: { padding: 16, paddingBottom: 24, gap: 16 },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
   },
-  stat: {
+  section: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: colors.border,
-    padding: 16,
-    gap: 4,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  statLabel: { color: colors.muted, fontSize: 13 },
-  statValue: { color: colors.text, fontSize: 28, fontWeight: "700" },
+  sectionTitle: {
+    fontSize: 12.5,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 4,
+  },
+  empty: {
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.muted,
+  },
   error: { color: colors.muted, fontSize: 15, textAlign: "center" },
   retry: {
     backgroundColor: colors.surface,
