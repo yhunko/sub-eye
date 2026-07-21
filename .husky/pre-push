@@ -3,9 +3,6 @@ set -e
 echo "📦 Checking dependency consistency..."
 bun run deps:lint
 
-echo "🌎 Compiling i18n..."
-bun --cwd apps/client run prepare
-
 echo "🔎 Running lint across the repo..."
 bun run lint
 
