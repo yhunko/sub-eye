@@ -1,7 +1,7 @@
 import type { SubscriptionDto } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import type { SearchBarCommands } from "react-native-screens";
 import {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
@@ -24,6 +25,7 @@ export function SubscriptionsPage() {
   const router = useRouter();
   const list = useQuery(subscriptionsQuery());
   const [filters, setFilters] = useState(DEFAULT_SUBSCRIPTION_FILTERS);
+  const searchRef = useRef<SearchBarCommands | null>(null);
 
   // Everything the chips and the search field do happens right here, over the
   // array the query already holds. No debounce, no new query key, no round-trip —
@@ -40,9 +42,18 @@ export function SubscriptionsPage() {
       <Stack.Screen
         options={{
           title: m.subscriptions_title(),
-          // Native search field in the nav bar. onChangeText writes straight to
-          // local state — no debounce is needed when nothing fetches.
+          // iOS 26: a collapsed search button on the nav bar's trailing edge that
+          // expands into a field on tap ("integratedButton"). Styling stays
+          // minimal so the native liquid-glass button owns its own appearance —
+          // a custom barTintColor is what renders the glyph black on the dark
+          // field. onChangeText writes straight to local state; no debounce is
+          // needed because nothing fetches.
           headerSearchBarOptions: {
+            ref: searchRef,
+            placement: "integratedButton",
+            // Keep the button in the nav bar rather than letting iOS pull it
+            // into a bottom toolbar on iPhone.
+            allowToolbarIntegration: false,
             placeholder: m.subs_searchPlaceholder(),
             autoCapitalize: "none",
             tintColor: colors.accent,
@@ -60,6 +71,12 @@ export function SubscriptionsPage() {
         keyExtractor={(item) => item.id}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
+        onScrollBeginDrag={() => {
+          // integratedButton ignores hideWhenScrolling (UIKit honours that only
+          // for the stacked placement), so collapse an empty search back to its
+          // button ourselves once the list starts moving.
+          if (!filters.search.trim()) searchRef.current?.cancelSearch();
+        }}
         contentContainerStyle={visible.length ? styles.list : styles.empty}
         refreshControl={
           <RefreshControl
