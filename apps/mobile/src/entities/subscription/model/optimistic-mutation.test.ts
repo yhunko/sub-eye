@@ -27,6 +27,11 @@ const detailCost = () =>
 const listCost = () =>
   client.getQueryData<SubscriptionDto[]>(subscriptionKeys.list())?.[0]?.cost;
 
+// TanStack passes a MutationFunctionContext as the last argument of every
+// mutation callback. Nothing here reads it; it exists to satisfy the signature
+// when the callbacks are invoked directly instead of through a React render.
+const mutationContext = () => ({ client, meta: undefined });
+
 type CostVars = { id: string; cost: number };
 
 const costMutation = (
@@ -44,7 +49,7 @@ const costMutation = (
 
 describe("buildOptimisticSubscriptionMutation", () => {
   it("applies the patch to both caches before the request leaves the device", async () => {
-    await costMutation().onMutate?.({ id: "a", cost: 149 });
+    await costMutation().onMutate?.({ id: "a", cost: 149 }, mutationContext());
 
     expect(detailCost()).toBe(149);
     expect(listCost()).toBe(149);
@@ -58,10 +63,15 @@ describe("buildOptimisticSubscriptionMutation", () => {
     });
     const vars = { id: "a", cost: 149 };
 
-    const context = await options.onMutate?.(vars);
+    const snapshot = await options.onMutate?.(vars, mutationContext());
     expect(detailCost()).toBe(149); // the optimistic state was visible
 
-    options.onError?.(new Error("network down"), vars, context);
+    options.onError?.(
+      new Error("network down"),
+      vars,
+      snapshot,
+      mutationContext(),
+    );
 
     // Both shapes are back to the server truth — this is the whole point.
     expect(detailCost()).toBe(100);
@@ -71,7 +81,7 @@ describe("buildOptimisticSubscriptionMutation", () => {
   it("cancels in-flight queries before patching, so a late refetch cannot clobber it", async () => {
     const cancelQueries = spyOn(client, "cancelQueries");
 
-    await costMutation().onMutate?.({ id: "a", cost: 149 });
+    await costMutation().onMutate?.({ id: "a", cost: 149 }, mutationContext());
 
     const cancelled = cancelQueries.mock.calls.map(
       ([argument]) => (argument as { queryKey: readonly unknown[] }).queryKey,
@@ -88,10 +98,14 @@ describe("buildOptimisticSubscriptionMutation", () => {
       removes: true,
     });
 
-    await options.onMutate?.({ id: "a" });
+    await options.onMutate?.({ id: "a" }, mutationContext());
 
-    expect(client.getQueryData(subscriptionKeys.list())).toEqual([]);
-    expect(client.getQueryData(subscriptionKeys.detail("a"))).toBeUndefined();
+    expect(
+      client.getQueryData<SubscriptionDto[]>(subscriptionKeys.list()),
+    ).toEqual([]);
+    expect(
+      client.getQueryData<SubscriptionDto>(subscriptionKeys.detail("a")),
+    ).toBeUndefined();
   });
 
   it("overwrites the optimistic guess with the authoritative server row", () => {
@@ -105,11 +119,12 @@ describe("buildOptimisticSubscriptionMutation", () => {
       allowedActions: ["edit", "delete"],
     });
 
-    costMutation().onSuccess?.(server, { id: "a", cost: 149 }, undefined, {
-      id: "a",
-      detail: netflix,
-      list: [netflix],
-    });
+    costMutation().onSuccess?.(
+      server,
+      { id: "a", cost: 149 },
+      { id: "a", detail: netflix, list: [netflix] },
+      mutationContext(),
+    );
 
     expect(
       client.getQueryData<SubscriptionDto>(subscriptionKeys.detail("a")),
@@ -127,8 +142,8 @@ describe("buildOptimisticSubscriptionMutation", () => {
     });
 
     const vars = { id: "a", cost: 149 };
-    const context = await options.onMutate?.(vars);
-    options.onError?.(new Error("nope"), vars, context);
+    const snapshot = await options.onMutate?.(vars, mutationContext());
+    options.onError?.(new Error("nope"), vars, snapshot, mutationContext());
 
     // Ordering matters: the user must never be told "that failed" while the
     // screen is still showing the value that failed to save.
