@@ -1,3 +1,4 @@
+export { subscriptionDetailQuery, useSubscriptionDetail } from "./api/detail";
 export {
   getCachedSubscriptionRow,
   subscriptionKeys,
