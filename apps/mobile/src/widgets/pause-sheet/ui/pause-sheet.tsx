@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { usePauseSubscription } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { NativeDateField } from "@/shared/ui/native-date-field";
@@ -39,7 +39,7 @@ export function PauseSheet({ id }: { id: string }) {
   };
 
   return (
-    <ScrollView style={styles.sheet} contentContainerStyle={styles.content}>
+    <View style={styles.sheet}>
       <Text style={styles.title}>{m.confirm_pauseTitle()}</Text>
 
       <NativeDateField
@@ -57,13 +57,12 @@ export function PauseSheet({ id }: { id: string }) {
       >
         <Text style={styles.primaryLabel}>{m.pause_confirm()}</Text>
       </Pressable>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, paddingBottom: 40 },
+  sheet: { backgroundColor: colors.bg, padding: 20, paddingBottom: 40 },
   title: {
     marginBottom: 20,
     fontSize: 20,
