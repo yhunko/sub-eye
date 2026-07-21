@@ -5,6 +5,11 @@ export {
   subscriptionsQuery,
   useCachedSubscriptionRow,
 } from "./api/list";
+export { useDeleteSubscription } from "./api/use-delete-subscription";
+export {
+  type UpdateSubscriptionVars,
+  useUpdateSubscription,
+} from "./api/use-update-subscription";
 export {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
