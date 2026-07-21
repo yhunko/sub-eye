@@ -1,4 +1,7 @@
 import { SubscriptionPeriod } from "@subeye/shared";
+// Straight from the money module, not the format barrel: the barrel also carries
+// `when`, which reaches the Paraglide runtime and the native layer behind it.
+import { parsePrice } from "@/shared/lib/format/money";
 
 // The shared enum, not a parallel string union: SubscriptionPeriod is a TS
 // string enum and therefore nominal, so a bare "month" is not assignable to it
@@ -46,20 +49,6 @@ export type FormErrorCode =
 export type FormErrors = Partial<
   Record<keyof SubscriptionFormValues, FormErrorCode>
 >;
-
-/**
- * Accepts "1 299,50" and "1299.50" alike — a numeric keypad in a uk-UA locale
- * emits a comma, and a user pasting a price brings the grouping with it.
- * Returns null when there is no number in there at all.
- */
-function parsePrice(input: string): number | null {
-  const normalized = input.replace(/\s/g, "").replace(",", ".");
-  if (normalized === "" || normalized === ".") return null;
-  if (!/^\d*\.?\d*$/.test(normalized)) return null;
-
-  const value = Number(normalized);
-  return Number.isFinite(value) ? value : null;
-}
 
 export function makeInitialFormValues({
   preferredCurrency,

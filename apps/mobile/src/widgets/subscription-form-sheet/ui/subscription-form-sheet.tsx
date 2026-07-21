@@ -12,6 +12,7 @@ import { preferencesQuery } from "@/entities/user";
 import { m } from "@/shared/i18n";
 import { Field, TextField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
+import { Segmented } from "@/shared/ui/segmented";
 import { colors } from "@/shared/ui/theme";
 import {
   type FormErrorCode,
@@ -20,7 +21,6 @@ import {
   type SubscriptionFormValues,
   validateSubscriptionForm,
 } from "../model/form-schema";
-import { Segmented } from "./segmented";
 
 // Message-function references, invoked at render time — never called at module
 // scope, or the string freezes in whichever locale was active at import.

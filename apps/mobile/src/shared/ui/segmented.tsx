@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
 
 /** A row of mutually exclusive choices. Used for period, offer kind and mode. */
 export function Segmented<T extends string>({

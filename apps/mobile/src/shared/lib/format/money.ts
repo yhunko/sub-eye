@@ -15,6 +15,21 @@ const SYMBOLS: Record<string, { symbol: string; locale: string }> = {
   pln: { symbol: "zł", locale: "pl-PL" },
 };
 
+/**
+ * Reads a price the user typed. Accepts "1 299,50" and "1299.50" alike — a
+ * numeric keypad in a uk-UA locale emits a comma, and a pasted price brings its
+ * grouping with it. Returns null when there is no number in there at all, so
+ * callers can tell "empty or gibberish" apart from a legitimate zero.
+ */
+export function parsePrice(input: string): number | null {
+  const normalized = input.replace(/\s/g, "").replace(",", ".");
+  if (normalized === "" || normalized === ".") return null;
+  if (!/^\d*\.?\d*$/.test(normalized)) return null;
+
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
 export function formatMoney(
   amount: number,
   currencyCode: string,
