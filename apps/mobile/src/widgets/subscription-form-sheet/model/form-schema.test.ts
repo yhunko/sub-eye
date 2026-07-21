@@ -1,0 +1,184 @@
+import { describe, expect, it } from "bun:test";
+import {
+  makeInitialFormValues,
+  type SubscriptionFormValues,
+  validateSubscriptionForm,
+} from "./form-schema";
+
+const base: SubscriptionFormValues = {
+  name: "Netflix",
+  cost: "299",
+  currency: "uah",
+  every: "1",
+  period: "month",
+  paymentDate: new Date("2026-09-01T00:00:00.000Z"),
+  categoryId: null,
+  offerMode: "none",
+  offerCost: "",
+  offerEndsAt: null,
+};
+
+const tomorrow = () => new Date(Date.now() + 24 * 60 * 60 * 1000);
+const yesterday = () => new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+describe("makeInitialFormValues", () => {
+  // The retired web form hardcoded `currency: "usd"` in its defaultValues
+  // despite a stored preference. This is the regression guard.
+  it("defaults the currency to the user's preferred currency, not usd", () => {
+    expect(makeInitialFormValues({ preferredCurrency: "uah" }).currency).toBe(
+      "uah",
+    );
+  });
+
+  it("prefills from an existing subscription when editing", () => {
+    const values = makeInitialFormValues({
+      preferredCurrency: "uah",
+      subscription: {
+        name: "Spotify",
+        cost: 149.5,
+        currency: "usd",
+        every: 3,
+        period: "month",
+        paymentDate: "2026-08-15T00:00:00.000Z",
+        categoryId: "cat-1",
+      },
+    });
+
+    expect(values).toMatchObject({
+      name: "Spotify",
+      cost: "149.5",
+      currency: "usd",
+      every: "3",
+      categoryId: "cat-1",
+    });
+  });
+});
+
+describe("validateSubscriptionForm", () => {
+  it("coerces the text inputs to numbers and an ISO date", () => {
+    const result = validateSubscriptionForm(base);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // A form that posts "299" where the API expects 299 fails server-side with
+    // an opaque validation error, so the coercion is the point of this module.
+    expect(result.value.cost).toBe(299);
+    expect(result.value.every).toBe(1);
+    expect(result.value.paymentDate).toBe("2026-09-01T00:00:00.000Z");
+    expect(result.value.intro).toBeNull();
+  });
+
+  it("accepts a comma decimal and spaced thousands", () => {
+    const result = validateSubscriptionForm({ ...base, cost: "1 299,50" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.cost).toBe(1299.5);
+  });
+
+  it("lowercases and trims the currency", () => {
+    const result = validateSubscriptionForm({ ...base, currency: " UAH " });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.currency).toBe("uah");
+  });
+
+  it("rejects a blank name", () => {
+    const result = validateSubscriptionForm({ ...base, name: "  " });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.name).toBe("required");
+  });
+
+  it("rejects a non-positive or unparseable price", () => {
+    expect(validateSubscriptionForm({ ...base, cost: "0" })).toMatchObject({
+      ok: false,
+      errors: { cost: "positiveNumber" },
+    });
+    expect(validateSubscriptionForm({ ...base, cost: "abc" })).toMatchObject({
+      ok: false,
+      errors: { cost: "invalidNumber" },
+    });
+  });
+
+  it("rejects a fractional cycle length", () => {
+    expect(validateSubscriptionForm({ ...base, every: "1.5" })).toMatchObject({
+      ok: false,
+      errors: { every: "wholeNumber" },
+    });
+  });
+
+  it("rejects a past offer end date", () => {
+    const result = validateSubscriptionForm({
+      ...base,
+      offerMode: "trial",
+      offerEndsAt: yesterday(),
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.offerEndsAt).toBe("futureDate");
+  });
+
+  // The two rules the retired browser form owned, now enforced on both sides:
+  // an intro discount must cost something, a free trial may cost nothing.
+  it("rejects a zero intro price but allows a zero trial price", () => {
+    expect(
+      validateSubscriptionForm({
+        ...base,
+        offerMode: "intro",
+        offerCost: "0",
+        offerEndsAt: tomorrow(),
+      }),
+    ).toMatchObject({ ok: false, errors: { offerCost: "positiveNumber" } });
+
+    const trial = validateSubscriptionForm({
+      ...base,
+      offerMode: "trial",
+      offerCost: "0",
+      offerEndsAt: tomorrow(),
+    });
+    expect(trial.ok).toBe(true);
+    if (!trial.ok) return;
+    expect(trial.value.intro).toEqual({
+      kind: "trial",
+      promoCost: 0,
+      endsAt: trial.value.intro?.endsAt ?? "",
+    });
+  });
+
+  it("reads a blank trial price as free, but still rejects gibberish", () => {
+    expect(
+      validateSubscriptionForm({
+        ...base,
+        offerMode: "trial",
+        offerCost: "",
+        offerEndsAt: tomorrow(),
+      }).ok,
+    ).toBe(true);
+
+    expect(
+      validateSubscriptionForm({
+        ...base,
+        offerMode: "trial",
+        offerCost: "free",
+        offerEndsAt: tomorrow(),
+      }),
+    ).toMatchObject({ ok: false, errors: { offerCost: "invalidNumber" } });
+  });
+
+  it("drops the offer entirely when the mode is none", () => {
+    const result = validateSubscriptionForm({
+      ...base,
+      offerMode: "none",
+      offerCost: "5",
+      offerEndsAt: yesterday(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.intro).toBeNull();
+  });
+});
