@@ -7,6 +7,14 @@ export {
 } from "./api/list";
 export { useDeleteSubscription } from "./api/use-delete-subscription";
 export {
+  type CancelSubscriptionVars,
+  type PauseSubscriptionVars,
+  useCancelSubscription,
+  usePauseSubscription,
+  useRenewSubscription,
+  useResumeSubscription,
+} from "./api/use-lifecycle";
+export {
   type UpdateSubscriptionVars,
   useUpdateSubscription,
 } from "./api/use-update-subscription";
