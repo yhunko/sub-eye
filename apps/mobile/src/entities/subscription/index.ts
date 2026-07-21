@@ -32,3 +32,4 @@ export {
   type SubscriptionSort,
   type SubscriptionStatusFilter,
 } from "./model/filters";
+export { type TimelineRow, toTimelineRows } from "./model/timeline-rows";

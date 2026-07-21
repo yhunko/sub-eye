@@ -1,0 +1,4 @@
+[test]
+# See test-preload.ts: react-native's Flow-typed entry point is unparseable by
+# bun, so it is stubbed before any test file loads.
+preload = ["./test-preload.ts"]
