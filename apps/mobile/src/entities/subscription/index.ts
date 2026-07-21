@@ -15,6 +15,13 @@ export {
   useResumeSubscription,
 } from "./api/use-lifecycle";
 export {
+  type ApplyPhaseNowVars,
+  type StartPhaseVars,
+  useApplyPhaseNow,
+  useCancelPhase,
+  useStartPhase,
+} from "./api/use-phases";
+export {
   type UpdateSubscriptionVars,
   useUpdateSubscription,
 } from "./api/use-update-subscription";

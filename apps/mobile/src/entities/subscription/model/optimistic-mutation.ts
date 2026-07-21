@@ -11,6 +11,8 @@ import {
   snapshotSubscriptionCaches,
 } from "./cache";
 
+export type { SubscriptionPatch };
+
 export type OptimisticMutationConfig<TVars> = {
   client: QueryClient;
   /** How to read the subscription id out of the mutation variables. */
