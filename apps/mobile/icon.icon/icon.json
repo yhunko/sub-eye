@@ -1,0 +1,45 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "bar-center.svg",
+          "name": "bar-center"
+        },
+        {
+          "image-name": "bar-left.svg",
+          "name": "bar-left"
+        },
+        {
+          "image-name": "bar-right.svg",
+          "name": "bar-right"
+        },
+        {
+          "image-name": "eye.svg",
+          "name": "eye",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              -0.13245740763898084, -0.008005360100696635
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": ["watchOS"],
+    "squares": ["iOS"]
+  }
+}
