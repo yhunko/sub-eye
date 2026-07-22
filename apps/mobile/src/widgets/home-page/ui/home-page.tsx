@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   Pressable,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,15 +9,17 @@ import {
 import { useDashboard } from "@/entities/dashboard";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
-import { RenewalRow } from "./renewal-row";
+import { CategoryBars } from "./category-bars";
+import { MonthHero } from "./month-hero";
 import { ResumingRow } from "./resuming-row";
-import { StatTrio } from "./stat-trio";
+import { TopSubscription } from "./top-subscription";
+import { TrendCard } from "./trend-card";
 
-// Three server-computed numbers, then what is coming. No charts — that is a
-// product decision, not an omission: the v3 web client spent 2,526 LOC on charts
-// nobody used, and every number here is already calculated server-side.
+// One question per card, in the order a user asks them: what is left this month,
+// where is it heading, what costs the most, where does it go. Upcoming renewals
+// live on the Subscriptions tab — repeating them here made Home a second list.
 export function HomePage() {
-  const { data, isPending, isError, isRefetching, refetch } = useDashboard();
+  const { data, isPending, isError, refetch } = useDashboard();
 
   if (isPending) {
     return (
@@ -43,39 +44,29 @@ export function HomePage() {
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefetching}
-          onRefresh={() => void refetch()}
-          tintColor={colors.muted}
-        />
-      }
     >
-      <StatTrio
+      <MonthHero
         currency={data.preferredCurrencyCode}
-        yearlyForecast={data.yearlyForecast}
-        monthlyBurnRate={data.monthlyBurnRate}
         remainingThisMonth={data.remainingThisMonth}
-        labels={{
-          yearly: m.home_yearlyForecast(),
-          monthly: m.home_monthlyBurnRate(),
-          remaining: m.home_remainingThisMonth(),
-        }}
+        nextMonthForecast={data.nextMonthForecast}
       />
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{m.home_nextUp()}</Text>
-        {data.upcomingRenewals.length ? (
-          data.upcomingRenewals.map((item) => (
-            <RenewalRow
-              key={`${item.id}-${item.nextPaymentDate}`}
-              item={item}
-            />
-          ))
-        ) : (
-          <Text style={styles.empty}>{m.home_nextUpEmpty()}</Text>
-        )}
-      </View>
+      <TrendCard
+        currency={data.preferredCurrencyCode}
+        monthlyTrend={data.monthlyTrend}
+      />
+
+      {data.mostExpensiveSubscription ? (
+        <TopSubscription
+          currency={data.preferredCurrencyCode}
+          item={data.mostExpensiveSubscription}
+        />
+      ) : null}
+
+      <CategoryBars
+        currency={data.preferredCurrencyCode}
+        categories={data.categorySpending}
+      />
 
       {/* Rendered only when something is actually resuming — an always-present
           empty "Resuming soon" block trains the user to stop reading it. */}
@@ -92,7 +83,7 @@ export function HomePage() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 24, gap: 16 },
+  content: { padding: 16, paddingBottom: 24, gap: 14 },
   centered: {
     flex: 1,
     alignItems: "center",
@@ -113,11 +104,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 4,
-  },
-  empty: {
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.muted,
   },
   error: { color: colors.muted, fontSize: 15, textAlign: "center" },
   retry: {

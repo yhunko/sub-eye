@@ -36,4 +36,9 @@ export {
   type SubscriptionSort,
   type SubscriptionStatusFilter,
 } from "./model/filters";
+export {
+  type LifecycleActionItem,
+  type LifecycleActionTarget,
+  useLifecycleActionBuilder,
+} from "./model/lifecycle-actions";
 export { type TimelineRow, toTimelineRows } from "./model/timeline-rows";

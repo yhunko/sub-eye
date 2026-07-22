@@ -18,6 +18,18 @@ import { mock } from "bun:test";
  * touched rather than mirroring the whole API.
  */
 mock.module("react-native", () => ({
+  ActionSheetIOS: { showActionSheetWithOptions: () => {} },
   Alert: { alert: () => {} },
   Platform: { OS: "ios", select: (spec: Record<string, unknown>) => spec.ios },
+}));
+
+/**
+ * Same problem, one layer out: the subscription barrel exports
+ * `useLifecycleActionBuilder`, which needs `useRouter` to open the edit/pricing
+ * screens. expo-router reaches react-native through DEEP paths
+ * (`react-native/Libraries/...`) that the stub above cannot intercept, so a test
+ * that only wanted the barrel's query keys dies on a Flow parse error.
+ */
+mock.module("expo-router", () => ({
+  useRouter: () => ({ push: () => {}, back: () => {} }),
 }));

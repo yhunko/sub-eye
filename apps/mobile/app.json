@@ -7,17 +7,24 @@
     "runtimeVersion": { "policy": "appVersion" },
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "backgroundColor": "#0f1115",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "cc.subeye.app",
+      "icon": "./icon.icon",
       "backgroundColor": "#0f1115",
       "config": { "usesNonExemptEncryption": false },
       "infoPlist": { "CFBundleAllowMixedLocalizations": true }
     },
     "android": {
       "package": "cc.subeye.app",
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f1115"
+      }
     },
     "locales": {
       "en": "./locales/en.json",

@@ -98,6 +98,9 @@ export function FilterChips({
 const styles = StyleSheet.create({
   strip: {
     gap: 8,
+    // The strip itself is full-bleed so chips scroll off under the screen edge;
+    // this is what puts them back in line with the rows below.
+    paddingHorizontal: 12,
     paddingBottom: 8,
   },
   chip: {
