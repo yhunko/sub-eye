@@ -54,3 +54,6 @@ bun.lockb
 # Server types-only build output (@subeye/server/client)
 apps/server/dist
 apps/server/tsconfig.tsbuildinfo
+
+# graphify knowledge-graph output
+graphify-out/

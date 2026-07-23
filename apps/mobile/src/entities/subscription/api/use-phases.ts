@@ -7,7 +7,7 @@ import {
   type SubscriptionPatch,
 } from "../model/optimistic-mutation";
 
-export type StartPhaseVars = { id: string; phase: StartPhaseInput };
+type StartPhaseVars = { id: string; phase: StartPhaseInput };
 
 /**
  * What a new phase does to today's price.
@@ -47,7 +47,7 @@ export function useStartPhase() {
   );
 }
 
-export type ApplyPhaseNowVars = {
+type ApplyPhaseNowVars = {
   id: string;
   phaseId: string;
   cost: number;

@@ -1,9 +1,5 @@
 import type { SubscriptionDto, SubscriptionListPageDto } from "@subeye/shared";
-import {
-  type QueryClient,
-  queryOptions,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, queryOptions } from "@tanstack/react-query";
 import { apiClient, assertOk } from "@/shared/api";
 
 export const subscriptionKeys = {
@@ -50,11 +46,4 @@ export function getCachedSubscriptionRow(
   return client
     .getQueryData<SubscriptionDto[]>(subscriptionKeys.list())
     ?.find((item) => item.id === id);
-}
-
-/** React binding for getCachedSubscriptionRow. */
-export function useCachedSubscriptionRow(
-  id: string,
-): SubscriptionDto | undefined {
-  return getCachedSubscriptionRow(useQueryClient(), id);
 }

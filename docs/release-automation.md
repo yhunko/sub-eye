@@ -14,7 +14,7 @@ Workflow: `.github/workflows/release-production.yml`
 Order of operations:
 
 1. Install dependencies.
-2. Apply production DB migrations (`bun run --cwd server db:migrate`).
+2. Apply production DB migrations (`bun run --cwd apps/server db:migrate`).
 3. Run `semantic-release` for stable version/tag/notes updates.
 4. Build and deploy to Cloudflare.
 5. Back-merge `main` into `dev`.

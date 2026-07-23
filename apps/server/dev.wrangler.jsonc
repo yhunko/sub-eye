@@ -1,13 +1,13 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "subeye",
-  "main": "./apps/server/src/index.ts",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "subeye-dev",
+  "main": "./src/index.ts",
   "compatibility_date": "2025-05-25",
   "route": {
-    "pattern": "app.subeye.cc",
+    "pattern": "dev.subeye.cc",
     "custom_domain": true
   },
-  "tsconfig": "./tsconfig.json",
+  "tsconfig": "../../tsconfig.json",
   "compatibility_flags": ["nodejs_compat"],
   "triggers": {
     "crons": ["17 4 * * *"]

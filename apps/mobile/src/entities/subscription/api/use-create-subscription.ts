@@ -5,7 +5,7 @@ import { apiClient, assertOk } from "@/shared/api";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { subscriptionKeys } from "./list";
 
-export type CreateSubscriptionVars = {
+type CreateSubscriptionVars = {
   name: string;
   cost: number;
   currency: string;

@@ -14,7 +14,7 @@ import { buildOptimisticSubscriptionMutation } from "../model/optimistic-mutatio
  * with the response, well before the user can open the action sheet again.
  */
 
-export type PauseSubscriptionVars = { id: string; resumeAt: string | null };
+type PauseSubscriptionVars = { id: string; resumeAt: string | null };
 
 /**
  * Pause is per-occurrence, not per-subscription: charges inside
@@ -70,7 +70,7 @@ export function useResumeSubscription() {
   );
 }
 
-export type CancelSubscriptionVars = {
+type CancelSubscriptionVars = {
   id: string;
   mode: CancelSubscriptionMode;
 };

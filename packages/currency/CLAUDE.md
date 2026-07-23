@@ -13,9 +13,9 @@ bug in currency code — read it twice before touching a conversion.
 ## Invariants
 
 1. **Keys are lowercase, always.** The upstream envelope is keyed by the lowercase base code.
-   `extractRateTable` lowercases the base before the lookup so callers may pass either case.
-   Anything that indexes a `RateTable` must lowercase first (`CurrencyUtils.normalizeCode` in
-   `@subeye/shared` does this).
+   `FxRateRepository` (`apps/server/src/domains/currency`) lowercases the base on every read and
+   write, so callers may pass either case. Anything that indexes a `RateTable` must lowercase
+   first (`CurrencyUtils.normalizeCode` in `@subeye/shared` does this).
 2. **A missing rate is not an error.** `CurrencyService.getRates` returns `{}` when the
    `fx_rates` row is absent, and `CurrencyUtils.convert` returns the amount unchanged on a miss.
    The product decision behind this: a dashboard that shows unconverted amounts is better than a

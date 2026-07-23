@@ -4,7 +4,7 @@ import { apiClient, assertOk } from "@/shared/api";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { buildOptimisticSubscriptionMutation } from "../model/optimistic-mutation";
 
-export type UpdateSubscriptionVars = {
+type UpdateSubscriptionVars = {
   id: string;
   changes: UpdateSubscriptionInput;
 };

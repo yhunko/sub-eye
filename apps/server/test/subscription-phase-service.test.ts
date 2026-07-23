@@ -17,9 +17,6 @@ const baseSubscription = {
   notes: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-  qstashMessageId: null,
-  cancellationQstashMessageId: null,
-  priceChangeQstashMessageId: null,
   brandDomain: "netflix.com",
   paymentDate: "2026-07-01T00:00:00.000Z",
   scheduledEffectiveAt: null,
@@ -60,7 +57,6 @@ function buildDeps() {
           ...row,
           id: `phase_${index}`,
           appliedAt: row.appliedAt ?? null,
-          qstashMessageId: row.qstashMessageId ?? null,
           createdAt: new Date(),
           updatedAt: new Date(),
         }));

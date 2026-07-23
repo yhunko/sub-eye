@@ -8,7 +8,6 @@
     "@cloudflare/workers-types": "^4.20260415.1",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "bun-types": "^1.3.12",
@@ -19,6 +18,7 @@
     "semantic-release": "^25.0.3",
     "syncpack": "^14.3.0",
     "turbo": "^2.9.6",
+    "typescript": "^5.9.3",
     "wrangler": "^4.83.0"
   },
   "homepage": "https://github.com/yhunko/sub-eye",
@@ -31,9 +31,6 @@
   ],
   "license": "MIT",
   "packageManager": "bun@1.3.12",
-  "peerDependencies": {
-    "typescript": "^6.0.2"
-  },
   "private": true,
   "scripts": {
     "build": "turbo build",
@@ -43,7 +40,7 @@
     "check:circular:server": "madge --circular --extensions ts,tsx apps/server/src",
     "check:circular:packages": "madge --circular --extensions ts packages/currency/src packages/pricing/src packages/shared/src packages/spend/src",
     "check:circular:mobile": "madge --circular --extensions ts,tsx --ts-config apps/mobile/tsconfig.json apps/mobile/src",
-    "deploy:dev": "turbo build && wrangler -c dev.wrangler.jsonc deploy --minify",
+    "deploy:dev": "turbo build && wrangler -c apps/server/dev.wrangler.jsonc deploy --minify",
     "deps:fix": "syncpack fix",
     "deps:format": "syncpack format",
     "deps:lint": "syncpack lint",
@@ -53,6 +50,7 @@
     "dev": "turbo dev",
     "dev:server": "turbo dev --filter=@subeye/server",
     "dev:mobile": "bun run --cwd apps/server build && bun run --cwd apps/mobile start",
+    "dev:lan": "bun run --cwd apps/server dev:lan",
     "format": "biome format --write .",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

@@ -1,7 +1,7 @@
 import { ActionSheetIOS, Alert, Platform } from "react-native";
 import { m } from "@/shared/i18n";
 
-export type Choice = {
+type Choice = {
   label: string;
   destructive?: boolean;
   onPress: () => void;

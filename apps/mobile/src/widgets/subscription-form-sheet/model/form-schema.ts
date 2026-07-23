@@ -6,7 +6,7 @@ import { parsePrice } from "@/shared/lib/format/money";
 // The shared enum, not a parallel string union: SubscriptionPeriod is a TS
 // string enum and therefore nominal, so a bare "month" is not assignable to it
 // and every hand-off to the API would need a cast.
-export type SubscriptionPeriodValue = SubscriptionPeriod;
+type SubscriptionPeriodValue = SubscriptionPeriod;
 
 export type SubscriptionFormValues = {
   name: string;
@@ -22,7 +22,7 @@ export type SubscriptionFormValues = {
   offerEndsAt: Date | null;
 };
 
-export type ParsedSubscriptionForm = {
+type ParsedSubscriptionForm = {
   name: string;
   cost: number;
   currency: string;

@@ -1,12 +1,14 @@
 /**
  * Architecture boundary enforcement. Run with `bun run check:boundaries`.
  *
- * Encodes three invariants:
+ * Encodes four invariants:
  *  1. Packages never depend on apps.
  *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
  *     (a layer may only import from lower layers). There is no `features`
  *     layer — seven screens do not justify one.
  *  3. Server layering: repositories are leaves (never import services).
+ *  4. Mobile reaches the server ONLY through the typed RPC client at
+ *     `@subeye/server/client` — never a deep import into apps/server/src.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -19,6 +21,14 @@ module.exports = {
       severity: "error",
       from: { path: "^packages/" },
       to: { path: "^apps/" },
+    },
+    {
+      name: "mobile-server-only-via-client",
+      comment:
+        "apps/mobile reaches the server ONLY through the typed RPC client at '@subeye/server/client' (a types-only build under apps/server/dist). Deep imports into apps/server/src are forbidden — they drag server internals into the app and bypass the RPC contract.",
+      severity: "error",
+      from: { path: "^apps/mobile/" },
+      to: { path: "^apps/server/src/" },
     },
     // --- apps/mobile FSD: app → widgets → entities → shared (NO features layer)
     //

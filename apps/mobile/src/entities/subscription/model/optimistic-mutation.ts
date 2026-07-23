@@ -13,7 +13,7 @@ import {
 
 export type { SubscriptionPatch };
 
-export type OptimisticMutationConfig<TVars> = {
+type OptimisticMutationConfig<TVars> = {
   client: QueryClient;
   /** How to read the subscription id out of the mutation variables. */
   subscriptionId: (vars: TVars) => string;

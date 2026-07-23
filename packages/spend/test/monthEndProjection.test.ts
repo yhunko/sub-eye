@@ -22,7 +22,6 @@ const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({
   notes: null,
   createdAt: "2025-01-01T00:00:00.000Z",
   updatedAt: "2025-01-01T00:00:00.000Z",
-  qstashMessageId: null,
   brandDomain: "icloud.com",
   billing: {
     original: {
@@ -117,7 +116,6 @@ describe("AnalyticsCalculator.buildMonthlyTrend", () => {
           notes: null,
           createdAt: "2026-02-04T19:02:34.000Z",
           updatedAt: "2026-03-02T18:55:58.746Z",
-          qstashMessageId: null,
           brandDomain: "icloud.com",
           billing: {
             original: {
