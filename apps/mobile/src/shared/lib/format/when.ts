@@ -20,14 +20,32 @@ export function daysUntil(isoDate: string, now: Date = new Date()): number {
 }
 
 /**
+ * "Today" / "Tomorrow" / "in N days", however far out. The detail screen shows
+ * this next to the concrete date, so the date branch below would only repeat it.
+ */
+export function formatCountdown(days: number): string {
+  if (days <= 0) return m.when_today();
+  if (days === 1) return m.when_tomorrow();
+  return m.when_inDays({ days });
+}
+
+/** "1 August 2026" — the concrete day, for the one place a countdown names it. */
+export function formatDate(isoDate: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(isoDate));
+}
+
+/**
  * "Today" / "Tomorrow" / "in N days" up to a fortnight out, then a short date.
  * `isoDate` is only read for the date branch, so callers can pass the server's
  * timezone-correct `daysUntil` alongside the raw date.
  */
 export function formatDaysUntil(days: number, isoDate: string): string {
-  if (days <= 0) return m.when_today();
-  if (days === 1) return m.when_tomorrow();
-  if (days < 14) return m.when_inDays({ days });
+  if (days < 14) return formatCountdown(days);
 
   const date = new Date(isoDate);
   const sameYear = date.getUTCFullYear() === new Date().getUTCFullYear();

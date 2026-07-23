@@ -14,14 +14,14 @@ const KIND_LABEL: Record<Row["kind"], (() => string) | null> = {
   standard: null,
 };
 
-export function TimelineRow({ row }: { row: Row }) {
+export function TimelineRow({ row, last }: { row: Row; last?: boolean }) {
   const label = KIND_LABEL[row.kind];
   const range = row.to
     ? m.phase_range({ from: row.from, to: row.to })
     : m.phase_since({ date: row.from });
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, last && styles.lastRow]}>
       <Text
         style={[styles.price, row.isActive && styles.active]}
         maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
@@ -55,6 +55,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  // The card the rows now sit in draws its own edge; a divider under the last
+  // one would double it.
+  lastRow: { borderBottomWidth: 0, paddingBottom: 2 },
   price: {
     fontSize: 15,
     color: colors.muted,

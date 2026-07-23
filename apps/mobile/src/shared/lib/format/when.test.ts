@@ -10,7 +10,17 @@ mock.module("@/shared/i18n", () => ({
   },
 }));
 
-const { daysUntil, formatDaysUntil } = await import("./when");
+const { daysUntil, formatCountdown, formatDaysUntil } = await import("./when");
+
+describe("formatCountdown", () => {
+  // Unlike formatDaysUntil it never falls back to a date: the detail card prints
+  // the date beside it, and two spellings of the same day read as a bug.
+  it("keeps counting days past the fortnight", () => {
+    expect(formatCountdown(0)).toBe("Today");
+    expect(formatCountdown(1)).toBe("Tomorrow");
+    expect(formatCountdown(47)).toBe("in 47 days");
+  });
+});
 
 describe("formatDaysUntil", () => {
   // Anything already due reads as Today — a negative count is noise to the user.

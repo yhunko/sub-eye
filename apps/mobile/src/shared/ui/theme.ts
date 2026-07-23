@@ -18,6 +18,7 @@ export const colors = {
   // Amber. Only ever "this is suspended", never "this is wrong" — it is the
   // paused hue, shared by the paused row tint and the Pause swipe action.
   warning: "#e0a32e",
+  warningSoft: "rgba(224,163,46,0.10)",
 } as const;
 
 // One colour per category row on Home, assigned by rank — categorySpending
