@@ -9,7 +9,7 @@ setLocale(resolveDeviceLocale(getLocales().map((l) => l.languageCode)), {
 });
 
 export type { AppLocale } from "./locale";
-export { FALLBACK_LOCALE, resolveDeviceLocale } from "./locale";
+export { resolveDeviceLocale } from "./locale";
 export * as m from "./paraglide/messages";
 export { getLocale } from "./paraglide/runtime";
 export { useAppLocale } from "./use-app-locale";

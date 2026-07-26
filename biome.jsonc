@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -11,6 +11,9 @@
       "**",
       "!apps/mobile/src/shared/i18n/paraglide",
       "!apps/server/drizzle/meta",
+      // Apple Icon Composer owns this bundle and regenerates it; its layer
+      // SVGs are artwork, not accessible content.
+      "!apps/mobile/icon.icon",
       "!!.claude",
       "!!.git",
       "!!.idea",
@@ -31,31 +34,20 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
-      "a11y": {
-        "noLabelWithoutControl": "off",
-        "noStaticElementInteractions": "off",
-        "noSvgWithoutTitle": "off",
-        "useFocusableInteractive": "off",
-        "useKeyWithClickEvents": "off",
-        "useSemanticElements": "off"
-      },
+      "preset": "recommended",
       "complexity": {
-        "noImportantStyles": "off",
+        // Services, repositories, controllers and mappers are static-only
+        // classes used as namespaces — that is the server's layering, not an
+        // accident. Enabling this flags all 12 of them.
         "noStaticOnlyClass": "off"
       },
       "correctness": {
+        // Stricter than recommended: a stale hook dep in the mobile app shows
+        // up as a screen that silently never refetches.
         "useExhaustiveDependencies": "error"
-      },
-      "security": {
-        "noDangerouslySetInnerHtml": "off"
       },
       "style": {
         "noNonNullAssertion": "off"
-      },
-      "suspicious": {
-        "noArrayIndexKey": "off",
-        "noControlCharactersInRegex": "off"
       }
     }
   },
@@ -66,11 +58,6 @@
       "quoteStyle": "double",
       "semicolons": "always",
       "trailingCommas": "all"
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
     }
   }
 }

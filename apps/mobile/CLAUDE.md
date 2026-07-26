@@ -91,7 +91,7 @@ Build numbers (`ios.buildNumber` / `android.versionCode`) are **EAS-owned — ne
 
 ## Testing
 
-`bun test ./src` (matching `apps/client`; there is no vitest here). Test **pure logic only** — locale resolution, transport error mapping, and later the pricing/spend derivations. **No React Native component renders** (no renderer is configured, and it is out of scope). Co-locate tests as `*.test.ts` next to the module.
+`bun test ./src` — `bun:test`, there is no vitest anywhere in the repo. Test **pure logic only** — locale resolution, transport error mapping, and later the pricing/spend derivations. **No React Native component renders** (no renderer is configured, and it is out of scope). Co-locate tests as `*.test.ts` next to the module.
 
 ## Commands
 

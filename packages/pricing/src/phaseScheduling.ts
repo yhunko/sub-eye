@@ -39,7 +39,7 @@ export const isSameCalendarDayInTimezone = (
  * that instant is already past we step forward one full period — a price
  * change must never be scheduled in the past.
  */
-export const resolveNextOccurrenceEffectiveAt = (
+const resolveNextOccurrenceEffectiveAt = (
   subscription: RecurringSubscription,
   timezone?: string,
 ): string => {

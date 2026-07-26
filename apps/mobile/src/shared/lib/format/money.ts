@@ -1,12 +1,11 @@
-// Currency presentation for the mobile client.
+// Currency presentation for the mobile client, and the only place it is defined.
 //
-// ponytail: a local 5-entry table instead of importing `CurrenciesMap` /
-// `CurrencyUtils.formatAmount` from @subeye/shared. Those live in a package the
-// server also uses; pulling them in drags the whole shared barrel (valibot
-// schemas, date-fns timezone utils) into the Metro bundle for a symbol lookup.
-// The five codes below are the complete set the product supports — mirrored from
-// packages/shared/src/domains/currency. Add a row here and there together if a
-// sixth is ever supported.
+// The table stays local rather than shared: importing a symbol lookup from
+// @subeye/shared would drag that whole barrel (valibot schemas, date-fns
+// timezone utils) into the Metro bundle. The server only rounds amounts and
+// sends the currency code; symbols and grouping exist nowhere else, so there is
+// nothing to keep in sync. These five codes are the complete set the product
+// supports.
 const SYMBOLS: Record<string, { symbol: string; locale: string }> = {
   usd: { symbol: "$", locale: "en-US" },
   eur: { symbol: "€", locale: "de-DE" },

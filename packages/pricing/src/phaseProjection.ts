@@ -42,7 +42,7 @@ const normalizeIsoOrEmpty = (value?: string | null): string => {
 };
 
 /** Converts one stored phase row into the DTO the client renders. */
-export const toPricePhaseDto = (
+const toPricePhaseDto = (
   phase: PricePhaseInput,
   recurrence: PhaseRecurrence,
   preferredCurrency: string,

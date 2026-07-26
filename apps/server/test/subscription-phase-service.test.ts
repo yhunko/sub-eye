@@ -92,9 +92,7 @@ describe("SubscriptionPhaseService.startPhase", () => {
       (call) => (call.args[1] as { cost?: string }).cost === "0.00",
     );
     expect(priceUpdate).toBeDefined();
-    expect((priceUpdate?.args[1] as { currency?: string }).currency).toBe(
-      "usd",
-    );
+    expect(priceUpdate?.args[1]).toMatchObject({ currency: "usd" });
 
     // Two phases inserted: the trial (applied now) + the standard revert.
     expect(insertManyCalls).toHaveLength(1);

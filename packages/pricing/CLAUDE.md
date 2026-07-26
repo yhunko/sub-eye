@@ -56,9 +56,8 @@ the current charge.
 
 `getSubscriptionLifecycleStatus`, `shouldIncludeOccurrence`, `isCurrentlyActiveSubscription`
 and `subscriptionLifecycleStatuses` stay in **`@subeye/shared`**. That is cycle avoidance, not
-an oversight: `subscriptionLifecycleStatuses` feeds a valibot picklist inside
-`@subeye/shared`'s own subscription schema, and `shouldIncludeOccurrence` is consumed by
-`@subeye/spend` — moving either would create a package cycle.
+an oversight: `shouldIncludeOccurrence` is consumed by `@subeye/spend`, so moving it here would
+make `pricing` and `spend` import each other through a shared leaf. Leave them where they are.
 
 ## Timezone strings carry an offset, not `Z`
 
@@ -68,15 +67,18 @@ an oversight: `subscriptionLifecycleStatuses` feeds a valibot picklist inside
 `startsAt`/`endsAt`, so **compare phase boundaries as instants (`Date.parse`), never as
 strings.** This is pre-existing behaviour, preserved deliberately by the extraction.
 
-## Known defects, unfixed on purpose
+## Two traps that were live bugs — keep their tests passing
 
-Both are described in the v4 design spec §5 and belong to the server-correctness plan:
+Both were real defects, both are fixed, and each is pinned by a regression test in
+`apps/server/test`. If you refactor the apply or cancel path, these are the tests that catch a
+regression:
 
-- **`applyPhaseNow` leaves the timeline lying.** It stamps `appliedAt` and copies the price but
-  never closes the preceding phase's `endsAt` nor pulls the applied phase's `startsAt` back to
-  now. After "end trial now" the row charges the standard price while `effectivePhaseKind` still
-  reports `trial` and `scheduledPriceChange` stays populated. `getUpcomingPhase` is
-  `appliedAt`-blind by construction, so no client can compensate.
-- **Cancel permanently strands the price.** Cancelling deletes pending phases and renew cannot
-  restore them. Cancelling during a trial removes the standard-reversion phase, so after renew
-  the subscription is stuck at the trial price forever.
+- **`applyPhaseNow` must close the timeline it moves.** Stamping `appliedAt` and copying the
+  price is not enough — it must also close the preceding phase's `endsAt` and pull the applied
+  phase's `startsAt` back to now. Skip either and the row charges the new price while
+  `effectivePhaseKind` still reports `trial` and `scheduledPriceChange` stays populated;
+  `getUpcomingPhase` is `appliedAt`-blind by construction, so no client can compensate.
+  → `phase-apply-now-closes-timeline.test.ts`
+- **Cancel must preserve pending phases.** Deleting them on cancel strands the subscription on
+  the trial price forever, because renew cannot restore what was deleted.
+  → `cancel-preserves-pending-phases.test.ts`

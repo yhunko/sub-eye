@@ -1,4 +1,3 @@
-import { CurrenciesMap } from "../domains/currency/constants";
 import { SubscriptionPeriod } from "../types";
 
 export class CurrencyUtils {
@@ -52,37 +51,5 @@ export class CurrencyUtils {
     }
 
     return amount;
-  }
-
-  static formatAmount(
-    amount: number,
-    currencyCode: string | undefined | null,
-    options?: {
-      absolute?: boolean;
-      minimumFractionDigits?: number;
-      maximumFractionDigits?: number;
-    },
-  ): string {
-    const normalized = CurrencyUtils.normalizeCode(currencyCode);
-    const currency = CurrenciesMap.get(normalized);
-    const value = options?.absolute ? Math.abs(amount) : amount;
-    const minimumFractionDigits = options?.minimumFractionDigits ?? 2;
-    const maximumFractionDigits = options?.maximumFractionDigits ?? 2;
-
-    if (!currency) {
-      return `${value.toFixed(maximumFractionDigits)} ${normalized.toUpperCase()}`;
-    }
-
-    const formatted = new Intl.NumberFormat(currency.format, {
-      minimumFractionDigits,
-      maximumFractionDigits,
-    }).format(value);
-
-    return `${currency.symbol}${formatted}`;
-  }
-
-  static formatSignedAmount(amount: number, currencyCode: string): string {
-    const sign = amount > 0 ? "+" : amount < 0 ? "-" : "";
-    return `${sign}${CurrencyUtils.formatAmount(Math.abs(amount), currencyCode)}`;
   }
 }

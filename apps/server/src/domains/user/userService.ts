@@ -1,5 +1,5 @@
 import type { UpdateUserPreferences, UserPreferences } from "@subeye/shared";
-import { CurrencyUtils, DateFormatUtils } from "@subeye/shared";
+import { CurrencyUtils, DEFAULT_DATE_FORMAT } from "@subeye/shared";
 import { UserRepository } from "./userRepository";
 
 type UserRow = {
@@ -22,7 +22,7 @@ const defaultDeps: UserServiceDeps = { userRepository: UserRepository };
 const DEFAULTS: UserPreferences = {
   preferredCurrency: CurrencyUtils.DEFAULT_CURRENCY_CODE,
   preferredTimezone: "UTC",
-  dateFormat: DateFormatUtils.DEFAULT_FORMAT,
+  dateFormat: DEFAULT_DATE_FORMAT,
   locale: "en",
   theme: "system",
 };

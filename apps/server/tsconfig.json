@@ -4,8 +4,6 @@
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "ESNext",
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
 
     "types": ["bun-types", "@cloudflare/workers-types"],
 
@@ -18,7 +16,6 @@
     "noEmit": false,
     "rootDir": ".",
     "outDir": "dist",
-    "emitDecoratorMetadata": true,
 
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,

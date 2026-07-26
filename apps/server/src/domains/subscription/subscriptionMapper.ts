@@ -6,9 +6,6 @@ import type {
 import { deriveSubscriptionStatus, getAllowedActions } from "@subeye/shared";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
-/** @deprecated Alias kept so existing imports resolve; use `PhaseProjection`. */
-export type SubscriptionPhaseProjection = PhaseProjection;
-
 /** The category, embedded on the DTO so the client renders a chip without a second request. */
 export type EmbeddedCategory = { id: string; name: string; emoji: string };
 
@@ -18,7 +15,7 @@ export class SubscriptionMapper {
     billing: SubscriptionBillingDetails,
     nextPaymentDate: string,
     lastPaymentDate: string | null,
-    phases: SubscriptionPhaseProjection,
+    phases: PhaseProjection,
     category: EmbeddedCategory | null,
   ): SubscriptionDto {
     const paymentDate = SubscriptionMapper.normalizeDate(

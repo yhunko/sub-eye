@@ -20,9 +20,7 @@ const parseDate = (value?: string | null): Date | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-export const getEffectiveCancellationDate = (
-  input: LifecycleInput,
-): Date | null => {
+const getEffectiveCancellationDate = (input: LifecycleInput): Date | null => {
   const willBeCancelledAt = parseDate(input.willBeCancelledAt);
 
   if (!willBeCancelledAt) {

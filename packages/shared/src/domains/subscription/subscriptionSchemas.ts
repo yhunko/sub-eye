@@ -58,7 +58,6 @@ const futureIsoDateSchema = pipe(
 export const idQuerySchema = object({
   id: string(),
 });
-export type IdParam = InferOutput<typeof idQuerySchema>;
 
 /**
  * Optional "starting offer" set up at creation time: begin the subscription on
@@ -262,9 +261,6 @@ export type UpdateSubscriptionInput = InferOutput<
 export type SchedulePriceChangeInput = InferOutput<
   typeof SchedulePriceChangeSchema
 >;
-export type CancelSubscriptionInput = InferOutput<
-  typeof CancelSubscriptionSchema
->;
 export type SubscriptionDto = InferOutput<typeof SubscriptionDtoSchema>;
 
 export const BulkDeleteSubscriptionsSchema = strictObject({
@@ -281,23 +277,4 @@ export type BulkDeleteSubscriptionsInput = InferOutput<
 >;
 export type BulkUpdateCategoryInput = InferOutput<
   typeof BulkUpdateCategorySchema
->;
-
-export const BulkDeleteResponseSchema = strictObject({
-  deletedCount: pipe(
-    number(),
-    check((value) => Number.isFinite(value) && value >= 0),
-  ),
-});
-
-export const BulkUpdateCategoryResponseSchema = strictObject({
-  updatedCount: pipe(
-    number(),
-    check((value) => Number.isFinite(value) && value >= 0),
-  ),
-});
-
-export type BulkDeleteResponse = InferOutput<typeof BulkDeleteResponseSchema>;
-export type BulkUpdateCategoryResponse = InferOutput<
-  typeof BulkUpdateCategoryResponseSchema
 >;

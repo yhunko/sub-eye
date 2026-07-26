@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { dateFormats } from "../utils/dateFormatUtils";
 
 export const UpdateUserPreferencesSchema = v.object({
   preferredCurrency: v.optional(
@@ -7,14 +8,7 @@ export const UpdateUserPreferencesSchema = v.object({
   preferredTimezone: v.optional(
     v.pipe(v.string(), v.minLength(1), v.maxLength(64)),
   ),
-  dateFormat: v.optional(
-    v.picklist([
-      "DD.MM.YYYY",
-      "DD/MM/YYYY",
-      "MM/DD/YYYY",
-      "YYYY-MM-DD",
-    ] as const),
-  ),
+  dateFormat: v.optional(v.picklist(dateFormats)),
   locale: v.optional(
     v.pipe(
       v.string(),

@@ -6,10 +6,6 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {
-    "@subeye/shared": "workspace:*",
-    "valibot": "^1.3.1"
-  },
   "scripts": {
     "lint": "biome check .",
     "test": "bun test --pass-with-no-tests",

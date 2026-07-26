@@ -33,8 +33,8 @@ it or on its sibling `calculateSpendInRange`.
 5. **`resolveOccurrenceAmount` is per-occurrence, not per-subscription.** An occurrence on or
    after a scheduled price change's `effectiveAt` is charged the new price; earlier ones are
    charged the old. This is why a single month can contain two different amounts for the same
-   subscription. Any new per-occurrence rule (pause, for example) belongs here or in
-   `collectPaymentsInRange`, never in the aggregate callers.
+   subscription. Any new per-occurrence rule belongs here or in `collectPaymentsInRange`, never
+   in the aggregate callers — that is where `pause.ts` lives, and where the next one goes.
 
 ## Public-by-design
 
@@ -49,9 +49,11 @@ of aggregation. Keep it that way.
 satisfies them structurally. If you add a field, add it to the structural type too — do not
 reach for the row type.
 
-## Known defect, unfixed on purpose
+## The call-site trap this package cannot defend against
 
-Run-rate metrics in `apps/server`'s analytics service pass a filtered "currently active" list
-while occurrence metrics pass the unfiltered one, so `yearlyForecast` and `remainingThisMonth`
-count different sets of subscriptions. The defect is at the **call sites**, not in this
-package. It is fixed in the server-correctness plan.
+Every aggregate is only as consistent as the list handed to it. Passing a filtered "currently
+active" list to the run-rate metrics and the unfiltered one to the occurrence metrics makes
+`yearlyForecast` and `remainingThisMonth` count different sets of subscriptions — a real bug
+once, fixed at the call sites in `apps/server`'s analytics service and pinned by
+`apps/server/test/dashboard-metric-agreement.test.ts`. Feed every metric in one response from
+the same list.

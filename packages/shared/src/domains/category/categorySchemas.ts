@@ -3,7 +3,6 @@ import {
   check,
   type InferOutput,
   minLength,
-  nullable,
   number,
   object,
   optional,
@@ -245,13 +244,6 @@ export const DeleteCategoriesResponseSchema = strictObject({
 export type CategoryDto = InferOutput<typeof CategoryDtoSchema>;
 export type CreateCategoryInput = InferOutput<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = InferOutput<typeof UpdateCategorySchema>;
-export type DeleteCategoriesInput = InferOutput<
-  typeof DeleteCategoriesInputSchema
->;
 export type DeleteCategoriesResponse = InferOutput<
   typeof DeleteCategoriesResponseSchema
 >;
-
-export const categoryIdSchema = optional(
-  nullable(pipe(string(), minLength(1))),
-);

@@ -1,10 +1,31 @@
-# Server — Pricing Phases Guidelines
+# @subeye/server — API guidelines
+
+Hono on a single Cloudflare Worker. Neon Postgres via Drizzle, Clerk auth.
+`src/index.ts` mounts every router under the `/api` base path; see
+[README.md](README.md) for the route surface, env bindings, and db commands.
+
+```
+src/domains/<domain>/   service + repository per domain
+                        (analytics, category, currency, subscription, user)
+src/routes/             Hono routers — validation + delegation, no logic
+src/db/                 schema.ts + the Drizzle client
+src/middleware/         auth, error mapping
+```
+
+**Layering:** routes → services → repositories. A repository owns `db` and is a
+leaf — it never imports a service. `bun run check:boundaries` fails the build on
+a violation (`server-repository-is-leaf`).
+
+Most of this file is about pricing phases, because that is where the sharp edges
+are.
+
+---
+
+## Pricing phases
 
 The pricing-phase model is the core of the server. It decides what a user is
 charged and when, so bugs here are silently wrong money. Read this before
 touching `subscriptionPhaseService.ts` or `subscriptionPricePhaseRepository.ts`.
-
----
 
 ## The model
 
