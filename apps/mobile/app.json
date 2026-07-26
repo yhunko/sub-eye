@@ -37,6 +37,7 @@
         { "supportedLocales": { "ios": ["en", "uk"], "android": ["en", "uk"] } }
       ],
       "expo-secure-store",
+      "expo-notifications",
       [
         "expo-splash-screen",
         { "resizeMode": "contain", "backgroundColor": "#0f1115" }

@@ -16,3 +16,15 @@ export const mmkvStorage = {
     mmkv.remove(key);
   },
 };
+
+/**
+ * Device-local on/off switches, on the same store under their own keys.
+ *
+ * Small typed door rather than exporting `mmkv` itself: the instance stays
+ * module-private so the persister and these flags cannot start reading each
+ * other's keys. Values are PER-DEVICE and per-install — never per-account.
+ */
+export const deviceFlags = {
+  get: (key: string) => mmkv.getBoolean(key) ?? false,
+  set: (key: string, value: boolean) => mmkv.set(key, value),
+};

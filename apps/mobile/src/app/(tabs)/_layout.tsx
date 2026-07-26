@@ -1,8 +1,45 @@
 import { useAuth } from "@clerk/clerk-expo";
+import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { useEffect } from "react";
+import { AppState } from "react-native";
+import { subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
+import { syncRenewalReminders } from "@/shared/lib/notifications";
 import { colors } from "@/shared/ui/theme";
+
+/**
+ * Renders nothing; keeps the device's pending renewal reminders in step with the
+ * subscription list. Mounted here rather than in the root layout so it only runs
+ * for a signed-in user.
+ *
+ * Rebuilds the whole schedule — cancel all, recompute, re-schedule — on every
+ * foreground and whenever the list changes. Wholesale is what makes it
+ * idempotent: no stored notification ids, no reconciliation, and no way to
+ * drift. It also re-arms the window, which is what a scheduled-ahead bounded
+ * plan needs; without it, a user who ignores the app eventually runs past the
+ * last scheduled occurrence and goes quiet.
+ */
+function RenewalReminderSync() {
+  const { data } = useQuery(subscriptionsQuery());
+
+  useEffect(() => {
+    if (!data) return;
+
+    const sync = () => {
+      void syncRenewalReminders(data);
+    };
+
+    sync();
+    const listener = AppState.addEventListener("change", (status) => {
+      if (status === "active") sync();
+    });
+    return () => listener.remove();
+  }, [data]);
+
+  return null;
+}
 
 // FSD app layer: the native tab bar. Liquid Glass on iOS 26, Material 3 on
 // Android — rendered by the platform, not by JS.
@@ -24,21 +61,27 @@ export default function TabsLayout() {
   if (!isSignedIn) return <Redirect href="/sign-in" />;
 
   return (
-    <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
-      <NativeTabs.Trigger name="(home)">
-        <NativeTabs.Trigger.Icon sf="house" md="home" />
-        <NativeTabs.Trigger.Label>{m.tabs_home()}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="subscriptions">
-        <NativeTabs.Trigger.Icon sf="rectangle.stack" md="stacks" />
-        <NativeTabs.Trigger.Label>
-          {m.tabs_subscriptions()}
-        </NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="settings">
-        <NativeTabs.Trigger.Icon sf="gearshape" md="settings" />
-        <NativeTabs.Trigger.Label>{m.tabs_settings()}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <>
+      {/* Outside NativeTabs: its children must be triggers and nothing else. */}
+      <RenewalReminderSync />
+      <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
+        <NativeTabs.Trigger name="(home)">
+          <NativeTabs.Trigger.Icon sf="house" md="home" />
+          <NativeTabs.Trigger.Label>{m.tabs_home()}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="subscriptions">
+          <NativeTabs.Trigger.Icon sf="rectangle.stack" md="stacks" />
+          <NativeTabs.Trigger.Label>
+            {m.tabs_subscriptions()}
+          </NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="settings">
+          <NativeTabs.Trigger.Icon sf="gearshape" md="settings" />
+          <NativeTabs.Trigger.Label>
+            {m.tabs_settings()}
+          </NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    </>
   );
 }

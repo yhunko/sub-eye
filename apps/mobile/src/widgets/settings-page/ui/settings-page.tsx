@@ -3,21 +3,30 @@ import { useQuery } from "@tanstack/react-query";
 import Constants from "expo-constants";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Image,
   Linking,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from "react-native";
+import { subscriptionsQuery } from "@/entities/subscription";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
+import {
+  cancelRenewalReminders,
+  renewalRemindersBlocked,
+  renewalRemindersEnabled,
+  setRenewalRemindersEnabled,
+} from "@/shared/lib/notifications";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { presentChoice } from "@/shared/ui/present-choice";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
@@ -56,12 +65,22 @@ function Row({
   label,
   value,
   onPress,
+  accent,
+  toggle,
 }: {
   ios: SFSymbol;
   android: AndroidSymbol;
   label: string;
   value?: string;
   onPress?: () => void;
+  /** Tints the row as an action rather than a destination. */
+  accent?: boolean;
+  /** Renders a Switch in place of the chevron. Mutually exclusive with onPress. */
+  toggle?: {
+    value: boolean;
+    disabled: boolean;
+    onValueChange: (next: boolean) => void;
+  };
 }) {
   return (
     <Pressable
@@ -74,11 +93,11 @@ function Row({
       <SymbolView
         name={{ ios, android }}
         size={19}
-        tintColor={colors.muted}
+        tintColor={accent ? colors.accent : colors.muted}
         weight="regular"
       />
       <Text
-        style={styles.rowLabel}
+        style={[styles.rowLabel, accent && styles.rowLabelAccent]}
         numberOfLines={1}
         maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
       >
@@ -92,6 +111,16 @@ function Row({
         >
           {value}
         </Text>
+      ) : null}
+      {toggle ? (
+        // The platform control, deliberately: the design's toggle IS a stock
+        // iOS switch, and Android gets Material 3 for free.
+        <Switch
+          value={toggle.value}
+          disabled={toggle.disabled}
+          onValueChange={toggle.onValueChange}
+          trackColor={{ true: colors.accent, false: colors.surfaceAlt }}
+        />
       ) : null}
       {onPress ? (
         <SymbolView
@@ -110,6 +139,89 @@ function Group({ title, children }: { title?: string; children: ReactNode }) {
     <View>
       {title ? <Text style={styles.groupTitle}>{title}</Text> : null}
       <View style={styles.group}>{children}</View>
+    </View>
+  );
+}
+
+/**
+ * Renewal reminders — scheduled on this device, never on the server. The stored
+ * preference is therefore PER-DEVICE, not per-account: two phones toggle and
+ * schedule independently, and a reinstall forgets it. That is the price of the
+ * zero-server design, and it is the right trade here.
+ *
+ * Two states, from the design. Resting: a switch. Permission denied: the switch
+ * is replaced by a plain "Off" plus a route into the OS settings — on iOS a
+ * refusal is terminal (`requestPermissionsAsync` never prompts again), so a live
+ * switch there would be a control that does nothing.
+ */
+function RenewalReminders() {
+  const subscriptions = useQuery(subscriptionsQuery());
+  const [enabled, setEnabled] = useState(renewalRemindersEnabled);
+  const [blocked, setBlocked] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  // Permission can change while we are backgrounded — this row is what sends the
+  // user to the OS settings in the first place — so re-read on every foreground,
+  // not only on mount.
+  useEffect(() => {
+    const read = () => {
+      void renewalRemindersBlocked().then(setBlocked);
+    };
+
+    read();
+    const listener = AppState.addEventListener("change", (status) => {
+      if (status === "active") read();
+    });
+    return () => listener.remove();
+  }, []);
+
+  const toggle = async (next: boolean) => {
+    setBusy(true);
+    // An empty list on a cold start is fine: the flag is what persists, and the
+    // app-layer sync re-schedules as soon as the query resolves.
+    setEnabled(
+      await setRenewalRemindersEnabled(next, subscriptions.data ?? []),
+    );
+    setBlocked(await renewalRemindersBlocked());
+    setBusy(false);
+  };
+
+  return (
+    <View>
+      <Group title={m.settings_notifications()}>
+        <Row
+          ios={blocked ? "bell.slash" : "bell"}
+          android={blocked ? "notifications_off" : "notifications"}
+          label={m.settings_renewalReminders()}
+          value={blocked ? m.settings_off() : undefined}
+          toggle={
+            blocked
+              ? undefined
+              : {
+                  value: enabled,
+                  disabled: busy,
+                  onValueChange: (next) => void toggle(next),
+                }
+          }
+        />
+        {blocked ? (
+          <>
+            <Divider />
+            <Row
+              ios="gearshape"
+              android="settings"
+              label={m.settings_openDeviceSettings()}
+              accent
+              onPress={() => void Linking.openSettings()}
+            />
+          </>
+        ) : null}
+      </Group>
+      <Text style={styles.groupFootnote}>
+        {blocked
+          ? m.settings_renewalRemindersBlocked()
+          : m.settings_renewalRemindersHint()}
+      </Text>
     </View>
   );
 }
@@ -229,8 +341,10 @@ export function SettingsPage() {
           text: m.settings_signOut(),
           style: "destructive",
           // The (tabs) layout guards on Clerk's isSignedIn and redirects to
-          // /sign-in on its own, so there is nothing to navigate here.
-          onPress: () => void signOut(),
+          // /sign-in on its own, so there is nothing to navigate here. Drop the
+          // pending reminders first: they are scheduled on the device and would
+          // keep naming this account's subscriptions on the lock screen.
+          onPress: () => void cancelRenewalReminders().then(() => signOut()),
         },
       ],
     );
@@ -247,7 +361,12 @@ export function SettingsPage() {
         {
           text: m.action_delete(),
           style: "destructive",
-          onPress: () => void user?.delete().catch(notifyWriteFailed),
+          // Same reason as sign-out, more so: the account is gone but its
+          // locally-scheduled reminders would outlive it.
+          onPress: () =>
+            void cancelRenewalReminders().then(() =>
+              user?.delete().catch(notifyWriteFailed),
+            ),
         },
       ],
     );
@@ -304,6 +423,8 @@ export function SettingsPage() {
           <Text style={styles.groupFootnote}>{m.settings_deviceHint()}</Text>
         </View>
       ) : null}
+
+      <RenewalReminders />
 
       <Group title={m.settings_legal()}>
         <Row
@@ -387,6 +508,7 @@ const styles = StyleSheet.create({
   },
   rowPressed: { backgroundColor: colors.surfaceAlt },
   rowLabel: { flex: 1, fontSize: 16, color: colors.text },
+  rowLabelAccent: { color: colors.accent, fontWeight: "600" },
   rowValue: { fontSize: 16, color: colors.muted, flexShrink: 1 },
 
   action: { alignItems: "center", justifyContent: "center", minHeight: 52 },
