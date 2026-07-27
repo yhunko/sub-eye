@@ -131,7 +131,6 @@
   "category_deleteTitle": "Delete category?",
   "category_deleteBody": "{name} is removed. Subscriptions that move to Uncategorized: {count}.",
   "form_every": "Every",
-  "form_period": "Period",
   "form_nextPayment": "Next payment",
   "form_brand": "Brand",
   "form_brandNone": "No logo",

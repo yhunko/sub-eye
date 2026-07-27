@@ -131,7 +131,6 @@
   "category_deleteTitle": "Видалити категорію?",
   "category_deleteBody": "{name} буде видалено. Підписок, що стануть без категорії: {count}.",
   "form_every": "Кожні",
-  "form_period": "Період",
   "form_nextPayment": "Наступний платіж",
   "form_brand": "Бренд",
   "form_brandNone": "Без логотипа",

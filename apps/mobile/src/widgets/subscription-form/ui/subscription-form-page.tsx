@@ -2,11 +2,18 @@ import { SubscriptionPeriod } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { categoriesQuery } from "@/entities/category";
 import { m } from "@/shared/i18n";
 import { BrandLogo } from "@/shared/ui/brand-logo";
-import { CurrencyField } from "@/shared/ui/currency-field";
+import { CurrencyPicker } from "@/shared/ui/currency-picker";
 import { Field, TextField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
 import { Segmented } from "@/shared/ui/segmented";
@@ -186,37 +193,57 @@ export function SubscriptionFormPage() {
           onChangeText={(next) => set("name", next)}
           error={messageFor(errors.name)}
         />
-        <TextField
-          label={m.form_price()}
-          value={values.cost}
-          onChangeText={(next) => set("cost", next)}
-          keyboardType="decimal-pad"
-          error={messageFor(errors.cost)}
-        />
-        <CurrencyField
-          value={values.currency}
-          onChange={(next) => set("currency", next)}
-        />
+        {/* One control, the way a native amount field carries its unit: the
+            currency is a trailing accessory inside the price box rather than a
+            second labelled row. */}
+        <Field label={m.form_price()} error={messageFor(errors.cost)}>
+          <View style={[styles.box, errors.cost ? styles.boxError : null]}>
+            <TextInput
+              style={styles.amount}
+              value={values.cost}
+              onChangeText={(next) => set("cost", next)}
+              keyboardType="decimal-pad"
+              placeholderTextColor={colors.muted}
+              keyboardAppearance="dark"
+            />
+            <CurrencyPicker
+              value={values.currency}
+              onChange={(next) => set("currency", next)}
+            />
+          </View>
+        </Field>
 
         {/* What makes Home's category breakdown say anything: without a value
             here every subscription lands in "Uncategorized". */}
         <CategoryRow />
 
-        <TextField
-          label={m.form_every()}
-          value={values.every}
-          onChangeText={(next) => set("every", next)}
-          keyboardType="number-pad"
-          error={messageFor(errors.every)}
-        />
-
-        <Field label={m.form_period()}>
-          <Segmented
-            options={PERIODS}
-            value={values.period}
-            label={(option) => PERIOD_LABEL[option]()}
-            onChange={(option) => set("period", option)}
-          />
+        {/* "Every 2 months" is one sentence, so it is one row. The count is
+            sized for the two digits a real billing cycle uses — a wider box
+            only invites a number nobody bills on. */}
+        <Field label={m.form_every()} error={messageFor(errors.every)}>
+          <View style={styles.everyRow}>
+            <TextInput
+              style={[
+                styles.box,
+                styles.count,
+                errors.every ? styles.boxError : null,
+              ]}
+              value={values.every}
+              onChangeText={(next) => set("every", next)}
+              keyboardType="number-pad"
+              keyboardAppearance="dark"
+            />
+            {/* No "Period" label of its own — the segments announce themselves
+                and the row already reads "Every 2 · months". */}
+            <View style={styles.periods}>
+              <Segmented
+                options={PERIODS}
+                value={values.period}
+                label={(option) => PERIOD_LABEL[option]()}
+                onChange={(option) => set("period", option)}
+              />
+            </View>
+          </View>
         </Field>
 
         <NativeDateField
@@ -293,4 +320,32 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   brandCaption: { fontSize: 13, color: colors.muted },
+  // The same box `Field`'s own input draws, but as a container: the controls
+  // inside it are borderless so the row reads as one field.
+  box: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  boxError: { borderColor: colors.danger },
+  amount: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  everyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  count: {
+    width: 64,
+    fontSize: 16,
+    color: colors.text,
+    textAlign: "center",
+    paddingVertical: 12,
+  },
+  periods: { flex: 1 },
 });
