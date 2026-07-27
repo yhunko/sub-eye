@@ -152,15 +152,16 @@ export const SubscriptionRow = memo(function SubscriptionRow({
       ? item.resumeAt
       : item.nextPaymentDate;
 
+  // NORMALISED TO A MONTH, and only ever in the home currency.
+  //
+  // The list is a comparison, and `preferred.amount` is the amount as charged —
+  // so a yearly subscription sat next to monthly ones as one big number that
+  // meant something different from its neighbours. `preferred.monthly` is what
+  // the cost sort already ranked by, so the column and the ordering now agree.
+  // The as-charged figure and its original currency belong on the detail screen,
+  // where there is room to explain them.
   const preferred = item.billing.preferred;
-  const primary = formatMoney(preferred.amount, preferred.currencyCode);
-  // The charged amount only earns a second line when it is genuinely a different
-  // currency; on a same-currency row it would just repeat the number above it.
-  const charged =
-    preferred.currencyCode.trim().toLowerCase() !==
-    item.currency.trim().toLowerCase()
-      ? formatMoney(item.cost, item.currency)
-      : null;
+  const primary = formatMoney(preferred.monthly, preferred.currencyCode);
 
   const tint = statusTint[item.status];
   const statusLabel = STATUS_LABEL[item.status]?.();
@@ -189,7 +190,12 @@ export const SubscriptionRow = memo(function SubscriptionRow({
         accessibilityRole="button"
         // Colour alone must not carry the status — the tint is the visual
         // signal, this is the one a screen reader gets.
-        accessibilityLabel={[item.name, statusLabel, primary]
+        accessibilityLabel={[
+          item.name,
+          statusLabel,
+          // Spelled out — a screen reader saying "slash m o" is not a price.
+          m.subs_amountPerMonth({ amount: primary }),
+        ]
           .filter(Boolean)
           .join(", ")}
         onPress={() => {
@@ -215,24 +221,16 @@ export const SubscriptionRow = memo(function SubscriptionRow({
           </Text>
         </View>
 
-        <View style={styles.amounts}>
-          <Text
-            style={styles.amount}
-            numberOfLines={1}
-            maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-          >
-            {primary}
-          </Text>
-          {charged ? (
-            <Text
-              style={styles.charged}
-              numberOfLines={1}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {charged}
-            </Text>
-          ) : null}
-        </View>
+        {/* One line, one currency. The cadence suffix is what stops a
+            normalised figure from reading as the amount actually charged. */}
+        <Text
+          style={styles.amount}
+          numberOfLines={1}
+          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+        >
+          {primary}
+          <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
+        </Text>
       </Pressable>
     </ReanimatedSwipeable>
   );
@@ -267,7 +265,6 @@ const styles = StyleSheet.create({
   // width back on exactly the rows whose names tend to be longest.
   name: { fontSize: 15, fontWeight: "600", color: colors.text },
   sub: { marginTop: 2, fontSize: 12.5, color: colors.muted },
-  amounts: { alignItems: "flex-end" },
   amount: {
     fontSize: 15.5,
     fontWeight: "700",
@@ -275,12 +272,9 @@ const styles = StyleSheet.create({
     // Digits stop jittering between rows and during optimistic updates.
     fontVariant: ["tabular-nums"],
   },
-  charged: {
-    marginTop: 1,
-    fontSize: 11.5,
-    color: colors.muted,
-    fontVariant: ["tabular-nums"],
-  },
+  // Nested in the amount so it rides the same baseline; muted and small so the
+  // number stays the thing being compared.
+  cadence: { fontSize: 11.5, fontWeight: "600", color: colors.muted },
   // Laid out left-to-right here; the library's wrapper pins the group to the
   // trailing edge, so the destructive action ends up furthest out, as in Mail.
   actions: {

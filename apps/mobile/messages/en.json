@@ -31,6 +31,8 @@
   "subs_filterStatus": "Status",
   "subs_filterSort": "Sort by",
   "subs_filterReset": "Reset",
+  "subs_perMonthSuffix": "/mo",
+  "subs_amountPerMonth": "{amount} per month",
   "subs_sort_next": "Next payment",
   "subs_sort_name": "Name",
   "subs_sort_cost": "Cost",

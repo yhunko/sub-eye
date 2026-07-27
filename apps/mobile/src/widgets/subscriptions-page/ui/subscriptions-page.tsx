@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
-import type { SearchBarCommands } from "react-native-screens";
 import {
   applySubscriptionFilters,
   hasActiveFilters,
@@ -32,7 +31,6 @@ export function SubscriptionsPage() {
   // navigator owns sheet presentation here), so it cannot read this component's
   // state. See entities/subscription/model/filters-store.
   const filters = useSubscriptionFilters();
-  const searchRef = useRef<SearchBarCommands | null>(null);
 
   // ONE set of lifecycle mutations for the whole screen. Every visible row's
   // swipe actions are built from this — a hook per row would mean five TanStack
@@ -89,52 +87,65 @@ export function SubscriptionsPage() {
       <Stack.Screen
         options={{
           title: m.subscriptions_title(),
-          headerRight: () => (
-            <View style={styles.actions}>
-              {/* Filled + tinted while anything is narrowing the list — the same
-                  signal Mail uses, and the only one left now that the chips are
-                  gone. Search is excluded from `active`: the search field shows
-                  its own state. */}
-              <Pressable
-                onPress={() => router.push("/subscriptions/filters")}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={m.subs_filterTitle()}
-                accessibilityState={{ selected: active }}
-              >
+          // Two SEPARATE header subviews, not two Pressables in one view: iOS 26
+          // draws a single shared glass capsule around whatever one subview
+          // contains, so a combined view reads as one control with two halves.
+          // headerLeft/headerRight are distinct bar items and get a capsule each.
+          // (`headerRightBarButtonItems` would be the richer native route, but
+          // react-native-screens exposes it only on its own header config, not
+          // through the navigator options expo-router forwards.)
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.push("/subscriptions/filters")}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.subs_filterTitle()}
+              accessibilityState={{ selected: active }}
+            >
+              <View>
                 <SymbolView
                   name={{
-                    ios: active
-                      ? "line.3.horizontal.decrease.circle.fill"
-                      : "line.3.horizontal.decrease.circle",
+                    ios: "line.3.horizontal.decrease",
                     android: "filter_list",
                   }}
-                  size={22}
-                  tintColor={active ? colors.accent : colors.text}
+                  size={20}
+                  tintColor={colors.text}
                 />
-              </Pressable>
-              <Pressable
-                onPress={() => router.push("/subscriptions/new")}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={m.subs_add()}
-              >
-                <Text style={styles.add}>+</Text>
-              </Pressable>
-            </View>
+                {/* A dot, not a tint change. Recolouring the glyph asks the user
+                    to remember what the other colour meant; a dot is the
+                    conventional "there is something set here" mark and reads at a
+                    glance without knowing the resting state. */}
+                {active ? <View style={styles.dot} /> : null}
+              </View>
+            </Pressable>
           ),
-          // iOS 26: a collapsed search button on the nav bar's trailing edge that
-          // expands into a field on tap ("integratedButton"). Styling stays
-          // minimal so the native liquid-glass button owns its own appearance —
-          // a custom barTintColor is what renders the glyph black on the dark
-          // field. onChangeText writes straight to local state; no debounce is
-          // needed because nothing fetches.
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push("/subscriptions/new")}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.subs_add()}
+            >
+              <Text style={styles.add}>+</Text>
+            </Pressable>
+          ),
+          // `automatic` = UIKit's own choice, which here is a full-width field
+          // under the nav bar that hides itself as the list scrolls. It costs a
+          // row at rest and nothing while browsing, and it leaves the nav bar to
+          // the two actions instead of three controls.
+          //
+          // NOT the iOS 26 bottom-of-screen search: that is a tab-bar feature
+          // (`UITab.role = .search`), and expo-router's `NativeTabs.Trigger`
+          // `role` maps to the legacy `UITabBarItem.systemItem` instead — a
+          // normal tab with a magnifying-glass icon. Reaching the real one means
+          // adding a fourth Search tab, which is a screen, not a config change.
+          //
+          // Styling stays minimal so the native control owns its appearance — a
+          // custom barTintColor is what renders the glyph black on the dark
+          // field. onChangeText writes straight to the filter store; no debounce
+          // is needed because nothing fetches.
           headerSearchBarOptions: {
-            ref: searchRef,
-            placement: "integratedButton",
-            // Keep the button in the nav bar rather than letting iOS pull it
-            // into a bottom toolbar on iPhone.
-            allowToolbarIntegration: false,
+            placement: "automatic",
             placeholder: m.subs_searchPlaceholder(),
             autoCapitalize: "none",
             tintColor: colors.accent,
@@ -149,13 +160,10 @@ export function SubscriptionsPage() {
         keyExtractor={(item) => item.id}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
-        onScrollBeginDrag={() => {
-          closeOpenRow();
-          // integratedButton ignores hideWhenScrolling (UIKit honours that only
-          // for the stacked placement), so collapse an empty search back to its
-          // button ourselves once the list starts moving.
-          if (!filters.search.trim()) searchRef.current?.cancelSearch();
-        }}
+        // No cancelSearch hack here any more: that existed because
+        // `integratedButton` ignores hideWhenScrolling. UIKit honours it for
+        // this placement, so the field retracts on its own.
+        onScrollBeginDrag={closeOpenRow}
         // ponytail: no getItemLayout. Rows are a fixed ROW_HEIGHT, so
         // VirtualizedList's own length estimate is exact after the first cell.
         contentContainerStyle={[styles.list, !visible.length && styles.grow]}
@@ -184,8 +192,18 @@ const styles = StyleSheet.create({
   // No `gap` — each row carries its own ROW_GAP as a margin so the swipe
   // container stays the outermost box of a cell.
   list: { paddingHorizontal: 12, paddingBottom: 24 },
-  actions: { flexDirection: "row", alignItems: "center", gap: 18 },
   grow: { flexGrow: 1 },
+  // Sits on the glyph's trailing-top corner, outside its optical box so it never
+  // covers a bar of the icon.
+  dot: {
+    position: "absolute",
+    top: -2,
+    right: -3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
   emptyBox: {
     flex: 1,
     paddingVertical: 48,

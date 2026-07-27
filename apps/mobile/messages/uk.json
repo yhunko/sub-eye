@@ -31,6 +31,8 @@
   "subs_filterStatus": "Статус",
   "subs_filterSort": "Сортування",
   "subs_filterReset": "Скинути",
+  "subs_perMonthSuffix": "/міс",
+  "subs_amountPerMonth": "{amount} на місяць",
   "subs_sort_next": "Найближчий платіж",
   "subs_sort_name": "Назва",
   "subs_sort_cost": "Вартість",
