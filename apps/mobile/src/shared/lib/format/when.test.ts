@@ -10,7 +10,21 @@ mock.module("@/shared/i18n", () => ({
   },
 }));
 
-const { daysUntil, formatCountdown, formatDaysUntil } = await import("./when");
+const { daysUntil, formatCountdown, formatDaysUntil, formatShortDate } =
+  await import("./when");
+
+describe("formatShortDate", () => {
+  it("drops the year only while it is the current one", () => {
+    expect(formatShortDate("2026-08-03T00:00:00.000Z")).toBe("3 Aug");
+    expect(formatShortDate("2027-02-05T00:00:00.000Z")).toBe("5 Feb 2027");
+  });
+
+  // What a cancelled row and the ended card both print. A past date has to
+  // render as a date, not as a countdown clamped to "Today".
+  it("renders a past date as itself", () => {
+    expect(formatShortDate("2025-11-30T00:00:00.000Z")).toBe("30 Nov 2025");
+  });
+});
 
 describe("formatCountdown", () => {
   // Unlike formatDaysUntil it never falls back to a date: the detail card prints

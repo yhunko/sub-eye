@@ -8,7 +8,12 @@ import ReanimatedSwipeable, {
 } from "react-native-gesture-handler/ReanimatedSwipeable";
 import type { LifecycleActionTarget } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
-import { daysUntil, formatDaysUntil, formatMoney } from "@/shared/lib/format";
+import {
+  daysUntil,
+  formatDaysUntil,
+  formatMoney,
+  formatShortDate,
+} from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors, LAYOUT_FONT_SCALE_MAX, statusTint } from "@/shared/ui/theme";
 
@@ -145,12 +150,16 @@ export const SubscriptionRow = memo(function SubscriptionRow({
     [actions],
   );
 
-  // Paused rows answer "when does this start costing again", not "when is the
-  // next payment" — the resume date is the number the user is looking for.
+  // Each status is asking a different question of the same slot. Cancelled is
+  // the one that was WRONG: the server still computes a nextPaymentDate for it,
+  // so a dead subscription was advertising a payment it will never take.
+  const cancelled = item.status === "cancelled";
   const date =
-    item.status === "paused" && item.resumeAt
-      ? item.resumeAt
-      : item.nextPaymentDate;
+    cancelled && item.willBeCancelledAt
+      ? item.willBeCancelledAt
+      : item.status === "paused" && item.resumeAt
+        ? item.resumeAt
+        : item.nextPaymentDate;
 
   // NORMALISED TO A MONTH, and only ever in the home currency.
   //
@@ -210,21 +219,31 @@ export const SubscriptionRow = memo(function SubscriptionRow({
           { backgroundColor: tint.bg, borderColor: tint.border },
         ]}
       >
-        <BrandLogo name={item.name} brandDomain={item.brandDomain} size={38} />
+        <BrandLogo
+          name={item.name}
+          brandDomain={item.brandDomain}
+          size={38}
+          dimmed={cancelled}
+        />
 
         <View style={styles.middle}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text
+            style={[styles.name, cancelled && styles.spent]}
+            numberOfLines={1}
+          >
             {item.name}
           </Text>
           <Text style={styles.sub} numberOfLines={1}>
-            {formatDaysUntil(daysUntil(date), date)}
+            {cancelled
+              ? m.subs_ended({ date: formatShortDate(date) })
+              : formatDaysUntil(daysUntil(date), date)}
           </Text>
         </View>
 
         {/* One line, one currency. The cadence suffix is what stops a
             normalised figure from reading as the amount actually charged. */}
         <Text
-          style={styles.amount}
+          style={[styles.amount, cancelled && styles.amountSpent]}
           numberOfLines={1}
           maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
         >
@@ -264,6 +283,10 @@ const styles = StyleSheet.create({
   // No status badge: the row's own fill carries it, which buys the name the full
   // width back on exactly the rows whose names tend to be longest.
   name: { fontSize: 15, fontWeight: "600", color: colors.text },
+  // Struck through AND muted: the strike alone still reads as an emphasised row
+  // at a glance, which is the opposite of what a finished subscription is.
+  spent: { textDecorationLine: "line-through", color: colors.muted },
+  amountSpent: { color: colors.muted },
   sub: { marginTop: 2, fontSize: 12.5, color: colors.muted },
   amount: {
     fontSize: 15.5,

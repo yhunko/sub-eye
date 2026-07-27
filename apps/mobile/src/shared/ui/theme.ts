@@ -54,7 +54,10 @@ export const statusTint: Record<
   active: { bg: colors.surface, border: colors.border },
   paused: { bg: "#3c3421", border: "rgba(251,191,36,0.34)" },
   cancelling: { bg: "#3b2d25", border: "rgba(249,146,60,0.36)" },
-  cancelled: { bg: "#272a31", border: "rgba(152,160,174,0.22)" },
+  // Paler than `surface`, not brighter than it: this used to be #272a31, which
+  // made the one status that no longer costs anything the loudest row on the
+  // screen. A dead subscription should recede towards the page background.
+  cancelled: { bg: "#131519", border: "rgba(255,255,255,0.06)" },
 };
 
 // Cap Dynamic Type growth on layout-critical text (the fixed-size hero numbers

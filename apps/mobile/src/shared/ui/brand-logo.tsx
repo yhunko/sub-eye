@@ -23,10 +23,13 @@ export function BrandLogo({
   name,
   brandDomain,
   size = 40,
+  dimmed = false,
 }: {
   name: string;
   brandDomain: string | null;
   size?: number;
+  /** Drains the colour out of a logo whose subscription is over. */
+  dimmed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   // A full circle, not a squircle: most favicons are a logo on an opaque white
@@ -36,6 +39,7 @@ export function BrandLogo({
     width: size,
     height: size,
     borderRadius: size / 2,
+    ...(dimmed ? { opacity: 0.4 } : null),
   };
 
   if (!brandDomain || failed) {

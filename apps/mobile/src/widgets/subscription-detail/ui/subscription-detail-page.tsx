@@ -2,7 +2,7 @@ import type { SubscriptionDto, SubscriptionStatus } from "@subeye/shared";
 import { isCurrentlyActiveSubscription } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import type { SFSymbol } from "expo-symbols";
+import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { useMemo } from "react";
 import {
@@ -65,15 +65,22 @@ const CADENCE_EVERY: Record<
   year: m.cadence_everyYears,
 };
 
-// SF Symbols for the native overflow menu. Keys come from the lifecycle action
-// builder; anything unmapped simply shows as a text-only menu row.
-const MENU_ICON: Record<string, { type: "sfSymbol"; name: SFSymbol }> = {
-  pricing: { type: "sfSymbol", name: "tag" },
-  pause: { type: "sfSymbol", name: "pause.circle" },
-  resume: { type: "sfSymbol", name: "play.circle" },
-  cancel: { type: "sfSymbol", name: "xmark.circle" },
-  renew: { type: "sfSymbol", name: "arrow.clockwise" },
-  delete: { type: "sfSymbol", name: "trash" },
+// Platform symbols per lifecycle action. Keys come from the action builder;
+// anything unmapped simply shows as a text-only menu row. One table rather than
+// two because the primary button needs the same glyphs the menu does — and the
+// primary is no longer always `edit`.
+const EDIT_ICON: { ios: SFSymbol; android: AndroidSymbol } = {
+  ios: "pencil",
+  android: "edit",
+};
+const ACTION_ICON: Record<string, { ios: SFSymbol; android: AndroidSymbol }> = {
+  edit: EDIT_ICON,
+  pricing: { ios: "tag", android: "sell" },
+  pause: { ios: "pause.circle", android: "pause_circle" },
+  resume: { ios: "play.circle", android: "play_circle" },
+  cancel: { ios: "xmark.circle", android: "cancel" },
+  renew: { ios: "arrow.clockwise", android: "refresh" },
+  delete: { ios: "trash", android: "delete" },
 };
 
 function Track({ value }: { value: number }) {
@@ -143,6 +150,18 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   const date = paused ? subscription.resumeAt : subscription.nextPaymentDate;
   const showDate = status !== "cancelled" && date !== null;
 
+  // What a finished subscription is actually asked: when did it stop, and what
+  // did stopping it buy back. `willBeCancelledAt` is non-null by construction on
+  // this status (deriveSubscriptionStatus needs it to reach "cancelled"), and the
+  // guard is here because the DTO type does not know that.
+  //
+  // The figure is `preferred.monthly` — a RATE, not a history. Nothing here adds
+  // up what was ever paid: `createdAt` is when the row was typed into SubEye, not
+  // when the subscription began, so a lifetime total would be a confident lie for
+  // every subscription anyone imported.
+  const endedAt =
+    status === "cancelled" ? subscription.willBeCancelledAt : null;
+
   // How much of the monthly burn rate this one subscription is. Normalised
   // monthly on both sides, so a yearly subscription compares honestly.
   const burnRate = dashboard?.monthlyBurnRate ?? 0;
@@ -168,7 +187,10 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           {
             type: "button" as const,
             label: primary.label,
-            icon: { type: "sfSymbol" as const, name: "pencil" as const },
+            icon: {
+              type: "sfSymbol" as const,
+              name: (ACTION_ICON[primary.key] ?? EDIT_ICON).ios,
+            },
             variant: "prominent" as const,
             tintColor: colors.accent,
             onPress: primary.run,
@@ -183,13 +205,16 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             icon: { type: "sfSymbol" as const, name: "ellipsis" as const },
             menu: {
               title: subscription.name,
-              items: overflow.map((item) => ({
-                type: "action" as const,
-                label: item.label,
-                destructive: item.destructive,
-                icon: MENU_ICON[item.key],
-                onPress: item.run,
-              })),
+              items: overflow.map((item) => {
+                const icon = ACTION_ICON[item.key];
+                return {
+                  type: "action" as const,
+                  label: item.label,
+                  destructive: item.destructive,
+                  icon: icon && { type: "sfSymbol" as const, name: icon.ios },
+                  onPress: item.run,
+                };
+              }),
             },
           },
         ]
@@ -210,7 +235,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                 accessibilityLabel={primary.label}
               >
                 <SymbolView
-                  name={{ ios: "pencil", android: "edit" }}
+                  name={ACTION_ICON[primary.key] ?? EDIT_ICON}
                   size={22}
                   tintColor={colors.accent}
                   weight="semibold"
@@ -282,7 +307,8 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               numberOfLines={1}
               maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
             >
-              {m.detail_currentPrice()}
+              {/* Nothing about a cancelled subscription's price is current. */}
+              {endedAt ? m.detail_lastPrice() : m.detail_currentPrice()}
             </Text>
             <Text
               style={styles.price}
@@ -324,6 +350,38 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                 })}
               </Text>
             </View>
+          </View>
+        ) : null}
+
+        {endedAt ? (
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <Text
+                style={styles.label}
+                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+              >
+                {m.detail_ended()}
+              </Text>
+            </View>
+            {/* The date is the headline, not the amount — the hero above already
+                prints that number, and the same figure twice on one screen reads
+                as a rendering bug rather than as emphasis. */}
+            <Text
+              style={styles.countdown}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+            >
+              {formatDate(endedAt, locale)}
+            </Text>
+            <Text style={styles.footnote} numberOfLines={1}>
+              {m.detail_endedFreed({
+                amount: formatMoney(preferred.monthly, preferred.currencyCode, {
+                  decimals: 0,
+                }),
+              })}
+            </Text>
           </View>
         ) : null}
 

@@ -40,13 +40,14 @@ export function formatDate(isoDate: string, locale: string): string {
 }
 
 /**
- * "Today" / "Tomorrow" / "in N days" up to a fortnight out, then a short date.
- * `isoDate` is only read for the date branch, so callers can pass the server's
- * timezone-correct `daysUntil` alongside the raw date.
+ * "3 Aug", or "5 Feb 2027" once the year stops being obvious.
+ *
+ * The only shape a past date gets: a countdown cannot run backwards without
+ * plural forms this app deliberately does not carry (Hermes has no
+ * Intl.PluralRules, so every plural is spelled per locale in the catalog), and
+ * "ended 47 days ago" is not worth three Ukrainian spellings of "days".
  */
-export function formatDaysUntil(days: number, isoDate: string): string {
-  if (days < 14) return formatCountdown(days);
-
+export function formatShortDate(isoDate: string): string {
   const date = new Date(isoDate);
   const sameYear = date.getUTCFullYear() === new Date().getUTCFullYear();
   return new Intl.DateTimeFormat("en-GB", {
@@ -55,4 +56,14 @@ export function formatDaysUntil(days: number, isoDate: string): string {
     ...(sameYear ? {} : { year: "numeric" }),
     timeZone: "UTC",
   }).format(date);
+}
+
+/**
+ * "Today" / "Tomorrow" / "in N days" up to a fortnight out, then a short date.
+ * `isoDate` is only read for the date branch, so callers can pass the server's
+ * timezone-correct `daysUntil` alongside the raw date.
+ */
+export function formatDaysUntil(days: number, isoDate: string): string {
+  if (days < 14) return formatCountdown(days);
+  return formatShortDate(isoDate);
 }

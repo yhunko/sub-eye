@@ -42,10 +42,20 @@ export function useLifecycleActions({
 
   // Edit earns a real button. In the retired web client it sat behind an
   // ellipsis with everything else; it is the action people reach for most.
-  const primary = items.find((item) => item.key === "edit") ?? null;
-  const overflow = useMemo(
-    () => items.filter((item) => item.key !== "edit"),
+  //
+  // A cancelled subscription has no `edit` action at all (see getAllowedActions),
+  // so that screen used to open with nothing but an ellipsis. Renew is the move
+  // someone is there to make, and it takes the slot instead.
+  const primary = useMemo(
+    () =>
+      items.find((item) => item.key === "edit") ??
+      items.find((item) => item.key === "renew") ??
+      null,
     [items],
+  );
+  const overflow = useMemo(
+    () => items.filter((item) => item.key !== primary?.key),
+    [items, primary],
   );
 
   const showOverflow = useCallback(

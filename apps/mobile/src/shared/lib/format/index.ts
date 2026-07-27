@@ -11,4 +11,5 @@ export {
   formatCountdown,
   formatDate,
   formatDaysUntil,
+  formatShortDate,
 } from "./when";
