@@ -5,6 +5,7 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import { subscriptionsQuery } from "@/entities/subscription";
+import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
 import { syncRenewalReminders } from "@/shared/lib/notifications";
 import { colors } from "@/shared/ui/theme";
@@ -55,11 +56,26 @@ function RenewalReminderSync() {
 export default function TabsLayout() {
   const { isLoaded, isSignedIn } = useAuth();
 
-  // Hold the splash until Clerk has restored the session from SecureStore,
-  // otherwise a signed-in user is bounced to sign-in on every cold start.
-  if (!isLoaded) return null;
+  // Clerk's isLoaded waits on a client handshake — a network round-trip, not a
+  // SecureStore read. Blocking on it left a returning user staring at a black
+  // screen, so the device's own record of the last session decides what to mount
+  // and the synchronously-hydrated Query cache paints real numbers immediately.
+  //
+  // The hint is trusted in BOTH directions on purpose: rendering nothing while
+  // undecided is the same black screen by another name. Clerk still has the
+  // final say — it redirects here when it resolves to signed-out, and (auth)
+  // redirects back when it resolves to signed-in, so a stale hint in either
+  // direction costs one redirect and never data. Every request carries a real
+  // token and the server 401s without one.
+  if (!isLoaded) {
+    return sessionHint.read() ? <Tabs /> : <Redirect href="/sign-in" />;
+  }
   if (!isSignedIn) return <Redirect href="/sign-in" />;
 
+  return <Tabs />;
+}
+
+function Tabs() {
   return (
     <>
       {/* Outside NativeTabs: its children must be triggers and nothing else. */}

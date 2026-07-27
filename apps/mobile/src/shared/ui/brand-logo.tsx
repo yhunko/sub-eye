@@ -29,10 +29,13 @@ export function BrandLogo({
   size?: number;
 }) {
   const [failed, setFailed] = useState(false);
+  // A full circle, not a squircle: most favicons are a logo on an opaque white
+  // plate, and a rounded square leaves that plate reading as a white card behind
+  // the mark. Clipped round it reads as the avatar it is meant to be.
   const box = {
     width: size,
     height: size,
-    borderRadius: size / 3,
+    borderRadius: size / 2,
   };
 
   if (!brandDomain || failed) {

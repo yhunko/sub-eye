@@ -6,17 +6,32 @@ import { colors } from "./theme";
 export function Field({
   label,
   error,
+  hint,
+  accessory,
+  gap,
   children,
 }: {
   label: string;
   error?: string;
+  /** Explanatory copy under the control — sits below the error when both show. */
+  hint?: string;
+  /** Trailing element on the label row ("Forgot?", "Optional"). */
+  accessory?: ReactNode;
+  /** Bottom spacing. The auth screens space fields with a flex gap instead. */
+  gap?: number;
   children: ReactNode;
 }) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+    <View
+      style={[styles.field, gap === undefined ? null : { marginBottom: gap }]}
+    >
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>{label}</Text>
+        {accessory}
+      </View>
       {children}
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
 }
@@ -59,7 +74,13 @@ export function TextField({
 
 const styles = StyleSheet.create({
   field: { marginBottom: 16 },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+  },
   label: { marginBottom: 6, fontSize: 13, color: colors.muted },
+  hint: { marginTop: 6, fontSize: 12.5, lineHeight: 17, color: colors.muted },
   input: {
     fontSize: 16,
     color: colors.text,

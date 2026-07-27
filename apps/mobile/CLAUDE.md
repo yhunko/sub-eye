@@ -35,13 +35,15 @@ apps/mobile/src/
 - **`_layout.tsx` is the FSD app layer.** The root provider order is **load-bearing**:
 
   ```
-  ClerkProvider (tokenCache: expo-secure-store)
-    └ TokenBridge                  wires getToken() into shared/api/client
-      └ PersistQueryClientProvider (MMKV persister)
-        └ Stack
+  SafeAreaProvider               only the (auth) screens read insets from it
+    └ ClerkProvider (tokenCache: expo-secure-store)
+      └ TokenBridge              wires getToken() into shared/api/client
+        └ QueryClientProvider    NOT PersistQueryClientProvider — see Transport
+          └ Stack
   ```
 
   Clerk sits **above** Query so the token getter is wired before the first request fires. Reordering breaks auth on the first request after a cold start.
+- **The app never blocks on Clerk.** `(tabs)/_layout.tsx` mounts the tab tree from `sessionHint` (an MMKV boolean the token bridge writes) while `isLoaded` is still false, so a cold start paints the persisted Query cache instead of a black screen — `isLoaded` waits on a network handshake, and nothing holds the splash by then. Clerk still decides: a *resolved* signed-out state redirects. Because a refetch can now fire before the bridge exists, `shared/api/client.ts` makes the first request **await** the bridge (3s ceiling) rather than sending it anonymous.
 - `_layout.tsx` also does two bare side-effect imports — `import "@/shared/lib/online"` (connectivity → `onlineManager`) and `import "@/shared/lib/focus"` (`AppState` → `focusManager`). **Neither has a binding — do not let an auto-import cleanup delete them**, or online/offline detection and every foreground refetch die app-wide.
 - **Sheets are native `formSheet` routes**, the only sheet mechanism in the app. Add/Edit and Manage-pricing (Plan 7) are `presentation: "formSheet"` with `sheetGrabberVisible: true` and `sheetAllowedDetents: "fitToContents"`. There is **no NiceModal / modal-manager equivalent** — the navigator owns presentation.
 - **Confirms are native**: ActionSheet + `Alert`. Not a custom dialog component.
@@ -64,6 +66,7 @@ apps/mobile/src/
 - **`assertOk(res)` before `res.json()`.** Hono RPC leaks the route's error-response shapes into the success type; `assertOk` narrows to the 2xx branch.
 - **`createAuthFetch` casts its result to `typeof fetch`.** `bun-types` (in scope for `bun:test`) augments the global fetch with a required `preconnect` static that a React Native transport does not implement, and Hono's `fetch` option demands `typeof fetch`. The cast is at the boundary; Hono only ever invokes the call signature.
 - **Query cache is persisted to MMKV** (`shared/lib/query.ts`), `maxAge`/`gcTime` 7 days, `buster` = `expo.version` + a manual `PERSIST_SCHEMA`. Bump `PERSIST_SCHEMA` on any OTA update that changes a persisted DTO shape.
+- **The cache is hydrated SYNCHRONOUSLY at module load, not by `PersistQueryClientProvider`.** That component starts its restore inside a `useEffect`, so React has already committed a frame with an empty cache — and every screen branches on `isPending`, so that frame is a full-page spinner. MMKV reads synchronously, so `shared/lib/persisted-cache.ts` applies TanStack's own expiry/buster rules and `hydrate()`s before the first render; `persistQueryClientSubscribe` handles saving. **Do not reintroduce `PersistQueryClientProvider`** — its `isRestoring` gate also pauses every query until the restore resolves, which is the opposite of cache-first.
 - **There is no pull-to-refresh.** Revalidation is invisible: `shared/lib/focus.ts` wires `AppState` into TanStack's `focusManager`, so returning to the app refetches everything stale (>5 min) behind the cached screen. RN has no `visibilitychange`, so **without that bridge `refetchOnWindowFocus` silently does nothing** — which is why a `RefreshControl` used to be load-bearing. Do not add one back.
 - **MMKV is v4 (Nitro):** instantiate via `createMMKV()`, **not** `new MMKV()` (which throws on v4).
 
@@ -80,6 +83,8 @@ apps/mobile/src/
 ## UI
 
 RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`). Cap layout-critical text with `maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}`; leave prose uncapped for accessibility.
+
+**Splash screen.** The `expo-splash-screen` config **must keep its `image`**. The plugin only points the generated storyboard at the `SplashScreenBackground` colorset from the code path that installs the image view — with `backgroundColor` alone the colorset is still written but nothing references it, and the storyboard falls back to `systemBackgroundColor`, which under this app's forced dark mode is pure **black**. That is a black launch screen for the whole JS boot (measured: ~3s in a Release build). `_layout.tsx` holds the splash across that boot and hides it on the root view's first layout.
 
 **App icon.** `icon.icon/` is an Apple **Icon Composer** bundle and is the source of truth — `ios.icon` points straight at it (SDK 54+), so Apple renders the gradient, shadow and translucency. **Android cannot read a `.icon` bundle**, and a `.icon` path on the *root* `icon` key is rejected by `@expo/prebuild-config`, so the two Android PNGs in `assets/` are generated from the same four layer SVGs by `python3 scripts/build-android-icon.py`. **Rerun it after any edit under `icon.icon/Assets/`** or the platforms drift. Native dirs are CNG-generated and gitignored, so an icon change needs `bun run prebuild` + a native rebuild — Metro reload will not show it.
 

@@ -19,8 +19,10 @@ import {
 } from "react-native";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
+import { TERMS_URL } from "@/shared/config/legal";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
+import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
 import {
   cancelRenewalReminders,
   renewalRemindersBlocked,
@@ -31,17 +33,6 @@ import { notifyWriteFailed } from "@/shared/ui/notify";
 import { presentChoice } from "@/shared/ui/present-choice";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
 
-// The complete supported set — the same five codes the money formatter knows
-// (shared/lib/format/money.ts). There is no shared constant to import: pulling
-// one from @subeye/shared would drag that whole barrel into the Metro bundle.
-const CURRENCIES = [
-  { code: "uah", label: "🇺🇦 UAH" },
-  { code: "usd", label: "🇺🇸 USD" },
-  { code: "eur", label: "🇪🇺 EUR" },
-  { code: "gbp", label: "🇬🇧 GBP" },
-  { code: "pln", label: "🇵🇱 PLN" },
-] as const;
-
 // Endonyms, not translations: a Ukrainian speaker looking for their language in
 // an English UI scans for "Українська", not for "Ukrainian".
 const LANGUAGE_NAMES: Record<AppLocale, string> = {
@@ -49,9 +40,7 @@ const LANGUAGE_NAMES: Record<AppLocale, string> = {
   uk: "Українська",
 };
 
-// Hosted, not bundled: legal copy changes without a store release. There is no
-// privacy-policy page yet — add the row here once one exists.
-const TERMS_URL = "https://www.subeye.cc/terms-of-service/";
+// There is no privacy-policy page yet — add the row here once one exists.
 
 // Separator inset: row padding (16) + icon (19) + gap (13), so the rule starts
 // under the label rather than under the icon.
@@ -116,6 +105,7 @@ function Row({
         // The platform control, deliberately: the design's toggle IS a stock
         // iOS switch, and Android gets Material 3 for free.
         <Switch
+          style={styles.toggle}
           value={toggle.value}
           disabled={toggle.disabled}
           onValueChange={toggle.onValueChange}
@@ -307,17 +297,14 @@ export function SettingsPage() {
   const data = preferences.data;
 
   const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const currency = CURRENCIES.find(
-    (option) => option.code === data?.preferredCurrency,
-  );
 
   const pickCurrency = () =>
     presentChoice(
       m.settings_currency(),
-      currency?.label ?? "",
-      CURRENCIES.map((option) => ({
-        label: option.label,
-        onPress: () => update.mutate({ preferredCurrency: option.code }),
+      currencyLabel(data?.preferredCurrency ?? ""),
+      CURRENCY_CODES.map((code) => ({
+        label: currencyLabel(code),
+        onPress: () => update.mutate({ preferredCurrency: code }),
       })),
     );
 
@@ -392,7 +379,7 @@ export function SettingsPage() {
               ios="creditcard"
               android="credit_card"
               label={m.settings_currency()}
-              value={currency?.label ?? data.preferredCurrency.toUpperCase()}
+              value={currencyLabel(data.preferredCurrency)}
               onPress={update.isPending ? undefined : pickCurrency}
             />
             <Divider />
@@ -507,6 +494,11 @@ const styles = StyleSheet.create({
     marginLeft: DIVIDER_INSET,
   },
   rowPressed: { backgroundColor: colors.surfaceAlt },
+  // Not decoration: RN's iOS Switch hardcodes `alignSelf: "flex-start"` under
+  // the caller's style (Libraries/Components/Switch/Switch.js). The cross axis
+  // of a row is vertical, so that pins the switch to the row's TOP and beats the
+  // parent's alignItems — it sat 12pt above the label until this line.
+  toggle: { alignSelf: "center" },
   rowLabel: { flex: 1, fontSize: 16, color: colors.text },
   rowLabelAccent: { color: colors.accent, fontWeight: "600" },
   rowValue: { fontSize: 16, color: colors.muted, flexShrink: 1 },

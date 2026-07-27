@@ -6,13 +6,26 @@
 // sends the currency code; symbols and grouping exist nowhere else, so there is
 // nothing to keep in sync. These five codes are the complete set the product
 // supports.
-const SYMBOLS: Record<string, { symbol: string; locale: string }> = {
-  usd: { symbol: "$", locale: "en-US" },
-  eur: { symbol: "€", locale: "de-DE" },
-  uah: { symbol: "₴", locale: "uk-UA" },
-  gbp: { symbol: "£", locale: "en-GB" },
-  pln: { symbol: "zł", locale: "pl-PL" },
+const SYMBOLS: Record<
+  string,
+  { symbol: string; locale: string; flag: string }
+> = {
+  uah: { symbol: "₴", locale: "uk-UA", flag: "🇺🇦" },
+  usd: { symbol: "$", locale: "en-US", flag: "🇺🇸" },
+  eur: { symbol: "€", locale: "de-DE", flag: "🇪🇺" },
+  gbp: { symbol: "£", locale: "en-GB", flag: "🇬🇧" },
+  pln: { symbol: "zł", locale: "pl-PL", flag: "🇵🇱" },
 };
+
+/** Picker order follows the table above — reordering it reorders every picker. */
+export const CURRENCY_CODES = Object.keys(SYMBOLS);
+
+/** "🇺🇦 UAH". Unknown codes lose the flag rather than the row. */
+export function currencyLabel(currencyCode: string): string {
+  const code = currencyCode.trim().toLowerCase();
+  const flag = SYMBOLS[code]?.flag;
+  return flag ? `${flag} ${code.toUpperCase()}` : code.toUpperCase();
+}
 
 /**
  * Reads a price the user typed. Accepts "1 299,50" and "1299.50" alike — a

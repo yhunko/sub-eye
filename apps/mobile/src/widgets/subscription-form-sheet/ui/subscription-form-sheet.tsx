@@ -10,6 +10,7 @@ import {
 } from "@/entities/subscription";
 import { preferencesQuery } from "@/entities/user";
 import { m } from "@/shared/i18n";
+import { CurrencyField } from "@/shared/ui/currency-field";
 import { Field, TextField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
 import { Segmented } from "@/shared/ui/segmented";
@@ -151,12 +152,9 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
         keyboardType="decimal-pad"
         error={messageFor(errors.cost)}
       />
-      <TextField
-        label={m.form_currency()}
+      <CurrencyField
         value={values.currency}
-        onChangeText={(next) => set("currency", next)}
-        autoCapitalize="none"
-        error={messageFor(errors.currency)}
+        onChange={(next) => set("currency", next)}
       />
       <TextField
         label={m.form_every()}

@@ -12,6 +12,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "cc.subeye.app",
+      "appleTeamId": "Z6KADG969Z",
       "icon": "./icon.icon",
       "backgroundColor": "#0f1115",
       "config": { "usesNonExemptEncryption": false },
@@ -40,7 +41,12 @@
       "expo-notifications",
       [
         "expo-splash-screen",
-        { "resizeMode": "contain", "backgroundColor": "#0f1115" }
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#0f1115"
+        }
       ],
       "@react-native-community/datetimepicker"
     ],

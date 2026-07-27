@@ -9,12 +9,19 @@ export const colors = {
   text: "#f2f4f8",
   muted: "#98a0ae",
   border: "rgba(255,255,255,0.10)",
+  borderStrong: "rgba(255,255,255,0.16)",
   // Green is BRAND + interaction, never "money is good" — every amount in a
   // spend tracker is money leaving, so amounts stay neutral.
   accent: "#33a453",
   accentSoft: "rgba(51,164,83,0.14)",
+  // Focus/active affordances only. #33a453 on #0f1115 is 5.92:1 — fine for a
+  // filled button, too dim for a 1px focused border, which is what this is for.
+  accentBright: "#6fd98c",
+  accentPressed: "#2b8a46",
+  accentDisabled: "#1f6634",
   danger: "#f87171",
   dangerSoft: "rgba(248,113,113,0.14)",
+  dangerBorder: "rgba(248,113,113,0.32)",
   // Amber. Only ever "this is suspended", never "this is wrong" — it is the
   // paused hue, shared by the paused row tint and the Pause swipe action.
   warning: "#e0a32e",
