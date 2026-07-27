@@ -33,9 +33,14 @@ export default function SubscriptionsTabLayout() {
       <Stack.Screen name="index" options={{ title: m.subscriptions_title() }} />
       {/* The detail screen sets its own title from the subscription's name. */}
       <Stack.Screen name="[id]/index" />
-      <Stack.Screen name="new" options={scrollableSheet} />
+      {/* Add/edit is a full-screen modal that owns its own Stack, so it can
+          push the category picker. headerShown: false because that nested
+          layout brings its own nav bar. */}
+      <Stack.Screen
+        name="form"
+        options={{ presentation: "modal", headerShown: false }}
+      />
       <Stack.Screen name="filters" options={scrollableSheet} />
-      <Stack.Screen name="[id]/edit" options={scrollableSheet} />
       <Stack.Screen name="[id]/pricing" options={scrollableSheet} />
       <Stack.Screen name="[id]/pause" options={compactSheet} />
     </Stack>

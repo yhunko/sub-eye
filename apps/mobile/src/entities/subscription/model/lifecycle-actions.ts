@@ -63,11 +63,9 @@ export function useLifecycleActionBuilder() {
           key: "edit",
           label: m.action_edit(),
           destructive: false,
+          // One route for both modes: an `id` param means edit.
           run: () =>
-            router.push({
-              pathname: "/subscriptions/[id]/edit",
-              params: { id },
-            }),
+            router.push({ pathname: "/subscriptions/form", params: { id } }),
         }),
         // addPhase, applyPhaseNow and cancelPhase are three server permissions
         // over one screen. They collapse to a single entry (deduped below)

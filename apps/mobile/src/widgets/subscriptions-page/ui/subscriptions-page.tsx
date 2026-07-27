@@ -121,7 +121,7 @@ export function SubscriptionsPage() {
           ),
           headerRight: () => (
             <Pressable
-              onPress={() => router.push("/subscriptions/new")}
+              onPress={() => router.push("/subscriptions/form")}
               hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel={m.subs_add()}

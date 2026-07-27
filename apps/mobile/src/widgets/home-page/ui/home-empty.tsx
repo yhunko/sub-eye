@@ -34,7 +34,7 @@ export function HomeEmpty() {
       <View style={styles.action}>
         <Button
           label={m.subs_add()}
-          onPress={() => router.push("/subscriptions/new")}
+          onPress={() => router.push("/subscriptions/form")}
         />
       </View>
     </View>
