@@ -39,8 +39,15 @@ export function subscriptionsQuery() {
       // than pagination, and raising the server's default 50 is the same bug
       // with a larger number in it.
       do {
+        // `status: "all"` is NOT a no-op. The server defaults an absent status to
+        // "active" (subscriptionService.getSubscriptionsPage), and its "active"
+        // means active + cancelling — so omitting this drops every paused and
+        // cancelled subscription before it reaches the device. Every screen
+        // treats this array as the complete list, so the Paused and Cancelled
+        // filter chips were permanently empty and the category counts were
+        // short.
         const response = await apiClient.api.subscriptions.$get({
-          query: cursor ? { cursor } : {},
+          query: cursor ? { status: "all", cursor } : { status: "all" },
         });
         assertOk(response);
         const body: SubscriptionListPageDto<SubscriptionDto> =

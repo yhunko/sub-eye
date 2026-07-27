@@ -134,6 +134,36 @@ describe("subscriptionsQuery", () => {
     expect(urls[0]).toContain("/api/subscriptions");
   });
 
+  // The defect this prevents: the server defaults an absent status to "active"
+  // (and its "active" is really active + cancelling), so a request without this
+  // parameter never returns a paused or cancelled subscription. Every screen
+  // treats this array as the whole list, so the Paused and Cancelled chips were
+  // permanently empty and the category counts were short.
+  it("asks for every status — the server's default hides paused and cancelled", async () => {
+    const urls = stubJson({ items: [row], nextCursor: null });
+    const queryFn = subscriptionsQuery().queryFn as () => Promise<
+      SubscriptionDto[]
+    >;
+
+    await queryFn();
+    expect(urls[0]).toContain("status=all");
+  });
+
+  it("keeps status=all on every page, not just the first", async () => {
+    const urls = stubPages([
+      { items: [row], nextCursor: "50" },
+      { items: [], nextCursor: null },
+    ]);
+    const queryFn = subscriptionsQuery().queryFn as () => Promise<
+      SubscriptionDto[]
+    >;
+
+    await queryFn();
+    expect(urls).toHaveLength(2);
+    expect(urls[1]).toContain("status=all");
+    expect(urls[1]).toContain("cursor=50");
+  });
+
   // The defect this prevents: the server pages at 50 by default and every screen
   // treats this array as the COMPLETE list, so dropping nextCursor silently hides
   // a user's 51st subscription from the list, the search and the filters.
