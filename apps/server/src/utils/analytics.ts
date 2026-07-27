@@ -7,7 +7,6 @@ interface RequestContext {
   url: string;
   route?: string;
   userId?: string;
-  orgId?: string;
   /** Cloudflare Ray ID — unique per request, links error to CF logs */
   rayId?: string;
   userAgent?: string;
@@ -29,7 +28,6 @@ export const extractRequestContext = (ctx: Context): RequestContext => ({
   url: ctx.req.url,
   route: ctx.req.routePath,
   userId: (ctx.get("userId") as string | undefined) ?? undefined,
-  orgId: (ctx.get("orgId") as string | undefined) ?? undefined,
   rayId: ctx.req.header("cf-ray"),
   userAgent: ctx.req.header("user-agent"),
 });
@@ -54,7 +52,6 @@ export const captureServerException = async (
       $http_method: requestContext.method,
       $http_url: requestContext.url,
       route: requestContext.route,
-      org_id: requestContext.orgId,
       ray_id: requestContext.rayId,
       user_agent: requestContext.userAgent,
       response_status: requestContext.responseStatus,

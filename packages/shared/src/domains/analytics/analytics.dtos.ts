@@ -94,12 +94,10 @@ export interface DashboardAnalyticsDto {
   remainingThisMonth: number;
   nextMonthForecast: number;
   activeSubscriptionsTotal: number;
-  activeSubscriptionsAuto: number;
-  activeSubscriptionsManual: number;
   mostExpensiveSubscription: MostExpensiveSubscriptionDto | null;
   cashFlowForecast: CashFlowPoint[];
   upcomingRenewals: UpcomingRenewalDto[];
   totalUpcomingMonth: number;
-  monthlyTrend: MonthlyTrendPoint[];
   categorySpending: CategorySpendingDto[];
+  timezone: string;
 }

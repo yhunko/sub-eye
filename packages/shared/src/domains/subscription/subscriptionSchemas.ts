@@ -4,6 +4,7 @@ import {
   check,
   type InferOutput,
   integer,
+  literal,
   maxLength,
   minLength,
   minValue,
@@ -16,9 +17,15 @@ import {
   strictObject,
   string,
   transform,
+  variant,
 } from "valibot";
 import { SubscriptionPeriod } from "../../types";
-import { subscriptionLifecycleStatuses } from "./subscriptionLifecycle";
+import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
+import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
+import {
+  subscriptionAllowedActions,
+  subscriptionStatuses,
+} from "./subscriptionStatus";
 
 const currencyCodeSchema = pipe(
   string(),
@@ -39,17 +46,38 @@ const isoDateSchema = pipe(
   check((value) => !Number.isNaN(Date.parse(value)), "Invalid date"),
 );
 
+/** An ISO date that must still be ahead of us. Enforced on both clients. */
+const futureIsoDateSchema = pipe(
+  isoDateSchema,
+  check(
+    (value) => Date.parse(value) > Date.now(),
+    "Date must be in the future",
+  ),
+);
+
 export const idQuerySchema = object({
   id: string(),
 });
-export type IdParam = InferOutput<typeof idQuerySchema>;
 
-export const updateSubscriptionQuerySchema = object({
-  trackHistory: optional(picklist(["true", "false"])),
-});
-export type UpdateSubscriptionQuery = InferOutput<
-  typeof updateSubscriptionQuerySchema
->;
+/**
+ * Optional "starting offer" set up at creation time: begin the subscription on
+ * a free trial or an intro discount. `cost` on the parent payload is the
+ * standard price the offer reverts to; `promoCost` is the price paid until
+ * `endsAt` (0 for a free trial).
+ */
+export const addSubscriptionIntroSchema = pipe(
+  strictObject({
+    kind: picklist(["trial", "intro"] as const),
+    promoCost: pipe(number(), minValue(0)),
+    endsAt: futureIsoDateSchema,
+  }),
+  // A "discount" of zero is a free trial. Forcing the distinction keeps the
+  // timeline honest about what the user actually signed up for.
+  check(
+    (value) => value.kind !== "intro" || value.promoCost > 0,
+    "An intro discount must cost more than zero",
+  ),
+);
 
 export const AddSubscriptionSchema = strictObject({
   name: pipe(
@@ -83,6 +111,7 @@ export const AddSubscriptionSchema = strictObject({
     null,
   ),
   willBeCancelledAt: optional(nullable(isoDateSchema), null),
+  intro: optional(nullable(addSubscriptionIntroSchema)),
 });
 
 export const UpdateSubscriptionSchema = strictObject({
@@ -136,19 +165,56 @@ export const SchedulePriceChangeSchema = strictObject({
   customDate: optional(nullable(isoDateSchema)),
 });
 
-const subscriptionBillingDetailsSchema = strictObject({
-  original: strictObject({
-    currencyCode: string(),
-    monthly: number(),
+const positiveCostSchema = pipe(
+  number(),
+  check((value) => value > 0, "Cost must be greater than zero"),
+);
+
+/**
+ * One payload for every way of putting a price on the timeline:
+ *  - `trial` / `intro` start an override now that reverts to `standardCost`
+ *    on `endsAt`;
+ *  - `scheduledChange` replaces the standard price on a future date.
+ */
+export const StartPhaseSchema = variant("kind", [
+  strictObject({
+    kind: literal("trial"),
+    promoCost: pipe(number(), minValue(0)),
+    currency: optional(currencyCodeSchema),
+    endsAt: futureIsoDateSchema,
+    standardCost: positiveCostSchema,
   }),
-  preferred: strictObject({
-    currencyCode: string(),
-    amount: number(),
-    monthly: number(),
-    yearly: number(),
-    exchangeRate: number(),
+  strictObject({
+    kind: literal("intro"),
+    promoCost: positiveCostSchema,
+    currency: optional(currencyCodeSchema),
+    endsAt: futureIsoDateSchema,
+    standardCost: positiveCostSchema,
   }),
+  strictObject({
+    kind: literal("scheduledChange"),
+    cost: positiveCostSchema,
+    currency: optional(currencyCodeSchema),
+    mode: picklist(scheduledPriceChangeModes),
+    customDate: optional(nullable(isoDateSchema)),
+  }),
+]);
+export type StartPhaseInput = InferOutput<typeof StartPhaseSchema>;
+
+export const cancelSubscriptionModes = ["periodEnd", "immediate"] as const;
+export type CancelSubscriptionMode = (typeof cancelSubscriptionModes)[number];
+
+export const CancelSubscriptionSchema = strictObject({
+  mode: optional(picklist(cancelSubscriptionModes), "periodEnd"),
 });
+
+/** Pause a subscription, optionally until a known resume date. */
+export const PauseSubscriptionSchema = strictObject({
+  resumeAt: optional(nullable(isoDateSchema), null),
+});
+export type PauseSubscriptionInput = InferOutput<
+  typeof PauseSubscriptionSchema
+>;
 
 const scheduledPriceChangeSchema = strictObject({
   cost: number(),
@@ -159,7 +225,6 @@ const scheduledPriceChangeSchema = strictObject({
 
 export const SubscriptionDtoSchema = strictObject({
   id: string(),
-  userId: string(),
   name: string(),
   cost: number(),
   currency: string(),
@@ -171,14 +236,22 @@ export const SubscriptionDtoSchema = strictObject({
   notes: nullable(string()),
   createdAt: string(),
   updatedAt: string(),
-  qstashMessageId: nullable(string()),
   brandDomain: nullable(string()),
   billing: subscriptionBillingDetailsSchema,
   nextPaymentDate: string(),
   lastPaymentDate: nullable(string()),
   willBeCancelledAt: nullable(string()),
   scheduledPriceChange: nullable(scheduledPriceChangeSchema),
-  status: picklist(subscriptionLifecycleStatuses),
+  pricePhases: array(PricePhaseDtoSchema),
+  effectivePhaseKind: picklist(pricePhaseKinds),
+  upcomingPhase: nullable(PricePhaseDtoSchema),
+  status: picklist(subscriptionStatuses),
+  pausedAt: nullable(string()),
+  resumeAt: nullable(string()),
+  allowedActions: array(picklist(subscriptionAllowedActions)),
+  category: nullable(
+    strictObject({ id: string(), name: string(), emoji: string() }),
+  ),
 });
 
 export type AddSubscriptionInput = InferOutput<typeof AddSubscriptionSchema>;
@@ -188,37 +261,7 @@ export type UpdateSubscriptionInput = InferOutput<
 export type SchedulePriceChangeInput = InferOutput<
   typeof SchedulePriceChangeSchema
 >;
-export type SubscriptionBillingDetails = InferOutput<
-  typeof subscriptionBillingDetailsSchema
->;
 export type SubscriptionDto = InferOutput<typeof SubscriptionDtoSchema>;
-
-export const PushSubscriptionSchema = strictObject({
-  endpoint: pipe(
-    string(),
-    minLength(1),
-    check(
-      (value) => value.startsWith("https://"),
-      "Push endpoint must use HTTPS",
-    ),
-  ),
-  keys: strictObject({
-    p256dh: pipe(string(), minLength(16)),
-    auth: pipe(string(), minLength(8)),
-  }),
-});
-
-export type PushSubscriptionInput = InferOutput<typeof PushSubscriptionSchema>;
-
-export type PushNotificationPayload = {
-  title: string;
-  body: string;
-  icon?: string;
-  badge?: string;
-  tag?: string;
-  requireInteraction?: boolean;
-  data?: Record<string, unknown>;
-};
 
 export const BulkDeleteSubscriptionsSchema = strictObject({
   ids: pipe(array(pipe(string(), minLength(1))), minLength(1), maxLength(500)),
@@ -234,23 +277,4 @@ export type BulkDeleteSubscriptionsInput = InferOutput<
 >;
 export type BulkUpdateCategoryInput = InferOutput<
   typeof BulkUpdateCategorySchema
->;
-
-export const BulkDeleteResponseSchema = strictObject({
-  deletedCount: pipe(
-    number(),
-    check((value) => Number.isFinite(value) && value >= 0),
-  ),
-});
-
-export const BulkUpdateCategoryResponseSchema = strictObject({
-  updatedCount: pipe(
-    number(),
-    check((value) => Number.isFinite(value) && value >= 0),
-  ),
-});
-
-export type BulkDeleteResponse = InferOutput<typeof BulkDeleteResponseSchema>;
-export type BulkUpdateCategoryResponse = InferOutput<
-  typeof BulkUpdateCategoryResponseSchema
 >;

@@ -37,6 +37,18 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      # Ahead of semantic-release on purpose: a failing gate must not leave a
+      # published tag and a GitHub release behind for a commit that never ships.
+      # The pre-push hook covers lint/type-check/circular locally, but it is
+      # bypassable and never runs `test`. Turbo caches these, so a clean run is
+      # seconds.
+      - name: Quality Gate
+        run: |
+          bun run lint
+          bun run type-check
+          bun run test
+          bun run check:boundaries
+
       - name: Run Semantic Release
         id: semantic_release
         uses: cycjimmy/semantic-release-action@v5
@@ -56,19 +68,10 @@ jobs:
           release-notes: ${{ steps.semantic_release.outputs.new_release_notes }}
 
       # ---------------------------------------------------------------------------
-      # Build — vars.* are plaintext GitHub variables (non-sensitive).
-      # VITE_PADDLE_ENV maps PADDLE_ENV (server canonical: sandbox/live) to the
-      # Paddle JS SDK format (sandbox/production).
+      # Build — server only. The web client was retired in v4; the mobile app
+      # ships through EAS, not this pipeline.
       # ---------------------------------------------------------------------------
       - name: Build Project
-        env:
-          VITE_API_URL: ${{ vars.API_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
-          VITE_BRANDFETCH_CLIENT_ID: ${{ vars.BRANDFETCH_CLIENT_ID }}
-          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
-          VITE_PADDLE_CLIENT_TOKEN: ${{ vars.PADDLE_CLIENT_TOKEN }}
-          VITE_PADDLE_ENV: ${{ vars.PADDLE_CLIENT_ENV }}          # Paddle.js SDK: sandbox | production
-          VITE_POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
         run: bun run build
 
       # ---------------------------------------------------------------------------
@@ -79,30 +82,13 @@ jobs:
       - name: Validate CF Bindings
         env:
           # Non-sensitive config (GitHub vars)
-          BASE_URL: ${{ vars.BASE_URL }}
           CLIENT_ORIGIN: ${{ vars.CLIENT_ORIGIN }}
           CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
-          PADDLE_ENV: ${{ vars.PADDLE_ENV }}
-          PADDLE_PLUS_PRODUCT_ID: ${{ vars.PADDLE_PLUS_PRODUCT_ID }}
           POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
-          TELEGRAM_BOT_USERNAME: ${{ vars.TELEGRAM_BOT_USERNAME }}
-          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
-          VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
           # Sensitive credentials (GitHub secrets)
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PLANS_API_KEY: ${{ secrets.PLANS_API_KEY }}
-          PADDLE_API_KEY: ${{ secrets.PADDLE_API_KEY }}
-          PADDLE_WEBHOOK_SECRET: ${{ secrets.PADDLE_WEBHOOK_SECRET }}
-          QSTASH_CURRENT_SIGNING_KEY: ${{ secrets.QSTASH_CURRENT_SIGNING_KEY }}
-          QSTASH_NEXT_SIGNING_KEY: ${{ secrets.QSTASH_NEXT_SIGNING_KEY }}
-          QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
-          QSTASH_URL: ${{ secrets.QSTASH_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_WEBHOOK_SECRET_TOKEN: ${{ secrets.TELEGRAM_WEBHOOK_SECRET_TOKEN }}
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
         run: bun run --cwd apps/server check-env
 
       - name: Set CF Worker Secrets
@@ -110,59 +96,25 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           # Non-sensitive config (GitHub vars)
-          CF_BASE_URL: ${{ vars.BASE_URL }}
           CF_CLIENT_ORIGIN: ${{ vars.CLIENT_ORIGIN }}
           CF_CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
-          CF_PADDLE_ENV: ${{ vars.PADDLE_ENV }}
-          CF_PADDLE_PLUS_PRODUCT_ID: ${{ vars.PADDLE_PLUS_PRODUCT_ID }}
           CF_POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
-          CF_TELEGRAM_BOT_USERNAME: ${{ vars.TELEGRAM_BOT_USERNAME }}
-          CF_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
-          CF_VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
           # Sensitive credentials (GitHub secrets)
           CF_CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CF_CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
           CF_DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          CF_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CF_PLANS_API_KEY: ${{ secrets.PLANS_API_KEY }}
-          CF_PADDLE_API_KEY: ${{ secrets.PADDLE_API_KEY }}
-          CF_PADDLE_WEBHOOK_SECRET: ${{ secrets.PADDLE_WEBHOOK_SECRET }}
-          CF_QSTASH_CURRENT_SIGNING_KEY: ${{ secrets.QSTASH_CURRENT_SIGNING_KEY }}
-          CF_QSTASH_NEXT_SIGNING_KEY: ${{ secrets.QSTASH_NEXT_SIGNING_KEY }}
-          CF_QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
-          CF_QSTASH_URL: ${{ secrets.QSTASH_URL }}
-          CF_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          CF_TELEGRAM_WEBHOOK_SECRET_TOKEN: ${{ secrets.TELEGRAM_WEBHOOK_SECRET_TOKEN }}
-          CF_VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
         run: |
           jq -n '{
-            BASE_URL: env.CF_BASE_URL,
             CLIENT_ORIGIN: env.CF_CLIENT_ORIGIN,
             CLERK_PUBLISHABLE_KEY: env.CF_CLERK_PUBLISHABLE_KEY,
-            PADDLE_ENV: env.CF_PADDLE_ENV,
-            PADDLE_PLUS_PRODUCT_ID: env.CF_PADDLE_PLUS_PRODUCT_ID,
             POSTHOG_KEY: env.CF_POSTHOG_KEY,
-            TELEGRAM_BOT_USERNAME: env.CF_TELEGRAM_BOT_USERNAME,
-            VAPID_PUBLIC_KEY: env.CF_VAPID_PUBLIC_KEY,
-            VAPID_SUBJECT: env.CF_VAPID_SUBJECT,
             CLERK_SECRET_KEY: env.CF_CLERK_SECRET_KEY,
             CLERK_WEBHOOK_SECRET: env.CF_CLERK_WEBHOOK_SECRET,
-            DATABASE_URL: env.CF_DATABASE_URL,
-            GEMINI_API_KEY: env.CF_GEMINI_API_KEY,
-            PLANS_API_KEY: env.CF_PLANS_API_KEY,
-            PADDLE_API_KEY: env.CF_PADDLE_API_KEY,
-            PADDLE_WEBHOOK_SECRET: env.CF_PADDLE_WEBHOOK_SECRET,
-            QSTASH_CURRENT_SIGNING_KEY: env.CF_QSTASH_CURRENT_SIGNING_KEY,
-            QSTASH_NEXT_SIGNING_KEY: env.CF_QSTASH_NEXT_SIGNING_KEY,
-            QSTASH_TOKEN: env.CF_QSTASH_TOKEN,
-            QSTASH_URL: env.CF_QSTASH_URL,
-            TELEGRAM_BOT_TOKEN: env.CF_TELEGRAM_BOT_TOKEN,
-            TELEGRAM_WEBHOOK_SECRET_TOKEN: env.CF_TELEGRAM_WEBHOOK_SECRET_TOKEN,
-            VAPID_PRIVATE_KEY: env.CF_VAPID_PRIVATE_KEY
-          }' | bunx wrangler secret bulk --config dev.wrangler.jsonc
+            DATABASE_URL: env.CF_DATABASE_URL
+          }' | bunx wrangler secret bulk --config apps/server/dev.wrangler.jsonc
 
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: bun run wrangler deploy --config dev.wrangler.jsonc --minify
+        run: bun run wrangler deploy --config apps/server/dev.wrangler.jsonc --minify

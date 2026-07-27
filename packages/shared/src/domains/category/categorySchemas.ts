@@ -1,11 +1,8 @@
 import {
   array,
-  boolean,
   check,
   type InferOutput,
-  maxLength,
   minLength,
-  nullable,
   number,
   object,
   optional,
@@ -18,18 +15,22 @@ import {
 export const CategoryDtoSchema = object({
   id: string(),
   userId: string(),
-  orgId: nullable(string()),
   name: string(),
   emoji: string(),
   createdAt: string(),
   updatedAt: string(),
 });
 
-type CategoryEmojiGroup = {
+export type CategoryEmojiGroup = {
   label: string;
   emojis: readonly string[];
 };
 
+/**
+ * The picker's own shape. `CATEGORY_EMOJIS` below is this flattened, and it is
+ * what `categoryEmojiSchema` validates against — so a picker built from these
+ * groups can never offer an emoji the server answers with a 422.
+ */
 export const CATEGORY_EMOJI_GROUPS: readonly CategoryEmojiGroup[] = [
   {
     label: "⭐",
@@ -190,12 +191,16 @@ export const CATEGORY_EMOJI_GROUPS: readonly CategoryEmojiGroup[] = [
   },
 ];
 
+/**
+ * Exported because `categoryEmojiSchema` rejects anything outside it: a client
+ * that picks an emoji from its own list gets a 422 the user cannot act on. Any
+ * emoji a client offers must come from here.
+ */
 export const CATEGORY_EMOJIS: readonly string[] = CATEGORY_EMOJI_GROUPS.flatMap(
   (group) => group.emojis,
 );
 
 const CATEGORY_EMOJI_SET = new Set(CATEGORY_EMOJIS);
-export const DEFAULT_CATEGORY_EMOJI = "📦";
 
 const categoryEmojiSchema = pipe(
   string(),
@@ -246,167 +251,9 @@ export const DeleteCategoriesResponseSchema = strictObject({
   ),
 });
 
-export const CategoryAiSuggestionSchema = strictObject({
-  draftId: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-  ),
-  name: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-    maxLength(64),
-  ),
-  emoji: categoryEmojiSchema,
-  subscriptionIds: array(
-    pipe(
-      string(),
-      transform((v) => v.trim()),
-      minLength(1),
-    ),
-  ),
-  enabled: optional(boolean(), true),
-});
-
-export const AiUsageQuotaSchema = strictObject({
-  current: number(),
-  limit: nullable(number()),
-  remaining: nullable(number()),
-  periodKey: string(),
-  resetsAt: string(),
-  isLimited: boolean(),
-});
-
-export const CategoryAiSuggestResponseSchema = strictObject({
-  model: string(),
-  sourceCount: number(),
-  generatedAt: string(),
-  quota: AiUsageQuotaSchema,
-  suggestions: array(CategoryAiSuggestionSchema),
-});
-
-export const CategoryAiApplyInputSchema = strictObject({
-  suggestions: array(CategoryAiSuggestionSchema),
-});
-
-export const CategoryAiApplyResponseSchema = strictObject({
-  createdCount: number(),
-  assignedCount: number(),
-  skippedExistingCount: number(),
-  quota: AiUsageQuotaSchema,
-});
-
-export const CategoryAiOptimizationReassignmentSchema = strictObject({
-  subscriptionId: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-  ),
-  fromCategoryId: nullable(
-    pipe(
-      string(),
-      transform((v) => v.trim()),
-      minLength(1),
-    ),
-  ),
-  toCategoryId: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-  ),
-  reason: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-    maxLength(140),
-  ),
-  enabled: optional(boolean(), true),
-});
-
-export const CategoryAiOptimizationMergeSchema = strictObject({
-  sourceCategoryId: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-  ),
-  targetCategoryId: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-  ),
-  affectedCount: pipe(
-    number(),
-    check((value) => Number.isFinite(value) && value >= 0),
-  ),
-  reason: pipe(
-    string(),
-    transform((v) => v.trim()),
-    minLength(1),
-    maxLength(140),
-  ),
-  enabled: optional(boolean(), true),
-});
-
-export const CategoryAiOptimizeSuggestResponseSchema = strictObject({
-  model: string(),
-  sourceCount: number(),
-  generatedAt: string(),
-  quota: AiUsageQuotaSchema,
-  reassignments: array(CategoryAiOptimizationReassignmentSchema),
-  merges: array(CategoryAiOptimizationMergeSchema),
-});
-
-export const CategoryAiOptimizeApplyInputSchema = strictObject({
-  reassignments: array(CategoryAiOptimizationReassignmentSchema),
-  merges: array(CategoryAiOptimizationMergeSchema),
-});
-
-export const CategoryAiOptimizeApplyResponseSchema = strictObject({
-  reassignedCount: number(),
-  mergedCount: number(),
-  deletedEmptyCategoriesCount: number(),
-  quota: AiUsageQuotaSchema,
-});
-
 export type CategoryDto = InferOutput<typeof CategoryDtoSchema>;
 export type CreateCategoryInput = InferOutput<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = InferOutput<typeof UpdateCategorySchema>;
-export type DeleteCategoriesInput = InferOutput<
-  typeof DeleteCategoriesInputSchema
->;
 export type DeleteCategoriesResponse = InferOutput<
   typeof DeleteCategoriesResponseSchema
 >;
-export type CategoryAiSuggestion = InferOutput<
-  typeof CategoryAiSuggestionSchema
->;
-export type AiUsageQuota = InferOutput<typeof AiUsageQuotaSchema>;
-export type CategoryAiSuggestResponse = InferOutput<
-  typeof CategoryAiSuggestResponseSchema
->;
-export type CategoryAiApplyInput = InferOutput<
-  typeof CategoryAiApplyInputSchema
->;
-export type CategoryAiApplyResponse = InferOutput<
-  typeof CategoryAiApplyResponseSchema
->;
-export type CategoryAiOptimizationReassignment = InferOutput<
-  typeof CategoryAiOptimizationReassignmentSchema
->;
-export type CategoryAiOptimizationMerge = InferOutput<
-  typeof CategoryAiOptimizationMergeSchema
->;
-export type CategoryAiOptimizeSuggestResponse = InferOutput<
-  typeof CategoryAiOptimizeSuggestResponseSchema
->;
-export type CategoryAiOptimizeApplyInput = InferOutput<
-  typeof CategoryAiOptimizeApplyInputSchema
->;
-export type CategoryAiOptimizeApplyResponse = InferOutput<
-  typeof CategoryAiOptimizeApplyResponseSchema
->;
-
-export const categoryIdSchema = optional(
-  nullable(pipe(string(), minLength(1))),
-);

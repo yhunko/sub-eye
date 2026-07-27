@@ -2,6 +2,12 @@
   "$schema": "./node_modules/syncpack/schema.json",
   "versionGroups": [
     {
+      "label": "@subeye/mobile versions are Expo-SDK-managed; do not reconcile them against the other workspaces",
+      "packages": ["@subeye/mobile"],
+      "dependencies": ["**"],
+      "isIgnored": true
+    },
+    {
       "label": "Sync all dependencies to highest semver",
       "packages": ["**"],
       "dependencies": ["**"],
@@ -10,6 +16,12 @@
     }
   ],
   "semverGroups": [
+    {
+      "label": "Expo/React Native own their pins (~ / exact); syncpack must not rewrite them to ^",
+      "packages": ["@subeye/mobile"],
+      "dependencies": ["**"],
+      "isIgnored": true
+    },
     {
       "dependencyTypes": ["prod"],
       "range": "^"

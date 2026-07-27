@@ -1,19 +1,8 @@
-import { BillingAccountRepository } from "../billing/paddle/billingAccountRepository";
 import { CategoryService } from "../category/categoryService";
-import { ComparatorRepository } from "../comparator/comparatorRepository";
-import { PushNotificationService } from "../push-notification/pushNotificationService";
-import { SubscriptionHistoryRepository } from "../subscription/subscriptionHistoryRepository";
 import { SubscriptionService } from "../subscription/subscriptionService";
-import { TelegramNotificationService } from "../telegram-notification/telegramNotificationService";
+import { UserRepository } from "./userRepository";
 
-export type CleanupDomain =
-  | "subscriptions"
-  | "categories"
-  | "push_notifications"
-  | "telegram_notifications"
-  | "billing_accounts"
-  | "comparator"
-  | "subscription_history";
+export type CleanupDomain = "subscriptions" | "categories" | "users";
 
 export type CleanupResult = {
   domain: CleanupDomain;
@@ -37,22 +26,10 @@ export async function cleanupUserData(
   const settledResults = await Promise.allSettled([
     SubscriptionService.deleteAllForUser(userId),
     CategoryService.deleteAllForUser(userId),
-    PushNotificationService.deleteAllForUser(userId),
-    TelegramNotificationService.deleteAllForUser(userId),
-    BillingAccountRepository.deleteByUserId(userId),
-    ComparatorRepository.deleteAllForUser(userId),
-    SubscriptionHistoryRepository.deleteByUserId(userId),
+    UserRepository.deleteById(userId),
   ]);
 
-  const domains: CleanupDomain[] = [
-    "subscriptions",
-    "categories",
-    "push_notifications",
-    "telegram_notifications",
-    "billing_accounts",
-    "comparator",
-    "subscription_history",
-  ];
+  const domains: CleanupDomain[] = ["subscriptions", "categories", "users"];
 
   const results: CleanupResult[] = settledResults.map((result, index) => {
     const domain = domains[index]!;

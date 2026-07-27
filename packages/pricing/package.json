@@ -1,0 +1,20 @@
+{
+  "name": "@subeye/pricing",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@subeye/currency": "workspace:*",
+    "@subeye/shared": "workspace:*",
+    "@subeye/spend": "workspace:*",
+    "date-fns": "^4.1.0"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "test": "bun test ./test",
+    "type-check": "tsc --noEmit --pretty"
+  }
+}

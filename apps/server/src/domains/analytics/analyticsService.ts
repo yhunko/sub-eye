@@ -9,11 +9,11 @@ import {
   DateTimezoneUtils,
   isCurrentlyActiveSubscription,
 } from "@subeye/shared";
+import { AnalyticsCalculator } from "@subeye/spend";
 import { eachDayOfInterval, endOfWeek, startOfWeek } from "date-fns";
 import { CategoryService } from "../category/categoryService";
 import { SubscriptionService } from "../subscription/subscriptionService";
 import { UserService } from "../user/userService";
-import { AnalyticsCalculator } from "./analyticsCalculator";
 
 type AnalyticsServiceDeps = {
   subscriptionService: typeof SubscriptionService;
@@ -34,17 +34,14 @@ const defaultDeps: AnalyticsServiceDeps = {
 export class AnalyticsService {
   static async getDashboardStats(
     userId: string,
-    orgId?: string | null,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<DashboardAnalyticsDto> {
     const [
       { subscriptions, preferredCurrencyCode, now, timezone },
       categories,
     ] = await Promise.all([
-      AnalyticsService.getAnalyticsContext(userId, orgId, deps),
-      orgId
-        ? deps.categoryService.getOrgCategories(orgId)
-        : deps.categoryService.getCategories(userId),
+      AnalyticsService.getAnalyticsContext(userId, deps),
+      deps.categoryService.getCategories(userId),
     ]);
 
     const today = DateTimezoneUtils.startOfDay(now, timezone);
@@ -61,87 +58,81 @@ export class AnalyticsService {
       (subscription) => isCurrentlyActiveSubscription(subscription.status),
     );
 
-    // Aggregate subscription stats
-    let monthlyBurnRate = 0;
-    let activeSubscriptionsAuto = 0;
-    let activeSubscriptionsManual = 0;
-
-    for (const sub of currentlyActiveSubscriptions) {
-      monthlyBurnRate += sub.billing.preferred.monthly;
-      if (sub.autoPaid) {
-        activeSubscriptionsAuto += 1;
-      } else {
-        activeSubscriptionsManual += 1;
-      }
-    }
+    const monthlyBurnRate = currentlyActiveSubscriptions.reduce(
+      (total, sub) => total + sub.billing.preferred.monthly,
+      0,
+    );
 
     // Delegate all projections to calculator
     const mostExpensiveSubscription = AnalyticsCalculator.findMostExpensive(
       currentlyActiveSubscriptions,
     );
 
-    const allUpcomingPayments = AnalyticsCalculator.projectUpcomingPayments(
-      subscriptions,
+    const upcomingRenewals = AnalyticsCalculator.nextOccurrenceRenewals(
+      currentlyActiveSubscriptions,
       today,
-      oneYearFromNow,
       preferredCurrencyCode,
       timezone,
-    );
-
-    const upcomingRenewals = [...allUpcomingPayments]
-      .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 5);
+    ).slice(0, 5);
 
     const {
       forecast: cashFlowForecast,
       remainingThisMonth,
       totalUpcomingMonth,
     } = AnalyticsCalculator.buildCashFlowForecast(
-      subscriptions,
+      currentlyActiveSubscriptions,
       today,
       timezone,
     );
 
-    const monthlyTrendStartOffset = -1;
-    const monthlyTrend = AnalyticsCalculator.buildMonthlyTrend(
-      subscriptions,
-      DateTimezoneUtils.shiftMonths(today, monthlyTrendStartOffset, timezone),
-      12,
-      timezone,
-    );
-    const currentMonthIndex = Math.abs(monthlyTrendStartOffset);
-    const nextMonthForecast = monthlyTrend[currentMonthIndex + 1]?.amount ?? 0;
+    const nextMonthForecast =
+      AnalyticsCalculator.buildMonthlyTrend(
+        currentlyActiveSubscriptions,
+        DateTimezoneUtils.shiftMonths(today, 1, timezone),
+        1,
+        timezone,
+      )[0]?.amount ?? 0;
 
     const categorySpending = AnalyticsCalculator.buildCategorySpending(
       currentlyActiveSubscriptions,
       categories,
     );
 
+    // yearlyForecast counts the occurrences that actually land in the next 12
+    // months — NOT monthlyBurnRate * 12. A cancelling subscription that lapses
+    // mid-year, or (once pause lands) a paused one, keeps a full monthly
+    // run-rate but contributes fewer charges to the year.
+    const yearlyForecast = Number(
+      AnalyticsCalculator.sumSpendInRange(
+        currentlyActiveSubscriptions,
+        today,
+        oneYearFromNow,
+        timezone,
+      ).toFixed(2),
+    );
+
     return {
       preferredCurrencyCode,
       monthlyBurnRate,
-      yearlyForecast: monthlyBurnRate * 12,
+      yearlyForecast,
       remainingThisMonth,
       nextMonthForecast,
       activeSubscriptionsTotal: currentlyActiveSubscriptions.length,
-      activeSubscriptionsAuto,
-      activeSubscriptionsManual,
       mostExpensiveSubscription,
       cashFlowForecast,
       upcomingRenewals,
       totalUpcomingMonth,
-      monthlyTrend,
       categorySpending,
+      timezone,
     };
   }
 
   static async getMonthlySpendSummary(
     userId: string,
-    orgId?: string | null,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<MonthlySpendSummaryDto> {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
-      await AnalyticsService.getAnalyticsContext(userId, orgId, deps);
+      await AnalyticsService.getAnalyticsContext(userId, deps);
 
     const monthOffsets = [-1, 0, 1, 2, 3, 4, 5, 6];
 
@@ -186,11 +177,10 @@ export class AnalyticsService {
 
   static async getWeeklyRenewalsSummary(
     userId: string,
-    orgId?: string | null,
     deps: AnalyticsServiceDeps = defaultDeps,
   ): Promise<WeeklyRenewalsSummaryDto> {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
-      await AnalyticsService.getAnalyticsContext(userId, orgId, deps);
+      await AnalyticsService.getAnalyticsContext(userId, deps);
 
     const nowZoned = DateTimezoneUtils.toZoned(now, timezone);
     const startOfCurrentWeek = DateTimezoneUtils.startOfDay(
@@ -245,16 +235,10 @@ export class AnalyticsService {
 
   private static async getAnalyticsContext(
     userId: string,
-    orgId: string | null | undefined,
     deps: AnalyticsServiceDeps,
   ) {
-    const subscriptions = orgId
-      ? await deps.subscriptionService.getOrgSubscriptions(orgId, userId, {
-          status: "all",
-        })
-      : await deps.subscriptionService.getSubscriptions(userId, {
-          status: "all",
-        });
+    const subscriptions =
+      await deps.subscriptionService.getSubscriptions(userId);
     const metadata = await deps.userService.getUserPreferences(userId);
 
     const normalizedCurrency = CurrencyUtils.normalizeCode(

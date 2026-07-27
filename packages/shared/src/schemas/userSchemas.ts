@@ -1,27 +1,14 @@
 import * as v from "valibot";
+import { dateFormats } from "../utils/dateFormatUtils";
 
-export const UpdateUserPublicMetadataSchema = v.object({
-  preferredCurrency: v.optional(v.string()),
-  preferredTimezone: v.optional(v.string()),
-  notificationTime: v.optional(
-    v.pipe(
-      v.string(),
-      v.regex(
-        /^([01]\d|2[0-3]):([0-5]\d)$/,
-        "notificationTime must use HH:mm (24-hour) format",
-      ),
-    ),
+export const UpdateUserPreferencesSchema = v.object({
+  preferredCurrency: v.optional(
+    v.pipe(v.string(), v.minLength(3), v.maxLength(8)),
   ),
-  notificationOffset: v.optional(
-    v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(30)),
+  preferredTimezone: v.optional(
+    v.pipe(v.string(), v.minLength(1), v.maxLength(64)),
   ),
-  expiryNotificationsEnabled: v.optional(v.boolean()),
-  expiryNotificationIntervals: v.optional(
-    v.pipe(
-      v.array(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(30))),
-      v.maxLength(4),
-    ),
-  ),
+  dateFormat: v.optional(v.picklist(dateFormats)),
   locale: v.optional(
     v.pipe(
       v.string(),
@@ -31,9 +18,9 @@ export const UpdateUserPublicMetadataSchema = v.object({
       ),
     ),
   ),
-  preferredDateFormat: v.optional(v.string()),
+  theme: v.optional(v.picklist(["light", "dark", "system"] as const)),
 });
 
-export type UpdateUserPublicMetadata = v.InferInput<
-  typeof UpdateUserPublicMetadataSchema
+export type UpdateUserPreferences = v.InferOutput<
+  typeof UpdateUserPreferencesSchema
 >;

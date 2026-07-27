@@ -1,68 +1,83 @@
-# SubEye
+# sub-eye
 
-Subscription-management SaaS. **Bun** monorepo, orchestrated by **Turbo**.
+Subscription tracking. Bun + Turbo monorepo: a Hono API on Cloudflare Workers
+and an Expo mobile client over four pure packages.
 
-- `apps/client` (`@subeye/client`) — React 19 + Vite PWA, **Feature-Sliced Design**.
-- `apps/server` (`@subeye/server`) — **Hono** API deployed as a **single Cloudflare Worker** that serves both the API and the built client assets.
-- `packages/*` — scoped `@subeye/*` libraries, separated **by concern**, consumed as **source** (see below).
+```
+apps/server       Hono API — Cloudflare Worker, Neon Postgres via Drizzle, Clerk auth
+apps/mobile       Expo (React Native, expo-router) — the only client
+packages/shared   schemas, DTOs, domain utils — consumed by everything
+packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
+packages/spend    pure occurrence engine (payment projection, aggregates)
+packages/currency the RateTable type. That is all it is.
+```
 
-**External services:** Clerk (auth — JWT per request, Svix webhooks for `user.deleted`) · Neon Postgres + Drizzle (`apps/server/src/db/schema.ts`) · Paddle (billing webhooks → `billing_accounts`) · Upstash QStash (scheduled renewal/expiry/price-change workflows) · Google Gemini (AI) · Web Push + Telegram (notifications).
-
-## Packages — source-only, by concern
-
-| Package | Responsibility |
-| --- | --- |
-| `@subeye/shared` | Environment-agnostic contracts: types, Valibot schemas, enums, pure utils. Used by client **and** server. |
-| `@subeye/scheduling` | QStash adapter — `serve` (re-exported unchanged), `triggerWorkflow`, `cancelWorkflow`. |
-| `@subeye/notifications` | Transport only: `./push` (web-push) + `./telegram` (Bot API). |
-| `@subeye/ai` | Gemini `generateContent` client + `normalizeModelJson`. |
-
-**Source-only packaging (DX rule):** every package's `exports` points at `./src/index.ts` — **no `dist`, no build step, no `postinstall`**. Wrangler/esbuild and Vite compile package TS source directly. Edit source and it's live; never add a build step or import a `dist/` path. The root `tsconfig.json` is flat (no path aliases / project references).
-
-## Import boundaries (enforced by `bun run check:boundaries`)
-
-- `apps/* → packages/*` ✅; `packages/* → apps/*` ❌ (packages never import the db, domains, or routes).
-- Client → server **only** via `@subeye/server/client` (Hono RPC types). Deep imports into `apps/server/src/*` are forbidden.
-- **Client FSD:** `app → pages → widgets → features → entities → shared`; a layer imports only from lower layers (no upward imports). Cross-slice reuse goes down a layer (e.g. shared logic → `entities/*`) and through a slice's public `index.ts`.
-- **Server:** `Route → Service → Repository`. Repositories own `db`; services must **not** import `db`. Repositories are leaves (never import a service).
+Each of `apps/*` and `packages/shared|pricing|spend` has its own `CLAUDE.md`
+with the invariants for that area. Read the one you are touching — those carry
+the rules that actually bite.
 
 ## Commands
 
 ```bash
 bun install
-bun run dev                       # client + server (Turbo)
-bun run type-check                # all workspaces
-bun run test                      # all workspaces (server: bun test ./test; client: bun test ./src)
-bun run lint                      # Biome (also: lint:fix)
-bun run build                     # Turbo build (client → apps/client/dist; packages need no build)
-bun run check:boundaries          # dependency-cruiser: package + FSD + layer rules
-bun run check:circular            # madge (client + server)
-bun run --cwd apps/client prepare # compile Paraglide i18n (auto-runs before client type-check)
-bun run --cwd apps/server db:generate | db:migrate | db:push   # Drizzle (Neon)
-bun run deploy:dev                # build + wrangler -c dev.wrangler.jsonc deploy
+bun run dev:server        # wrangler dev
+bun run dev:mobile        # build server types, then Metro
+bun run dev:lan           # server on 0.0.0.0:8788 for on-device testing
 ```
+
+```bash
+bun run type-check        # turbo, every workspace
+bun run test              # turbo — bun:test everywhere, there is no vitest
+bun run lint              # biome (not eslint, not prettier)
+bun run check:boundaries  # dependency-cruiser — layer + leaf rules
+bun run check:circular    # madge
+```
+
+Run `type-check`, `test`, and `check:boundaries` before calling work done.
+`bun run lint:fix` and `bun run format` write.
 
 ## Conventions
 
-- **Client:** all user-facing copy via Paraglide (`import * as m from "@/i18n/messages"`) — no hardcoded strings. Dialogs via `NiceModal.show(...)`. Query keys via `@lukemorales/query-key-factory` in each slice's `model/query-keys.ts`. TanStack Query is persisted to IndexedDB — invalidate explicitly, avoid ad-hoc `setQueryData`. Lazy-load heavy components (recharts loads via `features/analytics/ui/use-recharts-module.ts`). File names `kebab-case`.
-- **Server:** validate every payload at the route with `@hono/valibot-validator`. `protect`/`clerkAuth` on authenticated routes; never re-derive identity in services. Webhook routes (`/api/webhooks/**`) skip auth and verify Svix/Paddle signatures. QStash workflows are triggered from services, not routes. Services accept an optional `deps` param (defaults to real impls) for testability. File names `camelCase` (modules) / `kebab-case` (route resources). DB identifiers `snake_case`.
-- **Billing usage:** `GET /api/billing/usage` (`BillingService.getUsage`) + client `billingQueryKeys.usage` are the **single source of truth** for plan/quota data. Do not add parallel usage endpoints or keys.
+**Packages export source.** Every `@subeye/*` package points `exports` at
+`./src/index.ts` and type-checks with `noEmit` — no build step, no `dist`. The
+one exception is `@subeye/server/client`, a types-only `tsc` build that exists
+solely to hand `ServerRpcType` to the mobile app; see
+[apps/mobile/CLAUDE.md](apps/mobile/CLAUDE.md) for why Metro forces that.
 
-## Gotchas
+**Boundaries are enforced, not suggested.** `dependency-cruiser.cjs` fails the
+build on: a package importing from `apps/` (`no-package-to-app`), a server
+repository importing a service (`server-repository-is-leaf`), a mobile FSD
+layer importing upward, `src/features/` appearing in mobile, and any cycle.
+If a rule blocks you, the design is wrong — do not add an exception.
 
-- **CF Worker `process.env` is `undefined` at module load** — read secrets/vars per-request via `context.env`. (Known exception: `apps/server/src/index.ts` reads `process.env.CLIENT_ORIGIN` at module scope; it works under `nodejs_compat` and is intentionally left as-is.)
-- **Neon `neon-http` driver has no interactive transactions** — `db.transaction()` throws, so the category optimization/delete paths apply their writes as plain sequential statements. Don't assume multi-statement atomicity (use `db.batch([...])` if you need an atomic group).
-- **Hono RPC leaks error shapes into the client success type.** In route error handlers cast status to narrow literals (`400 | 403 | 404`), never `ContentfulStatusCode`/`StatusCode`.
-- Returning 204 from middleware: use `new Response("", { status: 204 })`. Inline `.use()` middleware that can return `next()` **or** a `Response` must be `async`.
-- **Generated — never hand-edit:** `apps/client/src/app/routes/routeTree.gen.ts` (TanStack Router), `apps/client/src/shared/lib/i18n/**` (Paraglide). Edit source + rerun the generator.
-- Dev Plus-plan simulation: `apps/client/src/shared/lib/billing/local-plan-override.ts` (DEV only).
+**Purity in packages.** `pricing`, `spend`, and `currency` take `now` as a
+parameter and never touch `db`, `fetch`, or a clock. A pure function reports a
+caller error by returning `null`; the server converts that into a domain error.
 
-## Notifications — read before touching
+**Commits are conventional** — commitlint gates them and semantic-release reads
+them to cut versions.
 
-`apps/server/CLAUDE.md` documents the QStash workflow-replay invariants and anti-spam rules (authoritative-run gating, per-user reschedule serialization). Read it before editing any notification/workflow code.
+## Comments
 
-## Quality gates by scope
+Comment only what the code cannot say: a quirk, a trap, a non-obvious edge
+case, or a decision whose rationale is invisible at the call site.
 
-- Client: `bun run --cwd apps/client type-check` → `bun run --cwd apps/client test` (+ `bun run react-doctor` for React changes).
-- Server: `bun run --cwd apps/server type-check` → `bun run --cwd apps/server test`.
-- Cross-cutting / boundaries: `bun run type-check` → `bun run test` → `bun run check:boundaries` → `bun run check:circular`.
+Never write a comment that restates the line below it, a section banner, a
+docstring on a self-evident function, or a note about what you just changed —
+that is what the commit message is for. Prose describing obvious code is noise
+the next reader has to re-verify against reality, and it rots silently.
+
+The bar, both from this repo:
+
+- [packages/currency/src/rateTable.ts](packages/currency/src/rateTable.ts) —
+  warns that converting *into* the base currency is a division. Earns its place.
+- [apps/server/test/phase-apply-now-closes-timeline.test.ts](apps/server/test/phase-apply-now-closes-timeline.test.ts)
+  — each assertion names the failure mode it prevents.
+
+Neither restates code. Both would cost someone an hour if deleted.
+
+## Money
+
+Pricing and spend decide what a user is charged and when, so a bug there is
+silently wrong money rather than a crash. A change to phase logic, occurrence
+projection, or currency conversion needs a test that fails without it.

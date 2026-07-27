@@ -4,7 +4,7 @@
 
 This repository uses `semantic-release` on both long-lived branches:
 
-- `dev`: creates beta releases and keeps a release PR to `main` updated.
+- `dev`: creates beta releases, keeps a release PR to `main` updated, and deploys the dev Worker.
 - `main`: creates stable releases and deploys production.
 
 ## Production Flow (`main`)
@@ -14,14 +14,14 @@ Workflow: `.github/workflows/release-production.yml`
 Order of operations:
 
 1. Install dependencies.
-2. Apply production DB migrations (`bun run --cwd server db:migrate`).
+2. Apply production DB migrations (`bun run --cwd apps/server db:migrate`).
 3. Run `semantic-release` for stable version/tag/notes updates.
 4. Build and deploy to Cloudflare.
 5. Back-merge `main` into `dev`.
 
 This ensures schema changes are applied before the production app rollout.
 
-## Release PR Flow (`dev -> main`)
+## Dev Flow (`dev`)
 
 Workflow: `.github/workflows/deploy-dev.yml`
 
@@ -40,6 +40,13 @@ On each push to `dev`:
      - `Tests (✅)`
      - `Chores (🧰)`
      - `Other Changes (📦)`
+3. Build the project (`bun run build`).
+4. Validate every Cloudflare binding is present (`bun run --cwd apps/server check-env`)
+   — this fails the deploy if any secret or variable below is unset.
+5. Push the Worker secrets (`wrangler secret bulk`, `apps/server/dev.wrangler.jsonc`).
+6. Deploy the dev Worker (`wrangler deploy --minify`).
+
+Steps 3-6 run on every push to `dev`, whether or not a new beta was published.
 
 No `CHANGELOG.md` file is generated or committed by release automation.
 Shared PR sync logic lives in `.github/actions/sync-release-pr/action.yml` and is reused by both automated and manual flows.
@@ -63,10 +70,26 @@ From GitHub UI:
 
 The workflow creates/updates one open `source_branch -> target_branch` PR with the same grouped emoji changelist format.
 
-## Required GitHub Secrets
+## Required GitHub Secrets and Variables
+
+Both tiers are required — `check-env` fails the deploy if any of the six Worker
+bindings is missing. Not everything below is one: `GH_TOKEN`, `CLOUDFLARE_*` and
+`TURBO_*` are workflow credentials, never pushed to the Worker.
+`apps/server/src/env.ts` is the source of truth for what the Worker validates.
+
+Encrypted secrets (`secrets.*`):
 
 - `GH_TOKEN`
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `DATABASE_URL`
-- Existing project-specific deploy/build secrets already used in workflows
+- `CLERK_SECRET_KEY`
+- `CLERK_WEBHOOK_SECRET`
+- `TURBO_TOKEN`
+
+Plaintext variables (`vars.*`):
+
+- `CLIENT_ORIGIN`
+- `CLERK_PUBLISHABLE_KEY`
+- `POSTHOG_KEY`
+- `TURBO_TEAM`

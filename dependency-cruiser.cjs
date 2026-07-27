@@ -1,11 +1,14 @@
 /**
  * Architecture boundary enforcement. Run with `bun run check:boundaries`.
  *
- * Encodes three invariants:
+ * Encodes four invariants:
  *  1. Packages never depend on apps.
- *  2. Client Feature-Sliced Design layering: app → pages → widgets → features →
- *     entities → shared (a layer may only import from lower layers).
+ *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
+ *     (a layer may only import from lower layers). There is no `features`
+ *     layer — seven screens do not justify one.
  *  3. Server layering: repositories are leaves (never import services).
+ *  4. Mobile reaches the server ONLY through the typed RPC client at
+ *     `@subeye/server/client` — never a deep import into apps/server/src.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -20,41 +23,51 @@ module.exports = {
       to: { path: "^apps/" },
     },
     {
-      name: "fsd-no-pages-upward",
-      comment: "FSD: pages may import widgets/features/entities/shared only.",
+      name: "mobile-server-only-via-client",
+      comment:
+        "apps/mobile reaches the server ONLY through the typed RPC client at '@subeye/server/client' (a types-only build under apps/server/dist). Deep imports into apps/server/src are forbidden — they drag server internals into the app and bypass the RPC contract.",
       severity: "error",
-      from: { path: "^apps/client/src/pages" },
-      to: { path: "^apps/client/src/app/" },
+      from: { path: "^apps/mobile/" },
+      to: { path: "^apps/server/src/" },
+    },
+    // --- apps/mobile FSD: app → widgets → entities → shared (NO features layer)
+    //
+    // These match the ALIAS STRING (`@/widgets/…`), not a resolved path: the
+    // root tsconfig declares no `paths`, so `@/…` specifiers stay unresolved and
+    // dependency-cruiser keeps the raw specifier in `resolved`. Mobile code
+    // imports across layers exclusively through `@/…`, so this covers every
+    // cross-layer edge.
+    {
+      name: "mobile-fsd-no-widgets-upward",
+      comment:
+        "apps/mobile FSD: widgets may import entities/shared only, never the app (routing) layer.",
+      severity: "error",
+      from: { path: "^apps/mobile/src/widgets" },
+      to: { path: "^@/app/" },
     },
     {
-      name: "fsd-no-widgets-upward",
-      comment: "FSD: widgets may import features/entities/shared only.",
+      name: "mobile-fsd-no-entities-upward",
+      comment:
+        "apps/mobile FSD: entities may import shared only, never widgets or the app layer.",
       severity: "error",
-      from: { path: "^apps/client/src/widgets" },
-      to: { path: "^apps/client/src/(app/|pages/)" },
+      from: { path: "^apps/mobile/src/entities" },
+      to: { path: "^@/(app|widgets)/" },
     },
     {
-      name: "fsd-no-features-upward",
-      comment: "FSD: features may import entities/shared only.",
+      name: "mobile-fsd-no-shared-upward",
+      comment:
+        "apps/mobile FSD: shared is the bottom layer and must not depend on any layer above it.",
       severity: "error",
-      from: { path: "^apps/client/src/features" },
-      to: { path: "^apps/client/src/(app/|pages/|widgets/)" },
+      from: { path: "^apps/mobile/src/shared" },
+      to: { path: "^@/(app|widgets|entities)/" },
     },
     {
-      name: "fsd-no-entities-upward",
-      comment: "FSD: entities may import shared only.",
+      name: "mobile-no-features-layer",
+      comment:
+        "apps/mobile has NO features layer by design — seven screens make it ceremony. Page composition belongs in widgets/, domain data in entities/.",
       severity: "error",
-      from: { path: "^apps/client/src/entities" },
-      to: { path: "^apps/client/src/(app/|pages/|widgets/|features/)" },
-    },
-    {
-      name: "fsd-no-shared-upward",
-      comment: "FSD: shared must not depend on any higher layer.",
-      severity: "error",
-      from: { path: "^apps/client/src/shared" },
-      to: {
-        path: "^apps/client/src/(app/|pages/|widgets/|features/|entities/)",
-      },
+      from: { path: "^apps/mobile/src/" },
+      to: { path: "^(@/features/|apps/mobile/src/features/)" },
     },
     {
       name: "server-repository-is-leaf",
@@ -75,7 +88,7 @@ module.exports = {
   options: {
     tsConfig: { fileName: "tsconfig.json" },
     exclude: {
-      path: "(^node_modules)|(/dist/)|(/coverage/)|(routeTree\\.gen\\.ts)|(/shared/lib/i18n/)",
+      path: "(^node_modules)|(/dist/)|(/coverage/)",
     },
     doNotFollow: { path: "node_modules" },
   },

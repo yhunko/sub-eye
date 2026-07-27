@@ -5,85 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1771414925450,
-      "tag": "0000_rich_harry_osborn",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1771416847560,
-      "tag": "0001_skinny_satana",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772040994225,
-      "tag": "0002_remarkable_speedball",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1772367600000,
-      "tag": "0003_harsh_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1772540669000,
-      "tag": "0004_paddle_billing",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1772800000000,
-      "tag": "0005_telegram_notifications",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1773090000000,
-      "tag": "0006_telegram_message_template",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1773150000000,
-      "tag": "0007_comparator_usage",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1773300000000,
-      "tag": "0008_comparator_ai_usage_and_cache",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1773686981829,
-      "tag": "0009_narrow_morph",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1774271566848,
-      "tag": "0010_broad_justin_hammer",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1777294385376,
-      "tag": "0011_tricky_the_hood",
+      "when": 1784560789339,
+      "tag": "0000_v4_baseline",
       "breakpoints": true
     }
   ]

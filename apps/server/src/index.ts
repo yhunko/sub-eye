@@ -1,15 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { CurrencyService } from "./domains/currency/currencyService";
 import type { Bindings } from "./env";
 import { clerkAuth } from "./middleware/auth";
 import { analyticsRouter } from "./routes/analytics";
-import { billingRouter } from "./routes/billing";
 import { categoryRouter } from "./routes/categories";
-import { comparatorRouter } from "./routes/comparator";
-import { devRouter } from "./routes/dev";
-import { pushNotificationRouter } from "./routes/push-notifications";
 import { subscriptionRouter } from "./routes/subscriptions";
-import { telegramNotificationRouter } from "./routes/telegram-notifications";
 import { userRouter } from "./routes/user";
 import { webhookRouter } from "./routes/webhooks";
 import {
@@ -37,13 +33,8 @@ export const app = new Hono<{ Bindings: Bindings }>()
   // For per-route protection: .get("/api/private", protect, handler)
   .route("/categories", categoryRouter)
   .route("/analytics", analyticsRouter)
-  .route("/comparator", comparatorRouter)
-  .route("/billing", billingRouter)
   .route("/subscriptions", subscriptionRouter)
-  .route("/push-notifications", pushNotificationRouter)
-  .route("/telegram-notifications", telegramNotificationRouter)
   .route("/user", userRouter)
-  .route("/dev", devRouter)
   .onError((err, ctx) => {
     console.error("[Unhandled Error]", err);
     if (ctx.env.POSTHOG_KEY) {
@@ -58,4 +49,26 @@ export const app = new Hono<{ Bindings: Bindings }>()
     return ctx.json({ error: "Internal Server Error" }, 500);
   });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  /**
+   * Daily FX refresh. Keeping this on a cron is what allows GET /subscriptions
+   * and the analytics endpoints to read rates from Postgres instead of waiting
+   * on an outbound CDN fetch.
+   */
+  scheduled: async (
+    _event: { cron: string },
+    _env: Bindings,
+    ctx: { waitUntil: (promise: Promise<unknown>) => void },
+  ) => {
+    ctx.waitUntil(
+      CurrencyService.refreshRates()
+        .then((result) =>
+          console.log(
+            `[cron] fx refreshed: ${result.codes} codes for ${result.rateDate}`,
+          ),
+        )
+        .catch((error) => console.error("[cron] fx refresh failed", error)),
+    );
+  },
+};

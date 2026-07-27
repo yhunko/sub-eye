@@ -1,25 +1,26 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    // Environment settings
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "ESNext",
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
 
-    // Types
-    "types": ["bun-types"],
+    "types": ["bun-types", "@cloudflare/workers-types"],
 
-    // Source app: type-checked here, bundled by Wrangler/esbuild (no dist)
-    "noEmit": true,
-    "emitDecoratorMetadata": true,
+    // Emits dist/src/*.d.ts so consumers (Expo/Metro) typecheck against types
+    // instead of dragging 82 server source files into their program. This is
+    // the ONE exception to the monorepo's source-only packaging rule.
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false,
+    "rootDir": ".",
+    "outDir": "dist",
 
-    // Module resolution
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
     "strict": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "test", "**/*.test.ts"]
 }
