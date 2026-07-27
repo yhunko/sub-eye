@@ -37,6 +37,18 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      # Ahead of semantic-release on purpose: a failing gate must not leave a
+      # published tag and a GitHub release behind for a commit that never ships.
+      # The pre-push hook covers lint/type-check/circular locally, but it is
+      # bypassable and never runs `test`. Turbo caches these, so a clean run is
+      # seconds.
+      - name: Quality Gate
+        run: |
+          bun run lint
+          bun run type-check
+          bun run test
+          bun run check:boundaries
+
       - name: Run Semantic Release
         id: semantic_release
         uses: cycjimmy/semantic-release-action@v5

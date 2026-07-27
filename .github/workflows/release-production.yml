@@ -42,6 +42,17 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      # Ahead of the migration AND of semantic-release: a failing gate must not
+      # touch the production database or leave a published tag behind. The
+      # pre-push hook covers lint/type-check/circular locally, but it is
+      # bypassable and never runs `test`.
+      - name: Quality Gate
+        run: |
+          bun run lint
+          bun run type-check
+          bun run test
+          bun run check:boundaries
+
       - name: Apply Production DB Migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

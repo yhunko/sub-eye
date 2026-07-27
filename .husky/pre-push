@@ -11,3 +11,9 @@ bun run type-check
 
 echo "🔄 Checking for circular dependencies..."
 bun run check:circular
+
+echo "🧪 Running tests..."
+bun run test
+
+echo "🧱 Checking architecture boundaries..."
+bun run check:boundaries
