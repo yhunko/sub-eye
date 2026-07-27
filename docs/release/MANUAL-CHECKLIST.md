@@ -40,16 +40,23 @@ Two consequences, both live in the shipped app today:
    `apps/mobile/src/shared/config/legal.ts` builds `/uk/...` for a site that has
    no `/uk`.
 
-So this is a decision, not just a writing task:
+**Decided 2026-07-27:** the landing redesign will serve `/en` and `/uk`, so the
+app now prefixes **every** locale — English included. `legalUrl()` in
+`apps/mobile/src/shared/config/legal-url.ts` builds exactly these four, and
+`legal-url.test.ts` pins them:
 
-- **If the site will get Ukrainian pages**, publish all four and nothing in the
-  app changes.
-- **If it will not**, `localePrefix()` has to stop emitting `/uk` — it is three
-  lines and the only place the shape is encoded. Say which, and the code half is
-  a five-minute change.
+```
+https://www.subeye.cc/en/terms-of-service/
+https://www.subeye.cc/en/privacy-policy/
+https://www.subeye.cc/uk/terms-of-service/
+https://www.subeye.cc/uk/privacy-policy/
+```
 
-**If your site uses a different locale scheme** (`?lang=uk`, `uk.subeye.cc`,
-a subfolder that isn't `/uk`), change `localePrefix()` in that same file.
+**All four 404 today**, including the English terms page, which used to work at
+the unprefixed root. That is deliberate — the app is written against the
+redesign — but it means **the redesign shipping those four routes is now on the
+submission critical path.** If the scheme changes again, `legal-url.ts` is the
+only place it is encoded and the test will tell you.
 
 The privacy policy must state, at minimum:
 
