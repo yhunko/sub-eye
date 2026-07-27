@@ -1,13 +1,17 @@
-# subeye.cc — landing page design brief
+# subeye.cc — landing page design brief (v2)
 
-Paste this into Claude Design. It is written to be self-contained.
+Paste this into Claude Design as a fresh start. It supersedes an earlier brief.
+
+**A first attempt already exists and was rejected.** Read *What went wrong* below
+before designing anything — it is the most important section here, because the
+content architecture from that attempt was right and the visual system was not.
 
 ---
 
 ## What you're designing
 
 A pre-launch marketing site for **SubEye**, a subscription-tracking iPhone app.
-The app is built and going through App Store review. The site's job, in order:
+The app is built and heading for App Store review. The site's job, in order:
 
 1. Make someone want the app.
 2. Capture an email so they hear about launch day.
@@ -17,24 +21,61 @@ The app is built and going through App Store review. The site's job, in order:
 There is no App Store link yet. Every download affordance is a **"Coming to the
 App Store"** state plus an email field. Do not fake a live badge.
 
-Single page plus two legal pages. English and Ukrainian.
+One page, plus two legal pages. English and Ukrainian.
+
+---
+
+## What went wrong last time — read this first
+
+The previous attempt got the copy and the section order broadly right and the
+visual system badly wrong. Every failure below is a thing you must not repeat.
+
+1. **Everything was the same card.** A `#171a20` rounded rectangle with a 1px
+   white-10% border, repeated about fifteen times at different sizes, was the
+   only structural device on the page. Section after section resolved to
+   "eyebrow · heading · paragraph · card." There was no rhythm, no compression,
+   nothing to distinguish a major moment from a minor one.
+
+2. **Monospace was applied to labels instead of data.** Nine all-caps mono
+   eyebrows — `THE PRICE TIMELINE`, `WHAT IT DOES`, `PRICING`, `QUESTIONS`,
+   `NEVER ASKED FOR` — turned a meaningful signal into wallpaper and gave the
+   whole page a terminal-cosplay feel. Mono is for **numbers and dates only**.
+   Amounts, currency codes, day counts, cadences. Never a section label, never
+   a heading, never body copy.
+
+3. **No display face.** Headings were a default grotesk at semibold. The type
+   carried none of the personality, so the page had none.
+
+4. **The brand's colour ramp went unused.** SubEye ships seven category colours.
+   The page was green-on-black and nothing else, which is precisely the AI
+   default look.
+
+5. **The signature element was treated as a module.** The price timeline —
+   the one thing the whole page exists to show — was rendered inside the same
+   card as everything else, with `$0.00`, `$4.99` and `$12.99` set at identical
+   size and weight. The escalation *is* the content. Setting it flat threw away
+   the page's only real idea.
+
+6. **The hero demonstrated nothing.** Headline left, small stat card right, is
+   the single most templated layout on the web.
 
 ---
 
 ## The product, honestly
 
 SubEye is for someone who has quietly accumulated eleven subscriptions and could
-not tell you what they cost per year. Not for someone hunting a budgeting suite.
+not tell you what they cost per year. Not for someone shopping for a budgeting
+suite.
 
-**The thing that makes it different from every competitor: SubEye never touches
-your bank.** Rocket Money, Bobby Pro and the rest either link your accounts or
-read your email. SubEye asks you to type in what you pay. That sounds like a
-weakness and it is the whole pitch — no Plaid, no bank credentials, no inbox
-scanning, no "we found 3 subscriptions" surveillance. Say this plainly and early.
+**The thing that separates it from every competitor: SubEye never touches your
+bank.** The alternatives either link your accounts or read your inbox. SubEye
+asks you to type in what you pay. That sounds like a weakness and it is the
+whole pitch — no bank credentials, no inbox scanning, no "we found 3
+subscriptions" surveillance. Say it plainly and early.
 
 ### What the app actually does
 
-Do not invent features. This list is exhaustive.
+Exhaustive. Do not invent features.
 
 **Sees the money**
 - One number on the home screen: what is still going to leave your account this
@@ -45,76 +86,84 @@ Do not invent features. This list is exhaustive.
 - Where it goes, by category.
 - Anything resuming from a pause soon.
 
-**Tracks the price over time — this is the unusual one**
-- A subscription's price is modelled as a timeline, not a single number: free
-  trial → intro discount → standard price → any scheduled change.
+**Tracks the price over time — the unusual one**
+- A subscription's price is a timeline, not a number: free trial → intro
+  discount → standard price → any scheduled change.
 - The app knows a trial is about to convert, and what the price becomes.
 - Every subscription has a price history you can look at.
-- You can schedule a price change ahead of time, or apply one now.
+- You can schedule a price change ahead, or apply one now.
 
 **Manages the lifecycle**
-- Pause indefinitely or until a specific date; resume.
+- Pause indefinitely or until a date; resume.
 - Cancel at period end (you keep what you paid for) or cancel immediately.
 - Change your mind and keep it.
-- Swipe a row for the action; the app only ever offers actions that are legal
-  for that subscription's current state.
+- Swipe a row for the action; only actions legal for that subscription's current
+  state are ever offered.
 
 **Reminds you**
-- A notification the day before a renewal, at 9am, on the device.
-- Scheduled entirely on the phone. No push server, no notification tokens.
+- A notification the day before a renewal, at 9am, scheduled on the device.
+- No push server, no notification tokens.
 
 **Handles real money**
-- Five currencies: UAH, USD, EUR, GBP, PLN.
+- Five currencies: UAH, USD, EUR, GBP, PLN. Not more — don't imply a row of
+  flags.
 - Daily exchange rates. Everything re-denominates into your home currency, so a
-  mix of dollar and hryvnia subscriptions still adds up to one honest total.
+  mix of dollar and hryvnia subscriptions still adds to one honest total.
 
 **Everyday**
 - Search, filter by status, sort by next payment / name / cost.
 - Categories with a spend breakdown.
 - Real service logos on the rows.
-- Works offline against cached data; refreshes silently when you come back.
-- English and Ukrainian, following your phone's language.
+- Works offline against cached data; refreshes silently on return.
+- English and Ukrainian, following the phone's language.
 - Delete your account and everything in it goes, for real.
 
-### Deliberately not features — never imply otherwise
+### Never imply these
 
 No bank linking. No email scanning. No "we'll cancel it for you." No shared or
-family plans. No widgets. No web app. No CSV export yet. No price negotiation.
-No ads. No data sale.
+family plans. No widgets. No web app. No CSV export yet. No ads. No data sale.
+**No Android — do not mention it at all**, not in copy, not in an FAQ, not as a
+greyed-out badge. The product is an iPhone app. Raising the platform question
+only invites it.
 
 ---
 
-## Pricing — show it, and show it early
+## Pricing
 
-I'm recommending you put pricing on a pre-launch page, which is unusual. The
-reason: the loudest unspoken objection to a subscription-tracking app is *"is
-this thing going to turn into another subscription I forget about?"* Silence
-reads as "we'll work out how to charge you later." Answering it up front is the
-strongest trust asset on the page.
-
-Present two columns:
+Show it. The loudest unspoken objection to a subscription tracker is *"is this
+going to become another subscription I forget about?"* Silence reads as "we'll
+work out how to charge you later," so answering up front is the strongest trust
+asset on the page after the bank line.
 
 **Free** — Unlimited subscriptions. The full dashboard. Search, filters, every
-lifecycle action. Multi-currency with daily rates. Not a trial, not a teaser.
+lifecycle action. Multi-currency at daily rates. Not a trial, not a teaser.
 
-**Pro — $19.99 once** — Renewal reminders. Trial-ending and price-change
+**Pro — $11.99 once** — Renewal reminders. Trial-ending and price-change
 tracking. Categories and the spend breakdown. Export.
 
-The line that has to land, in whatever form you find for it: **one payment, not
-a subscription.** A subscription tracker charging a monthly subscription is a
-joke people will make at your expense, and declining to make it is the point.
-Don't over-wink at it — one dry line, then move on.
+Two things have to land:
 
-Frame the number as the **launch price**, and make the email capture worth
-something: early signups hear first and get a discount code. That is the
-incentive, not a countdown timer.
+**One payment, not a subscription.** A subscription tracker charging monthly is
+a joke people will make at your expense; declining to make it is the point. One
+dry line, then move on — don't over-wink at it.
+
+**Priced for where you live.** SubEye uses per-storefront pricing: about ₴199 in
+Ukraine, $11.99 in the US, adjusted elsewhere. This is real — Apple supports it
+— and almost no indie app says it out loud. It is a second trust signal of the
+same kind as the bank line, and it should be designed as one, not buried as a
+footnote. A visitor on a Ukrainian storefront should see hryvnia.
+
+Frame $11.99 as the **launch price**. Early signups hear first and the first 100
+get Pro free — that number is 100 because Apple issues exactly 100 promo codes
+per app version, so the scarcity is a fact rather than a device. No countdown,
+no "only N spots left" counter.
 
 ---
 
 ## Required routes — hard constraint
 
-The shipped app opens these URLs from Settings and from the sign-up consent row.
-They must resolve, with trailing slashes, exactly:
+The shipped app opens these from Settings and from the sign-up consent row. They
+must resolve, with trailing slashes, exactly:
 
 ```
 /terms-of-service/
@@ -123,13 +172,11 @@ They must resolve, with trailing slashes, exactly:
 /uk/privacy-policy/
 ```
 
-English at the root, Ukrainian under `/uk/`. If you propose a different locale
-scheme, say so loudly — it means a code change in the app and a new App Store
-build.
+English at the root, Ukrainian under `/uk/`. Proposing a different scheme means
+a code change and a new App Store build — so say so loudly if you do.
 
-The legal pages are opened from inside a dark app, so they should feel like the
-same product rather than a bare document dump. Readable measure, real type
-hierarchy, same palette.
+The legal pages open from inside a dark app, so they should feel like the same
+product: readable measure, real hierarchy, same palette. Not a document dump.
 
 ---
 
@@ -137,7 +184,7 @@ hierarchy, same palette.
 
 ### The palette is locked
 
-These are the app's shipped tokens. The site has to look like the same product.
+The app's shipped tokens. The site has to look like the same product.
 
 ```
 Background     #0f1115
@@ -152,43 +199,63 @@ Red            #f87171     destructive only
 Category ramp  #e8834e #34c759 #c15cff #d4d640 #4a9eff #f0507e #43d17a
 ```
 
-Two rules carried over from the app, and they matter:
+Rules carried from the app:
 
 - **Green is brand and interaction, never "good."** Every amount in a spend
-  tracker is money leaving. Amounts stay neutral — do not tint a total green
-  because it's a number.
-- **Amber means suspended, not wrong.** Red is only for destroying something.
+  tracker is money leaving. Amounts stay neutral — never tint a total green
+  because it is a number.
+- **Amber means suspended, not wrong.** Red only ever means destroying
+  something.
+- **The category ramp is not decoration and it is not optional here.** Those
+  seven colours are how the app draws its spend breakdown. Use them where that
+  feature appears. They are the page's only sanctioned escape from two-tone, and
+  the last attempt failed partly by ignoring them.
 
-### Read this before you start
+### Where the distinctiveness has to come from
 
-Near-black background with a single bright green accent is one of the three
-looks AI design defaults to. Here it is a genuine brand constraint, not a
-default — but that means **the palette axis is already spent, and you cannot use
-it to make the page distinctive.** Distinctiveness has to come from typography,
-structure, and the signature element. If you find yourself reaching for a
-gradient mesh, a glow behind the hero, or a big number with a small label and a
-green underline, you have landed on the template.
+Near-black plus one bright green is a genuine brand constraint here — but it is
+also one of the three looks AI design defaults to. **The palette axis is already
+spent. You cannot use colour to make this page distinctive.** It has to come
+from type, structure, and the signature. If you reach for a gradient mesh, a
+glow behind the hero, a hairline-bordered card grid, or a big number with a
+small caps label and a green underline, you have landed on the template.
 
-### Typography
+### Typography — three roles, strictly separated
 
-The app itself uses the system face on purpose — it should feel like iOS, not
-like a brand. The site is where the brand gets to speak, so **do not just set
-everything in Inter.**
+The app deliberately uses the system face so it feels like iOS. The site is
+where the brand speaks. **Do not set this in Inter.**
 
-Pick a display face with some measured, mechanical quality. This is a product
-about schedules and amounts, not about warmth or craft. One genuinely useful
-structural device: **set every amount and date in a monospace or tabular face.**
-That is not decoration — it is financial data, columns should align, and it
-gives the page a texture the copy alone won't. Let that be a real system, not a
-one-off in the pricing table.
+- **Display.** A face with real editorial authority, used only for section
+  headings and the hero. An unexpected but defensible direction: a high-contrast
+  serif on near-black. That is not the AI-default serif look, because the default
+  is a serif on warm cream — a serif over `#0f1115` paired with mono numerals
+  reads as financial press, which is exactly this product's world. A condensed
+  or expanded grotesk is the other credible route. Pick one, commit, and don't
+  hedge with a third.
+- **Mono.** Every amount, date, currency code, day count and cadence. This is
+  tabular financial data, columns should align, and it gives the page a texture
+  the copy alone won't. **Mono never touches a label, an eyebrow, a heading or
+  body copy.** Breaking this is what made the last attempt feel like a hacker
+  landing page.
+- **Body.** A neutral, legible sans. Its job is to disappear.
+
+### Structure
+
+- **At most two module treatments on the whole page**, and the timeline uses
+  neither. If a section can be separated by rhythm, a rule, or a change of
+  ground instead of a bordered box, do that.
+- **Vary vertical rhythm.** Some sections should compress and some should
+  breathe. Uniform section heights are what made the last page read as
+  generated.
+- Section labels: at most two on the page, in the display or body face. Not nine
+  in mono.
 
 ### Signature element — the price timeline
 
 Spend your boldness here and keep everything around it quiet.
 
 The one thing SubEye models that nobody else does is a subscription's price
-*over time*. Build the page around a real, honest timeline of one subscription's
-life:
+*over time*. Build the page around one honest example:
 
 ```
    free trial          intro price          standard
@@ -200,97 +267,151 @@ life:
                                      nobody sees coming
 ```
 
-That step from $4.99 to $12.99 is the emotional core of the product. A timeline
-is one of the few places sequence markers are honest — order carries real
-information here, so the structure is telling the truth rather than decorating.
+Non-negotiable this time:
 
-Use it as the hero thesis if it works there. If one orchestrated motion moment
-belongs anywhere on this page, it is this timeline advancing and the price
-stepping up as it scrolls into view — once, deliberately, respecting
-`prefers-reduced-motion`. Not scattered fades everywhere else.
+- **The escalation must be visible in the type itself.** `$0.00` small, `$4.99`
+  larger, `$12.99` largest and heaviest. Setting the three at one size — which
+  is what happened last time — throws away the entire idea. Scale is the
+  argument.
+- **It must break the page's grid.** Full-bleed, or the widest thing on the
+  page, or on its own ground. It must not be a card among cards.
+- A timeline is one of the few places sequence markers are honest — order
+  carries real information here, so the structure is telling the truth rather
+  than decorating.
+
+If one orchestrated motion moment belongs anywhere, it is this timeline
+advancing and the price stepping up as it scrolls into view. Once, deliberately,
+`prefers-reduced-motion` respected. **No scroll-reveal on other sections** —
+that is the clearest AI-design tell there is.
 
 ### Device mockups
 
-The app is **dark, portrait, iPhone-only, and uses iOS 26 native chrome**
-(Liquid Glass tab bar, transparent nav bars). Any phone frame must be portrait
-and dark. Never show a light-mode screenshot; there isn't one.
+The app is **dark, portrait, iPhone-only, iOS 26 native chrome** (Liquid Glass
+tab bar, transparent nav bars). Any frame is portrait and dark; there is no
+light mode.
 
-If you render screen content, use the app's real copy:
+No screenshots exist yet — design the mockups. If a phone screen is too small to
+read at page scale, either crop to one legible component or drop it. Last time
+the phone content was illegible, which made it decoration.
+
+Use the app's real copy:
 
 - Home: **"LEFT THIS MONTH"** · a large amount · a thin progress bar · "Day 18
   of 31" · "Next month · $284"
 - Sections: "Monthly spend / Last six months" · "Most expensive" · "Resuming
   soon"
-- List rows: a circular service logo, name, amount, next payment date
+- Rows: circular service logo, name, amount, next payment date
 - Status words: Active · Paused · Cancelling · Cancelled
 - Detail: "Current price" · "Next payment" · "Price history"
 - Actions: "Pause" · "Resume" · "Cancel at period end" · "Keep subscription"
 
 ### The mark
 
-The app icon is an eye whose pupil is a three-bar chart, in brand green on the
-near-black background. An eye watching a number move. Use the shape system —
-eye, three bars, that green — but do not just paste the icon at 400px and call
-it a hero.
+The app icon is an eye whose pupil is a three-bar chart, brand green on
+near-black. An eye watching a number move. Use the shape system — eye, three
+bars, that green — but don't paste the icon at 400px and call it a hero.
 
 ---
 
 ## Voice
 
-The app already has one and it is good. Match it. Plain, specific, no filler,
-sentence case, active voice.
+The app has one and it's good. Plain, specific, no filler, sentence case, active.
 
-Real strings from the product, as calibration:
+Calibration, from the product:
 
 > "Left this month" · "Could not load your numbers." · "Keep subscription" ·
 > "A reminder the day before a subscription renews." · "Your account and every
 > subscription in it are removed. This cannot be undone."
 
-Notice: it never apologises, never says "oops," never sells. Headlines should
-say what happens, not gesture at a feeling. **"See the price change before it
-hits you"** is the register. "Take control of your financial future" is not.
+It never apologises, never says "oops," never sells. Headlines say what happens.
+**"See the price change before it hits you"** is the register. "Take control of
+your financial future" is not.
 
-Avoid: "effortlessly," "seamlessly," "powerful," "beautiful," "your money, your
-rules," and any headline built on "Never ___ again."
+Avoid: effortlessly, seamlessly, powerful, beautiful, "your money your rules,"
+and anything built on "Never ___ again."
+
+**Copy worth keeping from the last attempt** — it was the part that worked:
+
+> "Know what your subscriptions cost. All of them."
+> "SubEye never touches your bank."
+> "One number, with a denominator."
+> "This is the part nobody sees coming."
+> "Charging a monthly fee to watch your monthly fees would be absurd."
+> "Two actions, because the one is paused."
 
 ---
 
 ## Page structure — a starting point, not a spec
 
-Rearrange, merge or cut if you find something better. It has to answer, in
-roughly this order: what is it, why should I trust it, what does it do, what
-does it cost, when can I have it.
+Rearrange, merge or cut if you find better. It must answer, roughly in order:
+what is it, why should I trust it, what does it do, what does it cost, when can
+I have it.
 
-1. **Hero** — the thesis, the coming-soon state, and one email field.
-2. **The trust line** — never touches your bank. This is high on the page, not
-   buried in a privacy section at the bottom.
+1. **Hero** — must *demonstrate*, not just assert. Headline-left/stat-card-right
+   is banned. The timeline may live here; see below.
+2. **Never touches your bank** — high on the page, not a privacy footnote.
 3. **The price timeline** — the signature moment.
-4. **What it does** — three or four blocks, each with one real screen. See the
-   money · manage the lifecycle · get reminded · handle mixed currencies.
-5. **Pricing** — two columns, one payment, not a subscription.
-6. **Email capture again**, with the early-signup incentive.
-7. **Footer** — Terms, Privacy, contact, language switch, © SubEye.
+4. **What it does** — three blocks, each with one legible screen or component:
+   see the money · manage the lifecycle · mixed currencies, one total.
+5. **Pricing** — two columns, one payment, priced for where you live.
+6. **Email capture**, with the first-100 incentive.
+7. **FAQ** — exactly three: *Why do I have to type everything in?* (because the
+   alternative is your bank password) · *Is my data safe?* (what's stored,
+   where, and that deletion is real) · *Do I need an account?* (yes — so your
+   subscriptions survive a lost phone).
+8. **Footer** — Terms, Privacy, contact, language switch, © SubEye.
 
-An FAQ is optional and probably earns its place, because there are three real
-questions: *Why do I have to type everything in?* (because the alternative is
-your bank password) · *Is my data safe?* (what's stored, where, and that you can
-delete all of it) · *Android?* (see below).
+**Show me two hero directions:** (a) the timeline *is* the hero, page opens on
+it; (b) a headline hero with the timeline as its supporting visual in the same
+viewport, email below. The last attempt did neither — it had a headline and an
+unrelated stat card.
+
+Target length: **tighter than the last attempt.** Roughly four screens of scroll
+past the hero. Pre-launch pages that scroll forever lose people before the
+second email field.
+
+---
+
+## Email form
+
+Design a native form. **Do not design around an embedded provider widget.**
+
+Assume a POST to one configurable endpoint, JSON `{ email, locale }`, responding
+200 / 409 (already subscribed) / 422 / 429. The provider is undecided, so the
+design must not depend on its markup.
+
+Design all four states: empty, submitting, success, error. **The success state
+is the highest-value moment on the page** — the only point where someone has
+committed to anything — so treat it as a designed state, not a swapped label.
+
+The form needs a real GDPR consent affordance. SubEye serves the EU and Ukraine
+and the page's whole argument is privacy — a pre-ticked box or consent buried
+underneath would contradict it. Design the consent line as part of the form.
 
 ---
 
 ## Constraints
 
-- **iOS first.** Android is undecided. Build any store-badge or platform area so
-  a second platform can be switched on later without a redesign, but do not
-  promise Android.
-- Responsive to 375px. The audience is on a phone; a phone-first read of this
-  page is the likely one.
-- Visible keyboard focus, `prefers-reduced-motion` respected, real contrast on
-  `#98a0ae` over `#0f1115`.
-- Fast. This is a static marketing page; it should not ship a framework's worth
-  of JavaScript to render text.
-- The email form needs a real destination. Note what it should post to; don't
-  design around a provider's embedded widget.
+- iPhone only. No platform badges beyond Apple, no Android anywhere.
+- Responsive to 375px. The audience is on a phone; assume a phone-first read.
+- Visible keyboard focus, `prefers-reduced-motion` respected, real contrast for
+  `#98a0ae` on `#0f1115`.
+- Static marketing page. It should not ship a framework's worth of JavaScript to
+  render text.
+- **Ukrainian is first-class, not a courtesy locale.** Design the `/uk/` layout
+  too, or at minimum verify the type scale survives Cyrillic: "Політика
+  конфіденційності" is more than twice the width of "Privacy policy" and will
+  break a tight nav or a two-column pricing header. The `/uk/` copy will be
+  written by a person, not machine-translated.
+- Top nav: the mark plus a language switch. Nothing else — it's one page, and
+  anchor links would be nav for nav's sake. But the language switch must be
+  findable, so footer-only is not enough.
+- Sign-in providers, if shown anywhere: email, Google, GitHub, Apple.
+- Do not name competitors. The bank-linking contrast lands without naming who
+  does it — naming them gives them free awareness and makes SubEye look like the
+  challenger.
+- Do not state a launch date, month or season. "Coming to the App Store," no
+  timeline.
 
 ---
 
@@ -299,12 +420,12 @@ delete all of it) · *Android?* (see below).
 `apps/landing/` in the SubEye monorepo — Bun workspaces, Turbo, Biome (not
 ESLint, not Prettier), TypeScript.
 
-**Recommended stack: Astro, static output, deployed to Cloudflare Pages.** The
-reasoning is not aesthetic: Astro's i18n routing produces `/terms-of-service/`
+**Recommended stack: Astro, static output, Cloudflare Pages.** The reasoning is
+functional, not aesthetic: Astro's i18n routing produces `/terms-of-service/`
 and `/uk/terms-of-service/` natively, which is the exact URL contract the
 shipped app depends on; it ships zero JavaScript by default; and the API already
-runs on Cloudflare. If you propose something else, make sure it satisfies those
-routes exactly.
+runs on Cloudflare. Anything you propose instead must satisfy those routes
+exactly.
 
-Deliver the design so it can be built as static pages with a small amount of
-scoped CSS — no design system to install, no component library dependency.
+Deliver so it can be built as static pages with scoped CSS — no design system to
+install, no component library dependency.
