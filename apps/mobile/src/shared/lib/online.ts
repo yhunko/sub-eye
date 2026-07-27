@@ -1,6 +1,5 @@
 import NetInfo from "@react-native-community/netinfo";
 import { onlineManager } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
 
 // Feed device connectivity into TanStack's onlineManager ONCE, at module load,
 // so query network-mode and any offline UI read one source. This module is
@@ -9,10 +8,3 @@ import { useSyncExternalStore } from "react";
 onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(!!state.isConnected)),
 );
-
-export function useIsOnline(): boolean {
-  return useSyncExternalStore(
-    (cb) => onlineManager.subscribe(cb),
-    () => onlineManager.isOnline(),
-  );
-}

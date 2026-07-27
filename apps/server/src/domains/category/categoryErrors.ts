@@ -8,12 +8,3 @@ export class CategoryNotFoundError extends Error {
     this.name = "CategoryNotFoundError";
   }
 }
-
-export class CategoryLimitReachedError extends Error {
-  readonly status = 403 as const;
-  readonly code: ApiErrorCode = "CATEGORY_LIMIT_REACHED";
-  constructor() {
-    super("Category limit reached");
-    this.name = "CategoryLimitReachedError";
-  }
-}

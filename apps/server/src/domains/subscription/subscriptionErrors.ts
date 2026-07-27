@@ -9,15 +9,6 @@ export class SubscriptionNotFoundError extends Error {
   }
 }
 
-export class SubscriptionLimitReachedError extends Error {
-  readonly status = 403 as const;
-  readonly code: ApiErrorCode = "SUBSCRIPTION_LIMIT_REACHED";
-  constructor() {
-    super("Subscription limit reached");
-    this.name = "SubscriptionLimitReachedError";
-  }
-}
-
 export class SubscriptionCategoryNotFoundError extends Error {
   readonly status = 404 as const;
   readonly code: ApiErrorCode = "CATEGORY_NOT_FOUND";

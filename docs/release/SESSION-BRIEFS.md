@@ -1,225 +1,66 @@
 # SubEye v4.0.0 — Claude Code session briefs
 
-Follow-up work from the 2026-07-27 release-readiness audit. Each brief is
+Unbuilt work from the 2026-07-27 release-readiness audit. Each brief is
 self-contained: open a fresh session, paste the brief, and it has what it needs.
 
-Order matters only where stated.
+The manual half — anything needing a dashboard login, credentials, or a decision
+— is [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md), and it leads with the blocker
+that gates everything else.
 
-Already landed on `dev` (do not redo):
+## What is left, in order
+
+1. **M1 — ship v4 to production.** The live API at `app.subeye.cc` is still v3;
+   the app is a v4 client. Everything below is untestable until this lands, and
+   the database half of it needs supervision, not CI.
+2. **M2** EAS production env vars. ⛔ blocks any usable build.
+3. **M3** publish the privacy policy and the four `/en` + `/uk` legal routes.
+   ⛔ blocks submission, and the app links them today. Work in the landing repo,
+   not this one.
+4. **B3** client crash telemetry — batch the native module with the prebuild for
+   the first EAS build rather than burning a build on it alone.
+5. **M4 / M5** Clerk production instance, then the App Store Connect record and
+   privacy label.
+6. **M6** first EAS build + device smoke test.
+7. **B7** rate limiting (mostly the M7 dashboard rule), **B6** RevenueCat (still
+   blocked on M8).
+
+B3 adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means revisiting
+M3's processor list, the App Privacy label, and the EAS production environment —
+not purely client work.
+
+## Already landed on `dev`
+
+Detail lives in the commits; this is only an index so a fresh session knows what
+not to redo.
 
 | Commit | What |
 | --- | --- |
 | `730ce60` | CI + pre-push quality gate |
-| `9b94f95` | Privacy policy links, locale-aware legal URLs, real privacy manifest, Face ID string dropped |
+| `9b94f95` | Privacy policy links, locale-aware legal URLs, real privacy manifest |
 | `40ecafe` | Subscription list follows its cursor (was silently capped at 50) |
 | `4e3615d` | expo-router `ErrorBoundary` |
 | `e532af0` | Category picker + inline create, `brandDomain` field |
 | `b89a3c7` | **B1** Sign in with Apple · **B4** category management · **B5** first-run experience · consent notice |
-| `b0753be` | Category emoji picker laid out in even rows of six |
-| `9bbe2c2` | **B2** observability config + probed release state |
+| `9bbe2c2` | **B2** observability config reconciled (`enabled` and `logs.enabled` no longer disagree) |
 | `769852a` | Legal URLs prefixed `/en` and `/uk` (tracks the landing redesign) |
-| `9ad5003` | **Paused/cancelled subscriptions never reached the client** — `status=all` |
-| `cb65810` | List filters moved into a native sheet behind one header button |
-| `0742049` | Separate header buttons, dot for active filters, monthly single-currency rows |
+| `9ad5003` | Paused/cancelled subscriptions never reached the client — `status=all` |
+| `cb65810`, `0742049` | List filters in a native sheet, split header actions, monthly single-currency rows |
 | `8aaf525` | Add/edit is a full-screen modal with its own stack + searchable category picker |
-| *(this one)* | **B8** brand picker — the Website field is now a searchable logo avatar |
+| `b07e334`, `3f6bf1f` | **B8** brand picker — the Website field is a searchable logo avatar over Brandfetch, opening on 20 popular services |
+| `d7bf701` | Subscription form fits on one screen |
+| `0f707ee` | A cancelled subscription reads as finished |
+| `c1f2818` | Trend, top and resuming rows replaced by one attention card — **this also changed the dashboard DTO in `packages/shared`, so it is part of what M1 has to deploy** |
 
-`8aaf525` is what **B8 below builds on**: add/edit is now
-`presentation: "modal"` over its own `Stack` at
-`app/(tabs)/subscriptions/form/`, with an X and a checkmark in the nav bar and a
-Category drill-down screen carrying the native `UISearchBar` plus
-create-in-place. One route serves both modes (`?id=` means edit). The in-flight
-draft lives in a React context on the modal's layout
-(`widgets/subscription-form/model/form-context.tsx`) so a pushed sub-screen can
-write into it — that is the pattern B8 reuses.
+Two patterns from that work are load-bearing for anything new:
 
----
-
-## ⛔ Where submission actually stands (probed 2026-07-27, second pass)
-
-| Check | Result |
-| --- | --- |
-| EAS project linked | ✅ `projectId e52f6dbb-…`, `owner yehor.hunko` |
-| Clerk Apple SSO connection | ✅ configured |
-| `com.apple.developer.applesignin` entitlement | ✅ written by `bun run prebuild` |
-| Production Worker live | ✅ `GET /api/subscriptions` → `401 {"error":"Unauthorized"}` |
-| `www.subeye.cc/terms-of-service/` | ✅ 200 |
-| **EAS production env vars** | ⛔ **"No variables found for this environment"** |
-| **`www.subeye.cc/privacy-policy/`** | ⛔ **404** |
-| **`www.subeye.cc/uk/{terms-of-service,privacy-policy}/`** | ⛔ **404 — no `/uk` on the site at all** |
-
-The two ⛔ rows are the whole remaining blocker list, and both are yours:
-
-1. **EAS production has no variables.**
-   `apps/mobile/src/shared/config/env.ts` validates at module load, so a
-   production build today throws `Missing required env var:
-   EXPO_PUBLIC_API_URL` before React renders a frame. Two commands, in M4 step 5.
-2. **No privacy policy exists.** App Store Connect requires a resolving Privacy
-   Policy URL, and Settings → Privacy 404s in the shipped app. The Ukrainian
-   pages are missing too, which makes `localePrefix()` emit dead URLs — see M1
-   for the decision that needs making (publish `/uk` pages, or stop emitting the
-   prefix).
-
----
-
-## B1 — Sign in with Apple ✅ landed
-
-Native iOS Sign in with Apple, per Guideline 4.8.
-
-- `apps/mobile/src/widgets/auth-page/ui/apple-sign-in.tsx` — `useAppleSignIn()`
-  and `AppleSignInButton`, wired into both `sign-in-page.tsx` and
-  `sign-up-page.tsx` above the Google/GitHub row.
-- Uses clerk-expo 2.19's **`useSignInWithApple()`**, not
-  `useSSO({ strategy: "oauth_apple" })`. The hook drives
-  `expo-apple-authentication` and posts the identity token
-  (`signIn.create({ strategy: "oauth_token_apple" })`, transferring to `signUp`
-  when the account is new). No SFSafariViewController anywhere in the flow.
-- Renders Apple's own `ASAuthorizationAppleIDButton` (white, 52pt, corner radius
-  14 — never smaller than the other providers). `BrandLogo` is not involved.
-- **iOS only.** `expo-apple-authentication` has no Android implementation and
-  4.8 is an App Store rule; Android keeps Google/GitHub. Reason is commented in
-  the component.
-- `app.json`: `ios.usesAppleSignIn: true` plus an explicit
-  `"expo-apple-authentication"` plugin entry. New deps:
-  `expo-apple-authentication`, `expo-crypto`.
-- No new strings — the native button localises itself, and failures reuse
-  `auth_ssoFailed`.
-
-**M3 is done** (Apple Developer capability, Clerk SSO connection) and
-`bun run prebuild` was run — `ios/SubEye/SubEye.entitlements` now carries
-`com.apple.developer.applesignin: ["Default"]`. What is left is exercising the
-flow with a real Apple ID, which is an M7 line item.
-
----
-
-## B2 — Production configuration verification ⚠️ partly landed
-
-**Landed:** the observability contradiction is gone.
-`apps/server/prod.wrangler.jsonc` (and `dev.wrangler.jsonc`) had
-`observability.enabled: false` with `observability.logs.enabled: true`.
-Verified against the installed wrangler 4.83.0: it does **not** reconcile the
-two locally — `deploy` posts the block verbatim (`observability:
-config.observability`) and lets the Workers API decide, so the answer was not
-knowable from the client. Both are now `true`, traces stay `false`.
-`wrangler deploy --dry-run` on the prod config passes.
-
-**Item 1 is now measured, not assumed:** EAS production holds **no variables at
-all**, so both `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` are
-missing. M4 step 5 is the fix. Set the API URL with no trailing slash and no
-`/api` — the server's `basePath("/api")` rides on the Hono RPC accessor, and
-appending it 404s every request at `/api/api/…`. The publishable key must be
-`pk_live_`; a `pk_test_` key in a store build is a total silent failure.
-
-**Still needs you** — both require a dashboard login:
-
-2. Confirm the Clerk **production** instance has `subeye://` and the SSO
-   redirect URL registered under Native Applications, and that its webhook
-   points at `https://app.subeye.cc/api/webhooks/clerk` with the
-   `CLERK_WEBHOOK_SECRET` Cloudflare holds. Account deletion depends on that
-   webhook (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) —
-   without it, deleted accounts leave orphaned Postgres rows, which is a GDPR
-   problem, not just a tidiness one.
-3. Run a real production-profile build and confirm the app reaches the API. The
-   Worker itself is confirmed live and authenticating
-   (`GET https://app.subeye.cc/api/subscriptions` → 401), so this is about the
-   binary's config, not the backend.
-
----
-
-## B4 — Category management ✅ landed
-
-- `packages/shared`: `CATEGORY_EMOJI_GROUPS` and `CategoryEmojiGroup` are now
-  exported, so the picker is built from the same list `categoryEmojiSchema`
-  validates against and can never produce a 422.
-- `entities/category`: `useUpdateCategory()` and `useDeleteCategory()`. Both
-  invalidate the dashboard **and** the subscription list — a rename would
-  otherwise leave the old name on every row's denormalised `category`.
-- `widgets/categories-page/`: the list (`Settings → Categories`, with each
-  category's subscription count) and a `formSheet` edit route with a name field,
-  the grouped emoji grid, and a destructive delete.
-- Delete warns with the number of subscriptions that move to Uncategorized
-  rather than blocking — `subscriptions.category_id` is `onDelete: "set null"`.
-- Routes `app/(tabs)/settings/categories/index.tsx` and `.../[id].tsx`.
-- `pickCategoryEmoji` is untouched and still the default for inline creation.
-- The subscriptions list gained a **category filter chip strip**, rendered only
-  when the account has categories.
-
-**Deliberately not built:** an "Add category" button on the management screen.
-Creation stays inline in the subscription form (a category with no subscription
-in it is a dead category); the screen's footnote says where they come from.
-Revisit if the footnote turns out not to be enough.
-
----
-
-## B5 — First-run experience ✅ landed
-
-**Empty Home.** `widgets/home-page/ui/home-empty.tsx` replaces the zero hero /
-flat trend / empty category card with one sentence and a button to
-`/subscriptions/new`. It shows only when the account has nothing active, nothing
-paused, **and** no spend in the six-month trend — the last clause is what keeps
-a user who just cancelled their last subscription looking at their history
-instead of at a first-run screen.
-
-**Default currency.** `entities/user/api/use-seed-preferred-currency.ts`, mounted
-next to `RenewalReminderSync` in `(tabs)/_layout.tsx`. Adopts the device
-region's currency once per account per device, guarded twice:
-
-1. an MMKV flag set on the first run **whether or not anything changed**, so a
-   failed PATCH is never a second chance to overwrite a hand-picked currency;
-2. the stored preference must still be the server default `"uah"` — `deviceFlags`
-   is per-install, so without this a user who chose USD in Berlin would be
-   silently re-denominated by their second phone.
-
-`supportedCurrencyCode()` in `shared/lib/format/money.ts` does the mapping and is
-covered by six cases in `money.test.ts`. One of them caught a **pre-existing
-bug**: `SYMBOLS[code]` walked the prototype, so `formatMoney(x, "constructor")`
-rendered `"undefined1,234.50"`. All three readers now go through a guarded
-`currencyFor()`.
-
----
-
-## B8 — Brand picker ✅ landed
-
-The "Website" text field is gone. The form opens with a tappable 88pt avatar
-above the fields; tapping it pushes `form/brand.tsx` — a real `UISearchBar` over
-Brandfetch's Brand Search API, rows of logo + name + domain, a "No logo" row
-first, and a "Use `netflix.com`" row whenever what was typed parses as a host.
-Picking a brand fills an **empty** Name field with the brand's name and never
-overwrites typing.
-
-- `model/brand-search.ts` — `brandSearchUrl` / `toBrandHits` (pure, tested) plus
-  the query. 300ms debounce, TanStack's `signal` for cancellation, `retry: false`,
-  `staleTime` 5 min against Brandfetch's 200-per-5-min-per-IP ceiling.
-- **`POPULAR_BRANDS`** — 20 hardcoded services shown with nothing typed, so the
-  screen never opens as a search bar over an empty list and the most common
-  subscription is one tap away. Every domain was checked against Google's
-  favicon endpoint to rule out the generic-globe fallback; do the same before
-  adding one. Deliberately not a fallback for an empty or in-flight *search* —
-  popular brands under a typed query read as matches that never matched.
-- **`BrandLogo` still uses Google favicons.** The picker renders results through
-  the same component from the domain alone, so the preview is byte-identical to
-  the row that ships — which is the consistency the Brandfetch CDN was supposed
-  to buy, without a second image path or a key. Brandfetch's own `icon` URLs are
-  hotlink-only and expire after 24h, so storing one was never on the table.
-- **`meta: { persist: false }`** on the search query, and
-  `shared/lib/query.ts` grew the `shouldDehydrateQuery` filter its comment had
-  been inviting. Brandfetch's terms say the data is fetched live and not
-  persisted, and the query key is whatever the user typed — neither belongs in a
-  7-day MMKV cache.
-- `EXPO_PUBLIC_BRANDFETCH_CLIENT_ID` is **optional** in `env.ts`.
-- `normalizeBrandDomain` is untouched and still guards the write path; it is now
-  also what decides whether the "Use …" row appears.
-
-**Probed 2026-07-27:** the search endpoint returns full results with **no `c`
-parameter at all**, and with a bogus one. So the feature works out of the box
-and the id is not a blocker — but `c` is documented as required, so M4 step 5
-now lists it as a third var. `brandSearchUrl` omits the parameter entirely when
-unset rather than sending `?c=`.
-
-**Release consequences, both landed:** `app.json`'s privacy manifest gained
-`NSPrivacyCollectedDataTypeSearchHistory` (**not** linked — no account id
-travels with the lookup), M1's processor list names Brandfetch, M2's label table
-gained the row, and M7 gained two smoke-test lines including the offline one.
+- **Add/edit is `presentation: "modal"` over its own `Stack`** at
+  `app/(tabs)/subscriptions/form/`. One route serves both modes (`?id=` means
+  edit). The in-flight draft lives in a React context on the modal's layout
+  (`widgets/subscription-form/model/form-context.tsx`) so a pushed sub-screen can
+  write into it. Anything that outgrows an action sheet becomes a pushed screen
+  in that stack.
+- **`headerSearchBarOptions` works on a pushed screen inside that nested stack**
+  — the category and brand pickers both use the real `UISearchBar`.
 
 ---
 
@@ -253,24 +94,24 @@ Not a blocker, but shipping without it means debugging from one-star reviews.
 
 ## B6 — RevenueCat paywall and Pro entitlement
 
-**Only after M5 (App Store Connect IAP setup).** Do not start before there is
-an approved product id to point at.
+**Only after M8 (App Store Connect IAP setup).** Do not start before there is an
+approved product id to point at.
 
 > Add SubEye Pro to the mobile app via RevenueCat.
 >
 > Decided model (do not redesign it):
 > - **One non-consumable, $19.99 lifetime.** No auto-renewable subscription in
->   v1 — Guideline 3.1.2 paywall requirements, dunning and grace periods are
->   ops a solo developer does not need on day one, and a subscription-tracking
->   app charging a subscription is a joke reviewers make in public.
+>   v1 — Guideline 3.1.2 paywall requirements, dunning and grace periods are ops
+>   a solo developer does not need on day one, and a subscription-tracking app
+>   charging a subscription is a joke reviewers make in public.
 > - **Free:** unlimited subscriptions, the full Home dashboard, list, search,
 >   filter, sort, every lifecycle action, multi-currency conversion.
 > - **Pro:** renewal reminders · pricing phases (trial-ending and price-change
 >   tracking) · categories, the category breakdown and the category filter ·
 >   CSV export.
 > - The gate is *features*, not a subscription count cap. Nothing gated costs
->   the developer anything at runtime, so the free tier cannot be griefed into
->   a bill and the cap never punishes the users who evangelise the app.
+>   the developer anything at runtime, so the free tier cannot be griefed into a
+>   bill and the cap never punishes the users who evangelise the app.
 >
 > Implementation notes:
 > - `react-native-purchases` + RevenueCat. Do not hand-roll StoreKit.
@@ -286,7 +127,7 @@ an approved product id to point at.
 > - Existing users must not lose reminders they already have on. Grandfather
 >   anyone with `notifications.renewalReminders` already true in MMKV, and say
 >   so in the commit message.
-> - Categories are now reachable from Settings → Categories and from the list's
+> - Categories are reachable from Settings → Categories and from the list's
 >   filter chips. Gating them means gating **three** surfaces, not one — decide
 >   whether the chips disappear or deep-link to the paywall, and be consistent.
 > - Strings in both message catalogs.
@@ -296,12 +137,12 @@ an approved product id to point at.
 ## B7 — API rate limiting
 
 > The SubEye API (`apps/server`) has no rate limiting. Every endpoint requires
-> Clerk auth, so abuse needs an account — but one scripted account can burn
-> Neon compute-hours, which is the meter that actually costs money.
+> Clerk auth, so abuse needs an account — but one scripted account can burn Neon
+> compute-hours, which is the meter that actually costs money.
 >
 > Prefer a Cloudflare Rate Limiting rule on `app.subeye.cc` over application
 > code: it is free, it runs before the Worker, and it costs zero request
-> latency. See manual step **M6** for the suggested rule — the dashboard part is
+> latency. See manual step **M7** for the suggested rule — the dashboard part is
 > yours, this brief is the code/doc half. If the dashboard rule cannot express a
 > per-user limit, add the smallest possible Worker-side check — but do not
 > introduce a KV namespace or Durable Object for this without saying why in the
@@ -311,33 +152,13 @@ an approved product id to point at.
 
 ---
 
-## What is left, in order
-
-1. **M4 step 5**: the EAS production env vars. ⛔ blocks any usable build. Two
-   are required; `EXPO_PUBLIC_BRANDFETCH_CLIENT_ID` is the optional third.
-2. **M1**: publish the privacy policy and the four `/en` + `/uk` legal routes.
-   ⛔ blocks submission, and the app links these today. The processor list now
-   has to name Brandfetch.
-3. **B3** client crash telemetry — batch the native module with any other
-   prebuild.
-4. **M2** App Store Connect record and privacy label, then **M7** device smoke
-   test on a production build.
-5. **B7** rate limiting (mostly the M6 dashboard rule), **B6** RevenueCat (still
-   blocked on M5).
-
-B3 still adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means
-revisiting M1's processor list, the App Privacy label, and the EAS production
-environment — not purely client work. B8 already did that round.
-
----
-
 ## Verified on a simulator, 2026-07-27
 
 Categories screen and counts, the category edit sheet and its delete warning,
 the emoji grid, the filter sheet (including Reset and the header dot), the
 paused-subscription fix, monthly single-currency rows, and both the create and
-edit paths of the new modal with its category picker.
+edit paths of the add/edit modal with its category picker.
 
-**Still needs real hardware:** the Apple sign-in flow end to end with a real
-Apple ID, notification permission, and anything about a *production* build
-reaching the API. Manual step **M7** is the checklist.
+**Still needs real hardware and a production build** — the Apple sign-in flow
+end to end with a real Apple ID, notification permission, and anything about
+reaching the deployed API. Manual step **M6** is that checklist.

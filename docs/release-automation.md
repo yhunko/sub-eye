@@ -72,9 +72,10 @@ The workflow creates/updates one open `source_branch -> target_branch` PR with t
 
 ## Required GitHub Secrets and Variables
 
-Both tiers are required — `check-env` fails the deploy if any of the four
-Worker bindings below is missing. `apps/server/src/env.ts` is the source of
-truth for which bindings the Worker validates.
+Both tiers are required — `check-env` fails the deploy if any of the six Worker
+bindings is missing. Not everything below is one: `GH_TOKEN`, `CLOUDFLARE_*` and
+`TURBO_*` are workflow credentials, never pushed to the Worker.
+`apps/server/src/env.ts` is the source of truth for what the Worker validates.
 
 Encrypted secrets (`secrets.*`):
 
@@ -88,7 +89,6 @@ Encrypted secrets (`secrets.*`):
 
 Plaintext variables (`vars.*`):
 
-- `BASE_URL`
 - `CLIENT_ORIGIN`
 - `CLERK_PUBLISHABLE_KEY`
 - `POSTHOG_KEY`

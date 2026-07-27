@@ -3,97 +3,273 @@
 Everything here needs credentials, a dashboard login, or a human decision.
 No agent can do any of it.
 
-⛔ = blocks App Store submission.
+⛔ = blocks App Store submission. Steps are in the order they should happen.
+
+**Already done, kept only for the record:**
+
+| Step | State |
+| --- | --- |
+| `eas init` | ✅ 2026-07-27 — `projectId e52f6dbb-…`, `owner yehor.hunko`. The project had never been linked, and with `appVersionSource: "remote"` that had been blocking every EAS build of every profile. |
+| Sign in with Apple — Apple Developer capability + Clerk SSO connection | ✅ 2026-07-27. `bun run prebuild` writes `com.apple.developer.applesignin: ["Default"]` into `ios/SubEye/SubEye.entitlements`, so the capability is in the binary. The **flow itself is still unexercised** — it is a line item in M6. If the Clerk instance is ever rebuilt, the part that is easy to miss is registering the native bundle id (`cc.subeye.app`) in the Apple connection: a native identity token's `aud` claim is the bundle identifier, not the Services ID, so a web-only connection rejects every token the app sends. |
 
 ---
 
-## M0 — `eas init`  ✅ done 2026-07-27
+## M1 — Ship v4 to production (server + database)  ⛔ ← the first blocker
 
-`expo.extra.eas.projectId` is now `e52f6dbb-…` with `owner: yehor.hunko`, and
-`eas env:list` runs. Left here for the record: the project had never been
-linked, and with `appVersionSource: "remote"` that had been blocking every EAS
-build of every profile.
+**Production is running the v3 API.** Probed 2026-07-27 against both live
+Workers, using routes that exist in exactly one version:
+
+| Route | `app.subeye.cc` | `dev.subeye.cc` |
+| --- | --- | --- |
+| `POST /api/subscriptions/:id/resume` (v4-only) | **404** | 401 |
+| `POST /api/subscriptions/:id/pause` (v4-only) | **404** | 401 |
+| `GET /api/subscriptions/:id/history` (v3-only) | **401** | 404 |
+
+`origin/main` is `add21f8 chore(release): v3.11.0`, dated 2026-06-05. `dev` is
+50 commits ahead. The mobile app is a v4 client, so against production as it
+stands it cannot pause, resume, or manage a pricing phase, and Home's dashboard
+DTO no longer matches what the server returns.
+
+A `401` on `GET /api/subscriptions` proves only that *a* Worker is
+authenticating. It does not tell you which one — that is what the table above
+is for, and it is worth re-running after any deploy.
+
+[PR #41 `release/v3.12.0`](https://github.com/yhunko/sub-eye/pull/41) is the
+merge that ships it. It is MERGEABLE and CLEAN.
+
+### Why not just merge it
+
+`release-production.yml` runs `db:migrate` against the production database and
+*then* deploys. Three things follow from that:
+
+1. **`drizzle/0000_v4_baseline.sql` drops 10 tables and 7 columns** on the v3
+   path. It is idempotent and written for exactly this migration, but it is
+   still the destructive step and it would run unattended inside CI.
+2. **`db:reset-ledger` is not in the workflow.** The v4 baseline is migration
+   `0000` of a squashed journal, while production's `drizzle.__drizzle_migrations`
+   still holds the v3 entries. Whether `drizzle-kit migrate` decides to apply
+   the baseline over that ledger is a question you do not want answered
+   mid-deploy. The script exists precisely for this, and it is safe because the
+   baseline is idempotent.
+3. **`db:backfill-users` is not in the workflow.** The migration seeds a
+   defaults-only `users` row per known user id; `scripts/backfill-users-from-clerk.ts`
+   copies the real preferences out of Clerk `publicMetadata`. Skip it and every
+   existing user's currency, timezone and date format silently revert to
+   `uah` / `UTC` / `DD/MM/YYYY`. Nothing crashes — `UserService.getUserPreferences`
+   returns defaults for a missing or unpopulated row — so this fails quietly,
+   which is worse.
+
+There is also a window, between the migration finishing and the new Worker
+going live, where the **old v3 code is serving traffic against the new v4
+schema**. v3 reads `subscription_history`, `scheduled_cost` and `org_id`, all
+dropped, so it will 500. With an internal-only user base that is acceptable;
+just do not leave the PR unmerged overnight after migrating.
+
+### The order that avoids all of it
+
+Do the database by hand, first, under supervision, so that by the time CI runs
+`db:migrate` it is a no-op and the merge is only a deploy.
+
+**1. Branch production in Neon.** This is the backup *and* the rehearsal
+target — a Neon branch is copy-on-write, so it costs nothing and restoring is a
+branch reset rather than a dump reload. Copy its connection string.
+
+**2. Rehearse on the branch.** Nothing here touches production:
+
+```bash
+DATABASE_URL='<branch-url>' bun run --cwd apps/server db:reset-ledger
+```
+
+```bash
+DATABASE_URL='<branch-url>' bun run --cwd apps/server db:migrate
+```
+
+A shell variable beats `--env-file`, so these override `apps/server/.env`
+without editing it. Verify before assuming — the script prints the ledger count
+it found before clearing.
+
+**3. Check the status backfill against real rows.** This is the one part of the
+migration that transforms data rather than shape: `status` is derived from
+`cancelled_at`, and `cancelled_at` is a naive column written from JS as UTC.
+
+```bash
+PARITY_DATABASE_URL='<branch-url>' bun test --cwd apps/server ./test/status-backfill-parity.test.ts
+```
+
+Two assertions: every migrated row's `status` matches what
+`deriveSubscriptionStatus` computes from its dates, and no row holds a value
+outside the enum. The test skips itself when the variable is unset, so a green
+run with no variable means nothing — confirm it actually reported two passing
+tests.
+
+**4. Rehearse the Clerk backfill on the branch too:**
+
+```bash
+DATABASE_URL='<branch-url>' CLERK_SECRET_KEY='<prod-key>' bun run --cwd apps/server db:backfill-users
+```
+
+It prints one line per user. `skip` means the id no longer exists in Clerk,
+which is fine — that row keeps its defaults.
+
+**5. Now the real run.** Same four commands against the production
+`DATABASE_URL`, in the same order: reset-ledger → migrate → parity test →
+backfill.
+
+**6. Merge PR #41 immediately after.** CI's `db:migrate` finds the baseline
+already in the ledger and no-ops; semantic-release cuts the tag; the Worker
+deploys. Watch the run.
+
+**7. Verify, do not assume:**
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://app.subeye.cc/api/subscriptions/x/resume
+```
+
+`401` = v4 is live. `404` = it is not, and nothing downstream of this step is
+worth starting.
+
+**8. If it goes wrong:** reset the production branch from the Neon branch you
+took in step 1, and re-deploy the previous Worker version from the Cloudflare
+dashboard (Workers → subeye → Deployments → Rollback). Both halves are needed —
+rolling back only the code leaves v3 against a v4 schema, which is the broken
+state described above.
+
+### Known cosmetic mismatch
+
+The tag will read **v3.12.0**, not v4.0.0. `.releaserc.json` uses the default
+commit-analyzer (angular preset), which needs a `BREAKING CHANGE:` footer and
+ignores the `!` in `refactor!:` — and there are no such footers on `dev`. The
+app's own marketing version is independent (`app.json` → `4.0.0`), so this
+blocks nothing. Fix it by adding a `BREAKING CHANGE:` footer to the merge
+commit, or leave it and stop calling the tag v4.
 
 ---
 
-## M1 — Write and publish the legal pages  ⛔
+## M2 — EAS production environment variables  ⛔
 
-**Verified 2026-07-27 — three of the four URLs the app links are 404 right now:**
+**Verified 2026-07-27:** `bunx eas env:list --environment production` returns
+**"No variables found for this environment"**. So does `preview`.
+
+That is not a degraded build, it is a dead one:
+`apps/mobile/src/shared/config/env.ts` validates at module load and **throws
+`Missing required env var: EXPO_PUBLIC_API_URL` before React renders a frame**.
+A production build made today launches to the splash screen and then the error
+boundary.
+
+```bash
+bunx eas env:create --environment production --name EXPO_PUBLIC_API_URL --value https://app.subeye.cc
+```
+
+```bash
+bunx eas env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value pk_live_YOUR_KEY
+```
+
+No trailing slash and no `/api` on the API URL — the server's `basePath("/api")`
+rides on the Hono RPC accessor, and appending it makes every request 404 at
+`/api/api/…`. The publishable key must be `pk_live_`; a `pk_test_` key in a
+store build is a total silent failure.
+
+Then the **optional** third, from a free account at
+[developers.brandfetch.com](https://developers.brandfetch.com). The client id is
+public by design — it ships in the bundle either way:
+
+```bash
+bunx eas env:create --environment production --name EXPO_PUBLIC_BRANDFETCH_CLIENT_ID --value YOUR_CLIENT_ID
+```
+
+Skipping it does not break the build, and as of 2026-07-27 it does not even
+break search — the endpoint answers anonymous requests. Set it anyway: `c` is
+documented as required, and the day Brandfetch enforces it a shipped binary
+cannot be reconfigured. The picker still lets you type a domain by hand.
+
+---
+
+## M3 — Write and publish the legal pages  ⛔
+
+**Verified 2026-07-27 — all four URLs the app links are 404:**
 
 | URL | Status |
 | --- | --- |
-| `https://www.subeye.cc/terms-of-service/` | **200** ✅ |
-| `https://www.subeye.cc/privacy-policy/` | **404** ⛔ |
+| `https://www.subeye.cc/en/terms-of-service/` | **404** ⛔ |
+| `https://www.subeye.cc/en/privacy-policy/` | **404** ⛔ |
 | `https://www.subeye.cc/uk/terms-of-service/` | **404** ⛔ |
 | `https://www.subeye.cc/uk/privacy-policy/` | **404** ⛔ |
 
-`/privacy`, `/privacy-policy` (no trailing slash), `/uk` and `/uk/` were all
-404 too, so this is not a URL-shape mismatch — **the privacy policy does not
-exist, and the site serves no Ukrainian locale at all.**
+The unprefixed `https://www.subeye.cc/terms-of-service/` still returns 200, and
+it is the only legal page that exists. The privacy policy does not exist at any
+path, and the site serves no Ukrainian locale at all.
 
-Two consequences, both live in the shipped app today:
+**This is work in another repo.** `subeye.cc` is a Vercel deployment; nothing
+about it lives in this monorepo. `docs/landing/DESIGN-BRIEF.md` is the brief for
+the redesign that serves these routes.
 
-1. **App Store Connect requires a working Privacy Policy URL.** A 404 there is a
-   rejection before review even starts.
-2. Settings → Privacy 404s for every user, and for a Ukrainian-locale device
-   Settings → Terms 404s as well — `localePrefix()` in
-   `apps/mobile/src/shared/config/legal.ts` builds `/uk/...` for a site that has
-   no `/uk`.
+**Decided 2026-07-27:** the redesign serves `/en` and `/uk`, so the app prefixes
+**every** locale, English included. `legalUrl()` in
+`apps/mobile/src/shared/config/legal-url.ts` builds exactly those four and
+`legal-url.test.ts` pins them. That means **the redesign shipping those four
+routes is on the submission critical path.** If the scheme changes again,
+`legal-url.ts` is the only place it is encoded and the test will tell you.
 
-**Decided 2026-07-27:** the landing redesign will serve `/en` and `/uk`, so the
-app now prefixes **every** locale — English included. `legalUrl()` in
-`apps/mobile/src/shared/config/legal-url.ts` builds exactly these four, and
-`legal-url.test.ts` pins them:
-
-```
-https://www.subeye.cc/en/terms-of-service/
-https://www.subeye.cc/en/privacy-policy/
-https://www.subeye.cc/uk/terms-of-service/
-https://www.subeye.cc/uk/privacy-policy/
-```
-
-**All four 404 today**, including the English terms page, which used to work at
-the unprefixed root. That is deliberate — the app is written against the
-redesign — but it means **the redesign shipping those four routes is now on the
-submission critical path.** If the scheme changes again, `legal-url.ts` is the
-only place it is encoded and the test will tell you.
+Two consequences live in the shipped app today: App Store Connect requires a
+resolving Privacy Policy URL (a 404 is a rejection before review starts), and
+Settings → Privacy 404s for every user.
 
 The privacy policy must state, at minimum:
 
 - **What is collected:** email address, name/username, Clerk user id, and the
   subscription data you enter (service names, amounts, dates, notes).
-- **Who processes it:** Clerk (authentication), Neon (Postgres, database
-  hosting), Cloudflare (API hosting), PostHog EU (error telemetry), and
-  **Brandfetch** (brand logo search). Name them and their regions.
-- **Brandfetch specifically** (added by brief B8): when the user searches for a
-  brand in the add/edit form, **what they type is sent to `api.brandfetch.io`**
-  along with their IP. Nothing else goes with it — no account id, no
-  subscription data — and the results are never written to disk. Say so; it is a
-  third-party processor receiving user-typed text and it has to be disclosed.
-  Google is also contacted for every logo image (`google.com/s2/favicons`), which
-  discloses the domain and the IP but nothing the user typed.
+- **Who processes it:** Clerk (authentication), Neon (Postgres), Cloudflare (API
+  hosting), PostHog EU (error telemetry), and **Brandfetch** (brand logo
+  search). Name them and their regions.
+- **Brandfetch specifically:** when the user searches for a brand in the
+  add/edit form, **what they type is sent to `api.brandfetch.io`** along with
+  their IP. Nothing else goes with it — no account id, no subscription data —
+  and the results are never written to disk. Say so; it is a third-party
+  processor receiving user-typed text and it has to be disclosed. Google is also
+  contacted for every logo image (`google.com/s2/favicons`), which discloses the
+  domain and the IP but nothing the user typed.
 - **Why:** operating the service. No advertising, no tracking, no data sale.
 - **Retention and deletion:** deleting the account in Settings removes the
-  account and every subscription in it; the Clerk `user.deleted` webhook is
-  what purges Postgres.
+  account and every subscription in it; the Clerk `user.deleted` webhook is what
+  purges Postgres.
 - **Contact:** a real address for privacy requests.
 - **Rights:** GDPR access/erasure/portability, since you serve EU and Ukraine.
 
-Not legal advice — have it reviewed if you can. A generic template is worse
-than useless here because the processor list is specific to your stack.
+Not legal advice — have it reviewed if you can. A generic template is worse than
+useless here because the processor list is specific to your stack.
 
 ---
 
-## M2 — App Store Connect: app record and privacy label  ⛔
+## M4 — Clerk production instance  ⛔
+
+The app currently uses a `pk_test_` key locally. A store build must not.
+
+1. Create/promote the Clerk **production** instance.
+2. Configure the same providers: email+password, Google, GitHub, and Apple.
+3. Confirm `subeye://` and the SSO redirect URL are registered under Native
+   Applications.
+4. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
+   `user.deleted`. Copy the signing secret. Account deletion depends on it
+   (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) — without
+   it, deleted accounts leave orphaned Postgres rows, which is a GDPR problem
+   rather than a tidiness one.
+5. Put the production values in Cloudflare via the GitHub environment —
+   `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` as **secrets**,
+   `CLERK_PUBLISHABLE_KEY` as a **var** — under the `production` environment.
+   The release workflow pushes them with `wrangler secret bulk`.
+
+---
+
+## M5 — App Store Connect: app record and privacy label  ⛔
 
 Bundle id `cc.subeye.app` is already correct in `app.json` for **both**
-platforms — nothing to change there. Your `app.subeye.cc` API host and the
-`subeye.cc` landing site are consistent with it.
+platforms. Your `app.subeye.cc` API host and the `subeye.cc` landing site are
+consistent with it.
 
-1. Create the app record. Bundle id `cc.subeye.app`, SKU your choice,
-   primary language English.
-2. **Privacy Policy URL:** `https://www.subeye.cc/privacy-policy/`.
-3. **App Privacy label** — must match the manifest now in `app.json`. Each is
+1. Create the app record. Bundle id `cc.subeye.app`, SKU your choice, primary
+   language English.
+2. **Privacy Policy URL:** `https://www.subeye.cc/en/privacy-policy/` (M3).
+3. **App Privacy label** — must match the manifest in `app.json`. Each is
    "App Functionality" and **not** used for tracking:
 
    | Category | Type | Linked to the user |
@@ -107,155 +283,41 @@ platforms — nothing to change there. Your `app.subeye.cc` API host and the
 
    Crash Data is there because the Worker posts exceptions to PostHog keyed by
    your Clerk user id. It is real collection even though no SDK ships in the
-   binary.
+   binary today — brief B3 would add one.
 
-   Search History is the brand picker (brief B8): the text typed into it goes to
+   Search History is the brand picker: the text typed into it goes to
    Brandfetch. **Not** linked — no account id or Clerk token travels with that
    request, and the app never stores the results.
 4. Age rating: 4+. No objectionable content.
 5. **Encryption:** `usesNonExemptEncryption` is already `false` in `app.json`,
    so App Store Connect should not ask. If it does, answer that you use only
    standard HTTPS.
-6. Screenshots: 6.9" iPhone required. The app is dark-only and portrait-only
-   — capture on a real device, not the simulator's default frame.
+6. Screenshots: 6.9" iPhone required. The app is dark-only and portrait-only —
+   capture on a real device, not the simulator's default frame.
 7. Support URL and marketing URL on `subeye.cc`.
 
 ---
 
-## M3 — Sign in with Apple  ✅ dashboard done 2026-07-27
+## M6 — First EAS build, then a device smoke test  ⛔
 
-Code (brief B1) and the Apple Developer / Clerk configuration are both done.
-Verified locally: `bun run prebuild` writes
-`com.apple.developer.applesignin: ["Default"]` into
-`ios/SubEye/SubEye.entitlements`, so the capability is in the binary.
+**`eas build:list` is empty — no build has ever been produced.** iOS
+credentials, provisioning, the Apple Sign in entitlement in a *signed* binary,
+and `eas submit` are all completely unexercised, and `eas.json` has no `submit`
+block at all. Budget a cycle for credentials alone.
 
-**Still unverified:** the flow itself, end to end, on a real device with a real
-Apple ID — see M7. Steps kept below for the record and for the day the Clerk
-instance is rebuilt.
+`apps/mobile/.env` points at a LAN wrangler-dev host, so the app has also never
+talked to a deployed backend of any kind. M1 and M2 both have to be green first
+or this step only proves the error boundary works.
 
-1. **Apple Developer portal** → Identifiers → `cc.subeye.app` → enable the
-   **Sign in with Apple** capability.
-2. Create a **Services ID** and a **Sign in with Apple key** (`.p8`). Download
-   the key once — Apple will not show it again. Note the Key ID and your Team
-   ID (`Z6KADG969Z`).
-3. **Clerk dashboard** (production instance) → SSO Connections → Apple. Paste
-   the Services ID, Team ID, Key ID and the `.p8` contents.
-4. **Register the native app's bundle id (`cc.subeye.app`) in that same Clerk
-   Apple connection.** This is the step that is easy to miss and it is the one
-   the native flow depends on: a native identity token's `aud` claim is the
-   *bundle identifier*, not the Services ID, so a connection configured for the
-   web flow alone will reject every token the app sends.
-5. Register the native redirect URL Clerk gives you, alongside the existing
-   `subeye://` entry under Native Applications. (Google and GitHub still use the
-   web flow and need it; Apple no longer does.)
-6. Confirm `*.p8` stays gitignored — `apps/mobile/.gitignore` already covers
-   it. Never commit that key.
-7. **Rebuild natively.** `ios.usesAppleSignIn` and the
-   `expo-apple-authentication` plugin only write the
-   `com.apple.developer.applesignin` entitlement during prebuild:
+Batch any native change (brief B3 adds a module) into the prebuild before
+burning a build.
 
 ```bash
-cd apps/mobile && bun run prebuild && bun run ios
+bunx eas build --profile production --platform ios
 ```
 
-   A Metro reload will not do it, and without the entitlement the sheet fails to
-   present at all.
-
----
-
-## M4 — Clerk production instance  ⛔ ← the next blocker
-
-**Verified 2026-07-27:** `bunx eas env:list --environment production` returns
-**"No variables found for this environment"**. Both required vars are missing.
-
-That is not a degraded build, it is a dead one:
-`apps/mobile/src/shared/config/env.ts` validates at module load and **throws
-`Missing required env var: EXPO_PUBLIC_API_URL` before React renders a frame**.
-A production build made today launches to the splash screen and then the error
-boundary. Step 5 below is the fix and it is two commands.
-
-The app currently uses a `pk_test_` key locally. A store build must not.
-
-1. Create/promote the Clerk **production** instance.
-2. Configure the same providers: email+password, Google, GitHub, and Apple.
-3. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
-   `user.deleted`. Copy the signing secret.
-4. Put the production values in Cloudflare via the GitHub environment —
-   `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` as **secrets**,
-   `CLERK_PUBLISHABLE_KEY` as a **var** — under the `production` environment.
-   The release workflow pushes them with `wrangler secret bulk`.
-5. Set the EAS production environment values:
-
-```bash
-bunx eas env:create --environment production --name EXPO_PUBLIC_API_URL --value https://app.subeye.cc
-```
-
-```bash
-bunx eas env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value pk_live_YOUR_KEY
-```
-
-Then the **optional** third one, from a free account at
-[developers.brandfetch.com](https://developers.brandfetch.com). The client id is
-public by design — it ships in the bundle either way:
-
-```bash
-bunx eas env:create --environment production --name EXPO_PUBLIC_BRANDFETCH_CLIENT_ID --value YOUR_CLIENT_ID
-```
-
-Skipping it does not break the build, and as of 2026-07-27 it does not even
-break search — the endpoint answers anonymous requests. Set it anyway: `c` is
-documented as required, and the day Brandfetch enforces it a shipped binary
-cannot be reconfigured. The picker still lets you type a domain by hand.
-
-No trailing slash and no `/api` on the API URL — the server's `basePath("/api")`
-rides on the Hono RPC accessor, and appending it makes every request 404 at
-`/api/api/…`.
-
----
-
-## M5 — App Store Connect: in-app purchase (before brief B6)
-
-1. **Agreements, Tax, and Banking** → accept the Paid Applications agreement
-   and complete banking and tax. Nothing IAP works until this is done, and it
-   takes days, not minutes. Start it early even if the paywall ships later.
-2. **App Store Small Business Program** → enroll. 15% commission instead of
-   30% under $1M/yr. It is a form; there is no reason not to.
-3. Create the IAP: **Non-Consumable**, product id `cc.subeye.app.pro.lifetime`,
-   reference name "SubEye Pro (Lifetime)", price tier $19.99.
-4. Add localized display name and description (en + uk).
-5. **RevenueCat**: create the project, add the iOS app with bundle id
-   `cc.subeye.app`, upload the App Store Connect **In-App Purchase Key**,
-   create an entitlement called `pro`, attach the product, and create a
-   default offering. Copy the public SDK key for brief B6.
-6. A non-consumable needs a review screenshot of the purchase screen — you can
-   only take that after B6 ships, so plan the order.
-
----
-
-## M6 — Cloudflare rate limiting (pairs with brief B7)
-
-Cloudflare dashboard → `subeye.cc` → Security → WAF → Rate limiting rules.
-
-Suggested starting rule, free plan:
-
-- **If** hostname equals `app.subeye.cc` and URI path starts with `/api/`
-- **Then** rate limit to **120 requests per minute per IP**
-- **Action:** Block, 60 second timeout
-
-The app makes roughly 10–20 requests per user per day thanks to the 60s
-`staleTime` and the MMKV cache, so 120/min will never touch a real user and
-stops a script from burning Neon compute-hours.
-
-Exclude `/api/webhooks/` from the rule — Clerk's Svix delivery retries in
-bursts and must not be blocked.
-
----
-
-## M7 — Pre-submission smoke test on a real device
-
-The simulator does not exercise Clerk redirects, notification permission, or
-the native tab bar the same way. On a real iPhone, with a **production**-profile
-build:
+Then, on a real iPhone with that build — the simulator does not exercise Clerk
+redirects, notification permission, or the native tab bar the same way:
 
 - [ ] Sign up with email + password, verify the code, land on Home
 - [ ] **A brand-new account lands on Home's empty state, and its button opens
@@ -270,10 +332,9 @@ build:
       logo, and Home's category card shows more than "Uncategorized"
 - [ ] **Tap the avatar at the top of the form** — it opens on the 20 popular
       services, each with a real logo rather than a letter tile
-- [ ] **Search a brand and pick it** — the
-      empty Name field fills with the brand's name, an already-typed name is left
-      alone, "No logo" clears it, and typing `netflix.com` offers "Use
-      netflix.com"
+- [ ] **Search a brand and pick it** — the empty Name field fills with the
+      brand's name, an already-typed name is left alone, "No logo" clears it,
+      and typing `netflix.com` offers "Use netflix.com"
 - [ ] **In airplane mode, open the brand picker and type** — it shows no results
       and no error screen, and the "Use …" row still commits a typed domain
 - [ ] **Settings → Categories: rename one, change its emoji, and delete one that
@@ -282,11 +343,13 @@ build:
 - [ ] **The subscriptions list's filter button opens the native sheet; Status,
       Sort by and Category each apply live, Reset clears them, and the button
       renders filled + green while any filter is on**
-- [ ] **Pause a subscription, then find it under the Paused filter** — the list
-      used to receive only active + cancelling rows from the server
+- [ ] **Pause a subscription, then find it under the Paused filter** — this is
+      the path that 404s against a v3 server, so it double-checks M1
 - [ ] Add a subscription with a free trial; check the detail screen's price
       timeline
 - [ ] Pause with a date, resume, cancel at period end, cancel now, renew, delete
+- [ ] **A cancelled subscription reads as finished**, and Home's attention card
+      surfaces what needs attention rather than a trend chart
 - [ ] Enable renewal reminders, accept the permission, confirm one is scheduled
 - [ ] Deny the permission and confirm the row shows "Off" with a settings link
 - [ ] Change currency in Settings; every amount re-denominates
@@ -299,7 +362,45 @@ build:
 
 ---
 
-## M8 — Decisions only you can make
+## M7 — Cloudflare rate limiting (pairs with brief B7)
+
+Cloudflare dashboard → `subeye.cc` → Security → WAF → Rate limiting rules.
+
+Suggested starting rule, free plan:
+
+- **If** hostname equals `app.subeye.cc` and URI path starts with `/api/`
+- **Then** rate limit to **120 requests per minute per IP**
+- **Action:** Block, 60 second timeout
+
+The app makes roughly 10–20 requests per user per day thanks to the 60s
+`staleTime` and the MMKV cache, so 120/min will never touch a real user and
+stops a script from burning Neon compute-hours.
+
+Exclude `/api/webhooks/` from the rule — Clerk's Svix delivery retries in bursts
+and must not be blocked.
+
+---
+
+## M8 — App Store Connect: in-app purchase (before brief B6)
+
+1. **Agreements, Tax, and Banking** → accept the Paid Applications agreement and
+   complete banking and tax. Nothing IAP works until this is done, and it takes
+   days, not minutes. Start it early even if the paywall ships later.
+2. **App Store Small Business Program** → enroll. 15% commission instead of 30%
+   under $1M/yr. It is a form; there is no reason not to.
+3. Create the IAP: **Non-Consumable**, product id `cc.subeye.app.pro.lifetime`,
+   reference name "SubEye Pro (Lifetime)", price tier $19.99.
+4. Add localized display name and description (en + uk).
+5. **RevenueCat**: create the project, add the iOS app with bundle id
+   `cc.subeye.app`, upload the App Store Connect **In-App Purchase Key**, create
+   an entitlement called `pro`, attach the product, and create a default
+   offering. Copy the public SDK key for brief B6.
+6. A non-consumable needs a review screenshot of the purchase screen — you can
+   only take that after B6 ships, so plan the order.
+
+---
+
+## M9 — Decisions only you can make
 
 | Question | Why it matters |
 | --- | --- |
@@ -307,6 +408,7 @@ build:
 | Is `expo-router`'s **alpha** `unstable-native-tabs` acceptable in production? | It owns the primary navigation. It will break on an Expo bump at some point. The alternative is standard tabs and losing Liquid Glass. |
 | Launch price: $19.99 lifetime? | Named in brief B6. Category comparables sit $10–25 lifetime. Easy to raise later, painful to lower. |
 | Deprecation plan for `app.subeye.cc`? | You mentioned retiring it. Whatever replaces it must ship in the *app binary*, so the switch needs a store release, not a config change. Decide before v1, not after. |
+| Keep CORS on the API? | `CLIENT_ORIGIN` and the `cors()` middleware exist for the retired web client. React Native sends no `Origin`, so they gate nothing today. Cheap to keep, one less binding to drop — but do not drop it in the same release as M1. |
 
 ---
 

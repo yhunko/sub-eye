@@ -89,23 +89,3 @@ export function formatMoney(
 
   return `${currency.symbol}${formatted}`;
 }
-
-/**
- * The converted (home-currency) amount, plus the amount as actually charged when
- * those differ. This is the multi-currency disclosure: totals are UAH, the charge
- * is USD, and hiding one of the two is what makes the numbers feel wrong.
- */
-export function formatConverted(
-  converted: number,
-  convertedCode: string,
-  original: number,
-  originalCode: string,
-): string {
-  const head = formatMoney(converted, convertedCode);
-  if (
-    convertedCode.trim().toLowerCase() === originalCode.trim().toLowerCase()
-  ) {
-    return head;
-  }
-  return `${head} · ${formatMoney(original, originalCode)}`;
-}

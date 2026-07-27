@@ -5,13 +5,12 @@ import * as v from "valibot";
  * GitHub is the single source of truth — injected via `wrangler secret bulk`.
  *
  * GitHub vars  (plaintext, non-sensitive):
- *   BASE_URL, CLIENT_ORIGIN, CLERK_PUBLISHABLE_KEY, POSTHOG_KEY
+ *   CLIENT_ORIGIN, CLERK_PUBLISHABLE_KEY, POSTHOG_KEY
  *
  * GitHub secrets (encrypted, sensitive):
  *   CLERK_SECRET_KEY, CLERK_WEBHOOK_SECRET, DATABASE_URL
  */
 export const BindingsSchema = v.object({
-  BASE_URL: v.pipe(v.string(), v.url()),
   CLERK_SECRET_KEY: v.pipe(v.string(), v.minLength(1)),
   CLERK_PUBLISHABLE_KEY: v.pipe(v.string(), v.minLength(1)),
   CLERK_WEBHOOK_SECRET: v.pipe(v.string(), v.minLength(1)),

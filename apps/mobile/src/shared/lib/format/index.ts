@@ -1,7 +1,6 @@
 export {
   CURRENCY_CODES,
   currencyLabel,
-  formatConverted,
   formatMoney,
   parsePrice,
   supportedCurrencyCode,

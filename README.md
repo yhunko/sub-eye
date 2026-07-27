@@ -20,8 +20,8 @@ A [Bun](https://bun.sh) + [Turborepo](https://turborepo.dev) monorepo: a
 | `packages/currency` | The `RateTable` type |
 
 Packages export TypeScript source directly (no build step). The lone exception
-is `@subeye/server/client`, a types-only build that gives the mobile app its
-typed Hono RPC client.
+is `@subeye/server/client`, a types-only build that hands the mobile app the
+`ServerRpcType` it types its Hono RPC calls against.
 
 ## Getting started
 
@@ -34,7 +34,7 @@ bun run dev:server   # API via wrangler dev
 bun run dev:mobile   # build server types, then start Metro
 ```
 
-The API needs seven environment bindings and the mobile app needs
+The API needs six environment bindings and the mobile app needs
 `EXPO_PUBLIC_*` vars — both validate at startup and fail loudly. See
 [apps/server/README.md](apps/server/README.md) for the server list.
 

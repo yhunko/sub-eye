@@ -29,17 +29,17 @@ Routers mounted in `src/index.ts` (all under `/api`):
 - `/user` — user preferences
 - `/webhooks` — Clerk Svix webhooks (`user.deleted`); skips auth, verifies signatures
 
-The mobile app consumes these via the typed Hono RPC client exported at
-`@subeye/server/client` (built by `bun run build`).
+The mobile app types its Hono RPC calls against `ServerRpcType` from
+`@subeye/server/client` — a types-only `tsc` build (`bun run build`) that exports
+no runtime. The client instance is built app-side; see `apps/mobile/CLAUDE.md`.
 
 The Worker also runs a `scheduled` cron export that refreshes the `fx_rates`
 table daily (`src/domains/currency/currencyService.ts`).
 
 ### Required environment variables
 
-Seven bindings, declared and validated in `src/env.ts`:
+Six bindings, declared and validated in `src/env.ts`:
 
-- `BASE_URL`
 - `CLIENT_ORIGIN`
 - `DATABASE_URL`
 - `CLERK_SECRET_KEY`
