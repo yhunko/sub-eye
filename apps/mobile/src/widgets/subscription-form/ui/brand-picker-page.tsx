@@ -13,7 +13,7 @@ import {
 import { m } from "@/shared/i18n";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
-import { brandSearchQuery } from "../model/brand-search";
+import { brandSearchQuery, POPULAR_BRANDS } from "../model/brand-search";
 import { useSubscriptionForm } from "../model/form-context";
 import { normalizeBrandDomain } from "../model/form-schema";
 
@@ -28,6 +28,9 @@ import { normalizeBrandDomain } from "../model/form-schema";
  * Typing a domain by hand is still offered below the results — search misses
  * small services, and it is the whole screen if Brandfetch is ever unreachable
  * or starts refusing the anonymous requests it answers today.
+ *
+ * With nothing typed it shows `POPULAR_BRANDS`, which is what most people came
+ * to pick and is also why the screen never opens empty.
  */
 export function BrandPickerPage() {
   const router = useRouter();
@@ -44,6 +47,13 @@ export function BrandPickerPage() {
 
   const results = useQuery(brandSearchQuery(needle));
   const hits = results.data ?? [];
+
+  // Below the query's own threshold there is nothing to search for, so the
+  // screen shows the shortlist instead. Deliberately NOT a fallback for an
+  // empty or in-flight result: popular brands appearing under a typed query
+  // reads as "here are your matches" for things that never matched.
+  const searching = needle.length >= 2;
+  const rows = searching ? hits : POPULAR_BRANDS;
 
   // Offered whenever what they typed is a plausible host and no result already
   // is it — search misses plenty of small services, and the field this screen
@@ -89,16 +99,16 @@ export function BrandPickerPage() {
             onPress={() => choose("")}
             label={m.form_brandNone()}
           />
-          {hits.map((hit) => (
+          {rows.map((row) => (
             <Row
-              key={hit.domain}
+              key={row.domain}
               first={false}
-              selected={values.brandDomain.trim() === hit.domain}
-              onPress={() => choose(hit.domain, hit.name)}
-              label={hit.name}
-              caption={hit.domain}
+              selected={values.brandDomain.trim() === row.domain}
+              onPress={() => choose(row.domain, row.name)}
+              label={row.name}
+              caption={row.domain}
               logo={
-                <BrandLogo name={hit.name} brandDomain={hit.domain} size={28} />
+                <BrandLogo name={row.name} brandDomain={row.domain} size={28} />
               }
             />
           ))}

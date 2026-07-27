@@ -268,7 +268,9 @@ build:
 - [ ] Reset password end to end
 - [ ] Add a subscription with a category and a brand — the row shows the real
       logo, and Home's category card shows more than "Uncategorized"
-- [ ] **Tap the avatar at the top of the form, search a brand, pick it** — the
+- [ ] **Tap the avatar at the top of the form** — it opens on the 20 popular
+      services, each with a real logo rather than a letter tile
+- [ ] **Search a brand and pick it** — the
       empty Name field fills with the brand's name, an already-typed name is left
       alone, "No logo" clears it, and typing `netflix.com` offers "Use
       netflix.com"

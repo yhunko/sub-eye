@@ -190,6 +190,12 @@ overwrites typing.
 - `model/brand-search.ts` — `brandSearchUrl` / `toBrandHits` (pure, tested) plus
   the query. 300ms debounce, TanStack's `signal` for cancellation, `retry: false`,
   `staleTime` 5 min against Brandfetch's 200-per-5-min-per-IP ceiling.
+- **`POPULAR_BRANDS`** — 20 hardcoded services shown with nothing typed, so the
+  screen never opens as a search bar over an empty list and the most common
+  subscription is one tap away. Every domain was checked against Google's
+  favicon endpoint to rule out the generic-globe fallback; do the same before
+  adding one. Deliberately not a fallback for an empty or in-flight *search* —
+  popular brands under a typed query read as matches that never matched.
 - **`BrandLogo` still uses Google favicons.** The picker renders results through
   the same component from the domain alone, so the preview is byte-identical to
   the row that ships — which is the consistency the Brandfetch CDN was supposed

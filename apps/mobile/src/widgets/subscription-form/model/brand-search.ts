@@ -38,6 +38,40 @@ export function toBrandHits(payload: unknown): BrandHit[] {
   });
 }
 
+/**
+ * What the picker shows before anything is typed, so the screen is never a
+ * search bar over nothing. Hardcoded because Brandfetch has no "popular"
+ * endpoint and this answer barely moves — and because the most common
+ * subscription in the app should be one tap from opening the form, not a
+ * round-trip.
+ *
+ * Names are proper nouns and stay untranslated. Every domain here was checked
+ * to resolve to a real favicon rather than the endpoint's generic globe; verify
+ * a replacement the same way before adding it.
+ */
+export const POPULAR_BRANDS: BrandHit[] = [
+  { name: "Netflix", domain: "netflix.com" },
+  { name: "Spotify", domain: "spotify.com" },
+  { name: "YouTube", domain: "youtube.com" },
+  { name: "iCloud", domain: "icloud.com" },
+  { name: "Apple Music", domain: "music.apple.com" },
+  { name: "Amazon Prime", domain: "amazon.com" },
+  { name: "Disney+", domain: "disneyplus.com" },
+  { name: "HBO Max", domain: "max.com" },
+  { name: "Google One", domain: "one.google.com" },
+  { name: "Microsoft 365", domain: "microsoft.com" },
+  { name: "Adobe", domain: "adobe.com" },
+  { name: "ChatGPT", domain: "openai.com" },
+  { name: "Claude", domain: "claude.ai" },
+  { name: "GitHub", domain: "github.com" },
+  { name: "Dropbox", domain: "dropbox.com" },
+  { name: "Notion", domain: "notion.so" },
+  { name: "Figma", domain: "figma.com" },
+  { name: "Telegram", domain: "telegram.org" },
+  { name: "PlayStation Plus", domain: "playstation.com" },
+  { name: "Xbox Game Pass", domain: "xbox.com" },
+];
+
 export function brandSearchQuery(query: string) {
   return queryOptions({
     queryKey: ["brand-search", query],
