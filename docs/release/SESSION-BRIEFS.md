@@ -18,22 +18,30 @@ Already landed on `dev` (do not redo):
 
 ---
 
-## ⛔ New blocker found while verifying B2
+## ⛔ Where submission actually stands (probed 2026-07-27, second pass)
 
-**The EAS project has never been initialised.** `bunx eas env:list --environment
-production` fails with "EAS project not configured", and `apps/mobile/app.json`
-has no `extra.eas.projectId`. With `eas.json` on `appVersionSource: "remote"` +
-`autoIncrement`, **no EAS build can run at all** — not production, not preview,
-not the development client.
+| Check | Result |
+| --- | --- |
+| EAS project linked | ✅ `projectId e52f6dbb-…`, `owner yehor.hunko` |
+| Clerk Apple SSO connection | ✅ configured |
+| `com.apple.developer.applesignin` entitlement | ✅ written by `bun run prebuild` |
+| Production Worker live | ✅ `GET /api/subscriptions` → `401 {"error":"Unauthorized"}` |
+| `www.subeye.cc/terms-of-service/` | ✅ 200 |
+| **EAS production env vars** | ⛔ **"No variables found for this environment"** |
+| **`www.subeye.cc/privacy-policy/`** | ⛔ **404** |
+| **`www.subeye.cc/uk/{terms-of-service,privacy-policy}/`** | ⛔ **404 — no `/uk` on the site at all** |
 
-`eas init` is interactive and needs the account, so only you can run it:
+The two ⛔ rows are the whole remaining blocker list, and both are yours:
 
-```bash
-cd apps/mobile && bunx eas init
-```
-
-Then M4's `eas env:create` steps become runnable. Everything in M7 (device smoke
-test) and the whole submission path is behind this. Do it first.
+1. **EAS production has no variables.**
+   `apps/mobile/src/shared/config/env.ts` validates at module load, so a
+   production build today throws `Missing required env var:
+   EXPO_PUBLIC_API_URL` before React renders a frame. Two commands, in M4 step 5.
+2. **No privacy policy exists.** App Store Connect requires a resolving Privacy
+   Policy URL, and Settings → Privacy 404s in the shipped app. The Ukrainian
+   pages are missing too, which makes `localePrefix()` emit dead URLs — see M1
+   for the decision that needs making (publish `/uk` pages, or stop emitting the
+   prefix).
 
 ---
 
@@ -60,11 +68,10 @@ Native iOS Sign in with Apple, per Guideline 4.8.
 - No new strings — the native button localises itself, and failures reuse
   `auth_ssoFailed`.
 
-**Still needs you:** manual step **M3** (Apple Developer capability + Services
-ID + key, Clerk SSO connection, native redirect URL) and a native rebuild
-(`bun run prebuild` then a dev-client or EAS build) — the entitlement only
-exists after prebuild. Until M3 is done the button authenticates and Clerk never
-creates a session.
+**M3 is done** (Apple Developer capability, Clerk SSO connection) and
+`bun run prebuild` was run — `ios/SubEye/SubEye.entitlements` now carries
+`com.apple.developer.applesignin: ["Default"]`. What is left is exercising the
+flow with a real Apple ID, which is an M7 line item.
 
 ---
 
@@ -79,14 +86,15 @@ config.observability`) and lets the Workers API decide, so the answer was not
 knowable from the client. Both are now `true`, traces stay `false`.
 `wrangler deploy --dry-run` on the prod config passes.
 
-**Still needs you** — all of it requires a dashboard login or the EAS account:
+**Item 1 is now measured, not assumed:** EAS production holds **no variables at
+all**, so both `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` are
+missing. M4 step 5 is the fix. Set the API URL with no trailing slash and no
+`/api` — the server's `basePath("/api")` rides on the Hono RPC accessor, and
+appending it 404s every request at `/api/api/…`. The publishable key must be
+`pk_live_`; a `pk_test_` key in a store build is a total silent failure.
 
-1. `eas init` (see the blocker above), then confirm via
-   `bunx eas env:list --environment production` that `EXPO_PUBLIC_API_URL` is
-   `https://app.subeye.cc` (no trailing slash, no `/api` — see
-   `apps/mobile/src/shared/config/env.ts`) and that
-   `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is a `pk_live_` key. A `pk_test_` key in
-   a store build is a total silent failure.
+**Still needs you** — both require a dashboard login:
+
 2. Confirm the Clerk **production** instance has `subeye://` and the SSO
    redirect URL registered under Native Applications, and that its webhook
    points at `https://app.subeye.cc/api/webhooks/clerk` with the
@@ -94,7 +102,10 @@ knowable from the client. Both are now `true`, traces stay `false`.
    webhook (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) —
    without it, deleted accounts leave orphaned Postgres rows, which is a GDPR
    problem, not just a tidiness one.
-3. Run a real production-profile build and confirm the app reaches the API.
+3. Run a real production-profile build and confirm the app reaches the API. The
+   Worker itself is confirmed live and authenticating
+   (`GET https://app.subeye.cc/api/subscriptions` → 401), so this is about the
+   binary's config, not the backend.
 
 ---
 

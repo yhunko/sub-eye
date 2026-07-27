@@ -7,42 +7,49 @@ No agent can do any of it.
 
 ---
 
-## M0 — `eas init`  ⛔ do this first
+## M0 — `eas init`  ✅ done 2026-07-27
 
-Found 2026-07-27 while verifying B2: **the EAS project has never been linked.**
-`bunx eas env:list --environment production` fails with "EAS project not
-configured", and `apps/mobile/app.json` has no `extra.eas.projectId`.
-
-`eas.json` is on `appVersionSource: "remote"` with `autoIncrement`, so **no EAS
-build can run at all** until this exists — not production, not preview, not the
-development client. Every other step that ends in a build is behind it.
-
-```bash
-cd apps/mobile && bunx eas init
-```
-
-It is interactive and writes `expo.extra.eas.projectId` into `app.json`. Commit
-that. Then M4's `eas env:create` commands become runnable.
+`expo.extra.eas.projectId` is now `e52f6dbb-…` with `owner: yehor.hunko`, and
+`eas env:list` runs. Left here for the record: the project had never been
+linked, and with `appVersionSource: "remote"` that had been blocking every EAS
+build of every profile.
 
 ---
 
 ## M1 — Write and publish the legal pages  ⛔
 
-The app now links a privacy policy. **These URLs must resolve before you
-submit**, or the links 404 in front of a reviewer.
+**Verified 2026-07-27 — three of the four URLs the app links are 404 right now:**
 
-`apps/mobile/src/shared/config/legal.ts` builds them as:
+| URL | Status |
+| --- | --- |
+| `https://www.subeye.cc/terms-of-service/` | **200** ✅ |
+| `https://www.subeye.cc/privacy-policy/` | **404** ⛔ |
+| `https://www.subeye.cc/uk/terms-of-service/` | **404** ⛔ |
+| `https://www.subeye.cc/uk/privacy-policy/` | **404** ⛔ |
 
-```
-https://www.subeye.cc/terms-of-service/
-https://www.subeye.cc/privacy-policy/
-https://www.subeye.cc/uk/terms-of-service/
-https://www.subeye.cc/uk/privacy-policy/
-```
+`/privacy`, `/privacy-policy` (no trailing slash), `/uk` and `/uk/` were all
+404 too, so this is not a URL-shape mismatch — **the privacy policy does not
+exist, and the site serves no Ukrainian locale at all.**
+
+Two consequences, both live in the shipped app today:
+
+1. **App Store Connect requires a working Privacy Policy URL.** A 404 there is a
+   rejection before review even starts.
+2. Settings → Privacy 404s for every user, and for a Ukrainian-locale device
+   Settings → Terms 404s as well — `localePrefix()` in
+   `apps/mobile/src/shared/config/legal.ts` builds `/uk/...` for a site that has
+   no `/uk`.
+
+So this is a decision, not just a writing task:
+
+- **If the site will get Ukrainian pages**, publish all four and nothing in the
+  app changes.
+- **If it will not**, `localePrefix()` has to stop emitting `/uk` — it is three
+  lines and the only place the shape is encoded. Say which, and the code half is
+  a five-minute change.
 
 **If your site uses a different locale scheme** (`?lang=uk`, `uk.subeye.cc`,
-a subfolder that isn't `/uk`), change `localePrefix()` in that file — it is
-three lines and the only place the shape is encoded.
+a subfolder that isn't `/uk`), change `localePrefix()` in that same file.
 
 The privacy policy must state, at minimum:
 
@@ -97,11 +104,16 @@ platforms — nothing to change there. Your `app.subeye.cc` API host and the
 
 ---
 
-## M3 — Sign in with Apple  ⛔ (brief B1 has already landed)
+## M3 — Sign in with Apple  ✅ dashboard done 2026-07-27
 
-The app code is done — `apps/mobile` now renders Apple's native button and posts
-the identity token to Clerk. **Until this section is finished the button
-authenticates against Apple and Clerk silently never creates a session.**
+Code (brief B1) and the Apple Developer / Clerk configuration are both done.
+Verified locally: `bun run prebuild` writes
+`com.apple.developer.applesignin: ["Default"]` into
+`ios/SubEye/SubEye.entitlements`, so the capability is in the binary.
+
+**Still unverified:** the flow itself, end to end, on a real device with a real
+Apple ID — see M7. Steps kept below for the record and for the day the Clerk
+instance is rebuilt.
 
 1. **Apple Developer portal** → Identifiers → `cc.subeye.app` → enable the
    **Sign in with Apple** capability.
@@ -133,7 +145,16 @@ cd apps/mobile && bun run prebuild && bun run ios
 
 ---
 
-## M4 — Clerk production instance  ⛔
+## M4 — Clerk production instance  ⛔ ← the next blocker
+
+**Verified 2026-07-27:** `bunx eas env:list --environment production` returns
+**"No variables found for this environment"**. Both required vars are missing.
+
+That is not a degraded build, it is a dead one:
+`apps/mobile/src/shared/config/env.ts` validates at module load and **throws
+`Missing required env var: EXPO_PUBLIC_API_URL` before React renders a frame**.
+A production build made today launches to the splash screen and then the error
+boundary. Step 5 below is the fix and it is two commands.
 
 The app currently uses a `pk_test_` key locally. A store build must not.
 
