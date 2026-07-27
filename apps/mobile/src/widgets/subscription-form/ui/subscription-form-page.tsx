@@ -2,9 +2,10 @@ import { SubscriptionPeriod } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { categoriesQuery } from "@/entities/category";
 import { m } from "@/shared/i18n";
+import { BrandLogo } from "@/shared/ui/brand-logo";
 import { CurrencyField } from "@/shared/ui/currency-field";
 import { Field, TextField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
@@ -46,6 +47,43 @@ const VALIDATION_MESSAGE: Record<FormErrorCode, () => string> = {
 
 const messageFor = (code: FormErrorCode | undefined) =>
   code ? VALIDATION_MESSAGE[code]() : undefined;
+
+/**
+ * The subscription's logo, and the way to change it.
+ *
+ * It replaces a "Website" text field that asked the user to know and type
+ * `netflix.com`. An avatar above the fields says what the value is FOR — the
+ * row's logo — in a way a labelled domain input never did.
+ */
+function BrandAvatar() {
+  const router = useRouter();
+  const { values } = useSubscriptionForm();
+  const domain = values.brandDomain.trim();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${m.form_brand()}, ${domain || m.form_brandNone()}`}
+      onPress={() => router.push("/subscriptions/form/brand")}
+      style={({ pressed }) => [styles.brand, pressed && styles.brandPressed]}
+    >
+      {domain ? (
+        <BrandLogo name={values.name} brandDomain={domain} size={88} />
+      ) : (
+        <View style={styles.brandEmpty}>
+          <SymbolView
+            name={{ ios: "magnifyingglass", android: "search" }}
+            size={30}
+            tintColor={colors.muted}
+          />
+        </View>
+      )}
+      <Text style={styles.brandCaption} numberOfLines={1}>
+        {domain || m.form_brandPick()}
+      </Text>
+    </Pressable>
+  );
+}
 
 /** The category row is a destination, not a control: it pushes the picker. */
 function CategoryRow() {
@@ -140,6 +178,8 @@ export function SubscriptionFormPage() {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
+        <BrandAvatar />
+
         <TextField
           label={m.form_name()}
           value={values.name}
@@ -183,19 +223,6 @@ export function SubscriptionFormPage() {
           label={m.form_nextPayment()}
           value={values.paymentDate}
           onChange={(date) => set("paymentDate", date)}
-        />
-
-        {/* What turns the row's letter tile into the service's actual logo. Free
-            text, never required: a blank or unparseable value normalizes to null
-            and the tile stays. autoCapitalize off, or iOS turns "netflix.com"
-            into "Netflix.com". */}
-        <TextField
-          label={m.form_brandDomain()}
-          placeholder={m.form_brandDomainPlaceholder()}
-          value={values.brandDomain}
-          onChangeText={(next) => set("brandDomain", next)}
-          keyboardType="url"
-          autoCapitalize="none"
         />
 
         {/* An offer is part of signing up. Changing one afterwards is what the
@@ -253,4 +280,17 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.surfaceAlt },
   triggerValue: { flex: 1, fontSize: 16, color: colors.text },
+  brand: { alignItems: "center", gap: 8, marginBottom: 20 },
+  brandPressed: { opacity: 0.6 },
+  brandEmpty: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  brandCaption: { fontSize: 13, color: colors.muted },
 });

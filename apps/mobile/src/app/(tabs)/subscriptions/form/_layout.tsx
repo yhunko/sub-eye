@@ -20,6 +20,7 @@ export default function SubscriptionFormLayout() {
       <Stack screenOptions={nativeHeaderChrome}>
         <Stack.Screen name="index" />
         <Stack.Screen name="category" />
+        <Stack.Screen name="brand" />
       </Stack>
     </SubscriptionFormProvider>
   );

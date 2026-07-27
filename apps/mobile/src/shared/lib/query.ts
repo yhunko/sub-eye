@@ -63,7 +63,13 @@ persistQueryClientSubscribe({
   persister,
   // No maxAge here — it is a restore-time rule, and the restore above applies it.
   buster,
-  // Persist every successful query. With seven screens there is no query worth
-  // excluding; add a shouldDehydrateQuery filter only when one appears.
-  dehydrateOptions: {},
+  dehydrateOptions: {
+    // Everything the app owns is worth a cold start. Brand search is not: it is
+    // a third party's data, its terms say it is fetched live and not persisted,
+    // and its query key is whatever the user typed into the search bar. A query
+    // opts out with `meta: { persist: false }` rather than being named here.
+    // The status check is TanStack's own default, which this replaces.
+    shouldDehydrateQuery: (query) =>
+      query.state.status === "success" && query.meta?.persist !== false,
+  },
 });

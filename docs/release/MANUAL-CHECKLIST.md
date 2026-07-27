@@ -63,8 +63,15 @@ The privacy policy must state, at minimum:
 - **What is collected:** email address, name/username, Clerk user id, and the
   subscription data you enter (service names, amounts, dates, notes).
 - **Who processes it:** Clerk (authentication), Neon (Postgres, database
-  hosting), Cloudflare (API hosting), PostHog EU (error telemetry). Name them
-  and their regions.
+  hosting), Cloudflare (API hosting), PostHog EU (error telemetry), and
+  **Brandfetch** (brand logo search). Name them and their regions.
+- **Brandfetch specifically** (added by brief B8): when the user searches for a
+  brand in the add/edit form, **what they type is sent to `api.brandfetch.io`**
+  along with their IP. Nothing else goes with it — no account id, no
+  subscription data — and the results are never written to disk. Say so; it is a
+  third-party processor receiving user-typed text and it has to be disclosed.
+  Google is also contacted for every logo image (`google.com/s2/favicons`), which
+  discloses the domain and the IP but nothing the user typed.
 - **Why:** operating the service. No advertising, no tracking, no data sale.
 - **Retention and deletion:** deleting the account in Settings removes the
   account and every subscription in it; the Clerk `user.deleted` webhook is
@@ -86,21 +93,25 @@ platforms — nothing to change there. Your `app.subeye.cc` API host and the
 1. Create the app record. Bundle id `cc.subeye.app`, SKU your choice,
    primary language English.
 2. **Privacy Policy URL:** `https://www.subeye.cc/privacy-policy/`.
-3. **App Privacy label** — must match the manifest now in `app.json`. Declare
-   all five, each **linked to the user**, each "App Functionality", each
-   **not** used for tracking:
+3. **App Privacy label** — must match the manifest now in `app.json`. Each is
+   "App Functionality" and **not** used for tracking:
 
-   | Category | Type |
-   | --- | --- |
-   | Contact Info | Email Address |
-   | Contact Info | Name |
-   | Identifiers | User ID |
-   | User Content | Other User Content |
-   | Diagnostics | Crash Data |
+   | Category | Type | Linked to the user |
+   | --- | --- | --- |
+   | Contact Info | Email Address | yes |
+   | Contact Info | Name | yes |
+   | Identifiers | User ID | yes |
+   | User Content | Other User Content | yes |
+   | Diagnostics | Crash Data | yes |
+   | Browsing/Search | Search History | **no** |
 
    Crash Data is there because the Worker posts exceptions to PostHog keyed by
    your Clerk user id. It is real collection even though no SDK ships in the
    binary.
+
+   Search History is the brand picker (brief B8): the text typed into it goes to
+   Brandfetch. **Not** linked — no account id or Clerk token travels with that
+   request, and the app never stores the results.
 4. Age rating: 4+. No objectionable content.
 5. **Encryption:** `usesNonExemptEncryption` is already `false` in `app.json`,
    so App Store Connect should not ask. If it does, answer that you use only
@@ -183,6 +194,19 @@ bunx eas env:create --environment production --name EXPO_PUBLIC_API_URL --value 
 bunx eas env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value pk_live_YOUR_KEY
 ```
 
+Then the **optional** third one, from a free account at
+[developers.brandfetch.com](https://developers.brandfetch.com). The client id is
+public by design — it ships in the bundle either way:
+
+```bash
+bunx eas env:create --environment production --name EXPO_PUBLIC_BRANDFETCH_CLIENT_ID --value YOUR_CLIENT_ID
+```
+
+Skipping it does not break the build, and as of 2026-07-27 it does not even
+break search — the endpoint answers anonymous requests. Set it anyway: `c` is
+documented as required, and the day Brandfetch enforces it a shipped binary
+cannot be reconfigured. The picker still lets you type a domain by hand.
+
 No trailing slash and no `/api` on the API URL — the server's `basePath("/api")`
 rides on the Hono RPC accessor, and appending it makes every request 404 at
 `/api/api/…`.
@@ -242,8 +266,14 @@ build:
 - [ ] Sign in with Google, then GitHub, then **Apple** — and confirm Apple's
       "Hide My Email" path lands in the app with a session
 - [ ] Reset password end to end
-- [ ] Add a subscription with a category and a website — the row shows the real
+- [ ] Add a subscription with a category and a brand — the row shows the real
       logo, and Home's category card shows more than "Uncategorized"
+- [ ] **Tap the avatar at the top of the form, search a brand, pick it** — the
+      empty Name field fills with the brand's name, an already-typed name is left
+      alone, "No logo" clears it, and typing `netflix.com` offers "Use
+      netflix.com"
+- [ ] **In airplane mode, open the brand picker and type** — it shows no results
+      and no error screen, and the "Use …" row still commits a typed domain
 - [ ] **Settings → Categories: rename one, change its emoji, and delete one that
       has subscriptions in it** — the confirm names the count, the subscriptions
       survive as Uncategorized, and the list rows show the new name immediately

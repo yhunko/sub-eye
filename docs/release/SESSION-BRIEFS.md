@@ -22,6 +22,7 @@ Already landed on `dev` (do not redo):
 | `cb65810` | List filters moved into a native sheet behind one header button |
 | `0742049` | Separate header buttons, dot for active filters, monthly single-currency rows |
 | `8aaf525` | Add/edit is a full-screen modal with its own stack + searchable category picker |
+| *(this one)* | **B8** brand picker — the Website field is now a searchable logo avatar |
 
 `8aaf525` is what **B8 below builds on**: add/edit is now
 `presentation: "modal"` over its own `Stack` at
@@ -177,80 +178,42 @@ rendered `"undefined1,234.50"`. All three readers now go through a guarded
 
 ---
 
-## B8 — Brand picker: replace the Website field with a searchable logo avatar
+## B8 — Brand picker ✅ landed
 
-The single highest-value remaining UX change, and the one the retired web client
-did better. Do it **after** the modal commit above has landed — it builds
-directly on the drill-down pattern that commit introduced.
+The "Website" text field is gone. The form opens with a tappable 88pt avatar
+above the fields; tapping it pushes `form/brand.tsx` — a real `UISearchBar` over
+Brandfetch's Brand Search API, rows of logo + name + domain, a "No logo" row
+first, and a "Use `netflix.com`" row whenever what was typed parses as a host.
+Picking a brand fills an **empty** Name field with the brand's name and never
+overwrites typing.
 
-> Replace the SubEye add/edit form's "Website" text field with a tappable brand
-> avatar at the top of the form, backed by Brandfetch search.
->
-> **Today:** `apps/mobile/src/widgets/subscription-form/ui/subscription-form-page.tsx`
-> has a free-text `TextField` labelled "Website"
-> (`form_brandDomain`, placeholder "netflix.com — for the logo"). The user is
-> asked to know and type a domain. `normalizeBrandDomain` in
-> `../model/form-schema.ts` sanitises whatever they typed, and
-> `shared/ui/brand-logo.tsx` renders it through **Google's favicon endpoint**
-> (`/s2/favicons?domain=…`), falling back to a letter tile.
->
-> **Target** — the shape the old web client used, natively:
-> - A large circular avatar at the TOP of the form, above the fields, showing the
->   current logo or a magnifier when unset, with a caption like "Tap to choose a
->   brand".
-> - Tapping it pushes a brand-search screen onto the form modal's own stack —
->   the same mechanism `form/category.tsx` already uses. Add
->   `app/(tabs)/subscriptions/form/brand.tsx` and register it in
->   `form/_layout.tsx`.
-> - That screen uses the native search bar via `headerSearchBarOptions`
->   (`placement: "stacked"`, `hideWhenScrolling: false`) — this DOES work on a
->   pushed screen inside that nested stack; see the note in `apps/mobile/CLAUDE.md`.
-> - Results are brand rows: logo, name, domain. Picking one writes `brandDomain`
->   into the form context and pops back, exactly as the category picker does.
-> - There must be a way to CLEAR a chosen brand and go back to the letter tile.
-> - Selecting a brand is a good moment to prefill an empty Name field with the
->   brand's name. Do it only when Name is still empty — never overwrite typing.
->
-> **Brandfetch specifics — verify against current docs before coding.** Use
-> context7 or the Brandfetch developer site; the details below are from memory
-> and the free tier's shape changes:
-> - Brand Search API, intended for client-side autocomplete:
->   `GET https://api.brandfetch.io/v2/search/{query}?c={clientId}`, returning
->   name / domain / icon / brandId per hit.
-> - Logo CDN: `https://cdn.brandfetch.io/{domain}/w/{w}/h/{h}?c={clientId}`.
-> - The client id is public by design. Register at brandfetch.dev.
->
-> **Constraints:**
-> - Any new `EXPO_PUBLIC_*` var must be added to
->   `apps/mobile/src/shared/config/env.ts`, **which throws at module load on a
->   missing var**. Decide deliberately: required (a missing id bricks the app) or
->   optional (the picker degrades to the letter tile and the app still boots).
->   Optional is almost certainly right for a cosmetic feature.
-> - **This is the first search box in the app that hits the network.** Debounce
->   it (~300ms), cancel in-flight requests, and never let a failed or offline
->   request throw — the app is offline-tolerant and a logo is decorative.
-> - Decide whether `BrandLogo` switches from Google favicons to the Brandfetch
->   CDN. Consistency argues yes (the picker would otherwise preview one image and
->   the row render another); the favicon endpoint needs no key and already works,
->   which argues no. Whichever you pick, say why in the commit message.
-> - Keep `normalizeBrandDomain`. Existing rows hold hand-typed domains and the
->   sanitiser is still what guards the write path.
-> - Strings in **both** `messages/en.json` and `uk.json`, keys `prefix_camelCase`,
->   and never `m.someKey()` at module scope.
->
-> **Two release consequences you must not skip** — this is why the brief is not
-> just UI work:
-> 1. Brandfetch becomes a **third-party processor receiving user-typed text**.
->    Manual step M1 lists processors explicitly (Clerk, Neon, Cloudflare,
->    PostHog); the privacy policy has to name Brandfetch too, and the App Store
->    privacy label may need a Search History / Usage Data entry. Re-check
->    `expo.ios.privacyManifests` in `apps/mobile/app.json`.
-> 2. The client id must be added to the **EAS production environment** alongside
->    the two vars in M4 step 5, or the production build ships without it.
->
-> Read `apps/mobile/CLAUDE.md` first. Run `bun run lint`, `type-check`, `test`
-> and `check:boundaries` before calling it done, and exercise the flow on a
-> simulator — the pattern has one gotcha per screen so far.
+- `model/brand-search.ts` — `brandSearchUrl` / `toBrandHits` (pure, tested) plus
+  the query. 300ms debounce, TanStack's `signal` for cancellation, `retry: false`,
+  `staleTime` 5 min against Brandfetch's 200-per-5-min-per-IP ceiling.
+- **`BrandLogo` still uses Google favicons.** The picker renders results through
+  the same component from the domain alone, so the preview is byte-identical to
+  the row that ships — which is the consistency the Brandfetch CDN was supposed
+  to buy, without a second image path or a key. Brandfetch's own `icon` URLs are
+  hotlink-only and expire after 24h, so storing one was never on the table.
+- **`meta: { persist: false }`** on the search query, and
+  `shared/lib/query.ts` grew the `shouldDehydrateQuery` filter its comment had
+  been inviting. Brandfetch's terms say the data is fetched live and not
+  persisted, and the query key is whatever the user typed — neither belongs in a
+  7-day MMKV cache.
+- `EXPO_PUBLIC_BRANDFETCH_CLIENT_ID` is **optional** in `env.ts`.
+- `normalizeBrandDomain` is untouched and still guards the write path; it is now
+  also what decides whether the "Use …" row appears.
+
+**Probed 2026-07-27:** the search endpoint returns full results with **no `c`
+parameter at all**, and with a bogus one. So the feature works out of the box
+and the id is not a blocker — but `c` is documented as required, so M4 step 5
+now lists it as a third var. `brandSearchUrl` omits the parameter entirely when
+unset rather than sending `?c=`.
+
+**Release consequences, both landed:** `app.json`'s privacy manifest gained
+`NSPrivacyCollectedDataTypeSearchHistory` (**not** linked — no account id
+travels with the lookup), M1's processor list names Brandfetch, M2's label table
+gained the row, and M7 gained two smoke-test lines including the offline one.
 
 ---
 
@@ -344,21 +307,21 @@ an approved product id to point at.
 
 ## What is left, in order
 
-1. **M4 step 5**: the two EAS production env vars. ⛔ blocks any usable build.
+1. **M4 step 5**: the EAS production env vars. ⛔ blocks any usable build. Two
+   are required; `EXPO_PUBLIC_BRANDFETCH_CLIENT_ID` is the optional third.
 2. **M1**: publish the privacy policy and the four `/en` + `/uk` legal routes.
-   ⛔ blocks submission, and the app links these today.
-3. **B8** brand picker — the biggest remaining UX gap.
-4. **B3** client crash telemetry — batch the native module with any other
+   ⛔ blocks submission, and the app links these today. The processor list now
+   has to name Brandfetch.
+3. **B3** client crash telemetry — batch the native module with any other
    prebuild.
-5. **M2** App Store Connect record and privacy label, then **M7** device smoke
+4. **M2** App Store Connect record and privacy label, then **M7** device smoke
    test on a production build.
-6. **B7** rate limiting (mostly the M6 dashboard rule), **B6** RevenueCat (still
+5. **B7** rate limiting (mostly the M6 dashboard rule), **B6** RevenueCat (still
    blocked on M5).
 
-Note that B8 and B3 both add a third-party processor and/or an
-`EXPO_PUBLIC_*` var. Each one means revisiting M1's processor list, the App
-Privacy label, and the EAS production environment — do not treat either as
-purely client work.
+B3 still adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means
+revisiting M1's processor list, the App Privacy label, and the EAS production
+environment — not purely client work. B8 already did that round.
 
 ---
 

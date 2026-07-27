@@ -17,4 +17,9 @@ export const env = {
     "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
     process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
   ),
+  // Optional, and the only var here that is. Brandfetch's search endpoint
+  // serves anonymous requests, so brand search works without it — but the
+  // parameter is documented as required, so an id is what keeps it working.
+  // Either way a decorative lookup must never be able to brick the boot.
+  BRANDFETCH_CLIENT_ID: process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID ?? null,
 } as const;
