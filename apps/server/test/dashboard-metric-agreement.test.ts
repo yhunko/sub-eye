@@ -96,8 +96,8 @@ describe("AnalyticsService.getDashboardStats", () => {
   });
 });
 
-describe("AnalyticsService.getDashboardStats — resuming soon", () => {
-  it("returns the resolved timezone and every paused sub with a resume date, soonest first", async () => {
+describe("AnalyticsService.getDashboardStats — paused subscriptions", () => {
+  it("returns the resolved timezone and counts no paused sub as active", async () => {
     const later = makeSub({
       id: "later",
       status: "paused",
@@ -141,11 +141,11 @@ describe("AnalyticsService.getDashboardStats — resuming soon", () => {
     // The client must stop re-deriving the timezone from the device.
     expect(stats.timezone).toBe("Europe/Kyiv");
 
-    // An indefinite pause has no date to surface, so it is not "resuming soon".
-    expect(stats.resumingSoon.map((entry) => entry.id)).toEqual([
-      "sooner",
-      "later",
-    ]);
+    // A paused subscription still bills nothing. This is what Home's empty
+    // state reads, so counting one here sends a paused-only account to the
+    // first-run screen instead of its own numbers.
+    expect(stats.activeSubscriptionsTotal).toBe(0);
+    expect(stats.remainingThisMonth).toBe(0);
   });
 });
 

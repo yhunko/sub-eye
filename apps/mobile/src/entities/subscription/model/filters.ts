@@ -15,9 +15,18 @@ export type SubscriptionListFilters = {
   sort: SubscriptionSort;
 };
 
+/**
+ * Active-only, deliberately: the list is what you are paying for, and a
+ * cancelled subscription from last year is history, not inventory. The other
+ * statuses are a tap away in the filter sheet.
+ *
+ * `hasActiveFilters` compares against THIS object, not against a neutral
+ * baseline — so the default view leaves the header's filter dot dark, and
+ * switching to "All" lights it. Change one and the other follows.
+ */
 export const DEFAULT_SUBSCRIPTION_FILTERS: SubscriptionListFilters = {
   search: "",
-  status: "all",
+  status: "active",
   categoryId: null,
   sort: "next",
 };

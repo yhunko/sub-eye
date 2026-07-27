@@ -87,15 +87,6 @@ export interface CategorySpendingSubscriptionDto {
   monthlyCost: number;
 }
 
-export interface ResumingSoonDto {
-  id: string;
-  name: string;
-  brandDomain: string | null;
-  resumeAt: string;
-  amount: number;
-  currencyCode: string;
-}
-
 export interface DashboardAnalyticsDto {
   preferredCurrencyCode: string;
   monthlyBurnRate: number;
@@ -103,14 +94,10 @@ export interface DashboardAnalyticsDto {
   remainingThisMonth: number;
   nextMonthForecast: number;
   activeSubscriptionsTotal: number;
-  activeSubscriptionsAuto: number;
-  activeSubscriptionsManual: number;
   mostExpensiveSubscription: MostExpensiveSubscriptionDto | null;
   cashFlowForecast: CashFlowPoint[];
   upcomingRenewals: UpcomingRenewalDto[];
   totalUpcomingMonth: number;
-  monthlyTrend: MonthlyTrendPoint[];
   categorySpending: CategorySpendingDto[];
   timezone: string;
-  resumingSoon: ResumingSoonDto[];
 }

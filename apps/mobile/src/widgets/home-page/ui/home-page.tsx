@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -7,22 +9,30 @@ import {
   View,
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
+import { deriveAttention, subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
+import { AttentionCard } from "./attention-card";
 import { CategoryBars } from "./category-bars";
 import { HomeEmpty } from "./home-empty";
 import { MonthHero } from "./month-hero";
-import { ResumingRow } from "./resuming-row";
-import { TopSubscription } from "./top-subscription";
-import { TrendCard } from "./trend-card";
 
 // One question per card, in the order a user asks them: what is left this month,
-// where is it heading, what costs the most, where does it go. Upcoming renewals
-// live on the Subscriptions tab — repeating them here made Home a second list.
+// what needs me, where does it go. Upcoming renewals live on the Subscriptions
+// tab — repeating them here made Home a second list.
 export function HomePage() {
   const { data, isPending, isError, refetch } = useDashboard();
+  // The list the Subscriptions tab already fetches and MMKV already persists.
+  // Every attention event is derived from fields it carries, so a server
+  // endpoint for them would be a second source of the same truth.
+  const subscriptions = useQuery(subscriptionsQuery());
 
-  if (isPending) {
+  const events = useMemo(
+    () => deriveAttention(subscriptions.data ?? []),
+    [subscriptions.data],
+  );
+
+  if (isPending || subscriptions.isPending) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={colors.accent} />
@@ -41,15 +51,13 @@ export function HomePage() {
     );
   }
 
-  // Nothing active, nothing paused, and no spend in the six-month trend — this
-  // account has never had anything to total. The trend clause is what keeps a
-  // user who just cancelled their last subscription looking at their history
-  // instead of at a first-run screen.
-  if (
-    data.activeSubscriptionsTotal === 0 &&
-    data.resumingSoon.length === 0 &&
-    !data.monthlyTrend.some((point) => point.amount > 0)
-  ) {
+  // Paused counts as something to come back to, and it is not in
+  // `activeSubscriptionsTotal` — without this clause a user who paused
+  // everything lands on the first-run screen.
+  const paused = (subscriptions.data ?? []).some(
+    (subscription) => subscription.status === "paused",
+  );
+  if (data.activeSubscriptionsTotal === 0 && !paused) {
     return <HomeEmpty />;
   }
 
@@ -61,36 +69,18 @@ export function HomePage() {
       <MonthHero
         currency={data.preferredCurrencyCode}
         remainingThisMonth={data.remainingThisMonth}
+        monthTotal={data.totalUpcomingMonth}
         nextMonthForecast={data.nextMonthForecast}
       />
 
-      <TrendCard
-        currency={data.preferredCurrencyCode}
-        monthlyTrend={data.monthlyTrend}
-      />
-
-      {data.mostExpensiveSubscription ? (
-        <TopSubscription
-          currency={data.preferredCurrencyCode}
-          item={data.mostExpensiveSubscription}
-        />
-      ) : null}
+      {/* Most days this is empty, and that is the answer. Rendering an empty
+          "nothing needs you" block is what trains a user to stop reading it. */}
+      {events.length ? <AttentionCard events={events} /> : null}
 
       <CategoryBars
         currency={data.preferredCurrencyCode}
         categories={data.categorySpending}
       />
-
-      {/* Rendered only when something is actually resuming — an always-present
-          empty "Resuming soon" block trains the user to stop reading it. */}
-      {data.resumingSoon.length ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{m.home_resumingSoon()}</Text>
-          {data.resumingSoon.map((item) => (
-            <ResumingRow key={item.id} item={item} />
-          ))}
-        </View>
-      ) : null}
     </ScrollView>
   );
 }
@@ -102,21 +92,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-  },
-  section: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  sectionTitle: {
-    fontSize: 12.5,
-    color: colors.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 4,
   },
   error: { color: colors.muted, fontSize: 15, textAlign: "center" },
   retry: {

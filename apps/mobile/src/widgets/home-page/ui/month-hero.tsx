@@ -16,20 +16,34 @@ function splitAmount(value: number, currency: string): [string, string] {
 export function MonthHero({
   currency,
   remainingThisMonth,
+  monthTotal,
   nextMonthForecast,
 }: {
   currency: string;
   remainingThisMonth: number;
+  monthTotal: number;
   nextMonthForecast: number;
 }) {
   const [whole, fraction] = splitAmount(remainingThisMonth, currency);
 
-  // ponytail: the device's calendar, not the dashboard's `timezone`. Hermes has
-  // no guaranteed IANA support in Intl, and the two disagree for at most a few
-  // hours a month on a progress bar. Thread `timezone` through if that ever bites.
-  const now = new Date();
-  const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const elapsed = now.getDate();
+  // MONEY spent, not days elapsed. The bar used to track the calendar, which on
+  // a month whose renewals cluster at the start reads nearly full while most of
+  // the money is still ahead — the opposite of what the number above it says.
+  const progress =
+    monthTotal > 0
+      ? Math.min(1, Math.max(0, (monthTotal - remainingThisMonth) / monthTotal))
+      : 0;
+
+  // The absolute forecast alone says nothing; the delta is the whole signal, and
+  // it is the honest version of what the old six-bar trend was reaching for —
+  // change happens at a specific month, not across a flat series.
+  const delta = nextMonthForecast - monthTotal;
+  const deltaText =
+    Math.abs(delta) < 1
+      ? null
+      : `${delta > 0 ? "+" : "−"}${formatMoney(Math.abs(delta), currency, {
+          decimals: 0,
+        })}`;
 
   return (
     <View style={styles.card}>
@@ -48,13 +62,10 @@ export function MonthHero({
       </Text>
 
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${(elapsed / total) * 100}%` }]} />
+        <View style={[styles.fill, { width: `${progress * 100}%` }]} />
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.sub} numberOfLines={1}>
-          {m.home_daysElapsed({ elapsed, total })}
-        </Text>
         <Text style={styles.sub} numberOfLines={1}>
           {m.home_nextMonthForecast()}
           {" · "}
@@ -62,6 +73,17 @@ export function MonthHero({
             {formatMoney(nextMonthForecast, currency, { decimals: 0 })}
           </Text>
         </Text>
+        {/* Red for more, muted for less — never green. Every amount here is
+            money leaving, so "cheaper" is not a win worth a brand colour. */}
+        {deltaText ? (
+          <Text
+            style={[styles.sub, delta > 0 && styles.deltaUp]}
+            numberOfLines={1}
+            maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+          >
+            {deltaText} {m.home_vsThisMonth()}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -108,4 +130,5 @@ const styles = StyleSheet.create({
   },
   sub: { fontSize: 12.5, color: colors.muted },
   subStrong: { color: colors.text, fontWeight: "600" },
+  deltaUp: { color: colors.danger },
 });

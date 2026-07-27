@@ -19,6 +19,11 @@ export {
 } from "./api/use-phases";
 export { useUpdateSubscription } from "./api/use-update-subscription";
 export {
+  type AttentionEvent,
+  type AttentionKind,
+  deriveAttention,
+} from "./model/attention";
+export {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
   type SubscriptionListFilters,

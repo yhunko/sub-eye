@@ -102,7 +102,7 @@ export function SubscriptionsPage() {
               accessibilityLabel={m.subs_filterTitle()}
               accessibilityState={{ selected: active }}
             >
-              <View>
+              <View style={styles.filterIcon}>
                 <SymbolView
                   name={{
                     ios: "line.3.horizontal.decrease",
@@ -193,12 +193,23 @@ const styles = StyleSheet.create({
   // container stays the outermost box of a cell.
   list: { paddingHorizontal: 12, paddingBottom: 24 },
   grow: { flexGrow: 1 },
-  // Sits on the glyph's trailing-top corner, outside its optical box so it never
-  // covers a bar of the icon.
+  // The box exists ONLY to give the badge somewhere legal to sit. A native
+  // header bar item clips to its content view, so the dot's old negative insets
+  // put its outer edge outside the clip and shaved it into a wedge. Four points
+  // of slack on each side keeps the whole dot inside the bounds; the glyph stays
+  // optically centred because the slack is symmetric.
+  filterIcon: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // The corner of a 20pt SF Symbol's box is empty — the strokes never reach it —
+  // so the dot still reads as sitting beside the glyph rather than on it.
   dot: {
     position: "absolute",
-    top: -2,
-    right: -3,
+    top: 0,
+    right: 0,
     width: 8,
     height: 8,
     borderRadius: 4,

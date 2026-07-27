@@ -58,19 +58,10 @@ export class AnalyticsService {
       (subscription) => isCurrentlyActiveSubscription(subscription.status),
     );
 
-    // Aggregate subscription stats
-    let monthlyBurnRate = 0;
-    let activeSubscriptionsAuto = 0;
-    let activeSubscriptionsManual = 0;
-
-    for (const sub of currentlyActiveSubscriptions) {
-      monthlyBurnRate += sub.billing.preferred.monthly;
-      if (sub.autoPaid) {
-        activeSubscriptionsAuto += 1;
-      } else {
-        activeSubscriptionsManual += 1;
-      }
-    }
+    const monthlyBurnRate = currentlyActiveSubscriptions.reduce(
+      (total, sub) => total + sub.billing.preferred.monthly,
+      0,
+    );
 
     // Delegate all projections to calculator
     const mostExpensiveSubscription = AnalyticsCalculator.findMostExpensive(
@@ -94,15 +85,13 @@ export class AnalyticsService {
       timezone,
     );
 
-    const monthlyTrendStartOffset = -1;
-    const monthlyTrend = AnalyticsCalculator.buildMonthlyTrend(
-      currentlyActiveSubscriptions,
-      DateTimezoneUtils.shiftMonths(today, monthlyTrendStartOffset, timezone),
-      12,
-      timezone,
-    );
-    const currentMonthIndex = Math.abs(monthlyTrendStartOffset);
-    const nextMonthForecast = monthlyTrend[currentMonthIndex + 1]?.amount ?? 0;
+    const nextMonthForecast =
+      AnalyticsCalculator.buildMonthlyTrend(
+        currentlyActiveSubscriptions,
+        DateTimezoneUtils.shiftMonths(today, 1, timezone),
+        1,
+        timezone,
+      )[0]?.amount ?? 0;
 
     const categorySpending = AnalyticsCalculator.buildCategorySpending(
       currentlyActiveSubscriptions,
@@ -122,27 +111,6 @@ export class AnalyticsService {
       ).toFixed(2),
     );
 
-    // A pause you forgot about is a charge you did not plan for. Only pauses
-    // with a known resume date can be surfaced — an indefinite pause has no
-    // date to warn about.
-    const resumingSoon = subscriptions
-      .filter(
-        (subscription) =>
-          subscription.status === "paused" && subscription.resumeAt,
-      )
-      .sort(
-        (a, b) =>
-          Date.parse(a.resumeAt as string) - Date.parse(b.resumeAt as string),
-      )
-      .map((subscription) => ({
-        id: subscription.id,
-        name: subscription.name,
-        brandDomain: subscription.brandDomain,
-        resumeAt: subscription.resumeAt as string,
-        amount: subscription.billing.preferred.amount,
-        currencyCode: subscription.billing.preferred.currencyCode,
-      }));
-
     return {
       preferredCurrencyCode,
       monthlyBurnRate,
@@ -150,16 +118,12 @@ export class AnalyticsService {
       remainingThisMonth,
       nextMonthForecast,
       activeSubscriptionsTotal: currentlyActiveSubscriptions.length,
-      activeSubscriptionsAuto,
-      activeSubscriptionsManual,
       mostExpensiveSubscription,
       cashFlowForecast,
       upcomingRenewals,
       totalUpcomingMonth,
-      monthlyTrend,
       categorySpending,
       timezone,
-      resumingSoon,
     };
   }
 

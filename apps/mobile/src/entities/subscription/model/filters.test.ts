@@ -105,8 +105,11 @@ describe("applySubscriptionFilters — search", () => {
         (s) => s.id,
       ),
     ).toEqual(["1"]);
+    // status: "all" pinned explicitly — this is about the search term, and the
+    // default narrows to active on its own.
     expect(
-      applySubscriptionFilters(all, filters({ search: "   " })).length,
+      applySubscriptionFilters(all, filters({ search: "   ", status: "all" }))
+        .length,
     ).toBe(3);
   });
 
@@ -118,6 +121,16 @@ describe("applySubscriptionFilters — search", () => {
 });
 
 describe("applySubscriptionFilters — status and category", () => {
+  // The list is what you are paying for. Everything else is a tap away in the
+  // sheet, and `hasActiveFilters` reads the same object so the header dot stays
+  // dark while this is in force.
+  it("shows only active subscriptions by default", () => {
+    expect(applySubscriptionFilters(all, filters()).map((s) => s.id)).toEqual([
+      "2",
+      "1",
+    ]);
+  });
+
   it("filters by exact status", () => {
     expect(
       applySubscriptionFilters(all, filters({ status: "paused" })).map(
@@ -150,20 +163,23 @@ describe("applySubscriptionFilters — status and category", () => {
   });
 });
 
+// status: "all" throughout — these pin the ordering, and the default status
+// filter would quietly drop the paused row out of every expectation.
 describe("applySubscriptionFilters — sort", () => {
   it("sorts by soonest next payment by default", () => {
-    expect(applySubscriptionFilters(all, filters()).map((s) => s.id)).toEqual([
-      "2",
-      "1",
-      "3",
-    ]);
+    expect(
+      applySubscriptionFilters(all, filters({ status: "all" })).map(
+        (s) => s.id,
+      ),
+    ).toEqual(["2", "1", "3"]);
   });
 
   it("sorts by name A→Z", () => {
     expect(
-      applySubscriptionFilters(all, filters({ sort: "name" })).map(
-        (s) => s.name,
-      ),
+      applySubscriptionFilters(
+        all,
+        filters({ sort: "name", status: "all" }),
+      ).map((s) => s.name),
     ).toEqual(["Adobe", "Netflix", "Spotify"]);
   });
 
