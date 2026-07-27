@@ -1,7 +1,8 @@
-import type { CategoryDto, SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { SymbolView } from "expo-symbols";
+import { useCallback, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,23 +13,25 @@ import {
 } from "react-native";
 import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 import type { SearchBarCommands } from "react-native-screens";
-import { categoriesQuery } from "@/entities/category";
 import {
   applySubscriptionFilters,
-  DEFAULT_SUBSCRIPTION_FILTERS,
+  hasActiveFilters,
+  subscriptionFilters,
   subscriptionsQuery,
   useLifecycleActionBuilder,
+  useSubscriptionFilters,
 } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
-import { FilterChips } from "./filter-chips";
 import { SubscriptionRow } from "./subscription-row";
 
 export function SubscriptionsPage() {
   const router = useRouter();
   const list = useQuery(subscriptionsQuery());
-  const categories = useQuery(categoriesQuery());
-  const [filters, setFilters] = useState(DEFAULT_SUBSCRIPTION_FILTERS);
+  // Module store, not useState: the filter sheet is a separate route (the
+  // navigator owns sheet presentation here), so it cannot read this component's
+  // state. See entities/subscription/model/filters-store.
+  const filters = useSubscriptionFilters();
   const searchRef = useRef<SearchBarCommands | null>(null);
 
   // ONE set of lifecycle mutations for the whole screen. Every visible row's
@@ -48,15 +51,17 @@ export function SubscriptionsPage() {
     openRow.current = null;
   }, []);
 
-  // Everything the chips and the search field do happens right here, over the
-  // array the query already holds. No debounce, no new query key, no round-trip —
-  // the search field is instant because it never touches the network.
+  // Everything the filter sheet and the search field do happens right here, over
+  // the array the query already holds. No debounce, no new query key, no
+  // round-trip — the search field is instant because it never touches the
+  // network.
   const visible = useMemo(
     () => applySubscriptionFilters(list.data ?? [], filters),
     [list.data, filters],
   );
 
   const hasAny = (list.data?.length ?? 0) > 0;
+  const active = hasActiveFilters(filters);
 
   // No setQueryData here: subscriptionDetailQuery seeds itself from this list
   // cache, so navigation paints instantly without writing a half-shaped detail
@@ -85,14 +90,38 @@ export function SubscriptionsPage() {
         options={{
           title: m.subscriptions_title(),
           headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/subscriptions/new")}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.subs_add()}
-            >
-              <Text style={styles.add}>+</Text>
-            </Pressable>
+            <View style={styles.actions}>
+              {/* Filled + tinted while anything is narrowing the list — the same
+                  signal Mail uses, and the only one left now that the chips are
+                  gone. Search is excluded from `active`: the search field shows
+                  its own state. */}
+              <Pressable
+                onPress={() => router.push("/subscriptions/filters")}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={m.subs_filterTitle()}
+                accessibilityState={{ selected: active }}
+              >
+                <SymbolView
+                  name={{
+                    ios: active
+                      ? "line.3.horizontal.decrease.circle.fill"
+                      : "line.3.horizontal.decrease.circle",
+                    android: "filter_list",
+                  }}
+                  size={22}
+                  tintColor={active ? colors.accent : colors.text}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/subscriptions/new")}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={m.subs_add()}
+              >
+                <Text style={styles.add}>+</Text>
+              </Pressable>
+            </View>
           ),
           // iOS 26: a collapsed search button on the nav bar's trailing edge that
           // expands into a field on tap ("integratedButton"). Styling stays
@@ -111,10 +140,7 @@ export function SubscriptionsPage() {
             tintColor: colors.accent,
             textColor: colors.text,
             onChangeText: (event) =>
-              setFilters((current) => ({
-                ...current,
-                search: event.nativeEvent.text,
-              })),
+              subscriptionFilters.set({ search: event.nativeEvent.text }),
           },
         }}
       />
@@ -123,11 +149,6 @@ export function SubscriptionsPage() {
         keyExtractor={(item) => item.id}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
-        // The filter/sort bar pins under the nav bar instead of scrolling away.
-        // This is the ScrollView's own sticky-header path — the header stays put
-        // on the UI thread, no scroll listener on the JS side. Index 0 is the
-        // ListHeaderComponent, so it is only valid while that header exists.
-        stickyHeaderIndices={hasAny ? STICKY_HEADER : undefined}
         onScrollBeginDrag={() => {
           closeOpenRow();
           // integratedButton ignores hideWhenScrolling (UIKit honours that only
@@ -136,37 +157,9 @@ export function SubscriptionsPage() {
           if (!filters.search.trim()) searchRef.current?.cancelSearch();
         }}
         // ponytail: no getItemLayout. Rows are a fixed ROW_HEIGHT, so
-        // VirtualizedList's own length estimate is exact after the first cell —
-        // and getItemLayout offsets would have to hard-code this header's height,
-        // which Dynamic Type can change under us.
+        // VirtualizedList's own length estimate is exact after the first cell.
         contentContainerStyle={[styles.list, !visible.length && styles.grow]}
-        ListHeaderComponent={
-          hasAny ? (
-            <View style={styles.header}>
-              <FilterChips
-                status={filters.status}
-                sort={filters.sort}
-                categories={categories.data ?? EMPTY_CATEGORIES}
-                categoryId={filters.categoryId}
-                onStatus={(status) => {
-                  closeOpenRow();
-                  setFilters((current) => ({ ...current, status }));
-                }}
-                onSort={(sort) => {
-                  closeOpenRow();
-                  setFilters((current) => ({ ...current, sort }));
-                }}
-                onCategory={(categoryId) => {
-                  closeOpenRow();
-                  setFilters((current) => ({ ...current, categoryId }));
-                }}
-              />
-            </View>
-          ) : null
-        }
         ListEmptyComponent={
-          // Centres itself in whatever space is left BELOW the pinned chips,
-          // rather than centring the chips along with it.
           <View style={styles.emptyBox}>
             {list.isLoading ? (
               <ActivityIndicator color={colors.muted} />
@@ -187,19 +180,11 @@ export function SubscriptionsPage() {
   );
 }
 
-// Module constants: a fresh [0] each render would re-key the sticky header, and
-// a fresh [] would break FilterChips' memoization for no reason.
-const STICKY_HEADER = [0];
-const EMPTY_CATEGORIES: CategoryDto[] = [];
-
 const styles = StyleSheet.create({
   // No `gap` — each row carries its own ROW_GAP as a margin so the swipe
   // container stays the outermost box of a cell.
   list: { paddingHorizontal: 12, paddingBottom: 24 },
-  // Opaque and full-bleed (the negative margin cancels the list's own inset), so
-  // rows scroll UNDER the pinned chips instead of showing through the gutters.
-  // The chip strips bring their own inset back.
-  header: { backgroundColor: colors.bg, marginHorizontal: -12, paddingTop: 4 },
+  actions: { flexDirection: "row", alignItems: "center", gap: 18 },
   grow: { flexGrow: 1 },
   emptyBox: {
     flex: 1,

@@ -26,6 +26,11 @@ export {
   type SubscriptionStatusFilter,
 } from "./model/filters";
 export {
+  hasActiveFilters,
+  subscriptionFilters,
+  useSubscriptionFilters,
+} from "./model/filters-store";
+export {
   type LifecycleActionItem,
   type LifecycleActionTarget,
   useLifecycleActionBuilder,

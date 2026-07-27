@@ -34,6 +34,7 @@ export default function SubscriptionsTabLayout() {
       {/* The detail screen sets its own title from the subscription's name. */}
       <Stack.Screen name="[id]/index" />
       <Stack.Screen name="new" options={scrollableSheet} />
+      <Stack.Screen name="filters" options={scrollableSheet} />
       <Stack.Screen name="[id]/edit" options={scrollableSheet} />
       <Stack.Screen name="[id]/pricing" options={scrollableSheet} />
       <Stack.Screen name="[id]/pause" options={compactSheet} />
