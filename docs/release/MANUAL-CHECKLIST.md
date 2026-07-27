@@ -247,8 +247,11 @@ build:
 - [ ] **Settings → Categories: rename one, change its emoji, and delete one that
       has subscriptions in it** — the confirm names the count, the subscriptions
       survive as Uncategorized, and the list rows show the new name immediately
-- [ ] **The category filter chips appear on the subscriptions list once a
-      category exists, and filtering by one narrows the list**
+- [ ] **The subscriptions list's filter button opens the native sheet; Status,
+      Sort by and Category each apply live, Reset clears them, and the button
+      renders filled + green while any filter is on**
+- [ ] **Pause a subscription, then find it under the Paused filter** — the list
+      used to receive only active + cancelling rows from the server
 - [ ] Add a subscription with a free trial; check the detail screen's price
       timeline
 - [ ] Pause with a date, resume, cancel at period end, cancel now, renew, delete
