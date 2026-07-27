@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { useCreateCategory } from "@/entities/category";
 import {
   subscriptionDetailQuery,
   useCreateSubscription,
@@ -13,6 +14,7 @@ import { m } from "@/shared/i18n";
 import { CurrencyField } from "@/shared/ui/currency-field";
 import { Field, TextField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
+import { notifyWriteFailed } from "@/shared/ui/notify";
 import { Segmented } from "@/shared/ui/segmented";
 import { colors } from "@/shared/ui/theme";
 import {
@@ -22,6 +24,7 @@ import {
   type SubscriptionFormValues,
   validateSubscriptionForm,
 } from "../model/form-schema";
+import { CategoryField, NEW_CATEGORY } from "./category-field";
 
 // Message-function references, invoked at render time — never called at module
 // scope, or the string freezes in whichever locale was active at import.
@@ -70,11 +73,16 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
 
   const create = useCreateSubscription();
   const update = useUpdateSubscription();
+  const createCategory = useCreateCategory();
 
   const [values, setValues] = useState<SubscriptionFormValues>(() =>
     makeInitialFormValues({ preferredCurrency: "usd" }),
   );
   const [errors, setErrors] = useState<FormErrors>({});
+  // Transient: it exists only between choosing "New category…" and the write
+  // that turns it into an id, so it stays out of SubscriptionFormValues and out
+  // of the pure validator.
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // Preferences and the subscription arrive asynchronously, so the form is
   // seeded when they land — but ONCE. The detail query refetches on mount, and
@@ -97,6 +105,7 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
           period: subscription.period,
           paymentDate: subscription.paymentDate,
           categoryId: subscription.categoryId,
+          brandDomain: subscription.brandDomain,
         },
       }),
     );
@@ -107,7 +116,9 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
     value: SubscriptionFormValues[K],
   ) => setValues((previous) => ({ ...previous, [key]: value }));
 
-  const submit = () => {
+  const submit = async () => {
+    if (createCategory.isPending) return;
+
     const result = validateSubscriptionForm(values);
 
     if (!result.ok) {
@@ -116,15 +127,36 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
     }
     setErrors({});
 
+    // The one part of the write that cannot be fire-and-forget: the subscription
+    // payload can only carry a category id the server already knows, so a new
+    // category has to land first. A blank name means the user opened the field
+    // and changed their mind — same outcome as None, not an error.
+    let categoryId = result.value.categoryId;
+    if (categoryId === NEW_CATEGORY) {
+      const name = newCategoryName.trim();
+      if (!name) {
+        categoryId = null;
+      } else {
+        try {
+          categoryId = (await createCategory.mutateAsync(name)).id;
+        } catch {
+          // Stay on the sheet: the typed name is still here to retry with, and
+          // dismissing would silently drop the whole subscription.
+          notifyWriteFailed();
+          return;
+        }
+      }
+    }
+
     if (id) {
       const { intro: _intro, ...changes } = result.value;
-      update.mutate({ id, changes });
+      update.mutate({ id, changes: { ...changes, categoryId } });
     } else {
-      create.mutate(result.value);
+      create.mutate({ ...result.value, categoryId });
     }
 
     // Edit is optimistic and create seeds the cache on success, so dismissing
-    // straight away is correct: there is nothing to wait for on screen.
+    // straight away is correct: there is nothing left to wait for on screen.
     router.back();
   };
 
@@ -156,6 +188,15 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
         value={values.currency}
         onChange={(next) => set("currency", next)}
       />
+
+      {/* What makes Home's category breakdown say anything: without a value here
+          every subscription lands in "Uncategorized" and the card is one bar. */}
+      <CategoryField
+        categoryId={values.categoryId}
+        newCategoryName={newCategoryName}
+        onSelect={(next) => set("categoryId", next)}
+        onNewCategoryName={setNewCategoryName}
+      />
       <TextField
         label={m.form_every()}
         value={values.every}
@@ -177,6 +218,19 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
         label={m.form_nextPayment()}
         value={values.paymentDate}
         onChange={(date) => set("paymentDate", date)}
+      />
+
+      {/* What turns the row's letter tile into the service's actual logo. Free
+          text, never required: a blank or unparseable value normalizes to null
+          and the tile stays. autoCapitalize off, or iOS turns "netflix.com"
+          into "Netflix.com". */}
+      <TextField
+        label={m.form_brandDomain()}
+        placeholder={m.form_brandDomainPlaceholder()}
+        value={values.brandDomain}
+        onChangeText={(next) => set("brandDomain", next)}
+        keyboardType="url"
+        autoCapitalize="none"
       />
 
       {/* An offer is part of signing up. Changing one afterwards is what the
@@ -214,8 +268,9 @@ export function SubscriptionFormSheet({ id }: { id?: string }) {
       )}
 
       <Pressable
-        style={styles.save}
-        onPress={submit}
+        style={[styles.save, createCategory.isPending && styles.saveBusy]}
+        onPress={() => void submit()}
+        disabled={createCategory.isPending}
         accessibilityRole="button"
       >
         <Text style={styles.saveLabel}>{m.form_save()}</Text>
@@ -240,5 +295,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 13,
   },
+  saveBusy: { opacity: 0.5 },
   saveLabel: { fontSize: 15, fontWeight: "700", color: colors.bg },
 });

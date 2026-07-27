@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "@subeye/shared";
 import {
   makeInitialFormValues,
+  normalizeBrandDomain,
   type SubscriptionFormValues,
   validateSubscriptionForm,
 } from "./form-schema";
@@ -14,6 +15,7 @@ const base: SubscriptionFormValues = {
   period: SubscriptionPeriod.MONTH,
   paymentDate: new Date("2026-09-01T00:00:00.000Z"),
   categoryId: null,
+  brandDomain: "",
   offerMode: "none",
   offerCost: "",
   offerEndsAt: null,
@@ -42,6 +44,7 @@ describe("makeInitialFormValues", () => {
         period: SubscriptionPeriod.MONTH,
         paymentDate: "2026-08-15T00:00:00.000Z",
         categoryId: "cat-1",
+        brandDomain: "spotify.com",
       },
     });
 
@@ -51,6 +54,7 @@ describe("makeInitialFormValues", () => {
       currency: "usd",
       every: "3",
       categoryId: "cat-1",
+      brandDomain: "spotify.com",
     });
   });
 });
@@ -170,6 +174,17 @@ describe("validateSubscriptionForm", () => {
     ).toMatchObject({ ok: false, errors: { offerCost: "invalidNumber" } });
   });
 
+  it("normalizes the brand domain on the way out", () => {
+    const result = validateSubscriptionForm({
+      ...base,
+      brandDomain: "  HTTPS://WWW.Netflix.com/browse?x=1  ",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.brandDomain).toBe("netflix.com");
+  });
+
   it("drops the offer entirely when the mode is none", () => {
     const result = validateSubscriptionForm({
       ...base,
@@ -181,5 +196,38 @@ describe("validateSubscriptionForm", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.intro).toBeNull();
+  });
+});
+
+describe("normalizeBrandDomain", () => {
+  // Each case is a shape a real person types. A wrong answer here is a broken
+  // image request, not a crash, which is exactly why it needs a test.
+  it("keeps a bare host untouched", () => {
+    expect(normalizeBrandDomain("netflix.com")).toBe("netflix.com");
+  });
+
+  it("strips scheme, www, path, query and port", () => {
+    expect(normalizeBrandDomain("https://www.netflix.com:443/browse?x=1")).toBe(
+      "netflix.com",
+    );
+  });
+
+  it("lowercases and trims", () => {
+    expect(normalizeBrandDomain("  Netflix.COM ")).toBe("netflix.com");
+  });
+
+  it("keeps subdomains other than www", () => {
+    expect(normalizeBrandDomain("music.youtube.com")).toBe("music.youtube.com");
+  });
+
+  it("rejects a brand name with no dot rather than sending it", () => {
+    expect(normalizeBrandDomain("Netflix")).toBeNull();
+  });
+
+  it("rejects empty and dot-only input", () => {
+    expect(normalizeBrandDomain("")).toBeNull();
+    expect(normalizeBrandDomain("   ")).toBeNull();
+    expect(normalizeBrandDomain(".com")).toBeNull();
+    expect(normalizeBrandDomain("netflix.")).toBeNull();
   });
 });

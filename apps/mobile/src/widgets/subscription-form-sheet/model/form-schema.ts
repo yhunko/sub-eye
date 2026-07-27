@@ -16,6 +16,8 @@ export type SubscriptionFormValues = {
   period: SubscriptionPeriodValue;
   paymentDate: Date;
   categoryId: string | null;
+  /** Free text as typed; `normalizeBrandDomain` is what reaches the API. */
+  brandDomain: string;
   /** The optional starting offer. Only meaningful when creating. */
   offerMode: "none" | "trial" | "intro";
   offerCost: string;
@@ -30,8 +32,30 @@ type ParsedSubscriptionForm = {
   period: SubscriptionPeriodValue;
   paymentDate: string;
   categoryId: string | null;
+  brandDomain: string | null;
   intro: { kind: "trial" | "intro"; promoCost: number; endsAt: string } | null;
 };
+
+/**
+ * What the logo endpoint needs: a bare host. People paste whole URLs, type
+ * "Netflix", and capitalise — so strip scheme, credentials, path, port and
+ * `www.`, then insist on a dot. Anything without one is a brand name, not a
+ * domain, and sending it would only produce a broken image request.
+ */
+export function normalizeBrandDomain(input: string): string | null {
+  const host = input
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+    .replace(/^[^/@]*@/, "")
+    .split(/[/?#]/)[0]
+    ?.split(":")[0]
+    ?.replace(/^www\./, "");
+
+  if (!host?.includes(".")) return null;
+  if (host.startsWith(".") || host.endsWith(".")) return null;
+  return host;
+}
 
 /**
  * Codes, not sentences. Keeping the copy out of here means this module never
@@ -63,6 +87,7 @@ export function makeInitialFormValues({
     period: SubscriptionPeriodValue;
     paymentDate: string;
     categoryId: string | null;
+    brandDomain: string | null;
   };
 }): SubscriptionFormValues {
   return {
@@ -74,6 +99,7 @@ export function makeInitialFormValues({
     period: subscription?.period ?? SubscriptionPeriod.MONTH,
     paymentDate: subscription ? new Date(subscription.paymentDate) : new Date(),
     categoryId: subscription?.categoryId ?? null,
+    brandDomain: subscription?.brandDomain ?? "",
     // An offer is a creation-time concept; editing one is what the
     // manage-pricing sheet is for.
     offerMode: "none",
@@ -148,6 +174,7 @@ export function validateSubscriptionForm(
       period: values.period,
       paymentDate: values.paymentDate.toISOString(),
       categoryId: values.categoryId,
+      brandDomain: normalizeBrandDomain(values.brandDomain),
       intro,
     },
   };

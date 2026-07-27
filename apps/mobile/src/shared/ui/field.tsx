@@ -49,7 +49,7 @@ export function TextField({
   value: string;
   onChangeText: (value: string) => void;
   error?: string;
-  keyboardType?: "default" | "decimal-pad" | "number-pad";
+  keyboardType?: "default" | "decimal-pad" | "number-pad" | "url";
   placeholder?: string;
   autoCapitalize?: "none" | "sentences" | "words";
 }) {

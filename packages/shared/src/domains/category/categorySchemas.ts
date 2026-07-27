@@ -186,7 +186,12 @@ const CATEGORY_EMOJI_GROUPS: readonly CategoryEmojiGroup[] = [
   },
 ];
 
-const CATEGORY_EMOJIS: readonly string[] = CATEGORY_EMOJI_GROUPS.flatMap(
+/**
+ * Exported because `categoryEmojiSchema` rejects anything outside it: a client
+ * that picks an emoji from its own list gets a 422 the user cannot act on. Any
+ * emoji a client offers must come from here.
+ */
+export const CATEGORY_EMOJIS: readonly string[] = CATEGORY_EMOJI_GROUPS.flatMap(
   (group) => group.emojis,
 );
 
