@@ -17,15 +17,40 @@ export const subscriptionKeys = {
  * "Many subscriptions" for one person is tens, not thousands — the entire list is
  * one small payload, and holding it locally is what makes search free.
  */
+/**
+ * Runaway guard, not a page budget. The server's cursor is an offset that always
+ * advances and returns null when exhausted, so this can only trip if the API
+ * starts handing back a non-advancing cursor — in which case a phone looping on
+ * the network forever is a worse failure than a short list.
+ */
+const MAX_PAGES = 20;
+
 export function subscriptionsQuery() {
   return queryOptions({
     queryKey: subscriptionKeys.list(),
     queryFn: async (): Promise<SubscriptionDto[]> => {
-      const response = await apiClient.api.subscriptions.$get({ query: {} });
-      assertOk(response);
-      const body: SubscriptionListPageDto<SubscriptionDto> =
-        await response.json();
-      return body.items;
+      const items: SubscriptionDto[] = [];
+      let cursor: string | undefined;
+      let page = 0;
+
+      // Followed to exhaustion, NOT capped with a bigger `limit`. Every screen
+      // treats this array as the whole list — search, filters and sort all run
+      // in memory over it — so a partial first page is silent data loss rather
+      // than pagination, and raising the server's default 50 is the same bug
+      // with a larger number in it.
+      do {
+        const response = await apiClient.api.subscriptions.$get({
+          query: cursor ? { cursor } : {},
+        });
+        assertOk(response);
+        const body: SubscriptionListPageDto<SubscriptionDto> =
+          await response.json();
+        items.push(...body.items);
+        cursor = body.nextCursor ?? undefined;
+        page += 1;
+      } while (cursor && page < MAX_PAGES);
+
+      return items;
     },
     staleTime: 60 * 1000,
   });

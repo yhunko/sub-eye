@@ -29,6 +29,26 @@ function stubJson(body: unknown): string[] {
   return urls;
 }
 
+/** Serves one body per call, so a paginated queryFn walks a real sequence. */
+function stubPages(
+  bodies: unknown[],
+  { repeatLast = false }: { repeatLast?: boolean } = {},
+): string[] {
+  const urls: string[] = [];
+  globalThis.fetch = ((input: unknown) => {
+    const index = urls.length;
+    urls.push(input instanceof Request ? input.url : String(input));
+    const body = bodies[index] ?? (repeatLast ? bodies.at(-1) : undefined);
+    return Promise.resolve(
+      new Response(JSON.stringify(body ?? { items: [], nextCursor: null }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+  }) as typeof fetch;
+  return urls;
+}
+
 const { getCachedSubscriptionRow, subscriptionKeys, subscriptionsQuery } =
   await import("./list");
 
@@ -112,6 +132,38 @@ describe("subscriptionsQuery", () => {
 
     await expect(queryFn()).resolves.toEqual([row]);
     expect(urls[0]).toContain("/api/subscriptions");
+  });
+
+  // The defect this prevents: the server pages at 50 by default and every screen
+  // treats this array as the COMPLETE list, so dropping nextCursor silently hides
+  // a user's 51st subscription from the list, the search and the filters.
+  it("follows nextCursor to exhaustion instead of returning the first page", async () => {
+    const second = { ...row, id: "sub_2", name: "Spotify" };
+    const urls = stubPages([
+      { items: [row], nextCursor: "50" },
+      { items: [second], nextCursor: null },
+    ]);
+    const queryFn = subscriptionsQuery().queryFn as () => Promise<
+      SubscriptionDto[]
+    >;
+
+    await expect(queryFn()).resolves.toEqual([row, second]);
+    expect(urls).toHaveLength(2);
+    expect(urls[1]).toContain("cursor=50");
+  });
+
+  // A server that keeps handing back the same cursor must not put the phone in
+  // an unbounded request loop.
+  it("stops after MAX_PAGES when the cursor never advances", async () => {
+    const urls = stubPages([{ items: [row], nextCursor: "50" }], {
+      repeatLast: true,
+    });
+    const queryFn = subscriptionsQuery().queryFn as () => Promise<
+      SubscriptionDto[]
+    >;
+
+    await queryFn();
+    expect(urls).toHaveLength(20);
   });
 });
 
