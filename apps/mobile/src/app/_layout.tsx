@@ -12,7 +12,13 @@ import { useAppLocale } from "@/shared/i18n";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import "@/shared/lib/online"; // side-effect only: registers onlineManager↔NetInfo once
 import { queryClient } from "@/shared/lib/query";
+import { AppErrorBoundary } from "@/shared/ui/error-boundary";
 import { colors } from "@/shared/ui/theme";
+
+// expo-router looks for this exact named export on a layout and uses it as the
+// error boundary for everything below. Without it a throw in any screen is a
+// blank window in a Release build — the red box only exists in development.
+export { AppErrorBoundary as ErrorBoundary };
 
 // HOLD THE SPLASH ACROSS THE JS BOOT. Left to itself the native splash hides as
 // soon as the root view exists — which is long before the bundle has evaluated,
