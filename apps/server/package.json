@@ -39,7 +39,7 @@
     "dev": "bun --watch run src/index.ts & tsc --watch",
     "dev:lan": "WRANGLER_SEND_METRICS=false wrangler dev -c dev.wrangler.jsonc --ip 0.0.0.0 --port 8788",
     "lint": "biome check .",
-    "test": "bun test ./test",
+    "test": "DATABASE_URL=${DATABASE_URL:-postgres://placeholder:placeholder@localhost/placeholder} bun test ./test",
     "type-check": "tsc -p tsconfig.json --pretty"
   }
 }

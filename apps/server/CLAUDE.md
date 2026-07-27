@@ -88,6 +88,27 @@ leaves (they never import a service).
 
 ---
 
+## Tests
+
+`bun test ./test` — unit tests over fake repositories. Nothing here talks to
+Postgres.
+
+The `test` script pins a placeholder `DATABASE_URL` when the environment has
+none. Every service reaches a repository, every repository imports
+`src/db/index.ts`, and that module **throws at import** on a missing
+`DATABASE_URL` — so without the placeholder the suite dies during module
+evaluation and reports a cascade of `Cannot access 'X' before initialization`,
+even though no test issues a query. A real value still wins, and the Worker
+keeps its fail-loudly-at-boot behaviour.
+
+**A local pass proves less than it looks.** `apps/server/.env` supplies
+`DATABASE_URL`, so the suite goes green locally whether or not the placeholder
+is there; CI has no `.env` and is the only place the difference shows. Turbo
+caches `test`, so a cache hit can also replay a green log for code that would
+fail if it actually ran — `turbo test --force` is what checks the claim.
+
+---
+
 ## Adding a new phase kind
 
 1. Add the value to `pricePhaseKindEnum` in `src/db/schema.ts` and to the
