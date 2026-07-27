@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { CategoryDto, SubscriptionDto } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 import type { SearchBarCommands } from "react-native-screens";
+import { categoriesQuery } from "@/entities/category";
 import {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
@@ -26,6 +27,7 @@ import { SubscriptionRow } from "./subscription-row";
 export function SubscriptionsPage() {
   const router = useRouter();
   const list = useQuery(subscriptionsQuery());
+  const categories = useQuery(categoriesQuery());
   const [filters, setFilters] = useState(DEFAULT_SUBSCRIPTION_FILTERS);
   const searchRef = useRef<SearchBarCommands | null>(null);
 
@@ -144,6 +146,8 @@ export function SubscriptionsPage() {
               <FilterChips
                 status={filters.status}
                 sort={filters.sort}
+                categories={categories.data ?? EMPTY_CATEGORIES}
+                categoryId={filters.categoryId}
                 onStatus={(status) => {
                   closeOpenRow();
                   setFilters((current) => ({ ...current, status }));
@@ -151,6 +155,10 @@ export function SubscriptionsPage() {
                 onSort={(sort) => {
                   closeOpenRow();
                   setFilters((current) => ({ ...current, sort }));
+                }}
+                onCategory={(categoryId) => {
+                  closeOpenRow();
+                  setFilters((current) => ({ ...current, categoryId }));
                 }}
               />
             </View>
@@ -179,8 +187,10 @@ export function SubscriptionsPage() {
   );
 }
 
-// Module constant: a fresh [0] each render would re-key the sticky header.
+// Module constants: a fresh [0] each render would re-key the sticky header, and
+// a fresh [] would break FilterChips' memoization for no reason.
 const STICKY_HEADER = [0];
+const EMPTY_CATEGORIES: CategoryDto[] = [];
 
 const styles = StyleSheet.create({
   // No `gap` — each row carries its own ROW_GAP as a margin so the swipe

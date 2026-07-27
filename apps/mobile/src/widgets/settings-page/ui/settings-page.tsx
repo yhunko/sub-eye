@@ -1,6 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useQuery } from "@tanstack/react-query";
 import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { type ReactNode, useEffect, useState } from "react";
@@ -290,6 +291,7 @@ function AccountHeader() {
 export function SettingsPage() {
   const { signOut } = useAuth();
   const { user } = useUser();
+  const router = useRouter();
   const preferences = useQuery(preferencesQuery());
   const update = useUpdatePreferences();
   const data = preferences.data;
@@ -391,6 +393,13 @@ export function SettingsPage() {
                   ? undefined
                   : syncTimezone
               }
+            />
+            <Divider />
+            <Row
+              ios="tag"
+              android="label"
+              label={m.settings_categories()}
+              onPress={() => router.push("/settings/categories")}
             />
             <Divider />
             <Row

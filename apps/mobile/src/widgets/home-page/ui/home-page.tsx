@@ -10,6 +10,7 @@ import { useDashboard } from "@/entities/dashboard";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
 import { CategoryBars } from "./category-bars";
+import { HomeEmpty } from "./home-empty";
 import { MonthHero } from "./month-hero";
 import { ResumingRow } from "./resuming-row";
 import { TopSubscription } from "./top-subscription";
@@ -38,6 +39,18 @@ export function HomePage() {
         </Pressable>
       </View>
     );
+  }
+
+  // Nothing active, nothing paused, and no spend in the six-month trend — this
+  // account has never had anything to total. The trend clause is what keeps a
+  // user who just cancelled their last subscription looking at their history
+  // instead of at a first-run screen.
+  if (
+    data.activeSubscriptionsTotal === 0 &&
+    data.resumingSoon.length === 0 &&
+    !data.monthlyTrend.some((point) => point.amount > 0)
+  ) {
+    return <HomeEmpty />;
   }
 
   return (

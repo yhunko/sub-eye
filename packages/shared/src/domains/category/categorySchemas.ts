@@ -21,12 +21,17 @@ export const CategoryDtoSchema = object({
   updatedAt: string(),
 });
 
-type CategoryEmojiGroup = {
+export type CategoryEmojiGroup = {
   label: string;
   emojis: readonly string[];
 };
 
-const CATEGORY_EMOJI_GROUPS: readonly CategoryEmojiGroup[] = [
+/**
+ * The picker's own shape. `CATEGORY_EMOJIS` below is this flattened, and it is
+ * what `categoryEmojiSchema` validates against — so a picker built from these
+ * groups can never offer an emoji the server answers with a 422.
+ */
+export const CATEGORY_EMOJI_GROUPS: readonly CategoryEmojiGroup[] = [
   {
     label: "⭐",
     emojis: [

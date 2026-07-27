@@ -1,9 +1,42 @@
 import type { Href } from "expo-router";
 import { Link } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
+import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
+
+/**
+ * Closes every screen that can create an account. It sits BELOW all the buttons
+ * rather than gating one of them: SSO and Apple create accounts too — on the
+ * sign-in screen as much as on sign-up — and a checkbox next to the credential
+ * form left those paths agreeing to nothing.
+ */
+export function ConsentNotice() {
+  return (
+    // Split into separate keys rather than one sentence with markers: each
+    // linked phrase has to inflect per locale (uk needs the instrumental
+    // "Умовами користування"), which no interpolation into a shared noun
+    // could produce.
+    <Text style={styles.consent}>
+      {m.auth_consentBefore()}
+      <Text
+        style={styles.consentLink}
+        onPress={() => void Linking.openURL(termsUrl())}
+      >
+        {m.auth_consentLink()}
+      </Text>
+      {m.auth_consentAnd()}
+      <Text
+        style={styles.consentLink}
+        onPress={() => void Linking.openURL(privacyUrl())}
+      >
+        {m.auth_consentPrivacyLink()}
+      </Text>
+      {m.auth_consentAfter()}
+    </Text>
+  );
+}
 
 /** The "or" rule between the credential form and the SSO buttons. */
 export function OrDivider() {
@@ -94,6 +127,14 @@ const styles = StyleSheet.create({
   },
   noteTitle: { fontSize: 13, fontWeight: "700", color: colors.text },
   noteBody: { fontSize: 13, lineHeight: 18, color: colors.muted },
+  consent: {
+    marginTop: 20,
+    textAlign: "center",
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.muted,
+  },
+  consentLink: { fontWeight: "600", color: colors.text },
   footer: { textAlign: "center", fontSize: 14, color: colors.muted },
   footerAction: { fontWeight: "600", color: colors.accent },
 });

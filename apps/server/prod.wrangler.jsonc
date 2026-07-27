@@ -12,8 +12,13 @@
   "triggers": {
     "crons": ["17 4 * * *"]
   },
+  // `enabled` is the master switch and `logs.enabled` was true underneath it.
+  // Wrangler does not reconcile the two — it posts this block verbatim and lets
+  // the Workers API decide — so "does production keep logs?" was a question only
+  // an incident would answer. Both true, traces off: unambiguous, and traces are
+  // the part that is not free at any real volume.
   "observability": {
-    "enabled": false,
+    "enabled": true,
     "head_sampling_rate": 1,
     "logs": {
       "enabled": true,

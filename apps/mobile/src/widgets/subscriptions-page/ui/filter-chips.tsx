@@ -1,3 +1,4 @@
+import type { CategoryDto } from "@subeye/shared";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import type {
   SubscriptionSort,
@@ -53,13 +54,19 @@ function Chip({
 export function FilterChips({
   status,
   sort,
+  categories,
+  categoryId,
   onStatus,
   onSort,
+  onCategory,
 }: {
   status: SubscriptionStatusFilter;
   sort: SubscriptionSort;
+  categories: readonly CategoryDto[];
+  categoryId: string | null;
   onStatus: (value: SubscriptionStatusFilter) => void;
   onSort: (value: SubscriptionSort) => void;
+  onCategory: (value: string | null) => void;
 }) {
   return (
     <>
@@ -77,6 +84,31 @@ export function FilterChips({
           />
         ))}
       </ScrollView>
+
+      {/* Only for accounts that have categories. A third pinned strip is real
+          vertical chrome, and a lone "All categories" chip that filters nothing
+          is chrome that does nothing. */}
+      {categories.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.strip}
+        >
+          <Chip
+            label={m.subs_categoryAll()}
+            active={categoryId === null}
+            onPress={() => onCategory(null)}
+          />
+          {categories.map((category) => (
+            <Chip
+              key={category.id}
+              label={`${category.emoji} ${category.name}`}
+              active={categoryId === category.id}
+              onPress={() => onCategory(category.id)}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

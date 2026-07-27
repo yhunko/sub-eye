@@ -12,8 +12,10 @@
   "triggers": {
     "crons": ["17 4 * * *"]
   },
+  // Kept in step with prod.wrangler.jsonc — see the note there on why `enabled`
+  // and `logs.enabled` must not disagree.
   "observability": {
-    "enabled": false,
+    "enabled": true,
     "head_sampling_rate": 1,
     "logs": {
       "enabled": true,

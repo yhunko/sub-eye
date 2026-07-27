@@ -7,6 +7,25 @@ No agent can do any of it.
 
 ---
 
+## M0 — `eas init`  ⛔ do this first
+
+Found 2026-07-27 while verifying B2: **the EAS project has never been linked.**
+`bunx eas env:list --environment production` fails with "EAS project not
+configured", and `apps/mobile/app.json` has no `extra.eas.projectId`.
+
+`eas.json` is on `appVersionSource: "remote"` with `autoIncrement`, so **no EAS
+build can run at all** until this exists — not production, not preview, not the
+development client. Every other step that ends in a build is behind it.
+
+```bash
+cd apps/mobile && bunx eas init
+```
+
+It is interactive and writes `expo.extra.eas.projectId` into `app.json`. Commit
+that. Then M4's `eas env:create` commands become runnable.
+
+---
+
 ## M1 — Write and publish the legal pages  ⛔
 
 The app now links a privacy policy. **These URLs must resolve before you
@@ -78,7 +97,11 @@ platforms — nothing to change there. Your `app.subeye.cc` API host and the
 
 ---
 
-## M3 — Sign in with Apple  ⛔ (do before session brief B1)
+## M3 — Sign in with Apple  ⛔ (brief B1 has already landed)
+
+The app code is done — `apps/mobile` now renders Apple's native button and posts
+the identity token to Clerk. **Until this section is finished the button
+authenticates against Apple and Clerk silently never creates a session.**
 
 1. **Apple Developer portal** → Identifiers → `cc.subeye.app` → enable the
    **Sign in with Apple** capability.
@@ -87,12 +110,26 @@ platforms — nothing to change there. Your `app.subeye.cc` API host and the
    ID (`Z6KADG969Z`).
 3. **Clerk dashboard** (production instance) → SSO Connections → Apple. Paste
    the Services ID, Team ID, Key ID and the `.p8` contents.
-4. Register the native redirect URL Clerk gives you, alongside the existing
-   `subeye://` entry under Native Applications.
-5. Confirm `*.p8` stays gitignored — `apps/mobile/.gitignore` already covers
+4. **Register the native app's bundle id (`cc.subeye.app`) in that same Clerk
+   Apple connection.** This is the step that is easy to miss and it is the one
+   the native flow depends on: a native identity token's `aud` claim is the
+   *bundle identifier*, not the Services ID, so a connection configured for the
+   web flow alone will reject every token the app sends.
+5. Register the native redirect URL Clerk gives you, alongside the existing
+   `subeye://` entry under Native Applications. (Google and GitHub still use the
+   web flow and need it; Apple no longer does.)
+6. Confirm `*.p8` stays gitignored — `apps/mobile/.gitignore` already covers
    it. Never commit that key.
+7. **Rebuild natively.** `ios.usesAppleSignIn` and the
+   `expo-apple-authentication` plugin only write the
+   `com.apple.developer.applesignin` entitlement during prebuild:
 
-Then run brief B1.
+```bash
+cd apps/mobile && bun run prebuild && bun run ios
+```
+
+   A Metro reload will not do it, and without the entitlement the sheet fails to
+   present at all.
 
 ---
 
@@ -169,10 +206,21 @@ the native tab bar the same way. On a real iPhone, with a **production**-profile
 build:
 
 - [ ] Sign up with email + password, verify the code, land on Home
-- [ ] Sign in with Google, then GitHub, then Apple (after B1)
+- [ ] **A brand-new account lands on Home's empty state, and its button opens
+      the add-subscription sheet** (not a zero hero and an empty trend)
+- [ ] **On a device set to a non-Ukrainian region, that new account's currency
+      is the region's** (EUR/USD/GBP/PLN) — and changing it in Settings by hand
+      survives a reinstall + sign-in on the same device
+- [ ] Sign in with Google, then GitHub, then **Apple** — and confirm Apple's
+      "Hide My Email" path lands in the app with a session
 - [ ] Reset password end to end
 - [ ] Add a subscription with a category and a website — the row shows the real
       logo, and Home's category card shows more than "Uncategorized"
+- [ ] **Settings → Categories: rename one, change its emoji, and delete one that
+      has subscriptions in it** — the confirm names the count, the subscriptions
+      survive as Uncategorized, and the list rows show the new name immediately
+- [ ] **The category filter chips appear on the subscriptions list once a
+      category exists, and filtering by one narrows the list**
 - [ ] Add a subscription with a free trial; check the detail screen's price
       timeline
 - [ ] Pause with a date, resume, cancel at period end, cancel now, renew, delete

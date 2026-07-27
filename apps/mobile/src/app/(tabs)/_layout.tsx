@@ -5,6 +5,7 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import { subscriptionsQuery } from "@/entities/subscription";
+import { useSeedPreferredCurrency } from "@/entities/user";
 import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
 import { syncRenewalReminders } from "@/shared/lib/notifications";
@@ -75,11 +76,18 @@ export default function TabsLayout() {
   return <Tabs />;
 }
 
+/** Renders nothing; gives a brand-new account the device region's currency. */
+function PreferredCurrencySeed() {
+  useSeedPreferredCurrency();
+  return null;
+}
+
 function Tabs() {
   return (
     <>
       {/* Outside NativeTabs: its children must be triggers and nothing else. */}
       <RenewalReminderSync />
+      <PreferredCurrencySeed />
       <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
         <NativeTabs.Trigger name="(home)">
           <NativeTabs.Trigger.Icon sf="house" md="home" />

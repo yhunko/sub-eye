@@ -15,6 +15,7 @@ import { m } from "@/shared/i18n";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { Button } from "@/shared/ui/button";
 import { colors } from "@/shared/ui/theme";
+import { termsConsent } from "../model/consent";
 
 const APP_MARK = require("../../../../assets/icon.png");
 
@@ -58,6 +59,7 @@ export function useSso(onError: (message: string) => void) {
           // the Clerk Dashboard. Without it the provider authenticates fine and
           // Clerk silently never creates the session.
           redirectUrl: Linking.createURL("/sso-callback"),
+          unsafeMetadata: termsConsent(),
         });
 
       if (createdSessionId && setActive) {

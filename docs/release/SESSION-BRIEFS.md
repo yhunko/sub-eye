@@ -3,7 +3,7 @@
 Follow-up work from the 2026-07-27 release-readiness audit. Each brief is
 self-contained: open a fresh session, paste the brief, and it has what it needs.
 
-Order matters only where stated. **B1 and B2 gate App Store submission.**
+Order matters only where stated.
 
 Already landed on `dev` (do not redo):
 
@@ -14,68 +14,139 @@ Already landed on `dev` (do not redo):
 | `40ecafe` | Subscription list follows its cursor (was silently capped at 50) |
 | `4e3615d` | expo-router `ErrorBoundary` |
 | `e532af0` | Category picker + inline create, `brandDomain` field |
+| _this session_ | **B1** Sign in with Apple · **B2** observability config · **B4** category management · **B5** first-run experience |
 
 ---
 
-## B1 — Sign in with Apple  ⛔ blocks submission
+## ⛔ New blocker found while verifying B2
 
-**Do the manual brief's step M3 first.** The Clerk dashboard and Apple
-Developer configuration must exist before this code can work, or the button
-authenticates and silently never creates a session.
+**The EAS project has never been initialised.** `bunx eas env:list --environment
+production` fails with "EAS project not configured", and `apps/mobile/app.json`
+has no `extra.eas.projectId`. With `eas.json` on `appVersionSource: "remote"` +
+`autoIncrement`, **no EAS build can run at all** — not production, not preview,
+not the development client.
 
-> Add "Sign in with Apple" to the SubEye mobile app.
->
-> The SSO row lives in `apps/mobile/src/widgets/auth-page/ui/sso.tsx` and
-> currently offers Google and GitHub via Clerk's `useSSO`. App Store Guideline
-> 4.8 requires an equivalent privacy-preserving login alongside third-party
-> social login, and Google/GitHub do not qualify.
->
-> Constraints:
-> - Clerk is `@clerk/clerk-expo` 2.19.x — the **classic** API, not what current
->   Clerk docs show. Check the installed `@clerk/shared` types before writing
->   flow code.
-> - Prefer the native `expo-apple-authentication` button on iOS over the web
->   OAuth flow — Apple requires its own button styling and wording, and a
->   Custom Tab / SFSafariViewController flow for Apple sign-in reads as
->   non-native to reviewers. On Android, fall back to Clerk's `oauth_apple`
->   web flow or hide the button; decide and comment the reason.
-> - `BrandLogo` fetches favicons from Google's endpoint. Apple's button must
->   NOT use it — use the official SF Symbol `apple.logo` or the
->   `expo-apple-authentication` component.
-> - Add the `usesAppleSignIn` config so prebuild writes the entitlement.
-> - Strings go in `apps/mobile/messages/en.json` **and** `uk.json`, keys
->   `prefix_camelCase`. Never call `m.someKey()` at module scope.
->
-> Read `apps/mobile/CLAUDE.md` before touching anything. Run `bun run lint`,
-> `type-check`, `test` and `check:boundaries` before calling it done.
+`eas init` is interactive and needs the account, so only you can run it:
+
+```bash
+cd apps/mobile && bunx eas init
+```
+
+Then M4's `eas env:create` steps become runnable. Everything in M7 (device smoke
+test) and the whole submission path is behind this. Do it first.
 
 ---
 
-## B2 — Production configuration verification  ⛔ blocks submission
+## B1 — Sign in with Apple ✅ landed
 
-Pairs with manual steps M1/M2/M4. Mostly verification, little code.
+Native iOS Sign in with Apple, per Guideline 4.8.
 
-> Verify the SubEye production build configuration end to end and fix what is
-> wrong.
->
-> 1. `apps/mobile/eas.json` production profile uses `environment: production`.
->    Confirm via `bunx eas env:list --environment production` that
->    `EXPO_PUBLIC_API_URL` is `https://app.subeye.cc` (no trailing slash, no
->    `/api` — see `apps/mobile/src/shared/config/env.ts`) and that
->    `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is a `pk_live_` key. A `pk_test_` key
->    in a store build is a total silent failure.
-> 2. Confirm the Clerk **production** instance has `subeye://` and the SSO
->    redirect URL registered under Native Applications, and that its webhook
->    points at `https://app.subeye.cc/api/webhooks/clerk` with the
->    `CLERK_WEBHOOK_SECRET` that Cloudflare holds. Account deletion depends on
->    that webhook (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`)
->    — without it, deleted accounts leave orphaned Postgres rows, which is a
->    GDPR problem, not just a tidiness one.
-> 3. `apps/server/prod.wrangler.jsonc` sets `observability.enabled: false` with
->    `observability.logs.enabled: true`. Determine which wins in the installed
->    wrangler version and make it unambiguous — production with no logs is not
->    a state to discover during an incident.
-> 4. Run a real production-profile build and confirm the app reaches the API.
+- `apps/mobile/src/widgets/auth-page/ui/apple-sign-in.tsx` — `useAppleSignIn()`
+  and `AppleSignInButton`, wired into both `sign-in-page.tsx` and
+  `sign-up-page.tsx` above the Google/GitHub row.
+- Uses clerk-expo 2.19's **`useSignInWithApple()`**, not
+  `useSSO({ strategy: "oauth_apple" })`. The hook drives
+  `expo-apple-authentication` and posts the identity token
+  (`signIn.create({ strategy: "oauth_token_apple" })`, transferring to `signUp`
+  when the account is new). No SFSafariViewController anywhere in the flow.
+- Renders Apple's own `ASAuthorizationAppleIDButton` (white, 52pt, corner radius
+  14 — never smaller than the other providers). `BrandLogo` is not involved.
+- **iOS only.** `expo-apple-authentication` has no Android implementation and
+  4.8 is an App Store rule; Android keeps Google/GitHub. Reason is commented in
+  the component.
+- `app.json`: `ios.usesAppleSignIn: true` plus an explicit
+  `"expo-apple-authentication"` plugin entry. New deps:
+  `expo-apple-authentication`, `expo-crypto`.
+- No new strings — the native button localises itself, and failures reuse
+  `auth_ssoFailed`.
+
+**Still needs you:** manual step **M3** (Apple Developer capability + Services
+ID + key, Clerk SSO connection, native redirect URL) and a native rebuild
+(`bun run prebuild` then a dev-client or EAS build) — the entitlement only
+exists after prebuild. Until M3 is done the button authenticates and Clerk never
+creates a session.
+
+---
+
+## B2 — Production configuration verification ⚠️ partly landed
+
+**Landed:** the observability contradiction is gone.
+`apps/server/prod.wrangler.jsonc` (and `dev.wrangler.jsonc`) had
+`observability.enabled: false` with `observability.logs.enabled: true`.
+Verified against the installed wrangler 4.83.0: it does **not** reconcile the
+two locally — `deploy` posts the block verbatim (`observability:
+config.observability`) and lets the Workers API decide, so the answer was not
+knowable from the client. Both are now `true`, traces stay `false`.
+`wrangler deploy --dry-run` on the prod config passes.
+
+**Still needs you** — all of it requires a dashboard login or the EAS account:
+
+1. `eas init` (see the blocker above), then confirm via
+   `bunx eas env:list --environment production` that `EXPO_PUBLIC_API_URL` is
+   `https://app.subeye.cc` (no trailing slash, no `/api` — see
+   `apps/mobile/src/shared/config/env.ts`) and that
+   `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is a `pk_live_` key. A `pk_test_` key in
+   a store build is a total silent failure.
+2. Confirm the Clerk **production** instance has `subeye://` and the SSO
+   redirect URL registered under Native Applications, and that its webhook
+   points at `https://app.subeye.cc/api/webhooks/clerk` with the
+   `CLERK_WEBHOOK_SECRET` Cloudflare holds. Account deletion depends on that
+   webhook (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) —
+   without it, deleted accounts leave orphaned Postgres rows, which is a GDPR
+   problem, not just a tidiness one.
+3. Run a real production-profile build and confirm the app reaches the API.
+
+---
+
+## B4 — Category management ✅ landed
+
+- `packages/shared`: `CATEGORY_EMOJI_GROUPS` and `CategoryEmojiGroup` are now
+  exported, so the picker is built from the same list `categoryEmojiSchema`
+  validates against and can never produce a 422.
+- `entities/category`: `useUpdateCategory()` and `useDeleteCategory()`. Both
+  invalidate the dashboard **and** the subscription list — a rename would
+  otherwise leave the old name on every row's denormalised `category`.
+- `widgets/categories-page/`: the list (`Settings → Categories`, with each
+  category's subscription count) and a `formSheet` edit route with a name field,
+  the grouped emoji grid, and a destructive delete.
+- Delete warns with the number of subscriptions that move to Uncategorized
+  rather than blocking — `subscriptions.category_id` is `onDelete: "set null"`.
+- Routes `app/(tabs)/settings/categories/index.tsx` and `.../[id].tsx`.
+- `pickCategoryEmoji` is untouched and still the default for inline creation.
+- The subscriptions list gained a **category filter chip strip**, rendered only
+  when the account has categories.
+
+**Deliberately not built:** an "Add category" button on the management screen.
+Creation stays inline in the subscription form (a category with no subscription
+in it is a dead category); the screen's footnote says where they come from.
+Revisit if the footnote turns out not to be enough.
+
+---
+
+## B5 — First-run experience ✅ landed
+
+**Empty Home.** `widgets/home-page/ui/home-empty.tsx` replaces the zero hero /
+flat trend / empty category card with one sentence and a button to
+`/subscriptions/new`. It shows only when the account has nothing active, nothing
+paused, **and** no spend in the six-month trend — the last clause is what keeps
+a user who just cancelled their last subscription looking at their history
+instead of at a first-run screen.
+
+**Default currency.** `entities/user/api/use-seed-preferred-currency.ts`, mounted
+next to `RenewalReminderSync` in `(tabs)/_layout.tsx`. Adopts the device
+region's currency once per account per device, guarded twice:
+
+1. an MMKV flag set on the first run **whether or not anything changed**, so a
+   failed PATCH is never a second chance to overwrite a hand-picked currency;
+2. the stored preference must still be the server default `"uah"` — `deviceFlags`
+   is per-install, so without this a user who chose USD in Berlin would be
+   silently re-denominated by their second phone.
+
+`supportedCurrencyCode()` in `shared/lib/format/money.ts` does the mapping and is
+covered by six cases in `money.test.ts`. One of them caught a **pre-existing
+bug**: `SYMBOLS[code]` walked the prototype, so `formatMoney(x, "constructor")`
+rendered `"undefined1,234.50"`. All three readers now go through a guarded
+`currencyFor()`.
 
 ---
 
@@ -86,7 +157,7 @@ Not a blocker, but shipping without it means debugging from one-star reviews.
 > Add client-side error reporting to the SubEye mobile app.
 >
 > Today `apps/server/src/utils/analytics.ts` posts `$exception` events to
-> PostHog EU from the Worker. The mobile app reports nothing — the new
+> PostHog EU from the Worker. The mobile app reports nothing — the
 > `AppErrorBoundary` (`apps/mobile/src/shared/ui/error-boundary.tsx`) shows a
 > screen but sends nothing anywhere.
 >
@@ -101,66 +172,9 @@ Not a blocker, but shipping without it means debugging from one-star reviews.
 >   never block a render or throw on a dead network.
 > - If the SDK collects anything new, update `expo.ios.privacyManifests` in
 >   `apps/mobile/app.json` to match, and note it for the App Privacy label.
-
----
-
-## B4 — Category management screen
-
-Completes what `e532af0` started.
-
-> Add category management to the SubEye mobile app.
 >
-> `apps/mobile/src/entities/category` currently has `categoriesQuery()` and
-> `useCreateCategory()`. The server (`apps/server/src/routes/categories.ts`)
-> also supports rename, delete, and batch delete — none reachable from the app.
->
-> Build a Settings → Categories screen: list, rename, delete, and change the
-> emoji. The emoji picker should offer the grouped set in
-> `packages/shared/src/domains/category/categorySchemas.ts`
-> (`CATEGORY_EMOJI_GROUPS` is currently private — export it if needed; the
-> server validates against it, so a client-invented emoji is a 422). Once a
-> real picker exists, `pickCategoryEmoji` becomes the default for inline
-> creation only — keep it, do not delete it.
->
-> Deleting a category sets `subscriptions.category_id` to NULL
-> (`onDelete: "set null"`), so warn with the affected count rather than
-> blocking. Also add a category filter chip to the subscriptions list:
-> `applySubscriptionFilters` already supports `categoryId`
-> (`entities/subscription/model/filters.ts`) and nothing sets it.
->
-> Read `apps/mobile/CLAUDE.md` first — especially the routing and native-tabs
-> sections. Adding a screen needs an explicit argument; this one's is that the
-> app can create categories it can never rename or remove.
-
----
-
-## B5 — First-run experience and locale-derived default currency
-
-> Two first-run defects in the SubEye mobile app.
->
-> **1. Empty Home.** A new account lands on `HomePage` with a zero hero, an
-> empty trend and an empty category card. The only way to add a subscription
-> is a small "+" in the *other* tab's header. Give the dashboard a real empty
-> state that routes to `/subscriptions/new`. Do not add a tutorial, a carousel,
-> or sample data the user then has to delete.
->
-> **2. Default currency is UAH for everyone.** `usersTable.preferredCurrency`
-> defaults to `"uah"` (`apps/server/src/db/schema.ts`) and `UserService`
-> returns `CurrencyUtils.DEFAULT_CURRENCY_CODE` when the user has no row, so a
-> user in Berlin sees hryvnia on their first Home screen.
->
-> The supported set is exactly five codes — see `SYMBOLS` in
-> `apps/mobile/src/shared/lib/format/money.ts`: uah, usd, eur, gbp, pln.
-> `expo-localization`'s `getLocales()[0].currencyCode` gives the device's
-> region currency directly.
->
-> Recommended shape (challenge it if you see better): seed once on the client.
-> Guard with a per-Clerk-user MMKV flag (`shared/lib/mmkv.ts` has
-> `deviceFlags`), fire only when the flag is unset and the device currency is
-> in the supported set, and PATCH `/user/preferences`. No server change, no new
-> API surface, and an explicit user choice is never overwritten because the
-> flag is set on the first run either way. Add a test for the
-> device-currency → supported-code mapping.
+> Note that this adds a native module, so it needs a prebuild + rebuild — batch
+> it with any other native change rather than burning a build on it alone.
 
 ---
 
@@ -179,7 +193,8 @@ an approved product id to point at.
 > - **Free:** unlimited subscriptions, the full Home dashboard, list, search,
 >   filter, sort, every lifecycle action, multi-currency conversion.
 > - **Pro:** renewal reminders · pricing phases (trial-ending and price-change
->   tracking) · categories and the category breakdown · CSV export.
+>   tracking) · categories, the category breakdown and the category filter ·
+>   CSV export.
 > - The gate is *features*, not a subscription count cap. Nothing gated costs
 >   the developer anything at runtime, so the free tier cannot be griefed into
 >   a bill and the cap never punishes the users who evangelise the app.
@@ -198,6 +213,9 @@ an approved product id to point at.
 > - Existing users must not lose reminders they already have on. Grandfather
 >   anyone with `notifications.renewalReminders` already true in MMKV, and say
 >   so in the commit message.
+> - Categories are now reachable from Settings → Categories and from the list's
+>   filter chips. Gating them means gating **three** surfaces, not one — decide
+>   whether the chips disappear or deep-link to the paywall, and be consistent.
 > - Strings in both message catalogs.
 
 ---
@@ -210,8 +228,27 @@ an approved product id to point at.
 >
 > Prefer a Cloudflare Rate Limiting rule on `app.subeye.cc` over application
 > code: it is free, it runs before the Worker, and it costs zero request
-> latency. If that cannot express a per-user limit, add the smallest possible
-> Worker-side check — but do not introduce a KV namespace or Durable Object for
-> this without saying why in the commit message.
+> latency. See manual step **M6** for the suggested rule — the dashboard part is
+> yours, this brief is the code/doc half. If the dashboard rule cannot express a
+> per-user limit, add the smallest possible Worker-side check — but do not
+> introduce a KV namespace or Durable Object for this without saying why in the
+> commit message.
 >
 > Document whatever is chosen in `apps/server/README.md`.
+
+---
+
+## Not verified in any session so far
+
+Everything below needs a real build on real hardware. None of it is covered by
+`type-check` / `test` / `lint` / `check:boundaries`, all of which are green.
+
+- The Apple button rendering, and the whole SIWA flow end to end (needs M3 + a
+  native rebuild).
+- The `Settings → Categories` sheet detent behaviour and the emoji grid inside
+  it.
+- Home's empty state under the transparent iOS header.
+- The first-run currency seed against a genuinely new account.
+- The third (category) chip strip's effect on the sticky filter header height.
+
+Manual step **M7** is the checklist for all of it.

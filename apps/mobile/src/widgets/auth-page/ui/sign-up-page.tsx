@@ -1,15 +1,15 @@
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
-import { privacyUrl, termsUrl } from "@/shared/config/legal";
+import { StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { colors } from "@/shared/ui/theme";
+import { termsConsent } from "../model/consent";
+import { AppleSignInButton, useAppleSignIn } from "./apple-sign-in";
 import { AuthInput } from "./auth-input";
 import { AuthScaffold } from "./auth-scaffold";
-import { ErrorBanner, FooterLink, OrDivider } from "./chrome";
+import { ConsentNotice, ErrorBanner, FooterLink, OrDivider } from "./chrome";
 import { authErrorMessage } from "./error-copy";
 import { PasswordInput } from "./password-input";
 import { SsoHandoff, SsoRow, useSso } from "./sso";
@@ -20,10 +20,10 @@ export function SignUpPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [consented, setConsented] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const sso = useSso(setError);
+  const apple = useAppleSignIn(setError);
 
   const submit = async () => {
     if (!isLoaded || busy) return;
@@ -37,7 +37,7 @@ export function SignUpPage() {
         // empty string as a malformed address instead of as "not provided".
         ...(trimmedEmail ? { emailAddress: trimmedEmail } : {}),
         password,
-        unsafeMetadata: { termsAcceptedAt: new Date().toISOString() },
+        unsafeMetadata: termsConsent(),
       });
 
       if (attempt.status === "complete") {
@@ -66,8 +66,7 @@ export function SignUpPage() {
     }
   };
 
-  const canSubmit =
-    consented && username.trim().length > 0 && password.length > 0;
+  const canSubmit = username.trim().length > 0 && password.length > 0;
 
   return (
     <>
@@ -125,44 +124,6 @@ export function SignUpPage() {
             onSubmitEditing={() => void submit()}
           />
 
-          <Pressable
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: consented }}
-            onPress={() => setConsented((current) => !current)}
-            style={styles.consent}
-          >
-            <View style={[styles.box, consented ? styles.boxOn : null]}>
-              {consented ? (
-                <SymbolView
-                  name={{ ios: "checkmark", android: "check" }}
-                  size={13}
-                  tintColor={colors.bg}
-                />
-              ) : null}
-            </View>
-            {/* Split into separate keys rather than one sentence with markers:
-                each linked phrase has to inflect per locale (uk needs the
-                instrumental "Умовами користування"), which no interpolation
-                into a shared noun could produce. */}
-            <Text style={styles.consentText}>
-              {m.auth_consentBefore()}
-              <Text
-                style={styles.consentLink}
-                onPress={() => void Linking.openURL(termsUrl())}
-              >
-                {m.auth_consentLink()}
-              </Text>
-              {m.auth_consentAnd()}
-              <Text
-                style={styles.consentLink}
-                onPress={() => void Linking.openURL(privacyUrl())}
-              >
-                {m.auth_consentPrivacyLink()}
-              </Text>
-              {m.auth_consentAfter()}
-            </Text>
-          </Pressable>
-
           <Button
             label={m.auth_createAccount()}
             busy={busy}
@@ -172,7 +133,13 @@ export function SignUpPage() {
         </View>
 
         <OrDivider />
-        <SsoRow onStart={sso.start} disabled={busy} />
+        <AppleSignInButton
+          intent="signUp"
+          onPress={apple.start}
+          disabled={busy || apple.pending || sso.pending !== null}
+        />
+        <SsoRow onStart={sso.start} disabled={busy || apple.pending} />
+        <ConsentNotice />
       </AuthScaffold>
 
       {sso.pending ? (
@@ -185,23 +152,4 @@ export function SignUpPage() {
 const styles = StyleSheet.create({
   form: { gap: 14 },
   optional: { fontSize: 12, color: colors.muted },
-  consent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 11,
-    // The row IS the tap target for the checkbox — 44pt, not the 22pt box.
-    minHeight: 44,
-  },
-  box: {
-    width: 22,
-    height: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  boxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-  consentText: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.muted },
-  consentLink: { fontWeight: "600", color: colors.text },
 });

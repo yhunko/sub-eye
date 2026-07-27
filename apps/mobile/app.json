@@ -4,7 +4,9 @@
     "slug": "sub-eye",
     "scheme": "subeye",
     "version": "4.0.0",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
@@ -14,9 +16,14 @@
       "bundleIdentifier": "cc.subeye.app",
       "appleTeamId": "Z6KADG969Z",
       "icon": "./icon.icon",
+      "usesAppleSignIn": true,
       "backgroundColor": "#0f1115",
-      "config": { "usesNonExemptEncryption": false },
-      "infoPlist": { "CFBundleAllowMixedLocalizations": true },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      },
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],
@@ -81,9 +88,20 @@
       "expo-router",
       [
         "expo-localization",
-        { "supportedLocales": { "ios": ["en", "uk"], "android": ["en", "uk"] } }
+        {
+          "supportedLocales": {
+            "ios": ["en", "uk"],
+            "android": ["en", "uk"]
+          }
+        }
       ],
-      ["expo-secure-store", { "faceIDPermission": false }],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
+      "expo-apple-authentication",
       "expo-notifications",
       [
         "expo-splash-screen",
@@ -96,7 +114,15 @@
       ],
       "@react-native-community/datetimepicker"
     ],
-    "experiments": { "reactCompiler": true },
-    "extra": { "router": {} }
+    "experiments": {
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e52f6dbb-9a22-4a84-bcb5-7c35e4bbfff2"
+      }
+    },
+    "owner": "yehor.hunko"
   }
 }

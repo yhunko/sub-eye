@@ -6,9 +6,10 @@ import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { colors } from "@/shared/ui/theme";
 import { clerkErrorCode } from "../model/clerk-error";
+import { AppleSignInButton, useAppleSignIn } from "./apple-sign-in";
 import { AuthInput } from "./auth-input";
 import { AuthScaffold } from "./auth-scaffold";
-import { ErrorBanner, FooterLink, OrDivider } from "./chrome";
+import { ConsentNotice, ErrorBanner, FooterLink, OrDivider } from "./chrome";
 import { authErrorMessage } from "./error-copy";
 import { PasswordInput } from "./password-input";
 import { SsoHandoff, SsoRow, useSso } from "./sso";
@@ -21,6 +22,7 @@ export function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const sso = useSso(setError);
+  const apple = useAppleSignIn(setError);
 
   const submit = async () => {
     if (!isLoaded || busy) return;
@@ -105,7 +107,16 @@ export function SignInPage() {
         </View>
 
         <OrDivider />
-        <SsoRow onStart={sso.start} disabled={busy} />
+        <AppleSignInButton
+          intent="signIn"
+          onPress={apple.start}
+          disabled={busy || apple.pending || sso.pending !== null}
+        />
+        <SsoRow onStart={sso.start} disabled={busy || apple.pending} />
+        {/* Not redundant with sign-up: an SSO or Apple tap here creates the
+            account when there is none, which is exactly the path that used to
+            reach Clerk with no agreement behind it. */}
+        <ConsentNotice />
       </AuthScaffold>
 
       {sso.pending ? (
