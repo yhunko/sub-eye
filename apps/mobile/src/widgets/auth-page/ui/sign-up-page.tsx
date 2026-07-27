@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
-import { TERMS_URL } from "@/shared/config/legal";
+import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { colors } from "@/shared/ui/theme";
@@ -140,17 +140,24 @@ export function SignUpPage() {
                 />
               ) : null}
             </View>
-            {/* Split into three keys rather than one sentence with a marker:
-                the linked phrase has to inflect per locale (uk needs the
+            {/* Split into separate keys rather than one sentence with markers:
+                each linked phrase has to inflect per locale (uk needs the
                 instrumental "Умовами користування"), which no interpolation
                 into a shared noun could produce. */}
             <Text style={styles.consentText}>
               {m.auth_consentBefore()}
               <Text
                 style={styles.consentLink}
-                onPress={() => void Linking.openURL(TERMS_URL)}
+                onPress={() => void Linking.openURL(termsUrl())}
               >
                 {m.auth_consentLink()}
+              </Text>
+              {m.auth_consentAnd()}
+              <Text
+                style={styles.consentLink}
+                onPress={() => void Linking.openURL(privacyUrl())}
+              >
+                {m.auth_consentPrivacyLink()}
               </Text>
               {m.auth_consentAfter()}
             </Text>

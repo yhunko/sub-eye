@@ -19,7 +19,7 @@ import {
 } from "react-native";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
-import { TERMS_URL } from "@/shared/config/legal";
+import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
 import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
@@ -39,8 +39,6 @@ const LANGUAGE_NAMES: Record<AppLocale, string> = {
   en: "English",
   uk: "Українська",
 };
-
-// There is no privacy-policy page yet — add the row here once one exists.
 
 // Separator inset: row padding (16) + icon (19) + gap (13), so the rule starts
 // under the label rather than under the icon.
@@ -418,7 +416,14 @@ export function SettingsPage() {
           ios="doc.text"
           android="description"
           label={m.settings_terms()}
-          onPress={() => void Linking.openURL(TERMS_URL)}
+          onPress={() => void Linking.openURL(termsUrl())}
+        />
+        <Divider />
+        <Row
+          ios="hand.raised"
+          android="privacy_tip"
+          label={m.settings_privacy()}
+          onPress={() => void Linking.openURL(privacyUrl())}
         />
       </Group>
 
