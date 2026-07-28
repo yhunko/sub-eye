@@ -73,6 +73,7 @@ export function HomePage() {
         remainingThisMonth={data.remainingThisMonth}
         monthTotal={data.totalUpcomingMonth}
         nextMonthForecast={data.nextMonthForecast}
+        yearForecast={data.yearlyForecast}
       />
 
       {/* Most days this is empty, and that is the answer. Rendering an empty

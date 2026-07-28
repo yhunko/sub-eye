@@ -6,6 +6,7 @@
   "home_remainingThisMonth": "Left this month",
   "home_loadError": "Could not load your numbers.",
   "home_nextMonthForecast": "Next month",
+  "home_yearForecast": "Next 12 months",
   "home_deltaMore": "{amount} more",
   "home_deltaLess": "{amount} less",
   "home_attention": "Coming up",

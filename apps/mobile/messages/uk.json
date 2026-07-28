@@ -6,6 +6,7 @@
   "home_remainingThisMonth": "Залишилось цього місяця",
   "home_loadError": "Не вдалося завантажити ваші суми.",
   "home_nextMonthForecast": "Наступний місяць",
+  "home_yearForecast": "Наступні 12 місяців",
   "home_deltaMore": "на {amount} більше",
   "home_deltaLess": "на {amount} менше",
   "home_attention": "Незабаром",
