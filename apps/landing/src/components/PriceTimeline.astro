@@ -1,0 +1,202 @@
+---
+import type { PricePhaseKind } from "@subeye/shared";
+import { copyFor } from "../i18n";
+import { money } from "../lib/format";
+import type { Locale } from "../lib/site";
+import { priceTimeline } from "../lib/timeline";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+
+const phaseLabel: Record<PricePhaseKind, string> = {
+  trial: c.timeline.trial,
+  intro: c.timeline.intro,
+  scheduledChange: c.timeline.scheduledChange,
+  standard: c.timeline.standard,
+};
+
+// Every number below comes out of @subeye/pricing at build time — see
+// src/lib/timeline.ts. Nothing here is typed in.
+const steps = priceTimeline.map((step, i) => ({
+  ...step,
+  id: `phase-${i}`,
+  label: phaseLabel[step.kind],
+  blurb: c.timeline.blurb[step.kind],
+  span:
+    step.kind === "trial" && step.spanDays !== null
+      ? c.timeline.days(step.spanDays)
+      : step.spanMonths !== null
+        ? c.timeline.months(step.spanMonths)
+        : c.timeline.fromMonth(step.startMonth),
+  amount: money(step.monthly, step.currency),
+  // Dots sit in the middle of the stretch each card covers, so the axis reads
+  // as three spans of time rather than three instants.
+  at: `${((i + 0.5) / priceTimeline.length) * 100}%`,
+}));
+---
+
+<fieldset class="tl">
+  <legend class="sr-only">{c.timeline.kicker}</legend>
+
+  <div class="tl__rail" aria-hidden="true">
+    <span class="tl__fill"></span>
+    {
+      steps.map((step) => (
+        <span class="tl__dot" data-for={step.id} style={`left:${step.at}`} />
+      ))
+    }
+  </div>
+
+  <div class="tl__cards">
+    {
+      steps.map((step) => (
+        <label class="tl__card">
+          <input
+            class="tl__input"
+            type="radio"
+            name="phase"
+            id={step.id}
+            checked={step.isActive}
+          />
+          <span class="label">
+            {step.label} · {step.span}
+          </span>
+          <span class="tl__amount num">{step.amount}</span>
+          <span class="tl__blurb">{step.blurb}</span>
+        </label>
+      ))
+    }
+  </div>
+</fieldset>
+
+<style>
+  .tl {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .tl__rail {
+    display: none;
+    position: relative;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .tl__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    background: var(--accent);
+    transition: width 620ms var(--ease);
+  }
+
+  .tl__dot {
+    position: absolute;
+    top: -4.5px;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: var(--radius-pill);
+    background: var(--ink-700);
+    transition: background-color 280ms var(--ease);
+  }
+
+  .tl__cards {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .tl__card {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 1.75rem;
+    cursor: pointer;
+    opacity: 0.62;
+    transition:
+      opacity 280ms var(--ease),
+      border-color 280ms var(--ease);
+  }
+
+  .tl__card:has(:checked) {
+    opacity: 1;
+    border-color: var(--accent);
+  }
+
+  .tl__card:has(:focus-visible) {
+    outline: 2px solid var(--accent-bright);
+    outline-offset: 3px;
+  }
+
+  /* The card is the control; the radio only has to stay focusable and keyboard
+     operable, which it is — arrow keys move between the three. */
+  .tl__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tl__amount {
+    margin-top: 0.38rem;
+    font-size: clamp(2.13rem, 4vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--text-muted);
+    transition: color 280ms var(--ease);
+  }
+
+  .tl__card:has(:checked) .tl__amount {
+    color: var(--text);
+  }
+
+  .tl__blurb {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+  }
+
+  /* Three phases, guaranteed: src/lib/timeline.ts throws at build time if the
+     model returns any other number, so these cannot go stale silently. */
+  .tl:has(#phase-0:checked) .tl__fill {
+    width: 16.66%;
+  }
+
+  .tl:has(#phase-1:checked) .tl__fill {
+    width: 50%;
+  }
+
+  .tl:has(#phase-2:checked) .tl__fill {
+    width: 83.33%;
+  }
+
+  .tl:has(#phase-0:checked) [data-for="phase-0"],
+  .tl:has(#phase-1:checked) [data-for="phase-1"],
+  .tl:has(#phase-2:checked) [data-for="phase-2"] {
+    background: var(--accent);
+  }
+
+  /* The rail only means something while the cards sit along it. Stacked, it is
+     a line with three dots pointing at nothing. */
+  @media (min-width: 46em) {
+    .tl__rail {
+      display: block;
+      margin-bottom: 1.25rem;
+    }
+
+    .tl__cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

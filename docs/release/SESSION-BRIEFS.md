@@ -4,24 +4,23 @@ Unbuilt work from the 2026-07-27 release-readiness audit. Each brief is
 self-contained: open a fresh session, paste the brief, and it has what it needs.
 
 The manual half — anything needing a dashboard login, credentials, or a decision
-— is [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md), and it leads with the blocker
-that gates everything else.
+— is [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md).
+
+**v4.0.0 is live on `app.subeye.cc`** (M1, 2026-07-27). The app finally has a
+backend that matches it.
 
 ## What is left, in order
 
-1. **M1 — ship v4 to production.** The live API at `app.subeye.cc` is still v3;
-   the app is a v4 client. Everything below is untestable until this lands, and
-   the database half of it needs supervision, not CI.
-2. **M2** EAS production env vars. ⛔ blocks any usable build.
-3. **M3** publish the privacy policy and the four `/en` + `/uk` legal routes.
-   ⛔ blocks submission, and the app links them today. Work in the landing repo,
-   not this one.
-4. **B3** client crash telemetry — batch the native module with the prebuild for
+1. **M2** EAS production env vars. ⛔ blocks any usable build — three commands.
+2. **M3** publish the privacy policy and the four `/en` + `/uk` legal routes.
+   ⛔ blocks submission, the app links them today, and it is work in the landing
+   repo rather than this one. Longest lead time — start it first.
+3. **B3** client crash telemetry — batch the native module with the prebuild for
    the first EAS build rather than burning a build on it alone.
-5. **M4 / M5** Clerk production instance, then the App Store Connect record and
+4. **M4 / M5** Clerk production instance, then the App Store Connect record and
    privacy label.
-6. **M6** first EAS build + device smoke test.
-7. **B7** rate limiting (mostly the M7 dashboard rule), **B6** RevenueCat (still
+5. **M6** first EAS build + device smoke test.
+6. **B7** rate limiting (mostly the M7 dashboard rule), **B6** RevenueCat (still
    blocked on M8).
 
 B3 adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means revisiting
@@ -100,7 +99,8 @@ approved product id to point at.
 > Add SubEye Pro to the mobile app via RevenueCat.
 >
 > Decided model (do not redesign it):
-> - **One non-consumable, $19.99 lifetime.** No auto-renewable subscription in
+> - **One non-consumable, $11.99 lifetime**, per-storefront (~₴199 in Ukraine).
+>   Not a launch price; no promo codes. No auto-renewable subscription in
 >   v1 — Guideline 3.1.2 paywall requirements, dunning and grace periods are ops
 >   a solo developer does not need on day one, and a subscription-tracking app
 >   charging a subscription is a joke reviewers make in public.

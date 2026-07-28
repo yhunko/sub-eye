@@ -1,0 +1,697 @@
+---
+import CurrencyPanel from "../components/CurrencyPanel.astro";
+import Footer from "../components/Footer.astro";
+import LifecyclePanel from "../components/LifecyclePanel.astro";
+import Mark from "../components/Mark.astro";
+import Nav from "../components/Nav.astro";
+import PriceTimeline from "../components/PriceTimeline.astro";
+import SpendCard from "../components/SpendCard.astro";
+import TopBar from "../components/TopBar.astro";
+import UpcomingCard from "../components/UpcomingCard.astro";
+import { copyFor } from "../i18n";
+import { money } from "../lib/format";
+import { spendPanel } from "../lib/panels";
+import type { Locale } from "../lib/site";
+import { proPrice } from "../lib/site";
+import Base from "./Base.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const panel = spendPanel[locale];
+
+const us = { price: money(proPrice.usd, "usd"), where: c.pricing.storefrontUs };
+const ua = { price: money(proPrice.uah, "uah", 0), where: c.pricing.storefrontUa };
+const eu = { price: money(proPrice.eur, "eur"), where: c.pricing.storefrontEu };
+
+// A visitor on the Ukrainian storefront should see hryvnia first — the whole
+// point of the per-storefront line is that it is their price, not a conversion.
+const home = locale === "uk" ? ua : us;
+const storefronts = locale === "uk" ? [ua, us, eu] : [us, ua, eu];
+// "Free" priced in the reader's own currency, not a dollar zero on a hryvnia page.
+const free = money(0, locale === "uk" ? "uah" : "usd", 0);
+---
+
+<Base
+  locale={locale}
+  title={c.meta.title}
+  description={c.meta.description}
+  structuredData
+>
+  <TopBar locale={locale} />
+
+  <main id="main">
+    <section class="shell hero" id="top">
+      <div class="hero__nav">
+        <Nav locale={locale} />
+      </div>
+
+      <h1 class="hero__title">{c.hero.title}</h1>
+      <p class="lead hero__lead">{c.hero.lead}</p>
+
+      <div class="hero__actions">
+        <a class="btn" href="#how">{c.hero.ctaHow}</a>
+        <a class="btn btn--ghost" href="#price">
+          {c.hero.ctaPrice(free, home.price)}
+        </a>
+      </div>
+
+      <div class="hero__cards">
+        <SpendCard locale={locale} />
+        <UpcomingCard locale={locale} />
+      </div>
+    </section>
+
+    <section class="shell trust" aria-label={c.bank.title}>
+      <ul class="trust__list">
+        {c.bank.denials.map((line) => <li>{line}</li>)}
+      </ul>
+    </section>
+
+    <section class="shell band" id="how" aria-labelledby="how-title">
+      <p class="eyebrow">{c.nav.how}</p>
+      <h2 class="how__title" id="how-title">{c.timeline.kicker}</h2>
+      <p class="lead how__lede">{c.timeline.lede}</p>
+
+      <div class="how__timeline">
+        <PriceTimeline locale={locale} />
+      </div>
+
+      <p class="how__punch">{c.timeline.punch}</p>
+
+      <div class="how__cards">
+        <div class="card">
+          <h3>{c.does.money.title}</h3>
+          <p class="prose">{c.does.money.body}</p>
+          <div class="mini">
+            <p class="mini__row">
+              <span class="mini__big num">
+                {money(panel.left, panel.currency)}
+              </span>
+              <span class="mini__of num">
+                {c.panel.nextMonth} · {money(panel.nextMonth, panel.currency)}
+              </span>
+            </p>
+            <span class="mini__bar" aria-hidden="true">
+              <span
+                style={`width:${Math.round((panel.day / panel.daysInMonth) * 100)}%`}
+              ></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>{c.does.lifecycle.title}</h3>
+          <p class="prose">{c.does.lifecycle.body}</p>
+          <LifecyclePanel locale={locale} />
+        </div>
+
+        <div class="card">
+          <h3>{c.does.currency.title}</h3>
+          <p class="prose">{c.does.currency.body}</p>
+          <CurrencyPanel locale={locale} />
+        </div>
+      </div>
+    </section>
+
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="shell privacy__grid">
+        <div>
+          <p class="eyebrow">{c.nav.privacy}</p>
+          <h2 class="privacy__title" id="privacy-title">{c.bank.title}</h2>
+        </div>
+        <div>
+          <p class="lead">{c.bank.body}</p>
+          <ul class="privacy__pills">
+            {[...c.bank.pills, c.languages].map((pill) => (
+              <li class="pill">{pill}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell band" id="price" aria-labelledby="price-title">
+      <p class="eyebrow">{c.nav.price}</p>
+      <h2 class="price__title" id="price-title">{c.pricing.title}</h2>
+      <p class="lead price__lede">{c.pricing.joke}</p>
+
+      <div class="price__plans">
+        <div class="card plan">
+          <p class="plan__name">{c.pricing.freeName}</p>
+          <p class="plan__amount">
+            <span class="num">{free}</span>
+            <span class="plan__suffix">{c.pricing.freeSuffix}</span>
+          </p>
+          <p class="prose plan__body">{c.pricing.freeBody}</p>
+          <ul class="plan__items">
+            {c.pricing.freeItems.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+
+        <div class="card plan plan--pro">
+          <p class="plan__name">
+            {c.pricing.proName}
+            <span class="plan__tag">{c.pricing.proTag}</span>
+          </p>
+          <p class="plan__amount">
+            <span class="num">{home.price}</span>
+            <span class="plan__suffix">{c.pricing.proSuffix}</span>
+          </p>
+          <p class="prose plan__body">{c.pricing.proBody}</p>
+          <ul class="plan__items">
+            {c.pricing.proItems.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <div class="card store">
+        <div>
+          <p class="store__title">{c.pricing.storefrontTitle}</p>
+          <p class="store__body">{c.pricing.storefrontBody}</p>
+        </div>
+        <ul class="store__prices">
+          {
+            storefronts.map((s) => (
+              <li>
+                <span class="store__price num">{s.price}</span>
+                <span class="store__where">{s.where}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section class="shell band" id="faq" aria-labelledby="faq-title">
+      <div class="faq">
+        <div>
+          <p class="eyebrow">{c.faq.title}</p>
+          <h2 class="faq__title" id="faq-title">{c.faq.heading}</h2>
+        </div>
+
+        <div class="faq__list">
+          {
+            c.faq.items.map((item) => (
+              <details class="faq__item">
+                <summary>
+                  <span>{item.q}</span>
+                  <span class="faq__sign" aria-hidden="true" />
+                </summary>
+                <p class="prose faq__answer">{item.a}</p>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="shell band">
+      <div class="card end">
+        <span class="end__icon"><Mark height={32} /></span>
+        <h2 class="end__title">{c.cta.title}</h2>
+        <p class="lead end__body">{c.cta.body}</p>
+        <p class="end__badge">
+          <span class="end__dot" aria-hidden="true"></span>
+          {c.hero.platform} · {c.languages}
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <Footer locale={locale} />
+</Base>
+
+<style>
+  /* Where the fixed bar cannot reveal itself, the page keeps one brand row and
+     it is the bar's — see TopBar.astro. */
+  @supports not (animation-timeline: scroll()) {
+    .hero__nav {
+      display: none;
+    }
+  }
+
+  .hero {
+    padding-top: 0.5rem;
+  }
+
+  /* 24ch, not the mock's 15ch: at the shell's full 1140px that left the
+     headline ending halfway across with a full-width card row under it. This
+     is the measure at which it wraps to two lines that fill the column. */
+  .hero__title {
+    max-width: 24ch;
+    font-size: var(--fs-hero);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+
+  .hero__lead {
+    margin-top: 1.75rem;
+    max-width: 56ch;
+  }
+
+  .hero__actions {
+    margin-top: 2.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.88rem;
+  }
+
+  .hero__cards {
+    margin-top: 4rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .trust {
+    margin-top: 4rem;
+  }
+
+  .trust__list {
+    display: grid;
+    gap: 1rem 2rem;
+    padding-block: 1.38rem;
+    border-block: 1px solid var(--border);
+    font-size: var(--fs-body);
+    font-weight: 600;
+  }
+
+  .trust__list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .trust__list li::before {
+    content: "";
+    width: 16px;
+    height: 2px;
+    flex: none;
+    background: var(--accent);
+  }
+
+  .how__title {
+    margin-top: 1.13rem;
+    max-width: 22ch;
+    font-size: var(--fs-display);
+  }
+
+  .how__lede {
+    margin-top: 1.25rem;
+    max-width: 62ch;
+  }
+
+  .how__timeline {
+    margin-top: 3.5rem;
+  }
+
+  .how__punch {
+    margin-top: 1.75rem;
+    font-size: 1.06rem;
+    font-weight: 600;
+    color: var(--accent-bright);
+  }
+
+  .how__cards {
+    margin-top: 5rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .how__cards h3 {
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+  }
+
+  .how__cards .prose {
+    margin: 0.75rem 0 1.5rem;
+  }
+
+  .mini {
+    background: var(--surface-alt);
+    border-radius: 16px;
+    padding: 1.13rem;
+  }
+
+  .mini__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  .mini__big {
+    font-size: 1.63rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .mini__of {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+  }
+
+  .mini__bar {
+    display: block;
+    margin-top: 0.75rem;
+    height: 5px;
+    border-radius: var(--radius-pill);
+    background: rgb(255 255 255 / 8%);
+  }
+
+  .mini__bar > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+  }
+
+  .privacy {
+    margin-top: var(--section);
+    background: var(--surface);
+    border-block: 1px solid var(--border);
+  }
+
+  .privacy__grid {
+    padding-block: clamp(3.5rem, 8vw, 5.5rem);
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .privacy__title {
+    margin-top: 1.13rem;
+    max-width: 18ch;
+    font-size: var(--fs-display);
+  }
+
+  .privacy__pills {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.63rem;
+  }
+
+  .price__title,
+  .faq__title {
+    margin-top: 1.13rem;
+    font-size: var(--fs-display);
+  }
+
+  .price__lede {
+    margin-top: 1.25rem;
+    max-width: 56ch;
+  }
+
+  .price__plans {
+    margin-top: 3rem;
+    display: grid;
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .plan {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .plan--pro {
+    border-color: var(--accent);
+  }
+
+  .plan__name {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 1.63rem;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .plan__tag {
+    font-size: var(--fs-micro);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--on-accent);
+    background: var(--accent);
+    padding: 0.31rem 0.63rem;
+    border-radius: var(--radius-pill);
+  }
+
+  .plan__amount {
+    margin-top: 1.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.63rem;
+  }
+
+  .plan__amount .num {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .plan__suffix {
+    color: var(--text-muted);
+    font-size: var(--fs-body);
+  }
+
+  .plan__body {
+    margin: 1.25rem 0 1.5rem;
+  }
+
+  .plan__items {
+    display: grid;
+    gap: 0.75rem;
+    font-size: var(--fs-body);
+  }
+
+  .plan__items li {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .plan__items li::before {
+    content: "✓";
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .store {
+    margin-top: 1.25rem;
+    display: grid;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .store__title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .store__body {
+    margin-top: 0.5rem;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .store__prices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .store__price {
+    display: block;
+    font-size: 1.38rem;
+    font-weight: 700;
+  }
+
+  .store__where {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+  }
+
+  .faq {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .faq__title {
+    max-width: 16ch;
+  }
+
+  .faq__item {
+    border-top: 1px solid var(--border);
+  }
+
+  .faq__list > :last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq__item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: 1.5rem;
+    font-size: 1.06rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Two rules drawn instead of a "+" glyph, so opening rotates one of them
+     rather than swapping a character and reflowing the row. */
+  .faq__sign {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  .faq__sign::before,
+  .faq__sign::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: translateY(-50%);
+  }
+
+  .faq__sign::after {
+    transition: transform 240ms var(--ease);
+    transform: translateY(-50%) rotate(90deg);
+  }
+
+  .faq__item[open] .faq__sign::after {
+    transform: translateY(-50%) rotate(0deg);
+  }
+
+  /* A grid item's automatic minimum size is its content, which would hold the
+     0fr row open. These two are what let the row actually collapse. */
+  .faq__answer {
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 3.75rem 1.5rem 0;
+    line-height: 1.6;
+  }
+
+  /*
+   * The accordion, with no JavaScript and no layout thrash: `::details-content`
+   * is the open/closed box itself, so the panel is a grid row animating 0fr→1fr
+   * and the answer never re-wraps mid-transition. `content-visibility` has to
+   * transition discretely or the closing frame is skipped and the panel snaps.
+   * Browsers without `::details-content` simply open instantly — nothing to
+   * polyfill, and no script ships either way.
+   */
+  .faq__item::details-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    overflow: clip;
+    opacity: 0;
+    transition:
+      grid-template-rows 260ms var(--ease),
+      opacity 180ms var(--ease),
+      content-visibility 260ms allow-discrete;
+  }
+
+  .faq__item[open]::details-content {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .end {
+    padding: clamp(2.5rem, 6vw, 3.5rem) 2.5rem;
+    text-align: center;
+  }
+
+  /* The shipped icon's own ground (#0f1115), not white — see
+     apps/mobile/icon.icon/icon.json. */
+  .end__icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.75rem;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--accent);
+  }
+
+  .end__title {
+    font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+    line-height: 1.1;
+  }
+
+  .end__body {
+    margin: 1.13rem auto 0;
+    max-width: 52ch;
+  }
+
+  .end__badge {
+    margin-top: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.56rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 0.56rem 1rem;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .end__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+  }
+
+  @media (min-width: 46em) {
+    .trust__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .hero__cards,
+    .price__plans {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .how__cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .privacy__grid,
+    .faq {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 3rem;
+    }
+
+    .store {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .store__prices {
+      justify-content: flex-end;
+    }
+  }
+</style>
