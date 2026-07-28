@@ -11,17 +11,24 @@ backend that matches it.
 
 ## What is left, in order
 
-1. **M2** EAS production env vars. ⛔ blocks any usable build — three commands.
-2. **M3** publish the privacy policy and the four `/en` + `/uk` legal routes.
-   ⛔ blocks submission, the app links them today, and it is work in the landing
-   repo rather than this one. Longest lead time — start it first.
-3. **B3** client crash telemetry — batch the native module with the prebuild for
-   the first EAS build rather than burning a build on it alone.
-4. **M4 / M5** Clerk production instance, then the App Store Connect record and
-   privacy label.
-5. **M6** first EAS build + device smoke test.
-6. **B7** rate limiting (mostly the M7 dashboard rule), **B6** RevenueCat (still
-   blocked on M8).
+**Done 2026-07-28:** M2 (EAS production env — all three set, `pk_live_`) and M3
+(all six landing routes live on `www.subeye.cc`, apex 301s to it). M4's Clerk
+production instance is provisioned, DNS and all.
+
+1. **B3** client crash telemetry — batch the native module with the prebuild for
+   the first EAS build rather than burning a build on it alone. If B6 is in the
+   same release, batch both: one prebuild, one build cycle.
+2. **M5** App Store Connect record + privacy label. The privacy URL it demands
+   now resolves.
+3. **M6** first EAS build + device smoke test. `eas build:list` is still empty
+   and `eas.json` has no `submit` block.
+4. **M8** → **B6** payments. Start the Paid Applications agreement now whatever
+   else happens — it takes days. See [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md).
+5. **B7** rate limiting (mostly the M7 dashboard rule).
+
+The open question that outranks all of them: the landing page sells a Pro tier
+the binary does not have. Either B6 ships in v1 or that section comes off the
+page before the listing goes public.
 
 B3 adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means revisiting
 M3's processor list, the App Privacy label, and the EAS production environment —
@@ -93,44 +100,14 @@ Not a blocker, but shipping without it means debugging from one-star reviews.
 
 ## B6 — RevenueCat paywall and Pro entitlement
 
-**Only after M8 (App Store Connect IAP setup).** Do not start before there is an
-approved product id to point at.
+**Moved to its own file: [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md).** It carries the
+dashboard setup, the implementation brief, the three testing tiers and how to
+grant yourself the entitlement.
 
-> Add SubEye Pro to the mobile app via RevenueCat.
->
-> Decided model (do not redesign it):
-> - **One non-consumable, $11.99 lifetime**, per-storefront (~₴199 in Ukraine).
->   Not a launch price; no promo codes. No auto-renewable subscription in
->   v1 — Guideline 3.1.2 paywall requirements, dunning and grace periods are ops
->   a solo developer does not need on day one, and a subscription-tracking app
->   charging a subscription is a joke reviewers make in public.
-> - **Free:** unlimited subscriptions, the full Home dashboard, list, search,
->   filter, sort, every lifecycle action, multi-currency conversion.
-> - **Pro:** renewal reminders · pricing phases (trial-ending and price-change
->   tracking) · categories, the category breakdown and the category filter ·
->   CSV export.
-> - The gate is *features*, not a subscription count cap. Nothing gated costs
->   the developer anything at runtime, so the free tier cannot be griefed into a
->   bill and the cap never punishes the users who evangelise the app.
->
-> Implementation notes:
-> - `react-native-purchases` + RevenueCat. Do not hand-roll StoreKit.
-> - Entitlement is client-side only. `users` gets no new column: a cracked
->   client getting free on-device reminders costs nothing, and a server-side
->   check would put a paywall in the money path for no benefit.
-> - Cache the entitlement in MMKV so a cold start with no network does not
->   downgrade a paying user to free. Fail **open** on a RevenueCat outage.
-> - A "Restore purchases" action is mandatory (Guideline 3.1.1). Put it in
->   Settings next to the paywall entry, not only inside the paywall.
-> - The paywall must link Terms and Privacy — `shared/config/legal.ts` exports
->   `termsUrl()` and `privacyUrl()`.
-> - Existing users must not lose reminders they already have on. Grandfather
->   anyone with `notifications.renewalReminders` already true in MMKV, and say
->   so in the commit message.
-> - Categories are reachable from Settings → Categories and from the list's
->   filter chips. Gating them means gating **three** surfaces, not one — decide
->   whether the chips disappear or deep-link to the paywall, and be consistent.
-> - Strings in both message catalogs.
+Two corrections to what used to be here, in case an old copy is still open:
+**CSV export is not part of Pro** — it does not exist — and gating categories
+touches **four** surfaces, not three (the subscription form's category picker is
+the one that gets missed).
 
 ---
 

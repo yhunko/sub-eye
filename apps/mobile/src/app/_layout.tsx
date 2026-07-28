@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useProIdentity } from "@/entities/pro";
 import { tokenCache, useClerkTokenBridge } from "@/shared/auth";
 import { env } from "@/shared/config/env";
 import { useAppLocale } from "@/shared/i18n";
@@ -53,6 +54,14 @@ function TokenBridge() {
   return null;
 }
 
+// Renders nothing; aliases RevenueCat's app user id onto the Clerk user id.
+// Importing @/entities/pro is also what configures the SDK — that happens once,
+// at module load, before this ever mounts.
+function ProIdentityBridge() {
+  useProIdentity();
+  return null;
+}
+
 // FSD app layer: global providers + the native stack.
 //
 // PROVIDER ORDER IS LOAD-BEARING:
@@ -86,6 +95,7 @@ export default function RootLayout() {
           tokenCache={tokenCache}
         >
           <TokenBridge />
+          <ProIdentityBridge />
           {/* Dark-only app: force light status-bar icons regardless of OS appearance. */}
           <StatusBar style="light" />
           <QueryClientProvider client={queryClient}>
@@ -98,6 +108,13 @@ export default function RootLayout() {
             >
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="(auth)" />
+              {/* Root-level so every gated surface — a tab, a nested stack, a
+                  sheet — can `router.push("/paywall")` and land on the same
+                  screen. It brings its own header options. */}
+              <Stack.Screen
+                name="paywall"
+                options={{ presentation: "modal", headerShown: true }}
+              />
             </Stack>
           </QueryClientProvider>
         </ClerkProvider>

@@ -17,6 +17,13 @@ export const env = {
     "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
     process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
   ),
+  // RevenueCat's PUBLIC SDK key: `appl_…` for a store build, `test_…` for the
+  // Test Store during development. Required, like the Clerk key — a paywall that
+  // silently fails to configure sells nothing and reports nothing.
+  REVENUECAT_IOS_KEY: required(
+    "EXPO_PUBLIC_REVENUECAT_IOS_KEY",
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
+  ),
   // Optional, and the only var here that is. Brandfetch's search endpoint
   // serves anonymous requests, so brand search works without it — but the
   // parameter is documented as required, so an id is what keeps it working.

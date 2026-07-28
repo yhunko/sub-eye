@@ -192,11 +192,16 @@ consistent with it.
    | Identifiers | User ID | yes |
    | User Content | Other User Content | yes |
    | Diagnostics | Crash Data | yes |
+   | Purchases | Purchase History | yes |
    | Browsing/Search | Search History | **no** |
 
    Crash Data is there because the Worker posts exceptions to PostHog keyed by
    your Clerk user id. It is real collection even though no SDK ships in the
    binary today — brief B3 would add one.
+
+   Purchase History is RevenueCat (brief B6, landed). It is linked because the
+   RevenueCat app user id **is** the Clerk user id. The matching manifest entry
+   is `NSPrivacyCollectedDataTypePurchaseHistory` in `app.json`.
 
    Search History is the brand picker: the text typed into it goes to
    Brandfetch. **Not** linked — no account id or Clerk token travels with that

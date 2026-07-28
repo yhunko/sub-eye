@@ -9,19 +9,21 @@ import {
   View,
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
+import { ProLock, usePro } from "@/entities/pro";
 import { deriveAttention, subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
-import { AttentionCard } from "./attention-card";
 import { CategoryBars } from "./category-bars";
 import { HomeEmpty } from "./home-empty";
 import { MonthHero } from "./month-hero";
+import { UpcomingRail } from "./upcoming-rail";
 
 // One question per card, in the order a user asks them: what is left this month,
-// what needs me, where does it go. Upcoming renewals live on the Subscriptions
-// tab — repeating them here made Home a second list.
+// what needs me, where does it go. The rail is capped at five events, not a
+// window onto everything — the Subscriptions tab stays the full list.
 export function HomePage() {
   const { data, isPending, isError, refetch } = useDashboard();
+  const isPro = usePro();
   // The list the Subscriptions tab already fetches and MMKV already persists.
   // Every attention event is derived from fields it carries, so a server
   // endpoint for them would be a second source of the same truth.
@@ -75,12 +77,19 @@ export function HomePage() {
 
       {/* Most days this is empty, and that is the answer. Rendering an empty
           "nothing needs you" block is what trains a user to stop reading it. */}
-      {events.length ? <AttentionCard events={events} /> : null}
+      {events.length ? <UpcomingRail events={events} /> : null}
 
-      <CategoryBars
-        currency={data.preferredCurrencyCode}
-        categories={data.categorySpending}
-      />
+      {isPro ? (
+        <CategoryBars
+          currency={data.preferredCurrencyCode}
+          categories={data.categorySpending}
+        />
+      ) : (
+        <ProLock
+          title={m.paywall_lockBreakdown()}
+          body={m.paywall_lockBreakdownBody()}
+        />
+      )}
     </ScrollView>
   );
 }

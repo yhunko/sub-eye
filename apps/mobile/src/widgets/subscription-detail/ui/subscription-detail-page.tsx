@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
+import { ProLock, usePro } from "@/entities/pro";
 import { toTimelineRows, useSubscriptionDetail } from "@/entities/subscription";
 import { preferencesQuery } from "@/entities/user";
 import { m } from "@/shared/i18n";
@@ -93,6 +94,7 @@ function Track({ value }: { value: number }) {
 
 export function SubscriptionDetailPage({ id }: { id: string }) {
   const { data: subscription, isPending, isError } = useSubscriptionDetail(id);
+  const isPro = usePro();
   const { data: preferences } = useQuery(preferencesQuery());
   // Warm from the Home tab in the common case; the share card simply does not
   // render until it lands on a cold deep link.
@@ -437,7 +439,14 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           </View>
         ) : null}
 
-        {rows.length ? (
+        {/* Nothing to lock when there are no phases: a lock over an empty
+            timeline advertises the feature by implying missing data. */}
+        {!rows.length ? null : !isPro ? (
+          <ProLock
+            title={m.paywall_lockTimeline()}
+            body={m.paywall_lockTimelineBody()}
+          />
+        ) : (
           <View style={[styles.card, styles.timeline]}>
             <Text
               style={styles.label}
@@ -453,7 +462,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               />
             ))}
           </View>
-        ) : null}
+        )}
       </ScrollView>
     </>
   );

@@ -4,6 +4,7 @@ import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { categoriesQuery } from "@/entities/category";
+import { ProLock, usePro } from "@/entities/pro";
 import {
   hasActiveFilters,
   type SubscriptionSort,
@@ -93,6 +94,7 @@ function ChoiceRow({
 export function SubscriptionFiltersSheet() {
   const router = useRouter();
   const filters = useSubscriptionFilters();
+  const isPro = usePro();
   const categories = useQuery(categoriesQuery());
   const rows = categories.data ?? [];
 
@@ -138,9 +140,15 @@ export function SubscriptionFiltersSheet() {
         ))}
       </Section>
 
-      {/* Omitted entirely for an account with no categories — a lone
-            "All categories" row filters nothing. */}
-      {rows.length ? (
+      {/* Free tier gets the lock even with nothing to filter — it is the upsell,
+          and a free account has no categories by construction. Pro with none
+          still gets nothing: a lone "All categories" row filters nothing. */}
+      {!isPro ? (
+        <ProLock
+          title={m.paywall_lockFilter()}
+          body={m.paywall_lockFilterBody()}
+        />
+      ) : rows.length ? (
         <Section title={m.form_category()}>
           <ChoiceRow
             label={m.subs_categoryAll()}

@@ -18,6 +18,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { devForcePro, restorePro, usePro } from "@/entities/pro";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import { privacyUrl, termsUrl } from "@/shared/config/legal";
@@ -142,8 +143,16 @@ function Group({ title, children }: { title?: string; children: ReactNode }) {
  * is replaced by a plain "Off" plus a route into the OS settings — on iOS a
  * refusal is terminal (`requestPermissionsAsync` never prompts again), so a live
  * switch there would be a control that does nothing.
+ *
+ * GRANDFATHERED, and for free: an install whose flag is already `true` had
+ * reminders before the paywall existed, and `renewalRemindersEnabled()` reads
+ * exactly that flag — so the scheduler needs no Pro check at all and keeps
+ * firing. Only turning the switch ON asks for Pro. Turning it off is an opt-out
+ * and gives the grandfathering up with it.
  */
 function RenewalReminders() {
+  const router = useRouter();
+  const isPro = usePro();
   const subscriptions = useQuery(subscriptionsQuery());
   const [enabled, setEnabled] = useState(renewalRemindersEnabled);
   const [blocked, setBlocked] = useState(false);
@@ -165,6 +174,10 @@ function RenewalReminders() {
   }, []);
 
   const toggle = async (next: boolean) => {
+    if (next && !isPro) {
+      router.push("/paywall");
+      return;
+    }
     setBusy(true);
     // An empty list on a cold start is fine: the flag is what persists, and the
     // app-layer sync re-schedules as soon as the query resolves.
@@ -175,6 +188,8 @@ function RenewalReminders() {
     setBusy(false);
   };
 
+  const proHint = !isPro && !enabled ? m.paywall_badge() : undefined;
+
   return (
     <View>
       <Group title={m.settings_notifications()}>
@@ -182,7 +197,11 @@ function RenewalReminders() {
           ios={blocked ? "bell.slash" : "bell"}
           android={blocked ? "notifications_off" : "notifications"}
           label={m.settings_renewalReminders()}
-          value={blocked ? m.settings_off() : undefined}
+          // The badge is the only hint that the switch will open the paywall —
+          // a switch that visibly snaps back with no explanation reads as broken.
+          // "Off" still wins: an OS-level refusal is the terminal state here,
+          // and there is no switch left to gate.
+          value={blocked ? m.settings_off() : proHint}
           toggle={
             blocked
               ? undefined
@@ -292,9 +311,29 @@ export function SettingsPage() {
   const { signOut } = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  const isPro = usePro();
   const preferences = useQuery(preferencesQuery());
   const update = useUpdatePreferences();
   const data = preferences.data;
+  const [restoring, setRestoring] = useState(false);
+  const [forcedPro, setForcedPro] = useState(devForcePro.get);
+
+  // Restoring is the only Pro action that can report "nothing found" as a
+  // success, so it always says something — silence would read as a dead button.
+  const restore = async () => {
+    setRestoring(true);
+    try {
+      Alert.alert(
+        (await restorePro())
+          ? m.paywall_restoreDone()
+          : m.paywall_restoreNone(),
+      );
+    } catch {
+      Alert.alert(m.paywall_restoreNone());
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -399,7 +438,12 @@ export function SettingsPage() {
               ios="tag"
               android="label"
               label={m.settings_categories()}
-              onPress={() => router.push("/settings/categories")}
+              value={isPro ? undefined : m.paywall_badge()}
+              // Deep-linked, not hidden: the row is where someone goes looking
+              // for categories, so it is where the paywall has to be reachable.
+              onPress={() =>
+                router.push(isPro ? "/settings/categories" : "/paywall")
+              }
             />
             <Divider />
             <Row
@@ -419,6 +463,26 @@ export function SettingsPage() {
       ) : null}
 
       <RenewalReminders />
+
+      <Group title={m.settings_pro()}>
+        <Row
+          ios="crown"
+          android="workspace_premium"
+          label={m.settings_pro()}
+          value={isPro ? m.settings_proActive() : undefined}
+          onPress={isPro ? undefined : () => router.push("/paywall")}
+        />
+        <Divider />
+        {/* Guideline 3.1.1 puts Restore here as well as on the paywall — a
+            reviewer who cannot find it rejects the build. */}
+        <Row
+          ios="arrow.clockwise"
+          android="refresh"
+          label={m.settings_restore()}
+          accent
+          onPress={restoring ? undefined : () => void restore()}
+        />
+      </Group>
 
       <Group title={m.settings_legal()}>
         <Row
@@ -443,6 +507,26 @@ export function SettingsPage() {
         label={m.settings_deleteAccount()}
         onPress={user ? confirmDelete : undefined}
       />
+
+      {/* __DEV__, not an env var: a flag configuration can enable is a flag that
+          ships enabled one day. Metro strips this branch from a release bundle. */}
+      {__DEV__ ? (
+        <Group>
+          <Row
+            ios="hammer"
+            android="build"
+            label={m.settings_devForcePro()}
+            toggle={{
+              value: forcedPro,
+              disabled: false,
+              onValueChange: (next) => {
+                devForcePro.set(next);
+                setForcedPro(next);
+              },
+            }}
+          />
+        </Group>
+      ) : null}
 
       <Text style={styles.version}>
         SubEye {Constants.expoConfig?.version ?? ""}

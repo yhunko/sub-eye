@@ -19,7 +19,7 @@
     "syncpack": "^14.3.0",
     "turbo": "^2.9.6",
     "typescript": "^5.9.3",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.114.0"
   },
   "homepage": "https://github.com/yhunko/sub-eye",
   "keywords": [
