@@ -36,6 +36,13 @@ export {
   useSubscriptionFilters,
 } from "./model/filters-store";
 export {
+  ALL_KEY,
+  groupSubscriptions,
+  type SubscriptionGroupBy,
+  type SubscriptionSection,
+  UNGROUPED_KEY,
+} from "./model/grouping";
+export {
   type LifecycleActionItem,
   type LifecycleActionTarget,
   useLifecycleActionBuilder,

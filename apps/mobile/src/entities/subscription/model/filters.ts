@@ -1,4 +1,5 @@
 import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionGroupBy } from "./grouping";
 
 export type SubscriptionSort = "next" | "name" | "cost";
 export type SubscriptionStatusFilter =
@@ -13,6 +14,8 @@ export type SubscriptionListFilters = {
   status: SubscriptionStatusFilter;
   categoryId: string | null;
   sort: SubscriptionSort;
+  /** Arranges, never narrows — which is why `hasActiveFilters` ignores it. */
+  group: SubscriptionGroupBy;
 };
 
 /**
@@ -21,14 +24,15 @@ export type SubscriptionListFilters = {
  * statuses are a tap away in the filter sheet.
  *
  * `hasActiveFilters` compares against THIS object, not against a neutral
- * baseline — so the default view leaves the header's filter dot dark, and
- * switching to "All" lights it. Change one and the other follows.
+ * baseline — so the default view leaves the header's menu button plain, and
+ * switching to "All" tints it. Change one and the other follows.
  */
 export const DEFAULT_SUBSCRIPTION_FILTERS: SubscriptionListFilters = {
   search: "",
   status: "active",
   categoryId: null,
   sort: "next",
+  group: "none",
 };
 
 /**

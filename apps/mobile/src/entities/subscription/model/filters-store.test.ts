@@ -70,11 +70,21 @@ describe("hasActiveFilters", () => {
   it.each([
     ["status", { status: "paused" as const }],
     ["category", { categoryId: "cat_1" }],
-    ["sort", { sort: "cost" as const }],
   ])("is true when %s is narrowed", (_label, patch) => {
     expect(
       hasActiveFilters({ ...DEFAULT_SUBSCRIPTION_FILTERS, ...patch }),
     ).toBe(true);
+  });
+
+  // Neither removes a row. A tinted header button that could also mean "sorted
+  // by name" is a signal the user learns to ignore.
+  it.each([
+    ["sort", { sort: "cost" as const }],
+    ["group", { group: "category" as const }],
+  ])("stays false when only %s changes", (_label, patch) => {
+    expect(
+      hasActiveFilters({ ...DEFAULT_SUBSCRIPTION_FILTERS, ...patch }),
+    ).toBe(false);
   });
 
   // Search has its own visible affordance; lighting the filter button while the
