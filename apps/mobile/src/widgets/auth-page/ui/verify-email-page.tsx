@@ -34,7 +34,11 @@ export function VerifyEmailPage() {
   if (isLoaded && !signUp.emailAddress) return <Redirect href="/sign-up" />;
 
   const verify = async () => {
-    if (!isLoaded || busy) return;
+    if (busy) return;
+    if (!isLoaded) {
+      setError(m.auth_errorNotReady());
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -54,7 +58,12 @@ export function VerifyEmailPage() {
   };
 
   const resend = async () => {
-    if (!isLoaded || cooldown > 0) return;
+    // The cooldown is silent on purpose — the button already shows the count.
+    if (cooldown > 0) return;
+    if (!isLoaded) {
+      setError(m.auth_errorNotReady());
+      return;
+    }
     setError(null);
     setCooldown(RESEND_SECONDS);
     try {

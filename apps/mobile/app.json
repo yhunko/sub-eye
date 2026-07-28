@@ -128,7 +128,15 @@
           "backgroundColor": "#0f1115"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "pe-yhunko",
+          "project": "subeye-mobile",
+          "url": "https://de.sentry.io/"
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

@@ -24,6 +24,23 @@ mock.module("react-native", () => ({
 }));
 
 /**
+ * Same problem, third time: `@sentry/react-native` reaches
+ * `react-native/Libraries/TurboModule/TurboModuleRegistry`, past the stub above.
+ * Crash reporting is deliberately woven into the low layers — the query client,
+ * the token bridge, the error boundary — so the modules that import it are
+ * exactly the ones a pure-logic test pulls in for a query key or a type.
+ *
+ * A no-op stub is also the behaviour under test: nothing should report from a
+ * test run.
+ */
+mock.module("@sentry/react-native", () => ({
+  init: () => {},
+  captureException: () => {},
+  setUser: () => {},
+  wrap: (component: unknown) => component,
+}));
+
+/**
  * Same problem, one layer out: the subscription barrel exports
  * `useLifecycleActionBuilder`, which needs `useRouter` to open the edit/pricing
  * screens. expo-router reaches react-native through DEEP paths

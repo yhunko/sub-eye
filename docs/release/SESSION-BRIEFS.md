@@ -11,28 +11,28 @@ backend that matches it.
 
 ## What is left, in order
 
-**Done 2026-07-28:** M2 (EAS production env — all three set, `pk_live_`) and M3
-(all six landing routes live on `www.subeye.cc`, apex 301s to it). M4's Clerk
-production instance is provisioned, DNS and all.
+**Done 2026-07-28:** M2 (EAS production env), M3 (all six landing routes live on
+`www.subeye.cc`, apex 301s to it), M4 (Clerk production instance, DNS and all),
+and **B6** — the paywall and Pro gating shipped in `72615f8`, which also closed
+the "the landing page sells what the app gives away" problem.
 
-1. **B3** client crash telemetry — batch the native module with the prebuild for
-   the first EAS build rather than burning a build on it alone. If B6 is in the
-   same release, batch both: one prebuild, one build cycle.
-2. **M5** App Store Connect record + privacy label. The privacy URL it demands
-   now resolves.
-3. **M6** first EAS build + device smoke test. `eas build:list` is still empty
-   and `eas.json` has no `submit` block.
-4. **M8** → **B6** payments. Start the Paid Applications agreement now whatever
-   else happens — it takes days. See [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md).
-5. **B7** rate limiting (mostly the M7 dashboard rule).
+1. **B3** crash telemetry — [SENTRY-BRIEF.md](SENTRY-BRIEF.md). A native module,
+   so it goes in *before* the first build or it costs a whole build cycle. Its
+   privacy-policy half is overdue for RevenueCat regardless.
+2. **TestFlight** — [TESTFLIGHT-STEPS.md](TESTFLIGHT-STEPS.md). One App Store
+   Connect form and four commands; deliberately skips every IAP prerequisite.
+   Nothing has ever run on a device against the deployed API.
+3. **M6** the device smoke test, against that build.
+4. **M8** → real purchases: Paid Applications agreement (days of lead time), the
+   IAP product, RevenueCat's Apple config, and the `appl_` key replacing the
+   Test Store one in EAS. [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md).
+5. **M5** the rest of the store listing — privacy label (now needs a Purchase
+   History row), screenshots from the device, description.
+6. **B7** rate limiting (mostly the M7 dashboard rule).
 
-The open question that outranks all of them: the landing page sells a Pro tier
-the binary does not have. Either B6 ships in v1 or that section comes off the
-page before the listing goes public.
-
-B3 adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means revisiting
-M3's processor list, the App Privacy label, and the EAS production environment —
-not purely client work.
+The live gap to fix first: the published privacy policy does not name
+**RevenueCat**, and states *"no SDK ships inside the app"*. The binary has
+shipped one since `72615f8`.
 
 ## Already landed on `dev`
 
@@ -70,31 +70,20 @@ Two patterns from that work are load-bearing for anything new:
 
 ---
 
-## B3 — Client-side crash and event telemetry
+## B3 — Client-side crash telemetry
 
-Not a blocker, but shipping without it means debugging from one-star reviews.
+**Moved to its own file: [SENTRY-BRIEF.md](SENTRY-BRIEF.md)**, with the SDK
+choice settled (Sentry — the `pe-yhunko` org already exists on the EU region).
 
-> Add client-side error reporting to the SubEye mobile app.
->
-> Today `apps/server/src/utils/analytics.ts` posts `$exception` events to
-> PostHog EU from the Worker. The mobile app reports nothing — the
-> `AppErrorBoundary` (`apps/mobile/src/shared/ui/error-boundary.tsx`) shows a
-> screen but sends nothing anywhere.
->
-> Pick ONE of PostHog React Native or Sentry (a Sentry MCP is already wired in
-> `.mcp.json`) and justify the choice in one line. Requirements:
-> - Report from `AppErrorBoundary` and install a global JS error handler.
-> - Identify by Clerk user id so a client exception joins the server's
->   `distinct_id`. Do not send email or subscription names.
-> - No new EXPO_PUBLIC var without adding it to
->   `apps/mobile/src/shared/config/env.ts`, which validates at module load.
-> - The app is offline-tolerant (MMKV-persisted query cache); telemetry must
->   never block a render or throw on a dead network.
-> - If the SDK collects anything new, update `expo.ios.privacyManifests` in
->   `apps/mobile/app.json` to match, and note it for the App Privacy label.
->
-> Note that this adds a native module, so it needs a prebuild + rebuild — batch
-> it with any other native change rather than burning a build on it alone.
+Two corrections to what used to be here: there is **no Sentry entry in this
+repo's `.mcp.json`** — the MCP is configured globally — and the new DSN var must
+be **optional** in `env.ts`, not required. A required var there breaks the test
+suite and every EAS environment set up before it, which is exactly how
+`EXPO_PUBLIC_REVENUECAT_IOS_KEY` came to block store builds.
+
+The privacy-policy half of that brief is now overdue independently of Sentry:
+the published policy claims *"no SDK ships inside the app"* and does not mention
+**RevenueCat**, which has shipped since `72615f8`.
 
 ---
 

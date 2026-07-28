@@ -266,6 +266,7 @@
   "auth_errorPasswordMismatch": "Passwords do not match.",
   "auth_errorNeedsMoreSteps": "This account needs another step SubEye does not support yet.",
   "auth_errorGeneric": "Something went wrong. Please try again.",
+  "auth_errorNotReady": "Still connecting to the sign-in service. Check your connection and try again in a moment.",
   "auth_consentBefore": "By continuing, you agree to the ",
   "auth_consentLink": "Terms of service",
   "auth_consentAnd": " and the ",

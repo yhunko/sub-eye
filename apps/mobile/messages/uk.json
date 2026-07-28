@@ -266,6 +266,7 @@
   "auth_errorPasswordMismatch": "Паролі не збігаються.",
   "auth_errorNeedsMoreSteps": "Цей акаунт потребує додаткового кроку, який SubEye поки не підтримує.",
   "auth_errorGeneric": "Щось пішло не так. Спробуйте ще раз.",
+  "auth_errorNotReady": "Ще триває підключення до сервісу входу. Перевірте зʼєднання та спробуйте за мить.",
   "auth_consentBefore": "Продовжуючи, ви погоджуєтесь з ",
   "auth_consentLink": "Умовами користування",
   "auth_consentAnd": " та ",

@@ -1,11 +1,41 @@
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { hydrate, QueryClient } from "@tanstack/react-query";
+import {
+  hydrate,
+  MutationCache,
+  QueryCache,
+  QueryClient,
+} from "@tanstack/react-query";
 import { persistQueryClientSubscribe } from "@tanstack/react-query-persist-client";
 import Constants from "expo-constants";
+import { ApiError } from "@/shared/api";
 import { mmkvStorage } from "./mmkv";
 import { CACHE_KEY, readPersistedCache } from "./persisted-cache";
+import { reportError } from "./sentry";
+
+// THE BLIND SPOT SENTRY WOULD OTHERWISE HAVE. Query catches every error a
+// queryFn or a mutation throws, so none of them reaches the error boundary or a
+// global handler — the screen renders its error state and the cause is never
+// seen again. Nearly every screen in the app loads through Query, so without
+// this the reporting covers render crashes and almost nothing else.
+//
+// A 4xx ApiError is not a bug: 401 is an expired session, 404 a row deleted on
+// another device, 409 a conflict the form already explains. Everything else is —
+// a 5xx, or a TypeError thrown by our own parsing on a payload we did not expect.
+const reportUnexpected = (
+  error: unknown,
+  source: "query" | "mutation",
+): void => {
+  if (error instanceof ApiError && error.status < 500) return;
+  reportError(error, { source });
+};
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => reportUnexpected(error, "query"),
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => reportUnexpected(error, "mutation"),
+  }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,

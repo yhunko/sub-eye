@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/clerk-expo";
+import * as Sentry from "@sentry/react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -13,12 +14,14 @@ import { useAppLocale } from "@/shared/i18n";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import "@/shared/lib/online"; // side-effect only: registers onlineManager↔NetInfo once
 import { queryClient } from "@/shared/lib/query";
+import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
 import { colors } from "@/shared/ui/theme";
 
 // expo-router looks for this exact named export on a layout and uses it as the
 // error boundary for everything below. Without it a throw in any screen is a
-// blank window in a Release build — the red box only exists in development.
+// blank window in a Release build — the red box only exists in development. It
+// is also what reports a render crash to Sentry.
 export { AppErrorBoundary as ErrorBoundary };
 
 // HOLD THE SPLASH ACROSS THE JS BOOT. Left to itself the native splash hides as
@@ -72,7 +75,7 @@ function ProIdentityBridge() {
 // Clerk sits ABOVE Query so the token getter is set before any request fires.
 // Re-keying the Stack on locale makes an Android per-app language change
 // re-render every screen's strings.
-export default function RootLayout() {
+function RootLayout() {
   const locale = useAppLocale();
   return (
     // Outermost, and required: without it the subscription rows' swipe-to-reveal
@@ -122,5 +125,12 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+// Sentry.wrap adds the touch-event boundary, whose breadcrumbs are what turn a
+// bare stack trace into "they tapped this, then that, then it died". It renders
+// one flex:1 View around the tree, so the layout below is unchanged. It must be
+// applied to the DEFAULT export — expo-router renders that, and an unwrapped one
+// silently loses the breadcrumbs while everything still appears to work.
+export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({ root: { flex: 1 } });

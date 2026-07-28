@@ -43,4 +43,4 @@ export const privacyEmail = "privacy@subeye.cc";
 /** Named in the legal pages as the controller. GDPR Art. 13 wants an identity. */
 export const operator = "Yehor Hunko";
 
-export const legalUpdated = "2026-07-27";
+export const legalUpdated = "2026-07-28";

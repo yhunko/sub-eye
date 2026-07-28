@@ -13,6 +13,14 @@ export const tokenCache = {
     }
   },
   async saveToken(key: string, value: string): Promise<void> {
-    await SecureStore.setItemAsync(key, value);
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch {
+      // Clerk awaits this during its own load, so a keychain write that throws
+      // — a locked device, a restored backup, a missing entitlement — rejects
+      // inside the handshake and `isLoaded` never flips. That costs the whole
+      // app, silently, to save a token that only buys session persistence.
+      // Losing it means signing in again; not catching it means never at all.
+    }
   },
 };

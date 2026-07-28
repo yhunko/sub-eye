@@ -45,10 +45,16 @@ import { operator, privacyEmail } from "../../lib/site";
       and a device user agent — seen by the services listed below while a request
       is being served.
     </li>
+    <li>
+      <strong>Diagnostics, when something goes wrong:</strong> if the app crashes,
+      the stack trace with your device model and OS version. If you buy SubEye Pro,
+      the App Store receipt for that purchase. Neither carries anything you typed.
+    </li>
   </ul>
   <p>
     There is no advertising identifier, no location data, no contacts, no
-    photos, and no analytics SDK in the app.
+    photos, and no advertising or product-analytics SDK in the app. Two SDKs do
+    ship inside it — crash reporting and purchases — and both are listed below.
   </p>
 
   <h2>Who else processes it</h2>
@@ -76,11 +82,20 @@ import { operator, privacyEmail } from "../../lib/site";
       app passes through it, which means Cloudflare sees your IP address.
     </dd>
 
-    <dt>PostHog EU — error telemetry (European Union)</dt>
+    <dt>PostHog EU — server error telemetry (European Union)</dt>
     <dd>
-      Receives server-side exceptions so faults can be found and fixed, keyed by
-      your account identifier. It is not product analytics, there is no session
-      recording, and no SDK ships inside the app.
+      Receives exceptions raised by the SubEye API so faults can be found and
+      fixed, keyed by your account identifier. It is not product analytics and
+      there is no session recording. It sees only what happens on the server; a
+      crash inside the app goes to Sentry instead.
+    </dd>
+
+    <dt>Sentry — crash reporting (European Union)</dt>
+    <dd>
+      Receives the stack trace of a crash in the app, with your device model and
+      OS version, keyed by your account identifier. That is all of it: no
+      subscription names, no amounts, no notes, no email address, no screenshots
+      and no session recording.
     </dd>
 
     <dt>Brandfetch — brand logo search</dt>
@@ -94,6 +109,14 @@ import { operator, privacyEmail } from "../../lib/site";
         >google.com/s2/favicons</code
       >. That request discloses the website domain of the subscription and your
       IP address. It carries nothing you typed and no account identifier.
+    </dd>
+
+    <dt>RevenueCat — purchases (United States)</dt>
+    <dd>
+      Receives the App Store purchase receipt, the store transaction and the
+      account identifier used as the app user id, if you buy SubEye Pro. It is
+      what makes "you bought Pro" survive a reinstall or a new phone. It receives
+      no subscription data and no email address.
     </dd>
 
     <dt>Apple — the App Store</dt>

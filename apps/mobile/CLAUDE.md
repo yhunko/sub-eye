@@ -74,10 +74,49 @@ apps/mobile/src/
 - **There is no pull-to-refresh.** Revalidation is invisible: `shared/lib/focus.ts` wires `AppState` into TanStack's `focusManager`, so returning to the app refetches everything stale (>5 min) behind the cached screen. RN has no `visibilitychange`, so **without that bridge `refetchOnWindowFocus` silently does nothing** — which is why a `RefreshControl` used to be load-bearing. Do not add one back.
 - **MMKV is v4 (Nitro):** instantiate via `createMMKV()`, **not** `new MMKV()` (which throws on v4).
 
+## Crash reporting (Sentry)
+
+`shared/lib/sentry.ts` owns `Sentry.init` and is the only file that imports
+`@sentry/react-native` outside `_layout.tsx`. Everything else reports through
+`reportError` / `setSentryUser`. Org **`pe-yhunko`**, project **`subeye-mobile`**,
+**EU region**.
+
+- **`metro.config.js` uses `getSentryExpoConfig`, not `getDefaultConfig`.** It is
+  what stamps a Debug ID into the bundle and the map beside it. Swap it back and
+  the maps still upload, they just never pair with the bundle — every production
+  stack trace stays minified, silently and only in Release.
+- **The plugin's `url` must be `https://de.sentry.io/`.** It defaults to the US
+  host, where this org does not exist. It ends up in `ios/sentry.properties` as
+  `defaults.url`, which is what the upload step reads.
+- **Never set `tracesSampleRate`, not even `0`.** The SDK enables tracing on
+  `typeof tracesSampleRate === "number"`, so a literal `0` installs stall
+  tracking, native frame tracking and the app-start/AppRegistry hooks — per-frame
+  work on the JS thread whose every transaction is then sampled away. No
+  profiling, no session replay, no screenshots either.
+- **`EXPO_PUBLIC_SENTRY_DSN` is optional and must stay optional.** `env.ts`
+  validates at module load and sits on most tests' import graph; a `required()`
+  var there breaks `bun test` for every stale checkout *and* every EAS
+  environment configured before it. Telemetry degrades to "reports nothing",
+  never to "app does not start".
+- **`SENTRY_AUTH_TOKEN` has no `EXPO_PUBLIC_` prefix** — build-time only, set per
+  EAS environment. It must never reach the bundle.
+- **The three report sites are deliberate**: `AppErrorBoundary` (render crashes),
+  the `QueryCache`/`MutationCache` `onError` in `shared/lib/query.ts` (Query
+  swallows every queryFn throw, so without it reporting would cover render
+  crashes and almost nothing else), and the SDK's own global handlers. A 4xx
+  `ApiError` is filtered out — 401 is an expired session, not a bug.
+- **Identity lives in `shared/auth/token-bridge.ts`**, which already watches
+  Clerk. Id only — never email, username, subscription name, amount or note.
+- **`@sentry/react-native` is stubbed in `test-preload.ts`.** It reaches
+  `react-native/Libraries/TurboModule/...`, past the `react-native` stub, so any
+  test that transitively imports the query client or the token bridge dies on a
+  Flow parse error without it.
+
 ## Strings (i18n)
 
 - Paraglide, locales **en + uk**, `baseLocale: "en"`. Catalogs live in `apps/mobile/messages/{locale}.json` with their own `project.inlang` — **deliberately NOT the web client's 785-key catalog**. Keep the mobile catalog small.
 - Compiled into `src/shared/i18n/paraglide` (**gitignored**) by `bun run i18n:generate`, which auto-runs before `start`/`ios`/`android`/`type-check`.
+- **EAS runs none of those scripts.** It calls `expo export:embed` directly, and the gitignored output is not in the uploaded archive either, so a cloud build fails to resolve `./paraglide/runtime` while every local build succeeds. The `eas-build-post-install` script is what compiles the catalogs on the builder — deleting it breaks EAS only, and silently.
 - Strategy is `--strategy globalVariable baseLocale` — **space-separated, two arguments**. A comma-joined `globalVariable,baseLocale` compiles to one malformed strategy and makes `getLocale()` throw at runtime.
 - **NEVER call `m.someKey()` at module scope.** Module-level tables hold the message-function *reference* (`label: m.foo`) and invoke it at render time; otherwise the string freezes in whichever locale was active at import.
 - Locale is resolved **once at bootstrap** (`shared/i18n/index.ts` → `expo-localization` `getLocales()` → first of en/uk → else **en**) and re-synced by `useAppLocale()` in the root layout, which re-keys the `Stack`. Language switching is **OS-native only** (per-app language in iOS Settings / Android 13+) — no in-app locale state, no MMKV override.

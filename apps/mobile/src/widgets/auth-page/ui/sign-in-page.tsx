@@ -25,7 +25,14 @@ export function SignInPage() {
   const apple = useAppleSignIn(setError);
 
   const submit = async () => {
-    if (!isLoaded || busy) return;
+    if (busy) return;
+    // Clerk's load is a network handshake, and a failed one never resolves — so
+    // a bare `if (!isLoaded) return` makes the primary button do nothing, say
+    // nothing, and look identical to a dead tap. Report it instead.
+    if (!isLoaded) {
+      setError(m.auth_errorNotReady());
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
