@@ -112,24 +112,28 @@ const steps = priceTimeline.map((step, i) => ({
     gap: 1rem;
   }
 
+  /* An unselected phase recedes by losing its fill, never by `opacity`: opacity
+     dims the text along with the chrome, and at the 0.62 this used to carry it
+     put the label and the blurb at 3.3:1 against their own composited
+     background. Muted text on either ground is 6.6:1 (card) and 7.2:1 (page),
+     so the state now costs nothing to read. */
   .tl__card {
     position: relative;
     display: grid;
     gap: 0.5rem;
     justify-items: start;
-    background: var(--surface);
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     padding: 1.75rem;
     cursor: pointer;
-    opacity: 0.62;
     transition:
-      opacity 280ms var(--ease),
+      background-color 280ms var(--ease),
       border-color 280ms var(--ease);
   }
 
   .tl__card:has(:checked) {
-    opacity: 1;
+    background: var(--surface);
     border-color: var(--accent);
   }
 
