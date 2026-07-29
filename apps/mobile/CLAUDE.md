@@ -2,7 +2,9 @@
 
 `apps/mobile` (`@subeye/mobile`) is the **v4 SubEye client**: an Expo (React Native, expo-router) app over the pruned Hono API in `apps/server`. It replaces the retired React/Vite web client. Read this before touching mobile code.
 
-**Seven screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
+**Nine screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
+
+The two beyond the original seven, and why: **`settings/notifications`**, because reminder config outgrew a single switch the moment it had a time, several lead times and a health readout — and a status section is the only way a user can tell a silent OS refusal from an app bug. **`subscriptions/due/[date]`**, because a digest notification that names three services has to be able to show exactly those three, and the list's filter store is deliberately not persisted.
 
 ## Layers & structure
 
@@ -78,8 +80,10 @@ apps/mobile/src/
 
 `shared/lib/sentry.ts` owns `Sentry.init` and is the only file that imports
 `@sentry/react-native` outside `_layout.tsx`. Everything else reports through
-`reportError` / `setSentryUser`. Org **`pe-yhunko`**, project **`subeye-mobile`**,
-**EU region**.
+`reportError` / `setSentryUser`. Org **`pe-yhunko`**, project **`subeye`**,
+**EU region**. The slug in `app.json` must match the real project exactly — a
+wrong one is not a warning, it is `400 One or more projects are invalid` and a
+dead production build (see below).
 
 - **`metro.config.js` uses `getSentryExpoConfig`, not `getDefaultConfig`.** It is
   what stamps a Debug ID into the bundle and the map beside it. Swap it back and
@@ -111,6 +115,71 @@ apps/mobile/src/
   `react-native/Libraries/TurboModule/...`, past the `react-native` stub, so any
   test that transitively imports the query client or the token bridge dies on a
   Flow parse error without it.
+
+## Reminders (local notifications)
+
+`shared/lib/notifications/` — **no push tokens, no APNs/FCM, no server endpoint,
+no DB row, no cron.** The pending set is a pure function of the subscription list
+the app already holds, rebuilt wholesale (cancel-all → recompute → reschedule) on
+every foreground. Wholesale is what makes it idempotent: no stored notification
+ids, no reconciliation, nothing to drift.
+
+- **iOS keeps only the 64 soonest pending local notifications and silently drops
+  the rest.** No error, no warning. `REMINDER_BUDGET = 56` leaves headroom. This
+  ceiling is why `planReminders` **groups by firing instant**: every event landing
+  on one morning becomes one digest notification, so the budget counts *reminder
+  mornings*, not subscriptions × lead times. Grouping by `(instant, leadDays)`
+  instead would put two banners on the same minute whenever lead times overlap.
+- **Every amount in a reminder is the PREFERRED currency**, never the one the
+  subscription was entered in — `billing.preferred.amount`, already converted by
+  the server. `ReminderInput` deliberately omits `cost`/`currency` so the
+  original is not reachable from the planner at all. A trial prices from
+  `upcomingPhase.billing`, not the subscription's, whose own billing during a
+  trial is the trial price (usually zero). A digest totals only when every event
+  has an amount: one unknown price would silently understate the sum.
+- **Fire instants are built in the DEVICE's zone, not the account's
+  `preferredTimezone`.** A DATE trigger takes an absolute instant but "09:00,
+  three days before" is wall-clock, and the reminder should land at 09:00 where
+  the user physically is. Settings already shows the two can disagree.
+- **`syncReminders` takes settings ALREADY GATED** — run them through
+  `effectiveSettings`. `shared/` cannot import `entities/pro` without an upward
+  FSD edge, and reading the entitlement inside would put the Pro gate in a second
+  place. Free keeps renewal reminders, the time of day and the whole status
+  section; Pro buys extra lead times and trial-ending warnings. **The gate must
+  never sit between "warned" and "not warned"** — reminders are the retention
+  mechanism, and a tracker that never speaks has no reason to stay installed.
+- **`readNotificationHealth` waits on `createSettleBarrier` before reading.** A
+  rebuild cancels every pending notification and only then schedules the new
+  set, one awaited native call at a time, so anything sampling the pending list
+  inside that window counts ZERO over a schedule that is about to exist. Two
+  syncs race on every foreground (the screen's effect and the layout's
+  `ReminderSync`), and the losing run's completion callback lands inside the
+  winner's rebuild — which reported "nothing scheduled" on a healthy install
+  with 24 reminders pending. The barrier is a separate tested module because
+  the loop-until-stable part is what makes it correct.
+- **A `syncGeneration` counter guards the schedule loop.** Scheduling is up to 56
+  awaited native calls and the settings screen can start a second sync in the
+  middle of them; without the per-iteration check the newer run's cancel-all wipes
+  what the older one wrote, and the older one's tail then lands after it.
+- **A DATE trigger does not read back as a date on iOS.** `scheduleNotificationAsync`
+  turns it into a `UNCalendarNotificationTrigger`, which serialises to
+  `{ type: "calendar", dateComponents: { year, month, day, … } }` with no
+  timestamp — `.date` and `.value`, the fields the input types advertise, are
+  both `undefined`. `shared/lib/notifications/trigger-time.ts` owns that
+  conversion and is tested against the real shape. `month` is 1-based there and
+  0-based in `Date`. This shipped wrong once and was silent: the count stayed
+  correct, so the status section read "nothing scheduled" over a full, working
+  schedule. Anything user-facing must degrade to the count, never to a claim.
+- **Taps route through `useLastNotificationResponse`**, never
+  `addNotificationResponseReceivedListener` — the listener only fires while the
+  app is already running, and a reminder is usually tapped from a lock screen with
+  the app killed.
+- Settings live in **MMKV, per-device and per-install** — two phones configure
+  separately and a reinstall forgets. `readNotificationSettings` migrates the v1
+  boolean so an install that already had reminders on does not go silent.
+- **`react-native-mmkv` is stubbed in `test-preload.ts`** with a real in-memory
+  store. `createMMKV()` runs at import and throws without the native side, so
+  anything reading a device flag dies on import rather than on use.
 
 ## Strings (i18n)
 

@@ -28,3 +28,24 @@ export const deviceFlags = {
   get: (key: string) => mmkv.getBoolean(key) ?? false,
   set: (key: string, value: boolean) => mmkv.set(key, value),
 };
+
+/**
+ * Structured device-local values, JSON on the same store.
+ *
+ * `get` never throws: a blob written by an older build — or a truncated one —
+ * falls back to the caller's default. A settings object is read at render and
+ * before every schedule, so a parse error here would be a crash loop rather
+ * than a bad preference.
+ */
+export const deviceJson = {
+  get: <T>(key: string, fallback: T): T => {
+    const raw = mmkv.getString(key);
+    if (!raw) return fallback;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return fallback;
+    }
+  },
+  set: (key: string, value: unknown) => mmkv.set(key, JSON.stringify(value)),
+};

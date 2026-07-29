@@ -9,9 +9,10 @@ description, or App Review. Those belong to submission ([MANUAL-CHECKLIST.md](MA
 M5 and M8), and every one of them is easier to do once you have seen the app run
 on a real device.
 
-Do [SENTRY-BRIEF.md](SENTRY-BRIEF.md) **first** if you are doing it at all — it
-adds a native module, and batching it here costs nothing while doing it after
-costs a whole build cycle.
+[SENTRY-BRIEF.md](SENTRY-BRIEF.md) **has landed**, and it changed the shape of
+this document: a production build now runs a source-map upload as part of the
+bundle phase, and that phase **fails the build** if the upload fails. Step 2 is
+therefore no longer optional — see the box there.
 
 ---
 
@@ -59,45 +60,138 @@ Check what is there:
 bunx eas env:list --environment production
 ```
 
-Three are already set (`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`,
-`EXPO_PUBLIC_BRANDFETCH_CLIENT_ID`). The one that is missing:
+As of 2026-07-29 all five `EXPO_PUBLIC_*` are set: `API_URL`,
+`CLERK_PUBLISHABLE_KEY`, `BRANDFETCH_CLIENT_ID`, `REVENUECAT_IOS_KEY` and
+`SENTRY_DSN`. **`SENTRY_AUTH_TOKEN` is the only one still missing**, and it is the
+one that fails the build — see the box below.
+
+Note this command must run from `apps/mobile`; from the repo root eas-cli cannot
+find `app.json` and reports "EAS project not configured".
+
+### ⛔ The RevenueCat key must be `appl_…`, even for TestFlight
+
+**An earlier version of this document said the Test Store key (`test_…`) was a
+safe shortcut here. It is not, and build 5 proved it.** RevenueCat's own launch
+checklist: *"Using a Test Store API key in production will crash your app"*, and
+their SDK guidance is explicit — Test Store keys are for **debug builds**,
+platform keys (`appl_…`) for **release builds**. A `distribution: "store"`
+profile is a release build, TestFlight or not.
+
+The failure is quiet and looks like three separate bugs:
+`Purchases.configure` throws, the module-scope try/catch fails open, so the
+paywall reports "could not load", `usePro` falls back to a cached `false`, and
+**a dashboard grant has nowhere to land** because the SDK never created a
+customer for your Clerk id. Nothing reached Sentry until that catch was wired to
+`reportError`.
+
+Getting the `appl_` key needs **no IAP product and no Paid Applications
+agreement** — RevenueCat mints it the moment the Apple app config exists:
+
+1. App Store Connect → **Users and Access → Integrations → In-App Purchase**
+   ([direct link](https://appstoreconnect.apple.com/access/integrations/api/subs))
+   → generate a key, download the `.p8`, note the **Issuer ID**.
+2. RevenueCat → **Apps & providers → Apple App Store** → app name, bundle id
+   `cc.subeye.app`, the `.p8` and Issuer ID.
+3. Copy the **public app-specific key** (`appl_…`) from Project settings → API
+   keys.
+
+**A "Credentials need attention" badge on step 2 does not block step 3.** The
+`appl_` key is issued as soon as the app config saves; the `.p8` only gates
+purchase *validation*, and with no products there is nothing to validate. Take
+the key, set it, build — sort the credential out before you sell anything.
+
+If that badge says **"Valid key format"** and then **"The key is not valid or is
+not compatible with the Bundle ID of your app"**, the usual cause is uploading
+the wrong `.p8`: the App Store Connect API key (`AuthKey_….p8`) instead of the
+In-App Purchase key (`SubscriptionKey_….p8`). Both live under Integrations and
+only one works here. See [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md) Part 1 for the
+rest of the causes.
 
 ```bash
-bunx eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value test_YOUR_TEST_STORE_KEY
+bunx eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_… --visibility plaintext
 ```
 
-**Use the Test Store key (`test_…`) — the one already in `apps/mobile/.env`.**
-This is a deliberate shortcut and it is safe:
+Same value for `preview`. Keep `test_…` in `apps/mobile/.env` only — that is the
+debug build, which is exactly where it belongs.
 
-- `Purchases.configure` is wrapped in a try/catch that fails open, so no key can
-  brick the boot.
-- The Test Store still belongs to your RevenueCat project, so signing in on the
-  TestFlight build creates a real customer record — which means you can **grant
-  yourself `pro` from the RevenueCat dashboard** and exercise every gated
-  feature. (`dev.forcePro` will not work: `__DEV__` is false in a TestFlight
-  build, by design.)
-- The paywall will show either Test Store products or `paywall_unavailable`.
-  Both are correct for a build that is not selling anything.
+With the `appl_` key and no products configured yet, the paywall correctly shows
+`paywall_unavailable` and **dashboard grants work**, because the SDK configures,
+`Purchases.logIn(clerkUserId)` succeeds and the customer exists. (`dev.forcePro`
+will still not work: `__DEV__` is false in a store build, by design.)
 
-**Swap it for the `appl_…` key before you submit to review.** A Test Store key in
-a shipped binary sells nothing.
+### Sentry, and why this one can fail the build
 
-If Sentry landed, also add the auth token as a **secret**:
+⚠️ **`SENTRY_AUTH_TOKEN` is now a build requirement, not a nicety.** The Xcode
+bundle phase is wrapped by `sentry-xcode.sh`, which runs `sentry-cli react-native
+xcode` and returns a non-zero exit code — a hard `error:` in the Xcode log — when
+the upload fails. A missing token, a bad token, or a Sentry project that does not
+exist yet all end the build at "Bundle React Native code and images". It does not
+warn and carry on.
+
+So, in this order:
+
+1. **The project slug in `app.json` must match Sentry exactly.** It is `subeye`
+   in org `pe-yhunko` on **de.sentry.io**; `apps/mobile/ios/sentry.properties`
+   is generated from `app.json`. Build 4 died on precisely this — the plugin
+   said `subeye-mobile`, the project is `subeye`, and sentry-cli answered
+   `400 One or more projects are invalid`. A wrong slug authenticates fine and
+   then fails the build.
+2. **Generate the token** in Sentry → Settings → Auth Tokens, scope
+   `project:releases`.
+3. Set both variables. The token is a real secret; the DSN is public and only
+   grants writing events.
 
 ```bash
 bunx eas env:create --environment production --name SENTRY_AUTH_TOKEN --value sntrys_… --visibility secret
+bunx eas env:create --environment production --name EXPO_PUBLIC_SENTRY_DSN --value https://…@…ingest.de.sentry.io/… --visibility plaintext
+```
+
+The DSN is genuinely optional — `env.ts` reads it as nullable and the SDK
+initialises disabled without it, so leaving it out costs you reporting, not a
+boot. The token is the one that stops the build.
+
+**Prove the upload path before you spend a build on it.** This is the exact call
+the Xcode phase makes, and it answers in two seconds instead of twenty minutes:
+
+```bash
+cd apps/mobile/ios && SENTRY_AUTH_TOKEN=sntrys_… SENTRY_PROPERTIES=sentry.properties ../../../node_modules/@sentry/cli/bin/sentry-cli info
+```
+
+It prints the server, org and project it resolved. A `404 not found` there means
+the **slug in `app.json` does not match the real project** — check the URL in
+Sentry (`de.sentry.io/organizations/pe-yhunko/projects/<slug>/`), fix the
+`project` field in the `@sentry/react-native/expo` plugin block, and rerun. EAS
+prebuilds from `app.json` in the cloud, so editing it is enough; a local
+`prebuild` is only needed to refresh `ios/sentry.properties` on your Mac.
+
+**If you want a build before any of this exists**, opt out rather than half-doing
+it — the build then ships with no source maps and every production stack trace is
+minified:
+
+```bash
+bunx eas env:create --environment production --name SENTRY_DISABLE_AUTO_UPLOAD --value true
 ```
 
 ---
 
 ## Step 3 — Regenerate the native project
 
-Only needed if a native module changed since the last prebuild — Sentry counts,
-RevenueCat already landed.
+**Already done** for Sentry — `ios/` was regenerated and the pods installed when
+the brief landed. Only rerun this if another native module changes.
 
 ```bash
 bun run --cwd apps/mobile prebuild
 ```
+
+If `pod install` dies on `Encoding::CompatibilityError` the prebuild itself still
+succeeded; it is a CocoaPods locale problem on this Mac, not an Expo one:
+
+```bash
+cd apps/mobile/ios && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install
+```
+
+EAS does not care either way — it runs its own prebuild from `app.json`. This
+step only matters for building locally.
 
 ---
 
@@ -131,13 +225,17 @@ and the build number auto-increments on EAS because `eas.json` sets
 bunx eas submit --profile production --platform ios --latest
 ```
 
-`eas.json` has no `submit` block, so this asks interactively for your Apple ID
-and the app to submit to — pick the record from step 1. Ten minutes, mostly
-upload.
+`eas.json` now has a `submit.production` block carrying only `appleTeamId`.
+That is deliberate: **the profile has to exist or eas-cli refuses outright**
+(`Missing submit profile in eas.json: production` — which is also what
+`eas build --auto-submit` fails on, *after* queueing the build), while leaving
+`ascAppId` out keeps the first run interactive so you can pick the record from
+step 1. Ten minutes, mostly upload.
 
-Once this works, adding the `submit` block to `eas.json` is worth it so the next
-one is non-interactive. It needs the `ascAppId`, which only exists after step 1
-(App Store Connect → your app → App Information → Apple ID, a number).
+**Do not use `--auto-submit` for the first one.** It runs unattended when the
+build finishes and there is nothing there to answer the Apple ID prompt. Once
+this has worked once, add `ascAppId` (App Store Connect → your app → App
+Information → Apple ID, a number) and `appleId`, and auto-submit becomes usable.
 
 ---
 
@@ -188,6 +286,9 @@ that have never once been exercised, in priority order:
 | `eas submit` cannot find the app | Step 1 was skipped, or the bundle id on the record does not match `cc.subeye.app` exactly. |
 | Build stuck in *Processing* over an hour | Usually an invalid icon or a missing entitlement. Check the email Apple sends; it is more specific than the dashboard. |
 | Paywall shows nothing | Expected on the Test Store key with no products configured. Not a bug yet. |
+| Build fails at "Bundle React Native code and images" with `error: sentry-cli` | Read the status code it prints. `400 One or more projects are invalid` = the slug in `app.json` is not a real project (this killed build 4). `401`/auth = `SENTRY_AUTH_TOKEN` missing or wrong in the EAS environment. |
+| Crashes arrive in Sentry with minified frames | The bundle uploaded but its map did not, or `metro.config.js` stopped using `getSentryExpoConfig` (no Debug ID = no pairing). |
+| No crashes arrive at all | `EXPO_PUBLIC_SENTRY_DSN` is unset in the EAS environment. By design that boots fine and reports nothing. |
 
 ---
 

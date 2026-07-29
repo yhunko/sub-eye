@@ -1,18 +1,23 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "@tanstack/react-query";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
+import { usePro } from "@/entities/pro";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { useSeedPreferredCurrency } from "@/entities/user";
 import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
-import { syncRenewalReminders } from "@/shared/lib/notifications";
+import {
+  readEffectiveSettings,
+  syncReminders,
+  useReminderTap,
+} from "@/shared/lib/notifications";
 import { colors } from "@/shared/ui/theme";
 
 /**
- * Renders nothing; keeps the device's pending renewal reminders in step with the
+ * Renders nothing; keeps the device's pending reminders in step with the
  * subscription list. Mounted here rather than in the root layout so it only runs
  * for a signed-in user.
  *
@@ -22,15 +27,22 @@ import { colors } from "@/shared/ui/theme";
  * drift. It also re-arms the window, which is what a scheduled-ahead bounded
  * plan needs; without it, a user who ignores the app eventually runs past the
  * last scheduled occurrence and goes quiet.
+ *
+ * `isPro` is in the dependencies for a reason: a purchase widens the plan
+ * (extra lead times, trial warnings) and the schedule has to be rebuilt for it
+ * without waiting for the next foreground.
  */
-function RenewalReminderSync() {
+function ReminderSync() {
   const { data } = useQuery(subscriptionsQuery());
+  const isPro = usePro();
 
   useEffect(() => {
     if (!data) return;
 
+    // Settings are read at call time, not captured: the notifications screen
+    // writes straight to MMKV, so a foreground sync must see the latest.
     const sync = () => {
-      void syncRenewalReminders(data);
+      void syncReminders(data, readEffectiveSettings(isPro));
     };
 
     sync();
@@ -38,7 +50,33 @@ function RenewalReminderSync() {
       if (status === "active") sync();
     });
     return () => listener.remove();
-  }, [data]);
+  }, [data, isPro]);
+
+  return null;
+}
+
+/** Renders nothing; sends a tapped reminder to the screen it names. */
+function ReminderTapRouter() {
+  const router = useRouter();
+
+  useReminderTap((target) => {
+    switch (target.screen) {
+      case "subscription":
+        router.push({
+          pathname: "/subscriptions/[id]",
+          params: { id: target.id },
+        });
+        return;
+      case "due":
+        router.push({
+          pathname: "/subscriptions/due/[date]",
+          params: { date: target.date },
+        });
+        return;
+      case "list":
+        router.push("/subscriptions");
+    }
+  });
 
   return null;
 }
@@ -86,7 +124,8 @@ function Tabs() {
   return (
     <>
       {/* Outside NativeTabs: its children must be triggers and nothing else. */}
-      <RenewalReminderSync />
+      <ReminderSync />
+      <ReminderTapRouter />
       <PreferredCurrencySeed />
       <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
         <NativeTabs.Trigger name="(home)">

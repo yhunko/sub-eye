@@ -29,6 +29,7 @@ export {
   type SubscriptionListFilters,
   type SubscriptionSort,
   type SubscriptionStatusFilter,
+  subscriptionsDueOn,
 } from "./model/filters";
 export {
   hasActiveFilters,

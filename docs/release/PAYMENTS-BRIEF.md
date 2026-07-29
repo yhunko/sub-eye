@@ -66,12 +66,30 @@ Program is already enrolled.
    ID** shown at the top of that page. If no Issuer ID appears, create an App
    Store Connect API key and it will.
 
+   ⚠️ **Two different `.p8` keys live under Integrations and they are not
+   interchangeable.** The App Store Connect API key downloads as
+   `AuthKey_XXXXXXXXXX.p8`; the In-App Purchase key
+   ([direct link](https://appstoreconnect.apple.com/access/integrations/api/subs))
+   downloads as `SubscriptionKey_XXXXXXXXXX.p8`. Upload the API key by mistake
+   and RevenueCat reports **"Valid key format"** followed by **"The key is not
+   valid or is not compatible with the Bundle ID of your app"** — it passes the
+   format check and fails everything after. That exact pair of messages cost an
+   afternoon on 2026-07-29. The other causes of it, in order: a bundle id that
+   is not character-for-character `cc.subeye.app` (capitalization counts, and a
+   pasted trailing space is invisible), a wrong Issuer ID, and a revoked key.
+
 ### 1b. RevenueCat
 
 1. Create the project. **Apps & providers → App config → Apple App Store**:
    name, Bundle ID `cc.subeye.app`, the **In-App Purchase Key** (.p8 + Issuer
    ID), and the **App Store Connect API key** so products can be imported
    directly.
+
+   The `appl_…` public SDK key is issued the moment this config saves — a red
+   "Credentials need attention" badge does **not** withhold it. That key is all
+   a build needs to boot and to receive dashboard grants; the In-App Purchase
+   Key only matters once there is a purchase to validate. Do not let a bad `.p8`
+   block a build.
 2. **Apple Server-to-Server notifications** → click *Apply in App Store Connect*.
    It writes both the Production and Sandbox URLs for you. Without this,
    refunds and Apple-side changes never reach RevenueCat.

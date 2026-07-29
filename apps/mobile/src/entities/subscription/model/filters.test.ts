@@ -4,6 +4,7 @@ import {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
   type SubscriptionListFilters,
+  subscriptionsDueOn,
 } from "./filters";
 
 function sub(
@@ -212,5 +213,44 @@ describe("applySubscriptionFilters — sort", () => {
     const input = [netflix, spotify];
     applySubscriptionFilters(input, filters({ sort: "name" }));
     expect(input.map((s) => s.id)).toEqual(["1", "2"]);
+  });
+});
+
+describe("subscriptionsDueOn", () => {
+  const due = (
+    id: string,
+    day: string,
+    overrides: Partial<SubscriptionDto> = {},
+  ) => sub({ id, nextPaymentDate: `${day}T00:00:00.000Z`, ...overrides });
+
+  it("keeps only the subscriptions charging on that calendar day", () => {
+    const items = [
+      due("1", "2026-08-01"),
+      due("2", "2026-08-02"),
+      due("3", "2026-08-01"),
+    ];
+    expect(subscriptionsDueOn(items, "2026-08-01").map((s) => s.id)).toEqual([
+      "1",
+      "3",
+    ]);
+  });
+
+  // The server still computes a nextPaymentDate for a dead subscription, so
+  // without the status guard a cancelled row joins a day it will never charge.
+  it("excludes anything that is not billing", () => {
+    const items = [
+      due("1", "2026-08-01", { status: "cancelled" }),
+      due("2", "2026-08-01", { status: "paused" }),
+      due("3", "2026-08-01"),
+    ];
+    expect(subscriptionsDueOn(items, "2026-08-01").map((s) => s.id)).toEqual([
+      "3",
+    ]);
+  });
+
+  it("returns nothing for a malformed day rather than throwing", () => {
+    expect(subscriptionsDueOn([due("1", "2026-08-01")], "nonsense")).toEqual(
+      [],
+    );
   });
 });

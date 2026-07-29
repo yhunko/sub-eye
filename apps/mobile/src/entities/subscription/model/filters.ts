@@ -36,6 +36,31 @@ export const DEFAULT_SUBSCRIPTION_FILTERS: SubscriptionListFilters = {
 };
 
 /**
+ * The subscriptions charging on `day`, a `YYYY-MM-DD` calendar date in UTC —
+ * the zone every date in this app is stored and rendered in.
+ *
+ * Backs the deep link on a digest reminder: a notification that named three
+ * services has to open a screen showing exactly those three. Active only, for
+ * the same reason the planner schedules active only — the server still computes
+ * a `nextPaymentDate` for a cancelled subscription, and it will never be taken.
+ *
+ * Compares the ISO prefix rather than re-parsing: `nextPaymentDate` is always
+ * UTC midnight, so the first ten characters ARE the calendar day, and `new Date`
+ * would drag the device's zone into a comparison that must not depend on it.
+ */
+export function subscriptionsDueOn(
+  items: readonly SubscriptionDto[],
+  day: string,
+): SubscriptionDto[] {
+  return items
+    .filter(
+      (item) =>
+        item.status === "active" && item.nextPaymentDate.slice(0, 10) === day,
+    )
+    .sort((a, b) => b.billing.preferred.amount - a.billing.preferred.amount);
+}
+
+/**
  * Search, filter and sort the cached list — locally, over an array the client
  * already holds.
  *

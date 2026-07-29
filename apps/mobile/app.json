@@ -133,7 +133,7 @@
         "@sentry/react-native/expo",
         {
           "organization": "pe-yhunko",
-          "project": "subeye-mobile",
+          "project": "subeye",
           "url": "https://de.sentry.io/"
         }
       ]

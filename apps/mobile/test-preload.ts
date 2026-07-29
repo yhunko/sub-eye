@@ -41,6 +41,28 @@ mock.module("@sentry/react-native", () => ({
 }));
 
 /**
+ * `react-native-mmkv` is a Nitro module: `createMMKV()` runs at import time and
+ * throws without the native side, so anything reading a device flag — the Pro
+ * entitlement cache, the notification settings — dies on import rather than on
+ * use.
+ *
+ * A real in-memory store rather than a no-op: `readNotificationSettings` is
+ * only meaningful if what was written comes back, and a stub returning
+ * undefined would make every such test pass against defaults.
+ */
+mock.module("react-native-mmkv", () => {
+  const store = new Map<string, boolean | string>();
+  return {
+    createMMKV: () => ({
+      getBoolean: (key: string) => store.get(key) as boolean | undefined,
+      getString: (key: string) => store.get(key) as string | undefined,
+      set: (key: string, value: boolean | string) => store.set(key, value),
+      remove: (key: string) => store.delete(key),
+    }),
+  };
+});
+
+/**
  * Same problem, one layer out: the subscription barrel exports
  * `useLifecycleActionBuilder`, which needs `useRouter` to open the edit/pricing
  * screens. expo-router reaches react-native through DEEP paths

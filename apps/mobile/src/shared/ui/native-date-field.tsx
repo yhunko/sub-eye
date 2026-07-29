@@ -39,9 +39,7 @@ export function NativeDateField({
           display="compact"
           minimumDate={minimumDate}
           themeVariant="dark"
-          onChange={(_event, date) => {
-            if (date) onChange(date);
-          }}
+          onValueChange={(_event, date) => onChange(date)}
         />
       </Field>
     );
@@ -61,11 +59,14 @@ export function NativeDateField({
           value={value}
           mode="date"
           minimumDate={minimumDate}
-          onChange={(_event, date) => {
-            // Android fires once and closes, for both "set" and "dismissed".
+          // Both handlers unmount the dialog, because only `onValueChange`
+          // fires on a pick. Without `onDismiss` a cancelled dialog leaves
+          // `androidOpen` true, and the field cannot be opened a second time.
+          onValueChange={(_event, date) => {
             setAndroidOpen(false);
-            if (date) onChange(date);
+            onChange(date);
           }}
+          onDismiss={() => setAndroidOpen(false)}
         />
       ) : null}
     </Field>

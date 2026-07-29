@@ -156,17 +156,24 @@ Steps kept for the day the instance is rebuilt:
 
 1. Create/promote the Clerk **production** instance.
 2. Configure the same providers: email+password, Google, GitHub, and Apple.
-3. Confirm `subeye://` and the SSO redirect URL are registered under Native
+3. **Enable the Native SDK on the production instance.** This one is invisible
+   when it is wrong: `clerk-expo` never finishes its handshake, `isLoaded` stays
+   false forever, and Clerk raises no error a client can catch — so every guard
+   written as `if (!isLoaded) return` becomes a button that does nothing and
+   says nothing. It cost three TestFlight builds on 2026-07-29, with a healthy
+   `/v1/environment` answering 200 the whole time. A development instance has it
+   on by default; a production instance does not.
+4. Confirm `subeye://` and the SSO redirect URL are registered under Native
    Applications. For Apple, register the **native bundle id `cc.subeye.app`** in
    the Apple connection — a native identity token's `aud` claim is the bundle
    identifier, not the Services ID, so a web-only connection rejects every token
    the app sends.
-4. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
+5. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
    `user.deleted`. Copy the signing secret. Account deletion depends on it
    (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) — without
    it, deleted accounts leave orphaned Postgres rows, which is a GDPR problem
    rather than a tidiness one.
-5. Put the production values in Cloudflare via the GitHub environment —
+6. Put the production values in Cloudflare via the GitHub environment —
    `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` as **secrets**,
    `CLERK_PUBLISHABLE_KEY` as a **var** — under the `production` environment.
    The release workflow pushes them with `wrangler secret bulk`.
@@ -316,6 +323,15 @@ and must not be blocked.
    `cc.subeye.app`, upload the App Store Connect **In-App Purchase Key**, create
    an entitlement called `pro`, attach the product, and create a default
    offering. Copy the public SDK key for brief B6.
+
+   Two traps, both hit on 2026-07-29 and both written up in
+   [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md) Part 1: the **In-App Purchase key is
+   not the App Store Connect API key** (`SubscriptionKey_….p8` vs
+   `AuthKey_….p8`, both under Integrations, and the wrong one reports "valid
+   format" then fails on the bundle id), and **the store build needs the
+   `appl_…` key, never the Test Store `test_…` one** — RevenueCat rejects a test
+   key in a release build, which silently kills the paywall, the entitlement and
+   every dashboard grant at once.
 6. A non-consumable needs a review screenshot of the purchase screen — you can
    only take that after B6 ships, so plan the order.
 

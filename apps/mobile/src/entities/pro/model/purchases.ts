@@ -8,6 +8,7 @@ import Purchases, {
 } from "react-native-purchases";
 import { env } from "@/shared/config/env";
 import { deviceFlags } from "@/shared/lib/mmkv";
+import { reportError } from "@/shared/lib/sentry";
 import {
   DEV_FORCE_PRO_KEY,
   PRO_CACHE_KEY,
@@ -75,9 +76,15 @@ try {
     .catch(() => {
       // Offline at launch. The cached entitlement is the answer.
     });
-} catch {
-  // A malformed key, or Android running with an `appl_…` one. Fail open: every
-  // read falls back to the cache and the gates behave as they did last launch.
+} catch (error) {
+  // A malformed key, or a Test Store `test_…` key in a release build — which
+  // RevenueCat rejects outright. Fail open: every read falls back to the cache
+  // and the gates behave as they did last launch.
+  //
+  // REPORT IT. Swallowing this is what made a dead paywall, dead dashboard
+  // grants and a "could not load" purchase button look like three unrelated
+  // bugs, with nothing anywhere to connect them to a wrong key.
+  reportError(error, { scope: "purchases.configure" });
 }
 
 /** Whether this device may use the Pro features. Re-renders when that changes. */

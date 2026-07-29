@@ -8,6 +8,10 @@ export default function SettingsTabLayout() {
     <Stack screenOptions={nativeHeaderChrome}>
       <Stack.Screen name="index" options={{ title: m.settings_title() }} />
       <Stack.Screen
+        name="notifications"
+        options={{ title: m.settings_notifications() }}
+      />
+      <Stack.Screen
         name="categories/index"
         options={{ title: m.settings_categories() }}
       />
