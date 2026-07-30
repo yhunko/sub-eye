@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo } from "react";
 import {
@@ -21,14 +21,16 @@ import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
  * The app could create categories it could never rename or remove — the server
  * has supported all three since v4 and none of it was reachable.
  *
- * ponytail: no Add button here. Creating a category with no subscription in it
- * is a dead category; the inline "New category…" in the subscription form is
- * the create path, and the footnote says so.
+ * The + here is the second create path, not a replacement: the subscription
+ * form still creates inline from whatever was typed into its search field,
+ * which is the faster route when you are already filing something.
  */
 export function CategoriesPage() {
   const router = useRouter();
   const categories = useQuery(categoriesQuery());
   const subscriptions = useQuery(subscriptionsQuery());
+
+  const openNew = () => router.push("/settings/categories/new");
 
   // Counted from the list the app already holds, not from a new endpoint. The
   // subscriptions query is loaded app-wide (the reminder sync mounts it), so
@@ -45,67 +47,100 @@ export function CategoriesPage() {
   const rows = categories.data ?? [];
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content}
-    >
-      {!categories.data && categories.isLoading ? (
-        <ActivityIndicator color={colors.accent} />
-      ) : null}
-      {!categories.data && categories.isError ? (
-        <Text style={styles.placeholder}>{m.common_loadFailed()}</Text>
-      ) : null}
+    <>
+      <Stack.Screen
+        options={{
+          // A real UIBarButtonItem — iOS 26 gives it its own glass capsule.
+          // expo-router only swaps these in on iOS, so the Pressable stays as
+          // the Android path.
+          unstable_headerRightItems: () => [
+            {
+              type: "button" as const,
+              label: m.category_add(),
+              icon: { type: "sfSymbol" as const, name: "plus" as const },
+              variant: "prominent" as const,
+              tintColor: colors.accent,
+              onPress: openNew,
+            },
+          ],
+          headerRight: () => (
+            <Pressable
+              onPress={openNew}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.category_add()}
+            >
+              <SymbolView
+                name={{ ios: "plus", android: "add" }}
+                size={22}
+                tintColor={colors.accent}
+              />
+            </Pressable>
+          ),
+        }}
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+      >
+        {!categories.data && categories.isLoading ? (
+          <ActivityIndicator color={colors.accent} />
+        ) : null}
+        {!categories.data && categories.isError ? (
+          <Text style={styles.placeholder}>{m.common_loadFailed()}</Text>
+        ) : null}
 
-      {categories.data && rows.length === 0 ? (
-        <Text style={styles.placeholder}>{m.category_empty()}</Text>
-      ) : null}
+        {categories.data && rows.length === 0 ? (
+          <Text style={styles.placeholder}>{m.category_empty()}</Text>
+        ) : null}
 
-      {rows.length ? (
-        <View style={styles.group}>
-          {rows.map((row, index) => (
-            <View key={row.id}>
-              {index > 0 ? <View style={styles.divider} /> : null}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${row.emoji} ${row.name}`}
-                onPress={() =>
-                  router.push({
-                    pathname: "/settings/categories/[id]",
-                    params: { id: row.id },
-                  })
-                }
-                style={({ pressed }) => [
-                  styles.row,
-                  pressed && styles.rowPressed,
-                ]}
-              >
-                <Text style={styles.emoji} maxFontSizeMultiplier={1}>
-                  {row.emoji}
-                </Text>
-                <Text
-                  style={styles.name}
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+        {rows.length ? (
+          <View style={styles.group}>
+            {rows.map((row, index) => (
+              <View key={row.id}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${row.emoji} ${row.name}`}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/settings/categories/[id]",
+                      params: { id: row.id },
+                    })
+                  }
+                  style={({ pressed }) => [
+                    styles.row,
+                    pressed && styles.rowPressed,
+                  ]}
                 >
-                  {row.name}
-                </Text>
-                <Text style={styles.count} maxFontSizeMultiplier={1}>
-                  {counts.get(row.id) ?? 0}
-                </Text>
-                <SymbolView
-                  name={{ ios: "chevron.right", android: "chevron_right" }}
-                  size={13}
-                  tintColor={colors.muted}
-                  weight="semibold"
-                />
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      ) : null}
+                  <Text style={styles.emoji} maxFontSizeMultiplier={1}>
+                    {row.emoji}
+                  </Text>
+                  <Text
+                    style={styles.name}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+                  >
+                    {row.name}
+                  </Text>
+                  <Text style={styles.count} maxFontSizeMultiplier={1}>
+                    {counts.get(row.id) ?? 0}
+                  </Text>
+                  <SymbolView
+                    name={{ ios: "chevron.right", android: "chevron_right" }}
+                    size={13}
+                    tintColor={colors.muted}
+                    weight="semibold"
+                  />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
-      <Text style={styles.footnote}>{m.category_listHint()}</Text>
-    </ScrollView>
+        <Text style={styles.footnote}>{m.category_listHint()}</Text>
+      </ScrollView>
+    </>
   );
 }
 

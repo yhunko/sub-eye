@@ -58,10 +58,13 @@ export function CategoryPickerPage() {
 
   const createAndChoose = () => {
     if (createCategory.isPending) return;
-    createCategory.mutate(search.trim(), {
-      onSuccess: (created) => choose(created.id),
-      onError: notifyWriteFailed,
-    });
+    createCategory.mutate(
+      { name: search.trim() },
+      {
+        onSuccess: (created) => choose(created.id),
+        onError: notifyWriteFailed,
+      },
+    );
   };
 
   return (

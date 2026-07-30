@@ -44,6 +44,8 @@ export function TextField({
   keyboardType = "default",
   placeholder,
   autoCapitalize = "sentences",
+  autoFocus,
+  onSubmitEditing,
 }: {
   label: string;
   value: string;
@@ -52,6 +54,9 @@ export function TextField({
   keyboardType?: "default" | "decimal-pad" | "number-pad" | "url";
   placeholder?: string;
   autoCapitalize?: "none" | "sentences" | "words";
+  autoFocus?: boolean;
+  /** Given, the keyboard's return key submits — the field is the whole form. */
+  onSubmitEditing?: () => void;
 }) {
   return (
     <Field label={label} error={error}>
@@ -64,6 +69,9 @@ export function TextField({
         placeholderTextColor={colors.muted}
         autoCapitalize={autoCapitalize}
         autoCorrect={false}
+        autoFocus={autoFocus}
+        onSubmitEditing={onSubmitEditing}
+        returnKeyType={onSubmitEditing ? "done" : undefined}
         // The app is dark-only, so the OS keyboard has to be told as well —
         // it defaults to the light one and flashes white over a near-black sheet.
         keyboardAppearance="dark"

@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import {
   categoriesQuery,
+  pickCategoryEmoji,
+  useCreateCategory,
   useDeleteCategory,
   useUpdateCategory,
 } from "@/entities/category";
@@ -22,18 +24,28 @@ import { notifyWriteFailed } from "@/shared/ui/notify";
 import { colors } from "@/shared/ui/theme";
 import { EmojiGrid } from "./emoji-grid";
 
-/** Rename, re-emoji or delete one category. Reached from Settings → Categories. */
-export function CategoryEditSheet({ id }: { id: string }) {
+/**
+ * One category. With an `id` it renames / re-emojis / deletes; without one it
+ * creates. Reached from Settings → Categories — the + and a row.
+ *
+ * Creating is deliberately two taps and a word: the field is focused on open,
+ * the return key submits, and until the user touches the grid the emoji tracks
+ * `pickCategoryEmoji(name)`. Picking one is a choice, not a step.
+ */
+export function CategorySheet({ id }: { id?: string }) {
   const router = useRouter();
   const { data: categories } = useQuery(categoriesQuery());
   const { data: subscriptions } = useQuery(subscriptionsQuery());
+  const create = useCreateCategory();
   const update = useUpdateCategory();
   const remove = useDeleteCategory();
 
-  const category = categories?.find((row) => row.id === id);
+  const category = id ? categories?.find((row) => row.id === id) : undefined;
 
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("");
+  // null means "follow the name". Any tap on the grid pins a choice, including
+  // one that lands on the emoji the name was already deriving.
+  const [emoji, setEmoji] = useState<string | null>(null);
   const [error, setError] = useState<string>();
 
   // Seeded ONCE. categoriesQuery refetches on mount, and re-seeding when the
@@ -46,13 +58,16 @@ export function CategoryEditSheet({ id }: { id: string }) {
     setEmoji(category.emoji);
   }, [category]);
 
-  if (!category) {
+  if (id && !category) {
     return (
       <View style={styles.sheet}>
         <Text style={styles.placeholder}>{m.common_loadFailed()}</Text>
       </View>
     );
   }
+
+  const shownEmoji =
+    emoji ?? (category ? category.emoji : pickCategoryEmoji(name));
 
   const submit = () => {
     const trimmed = name.trim();
@@ -61,14 +76,38 @@ export function CategoryEditSheet({ id }: { id: string }) {
       return;
     }
 
+    // The server would happily store "Music" beside "music", and two rows that
+    // read identically in the picker is a bug the user has to untangle later.
+    const clash = (categories ?? []).some(
+      (row) =>
+        row.id !== id &&
+        row.name.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (clash) {
+      setError(m.category_duplicate());
+      return;
+    }
+
+    if (!category) {
+      create.mutate(
+        { name: trimmed, emoji: shownEmoji },
+        { onError: notifyWriteFailed },
+      );
+      router.back();
+      return;
+    }
+
     // Only what actually moved: UpdateCategorySchema takes both fields as
     // optional, and sending an unchanged emoji is a write for nothing.
     const changes: UpdateCategoryInput = {};
     if (trimmed !== category.name) changes.name = trimmed;
-    if (emoji !== category.emoji) changes.emoji = emoji;
+    if (shownEmoji !== category.emoji) changes.emoji = shownEmoji;
 
     if (changes.name !== undefined || changes.emoji !== undefined) {
-      update.mutate({ id, changes }, { onError: notifyWriteFailed });
+      update.mutate(
+        { id: category.id, changes },
+        { onError: notifyWriteFailed },
+      );
     }
     router.back();
   };
@@ -80,7 +119,8 @@ export function CategoryEditSheet({ id }: { id: string }) {
     (item) => item.category?.id === id,
   ).length;
 
-  const confirmDelete = () =>
+  const confirmDelete = () => {
+    if (!category) return;
     Alert.alert(
       m.category_deleteTitle(),
       m.category_deleteBody({ name: category.name, count: affected }),
@@ -90,12 +130,13 @@ export function CategoryEditSheet({ id }: { id: string }) {
           text: m.action_delete(),
           style: "destructive",
           onPress: () => {
-            remove.mutate(id, { onError: notifyWriteFailed });
+            remove.mutate(category.id, { onError: notifyWriteFailed });
             router.back();
           },
         },
       ],
     );
+  };
 
   return (
     <ScrollView
@@ -104,7 +145,9 @@ export function CategoryEditSheet({ id }: { id: string }) {
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>{m.category_editTitle()}</Text>
+      <Text style={styles.title}>
+        {category ? m.category_editTitle() : m.category_newTitle()}
+      </Text>
 
       <TextField
         label={m.form_name()}
@@ -114,10 +157,22 @@ export function CategoryEditSheet({ id }: { id: string }) {
           setError(undefined);
         }}
         error={error}
+        autoFocus={!id}
+        onSubmitEditing={submit}
       />
 
-      <Field label={m.category_emoji()}>
-        <EmojiGrid value={emoji} onChange={setEmoji} />
+      {/* The selected tile is wherever it falls in a 120-tile scroll, so on a
+          fresh sheet the derived emoji sits several screens down and the user
+          cannot see what they are about to get. The label row shows it. */}
+      <Field
+        label={m.category_emoji()}
+        accessory={
+          <Text style={styles.currentEmoji} maxFontSizeMultiplier={1}>
+            {shownEmoji}
+          </Text>
+        }
+      >
+        <EmojiGrid value={shownEmoji} onChange={setEmoji} />
       </Field>
 
       <Pressable
@@ -128,16 +183,18 @@ export function CategoryEditSheet({ id }: { id: string }) {
         <Text style={styles.saveLabel}>{m.form_save()}</Text>
       </Pressable>
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.delete,
-          pressed && styles.deletePressed,
-        ]}
-        onPress={confirmDelete}
-        accessibilityRole="button"
-      >
-        <Text style={styles.deleteLabel}>{m.action_delete()}</Text>
-      </Pressable>
+      {category ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.delete,
+            pressed && styles.deletePressed,
+          ]}
+          onPress={confirmDelete}
+          accessibilityRole="button"
+        >
+          <Text style={styles.deleteLabel}>{m.action_delete()}</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -159,6 +216,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   saveLabel: { fontSize: 15, fontWeight: "700", color: colors.bg },
+  currentEmoji: { marginBottom: 6, fontSize: 18 },
   delete: {
     marginTop: 10,
     alignItems: "center",

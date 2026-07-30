@@ -3,6 +3,17 @@ import { m } from "@/shared/i18n";
 import { nativeHeaderChrome } from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
 
+// A fixed tall detent, not "fitToContents": the emoji grid lives in a
+// ScrollView, and a `flex: 1` scroller has no intrinsic height for the sheet to
+// measure against. Matches the subscription sheets.
+const categorySheet = {
+  presentation: "formSheet" as const,
+  sheetGrabberVisible: true,
+  sheetAllowedDetents: [0.9],
+  headerShown: false,
+  contentStyle: { backgroundColor: colors.bg },
+};
+
 export default function SettingsTabLayout() {
   return (
     <Stack screenOptions={nativeHeaderChrome}>
@@ -15,19 +26,8 @@ export default function SettingsTabLayout() {
         name="categories/index"
         options={{ title: m.settings_categories() }}
       />
-      {/* A fixed tall detent, not "fitToContents": the emoji grid lives in a
-          ScrollView, and a `flex: 1` scroller has no intrinsic height for the
-          sheet to measure against. Matches the subscription sheets. */}
-      <Stack.Screen
-        name="categories/[id]"
-        options={{
-          presentation: "formSheet",
-          sheetGrabberVisible: true,
-          sheetAllowedDetents: [0.9],
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      />
+      <Stack.Screen name="categories/new" options={categorySheet} />
+      <Stack.Screen name="categories/[id]" options={categorySheet} />
     </Stack>
   );
 }
