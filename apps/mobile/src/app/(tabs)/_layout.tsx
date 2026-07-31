@@ -1,9 +1,10 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "@tanstack/react-query";
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useRouter, useSegments } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
+import { useDashboard, useMonthlySummary } from "@/entities/dashboard";
 import { usePro } from "@/entities/pro";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { useSeedPreferredCurrency } from "@/entities/user";
@@ -14,6 +15,7 @@ import {
   syncReminders,
   useReminderTap,
 } from "@/shared/lib/notifications";
+import { syncWidget } from "@/shared/lib/widget";
 import { colors } from "@/shared/ui/theme";
 
 /**
@@ -51,6 +53,42 @@ function ReminderSync() {
     });
     return () => listener.remove();
   }, [data, isPro]);
+
+  return null;
+}
+
+/**
+ * Renders nothing; keeps the Home Screen widgets' shared snapshot in step with
+ * the dashboard.
+ *
+ * Mounted beside `ReminderSync` and for the same reason: both are projections of
+ * data this tree already holds, and neither is worth a screen of its own. The
+ * effect is deliberately thin — `syncWidget` no-ops off iOS, drops a write that
+ * would not change anything, and is the only thing that spends a WidgetKit
+ * reload.
+ *
+ * `isPro` is a dependency because losing (or gaining) the entitlement has to
+ * blank (or fill) the widget without waiting for the numbers to move.
+ */
+function WidgetSync() {
+  const { data: dashboard } = useDashboard();
+  const { data: summary } = useMonthlySummary();
+  const isPro = usePro();
+
+  useEffect(() => {
+    if (!dashboard) return;
+
+    // The monthly summary is the preferred source for both month figures, but
+    // it is a second request and may still be in flight — the widget falls back
+    // to the dashboard's own month total and simply hides the comparison.
+    syncWidget({
+      locked: !isPro,
+      currency: summary?.currencyCode ?? dashboard.preferredCurrencyCode,
+      monthTotal: summary?.currentMonthTotal ?? dashboard.totalUpcomingMonth,
+      previousMonthTotal: summary?.previousMonthTotal ?? null,
+      upcoming: dashboard.upcomingRenewals,
+    });
+  }, [dashboard, summary, isPro]);
 
   return null;
 }
@@ -120,14 +158,40 @@ function PreferredCurrencySeed() {
   return null;
 }
 
+/**
+ * True while a subscription's own screen is on top of the stack.
+ *
+ * UIKit hides the tab bar on a pushed screen with `hidesBottomBarWhenPushed`,
+ * which react-native-screens does not expose — the only lever expo-router gives
+ * is `hidden` on the tab HOST, so the layout has to work out for itself when the
+ * detail screen is showing.
+ *
+ * Matched on the segment PAIR rather than the last segment: `[id]` alone also
+ * matches the category editor, which is a sheet floating over the tab bar and
+ * must not hide it, and the pair keeps the bar hidden while the detail screen's
+ * own pause/pricing sheets sit on top of it.
+ */
+function useSubscriptionDetailFocused(): boolean {
+  const segments = useSegments();
+  const index = segments.indexOf("subscriptions");
+  return index !== -1 && segments[index + 1] === "[id]";
+}
+
 function Tabs() {
+  const onSubscriptionDetail = useSubscriptionDetailFocused();
+
   return (
     <>
       {/* Outside NativeTabs: its children must be triggers and nothing else. */}
       <ReminderSync />
+      <WidgetSync />
       <ReminderTapRouter />
       <PreferredCurrencySeed />
-      <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
+      <NativeTabs
+        minimizeBehavior="onScrollDown"
+        tintColor={colors.accent}
+        hidden={onSubscriptionDetail}
+      >
         <NativeTabs.Trigger name="(home)">
           <NativeTabs.Trigger.Icon sf="house" md="home" />
           <NativeTabs.Trigger.Label>{m.tabs_home()}</NativeTabs.Trigger.Label>

@@ -1,0 +1,137 @@
+import Foundation
+
+/// Mirrors `WidgetSnapshot` in `src/shared/lib/widget/snapshot.ts`.
+///
+/// Every string here arrives already formatted and already translated. The
+/// extension deliberately owns no currency formatting, no number formatting and
+/// no catalog of its own — the app writes what it draws on screen, so the widget
+/// cannot disagree with the app about a price, a separator or a locale.
+///
+/// The one exception is `WidgetItem.date`, which is an instant: see below.
+struct Snapshot: Decodable {
+  let v: Int
+  let locked: Bool
+  let lockTitle: String
+  let lockCta: String
+  let monthLabel: String
+  let monthTotal: String
+  let nextLabel: String
+  let upcomingLabel: String
+  let emptyLabel: String
+  let delta: String?
+  let deltaLabel: String
+  let deltaUp: Bool
+  let alsoDue: String?
+  let items: [WidgetItem]
+}
+
+struct WidgetItem: Decodable, Identifiable {
+  let id: String
+  let name: String
+  let domain: String?
+  let amount: String
+  let date: String
+
+  /// The app writes `Date.toISOString()`, which carries MILLISECONDS — exactly
+  /// what `ISO8601DateFormatter` drops unless asked for them. Getting this wrong
+  /// is silent: `date(from:)` returns nil and every row renders "in 0 seconds".
+  var due: Date? {
+    Self.isoWithFractionalSeconds.date(from: date) ?? Self.iso.date(from: date)
+  }
+
+  /// "today" / "tomorrow" / "in 4 days", localised by the OS.
+  ///
+  /// Formatted from a whole-DAY difference rather than from the instant itself.
+  /// `.relative` on the raw date picks the largest unit that fits, so a payment
+  /// due this morning rendered as "20 minutes ago" — technically true, useless
+  /// on a widget, and it would have flipped wording several times a day.
+  ///
+  /// Days are counted in the DEVICE's calendar, the same choice the reminder
+  /// planner makes: "today" is a wall-clock question, and it should be answered
+  /// where the user physically is.
+  var dueText: String? {
+    guard let due else { return nil }
+
+    let calendar = Calendar.current
+    let days =
+      calendar.dateComponents(
+        [.day],
+        from: calendar.startOfDay(for: Date()),
+        to: calendar.startOfDay(for: due)
+      ).day ?? 0
+
+    return Self.relative.localizedString(from: DateComponents(day: days))
+  }
+
+  private static let isoWithFractionalSeconds: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+  }()
+  private static let iso = ISO8601DateFormatter()
+  private static let relative: RelativeDateTimeFormatter = {
+    let formatter = RelativeDateTimeFormatter()
+    // `.named` is what turns 0 and 1 into "today" and "tomorrow" rather than
+    // "in 0 days" and "in 1 day".
+    formatter.dateTimeStyle = .named
+    return formatter
+  }()
+}
+
+enum WidgetStore {
+  /// Must match `WIDGET_APP_GROUP` in `src/shared/lib/widget/sync.ts` and the
+  /// entitlement in both `app.json` and `expo-target.config.js`.
+  static let appGroup = "group.cc.subeye.app"
+  static let key = "snapshot"
+
+  static func read() -> Snapshot? {
+    guard
+      let defaults = UserDefaults(suiteName: appGroup),
+      let json = defaults.string(forKey: key),
+      let data = json.data(using: .utf8)
+    else { return nil }
+
+    return try? JSONDecoder().decode(Snapshot.self, from: data)
+  }
+}
+
+enum Favicon {
+  /// The same Google endpoint `shared/ui/brand-logo.tsx` uses, fetched HERE
+  /// rather than shipped inside the snapshot.
+  ///
+  /// A widget cannot load a remote image while rendering, so the alternative was
+  /// base64-ing every logo into shared `UserDefaults` on the JS side and keeping
+  /// a cache to stop re-downloading them. Fetching in the timeline provider is a
+  /// third of the code and `URLCache` does the caching for free.
+  static func load(_ domains: [String]) async -> [String: Data] {
+    await withTaskGroup(of: (String, Data?).self) { group in
+      for domain in Set(domains) {
+        group.addTask { (domain, await fetch(domain)) }
+      }
+
+      var logos: [String: Data] = [:]
+      for await (domain, data) in group {
+        if let data { logos[domain] = data }
+      }
+      return logos
+    }
+  }
+
+  private static func fetch(_ domain: String) async -> Data? {
+    guard
+      let encoded = domain.addingPercentEncoding(
+        withAllowedCharacters: .urlQueryAllowed),
+      let url = URL(
+        string: "https://www.google.com/s2/favicons?domain=\(encoded)&sz=128")
+    else { return nil }
+
+    var request = URLRequest(url: url)
+    // A logo is never worth stalling a timeline for. A missing one degrades to
+    // the same letter tile the app draws; a hung request would degrade to a
+    // widget that never redraws at all.
+    request.timeoutInterval = 5
+    request.cachePolicy = .returnCacheDataElseLoad
+
+    return try? await URLSession.shared.data(for: request).0
+  }
+}

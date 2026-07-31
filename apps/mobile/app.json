@@ -18,6 +18,9 @@
       "icon": "./icon.icon",
       "usesAppleSignIn": true,
       "backgroundColor": "#0f1115",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.cc.subeye.app"]
+      },
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -27,6 +30,12 @@
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1", "1C8F.1"]
+          }
+        ],
         "NSPrivacyCollectedDataTypes": [
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
@@ -136,7 +145,8 @@
           "project": "subeye",
           "url": "https://de.sentry.io/"
         }
-      ]
+      ],
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "reactCompiler": true

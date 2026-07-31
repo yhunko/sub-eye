@@ -1,27 +1,27 @@
 import type { UpdateCategoryInput } from "@subeye/shared";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import {
   categoriesQuery,
   pickCategoryEmoji,
   useCreateCategory,
-  useDeleteCategory,
   useUpdateCategory,
 } from "@/entities/category";
-import { subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
-import { Field, TextField } from "@/shared/ui/field";
+import { Field } from "@/shared/ui/field";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { colors } from "@/shared/ui/theme";
+import { useDeleteCategoryConfirm } from "../model/use-delete-category-confirm";
 import { EmojiGrid } from "./emoji-grid";
 
 /**
@@ -35,10 +35,9 @@ import { EmojiGrid } from "./emoji-grid";
 export function CategorySheet({ id }: { id?: string }) {
   const router = useRouter();
   const { data: categories } = useQuery(categoriesQuery());
-  const { data: subscriptions } = useQuery(subscriptionsQuery());
   const create = useCreateCategory();
   const update = useUpdateCategory();
-  const remove = useDeleteCategory();
+  const confirmDeleteCategory = useDeleteCategoryConfirm();
 
   const category = id ? categories?.find((row) => row.id === id) : undefined;
 
@@ -112,119 +111,148 @@ export function CategorySheet({ id }: { id?: string }) {
     router.back();
   };
 
-  // Deleting never removes a subscription — `subscriptions.category_id` is
-  // `onDelete: "set null"`. So the confirm warns with the number that lands in
-  // Uncategorized instead of blocking on a non-empty category.
-  const affected = (subscriptions ?? []).filter(
-    (item) => item.category?.id === id,
-  ).length;
-
   const confirmDelete = () => {
-    if (!category) return;
-    Alert.alert(
-      m.category_deleteTitle(),
-      m.category_deleteBody({ name: category.name, count: affected }),
-      [
-        { text: m.common_cancel(), style: "cancel" },
-        {
-          text: m.action_delete(),
-          style: "destructive",
-          onPress: () => {
-            remove.mutate(category.id, { onError: notifyWriteFailed });
-            router.back();
-          },
-        },
-      ],
-    );
+    if (category) confirmDeleteCategory(category, router.back);
+  };
+
+  // Save and delete belong to the nav bar, not the content: the emoji grid is
+  // 120 tiles, so anything under it is below the fold of a 0.9-detent sheet and
+  // a user has to scroll past every emoji to commit a name they already typed.
+  // iOS gets real bar button items; the Pressables are Android's path, which
+  // expo-router does not swap.
+  const deleteItem = {
+    type: "button" as const,
+    label: m.action_delete(),
+    icon: { type: "sfSymbol" as const, name: "trash" as const },
+    tintColor: colors.danger,
+    onPress: confirmDelete,
+  };
+  const saveItem = {
+    type: "button" as const,
+    // The label survives as the accessibility name — UIKit draws the glyph and
+    // drops the title once an image is set, the way `plus` does on the list.
+    label: m.form_save(),
+    icon: { type: "sfSymbol" as const, name: "checkmark" as const },
+    variant: "prominent" as const,
+    tintColor: colors.accent,
+    onPress: submit,
   };
 
   return (
-    <ScrollView
-      style={styles.sheet}
-      contentContainerStyle={styles.content}
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>
-        {category ? m.category_editTitle() : m.category_newTitle()}
-      </Text>
-
-      <TextField
-        label={m.form_name()}
-        value={name}
-        onChangeText={(next) => {
-          setName(next);
-          setError(undefined);
+    <>
+      <Stack.Screen
+        options={{
+          title: category ? m.category_editTitle() : m.category_newTitle(),
+          unstable_headerLeftItems: () => (category ? [deleteItem] : []),
+          unstable_headerRightItems: () => [saveItem],
+          headerLeft: category
+            ? () => (
+                <Pressable
+                  onPress={confirmDelete}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={m.action_delete()}
+                >
+                  <SymbolView
+                    name={{ ios: "trash", android: "delete" }}
+                    size={22}
+                    tintColor={colors.danger}
+                  />
+                </Pressable>
+              )
+            : undefined,
+          headerRight: () => (
+            <Pressable
+              onPress={submit}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.form_save()}
+            >
+              <SymbolView
+                name={{ ios: "checkmark", android: "check" }}
+                size={22}
+                tintColor={colors.accent}
+              />
+            </Pressable>
+          ),
         }}
-        error={error}
-        autoFocus={!id}
-        onSubmitEditing={submit}
       />
-
-      {/* The selected tile is wherever it falls in a 120-tile scroll, so on a
-          fresh sheet the derived emoji sits several screens down and the user
-          cannot see what they are about to get. The label row shows it. */}
-      <Field
-        label={m.category_emoji()}
-        accessory={
-          <Text style={styles.currentEmoji} maxFontSizeMultiplier={1}>
+      <ScrollView
+        style={styles.sheet}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* The emoji leads the name field instead of sitting in a label row.
+            The selected tile is wherever it falls in a 120-tile scroll, so on a
+            fresh sheet the derived emoji is several screens down — this is the
+            only place the user can see what they are about to get, and next to
+            the name is where it will be read in every list afterwards. */}
+        <View style={styles.nameRow}>
+          <Text style={styles.namePrefix} maxFontSizeMultiplier={1}>
             {shownEmoji}
           </Text>
-        }
-      >
-        <EmojiGrid value={shownEmoji} onChange={setEmoji} />
-      </Field>
+          <TextInput
+            style={styles.nameInput}
+            value={name}
+            onChangeText={(next) => {
+              setName(next);
+              setError(undefined);
+            }}
+            placeholder={m.form_name()}
+            placeholderTextColor={colors.muted}
+            // The caret and selection default to system blue, which is the one
+            // colour in the app that belongs to no token.
+            selectionColor={colors.accent}
+            autoCapitalize="sentences"
+            autoCorrect={false}
+            autoFocus={!id}
+            onSubmitEditing={submit}
+            returnKeyType="done"
+            keyboardAppearance="dark"
+          />
+        </View>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Pressable
-        style={styles.save}
-        onPress={submit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.saveLabel}>{m.form_save()}</Text>
-      </Pressable>
-
-      {category ? (
-        <Pressable
-          style={({ pressed }) => [
-            styles.delete,
-            pressed && styles.deletePressed,
-          ]}
-          onPress={confirmDelete}
-          accessibilityRole="button"
-        >
-          <Text style={styles.deleteLabel}>{m.action_delete()}</Text>
-        </Pressable>
-      ) : null}
-    </ScrollView>
+        <Field label={m.category_emoji()}>
+          <EmojiGrid value={shownEmoji} onChange={setEmoji} />
+        </Field>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
-  title: {
-    marginBottom: 20,
-    fontSize: 20,
-    fontWeight: "700",
+  // An inset-grouped row, not a bordered box: one filled surface, no outline,
+  // 17pt — what a single-field iOS form looks like. `minHeight` rather than a
+  // height so the row still grows with Dynamic Type.
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 16,
+    minHeight: 52,
+    paddingHorizontal: 14,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+  },
+  namePrefix: { fontSize: 24 },
+  nameInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 17,
     color: colors.text,
   },
-  save: {
-    marginTop: 8,
-    alignItems: "center",
-    backgroundColor: colors.accent,
-    borderRadius: 14,
-    paddingVertical: 13,
+  // Sits in the gap the name row already reserves, so showing it moves nothing.
+  error: {
+    marginTop: -10,
+    marginBottom: 10,
+    fontSize: 13,
+    color: colors.danger,
   },
-  saveLabel: { fontSize: 15, fontWeight: "700", color: colors.bg },
-  currentEmoji: { marginBottom: 6, fontSize: 18 },
-  delete: {
-    marginTop: 10,
-    alignItems: "center",
-    borderRadius: 14,
-    paddingVertical: 13,
-  },
-  deletePressed: { backgroundColor: colors.surface },
-  deleteLabel: { fontSize: 15, fontWeight: "600", color: colors.danger },
   placeholder: {
     padding: 20,
     fontSize: 14,

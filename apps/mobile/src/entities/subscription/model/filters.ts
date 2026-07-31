@@ -1,4 +1,5 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto, SubscriptionStatus } from "@subeye/shared";
+import { isCurrentlyActiveSubscription } from "@subeye/shared";
 import type { SubscriptionGroupBy } from "./grouping";
 
 export type SubscriptionSort = "next" | "name" | "cost";
@@ -16,6 +17,26 @@ export type SubscriptionListFilters = {
   sort: SubscriptionSort;
   /** Arranges, never narrows — which is why `hasActiveFilters` ignores it. */
   group: SubscriptionGroupBy;
+};
+
+/**
+ * "Active" is a QUESTION, not a column value: is this still mine?
+ *
+ * `cancelling` answers yes. It is an active subscription that happens to have
+ * an end date — it still bills, still gives access, and `@subeye/shared` already
+ * encodes exactly that for spend, which is why this reuses the predicate rather
+ * than restating it. Hiding one from the default list meant a subscription the
+ * user is still paying for vanished the moment they scheduled its cancellation.
+ *
+ * It stays reachable under `cancelling` too: one subscription, two true answers.
+ */
+const matchesStatus = (
+  status: SubscriptionStatus,
+  filter: SubscriptionStatusFilter,
+): boolean => {
+  if (filter === "all") return true;
+  if (filter === "active") return isCurrentlyActiveSubscription(status);
+  return status === filter;
 };
 
 /**
@@ -76,8 +97,7 @@ export function applySubscriptionFilters(
   const needle = filters.search.trim().toLowerCase();
 
   const matched = items.filter((item) => {
-    if (filters.status !== "all" && item.status !== filters.status)
-      return false;
+    if (!matchesStatus(item.status, filters.status)) return false;
     if (filters.categoryId && item.category?.id !== filters.categoryId) {
       return false;
     }

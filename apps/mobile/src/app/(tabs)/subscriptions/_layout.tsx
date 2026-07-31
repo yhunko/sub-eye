@@ -45,6 +45,7 @@ export default function SubscriptionsTabLayout() {
       <Stack.Screen name="filters" options={scrollableSheet} />
       <Stack.Screen name="[id]/pricing" options={scrollableSheet} />
       <Stack.Screen name="[id]/pause" options={compactSheet} />
+      <Stack.Screen name="[id]/renew" options={compactSheet} />
     </Stack>
   );
 }

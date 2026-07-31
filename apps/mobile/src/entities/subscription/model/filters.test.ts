@@ -140,6 +140,41 @@ describe("applySubscriptionFilters — status and category", () => {
     ).toEqual(["3"]);
   });
 
+  // "Active" asks whether it is still yours, and a cancelling subscription is
+  // one you are still paying for — it just has an end date. Excluding it made a
+  // subscription vanish from the default list the moment it was wound down,
+  // which is the one week a user most wants to see it.
+  it("counts a cancelling subscription as active", () => {
+    const winding = sub({
+      id: "4",
+      name: "CleanShot",
+      status: "cancelling",
+      willBeCancelledAt: "2026-09-29T00:00:00.000Z",
+      nextPaymentDate: "2026-09-29T00:00:00.000Z",
+    });
+
+    expect(
+      applySubscriptionFilters([...all, winding], filters()).map((s) => s.id),
+    ).toEqual(["2", "1", "4"]);
+  });
+
+  // ...and it is still reachable under its own status. One subscription, two
+  // true answers — an ENDED one is in neither "active" nor anything but its own.
+  it("keeps a cancelling subscription under its own status, and an ended one out of active", () => {
+    const winding = sub({ id: "4", status: "cancelling" });
+    const ended = sub({ id: "5", status: "cancelled" });
+    const items = [...all, winding, ended];
+
+    expect(
+      applySubscriptionFilters(items, filters({ status: "cancelling" })).map(
+        (s) => s.id,
+      ),
+    ).toEqual(["4"]);
+    expect(
+      applySubscriptionFilters(items, filters()).map((s) => s.id),
+    ).not.toContain("5");
+  });
+
   it("'all' keeps every status", () => {
     expect(
       applySubscriptionFilters(all, filters({ status: "all" })).length,

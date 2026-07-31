@@ -102,20 +102,32 @@ export function useCancelSubscription() {
   );
 }
 
-/** Un-cancel: clears the pending cancellation and restores normal billing. */
+/**
+ * Un-cancel: clears the pending cancellation and restores normal billing.
+ *
+ * `paymentDate` re-anchors the billing cycle to the day the subscription really
+ * started again, and is only sent for a subscription that has ENDED. A
+ * still-winding-down one never stopped billing, so moving its anchor would
+ * shift a cycle that was never interrupted.
+ */
 export function useRenewSubscription() {
   const client = useQueryClient();
 
   return useMutation(
-    buildOptimisticSubscriptionMutation<{ id: string }>({
+    buildOptimisticSubscriptionMutation<{ id: string; paymentDate?: string }>({
       client,
       subscriptionId: (vars) => vars.id,
       affectsSpend: true,
       onFailure: notifyWriteFailed,
-      patch: () => ({ status: "active", willBeCancelledAt: null }),
+      patch: (vars) => ({
+        status: "active",
+        willBeCancelledAt: null,
+        ...(vars.paymentDate ? { paymentDate: vars.paymentDate } : {}),
+      }),
       mutationFn: async (vars): Promise<SubscriptionDto> => {
         const response = await apiClient.api.subscriptions[":id"].renew.$post({
           param: { id: vars.id },
+          json: { paymentDate: vars.paymentDate ?? null },
         });
         assertOk(response);
         return response.json();

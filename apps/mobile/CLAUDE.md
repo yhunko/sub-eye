@@ -51,6 +51,7 @@ apps/mobile/src/
 - **A sheet is the fallback, not the first answer.** Where UIKit has a control, use the control: the subscriptions list puts sort / group / status / category behind a real **UIMenu** via `unstable_headerLeftItems` / `unstable_headerRightItems` (expo-router's wrapper over `headerLeftBarButtonItems`), and the detail screen does the same for its lifecycle actions. Items take **`label`, not `title`** — expo-router renames the RNScreens field — and submenus are **single-selection by default** (`multiselectable` is false unless set), so UIKit draws the checkmark itself from each action's `state: "on" | "off"`. Set **`multiselectable: true` on the outer `menu`** whenever its children are all submenus: the default sends `UIMenuOptionsSingleSelection` to a menu that owns no selectable actions, which is what the missing checkmarks were traced to. UIKit gives a submenu **no subtitle, no value slot and no per-item tint**, so a submenu announces itself two ways and only when it is off its default: the **filled variant of its own SF Symbol**, and the chosen value appended to the label (`"Status · Paused"`). A submenu at rest stays a plain glyph and a bare noun — spelling out every default made the top level four sentences long, and the defaults are the longest strings in their own lists. A submenu has **no `disabled`** field, so an empty submenu has to be omitted from the array rather than greyed out. expo-router only swaps native items in **on iOS**, so a screen that uses them keeps its `headerLeft`/`headerRight` Pressables as the Android path — and anything added to the menu must be added to Android's sheet too, or the feature silently does not exist there.
 - **Add/Edit is the exception: a `presentation: "modal"` route that owns its own `Stack`** (`app/(tabs)/subscriptions/form/`). It was a formSheet pinned at a 0.9 detent — a modal's footprint without a modal's navigation — which forced the category picker into an ActionSheet with no search and no create. A sheet cannot push a sub-screen without stacking a second sheet on itself. Anything that outgrows an action sheet becomes a pushed screen in that nested stack; the form's draft lives in a React **context** on its layout (`widgets/subscription-form/model/form-context.tsx`), NOT a module store — a half-typed subscription must die with the modal.
 - **`headerSearchBarOptions` uses `placement: "stacked"` + `hideWhenScrolling: false`** on both the category picker and the subscriptions list — a real `UISearchBar` pinned under the nav bar, glass header and all. Not `placement: "automatic"`: UIKit picks a field that retracts on the first scroll, so on a list long enough to want searching the control is gone exactly when it is wanted. If it ever appears not to render, suspect a stale Fast Refresh before concluding the platform cannot do it: a full relaunch was the difference here, and a hand-rolled `TextInput` lookalike was very nearly shipped over it.
+- **A sheet's commit action goes in its nav bar, not under its content.** The category editor is the one sheet that keeps `headerShown` — save and delete were buttons beneath a 120-tile emoji grid, which is below the fold of a 0.9 detent, so committing a typed name meant scrolling past every emoji first. It spreads `nativeHeaderChrome` like any headered screen and fills the bar from `CategorySheet` (`unstable_headerLeftItems` = delete, `unstable_headerRightItems` = save, plus the Android Pressables). Any sheet whose content can outgrow the detent should do the same.
 - **Confirms are native**: ActionSheet + `Alert`. Not a custom dialog component.
 
 ## Native tabs & headers
@@ -60,7 +61,8 @@ apps/mobile/src/
 - **Tabs need a nested `Stack` per tab to get a header.** `NativeTabs` children are bare screens with no navigator, so `<Stack.Screen options>` is inert on them. Each tab is a folder with `_layout.tsx` (a `Stack` carrying `nativeHeaderChrome`) plus `index.tsx`.
 - **Header chrome comes from `@/shared/ui/header`** (`nativeHeaderChrome`), spread into every headered screen. iOS gets `headerTransparent: true` + `scrollEdgeEffects: { top: "soft" }`; **Android gets an OPAQUE bar** — glass is iOS-only there, and a transparent header leaves scroll content stacked *under* the bar because `scrollEdgeEffects` and `contentInsetAdjustmentBehavior` are both iOS no-ops.
 - **Never** set `headerStyle.backgroundColor` or `headerBlurEffect` on iOS: a solid background kills the glass, and `headerBlurEffect` paints a permanent gray band over the near-black app while overlapping `scrollEdgeEffects`.
-- **Every scroll view under a header** sets `contentInsetAdjustmentBehavior="automatic"` and keeps `contentContainerStyle.paddingBottom` small (~24) — the automatic inset already clears the floating tab bar. **Home has no header at all** (`headerShown: false`); the same automatic inset is what clears its status bar, so do not swap it for a manual `useSafeAreaInsets` padding.
+- **Every scroll view under a header** sets `contentInsetAdjustmentBehavior="automatic"` and keeps `contentContainerStyle.paddingBottom` small (~24) — the automatic inset already clears the floating tab bar. Do not swap it for a manual `useSafeAreaInsets` padding.
+- **`scrollEdgeEffects` only blurs content passing under HEADER ITEMS.** Home shipped `headerShown: false` and therefore had nothing behind its status bar — cards slid up into bare pixels. It has a header again, and the two things in it are the argument for it: the **current month**, which every figure on the screen is scoped to and which the hero never names, and the **same `+` bar button the subscriptions list carries**. A header repeating the tab's own word is still not worth the fold.
 - **A nested horizontal ScrollView sets `automaticallyAdjustContentInsets={false}`** (Home's upcoming rail). Without it the inner scroller inherits the outer one's automatic inset and starts pushed in by the status-bar height.
 
 ## Transport
@@ -181,6 +183,60 @@ ids, no reconciliation, nothing to drift.
   store. `createMMKV()` runs at import and throws without the native side, so
   anything reading a device flag dies on import rather than on use.
 
+## Home Screen widgets (iOS only)
+
+`targets/widget/` is a **WidgetKit app extension**, generated into the Xcode
+project by `@bacons/apple-targets` on prebuild. Small = next payment, medium =
+month total + the next three renewals. There is no Android equivalent: an
+Android app widget is RemoteViews/Glance and shares none of this code.
+
+- **The widget never calls the API.** It reads one JSON string the app wrote to
+  the shared App Group. No token in the extension, no auth refresh, no offline
+  hole — and nothing to keep in sync with the server.
+- **`group.cc.subeye.app` is spelled in three files that must agree exactly**:
+  `ios.entitlements` in app.json, `targets/widget/expo-target.config.js` (which
+  reads it back off the app config rather than repeating it), and
+  `WIDGET_APP_GROUP` in `shared/lib/widget/sync.ts` — mirrored by
+  `WidgetStore.appGroup` in Swift. A mismatch is **silent**:
+  `UserDefaults(suiteName:)` hands back a working store that simply never sees
+  the other side's writes.
+- **The group and BOTH App IDs must be registered on the Apple Developer portal
+  before any iOS build**, local ones included — `cc.subeye.app` and the widget's
+  own `cc.subeye.app.widget`. Apple issues no profile for an unregistered
+  capability, so the build dies during "Planning build" having fallen back to a
+  wildcard profile (`iOS Team Provisioning Profile: *`), which can never carry
+  App Groups. The four-click fix and the `eas build` alternative are in
+  [docs/release/TESTFLIGHT-STEPS.md](../../docs/release/TESTFLIGHT-STEPS.md).
+- **Every string in the snapshot is already formatted and already translated.**
+  The extension owns no `NumberFormatter`, no currency logic and no catalog:
+  Paraglide cannot be reached from Swift, and a second copy of the money rules
+  is exactly how a widget starts disagreeing with the screen it mirrors. The
+  cost is that a locale change has to rewrite the snapshot — `WidgetSync` does,
+  on every foreground.
+- **`WidgetItem.date` is the one exception, and it is an instant, not a string.**
+  `.relative(presentation: .named)` formats at render time, so the provider's
+  `.after(midnight)` refresh policy is what stops a row written today from still
+  reading "tomorrow" the morning the payment lands. Do not replace that policy
+  with `.atEnd`.
+- **`toISOString()` carries milliseconds**, which `ISO8601DateFormatter` drops
+  unless given `.withFractionalSeconds`. Parsing it wrong is silent — `date(from:)`
+  returns nil and every row renders as "now".
+- **`syncWidget` de-duplicates before writing.** WidgetKit gives an app a bounded
+  number of timeline reloads per day; spending them on identical redraws is how a
+  widget goes stale exactly when a payment lands. It runs on every foreground, so
+  the comparison is doing real work.
+- **Pro gates the CONTENT, not the widget.** Anyone can add it — a locked
+  snapshot simply carries no figures at all, because a Home Screen is visible to
+  whoever is standing behind the user and a paywall is a reason to write less to
+  disk, not to blur what is already there.
+- Logos are fetched **in the timeline provider**, not shipped in the snapshot.
+  The alternative was base64-ing favicons into shared `UserDefaults` plus a cache
+  to stop re-downloading them; `URLCache` does that for free. A failed fetch
+  degrades to the same letter tile `BrandLogo` draws.
+- `configurationDisplayName` / `description` are Swift literals and therefore
+  **English only** — localising the widget gallery entry needs a `Localizable.strings`
+  in the target.
+
 ## Strings (i18n)
 
 - Paraglide, locales **en + uk**, `baseLocale: "en"`. Catalogs live in `apps/mobile/messages/{locale}.json` with their own `project.inlang` — **deliberately NOT the web client's 785-key catalog**. Keep the mobile catalog small.
@@ -191,12 +247,108 @@ ids, no reconciliation, nothing to drift.
 - Locale is resolved **once at bootstrap** (`shared/i18n/index.ts` → `expo-localization` `getLocales()` → first of en/uk → else **en**) and re-synced by `useAppLocale()` in the root layout, which re-keys the `Stack`. Language switching is **OS-native only** (per-app language in iOS Settings / Android 13+) — no in-app locale state, no MMKV override.
 - Native OS copy (app display name, permission prompts) lives in `apps/mobile/locales/{locale}.json` via `expo.locales`. Editing it needs a **rebuilt dev client**, not a Metro reload.
 - New keys are `prefix_camelCase` and must be added to **both** catalogs.
+- **Every `Intl` date format takes `dateLocale()`** from `shared/i18n` — never a hardcoded tag and never the account's `preferences.locale`, which this client cannot write and which printed English months under a Ukrainian UI. It returns the *device's* full tag (day-first vs month-first is regional, not linguistic) but only while that tag still speaks the app's language. A test stub for `@/shared/i18n` must include it: the format barrel reaches `when`, which asks for it at import time, and a missing export is an import-time crash in an unrelated test file.
 
 ## UI
 
 RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`). Cap layout-critical text with `maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}`; leave prose uncapped for accessibility.
 
 **Colour means one thing at a time.** `accent` green is brand and interaction, never "money is good" — the sole exception is Home's next-month chip, where it marks a *direction* of change. `danger`/`warning`/`muted` on Home's upcoming rail encode **when** (≤1 day / ≤7 rolling days / later), never what kind of event it is; the kind is carried by an SF Symbol. The one event that opts out is `ends`, which is always green because a cancellation takes money off the bill. Read the comments on the tokens before reusing one.
+
+**`cancelling` is a kind of ACTIVE, not a kind of cancelled.** It still bills
+and still gives access until `willBeCancelledAt`, so the list's "active" filter
+matches it via `isCurrentlyActiveSubscription` rather than `status === "active"`
+— excluding it made a subscription the user is still paying for vanish from the
+default list the moment they wound it down. It stays reachable under
+`cancelling` too: one subscription, two true answers. The reminder planner and
+`subscriptionsDueOn` deliberately keep the strict `=== "active"` test — those
+answer "will money move", not "is this still mine".
+
+**A cancelling subscription is asked "when do I lose it", never "when do I pay
+next".** `shouldIncludeOccurrence` is a strict `<`, and an end-of-period cancel
+sets `willBeCancelledAt` TO the next payment date — so that charge never
+happens, and the detail card counting down to it was promising money would move
+on the one screen a user opens to confirm it will not. The card reads
+`detail_ends` + the cancellation date, and answers the charge question from the
+DATES (`chargeBeforeCancellation`, tested): `edit` can push the cancellation
+past one or more payments, so "cancelling" alone never proves "no further
+charges".
+
+**Status labels name ONE subscription, so they are singular** — the detail hero
+and the filter menu share `subs_status_*`, and Ukrainian has no form that covers
+both. `cancelling` is "Cancelled" / "Скасовано" (the user cancelled it; it is
+still running) and `cancelled` is "Ended" / "Завершено" (the paid period
+elapsed); the near-identical Cancelling/Cancelled pair was unreadable at a
+glance. **The cadence belongs under the price, not on the status line** — it
+qualifies that number, and beside the status it lost a three-way squeeze for one
+row and truncated to "· щор…".
+
+**The detail banner's colour is the brand's own favicon, blurred — not an
+extracted palette.** `blurRadius` is a core RN `Image` prop, so the tint arrives
+with the image: no colour-extraction module, no native rebuild, and no async
+step that pops the header a frame after everything else. The **scrim over it is
+not decoration**. Most favicons are a mark on an opaque white plate, which blurs
+to a near-white field, so without a fixed dark gradient the white text below is
+unreadable for a large and unpredictable share of brands.
+
+The banner runs **behind the glass nav bar**, not below it — stopping at the
+header left a dark strip above the colour that read as a bug. The ScrollView's
+`contentInsetAdjustmentBehavior="automatic"` already places content below the
+bar, so the hero climbs back out of that inset with a negative `marginTop` of
+`insets.top + 44` and pays the same number back as `paddingTop`, leaving its
+content exactly where it was and moving only the artwork. A few points of
+overscan go on **both** so no rounding can leave a seam. It is **iOS-only**: the
+Android header is opaque (see Native tabs & headers), so there is nothing to
+show through and the negative margin would only hide the top of the banner.
+`@react-navigation/elements` is not in this tree — there is no `useHeaderHeight`
+to ask.
+
+**The banner owns the DATE, the card below owns the COUNTDOWN.** Both used to
+print the same date. The banner's line is already worded for the status
+(`detail_heroRenews` / `heroEnds` / `heroResumes` / `heroEnded`), so the card
+keeps only what the banner cannot say: how long, and how far through the cycle.
+
+**Nothing on the detail screen may restate the banner.** Two things were cut for
+this and should not come back: a centred "charged as $7.20" line — the
+as-charged amount is now the Amount segment's CAPTION, which previously read
+"Amount" and only named the number above it — and the ended-subscription card.
+A finished subscription gets no card at all: the banner names the end date, the
+price and the status, and everything else about one is unknowable here, because
+`createdAt` is when the row was typed into SubEye rather than when the
+subscription began. There is no honest lifetime total, no real duration and no
+"you saved X". What it gets instead is the one thing still worth doing with it: `EndedEmpty`,
+a glyph, one sentence and a Restart button.
+
+**`renew` is two different actions wearing one name, and `allowedActions` cannot
+tell them apart** — both wind-down states offer it. That is why
+`LifecycleActionTarget` carries `status`. On `cancelling` it is a one-tap undo
+labelled "Keep subscription"; the subscription never stopped billing, so its
+`paymentDate` must NOT move or a cycle that was never interrupted gets shifted.
+On `cancelled` it is "Start again", and it opens a sheet asking WHEN — the user
+may have resubscribed weeks ago and only now opened the app, and `paymentDate`
+is the anchor every future occurrence is projected from, so renewing silently on
+today's date puts every projected payment on the wrong day. The date may be in
+the past and may not be in the future: `maximumDate` on the picker makes that
+unreachable rather than rejectable, and `pastIsoDateSchema` is the backstop
+(compared against the end of the UTC day, so a user ahead of UTC can still pick
+their own "today").
+
+**The tab bar is hidden on the detail screen** (`hidden` on `NativeTabs`).
+UIKit's own `hidesBottomBarWhenPushed` is not exposed by react-native-screens
+and expo-router only offers the flag on the tab HOST, so `(tabs)/_layout.tsx`
+works out from `useSegments()` when the screen is showing. Match the PAIR
+`subscriptions` + `[id]`, never `[id]` alone: the category editor is also an
+`[id]` route, and it is a sheet floating over the tab bar that must keep it. The
+pair also keeps the bar hidden while the detail's own pause/pricing sheets sit
+on top of it.
+
+**A swiped row must be OPAQUE.** `ReanimatedSwipeable` slides the row over its
+revealed actions, so a row that inherits its background from a parent (the
+categories group card) shows the action through itself for the whole drag. The
+capsule-and-caption reveal also needs vertical room: at 52pt rows the caption
+pushes the capsule to within 2pt of the row top, which the group's 24pt corner
+radius then clips on the first row — the categories list drops the caption and
+centres the capsule, the 64pt subscription rows keep both.
 
 **The subscriptions list is a `SectionList`**, always — the ungrouped case is one section whose header renders `null`, which is cheaper than branching between two list components. Grouping lives in `entities/subscription/model/grouping.ts` (pure, tested); section headers total `billing.preferred.monthly` so a yearly group is comparable to a monthly one. Headers do **not** stick: they are borderless text on the page background, and pinning one would let rows slide through its letters.
 

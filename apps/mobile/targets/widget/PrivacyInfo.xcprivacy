@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- Apple's required-reason check runs per BUNDLE, so SubEyeWidget.appex needs
+         its own manifest even though the app target already has one. The reason
+         code is NOT the app's CA92.1: that one covers defaults only the app itself
+         can see, and `UserDefaults(suiteName:)` in Snapshot.swift reads the shared
+         App Group. 1C8F.1 is the App Group reason. Copying CA92.1 here would be a
+         declaration that does not describe the binary. -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+      <dict>
+        <key>NSPrivacyAccessedAPIType</key>
+        <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+        <key>NSPrivacyAccessedAPITypeReasons</key>
+        <array>
+          <string>1C8F.1</string>
+        </array>
+      </dict>
+    </array>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+  </dict>
+</plist>
