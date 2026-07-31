@@ -9,7 +9,7 @@ import { object, string } from "valibot";
 import { CategoryService } from "../domains/category/categoryService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
-import { handleServiceError } from "../utils/routeUtils";
+import { handleServiceError, onInvalid } from "../utils/routeUtils";
 
 const idParamSchema = object({ id: string() });
 
@@ -26,7 +26,7 @@ export const categoryRouter = new Hono()
   .post(
     "/",
     protect,
-    vValidator("json", CreateCategorySchema),
+    vValidator("json", CreateCategorySchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
       try {
@@ -41,7 +41,7 @@ export const categoryRouter = new Hono()
   .post(
     "/batch/delete",
     protect,
-    vValidator("json", DeleteCategoriesInputSchema),
+    vValidator("json", DeleteCategoriesInputSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
       try {
@@ -59,8 +59,8 @@ export const categoryRouter = new Hono()
   .patch(
     "/:id",
     protect,
-    vValidator("param", idParamSchema),
-    vValidator("json", UpdateCategorySchema),
+    vValidator("param", idParamSchema, onInvalid),
+    vValidator("json", UpdateCategorySchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
       try {
@@ -80,7 +80,7 @@ export const categoryRouter = new Hono()
   .delete(
     "/:id",
     protect,
-    vValidator("param", idParamSchema),
+    vValidator("param", idParamSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
       try {

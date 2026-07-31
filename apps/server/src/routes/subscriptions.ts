@@ -7,6 +7,7 @@ import {
   idQuerySchema,
   listQuerySchema,
   PauseSubscriptionSchema,
+  RenewSubscriptionSchema,
   StartPhaseSchema,
   UpdateSubscriptionSchema,
 } from "@subeye/shared";
@@ -16,7 +17,7 @@ import { SubscriptionPhaseService } from "../domains/subscription/subscriptionPh
 import { SubscriptionService } from "../domains/subscription/subscriptionService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
-import { handleServiceError } from "../utils/routeUtils";
+import { handleServiceError, onInvalid } from "../utils/routeUtils";
 
 const phaseIdParamSchema = object({
   id: string(),
@@ -24,24 +25,29 @@ const phaseIdParamSchema = object({
 });
 
 export const subscriptionRouter = new Hono()
-  .get("/", protect, vValidator("query", listQuerySchema), async (context) => {
-    const userId = requireUserId(context);
+  .get(
+    "/",
+    protect,
+    vValidator("query", listQuerySchema, onInvalid),
+    async (context) => {
+      const userId = requireUserId(context);
 
-    try {
-      const params = context.req.valid("query");
-      const page = await SubscriptionService.getSubscriptionsPage(userId, {
-        ...params,
-        limit: params.limit ? Number(params.limit) : undefined,
-      });
-      return context.json(page);
-    } catch (error) {
-      return handleServiceError(context, error);
-    }
-  })
+      try {
+        const params = context.req.valid("query");
+        const page = await SubscriptionService.getSubscriptionsPage(userId, {
+          ...params,
+          limit: params.limit ? Number(params.limit) : undefined,
+        });
+        return context.json(page);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .post(
     "/batch/delete",
     protect,
-    vValidator("json", BulkDeleteSubscriptionsSchema),
+    vValidator("json", BulkDeleteSubscriptionsSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -60,7 +66,7 @@ export const subscriptionRouter = new Hono()
   .post(
     "/batch/category",
     protect,
-    vValidator("json", BulkUpdateCategorySchema),
+    vValidator("json", BulkUpdateCategorySchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -76,24 +82,29 @@ export const subscriptionRouter = new Hono()
       }
     },
   )
-  .get("/:id", protect, vValidator("param", idQuerySchema), async (context) => {
-    const userId = requireUserId(context);
+  .get(
+    "/:id",
+    protect,
+    vValidator("param", idQuerySchema, onInvalid),
+    async (context) => {
+      const userId = requireUserId(context);
 
-    try {
-      const { id } = context.req.valid("param");
-      const subscription = await SubscriptionService.getSubscriptionById(
-        id,
-        userId,
-      );
-      return context.json(subscription);
-    } catch (error) {
-      return handleServiceError(context, error);
-    }
-  })
+      try {
+        const { id } = context.req.valid("param");
+        const subscription = await SubscriptionService.getSubscriptionById(
+          id,
+          userId,
+        );
+        return context.json(subscription);
+      } catch (error) {
+        return handleServiceError(context, error);
+      }
+    },
+  )
   .post(
     "/",
     protect,
-    vValidator("json", AddSubscriptionSchema),
+    vValidator("json", AddSubscriptionSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -112,8 +123,8 @@ export const subscriptionRouter = new Hono()
   .patch(
     "/:id",
     protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", UpdateSubscriptionSchema),
+    vValidator("param", idQuerySchema, onInvalid),
+    vValidator("json", UpdateSubscriptionSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -134,8 +145,8 @@ export const subscriptionRouter = new Hono()
   .post(
     "/:id/phases",
     protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", StartPhaseSchema),
+    vValidator("param", idQuerySchema, onInvalid),
+    vValidator("json", StartPhaseSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -156,7 +167,7 @@ export const subscriptionRouter = new Hono()
   .delete(
     "/:id/phases/:phaseId",
     protect,
-    vValidator("param", phaseIdParamSchema),
+    vValidator("param", phaseIdParamSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -176,7 +187,7 @@ export const subscriptionRouter = new Hono()
   .post(
     "/:id/phases/:phaseId/apply-now",
     protect,
-    vValidator("param", phaseIdParamSchema),
+    vValidator("param", phaseIdParamSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -196,8 +207,8 @@ export const subscriptionRouter = new Hono()
   .post(
     "/:id/cancel",
     protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", CancelSubscriptionSchema),
+    vValidator("param", idQuerySchema, onInvalid),
+    vValidator("json", CancelSubscriptionSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -220,7 +231,8 @@ export const subscriptionRouter = new Hono()
   .post(
     "/:id/renew",
     protect,
-    vValidator("param", idQuerySchema),
+    vValidator("param", idQuerySchema, onInvalid),
+    vValidator("json", RenewSubscriptionSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -229,6 +241,7 @@ export const subscriptionRouter = new Hono()
         const subscription = await SubscriptionService.renewSubscription(
           id,
           userId,
+          context.req.valid("json"),
         );
         return context.json(subscription);
       } catch (error) {
@@ -239,8 +252,8 @@ export const subscriptionRouter = new Hono()
   .post(
     "/:id/pause",
     protect,
-    vValidator("param", idQuerySchema),
-    vValidator("json", PauseSubscriptionSchema),
+    vValidator("param", idQuerySchema, onInvalid),
+    vValidator("json", PauseSubscriptionSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -261,7 +274,7 @@ export const subscriptionRouter = new Hono()
   .post(
     "/:id/resume",
     protect,
-    vValidator("param", idQuerySchema),
+    vValidator("param", idQuerySchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -280,7 +293,7 @@ export const subscriptionRouter = new Hono()
   .delete(
     "/:id",
     protect,
-    vValidator("param", idQuerySchema),
+    vValidator("param", idQuerySchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -292,14 +305,4 @@ export const subscriptionRouter = new Hono()
         return handleServiceError(context, error);
       }
     },
-  )
-  .delete("/", protect, async (context) => {
-    const userId = requireUserId(context);
-
-    try {
-      await SubscriptionService.deleteAllForUser(userId);
-      return context.json({ success: true });
-    } catch (error) {
-      return handleServiceError(context, error);
-    }
-  });
+  );

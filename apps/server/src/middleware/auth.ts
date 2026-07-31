@@ -1,5 +1,6 @@
 import { clerkMiddleware, getAuth } from "@clerk/hono";
 import type { MiddlewareHandler } from "hono";
+import { apiErrorBody } from "../utils/routeUtils";
 
 const publicRoutePrefixes = ["/api/webhooks"];
 
@@ -16,7 +17,7 @@ export const protect: MiddlewareHandler = async (context, next) => {
   const auth = getAuth(context);
 
   if (!auth?.userId) {
-    return context.json({ error: "Unauthorized" }, 401);
+    return context.json(apiErrorBody("UNAUTHORIZED", "Unauthorized"), 401);
   }
 
   context.set("userId", auth.userId);
