@@ -1,6 +1,26 @@
 import { mock } from "bun:test";
 
 /**
+ * The `required()` vars from `shared/config/env.ts`, which validates at MODULE
+ * LOAD and sits on the import graph of most of these tests — so a checkout
+ * without a `.env` does not fail on use, it fails on import, taking every test
+ * in the file with it.
+ *
+ * bun auto-loads `.env`, so a developer machine has always had these and the
+ * gap only shows on a machine that does not: CI has no `.env`, and this went
+ * unnoticed because turbo replayed a remote cache hit for `@subeye/mobile#test`
+ * until an unrelated change finally invalidated it. Adding a `required()` var
+ * must not be able to break the suite that way again.
+ *
+ * `??=`, so a real `.env` still wins — a local run stays faithful to the build
+ * it mirrors. Tests that assert on a URL set `EXPO_PUBLIC_API_URL` themselves
+ * before importing the client; this is only a floor.
+ */
+process.env.EXPO_PUBLIC_API_URL ??= "https://api.test";
+process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??= "pk_test_x";
+process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ??= "test_x";
+
+/**
  * Stubs `react-native` for the whole test run.
  *
  * bun cannot parse React Native's entry point — it is Flow-typed
