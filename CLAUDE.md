@@ -38,6 +38,15 @@ bun run check:circular    # madge
 Run `type-check`, `test`, and `check:boundaries` before calling work done.
 `bun run lint:fix` and `bun run format` write.
 
+**Never run `expo` from the repo root** — always `--cwd apps/mobile`, or `cd`
+into it. The Expo CLI resolves a "project" from the nearest `package.json` and
+will happily adopt the monorepo root: `expo prebuild` there writes an
+`{"expo": {}}` app.json, adds `expo`/`react`/`react-native` to the ROOT
+dependencies, and reformats the root `tsconfig.json`, stripping its comments.
+It scaffolds silently and none of it belongs here. That stray root `app.json`
+was committed once already, which is what made every later root invocation look
+legitimate.
+
 ## Conventions
 
 **Packages export source.** Every `@subeye/*` package points `exports` at

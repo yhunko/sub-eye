@@ -25,6 +25,118 @@ therefore no longer optional — see the box there.
 | EAS project | linked — `projectId e52f6dbb-…` |
 | Xcode | not needed. EAS builds in the cloud |
 
+### ⛔ The App Group must exist on the portal before ANY iOS build
+
+The Home Screen widget (`apps/mobile/targets/widget`) shares data with the app
+through App Group `group.cc.subeye.app`. Apple will not issue a provisioning
+profile for a capability that is not registered, and **a local
+`bun run --cwd apps/mobile ios` fails before it compiles a line**:
+
+```
+❌ Provisioning Profile "iOS Team Provisioning Profile: *" does not support the App Groups capability.
+❌ Entitlements file defines the value "com.apple.security.application-groups"
+   which is not registered for profile "iOS Team Provisioning Profile: cc.subeye.app".
+```
+
+The `*` in the widget's profile name is the tell: Xcode could not satisfy the
+entitlement, so it fell back to a **wildcard** App ID — and a wildcard App ID can
+never carry App Groups.
+
+Nothing in this repo can fix that; it is Apple-side state.
+
+> **Not App Store Connect.** App Groups do not exist on
+> appstoreconnect.apple.com. They live on the **Apple Developer** portal —
+> <https://developer.apple.com/account/resources/identifiers/list/applicationGroup>.
+> Two different sites, both signed in with the same Apple ID, and it is easy to
+> spend an afternoon looking for the capability on the wrong one.
+
+Do it once per team:
+
+1. **App Groups → ➕** —
+   <https://developer.apple.com/account/resources/identifiers/list/applicationGroup>
+   Description `SubEye`, identifier **`group.cc.subeye.app`**. Continue →
+   Register.
+2. **App IDs → `cc.subeye.app`** —
+   <https://developer.apple.com/account/resources/identifiers/list/bundleId>
+   Tick **App Groups**, press its **Configure**, tick `group.cc.subeye.app`,
+   Continue → Save. Leave Push Notifications and Sign in with Apple ticked —
+   untick nothing, or you break auth.
+3. **App IDs → ➕** for the widget — App IDs → App → Continue. Description
+   `SubEye Widget`, Bundle ID **Explicit** = **`cc.subeye.app.widget`**. Tick
+   **App Groups** → Configure → tick `group.cc.subeye.app` → Continue →
+   Register. This one does not exist yet, and its absence is exactly why Xcode
+   fell back to the wildcard.
+4. **Delete the locally cached profiles — this step is not optional.** Xcode
+   caches auto-generated profiles and will keep signing with a stale one for
+   months; a profile minted before step 2 has no App Groups in it and no amount
+   of portal editing changes the copy already on disk. The failing build's
+   `cc.subeye.app` profile was three days old.
+   ```bash
+   rm -rf ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles
+   ```
+5. Rebuild. Automatic signing mints fresh profiles that now carry the group.
+
+**Verify before rebuilding** — this prints what each cached profile actually
+grants, which is the only way to know the portal edit landed:
+
+```bash
+for f in ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision; do security cms -D -i "$f" | python3 -c "import plistlib,sys; p=plistlib.loads(sys.stdin.buffer.read()); e=p.get('Entitlements',{}); print(p['Name'], '->', e.get('com.apple.security.application-groups'))"; done
+```
+
+Both `cc.subeye.app` and `cc.subeye.app.widget` must list
+`['group.cc.subeye.app']`. `None`, or a profile named `*`, means it did not
+work — go back to step 3.
+
+**Or let EAS do steps 1–3**: `eas build --profile development --platform ios`
+syncs capabilities from the entitlements files to the portal as part of the
+build, creating the group and both App IDs. Slower and spends a build, but it
+needs no clicking. Step 4 still applies afterwards for local builds.
+
+### ⛔ `expo run:ios` cannot create a provisioning profile in this project
+
+After step 4 the profiles directory is empty, and the next build fails with
+something different:
+
+```
+❌ No profiles for 'cc.subeye.app' were found: Xcode couldn't find any iOS App
+   Development provisioning profiles matching 'cc.subeye.app'. Automatic signing
+   is disabled and unable to generate a profile. To enable automatic signing,
+   pass -allowProvisioningUpdates to xcodebuild.
+```
+
+This is not a regression — it is `@expo/cli` behaving as written, and it will
+never fix itself. `XcodeBuild.getXcodeBuildArgsAsync` only appends
+`-allowProvisioningUpdates` when `ensureDeviceIsCodeSignedForDeploymentAsync`
+returns a team id, and that function returns **`null` when every target already
+has a `DEVELOPMENT_TEAM`**. `ios.appleTeamId` in `app.json` means prebuild
+writes `Z6KADG969Z` into all four build configurations, so it always returns
+null. The giveaway is in the build's own log, one line above the errors:
+
+```
+› Auto signing app using team(s): Z6KADG969Z, Z6KADG969Z
+```
+
+So `expo run:ios` can only ever *use* profiles that already exist; it cannot
+mint them. Mint them once by hand — this is the only step that needs
+`-allowProvisioningUpdates`, and it also creates the widget's:
+
+```bash
+cd apps/mobile/ios
+xcodebuild -workspace SubEye.xcworkspace -scheme SubEye \
+  -configuration Debug -destination generic/platform=iOS \
+  -allowProvisioningUpdates build
+```
+
+Opening `apps/mobile/ios/SubEye.xcworkspace` in Xcode and building once does the
+same thing — the IDE always has that permission. Either way, once the profiles
+are on disk `bun run --cwd apps/mobile ios` works again until something
+invalidates them.
+
+The three identifiers must agree exactly. They are spelled in `app.json`
+(`ios.entitlements`), `targets/widget/expo-target.config.js`, and
+`WIDGET_APP_GROUP` in `src/shared/lib/widget/sync.ts`; see
+[apps/mobile/CLAUDE.md](../../apps/mobile/CLAUDE.md).
+
 ---
 
 ## Step 1 — Create the app record in App Store Connect
