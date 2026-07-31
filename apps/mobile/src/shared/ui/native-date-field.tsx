@@ -1,6 +1,7 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text } from "react-native";
+import { dateLocale } from "@/shared/i18n";
 import { Field } from "./field";
 import { colors } from "./theme";
 
@@ -21,12 +22,18 @@ export function NativeDateField({
   onChange,
   error,
   minimumDate,
+  maximumDate,
 }: {
   label: string;
   value: Date;
   onChange: (date: Date) => void;
   error?: string;
   minimumDate?: Date;
+  /**
+   * Renew uses this to make "not in the future" unreachable rather than
+   * rejectable — the OS greys the days out, so there is no error to write.
+   */
+  maximumDate?: Date;
 }) {
   const [androidOpen, setAndroidOpen] = useState(false);
 
@@ -38,10 +45,9 @@ export function NativeDateField({
           mode="date"
           display="compact"
           minimumDate={minimumDate}
+          maximumDate={maximumDate}
           themeVariant="dark"
-          onChange={(_event, date) => {
-            if (date) onChange(date);
-          }}
+          onValueChange={(_event, date) => onChange(date)}
         />
       </Field>
     );
@@ -54,18 +60,24 @@ export function NativeDateField({
         onPress={() => setAndroidOpen(true)}
         accessibilityRole="button"
       >
-        <Text style={styles.value}>{value.toLocaleDateString()}</Text>
+        <Text style={styles.value}>
+          {value.toLocaleDateString(dateLocale())}
+        </Text>
       </Pressable>
       {androidOpen ? (
         <DateTimePicker
           value={value}
           mode="date"
           minimumDate={minimumDate}
-          onChange={(_event, date) => {
-            // Android fires once and closes, for both "set" and "dismissed".
+          maximumDate={maximumDate}
+          // Both handlers unmount the dialog, because only `onValueChange`
+          // fires on a pick. Without `onDismiss` a cancelled dialog leaves
+          // `androidOpen` true, and the field cannot be opened a second time.
+          onValueChange={(_event, date) => {
             setAndroidOpen(false);
-            if (date) onChange(date);
+            onChange(date);
           }}
+          onDismiss={() => setAndroidOpen(false)}
         />
       ) : null}
     </Field>

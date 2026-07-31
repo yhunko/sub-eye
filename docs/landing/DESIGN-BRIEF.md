@@ -153,10 +153,10 @@ Ukraine, $11.99 in the US, adjusted elsewhere. This is real — Apple supports i
 same kind as the bank line, and it should be designed as one, not buried as a
 footnote. A visitor on a Ukrainian storefront should see hryvnia.
 
-Frame $11.99 as the **launch price**. Early signups hear first and the first 100
-get Pro free — that number is 100 because Apple issues exactly 100 promo codes
-per app version, so the scarcity is a fact rather than a device. No countdown,
-no "only N spots left" counter.
+**$11.99 is the price, not a launch price** (decided 2026-07-27). No
+introductory framing, no promo codes, no first-100-free, no countdown and no
+"only N spots left". A page whose whole argument is that it will not surprise
+you later should not open with a price that expires.
 
 ---
 
@@ -166,14 +166,17 @@ The shipped app opens these from Settings and from the sign-up consent row. They
 must resolve, with trailing slashes, exactly:
 
 ```
-/terms-of-service/
-/privacy-policy/
+/en/terms-of-service/
+/en/privacy-policy/
 /uk/terms-of-service/
 /uk/privacy-policy/
 ```
 
-English at the root, Ukrainian under `/uk/`. Proposing a different scheme means
-a code change and a new App Store build — so say so loudly if you do.
+**Every locale is prefixed, English included** — not the bare root. This changed
+in commit `769852a`; `apps/mobile/src/shared/config/legal-url.ts` builds
+`${SITE}/${locale}/${page}/` and `legal-url.test.ts` pins all four strings.
+Proposing a different scheme means a code change and a new App Store build — so
+say so loudly if you do.
 
 The legal pages open from inside a dark app, so they should feel like the same
 product: readable measure, real hierarchy, same palette. Not a document dump.
@@ -420,12 +423,15 @@ underneath would contradict it. Design the consent line as part of the form.
 `apps/landing/` in the SubEye monorepo — Bun workspaces, Turbo, Biome (not
 ESLint, not Prettier), TypeScript.
 
-**Recommended stack: Astro, static output, Cloudflare Pages.** The reasoning is
-functional, not aesthetic: Astro's i18n routing produces `/terms-of-service/`
-and `/uk/terms-of-service/` natively, which is the exact URL contract the
-shipped app depends on; it ships zero JavaScript by default; and the API already
-runs on Cloudflare. Anything you propose instead must satisfy those routes
-exactly.
+**Stack: Astro 6, static output, Vercel.** Functional reasoning, not aesthetic:
+Astro's i18n routing with `prefixDefaultLocale: true` produces `/en/...` and
+`/uk/...` natively, which is the exact URL contract the shipped app depends on,
+and it ships zero JavaScript by default. Vercel because `subeye.cc` already
+resolves there and moving hosts is churn on the critical path.
+
+The engineering constraints — monorepo wiring, the Turbo cache trap, what to
+reuse from `packages/`, and the 100/100/100/100 acceptance bar — are in
+[SETUP-BRIEF.md](SETUP-BRIEF.md). Read it before writing markup.
 
 Deliver so it can be built as static pages with scoped CSS — no design system to
 install, no component library dependency.

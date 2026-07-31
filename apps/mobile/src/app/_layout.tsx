@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/clerk-expo";
+import * as Sentry from "@sentry/react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -6,19 +7,29 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useProIdentity } from "@/entities/pro";
 import { tokenCache, useClerkTokenBridge } from "@/shared/auth";
 import { env } from "@/shared/config/env";
 import { useAppLocale } from "@/shared/i18n";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import "@/shared/lib/online"; // side-effect only: registers onlineManager↔NetInfo once
 import { queryClient } from "@/shared/lib/query";
+import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
 import { colors } from "@/shared/ui/theme";
 
 // expo-router looks for this exact named export on a layout and uses it as the
 // error boundary for everything below. Without it a throw in any screen is a
-// blank window in a Release build — the red box only exists in development.
+// blank window in a Release build — the red box only exists in development. It
+// is also what reports a render crash to Sentry.
 export { AppErrorBoundary as ErrorBoundary };
+
+// A deep link builds the root stack from the URL ALONE. Without an anchor the
+// locked Home Screen widget's `subeye://paywall` opens a modal that is the only
+// route in the stack, so every dismiss — including the one right after a
+// completed purchase — is a GO_BACK no navigator handles. `(tabs)` puts the app
+// underneath it. Named `anchor`; expo-router still accepts `initialRouteName`.
+export const unstable_settings = { anchor: "(tabs)" };
 
 // HOLD THE SPLASH ACROSS THE JS BOOT. Left to itself the native splash hides as
 // soon as the root view exists — which is long before the bundle has evaluated,
@@ -53,6 +64,14 @@ function TokenBridge() {
   return null;
 }
 
+// Renders nothing; aliases RevenueCat's app user id onto the Clerk user id.
+// Importing @/entities/pro is also what configures the SDK — that happens once,
+// at module load, before this ever mounts.
+function ProIdentityBridge() {
+  useProIdentity();
+  return null;
+}
+
 // FSD app layer: global providers + the native stack.
 //
 // PROVIDER ORDER IS LOAD-BEARING:
@@ -63,7 +82,7 @@ function TokenBridge() {
 // Clerk sits ABOVE Query so the token getter is set before any request fires.
 // Re-keying the Stack on locale makes an Android per-app language change
 // re-render every screen's strings.
-export default function RootLayout() {
+function RootLayout() {
   const locale = useAppLocale();
   return (
     // Outermost, and required: without it the subscription rows' swipe-to-reveal
@@ -86,6 +105,7 @@ export default function RootLayout() {
           tokenCache={tokenCache}
         >
           <TokenBridge />
+          <ProIdentityBridge />
           {/* Dark-only app: force light status-bar icons regardless of OS appearance. */}
           <StatusBar style="light" />
           <QueryClientProvider client={queryClient}>
@@ -98,6 +118,13 @@ export default function RootLayout() {
             >
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="(auth)" />
+              {/* Root-level so every gated surface — a tab, a nested stack, a
+                  sheet — can `router.push("/paywall")` and land on the same
+                  screen. It brings its own header options. */}
+              <Stack.Screen
+                name="paywall"
+                options={{ presentation: "modal", headerShown: true }}
+              />
             </Stack>
           </QueryClientProvider>
         </ClerkProvider>
@@ -105,5 +132,12 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+// Sentry.wrap adds the touch-event boundary, whose breadcrumbs are what turn a
+// bare stack trace into "they tapped this, then that, then it died". It renders
+// one flex:1 View around the tree, so the layout below is unchanged. It must be
+// applied to the DEFAULT export — expo-router renders that, and an unwrapped one
+// silently loses the breadcrumbs while everything still appears to work.
+export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({ root: { flex: 1 } });

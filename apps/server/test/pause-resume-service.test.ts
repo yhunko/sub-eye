@@ -94,15 +94,39 @@ describe("SubscriptionService.pauseSubscription", () => {
       ),
     ).rejects.toThrow("Subscription is already paused");
   });
+
+  it("pauses again once a dated pause has lapsed on its own", async () => {
+    // Nothing rewrites the column when `resume_at` simply elapses, so the guard
+    // has to read the derived status — the same one the DTO and the allowed
+    // actions are built from — or the row is stuck unpausable forever.
+    const { deps, updates } = buildDeps({
+      ...base,
+      status: "paused",
+      pausedAt: "2026-06-01T00:00:00.000Z",
+      resumeAt: "2026-07-01T00:00:00.000Z",
+    });
+
+    await SubscriptionService.pauseSubscription(
+      "sub_1",
+      "user_1",
+      {},
+      deps as never,
+    );
+
+    expect(updates[0]?.status).toBe("paused");
+  });
 });
 
 describe("SubscriptionService.resumeSubscription", () => {
   it("clears the pause and rolls payment_date forward to the next FUTURE occurrence", async () => {
+    // `resumeAt` is relative to now on purpose: a fixed future date turns into a
+    // LAPSED pause as the calendar passes it, and a lapsed pause derives to
+    // `active`, which is a different test (below).
     const { deps, updates } = buildDeps({
       ...base,
       status: "paused",
       pausedAt: "2026-02-01T00:00:00.000Z",
-      resumeAt: "2026-03-01T00:00:00.000Z",
+      resumeAt: new Date(Date.now() + 30 * 86_400_000).toISOString(),
     });
 
     await SubscriptionService.resumeSubscription(
@@ -124,6 +148,23 @@ describe("SubscriptionService.resumeSubscription", () => {
 
   it("refuses to resume a subscription that is not paused", async () => {
     const { deps } = buildDeps(base);
+    await expect(
+      SubscriptionService.resumeSubscription("sub_1", "user_1", deps as never),
+    ).rejects.toThrow("Subscription is not paused");
+  });
+
+  it("refuses to resume once the dated pause has lapsed on its own", async () => {
+    // The stale column still says `paused`, but the row reads `active`
+    // everywhere the user can see it and `getAllowedActions` never offers
+    // resume for it — accepting the call would roll the anchor of a
+    // subscription that is billing normally.
+    const { deps } = buildDeps({
+      ...base,
+      status: "paused",
+      pausedAt: "2026-06-01T00:00:00.000Z",
+      resumeAt: "2026-07-01T00:00:00.000Z",
+    });
+
     await expect(
       SubscriptionService.resumeSubscription("sub_1", "user_1", deps as never),
     ).rejects.toThrow("Subscription is not paused");

@@ -1,0 +1,170 @@
+---
+import { copyFor } from "../i18n";
+import { money } from "../lib/format";
+import { spendPanel } from "../lib/panels";
+import type { Locale } from "../lib/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const panel = spendPanel[locale];
+
+// The bar is how much of the *month* has gone, not how much of the money — the
+// figure above it is what is still to be paid out of the month that is left.
+const elapsed = Math.round((panel.day / panel.daysInMonth) * 100);
+const total = panel.categories.reduce((sum, amount) => sum + amount, 0);
+
+const categories = panel.categories.map((amount, i) => ({
+  amount,
+  name: c.panel.categories[i] ?? "",
+  share: (amount / total) * 100,
+  shade: `var(--green-${[500, 400, 300, 600, 700][i] ?? 500})`,
+}));
+---
+
+<div class="card spend">
+  <div class="spend__head">
+    <div>
+      <p class="label">{c.panel.leftThisMonth}</p>
+      <p class="spend__big num">{money(panel.left, panel.currency)}</p>
+    </div>
+    <div class="spend__next">
+      <p class="label">{c.panel.nextMonth}</p>
+      <p class="spend__forecast num">
+        {money(panel.nextMonth, panel.currency)}
+      </p>
+    </div>
+  </div>
+
+  <div class="spend__bar" aria-hidden="true">
+    <span style={`width:${elapsed}%`}></span>
+  </div>
+
+  <p class="spend__meta num">
+    <span>{c.panel.dayOf(panel.day, panel.daysInMonth)}</span>
+    <span>{c.panel.subscriptions(panel.subscriptions)}</span>
+  </p>
+
+  <p class="label spend__label">{c.panel.whereItGoes}</p>
+
+  <div class="spend__stack" aria-hidden="true">
+    {
+      categories.map((cat) => (
+        <span style={`flex:${cat.share};background:${cat.shade}`} />
+      ))
+    }
+  </div>
+
+  <ul class="spend__legend">
+    {
+      categories.map((cat) => (
+        <li>
+          <span class="spend__dot" style={`background:${cat.shade}`} />
+          <span class="spend__name">{cat.name}</span>
+          <span class="num spend__amt">{money(cat.amount, panel.currency)}</span>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .spend__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  .spend__next {
+    text-align: right;
+  }
+
+  .spend__big {
+    margin-top: 0.63rem;
+    font-size: clamp(2.75rem, 6vw, 4.13rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .spend__forecast {
+    margin-top: 0.63rem;
+    font-size: 1.38rem;
+    font-weight: 700;
+  }
+
+  .spend__bar {
+    margin-top: 1.75rem;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-alt);
+    overflow: hidden;
+  }
+
+  .spend__bar > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+  }
+
+  .spend__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+  }
+
+  .spend__label {
+    margin-top: 1.75rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .spend__stack {
+    display: flex;
+    gap: 3px;
+    margin-top: 0.88rem;
+    height: 10px;
+  }
+
+  .spend__stack > span {
+    border-radius: var(--radius-pill);
+  }
+
+  .spend__legend {
+    margin-top: 1.13rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
+    gap: 0.63rem 1.25rem;
+    font-size: var(--fs-small);
+  }
+
+  .spend__legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .spend__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex: none;
+  }
+
+  .spend__name {
+    color: var(--text-muted);
+  }
+
+  .spend__amt {
+    margin-left: auto;
+    font-weight: 600;
+  }
+</style>

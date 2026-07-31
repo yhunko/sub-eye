@@ -8,10 +8,8 @@ import { categoryRouter } from "./routes/categories";
 import { subscriptionRouter } from "./routes/subscriptions";
 import { userRouter } from "./routes/user";
 import { webhookRouter } from "./routes/webhooks";
-import {
-  captureServerException,
-  extractRequestContext,
-} from "./utils/analytics";
+import { reportServerException } from "./utils/analytics";
+import { apiErrorBody } from "./utils/routeUtils";
 
 export type { Bindings };
 
@@ -37,16 +35,11 @@ export const app = new Hono<{ Bindings: Bindings }>()
   .route("/user", userRouter)
   .onError((err, ctx) => {
     console.error("[Unhandled Error]", err);
-    if (ctx.env.POSTHOG_KEY) {
-      void captureServerException(err, ctx.env.POSTHOG_KEY, {
-        handled: false,
-        requestContext: {
-          ...extractRequestContext(ctx),
-          responseStatus: 500,
-        },
-      });
-    }
-    return ctx.json({ error: "Internal Server Error" }, 500);
+    reportServerException(ctx, err, { handled: false, responseStatus: 500 });
+    return ctx.json(
+      apiErrorBody("INTERNAL_ERROR", "Internal Server Error"),
+      500,
+    );
   });
 
 export default {

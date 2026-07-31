@@ -30,17 +30,24 @@ export function categoriesQuery() {
 }
 
 /**
- * Creates a category from a name alone — the emoji is derived, see
- * `pickCategoryEmoji`. The dashboard is invalidated because the category
- * breakdown is computed from this list joined to the subscriptions.
+ * Creates a category. `emoji` is optional — omitted, it is derived from the
+ * name (see `pickCategoryEmoji`), which is what the in-form create path wants.
+ * The dashboard is invalidated because the category breakdown is computed from
+ * this list joined to the subscriptions.
  */
 export function useCreateCategory() {
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: async (name: string): Promise<CategoryDto> => {
+    mutationFn: async ({
+      name,
+      emoji,
+    }: {
+      name: string;
+      emoji?: string;
+    }): Promise<CategoryDto> => {
       const response = await apiClient.api.categories.$post({
-        json: { name: name.trim(), emoji: pickCategoryEmoji(name) },
+        json: { name: name.trim(), emoji: emoji ?? pickCategoryEmoji(name) },
       });
       assertOk(response);
       return response.json();

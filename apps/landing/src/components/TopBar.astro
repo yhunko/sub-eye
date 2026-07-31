@@ -1,0 +1,170 @@
+---
+import { copyFor } from "../i18n";
+import { money } from "../lib/format";
+import { type Locale, otherLocale, path, proPrice } from "../lib/site";
+import Mark from "./Mark.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const other = otherLocale(locale);
+const pro = locale === "uk" ? money(proPrice.uah, "uah", 0) : money(proPrice.usd, "usd");
+---
+
+<header class="bar">
+  <div class="shell bar__inner">
+    <a class="bar__brand" href="#top" aria-label="SubEye">
+      <Mark height={20} />
+    </a>
+
+    <nav class="bar__nav">
+      <a class="bar__link" href="#how">{c.nav.how}</a>
+      <a class="bar__link" href="#privacy">{c.nav.privacy}</a>
+      <a class="bar__link" href="#price">{c.nav.price}</a>
+      <a class="bar__link" href="#faq">{c.faq.title}</a>
+      <span class="bar__rule" aria-hidden="true"></span>
+      <a
+        class="bar__lang"
+        href={path(other)}
+        hreflang={other}
+        lang={other}
+        rel="alternate"
+        aria-label={c.otherLangName}>{c.otherLangShort}</a
+      >
+      <a class="bar__cta" href="#price">{pro} {c.pricing.proSuffix}</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .bar {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 30;
+    /* Not `var(--bg)`: the bar is translucent over what scrolls under it. */
+    background: rgb(15 17 21 / 86%);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    height: 4.5rem;
+  }
+
+  .bar__brand {
+    display: flex;
+    color: var(--text);
+  }
+
+  .bar__nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    font-size: var(--fs-small);
+    font-weight: 600;
+  }
+
+  /* Class, not `.bar__nav > a` — a descendant selector outranks `.bar__cta`
+     and paints the filled button's label muted grey on green. */
+  .bar__link {
+    color: var(--text-muted);
+    transition: color 160ms var(--ease);
+  }
+
+  .bar__link:hover {
+    color: var(--text);
+  }
+
+  .bar__rule {
+    width: 1px;
+    height: 1.25rem;
+    background: var(--border);
+  }
+
+  .bar__lang {
+    font-size: var(--fs-tiny);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 0.3rem 0.6rem;
+    transition:
+      color 160ms var(--ease),
+      border-color 160ms var(--ease);
+  }
+
+  .bar__lang:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  .bar__cta {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+    padding: 0.63rem 1.13rem;
+    border-radius: var(--radius-button);
+    transition: background-color 160ms var(--ease);
+  }
+
+  .bar__cta:hover {
+    background: var(--accent-hover);
+    color: var(--on-accent);
+  }
+
+  /* Four anchors do not fit next to a price at 375px, and the sections they
+     point at are one scroll away regardless. */
+  .bar__link,
+  .bar__rule {
+    display: none;
+  }
+
+  @media (min-width: 60em) {
+    .bar__link {
+      display: inline;
+    }
+
+    .bar__rule {
+      display: block;
+    }
+  }
+
+  /*
+   * The bar belongs to the scrolled page, not to the hero — the hero carries
+   * its own logo and language switch. Scroll-driven CSS, so revealing it costs
+   * zero bytes of JavaScript and moves no layout. Where the timeline is not
+   * supported the bar simply starts visible, and Home.astro drops the hero's
+   * duplicate row to match.
+   */
+  @supports (animation-timeline: scroll()) {
+    .bar {
+      visibility: hidden;
+      opacity: 0;
+      animation: bar-in linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 20rem 27.5rem;
+    }
+
+    @keyframes bar-in {
+      from {
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(-100%);
+      }
+
+      to {
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+</style>

@@ -101,9 +101,10 @@ export const SubscriptionRow = memo(function SubscriptionRow({
       buildActions({
         id: item.id,
         name: item.name,
+        status: item.status,
         allowedActions: item.allowedActions,
       }).filter((action) => action.key in SWIPE_ACTIONS),
-    [buildActions, item.id, item.name, item.allowedActions],
+    [buildActions, item.id, item.name, item.status, item.allowedActions],
   );
 
   // A solid colour capsule with the glyph in it, and the label OUTSIDE and under
@@ -115,7 +116,14 @@ export const SubscriptionRow = memo(function SubscriptionRow({
         {actions.map((action) => {
           const spec = SWIPE_ACTIONS[action.key];
           if (!spec) return null;
-          const label = spec.label();
+          // `renew` is two actions under one key: an undo on a subscription that
+          // is winding down, a restart on one that has ended. The capsule caption
+          // has no room for either full label from `lifecycle-actions`, so it
+          // makes the same distinction in the short forms this list uses.
+          const label =
+            action.key === "renew" && item.status === "cancelled"
+              ? m.action_restart()
+              : spec.label();
           return (
             <Pressable
               key={action.key}
@@ -147,7 +155,7 @@ export const SubscriptionRow = memo(function SubscriptionRow({
         })}
       </View>
     ),
-    [actions],
+    [actions, item.status],
   );
 
   // Each status is asking a different question of the same slot. Cancelled is

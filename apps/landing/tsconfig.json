@@ -1,0 +1,20 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["bun"],
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    // Biome cannot see an .astro template, so it is excluded from linting
+    // repo-wide (see biome.jsonc). `astro check` reads both halves of the file,
+    // which makes this the one place unused-variable detection is accurate.
+    "noUnusedLocals": true
+  },
+  "include": [
+    "src",
+    "test",
+    "scripts",
+    "astro.config.mjs",
+    ".astro/types.d.ts"
+  ],
+  "exclude": ["dist"]
+}

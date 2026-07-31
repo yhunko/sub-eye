@@ -5,12 +5,18 @@ import type {
   BulkUpdateCategoryInput,
   GetSubscriptionsParams,
   PauseSubscriptionInput,
+  RenewSubscriptionInput,
   SubscriptionDto,
   SubscriptionPeriod,
+  SubscriptionStatus,
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
-import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/shared";
+import {
+  DateTimezoneUtils,
+  deriveSubscriptionStatus,
+  RecurrenceUtils,
+} from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
@@ -350,6 +356,10 @@ export class SubscriptionService {
     // the real reversion price instead of stranding the user on the trial cost.
     const updated = await deps.repository.update(id, {
       willBeCancelledAt,
+      status: SubscriptionService.currentStatus({
+        ...existing,
+        willBeCancelledAt,
+      }),
     });
 
     const finalRecord = updated;
@@ -366,10 +376,31 @@ export class SubscriptionService {
     );
   }
 
-  /** Resume a cancelling/cancelled subscription (clears the cancellation). */
+  /**
+   * Resume a cancelling/cancelled subscription (clears the cancellation).
+   *
+   * `paymentDate` re-anchors the billing cycle to the day the subscription
+   * actually started again. Every future occurrence is projected FROM that
+   * anchor (`getNextOccurrence`), so renewing a long-dead monthly subscription
+   * without it would keep billing on the old day-of-month and immediately
+   * project a payment that already passed.
+   *
+   * It is optional because the two renewable states want different things: a
+   * still-billing `cancelling` subscription never stopped, so moving its anchor
+   * would shift a cycle that was never interrupted. Only an ENDED one is asked
+   * for a date.
+   *
+   * Renewing also clears any pause. A paused subscription is offered `cancel`,
+   * and a cancelled one is offered `renew`, so the pause columns outlive the
+   * cancellation they were buried under — left in place they return the
+   * restarted subscription to an indefinite pause, which drops every future
+   * occurrence from spend. Renew means live again; nothing else can clear them
+   * from here, because `resume` is not offered on a cancelled subscription.
+   */
   static async renewSubscription(
     id: string,
     userId: string,
+    payload: RenewSubscriptionInput = { paymentDate: null },
     deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<SubscriptionDto> {
     const existing = await deps.repository.findById(id);
@@ -380,6 +411,10 @@ export class SubscriptionService {
 
     const updated = await deps.repository.update(id, {
       willBeCancelledAt: null,
+      pausedAt: null,
+      resumeAt: null,
+      status: "active",
+      ...(payload.paymentDate ? { paymentDate: payload.paymentDate } : {}),
     });
 
     const withRenewalWorkflow = updated;
@@ -409,7 +444,7 @@ export class SubscriptionService {
     if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-    if (existing.status === "paused") {
+    if (SubscriptionService.currentStatus(existing) === "paused") {
       throw new AlreadyPausedError();
     }
 
@@ -441,7 +476,7 @@ export class SubscriptionService {
     if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-    if (existing.status !== "paused") {
+    if (SubscriptionService.currentStatus(existing) !== "paused") {
       throw new NotPausedError();
     }
 
@@ -680,6 +715,28 @@ export class SubscriptionService {
     }
 
     return new Date(value);
+  }
+
+  /**
+   * The status the row's date columns say it has right now. Every lifecycle
+   * guard reads this rather than `record.status`, which is a cache the client
+   * never sees: the DTO derives its status on read, so a dated pause whose
+   * `resume_at` has elapsed reads `active` everywhere while the column still
+   * says `paused`, and a guard on the column refuses an action the same row
+   * advertises in `allowedActions`.
+   */
+  private static currentStatus(record: {
+    willBeCancelledAt: Date | string | null;
+    pausedAt: string | null;
+    resumeAt: string | null;
+  }): SubscriptionStatus {
+    return deriveSubscriptionStatus({
+      willBeCancelledAt: SubscriptionService.normalizeDate(
+        record.willBeCancelledAt,
+      ),
+      pausedAt: record.pausedAt,
+      resumeAt: record.resumeAt,
+    });
   }
 
   static normalizeDate(value?: string | Date | null): string | null {

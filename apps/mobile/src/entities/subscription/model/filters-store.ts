@@ -7,8 +7,8 @@ import {
 /**
  * The list's filter state, held outside React.
  *
- * It has to live somewhere both the list screen and the filter sheet can reach,
- * and those are two different **routes** — the navigator owns sheet
+ * It has to live somewhere both the list screen and Android's fallback sheet can
+ * reach, and those are two different **routes** — the navigator owns sheet
  * presentation in this app, so the sheet cannot be a child of the page and
  * cannot read its `useState`.
  *
@@ -63,14 +63,17 @@ export function useSubscriptionFilters(): SubscriptionListFilters {
 }
 
 /**
- * Whether anything is narrowing the list right now — what tints the header's
- * filter button. Search is excluded: the search bar shows its own state, and a
- * permanently-lit filter button while typing would say nothing.
+ * Whether anything is HIDING rows right now — what tints the header's menu
+ * button. Search is excluded: the search bar shows its own state, and a
+ * permanently-lit button while typing would say nothing.
+ *
+ * `sort` and `group` are excluded too. Neither removes a row, and a tinted
+ * button that only means "arranged differently" trains the user to ignore the
+ * one signal that means "you are not seeing everything".
  */
 export function hasActiveFilters(filters: SubscriptionListFilters): boolean {
   return (
     filters.status !== DEFAULT_SUBSCRIPTION_FILTERS.status ||
-    filters.categoryId !== DEFAULT_SUBSCRIPTION_FILTERS.categoryId ||
-    filters.sort !== DEFAULT_SUBSCRIPTION_FILTERS.sort
+    filters.categoryId !== DEFAULT_SUBSCRIPTION_FILTERS.categoryId
   );
 }

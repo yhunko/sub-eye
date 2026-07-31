@@ -26,7 +26,11 @@ export function SignUpPage() {
   const apple = useAppleSignIn(setError);
 
   const submit = async () => {
-    if (!isLoaded || busy) return;
+    if (busy) return;
+    if (!isLoaded) {
+      setError(m.auth_errorNotReady());
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

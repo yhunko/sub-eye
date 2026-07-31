@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { categoriesQuery } from "@/entities/category";
+import { usePro } from "@/entities/pro";
 import { m } from "@/shared/i18n";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { CurrencyPicker } from "@/shared/ui/currency-picker";
@@ -95,21 +96,28 @@ function BrandAvatar() {
 /** The category row is a destination, not a control: it pushes the picker. */
 function CategoryRow() {
   const router = useRouter();
+  const isPro = usePro();
   const { values } = useSubscriptionForm();
   const categories = useQuery(categoriesQuery());
 
   const label = m.form_category();
   const selected = categories.data?.find((row) => row.id === values.categoryId);
-  const value = selected
-    ? `${selected.emoji} ${selected.name}`
-    : m.form_categoryNone();
+  // The fourth category surface, and the one that gets missed. Locked, the row
+  // wears the badge rather than a value it can never have.
+  const value = !isPro
+    ? m.paywall_badge()
+    : selected
+      ? `${selected.emoji} ${selected.name}`
+      : m.form_categoryNone();
 
   return (
     <Field label={label}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${value}`}
-        onPress={() => router.push("/subscriptions/form/category")}
+        onPress={() =>
+          router.push(isPro ? "/subscriptions/form/category" : "/paywall")
+        }
         style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
       >
         <Text style={styles.triggerValue}>{value}</Text>
@@ -136,6 +144,7 @@ function CategoryRow() {
  */
 export function SubscriptionFormPage() {
   const router = useRouter();
+  const isPro = usePro();
   const { id, values, errors, set, submit } = useSubscriptionForm();
 
   return (
@@ -253,8 +262,33 @@ export function SubscriptionFormPage() {
         />
 
         {/* An offer is part of signing up. Changing one afterwards is what the
-            manage-pricing sheet does, so edit mode leaves it out entirely. */}
-        {id ? null : (
+            manage-pricing sheet does, so edit mode leaves it out entirely.
+
+            A trial or an intro price IS a pricing phase — the same Pro feature
+            that sheet gates. Left open, a free user could create a phase they
+            could then never see or change. Locked, it wears the badge exactly
+            like the category row above. */}
+        {id ? null : !isPro ? (
+          <Field label={m.form_startingOffer()}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${m.form_startingOffer()}, ${m.paywall_badge()}`}
+              onPress={() => router.push("/paywall")}
+              style={({ pressed }) => [
+                styles.trigger,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.triggerValue}>{m.paywall_badge()}</Text>
+              <SymbolView
+                name={{ ios: "chevron.right", android: "chevron_right" }}
+                size={13}
+                tintColor={colors.muted}
+                weight="semibold"
+              />
+            </Pressable>
+          </Field>
+        ) : (
           <>
             <Field label={m.form_startingOffer()}>
               <Segmented

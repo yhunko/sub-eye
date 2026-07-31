@@ -1,8 +1,14 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
 // Monorepo support (watchFolders + nodeModulesPaths) is auto-detected from the
 // bun workspace root by Expo SDK 57 / Metro — no manual wiring needed.
-const config = getDefaultConfig(__dirname);
+//
+// getSentryExpoConfig, NOT expo's getDefaultConfig: it is what stamps a Debug ID
+// into the bundle and into the source map beside it. The app.json plugin uploads
+// maps either way, but without a matching Debug ID Sentry cannot pair them with
+// the bundle — every production stack trace stays minified and the whole point
+// of the auth token is lost, silently and only in Release.
+const config = getSentryExpoConfig(__dirname);
 
 // Metro's transform cache key ignores Babel plugin versions, so worklet code
 // transformed by an older react-native-worklets plugin survives an up/downgrade

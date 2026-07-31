@@ -1,4 +1,7 @@
-import type { SubscriptionAllowedAction } from "@subeye/shared";
+import type {
+  SubscriptionAllowedAction,
+  SubscriptionStatus,
+} from "@subeye/shared";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import { Alert } from "react-native";
@@ -22,6 +25,11 @@ export type LifecycleActionItem = {
 export type LifecycleActionTarget = {
   id: string;
   name: string;
+  /**
+   * Not derivable from `allowedActions`: both wind-down states offer `renew`,
+   * and only the ended one is asked when it restarted.
+   */
+  status: SubscriptionStatus;
   allowedActions: readonly SubscriptionAllowedAction[];
   /** What to do once the delete mutation is fired. The detail screen pops. */
   onDeleted?: () => void;
@@ -53,6 +61,7 @@ export function useLifecycleActionBuilder() {
     ({
       id,
       name,
+      status,
       allowedActions,
       onDeleted,
     }: LifecycleActionTarget): LifecycleActionItem[] => {
@@ -130,11 +139,28 @@ export function useLifecycleActionBuilder() {
               ],
             ),
         }),
+        // Two states offer `renew` and they mean different things. A
+        // `cancelling` subscription never stopped billing, so un-cancelling it
+        // is a one-tap undo. An ENDED one is starting over, and the app has no
+        // idea when — the user may have resubscribed weeks ago and only now
+        // opened it. Renewing that silently on today's date would put every
+        // projected payment on the wrong day, so it asks.
+        // The LABEL differs for the same reason the behaviour does. On a
+        // cancelling subscription this is "Keep subscription" — an undo, and it
+        // still has one to keep. On an ended one there is nothing left to keep,
+        // so it is "Start again".
         renew: () => ({
           key: "renew",
-          label: m.action_renew(),
+          label: status === "cancelled" ? m.action_restart() : m.action_renew(),
           destructive: false,
-          run: () => renewMutate({ id }),
+          run:
+            status === "cancelled"
+              ? () =>
+                  router.push({
+                    pathname: "/subscriptions/[id]/renew",
+                    params: { id },
+                  })
+              : () => renewMutate({ id }),
         }),
         delete: () => ({
           key: "delete",

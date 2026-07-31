@@ -1,0 +1,122 @@
+---
+import { addDays } from "date-fns";
+import { copyFor } from "../i18n";
+import { money, shortDate } from "../lib/format";
+import { MOCK_TODAY, spendPanel, upcomingRows } from "../lib/panels";
+import type { Locale } from "../lib/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const currency = spendPanel[locale].currency;
+
+// Inside a week the app counts down; past that a countdown stops meaning
+// anything and it shows the date instead.
+const COUNTDOWN_DAYS = 7;
+
+const rows = upcomingRows.map((row) => {
+  const due = addDays(MOCK_TODAY, row.inDays);
+  const when =
+    row.inDays === 0
+      ? c.panel.today
+      : row.inDays <= COUNTDOWN_DAYS
+        ? c.panel.inDays(row.inDays)
+        : shortDate(locale, due.toISOString());
+
+  return {
+    ...row,
+    when,
+    isDue: row.inDays === 0,
+    charged: row.foreign
+      ? money(row.foreign.amount, row.foreign.currency)
+      : null,
+  };
+});
+---
+
+<div class="card next">
+  <p class="label">{c.hero.upcoming}</p>
+
+  <ul class="next__rows">
+    {
+      rows.map((row) => (
+        <li class="next__row">
+          <div>
+            <p class="next__name">{row.name}</p>
+            <p class:list={["next__when", "num", row.isDue && "next__when--due"]}>
+              {row.when}
+              {row.charged && <span class="next__fx"> · {row.charged}</span>}
+            </p>
+          </div>
+          <p class="next__amt num">{money(row.amount[locale], currency)}</p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="next__note">{c.hero.upcomingNote}</p>
+</div>
+
+<style>
+  .next {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .next__rows {
+    margin-top: 1.38rem;
+  }
+
+  .next__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .next__row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .next__name {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .next__when {
+    margin-top: 0.25rem;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+  }
+
+  /* The one date that is money moving today. Green is interaction and
+     attention here, not "good news". */
+  .next__when--due {
+    color: var(--accent-bright);
+    font-weight: 600;
+  }
+
+  .next__fx {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .next__amt {
+    font-size: 1.06rem;
+    font-weight: 700;
+  }
+
+  .next__note {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+</style>

@@ -1,0 +1,141 @@
+---
+import Footer from "../components/Footer.astro";
+import Nav from "../components/Nav.astro";
+import { copyFor } from "../i18n";
+import { legalUpdated, type Locale, path, type SitePage } from "../lib/site";
+import Base from "./Base.astro";
+
+interface Props {
+  locale: Locale;
+  page: SitePage;
+  title: string;
+  description: string;
+}
+
+const { locale, page, title, description } = Astro.props;
+const c = copyFor(locale);
+
+const updated = new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+}).format(new Date(legalUpdated));
+---
+
+<Base locale={locale} page={page} title={title} description={description}>
+  <div class="shell">
+    <Nav locale={locale} page={page} />
+  </div>
+
+  <main id="main" class="legal">
+    <div class="shell">
+      <p class="legal__back">
+        <a href={path(locale)}>{c.legal.backHome}</a>
+      </p>
+      <h1>{title}</h1>
+      <p class="legal__updated">
+        {c.legal.updated}
+        <time datetime={legalUpdated}>{updated}</time>
+      </p>
+      <div class="legal__body">
+        <slot />
+      </div>
+    </div>
+  </main>
+
+  <Footer locale={locale} page={page} />
+</Base>
+
+<style>
+  .legal {
+    padding-block: clamp(1.5rem, 4vw, 3rem) clamp(3rem, 7vw, 5rem);
+  }
+
+  .legal .shell {
+    max-width: 44rem;
+  }
+
+  .legal__back {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    margin-bottom: 1.75rem;
+  }
+
+  .legal h1 {
+    font-size: var(--fs-display);
+  }
+
+  .legal__updated {
+    margin-top: 0.9rem;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+  }
+
+  /* Slotted from the page, so the document rules have to be global. The legal
+     pages open from inside a dark app and should feel like the same product. */
+  .legal__body {
+    margin-top: clamp(2rem, 5vw, 3rem);
+  }
+
+  .legal__body :global(h2) {
+    font-size: var(--fs-title);
+    margin-top: 2.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .legal__body :global(h3) {
+    font-size: var(--fs-body);
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-top: 1.75rem;
+  }
+
+  .legal__body :global(p),
+  .legal__body :global(li) {
+    color: var(--text-muted);
+    max-width: 68ch;
+  }
+
+  .legal__body :global(p) {
+    margin-top: 1rem;
+  }
+
+  .legal__body :global(ul) {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .legal__body :global(li) {
+    padding-left: 1.1rem;
+    position: relative;
+  }
+
+  .legal__body :global(li)::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  .legal__body :global(strong) {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .legal__body :global(dl) {
+    margin: 1.25rem 0 0;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .legal__body :global(dt) {
+    font-weight: 600;
+  }
+
+  .legal__body :global(dd) {
+    margin: 0.15rem 0 0;
+    color: var(--text-muted);
+  }
+</style>

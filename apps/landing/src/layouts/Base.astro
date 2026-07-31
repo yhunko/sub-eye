@@ -1,0 +1,113 @@
+---
+import { copyFor } from "../i18n";
+import {
+  canonical,
+  locales,
+  type Locale,
+  proPrice,
+  SITE,
+  type SitePage,
+} from "../lib/site";
+import "../styles/global.css";
+
+interface Props {
+  locale: Locale;
+  page?: SitePage;
+  title: string;
+  description: string;
+  /** Only the marketing pages carry product markup; the legal pages are documents. */
+  structuredData?: boolean;
+}
+
+const { locale, page, title, description, structuredData = false } = Astro.props;
+const c = copyFor(locale);
+
+// The LCP element is the h1, so only the subset this locale will actually paint
+// is worth preloading. Preloading all three would be the same as preloading none.
+const textFont =
+  locale === "uk"
+    ? "/fonts/nunito-400-800-cyrillic.woff2"
+    : "/fonts/nunito-400-800-latin.woff2";
+
+const schema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: "SubEye",
+      applicationCategory: "FinanceApplication",
+      operatingSystem: "iOS",
+      url: canonical(locale),
+      inLanguage: locale,
+      description,
+      offers: {
+        "@type": "Offer",
+        price: proPrice.usd.toFixed(2),
+        priceCurrency: "USD",
+        category: "one-time purchase",
+      },
+    },
+    {
+      "@type": "Organization",
+      name: "SubEye",
+      url: SITE,
+      logo: `${SITE}/favicon.svg`,
+    },
+  ],
+};
+---
+
+<html lang={locale} dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0f1115" />
+    <meta name="color-scheme" content="dark" />
+
+    <link rel="canonical" href={canonical(locale, page)} />
+    {
+      locales.map((alt) => (
+        <link rel="alternate" hreflang={alt} href={canonical(alt, page)} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={canonical("en", page)} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={textFont}
+      crossorigin
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SubEye" />
+    <meta property="og:locale" content={locale === "uk" ? "uk_UA" : "en_US"} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical(locale, page)} />
+    <meta property="og:image" content={`${SITE}/og/${locale}.png`} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={c.hero.title} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {
+      structuredData && (
+        <script
+          type="application/ld+json"
+          is:inline
+          set:html={JSON.stringify(schema)}
+        />
+      )
+    }
+  </head>
+
+  <body>
+    <a class="skip" href="#main">{c.skip}</a>
+    <slot />
+  </body>
+</html>

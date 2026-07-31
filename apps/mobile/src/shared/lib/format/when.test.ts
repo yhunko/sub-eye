@@ -2,16 +2,27 @@ import { describe, expect, it, mock } from "bun:test";
 
 // Paraglide's runtime touches expo-localization through the i18n barrel; stub the
 // three message functions so this stays a pure unit test of the bucket logic.
+// `dateLocale` is pinned to en-GB for the same reason the real one exists: the
+// day/month order these assertions read is regional, not the module's choice.
+let locale = "en-GB";
+
 mock.module("@/shared/i18n", () => ({
+  dateLocale: () => locale,
   m: {
     when_today: () => "Today",
     when_tomorrow: () => "Tomorrow",
     when_inDays: ({ days }: { days: number }) => `in ${days} days`,
+    when_daysLeft: ({ days }: { days: number }) => `${days} days left`,
   },
 }));
 
-const { daysUntil, formatCountdown, formatDaysUntil, formatShortDate } =
-  await import("./when");
+const {
+  daysUntil,
+  formatCountdown,
+  formatDaysUntil,
+  formatRemaining,
+  formatShortDate,
+} = await import("./when");
 
 describe("formatShortDate", () => {
   it("drops the year only while it is the current one", () => {
@@ -24,6 +35,14 @@ describe("formatShortDate", () => {
   it("renders a past date as itself", () => {
     expect(formatShortDate("2025-11-30T00:00:00.000Z")).toBe("30 Nov 2025");
   });
+
+  // The regression this module shipped with: the tag was pinned to en-GB, so a
+  // Ukrainian UI printed "5 Feb 2027" beside its own "через 4 дн.".
+  it("follows the app's locale", () => {
+    locale = "uk";
+    expect(formatShortDate("2027-02-05T00:00:00.000Z")).toBe("5 лют. 2027 р.");
+    locale = "en-GB";
+  });
 });
 
 describe("formatCountdown", () => {
@@ -33,6 +52,23 @@ describe("formatCountdown", () => {
     expect(formatCountdown(0)).toBe("Today");
     expect(formatCountdown(1)).toBe("Tomorrow");
     expect(formatCountdown(47)).toBe("in 47 days");
+  });
+});
+
+describe("formatRemaining", () => {
+  // The same distance as formatCountdown, worded as a window running out. "In
+  // 326 days" is an event approaching; access you already hold is time left.
+  it("counts down a window rather than up to an event", () => {
+    expect(formatRemaining(326)).toBe("326 days left");
+    expect(formatCountdown(326)).toBe("in 326 days");
+  });
+
+  // The last day and the day before read the same either way, so they share the
+  // countdown's wording rather than earning two more catalog keys.
+  it("keeps today and tomorrow", () => {
+    expect(formatRemaining(0)).toBe("Today");
+    expect(formatRemaining(-4)).toBe("Today");
+    expect(formatRemaining(1)).toBe("Tomorrow");
   });
 });
 

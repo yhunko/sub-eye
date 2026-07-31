@@ -4,8 +4,10 @@ import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { categoriesQuery } from "@/entities/category";
+import { ProLock, usePro } from "@/entities/pro";
 import {
   hasActiveFilters,
+  type SubscriptionGroupBy,
   type SubscriptionSort,
   type SubscriptionStatusFilter,
   subscriptionFilters,
@@ -27,6 +29,13 @@ const SORTS: { value: SubscriptionSort; label: () => string }[] = [
   { value: "next", label: m.subs_sort_next },
   { value: "name", label: m.subs_sort_name },
   { value: "cost", label: m.subs_sort_cost },
+];
+
+const GROUPS: { value: SubscriptionGroupBy; label: () => string }[] = [
+  { value: "none", label: m.form_categoryNone },
+  { value: "category", label: m.form_category },
+  { value: "period", label: m.subs_group_period },
+  { value: "currency", label: m.form_currency },
 ];
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -80,12 +89,14 @@ function ChoiceRow({
 }
 
 /**
- * Every list filter, in one native sheet behind one header button.
+ * ANDROID'S list options. iOS reaches the same four dimensions through a real
+ * UIMenu on the nav bar (`unstable_headerRightItems` in `subscriptions-page`),
+ * which draws its own checkmarks, submenus and dismissal — this exists because
+ * Android has no bar-button menu, and a Material overflow with nested
+ * single-selection groups is a dependency, not a config change.
  *
- * Replaces three pinned chip strips. Those cost ~130pt of permanently sticky
- * chrome above a list, and they only got worse as dimensions were added — the
- * category strip was the third. Rows in a sheet scale to any number of
- * categories; a horizontal strip does not.
+ * Keep the two in step: a dimension added to the menu and not to this sheet is
+ * a feature Android silently does not have.
  *
  * Choices apply immediately, so there is no Cancel and nothing to commit. Done
  * is here for discoverability — the grabber and a swipe do the same thing.
@@ -93,6 +104,7 @@ function ChoiceRow({
 export function SubscriptionFiltersSheet() {
   const router = useRouter();
   const filters = useSubscriptionFilters();
+  const isPro = usePro();
   const categories = useQuery(categoriesQuery());
   const rows = categories.data ?? [];
 
@@ -138,9 +150,27 @@ export function SubscriptionFiltersSheet() {
         ))}
       </Section>
 
-      {/* Omitted entirely for an account with no categories — a lone
-            "All categories" row filters nothing. */}
-      {rows.length ? (
+      <Section title={m.subs_groupBy()}>
+        {GROUPS.map((option, index) => (
+          <ChoiceRow
+            key={option.value}
+            label={option.label()}
+            selected={filters.group === option.value}
+            first={index === 0}
+            onPress={() => subscriptionFilters.set({ group: option.value })}
+          />
+        ))}
+      </Section>
+
+      {/* Free tier gets the lock even with nothing to filter — it is the upsell,
+          and a free account has no categories by construction. Pro with none
+          still gets nothing: a lone "All categories" row filters nothing. */}
+      {!isPro ? (
+        <ProLock
+          title={m.paywall_lockFilter()}
+          body={m.paywall_lockFilterBody()}
+        />
+      ) : rows.length ? (
         <Section title={m.form_category()}>
           <ChoiceRow
             label={m.subs_categoryAll()}

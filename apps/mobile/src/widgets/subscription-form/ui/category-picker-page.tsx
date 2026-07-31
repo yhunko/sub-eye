@@ -58,10 +58,13 @@ export function CategoryPickerPage() {
 
   const createAndChoose = () => {
     if (createCategory.isPending) return;
-    createCategory.mutate(search.trim(), {
-      onSuccess: (created) => choose(created.id),
-      onError: notifyWriteFailed,
-    });
+    createCategory.mutate(
+      { name: search.trim() },
+      {
+        onSuccess: (created) => choose(created.id),
+        onError: notifyWriteFailed,
+      },
+    );
   };
 
   return (
@@ -74,7 +77,10 @@ export function CategoryPickerPage() {
             // The list is the whole screen and this field is how you get through
             // it, so it stays put rather than retracting on the first scroll.
             hideWhenScrolling: false,
-            placeholder: m.subs_searchPlaceholder(),
+            // Not the list's plain "Search": typing a name that matches nothing
+            // offers to create it, and that is the only way to make a category
+            // from here. A field labelled "Search" hides the feature entirely.
+            placeholder: m.form_categorySearchOrCreate(),
             autoCapitalize: "sentences",
             tintColor: colors.accent,
             textColor: colors.text,

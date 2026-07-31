@@ -4,29 +4,35 @@ Unbuilt work from the 2026-07-27 release-readiness audit. Each brief is
 self-contained: open a fresh session, paste the brief, and it has what it needs.
 
 The manual half — anything needing a dashboard login, credentials, or a decision
-— is [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md), and it leads with the blocker
-that gates everything else.
+— is [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md).
+
+**v4.0.0 is live on `app.subeye.cc`** (M1, 2026-07-27). The app finally has a
+backend that matches it.
 
 ## What is left, in order
 
-1. **M1 — ship v4 to production.** The live API at `app.subeye.cc` is still v3;
-   the app is a v4 client. Everything below is untestable until this lands, and
-   the database half of it needs supervision, not CI.
-2. **M2** EAS production env vars. ⛔ blocks any usable build.
-3. **M3** publish the privacy policy and the four `/en` + `/uk` legal routes.
-   ⛔ blocks submission, and the app links them today. Work in the landing repo,
-   not this one.
-4. **B3** client crash telemetry — batch the native module with the prebuild for
-   the first EAS build rather than burning a build on it alone.
-5. **M4 / M5** Clerk production instance, then the App Store Connect record and
-   privacy label.
-6. **M6** first EAS build + device smoke test.
-7. **B7** rate limiting (mostly the M7 dashboard rule), **B6** RevenueCat (still
-   blocked on M8).
+**Done 2026-07-28:** M2 (EAS production env), M3 (all six landing routes live on
+`www.subeye.cc`, apex 301s to it), M4 (Clerk production instance, DNS and all),
+and **B6** — the paywall and Pro gating shipped in `72615f8`, which also closed
+the "the landing page sells what the app gives away" problem.
 
-B3 adds an `EXPO_PUBLIC_*` var and possibly a processor, so it means revisiting
-M3's processor list, the App Privacy label, and the EAS production environment —
-not purely client work.
+1. **B3** crash telemetry — [SENTRY-BRIEF.md](SENTRY-BRIEF.md). A native module,
+   so it goes in *before* the first build or it costs a whole build cycle. Its
+   privacy-policy half is overdue for RevenueCat regardless.
+2. **TestFlight** — [TESTFLIGHT-STEPS.md](TESTFLIGHT-STEPS.md). One App Store
+   Connect form and four commands; deliberately skips every IAP prerequisite.
+   Nothing has ever run on a device against the deployed API.
+3. **M6** the device smoke test, against that build.
+4. **M8** → real purchases: Paid Applications agreement (days of lead time), the
+   IAP product, RevenueCat's Apple config, and the `appl_` key replacing the
+   Test Store one in EAS. [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md).
+5. **M5** the rest of the store listing — privacy label (now needs a Purchase
+   History row), screenshots from the device, description.
+6. **B7** rate limiting (mostly the M7 dashboard rule).
+
+The live gap to fix first: the published privacy policy does not name
+**RevenueCat**, and states *"no SDK ships inside the app"*. The binary has
+shipped one since `72615f8`.
 
 ## Already landed on `dev`
 
@@ -64,73 +70,33 @@ Two patterns from that work are load-bearing for anything new:
 
 ---
 
-## B3 — Client-side crash and event telemetry
+## B3 — Client-side crash telemetry
 
-Not a blocker, but shipping without it means debugging from one-star reviews.
+**Moved to its own file: [SENTRY-BRIEF.md](SENTRY-BRIEF.md)**, with the SDK
+choice settled (Sentry — the `pe-yhunko` org already exists on the EU region).
 
-> Add client-side error reporting to the SubEye mobile app.
->
-> Today `apps/server/src/utils/analytics.ts` posts `$exception` events to
-> PostHog EU from the Worker. The mobile app reports nothing — the
-> `AppErrorBoundary` (`apps/mobile/src/shared/ui/error-boundary.tsx`) shows a
-> screen but sends nothing anywhere.
->
-> Pick ONE of PostHog React Native or Sentry (a Sentry MCP is already wired in
-> `.mcp.json`) and justify the choice in one line. Requirements:
-> - Report from `AppErrorBoundary` and install a global JS error handler.
-> - Identify by Clerk user id so a client exception joins the server's
->   `distinct_id`. Do not send email or subscription names.
-> - No new EXPO_PUBLIC var without adding it to
->   `apps/mobile/src/shared/config/env.ts`, which validates at module load.
-> - The app is offline-tolerant (MMKV-persisted query cache); telemetry must
->   never block a render or throw on a dead network.
-> - If the SDK collects anything new, update `expo.ios.privacyManifests` in
->   `apps/mobile/app.json` to match, and note it for the App Privacy label.
->
-> Note that this adds a native module, so it needs a prebuild + rebuild — batch
-> it with any other native change rather than burning a build on it alone.
+Two corrections to what used to be here: there is **no Sentry entry in this
+repo's `.mcp.json`** — the MCP is configured globally — and the new DSN var must
+be **optional** in `env.ts`, not required. A required var there breaks the test
+suite and every EAS environment set up before it, which is exactly how
+`EXPO_PUBLIC_REVENUECAT_IOS_KEY` came to block store builds.
+
+The privacy-policy half of that brief is now overdue independently of Sentry:
+the published policy claims *"no SDK ships inside the app"* and does not mention
+**RevenueCat**, which has shipped since `72615f8`.
 
 ---
 
 ## B6 — RevenueCat paywall and Pro entitlement
 
-**Only after M8 (App Store Connect IAP setup).** Do not start before there is an
-approved product id to point at.
+**Moved to its own file: [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md).** It carries the
+dashboard setup, the implementation brief, the three testing tiers and how to
+grant yourself the entitlement.
 
-> Add SubEye Pro to the mobile app via RevenueCat.
->
-> Decided model (do not redesign it):
-> - **One non-consumable, $19.99 lifetime.** No auto-renewable subscription in
->   v1 — Guideline 3.1.2 paywall requirements, dunning and grace periods are ops
->   a solo developer does not need on day one, and a subscription-tracking app
->   charging a subscription is a joke reviewers make in public.
-> - **Free:** unlimited subscriptions, the full Home dashboard, list, search,
->   filter, sort, every lifecycle action, multi-currency conversion.
-> - **Pro:** renewal reminders · pricing phases (trial-ending and price-change
->   tracking) · categories, the category breakdown and the category filter ·
->   CSV export.
-> - The gate is *features*, not a subscription count cap. Nothing gated costs
->   the developer anything at runtime, so the free tier cannot be griefed into a
->   bill and the cap never punishes the users who evangelise the app.
->
-> Implementation notes:
-> - `react-native-purchases` + RevenueCat. Do not hand-roll StoreKit.
-> - Entitlement is client-side only. `users` gets no new column: a cracked
->   client getting free on-device reminders costs nothing, and a server-side
->   check would put a paywall in the money path for no benefit.
-> - Cache the entitlement in MMKV so a cold start with no network does not
->   downgrade a paying user to free. Fail **open** on a RevenueCat outage.
-> - A "Restore purchases" action is mandatory (Guideline 3.1.1). Put it in
->   Settings next to the paywall entry, not only inside the paywall.
-> - The paywall must link Terms and Privacy — `shared/config/legal.ts` exports
->   `termsUrl()` and `privacyUrl()`.
-> - Existing users must not lose reminders they already have on. Grandfather
->   anyone with `notifications.renewalReminders` already true in MMKV, and say
->   so in the commit message.
-> - Categories are reachable from Settings → Categories and from the list's
->   filter chips. Gating them means gating **three** surfaces, not one — decide
->   whether the chips disappear or deep-link to the paywall, and be consistent.
-> - Strings in both message catalogs.
+Two corrections to what used to be here, in case an old copy is still open:
+**CSV export is not part of Pro** — it does not exist — and gating categories
+touches **four** surfaces, not three (the subscription form's category picker is
+the one that gets missed).
 
 ---
 

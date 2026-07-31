@@ -1,6 +1,6 @@
-import type { SubscriptionDto, SubscriptionStatus } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/shared";
 import { isCurrentlyActiveSubscription } from "@subeye/shared";
-import { useQuery } from "@tanstack/react-query";
+
 import { Stack } from "expo-router";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
@@ -14,38 +14,26 @@ import {
   View,
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
+import { ProLock, usePro } from "@/entities/pro";
 import { toTimelineRows, useSubscriptionDetail } from "@/entities/subscription";
-import { preferencesQuery } from "@/entities/user";
-import { m } from "@/shared/i18n";
+
+import { dateLocale, m } from "@/shared/i18n";
 import {
   daysUntil,
   formatCountdown,
   formatDate,
   formatMoney,
+  formatRemaining,
+  formatShortDate,
 } from "@/shared/lib/format";
-import { BrandLogo } from "@/shared/ui/brand-logo";
 import { nativeHeaderChrome } from "@/shared/ui/header";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { chargeBeforeCancellation } from "../model/cancellation";
 import { cycleProgress } from "../model/cycle";
 import { useLifecycleActions } from "../model/use-lifecycle-actions";
+import { DetailHero } from "./detail-hero";
+import { EndedEmpty } from "./ended-empty";
 import { TimelineRow } from "./timeline-row";
-
-// References, not calls — see the note in subscriptions-page/ui/subscription-row.
-const STATUS_LABEL: Record<SubscriptionStatus, () => string> = {
-  active: m.subs_status_active,
-  paused: m.subs_status_paused,
-  cancelling: m.subs_status_cancelling,
-  cancelled: m.subs_status_cancelled,
-};
-
-// The status dot in the hero. Green only means "billing normally" — the two
-// wind-down states share the paused amber, and a dead subscription goes grey.
-const STATUS_COLOR: Record<SubscriptionStatus, string> = {
-  active: colors.accent,
-  paused: colors.warning,
-  cancelling: colors.warning,
-  cancelled: colors.muted,
-};
 
 // "monthly" reads better than "every 1 month", and the plural case is spelled
 // per locale rather than pluralised at runtime — Hermes has no Intl.PluralRules.
@@ -93,12 +81,15 @@ function Track({ value }: { value: number }) {
 
 export function SubscriptionDetailPage({ id }: { id: string }) {
   const { data: subscription, isPending, isError } = useSubscriptionDetail(id);
-  const { data: preferences } = useQuery(preferencesQuery());
+  const isPro = usePro();
   // Warm from the Home tab in the common case; the share card simply does not
   // render until it lands on a cold deep link.
   const { data: dashboard } = useDashboard();
-  const locale = preferences?.locale ?? "en-GB";
 
+  // The app's locale, NOT the account's `preferences.locale`: language here is
+  // OS-owned (per-app language) and this client never writes that field, so
+  // reading it printed English months under a Ukrainian UI.
+  const locale = dateLocale();
   const rows = useMemo(
     () => toTimelineRows(subscription?.pricePhases ?? [], locale),
     [subscription?.pricePhases, locale],
@@ -106,9 +97,10 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
 
   // Called unconditionally, before any early return — the mutations behind it
   // are hooks. It tolerates the empty list while the detail is still loading.
-  const { primary, overflow, showOverflow } = useLifecycleActions({
+  const { primary, overflow, showOverflow, pageAction } = useLifecycleActions({
     id,
     name: subscription?.name ?? "",
+    status: subscription?.status ?? "active",
     allowedActions: subscription?.allowedActions ?? [],
   });
 
@@ -144,23 +136,44 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       ? CADENCE_ONCE[subscription.period]()
       : CADENCE_EVERY[subscription.period]({ every: subscription.every });
 
-  // A paused subscription answers "when does this start costing again"; a
-  // cancelled one has no next date at all, and neither has an indefinite pause.
+  // One card, one question, and the question changes with the status. A paused
+  // subscription asks "when does this start costing again"; a cancelled one has
+  // no next date at all, and neither has an indefinite pause.
+  //
+  // A CANCELLING one asks "when do I lose it", never "when do I pay next". The
+  // occurrence exactly on `willBeCancelledAt` is excluded from spend
+  // (`shouldIncludeOccurrence` is a strict `<`), and an end-of-period cancel
+  // sets that date TO the next payment date — so the card was counting down to
+  // a charge the user had already stopped, on the one screen they open to check
+  // that they had stopped it.
   const paused = status === "paused";
-  const date = paused ? subscription.resumeAt : subscription.nextPaymentDate;
+  const endsAt =
+    status === "cancelling" ? subscription.willBeCancelledAt : null;
+  const date = paused
+    ? subscription.resumeAt
+    : (endsAt ?? subscription.nextPaymentDate);
   const showDate = status !== "cancelled" && date !== null;
 
-  // What a finished subscription is actually asked: when did it stop, and what
-  // did stopping it buy back. `willBeCancelledAt` is non-null by construction on
-  // this status (deriveSubscriptionStatus needs it to reach "cancelled"), and the
-  // guard is here because the DTO type does not know that.
-  //
-  // The figure is `preferred.monthly` — a RATE, not a history. Nothing here adds
-  // up what was ever paid: `createdAt` is when the row was typed into SubEye, not
-  // when the subscription began, so a lifetime total would be a confident lie for
-  // every subscription anyone imported.
+  const nextCharge = endsAt ? chargeBeforeCancellation(subscription) : null;
+
+  // When a finished subscription stopped. `willBeCancelledAt` is non-null by
+  // construction on this status (deriveSubscriptionStatus needs it to reach
+  // "cancelled"); the guard is here because the DTO type does not know that.
   const endedAt =
     status === "cancelled" ? subscription.willBeCancelledAt : null;
+
+  // The banner answers "when", already worded for the status; the card below it
+  // answers "how long" and owns the countdown. Splitting them this way is what
+  // keeps the same date off the screen twice.
+  const dateLine = endedAt
+    ? m.detail_heroEnded({ date: formatDate(endedAt) })
+    : !showDate || date === null
+      ? null
+      : paused
+        ? m.detail_heroResumes({ date: formatDate(date) })
+        : endsAt
+          ? m.detail_heroEnds({ date: formatDate(date) })
+          : m.detail_heroRenews({ date: formatDate(date) });
 
   // How much of the monthly burn rate this one subscription is. Normalised
   // monthly on both sides, so a yearly subscription compares honestly.
@@ -276,52 +289,15 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
       >
-        <View style={[styles.card, styles.hero]}>
-          <BrandLogo
-            name={subscription.name}
-            brandDomain={subscription.brandDomain}
-            size={56}
-          />
-          <View style={styles.heroText}>
-            <Text style={styles.name} numberOfLines={1}>
-              {subscription.name}
-            </Text>
-            <View style={styles.statusLine}>
-              <View
-                style={[styles.dot, { backgroundColor: STATUS_COLOR[status] }]}
-              />
-              <Text
-                style={[styles.status, { color: STATUS_COLOR[status] }]}
-                numberOfLines={1}
-              >
-                {STATUS_LABEL[status]()}
-              </Text>
-              <Text style={styles.cadence} numberOfLines={1}>
-                {`· ${cadence}`}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.heroPrice}>
-            <Text
-              style={styles.label}
-              numberOfLines={1}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {/* Nothing about a cancelled subscription's price is current. */}
-              {endedAt ? m.detail_lastPrice() : m.detail_currentPrice()}
-            </Text>
-            <Text
-              style={styles.price}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {price}
-            </Text>
-            {charged ? <Text style={styles.charged}>{charged}</Text> : null}
-          </View>
-        </View>
+        <DetailHero
+          name={subscription.name}
+          brandDomain={subscription.brandDomain}
+          status={status}
+          cadence={cadence}
+          price={price}
+          charged={charged}
+          dateLine={dateLine}
+        />
 
         {scheduledPriceChange ? (
           <View style={styles.alert}>
@@ -341,7 +317,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               </Text>
               <Text style={styles.alertBody}>
                 {m.detail_priceChangeBody({
-                  date: formatDate(scheduledPriceChange.effectiveAt, locale),
+                  date: formatDate(scheduledPriceChange.effectiveAt),
                   from: price,
                   to: formatMoney(
                     scheduledPriceChange.billing.preferred.amount,
@@ -353,37 +329,10 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           </View>
         ) : null}
 
-        {endedAt ? (
-          <View style={styles.card}>
-            <View style={styles.cardHead}>
-              <Text
-                style={styles.label}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
-                {m.detail_ended()}
-              </Text>
-            </View>
-            {/* The date is the headline, not the amount — the hero above already
-                prints that number, and the same figure twice on one screen reads
-                as a rendering bug rather than as emphasis. */}
-            <Text
-              style={styles.countdown}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {formatDate(endedAt, locale)}
-            </Text>
-            <Text style={styles.footnote} numberOfLines={1}>
-              {m.detail_endedFreed({
-                amount: formatMoney(preferred.monthly, preferred.currencyCode, {
-                  decimals: 0,
-                }),
-              })}
-            </Text>
-          </View>
-        ) : null}
+        {/* A finished subscription gets no card of FACTS — there are none the
+            banner does not already carry. What it gets is the one thing left to
+            do with it, which the hook has already taken out of the nav bar. */}
+        {pageAction ? <EndedEmpty onRenew={pageAction.run} /> : null}
 
         {showDate ? (
           <View style={styles.card}>
@@ -392,10 +341,11 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                 style={styles.label}
                 maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
               >
-                {paused ? m.detail_resumes() : m.detail_nextPayment()}
-              </Text>
-              <Text style={styles.headValue} numberOfLines={1}>
-                {formatDate(date, locale)}
+                {paused
+                  ? m.detail_resumes()
+                  : endsAt
+                    ? m.detail_ends()
+                    : m.detail_nextPayment()}
               </Text>
             </View>
             <Text
@@ -405,10 +355,32 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               minimumFontScale={0.7}
               maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
             >
-              {formatCountdown(daysUntil(date))}
+              {endsAt
+                ? formatRemaining(daysUntil(date))
+                : formatCountdown(daysUntil(date))}
             </Text>
-            {/* A cycle bar only means anything while the cycle is running. */}
-            {billingNow ? <Track value={cycleProgress(subscription)} /> : null}
+            {/* A cycle bar only means anything while the cycle is running. It
+                is re-anchored to the cancellation date so the bar fills toward
+                what the card is actually counting down to. */}
+            {billingNow ? (
+              <Track
+                value={cycleProgress(
+                  endsAt
+                    ? { ...subscription, nextPaymentDate: endsAt }
+                    : subscription,
+                )}
+              />
+            ) : null}
+            {/* The whole reason a user opens a cancelling subscription. */}
+            {endsAt ? (
+              <Text style={styles.footnote} numberOfLines={1}>
+                {nextCharge
+                  ? m.detail_endsNextCharge({
+                      date: formatShortDate(nextCharge),
+                    })
+                  : m.detail_endsNoCharges()}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 
@@ -437,7 +409,14 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           </View>
         ) : null}
 
-        {rows.length ? (
+        {/* Nothing to lock when there are no phases: a lock over an empty
+            timeline advertises the feature by implying missing data. */}
+        {!rows.length ? null : !isPro ? (
+          <ProLock
+            title={m.paywall_lockTimeline()}
+            body={m.paywall_lockTimelineBody()}
+          />
+        ) : (
           <View style={[styles.card, styles.timeline]}>
             <Text
               style={styles.label}
@@ -453,7 +432,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               />
             ))}
           </View>
-        ) : null}
+        )}
       </ScrollView>
     </>
   );
@@ -479,29 +458,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 18,
   },
-  hero: { flexDirection: "row", alignItems: "center", gap: 14 },
-  heroText: { flex: 1, minWidth: 0 },
-  name: { fontSize: 19, fontWeight: "700", color: colors.text },
-  statusLine: {
-    marginTop: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  dot: { width: 7, height: 7, borderRadius: 999 },
-  status: { fontSize: 13, fontWeight: "600" },
-  cadence: { fontSize: 13, color: colors.muted, flexShrink: 1 },
-  heroPrice: { alignItems: "flex-end", flexShrink: 0 },
-  price: {
-    marginTop: 3,
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    color: colors.text,
-    fontVariant: ["tabular-nums"],
-  },
-  charged: { marginTop: 2, fontSize: 12, color: colors.muted },
-
   label: {
     fontSize: 11,
     fontWeight: "700",

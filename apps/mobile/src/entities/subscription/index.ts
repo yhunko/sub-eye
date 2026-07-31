@@ -29,12 +29,20 @@ export {
   type SubscriptionListFilters,
   type SubscriptionSort,
   type SubscriptionStatusFilter,
+  subscriptionsDueOn,
 } from "./model/filters";
 export {
   hasActiveFilters,
   subscriptionFilters,
   useSubscriptionFilters,
 } from "./model/filters-store";
+export {
+  ALL_KEY,
+  groupSubscriptions,
+  type SubscriptionGroupBy,
+  type SubscriptionSection,
+  UNGROUPED_KEY,
+} from "./model/grouping";
 export {
   type LifecycleActionItem,
   type LifecycleActionTarget,

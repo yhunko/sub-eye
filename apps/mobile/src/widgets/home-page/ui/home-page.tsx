@@ -9,19 +9,21 @@ import {
   View,
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
+import { ProLock, usePro } from "@/entities/pro";
 import { deriveAttention, subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
-import { AttentionCard } from "./attention-card";
 import { CategoryBars } from "./category-bars";
 import { HomeEmpty } from "./home-empty";
 import { MonthHero } from "./month-hero";
+import { UpcomingRail } from "./upcoming-rail";
 
 // One question per card, in the order a user asks them: what is left this month,
-// what needs me, where does it go. Upcoming renewals live on the Subscriptions
-// tab — repeating them here made Home a second list.
+// what needs me, where does it go. The rail is capped at five events, not a
+// window onto everything — the Subscriptions tab stays the full list.
 export function HomePage() {
-  const { data, isPending, isError, refetch } = useDashboard();
+  const { data, isError, fetchStatus, refetch } = useDashboard();
+  const isPro = usePro();
   // The list the Subscriptions tab already fetches and MMKV already persists.
   // Every attention event is derived from fields it carries, so a server
   // endpoint for them would be a second source of the same truth.
@@ -32,18 +34,30 @@ export function HomePage() {
     [subscriptions.data],
   );
 
-  if (isPending || subscriptions.isPending) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
+  // An offline query does not fail, it PAUSES: status stays "pending" and
+  // `isError` never becomes true, so a first launch with nothing cached would
+  // otherwise spin forever with nothing to say. It resumes on its own once
+  // connectivity returns.
+  const offline =
+    fetchStatus === "paused" || subscriptions.fetchStatus === "paused";
 
-  if (isError) {
+  // Gated on there being nothing to paint, never on `isError` alone. The cache
+  // is hydrated before the first frame so this screen opens with numbers; a
+  // failed background revalidate must not take them away again.
+  if (!data || subscriptions.isPending) {
+    if (!isError && !offline) {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      );
+    }
+
     return (
       <View style={styles.centered}>
-        <Text style={styles.error}>{m.home_loadError()}</Text>
+        <Text style={styles.error}>
+          {offline ? m.common_offline() : m.home_loadError()}
+        </Text>
         <Pressable style={styles.retry} onPress={() => void refetch()}>
           <Text style={styles.retryText}>{m.common_retry()}</Text>
         </Pressable>
@@ -71,16 +85,24 @@ export function HomePage() {
         remainingThisMonth={data.remainingThisMonth}
         monthTotal={data.totalUpcomingMonth}
         nextMonthForecast={data.nextMonthForecast}
+        yearForecast={data.yearlyForecast}
       />
 
       {/* Most days this is empty, and that is the answer. Rendering an empty
           "nothing needs you" block is what trains a user to stop reading it. */}
-      {events.length ? <AttentionCard events={events} /> : null}
+      {events.length ? <UpcomingRail events={events} /> : null}
 
-      <CategoryBars
-        currency={data.preferredCurrencyCode}
-        categories={data.categorySpending}
-      />
+      {isPro ? (
+        <CategoryBars
+          currency={data.preferredCurrencyCode}
+          categories={data.categorySpending}
+        />
+      ) : (
+        <ProLock
+          title={m.paywall_lockBreakdown()}
+          body={m.paywall_lockBreakdownBody()}
+        />
+      )}
     </ScrollView>
   );
 }

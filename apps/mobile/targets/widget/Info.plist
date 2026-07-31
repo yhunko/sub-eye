@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- The extension has no .lproj resources, so this is the only thing that
+         tells Foundation it speaks Ukrainian. Without it `Locale.current` in the
+         extension resolves to en and `RelativeDateTimeFormatter` printed "in 4
+         days" under an otherwise fully Ukrainian widget. -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+      <string>en</string>
+      <string>uk</string>
+    </array>
+    <key>NSExtension</key>
+    <dict>
+      <key>NSExtensionPointIdentifier</key>
+      <string>com.apple.widgetkit-extension</string>
+    </dict>
+  </dict>
+</plist>

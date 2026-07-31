@@ -1,0 +1,63 @@
+---
+import { copyFor } from "../i18n";
+import { type Locale, otherLocale, path, type SitePage } from "../lib/site";
+import Mark from "./Mark.astro";
+
+interface Props {
+  locale: Locale;
+  page?: SitePage;
+}
+
+const { locale, page } = Astro.props;
+const c = copyFor(locale);
+const other = otherLocale(locale);
+---
+
+<div class="brandrow">
+  <a class="brandrow__mark" href={path(locale)} aria-label="SubEye">
+    <Mark height={22} />
+  </a>
+  <a
+    class="brandrow__lang"
+    href={path(other, page)}
+    hreflang={other}
+    lang={other}
+    rel="alternate"
+    aria-label={c.otherLangName}
+  >
+    {c.otherLangShort}
+  </a>
+</div>
+
+<style>
+  .brandrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: 1.75rem;
+  }
+
+  .brandrow__mark {
+    display: flex;
+    color: var(--text);
+  }
+
+  .brandrow__lang {
+    font-size: var(--fs-tiny);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 0.35rem 0.7rem;
+    transition:
+      color 160ms var(--ease),
+      border-color 160ms var(--ease);
+  }
+
+  .brandrow__lang:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+</style>

@@ -55,6 +55,24 @@ const futureIsoDateSchema = pipe(
   ),
 );
 
+/**
+ * An ISO date that must already have happened.
+ *
+ * Compared against the END of the current UTC day, not the current instant: a
+ * date picker hands back midnight, so "today" is behind `Date.now()` by however
+ * far into the day it is — but a user east of UTC can legitimately be on a
+ * calendar day the server has not reached yet, and rejecting their "today" is
+ * the one failure this schema must not produce.
+ */
+const pastIsoDateSchema = pipe(
+  isoDateSchema,
+  check((value) => {
+    const endOfUtcToday = new Date();
+    endOfUtcToday.setUTCHours(23, 59, 59, 999);
+    return Date.parse(value) <= endOfUtcToday.getTime();
+  }, "Date cannot be in the future"),
+);
+
 export const idQuerySchema = object({
   id: string(),
 });
@@ -214,6 +232,26 @@ export const PauseSubscriptionSchema = strictObject({
 });
 export type PauseSubscriptionInput = InferOutput<
   typeof PauseSubscriptionSchema
+>;
+
+/**
+ * Un-cancel, optionally re-anchoring the billing cycle to the day the
+ * subscription actually started again.
+ *
+ * `paymentDate` is only meaningful for a subscription that has already ENDED: a
+ * still-winding-down one never stopped billing, so re-anchoring it would move a
+ * cycle that was never interrupted. Omit it there.
+ *
+ * The date cannot be in the future, because this records a restart that has
+ * already happened. The past is explicitly allowed — someone who resubscribed
+ * three weeks ago and only now opened the app has to be able to say so, or
+ * every projected payment lands three weeks late.
+ */
+export const RenewSubscriptionSchema = strictObject({
+  paymentDate: optional(nullable(pastIsoDateSchema), null),
+});
+export type RenewSubscriptionInput = InferOutput<
+  typeof RenewSubscriptionSchema
 >;
 
 const scheduledPriceChangeSchema = strictObject({

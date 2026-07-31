@@ -4,6 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
+    "eas-build-post-install": "bun run i18n:generate",
     "i18n:generate": "bunx --bun @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/shared/i18n/paraglide --strategy globalVariable baseLocale --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme",
     "start": "bun run i18n:generate && expo start",
     "ios": "bun run i18n:generate && expo run:ios",
@@ -14,9 +15,11 @@
     "test": "bun test ./src"
   },
   "dependencies": {
+    "@bacons/apple-targets": "^5.0.0",
     "@clerk/clerk-expo": "^2.19.31",
     "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-community/netinfo": "12.0.1",
+    "@sentry/react-native": "~7.11.0",
     "@subeye/server": "workspace:*",
     "@subeye/shared": "workspace:*",
     "@tanstack/query-async-storage-persister": "^5.100.10",
@@ -44,6 +47,7 @@
     "react-native-gesture-handler": "~3.1.0",
     "react-native-mmkv": "^4.3.2",
     "react-native-nitro-modules": "^0.36.1",
+    "react-native-purchases": "^10.4.4",
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",

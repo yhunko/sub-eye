@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
+import { reportError } from "@/shared/lib/sentry";
 import { colors } from "./theme";
 
 /**
@@ -14,6 +16,10 @@ import { colors } from "./theme";
  *
  * The message is shown only in development. A stack trace is not something a
  * user can act on, and it is the one place app internals would reach the screen.
+ *
+ * Reporting is the one exception to "touches nothing": `reportError` cannot
+ * throw, and a crash nobody ever hears about is the reason this screen was
+ * invisible in production for its whole life.
  */
 export function AppErrorBoundary({
   error,
@@ -22,6 +28,12 @@ export function AppErrorBoundary({
   error: Error;
   retry: () => Promise<void>;
 }) {
+  // Keyed on the error, not on mount: `retry` remounts the subtree below without
+  // unmounting this, and a re-render must not file the same crash twice.
+  useEffect(() => {
+    reportError(error, { boundary: "root" });
+  }, [error]);
+
   return (
     <View style={styles.root}>
       <Text style={styles.title}>{m.error_crashTitle()}</Text>

@@ -70,11 +70,16 @@ jobs:
         run: HUSKY=0 bunx semantic-release
 
       # ---------------------------------------------------------------------------
-      # Build — server only. The web client was retired in v4; the mobile app
-      # ships through EAS, not this pipeline.
+      # Build — server only, and filtered on purpose. `turbo build` now also
+      # builds apps/landing, and a broken marketing page must never be able to
+      # stop an API deploy. The landing ships on its own to Cloudflare via
+      # `bun run --cwd apps/landing deploy`. The mobile app ships through EAS.
+      # (The Quality Gate above stays repo-wide: a landing type error should
+      # still fail CI — it just fails before anything is deployed, not between
+      # the migration and the Worker.)
       # ---------------------------------------------------------------------------
-      - name: Build Project
-        run: bun run build
+      - name: Build Server
+        run: bunx turbo build --filter=@subeye/server
 
       # ---------------------------------------------------------------------------
       # Validate — assert every CF binding is present before touching Cloudflare.

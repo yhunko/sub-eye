@@ -14,134 +14,39 @@ No agent can do any of it.
 
 ---
 
-## M1 — Ship v4 to production (server + database)  ⛔ ← the first blocker
+## M1 — Ship v4 to production (server + database)  ✅ done 2026-07-27
 
-**Production is running the v3 API.** Probed 2026-07-27 against both live
-Workers, using routes that exist in exactly one version:
+Production ran the **v3 API** until this landed: `origin/main` sat on v3.11.0
+from 2026-06-05 while `dev` was 50 commits ahead, so the v4 mobile client had no
+backend that could pause, resume, or manage a pricing phase.
 
-| Route | `app.subeye.cc` | `dev.subeye.cc` |
-| --- | --- | --- |
-| `POST /api/subscriptions/:id/resume` (v4-only) | **404** | 401 |
-| `POST /api/subscriptions/:id/pause` (v4-only) | **404** | 401 |
-| `GET /api/subscriptions/:id/history` (v3-only) | **401** | 404 |
+The order was the point — the destructive half ran by hand, under supervision,
+so the merge was only a deploy:
 
-`origin/main` is `add21f8 chore(release): v3.11.0`, dated 2026-06-05. `dev` is
-50 commits ahead. The mobile app is a v4 client, so against production as it
-stands it cannot pause, resume, or manage a pricing phase, and Home's dashboard
-DTO no longer matches what the server returns.
+1. A Neon branch of production as the backup, and a second branch to rehearse
+   on. (A branch you rehearse on stops being a backup the moment you migrate it.)
+2. `db:reset-ledger`, then `db:migrate`. The v4 baseline is migration `0000` of a
+   squashed journal while production's ledger still held the v3 entries, so
+   without the reset, whether drizzle-kit applied it at all came down to
+   timestamp luck.
+3. `test/status-backfill-parity.test.ts` with `PARITY_DATABASE_URL`, against real
+   production rows — **2 pass**. This is the only step that transforms data
+   rather than shape (`status` derived from a naive-UTC `cancelled_at`), which is
+   why it is worth running against real rows and not fixtures.
+4. `db:backfill-users`, to copy preferences out of Clerk `publicMetadata`. The
+   migration seeds defaults-only rows, and a missing value fails *silently* —
+   `UserService.getUserPreferences` returns defaults for an unpopulated row.
+5. PR #41 merged → CI's own `db:migrate` found the baseline already in the ledger
+   and no-opped → **v4.0.0** tagged and deployed.
 
-A `401` on `GET /api/subscriptions` proves only that *a* Worker is
-authenticating. It does not tell you which one — that is what the table above
-is for, and it is worth re-running after any deploy.
+Verified after: `POST /api/subscriptions/:id/resume` → `401` (v4 route present),
+`GET /api/subscriptions/:id/history` → `404` (v3 route gone).
 
-[PR #41 `release/v3.12.0`](https://github.com/yhunko/sub-eye/pull/41) is the
-merge that ships it. It is MERGEABLE and CLEAN.
-
-### Why not just merge it
-
-`release-production.yml` runs `db:migrate` against the production database and
-*then* deploys. Three things follow from that:
-
-1. **`drizzle/0000_v4_baseline.sql` drops 10 tables and 7 columns** on the v3
-   path. It is idempotent and written for exactly this migration, but it is
-   still the destructive step and it would run unattended inside CI.
-2. **`db:reset-ledger` is not in the workflow.** The v4 baseline is migration
-   `0000` of a squashed journal, while production's `drizzle.__drizzle_migrations`
-   still holds the v3 entries. Whether `drizzle-kit migrate` decides to apply
-   the baseline over that ledger is a question you do not want answered
-   mid-deploy. The script exists precisely for this, and it is safe because the
-   baseline is idempotent.
-3. **`db:backfill-users` is not in the workflow.** The migration seeds a
-   defaults-only `users` row per known user id; `scripts/backfill-users-from-clerk.ts`
-   copies the real preferences out of Clerk `publicMetadata`. Skip it and every
-   existing user's currency, timezone and date format silently revert to
-   `uah` / `UTC` / `DD/MM/YYYY`. Nothing crashes — `UserService.getUserPreferences`
-   returns defaults for a missing or unpopulated row — so this fails quietly,
-   which is worse.
-
-There is also a window, between the migration finishing and the new Worker
-going live, where the **old v3 code is serving traffic against the new v4
-schema**. v3 reads `subscription_history`, `scheduled_cost` and `org_id`, all
-dropped, so it will 500. With an internal-only user base that is acceptable;
-just do not leave the PR unmerged overnight after migrating.
-
-### The order that avoids all of it
-
-Do the database by hand, first, under supervision, so that by the time CI runs
-`db:migrate` it is a no-op and the merge is only a deploy.
-
-**1. Branch production in Neon.** This is the backup *and* the rehearsal
-target — a Neon branch is copy-on-write, so it costs nothing and restoring is a
-branch reset rather than a dump reload. Copy its connection string.
-
-**2. Rehearse on the branch.** Nothing here touches production:
-
-```bash
-DATABASE_URL='<branch-url>' bun run --cwd apps/server db:reset-ledger
-```
-
-```bash
-DATABASE_URL='<branch-url>' bun run --cwd apps/server db:migrate
-```
-
-A shell variable beats `--env-file`, so these override `apps/server/.env`
-without editing it. Verify before assuming — the script prints the ledger count
-it found before clearing.
-
-**3. Check the status backfill against real rows.** This is the one part of the
-migration that transforms data rather than shape: `status` is derived from
-`cancelled_at`, and `cancelled_at` is a naive column written from JS as UTC.
-
-```bash
-PARITY_DATABASE_URL='<branch-url>' bun test --cwd apps/server ./test/status-backfill-parity.test.ts
-```
-
-Two assertions: every migrated row's `status` matches what
-`deriveSubscriptionStatus` computes from its dates, and no row holds a value
-outside the enum. The test skips itself when the variable is unset, so a green
-run with no variable means nothing — confirm it actually reported two passing
-tests.
-
-**4. Rehearse the Clerk backfill on the branch too:**
-
-```bash
-DATABASE_URL='<branch-url>' CLERK_SECRET_KEY='<prod-key>' bun run --cwd apps/server db:backfill-users
-```
-
-It prints one line per user. `skip` means the id no longer exists in Clerk,
-which is fine — that row keeps its defaults.
-
-**5. Now the real run.** Same four commands against the production
-`DATABASE_URL`, in the same order: reset-ledger → migrate → parity test →
-backfill.
-
-**6. Merge PR #41 immediately after.** CI's `db:migrate` finds the baseline
-already in the ledger and no-ops; semantic-release cuts the tag; the Worker
-deploys. Watch the run.
-
-**7. Verify, do not assume:**
-
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" -X POST https://app.subeye.cc/api/subscriptions/x/resume
-```
-
-`401` = v4 is live. `404` = it is not, and nothing downstream of this step is
-worth starting.
-
-**8. If it goes wrong:** reset the production branch from the Neon branch you
-took in step 1, and re-deploy the previous Worker version from the Cloudflare
-dashboard (Workers → subeye → Deployments → Rollback). Both halves are needed —
-rolling back only the code leaves v3 against a v4 schema, which is the broken
-state described above.
-
-### Known cosmetic mismatch
-
-The tag will read **v3.12.0**, not v4.0.0. `.releaserc.json` uses the default
-commit-analyzer (angular preset), which needs a `BREAKING CHANGE:` footer and
-ignores the `!` in `refactor!:` — and there are no such footers on `dev`. The
-app's own marketing version is independent (`app.json` → `4.0.0`), so this
-blocks nothing. Fix it by adding a `BREAKING CHANGE:` footer to the merge
-commit, or leave it and stop calling the tag v4.
+**Reuse this shape for any future breaking migration.** The release workflow
+still does not run `db:reset-ledger` or `db:backfill-users`, so a migration
+needing either must be done by hand before the merge, never left to CI. And note
+the deploy window: between the migration and the new Worker going live, the old
+code is serving traffic against the new schema.
 
 ---
 
@@ -240,20 +145,35 @@ useless here because the processor list is specific to your stack.
 
 ---
 
-## M4 — Clerk production instance  ⛔
+## M4 — Clerk production instance  ✅ done 2026-07-27
 
-The app currently uses a `pk_test_` key locally. A store build must not.
+The production instance exists with Sign in with Apple configured. What remains
+is not dashboard work: the **`pk_live_` key has to reach the build** via M2, and
+the flow has to be exercised on a real device in M6. A `pk_test_` key in a store
+build is a total silent failure.
+
+Steps kept for the day the instance is rebuilt:
 
 1. Create/promote the Clerk **production** instance.
 2. Configure the same providers: email+password, Google, GitHub, and Apple.
-3. Confirm `subeye://` and the SSO redirect URL are registered under Native
-   Applications.
-4. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
+3. **Enable the Native SDK on the production instance.** This one is invisible
+   when it is wrong: `clerk-expo` never finishes its handshake, `isLoaded` stays
+   false forever, and Clerk raises no error a client can catch — so every guard
+   written as `if (!isLoaded) return` becomes a button that does nothing and
+   says nothing. It cost three TestFlight builds on 2026-07-29, with a healthy
+   `/v1/environment` answering 200 the whole time. A development instance has it
+   on by default; a production instance does not.
+4. Confirm `subeye://` and the SSO redirect URL are registered under Native
+   Applications. For Apple, register the **native bundle id `cc.subeye.app`** in
+   the Apple connection — a native identity token's `aud` claim is the bundle
+   identifier, not the Services ID, so a web-only connection rejects every token
+   the app sends.
+5. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
    `user.deleted`. Copy the signing secret. Account deletion depends on it
    (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) — without
    it, deleted accounts leave orphaned Postgres rows, which is a GDPR problem
    rather than a tidiness one.
-5. Put the production values in Cloudflare via the GitHub environment —
+6. Put the production values in Cloudflare via the GitHub environment —
    `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` as **secrets**,
    `CLERK_PUBLISHABLE_KEY` as a **var** — under the `production` environment.
    The release workflow pushes them with `wrangler secret bulk`.
@@ -279,11 +199,16 @@ consistent with it.
    | Identifiers | User ID | yes |
    | User Content | Other User Content | yes |
    | Diagnostics | Crash Data | yes |
+   | Purchases | Purchase History | yes |
    | Browsing/Search | Search History | **no** |
 
    Crash Data is there because the Worker posts exceptions to PostHog keyed by
    your Clerk user id. It is real collection even though no SDK ships in the
    binary today — brief B3 would add one.
+
+   Purchase History is RevenueCat (brief B6, landed). It is linked because the
+   RevenueCat app user id **is** the Clerk user id. The matching manifest entry
+   is `NSPrivacyCollectedDataTypePurchaseHistory` in `app.json`.
 
    Search History is the brand picker: the text typed into it goes to
    Brandfetch. **Not** linked — no account id or Clerk token travels with that
@@ -305,9 +230,9 @@ credentials, provisioning, the Apple Sign in entitlement in a *signed* binary,
 and `eas submit` are all completely unexercised, and `eas.json` has no `submit`
 block at all. Budget a cycle for credentials alone.
 
-`apps/mobile/.env` points at a LAN wrangler-dev host, so the app has also never
-talked to a deployed backend of any kind. M1 and M2 both have to be green first
-or this step only proves the error boundary works.
+`apps/mobile/.env` points at a LAN wrangler-dev host, so the app has never talked
+to a deployed backend of any kind. M1 is done, so the backend is finally real —
+but M2 has to be green first or this step only proves the error boundary works.
 
 Batch any native change (brief B3 adds a module) into the prebuild before
 burning a build.
@@ -389,12 +314,24 @@ and must not be blocked.
 2. **App Store Small Business Program** → enroll. 15% commission instead of 30%
    under $1M/yr. It is a form; there is no reason not to.
 3. Create the IAP: **Non-Consumable**, product id `cc.subeye.app.pro.lifetime`,
-   reference name "SubEye Pro (Lifetime)", price tier $19.99.
+   reference name "SubEye Pro (Lifetime)", price tier **$11.99** (decided
+   2026-07-27 — not a launch price, no promo codes). Leave per-storefront pricing
+   on Apple's default conversion so a Ukrainian storefront shows roughly ₴199;
+   the landing page states this outright as a trust signal.
 4. Add localized display name and description (en + uk).
 5. **RevenueCat**: create the project, add the iOS app with bundle id
    `cc.subeye.app`, upload the App Store Connect **In-App Purchase Key**, create
    an entitlement called `pro`, attach the product, and create a default
    offering. Copy the public SDK key for brief B6.
+
+   Two traps, both hit on 2026-07-29 and both written up in
+   [PAYMENTS-BRIEF.md](PAYMENTS-BRIEF.md) Part 1: the **In-App Purchase key is
+   not the App Store Connect API key** (`SubscriptionKey_….p8` vs
+   `AuthKey_….p8`, both under Integrations, and the wrong one reports "valid
+   format" then fails on the bundle id), and **the store build needs the
+   `appl_…` key, never the Test Store `test_…` one** — RevenueCat rejects a test
+   key in a release build, which silently kills the paywall, the entitlement and
+   every dashboard grant at once.
 6. A non-consumable needs a review screenshot of the purchase screen — you can
    only take that after B6 ships, so plan the order.
 
@@ -402,11 +339,14 @@ and must not be blocked.
 
 ## M9 — Decisions only you can make
 
-| Question | Why it matters |
+**Settled 2026-07-27:** **iOS only at launch** — Android later if it is ever
+warranted. Build `--platform ios`, and per DESIGN-BRIEF the landing page must not
+mention Android at all, not even as a greyed-out badge; raising the platform
+question only invites it. **Pro is $11.99 once**, always, no promo codes.
+
+| Still open | Why it matters |
 | --- | --- |
-| iOS-only or iOS + Android at launch? | `eas.json` builds both today. Android doubles the store surface and the support load for a first release. Shipping iOS first is the usual solo-dev call. |
 | Is `expo-router`'s **alpha** `unstable-native-tabs` acceptable in production? | It owns the primary navigation. It will break on an Expo bump at some point. The alternative is standard tabs and losing Liquid Glass. |
-| Launch price: $19.99 lifetime? | Named in brief B6. Category comparables sit $10–25 lifetime. Easy to raise later, painful to lower. |
 | Deprecation plan for `app.subeye.cc`? | You mentioned retiring it. Whatever replaces it must ship in the *app binary*, so the switch needs a store release, not a config change. Decide before v1, not after. |
 | Keep CORS on the API? | `CLIENT_ORIGIN` and the `cors()` middleware exist for the retired web client. React Native sends no `Origin`, so they gate nothing today. Cheap to keep, one less binding to drop — but do not drop it in the same release as M1. |
 

@@ -49,7 +49,10 @@ export function ResetPasswordPage() {
   // where the check happens — not across the callback boundary.
   const sendCode = () =>
     run(async () => {
-      if (!isLoaded) return;
+      if (!isLoaded) {
+        setError(m.auth_errorNotReady());
+        return;
+      }
       await signIn.create({
         strategy: "reset_password_email_code",
         identifier: email.trim(),
@@ -59,7 +62,10 @@ export function ResetPasswordPage() {
 
   const submitCode = () =>
     run(async () => {
-      if (!isLoaded) return;
+      if (!isLoaded) {
+        setError(m.auth_errorNotReady());
+        return;
+      }
       await signIn.attemptFirstFactor({
         strategy: "reset_password_email_code",
         code,
@@ -69,7 +75,10 @@ export function ResetPasswordPage() {
 
   const savePassword = () =>
     run(async () => {
-      if (!isLoaded) return;
+      if (!isLoaded) {
+        setError(m.auth_errorNotReady());
+        return;
+      }
       const attempt = await signIn.resetPassword({
         password,
         // The subtitle promises this, so it has to actually happen: a password

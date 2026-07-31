@@ -1,0 +1,70 @@
+---
+import Legal from "../../layouts/Legal.astro";
+import { operator, privacyEmail } from "../../lib/site";
+---
+
+<Legal
+  locale="en"
+  page="support"
+  title="Support"
+  description="How to get help with SubEye: where to write, what to include, and answers to the things that come up most."
+>
+  <p>
+    SubEye is built and run by one person. There is no ticket queue and no bot —
+    you write to a human and a human writes back.
+  </p>
+
+  <h2>Where to write</h2>
+  <p>
+    <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a> reaches {operator}
+    directly. Expect a reply within a few days; anything about your personal data
+    is answered within 30 days, as the <a href="/en/privacy-policy/"
+      >privacy policy</a
+    > says.
+  </p>
+  <p>
+    If something is broken, three lines make it fixable in one round instead of
+    four: your iPhone model and iOS version, what you tapped, and what happened
+    instead of what you expected.
+  </p>
+
+  <h2>Reminders are not arriving</h2>
+  <p>
+    Reminders are scheduled on your device by iOS. There is no push server, so
+    nothing can be re-sent from here. Check Settings → Notifications → SubEye on
+    the phone first, then Settings → Notifications inside the app, which shows
+    how many reminders are scheduled right now. If that number is zero while you
+    have active subscriptions, that is worth an email.
+  </p>
+
+  <h2>You bought Pro and the app does not know</h2>
+  <p>
+    Settings → Restore purchases asks the App Store again, using whichever Apple
+    Account is signed in. A new phone, a reinstall, or a different Apple Account
+    are the three usual reasons. SubEye Pro is tied to the Apple Account that
+    paid for it, not to your SubEye account.
+  </p>
+
+  <h2>Refunds</h2>
+  <p>
+    Purchases go through Apple, so refunds do too — request one at <a
+      href="https://reportaproblem.apple.com/">reportaproblem.apple.com</a
+    >. SubEye cannot issue a refund itself.
+  </p>
+
+  <h2>Deleting your account</h2>
+  <p>
+    Settings → Delete account, in the app. It removes the account and every
+    subscription in it, immediately and for good. Nothing has to be requested
+    from here, and it cannot be undone.
+  </p>
+
+  <h2>What SubEye cannot do</h2>
+  <p>
+    It does not connect to your bank, it does not read your email, it cannot see
+    your real charges, and it cannot cancel a subscription on your behalf. Every
+    figure in the app is arithmetic on the numbers you typed in — see the <a
+      href="/en/terms-of-service/">terms of service</a
+    >. There is no Android app and no web app.
+  </p>
+</Legal>

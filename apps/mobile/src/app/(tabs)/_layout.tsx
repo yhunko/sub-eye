@@ -1,18 +1,25 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "@tanstack/react-query";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter, useSegments } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
+import { useDashboard, useMonthlySummary } from "@/entities/dashboard";
+import { usePro } from "@/entities/pro";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { useSeedPreferredCurrency } from "@/entities/user";
 import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
-import { syncRenewalReminders } from "@/shared/lib/notifications";
+import {
+  readEffectiveSettings,
+  syncReminders,
+  useReminderTap,
+} from "@/shared/lib/notifications";
+import { syncWidget } from "@/shared/lib/widget";
 import { colors } from "@/shared/ui/theme";
 
 /**
- * Renders nothing; keeps the device's pending renewal reminders in step with the
+ * Renders nothing; keeps the device's pending reminders in step with the
  * subscription list. Mounted here rather than in the root layout so it only runs
  * for a signed-in user.
  *
@@ -22,15 +29,22 @@ import { colors } from "@/shared/ui/theme";
  * drift. It also re-arms the window, which is what a scheduled-ahead bounded
  * plan needs; without it, a user who ignores the app eventually runs past the
  * last scheduled occurrence and goes quiet.
+ *
+ * `isPro` is in the dependencies for a reason: a purchase widens the plan
+ * (extra lead times, trial warnings) and the schedule has to be rebuilt for it
+ * without waiting for the next foreground.
  */
-function RenewalReminderSync() {
+function ReminderSync() {
   const { data } = useQuery(subscriptionsQuery());
+  const isPro = usePro();
 
   useEffect(() => {
     if (!data) return;
 
+    // Settings are read at call time, not captured: the notifications screen
+    // writes straight to MMKV, so a foreground sync must see the latest.
     const sync = () => {
-      void syncRenewalReminders(data);
+      void syncReminders(data, readEffectiveSettings(isPro));
     };
 
     sync();
@@ -38,7 +52,69 @@ function RenewalReminderSync() {
       if (status === "active") sync();
     });
     return () => listener.remove();
-  }, [data]);
+  }, [data, isPro]);
+
+  return null;
+}
+
+/**
+ * Renders nothing; keeps the Home Screen widgets' shared snapshot in step with
+ * the dashboard.
+ *
+ * Mounted beside `ReminderSync` and for the same reason: both are projections of
+ * data this tree already holds, and neither is worth a screen of its own. The
+ * effect is deliberately thin — `syncWidget` no-ops off iOS, drops a write that
+ * would not change anything, and is the only thing that spends a WidgetKit
+ * reload.
+ *
+ * `isPro` is a dependency because losing (or gaining) the entitlement has to
+ * blank (or fill) the widget without waiting for the numbers to move.
+ */
+function WidgetSync() {
+  const { data: dashboard } = useDashboard();
+  const { data: summary } = useMonthlySummary();
+  const isPro = usePro();
+
+  useEffect(() => {
+    if (!dashboard) return;
+
+    // The monthly summary is the preferred source for both month figures, but
+    // it is a second request and may still be in flight — the widget falls back
+    // to the dashboard's own month total and simply hides the comparison.
+    syncWidget({
+      locked: !isPro,
+      currency: summary?.currencyCode ?? dashboard.preferredCurrencyCode,
+      monthTotal: summary?.currentMonthTotal ?? dashboard.totalUpcomingMonth,
+      previousMonthTotal: summary?.previousMonthTotal ?? null,
+      upcoming: dashboard.upcomingRenewals,
+    });
+  }, [dashboard, summary, isPro]);
+
+  return null;
+}
+
+/** Renders nothing; sends a tapped reminder to the screen it names. */
+function ReminderTapRouter() {
+  const router = useRouter();
+
+  useReminderTap((target) => {
+    switch (target.screen) {
+      case "subscription":
+        router.push({
+          pathname: "/subscriptions/[id]",
+          params: { id: target.id },
+        });
+        return;
+      case "due":
+        router.push({
+          pathname: "/subscriptions/due/[date]",
+          params: { date: target.date },
+        });
+        return;
+      case "list":
+        router.push("/subscriptions");
+    }
+  });
 
   return null;
 }
@@ -82,13 +158,40 @@ function PreferredCurrencySeed() {
   return null;
 }
 
+/**
+ * True while a subscription's own screen is on top of the stack.
+ *
+ * UIKit hides the tab bar on a pushed screen with `hidesBottomBarWhenPushed`,
+ * which react-native-screens does not expose — the only lever expo-router gives
+ * is `hidden` on the tab HOST, so the layout has to work out for itself when the
+ * detail screen is showing.
+ *
+ * Matched on the segment PAIR rather than the last segment: `[id]` alone also
+ * matches the category editor, which is a sheet floating over the tab bar and
+ * must not hide it, and the pair keeps the bar hidden while the detail screen's
+ * own pause/pricing sheets sit on top of it.
+ */
+function useSubscriptionDetailFocused(): boolean {
+  const segments = useSegments();
+  const index = segments.indexOf("subscriptions");
+  return index !== -1 && segments[index + 1] === "[id]";
+}
+
 function Tabs() {
+  const onSubscriptionDetail = useSubscriptionDetailFocused();
+
   return (
     <>
       {/* Outside NativeTabs: its children must be triggers and nothing else. */}
-      <RenewalReminderSync />
+      <ReminderSync />
+      <WidgetSync />
+      <ReminderTapRouter />
       <PreferredCurrencySeed />
-      <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
+      <NativeTabs
+        minimizeBehavior="onScrollDown"
+        tintColor={colors.accent}
+        hidden={onSubscriptionDetail}
+      >
         <NativeTabs.Trigger name="(home)">
           <NativeTabs.Trigger.Icon sf="house" md="home" />
           <NativeTabs.Trigger.Label>{m.tabs_home()}</NativeTabs.Trigger.Label>

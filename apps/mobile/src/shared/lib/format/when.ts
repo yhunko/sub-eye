@@ -1,4 +1,4 @@
-import { m } from "@/shared/i18n";
+import { dateLocale, m } from "@/shared/i18n";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -29,9 +29,25 @@ export function formatCountdown(days: number): string {
   return m.when_inDays({ days });
 }
 
+/**
+ * "326 days left" — the same distance as `formatCountdown`, worded as a window
+ * running out rather than as an event approaching.
+ *
+ * "In 326 days" is right for something that will happen (a payment, a resume)
+ * and wrong for something you still have (access until a cancellation date).
+ * Today and tomorrow read the same either way, so only the counted branch
+ * differs — and it starts at 2, which is why the English plural is safe to
+ * spell without `Intl.PluralRules`.
+ */
+export function formatRemaining(days: number): string {
+  if (days <= 0) return m.when_today();
+  if (days === 1) return m.when_tomorrow();
+  return m.when_daysLeft({ days });
+}
+
 /** "1 August 2026" — the concrete day, for the one place a countdown names it. */
-export function formatDate(isoDate: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+export function formatDate(isoDate: string): string {
+  return new Intl.DateTimeFormat(dateLocale(), {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -50,7 +66,7 @@ export function formatDate(isoDate: string, locale: string): string {
 export function formatShortDate(isoDate: string): string {
   const date = new Date(isoDate);
   const sameYear = date.getUTCFullYear() === new Date().getUTCFullYear();
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(dateLocale(), {
     day: "numeric",
     month: "short",
     ...(sameYear ? {} : { year: "numeric" }),

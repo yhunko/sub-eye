@@ -1,6 +1,10 @@
-import type { SubscriptionAllowedAction } from "@subeye/shared";
+import type {
+  SubscriptionAllowedAction,
+  SubscriptionStatus,
+} from "@subeye/shared";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo } from "react";
+import { usePro } from "@/entities/pro";
 import {
   type LifecycleActionItem,
   useLifecycleActionBuilder,
@@ -19,43 +23,67 @@ export type { LifecycleActionItem };
 export function useLifecycleActions({
   id,
   name,
+  status,
   allowedActions,
 }: {
   id: string;
   name: string;
+  status: SubscriptionStatus;
   allowedActions: readonly SubscriptionAllowedAction[];
 }) {
   const router = useRouter();
+  const isPro = usePro();
   const build = useLifecycleActionBuilder();
 
-  const items = useMemo(
+  const items = useMemo(() => {
+    const built = build({
+      id,
+      name,
+      status,
+      allowedActions,
+      // Deleting from the detail screen leaves nothing to look at.
+      onDeleted: () => router.back(),
+    });
+
+    if (isPro) return built;
+
+    // Same row, different destination. The gate sits on the way IN rather than
+    // inside a sheet that has already opened — and the row stays, because an
+    // action that appears only for some users reads as a bug.
+    return built.map((item) =>
+      item.key === "pricing"
+        ? { ...item, run: () => router.push("/paywall") }
+        : item,
+    );
+  }, [build, id, name, status, allowedActions, router, isPro]);
+
+  // A finished subscription's one real action moves OUT of the nav bar and onto
+  // the page, where the screen is otherwise empty and a full-width button can
+  // say what a glyph cannot. It is removed from the bar entirely rather than
+  // left in the overflow: one action, offered twice on one screen, is two things
+  // to read and decide between.
+  const pageAction = useMemo(
     () =>
-      build({
-        id,
-        name,
-        allowedActions,
-        // Deleting from the detail screen leaves nothing to look at.
-        onDeleted: () => router.back(),
-      }),
-    [build, id, name, allowedActions, router],
+      status === "cancelled"
+        ? (items.find((item) => item.key === "renew") ?? null)
+        : null,
+    [items, status],
+  );
+
+  const barItems = useMemo(
+    () => (pageAction ? items.filter((item) => item !== pageAction) : items),
+    [items, pageAction],
   );
 
   // Edit earns a real button. In the retired web client it sat behind an
   // ellipsis with everything else; it is the action people reach for most.
-  //
-  // A cancelled subscription has no `edit` action at all (see getAllowedActions),
-  // so that screen used to open with nothing but an ellipsis. Renew is the move
-  // someone is there to make, and it takes the slot instead.
   const primary = useMemo(
-    () =>
-      items.find((item) => item.key === "edit") ??
-      items.find((item) => item.key === "renew") ??
-      null,
-    [items],
+    () => barItems.find((item) => item.key === "edit") ?? null,
+    [barItems],
   );
   const overflow = useMemo(
-    () => items.filter((item) => item.key !== primary?.key),
-    [items, primary],
+    () => barItems.filter((item) => item.key !== primary?.key),
+    [barItems, primary],
   );
 
   const showOverflow = useCallback(
@@ -72,5 +100,5 @@ export function useLifecycleActions({
     [name, overflow],
   );
 
-  return { primary, overflow, showOverflow };
+  return { primary, overflow, showOverflow, pageAction };
 }

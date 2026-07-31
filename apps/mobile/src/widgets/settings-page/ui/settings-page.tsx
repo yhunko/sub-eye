@@ -1,35 +1,31 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useQuery } from "@tanstack/react-query";
 import Constants from "expo-constants";
-import { useRouter } from "expo-router";
-import type { AndroidSymbol, SFSymbol } from "expo-symbols";
-import { SymbolView } from "expo-symbols";
-import { type ReactNode, useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  AppState,
-  Image,
   Linking,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
-import { subscriptionsQuery } from "@/entities/subscription";
+import { devForcePro, restorePro, usePro } from "@/entities/pro";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
 import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
 import {
-  cancelRenewalReminders,
-  renewalRemindersBlocked,
-  renewalRemindersEnabled,
-  setRenewalRemindersEnabled,
+  cancelReminders,
+  readNotificationSettings,
 } from "@/shared/lib/notifications";
+import { clearQueryCache } from "@/shared/lib/query";
+import { clearWidget } from "@/shared/lib/widget";
+import { Divider, Row, Section } from "@/shared/ui/list-row";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { presentChoice } from "@/shared/ui/present-choice";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
@@ -41,177 +37,37 @@ const LANGUAGE_NAMES: Record<AppLocale, string> = {
   uk: "Українська",
 };
 
-// Separator inset: row padding (16) + icon (19) + gap (13), so the rule starts
-// under the label rather than under the icon.
-const DIVIDER_INSET = 48;
-
-const Divider = () => <View style={styles.divider} />;
-
-function Row({
-  ios,
-  android,
-  label,
-  value,
-  onPress,
-  accent,
-  toggle,
-}: {
-  ios: SFSymbol;
-  android: AndroidSymbol;
-  label: string;
-  value?: string;
-  onPress?: () => void;
-  /** Tints the row as an action rather than a destination. */
-  accent?: boolean;
-  /** Renders a Switch in place of the chevron. Mutually exclusive with onPress. */
-  toggle?: {
-    value: boolean;
-    disabled: boolean;
-    onValueChange: (next: boolean) => void;
-  };
-}) {
-  return (
-    <Pressable
-      accessibilityRole={onPress ? "button" : undefined}
-      accessibilityLabel={value ? `${label}, ${value}` : label}
-      disabled={!onPress}
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <SymbolView
-        name={{ ios, android }}
-        size={19}
-        tintColor={accent ? colors.accent : colors.muted}
-        weight="regular"
-      />
-      <Text
-        style={[styles.rowLabel, accent && styles.rowLabelAccent]}
-        numberOfLines={1}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {label}
-      </Text>
-      {value ? (
-        <Text
-          style={styles.rowValue}
-          numberOfLines={1}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
-          {value}
-        </Text>
-      ) : null}
-      {toggle ? (
-        // The platform control, deliberately: the design's toggle IS a stock
-        // iOS switch, and Android gets Material 3 for free.
-        <Switch
-          style={styles.toggle}
-          value={toggle.value}
-          disabled={toggle.disabled}
-          onValueChange={toggle.onValueChange}
-          trackColor={{ true: colors.accent, false: colors.surfaceAlt }}
-        />
-      ) : null}
-      {onPress ? (
-        <SymbolView
-          name={{ ios: "chevron.right", android: "chevron_right" }}
-          size={13}
-          tintColor={colors.muted}
-          weight="semibold"
-        />
-      ) : null}
-    </Pressable>
-  );
-}
-
-function Group({ title, children }: { title?: string; children: ReactNode }) {
-  return (
-    <View>
-      {title ? <Text style={styles.groupTitle}>{title}</Text> : null}
-      <View style={styles.group}>{children}</View>
-    </View>
-  );
-}
-
 /**
- * Renewal reminders — scheduled on this device, never on the server. The stored
- * preference is therefore PER-DEVICE, not per-account: two phones toggle and
- * schedule independently, and a reinstall forgets it. That is the price of the
- * zero-server design, and it is the right trade here.
+ * The door to the notifications screen, and a summary of what is behind it.
  *
- * Two states, from the design. Resting: a switch. Permission denied: the switch
- * is replaced by a plain "Off" plus a route into the OS settings — on iOS a
- * refusal is terminal (`requestPermissionsAsync` never prompts again), so a live
- * switch there would be a control that does nothing.
+ * Re-reads on focus: the sub-screen writes straight to MMKV rather than to React
+ * state, so coming back from it would otherwise show a stale "Off".
  */
-function RenewalReminders() {
-  const subscriptions = useQuery(subscriptionsQuery());
-  const [enabled, setEnabled] = useState(renewalRemindersEnabled);
-  const [blocked, setBlocked] = useState(false);
-  const [busy, setBusy] = useState(false);
+function NotificationsRow() {
+  const router = useRouter();
+  const [settings, setSettings] = useState(readNotificationSettings);
 
-  // Permission can change while we are backgrounded — this row is what sends the
-  // user to the OS settings in the first place — so re-read on every foreground,
-  // not only on mount.
-  useEffect(() => {
-    const read = () => {
-      void renewalRemindersBlocked().then(setBlocked);
-    };
+  useFocusEffect(
+    useCallback(() => {
+      setSettings(readNotificationSettings());
+    }, []),
+  );
 
-    read();
-    const listener = AppState.addEventListener("change", (status) => {
-      if (status === "active") read();
-    });
-    return () => listener.remove();
-  }, []);
-
-  const toggle = async (next: boolean) => {
-    setBusy(true);
-    // An empty list on a cold start is fine: the flag is what persists, and the
-    // app-layer sync re-schedules as soon as the query resolves.
-    setEnabled(
-      await setRenewalRemindersEnabled(next, subscriptions.data ?? []),
-    );
-    setBlocked(await renewalRemindersBlocked());
-    setBusy(false);
-  };
+  const on = settings.renewals || settings.trials;
 
   return (
-    <View>
-      <Group title={m.settings_notifications()}>
-        <Row
-          ios={blocked ? "bell.slash" : "bell"}
-          android={blocked ? "notifications_off" : "notifications"}
-          label={m.settings_renewalReminders()}
-          value={blocked ? m.settings_off() : undefined}
-          toggle={
-            blocked
-              ? undefined
-              : {
-                  value: enabled,
-                  disabled: busy,
-                  onValueChange: (next) => void toggle(next),
-                }
-          }
-        />
-        {blocked ? (
-          <>
-            <Divider />
-            <Row
-              ios="gearshape"
-              android="settings"
-              label={m.settings_openDeviceSettings()}
-              accent
-              onPress={() => void Linking.openSettings()}
-            />
-          </>
-        ) : null}
-      </Group>
-      <Text style={styles.groupFootnote}>
-        {blocked
-          ? m.settings_renewalRemindersBlocked()
-          : m.settings_renewalRemindersHint()}
-      </Text>
-    </View>
+    <Section
+      title={m.settings_notifications()}
+      footnote={m.settings_remindersHint()}
+    >
+      <Row
+        ios={on ? "bell" : "bell.slash"}
+        android={on ? "notifications" : "notifications_off"}
+        label={m.settings_reminders()}
+        value={on ? m.settings_on() : m.settings_off()}
+        onPress={() => router.push("/settings/notifications")}
+      />
+    </Section>
   );
 }
 
@@ -233,9 +89,9 @@ function ActionButton({
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.group,
+        styles.card,
         styles.action,
-        pressed && styles.rowPressed,
+        pressed && styles.cardPressed,
       ]}
     >
       <Text
@@ -248,39 +104,29 @@ function ActionButton({
   );
 }
 
-// The identity header iOS puts at the top of Settings: big round avatar, name,
-// email, centered, on the plain grouped background rather than in a card.
-function AccountHeader() {
-  const { user } = useUser();
-  if (!user) return null;
-
-  const email = user.primaryEmailAddress?.emailAddress ?? "";
-  const name = user.fullName ?? user.username ?? email;
-
+/**
+ * The initials circle, at icon size.
+ *
+ * There is no photo branch because there is no photo: neither sign-up path
+ * uploads one and Apple hands back no image, so `user.hasImage` is false for
+ * every account this app can create. Clerk would happily serve `imageUrl` — a
+ * generated initials avatar of its own — which is a network fetch to render a
+ * letter we already have.
+ */
+function Avatar({ initial }: { initial: string }) {
   return (
-    <View style={styles.account}>
-      {/* hasImage, not imageUrl: Clerk always returns a URL and synthesises an
-          initials avatar when none was uploaded — its generated one, not ours. */}
-      {user.hasImage ? (
-        <Image source={{ uri: user.imageUrl }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, styles.avatarFallback]}>
-          <Text style={styles.avatarText}>
-            {(name.at(0) ?? "?").toUpperCase()}
-          </Text>
-        </View>
-      )}
-      <Text style={styles.accountName}>{name}</Text>
-      {email ? (
-        <Text style={styles.accountEmail} numberOfLines={1}>
-          {email}
-        </Text>
-      ) : null}
+    <View style={styles.avatar}>
+      <Text
+        style={styles.avatarText}
+        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+      >
+        {initial}
+      </Text>
     </View>
   );
 }
 
-// Currency, time zone, language, sign out, delete account.
+// Account and plan, currency, time zone, language, sign out, delete account.
 //
 // Language and time zone are OS-owned and this screen only *reports* them.
 // Locale is resolved from the device (per-app language in iOS Settings /
@@ -292,11 +138,37 @@ export function SettingsPage() {
   const { signOut } = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  const isPro = usePro();
   const preferences = useQuery(preferencesQuery());
   const update = useUpdatePreferences();
   const data = preferences.data;
+  const [restoring, setRestoring] = useState(false);
+  const [forcedPro, setForcedPro] = useState(devForcePro.get);
+
+  // Restoring is the only Pro action that can report "nothing found" as a
+  // success, so it always says something — silence would read as a dead button.
+  const restore = async () => {
+    setRestoring(true);
+    try {
+      Alert.alert(
+        (await restorePro())
+          ? m.paywall_restoreDone()
+          : m.paywall_restoreNone(),
+      );
+    } catch {
+      Alert.alert(m.paywall_restoreNone());
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  // `fullName` is always null — neither sign-up path collects a name — so this
+  // resolves to the username, and to the email again for an Apple sign-in,
+  // which supplies neither. Hence the subtitle check below.
+  const accountName = user?.fullName ?? user?.username ?? email;
 
   const pickCurrency = () =>
     presentChoice(
@@ -318,6 +190,29 @@ export function SettingsPage() {
       },
     ]);
 
+  // Ends the session and takes this account's data off the device with it.
+  //
+  // Three stores outlive a Clerk session because none of them is React state:
+  // the pending reminders name subscriptions on the lock screen, the widget
+  // snapshot sits in the shared App Group on the Home Screen, and the Query
+  // cache is keyed WITHOUT a user id and re-hydrated from MMKV at module load —
+  // so the next account signs in onto the previous one's numbers.
+  //
+  // Order is load-bearing. The cache is cleared AFTER the session ends: a
+  // mounted screen's observer refetches the instant its query is removed, so
+  // clearing first only refills it under the account that is still signed in.
+  // And housekeeping never decides whether the session ends — a rejected native
+  // call used to leave the user signed in with nothing shown.
+  const endSession = async (end: () => Promise<unknown> | undefined) => {
+    await cancelReminders().catch(() => {});
+    clearWidget();
+    try {
+      await end();
+    } finally {
+      clearQueryCache();
+    }
+  };
+
   const confirmSignOut = () =>
     Alert.alert(
       m.settings_signOutConfirmTitle(),
@@ -328,17 +223,19 @@ export function SettingsPage() {
           text: m.settings_signOut(),
           style: "destructive",
           // The (tabs) layout guards on Clerk's isSignedIn and redirects to
-          // /sign-in on its own, so there is nothing to navigate here. Drop the
-          // pending reminders first: they are scheduled on the device and would
-          // keep naming this account's subscriptions on the lock screen.
-          onPress: () => void cancelRenewalReminders().then(() => signOut()),
+          // /sign-in on its own, so there is nothing to navigate here.
+          onPress: () =>
+            void endSession(() => signOut()).catch(notifyWriteFailed),
         },
       ],
     );
 
   // Clerk's user.delete() ends the session, and the `user.deleted` webhook is
   // what removes the Postgres rows (routes/webhooks/clerk) — deleting here does
-  // NOT need a server call of its own.
+  // NOT need a server call of its own. The one thing it cannot cover is Apple's
+  // 5.1.1(v) token revocation: `/auth/revoke` needs the Services ID and the .p8
+  // client secret, which must never be in a client binary, so that obligation
+  // belongs to the `user.deleted` webhook or to Clerk.
   const confirmDelete = () =>
     Alert.alert(
       m.settings_deleteAccountConfirmTitle(),
@@ -348,12 +245,10 @@ export function SettingsPage() {
         {
           text: m.action_delete(),
           style: "destructive",
-          // Same reason as sign-out, more so: the account is gone but its
-          // locally-scheduled reminders would outlive it.
+          // Same reason as sign-out, more so: the account is gone but every
+          // local trace of it would outlive it.
           onPress: () =>
-            void cancelRenewalReminders().then(() =>
-              user?.delete().catch(notifyWriteFailed),
-            ),
+            void endSession(() => user?.delete()).catch(notifyWriteFailed),
         },
       ],
     );
@@ -363,7 +258,39 @@ export function SettingsPage() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
     >
-      <AccountHeader />
+      {/* Identity and entitlement are one object — "this account, on this
+          plan" — so they are one cell, the shape iOS gives the Apple Account
+          row. Restore shares the card because it is the same subject, and
+          because guideline 3.1.1 wants it findable outside the paywall: a
+          reviewer who cannot find it rejects the build.
+
+          The account row is conditional and Restore is not. Clerk resolves
+          `user` over the network while the rest of this screen paints from the
+          persisted cache, and an empty name is worse than a late one — but
+          Restore has to be there on every render regardless. */}
+      <Section footnote={isPro ? undefined : m.settings_proPitch()}>
+        {user ? (
+          <>
+            <Row
+              leading={
+                <Avatar initial={(accountName.at(0) ?? "?").toUpperCase()} />
+              }
+              label={accountName}
+              subtitle={accountName === email ? undefined : email}
+              value={isPro ? m.paywall_badge() : m.settings_free()}
+              onPress={isPro ? undefined : () => router.push("/paywall")}
+            />
+            <Divider />
+          </>
+        ) : null}
+        <Row
+          ios="arrow.clockwise"
+          android="refresh"
+          label={m.settings_restore()}
+          accent
+          onPress={restoring ? undefined : () => void restore()}
+        />
+      </Section>
 
       {!data && preferences.isLoading ? (
         <ActivityIndicator color={colors.accent} />
@@ -373,54 +300,59 @@ export function SettingsPage() {
       ) : null}
 
       {data ? (
-        <View>
-          <Group title={m.settings_preferences()}>
-            <Row
-              ios="creditcard"
-              android="credit_card"
-              label={m.settings_currency()}
-              value={currencyLabel(data.preferredCurrency)}
-              onPress={update.isPending ? undefined : pickCurrency}
-            />
-            <Divider />
-            <Row
-              ios="clock"
-              android="schedule"
-              label={m.settings_timezone()}
-              value={data.preferredTimezone}
-              onPress={
-                data.preferredTimezone === deviceTimezone || update.isPending
-                  ? undefined
-                  : syncTimezone
-              }
-            />
-            <Divider />
-            <Row
-              ios="tag"
-              android="label"
-              label={m.settings_categories()}
-              onPress={() => router.push("/settings/categories")}
-            />
-            <Divider />
-            <Row
-              ios="globe"
-              android="language"
-              label={m.settings_language()}
-              value={LANGUAGE_NAMES[getLocale()]}
-              // The native switcher: iOS puts per-app language on the app's own
-              // Settings page, Android 13+ puts it in App info. openSettings()
-              // is the only route to either — there is no deep link to the
-              // language row itself, and the App-Prefs: scheme is rejected.
-              onPress={() => void Linking.openSettings()}
-            />
-          </Group>
-          <Text style={styles.groupFootnote}>{m.settings_deviceHint()}</Text>
-        </View>
+        <Section
+          title={m.settings_preferences()}
+          footnote={m.settings_deviceHint()}
+        >
+          <Row
+            ios="creditcard"
+            android="credit_card"
+            label={m.settings_currency()}
+            value={currencyLabel(data.preferredCurrency)}
+            onPress={update.isPending ? undefined : pickCurrency}
+          />
+          <Divider />
+          <Row
+            ios="clock"
+            android="schedule"
+            label={m.settings_timezone()}
+            value={data.preferredTimezone}
+            onPress={
+              data.preferredTimezone === deviceTimezone || update.isPending
+                ? undefined
+                : syncTimezone
+            }
+          />
+          <Divider />
+          <Row
+            ios="tag"
+            android="label"
+            label={m.settings_categories()}
+            value={isPro ? undefined : m.paywall_badge()}
+            // Deep-linked, not hidden: the row is where someone goes looking
+            // for categories, so it is where the paywall has to be reachable.
+            onPress={() =>
+              router.push(isPro ? "/settings/categories" : "/paywall")
+            }
+          />
+          <Divider />
+          <Row
+            ios="globe"
+            android="language"
+            label={m.settings_language()}
+            value={LANGUAGE_NAMES[getLocale()]}
+            // The native switcher: iOS puts per-app language on the app's own
+            // Settings page, Android 13+ puts it in App info. openSettings()
+            // is the only route to either — there is no deep link to the
+            // language row itself, and the App-Prefs: scheme is rejected.
+            onPress={() => void Linking.openSettings()}
+          />
+        </Section>
       ) : null}
 
-      <RenewalReminders />
+      <NotificationsRow />
 
-      <Group title={m.settings_legal()}>
+      <Section title={m.settings_legal()}>
         <Row
           ios="doc.text"
           android="description"
@@ -434,7 +366,7 @@ export function SettingsPage() {
           label={m.settings_privacy()}
           onPress={() => void Linking.openURL(privacyUrl())}
         />
-      </Group>
+      </Section>
 
       {/* Two separate cards, not two rows in one: sign-out is reversible and
           deletion is not, and the gap between them is what stops a mis-tap. */}
@@ -443,6 +375,26 @@ export function SettingsPage() {
         label={m.settings_deleteAccount()}
         onPress={user ? confirmDelete : undefined}
       />
+
+      {/* __DEV__, not an env var: a flag configuration can enable is a flag that
+          ships enabled one day. Metro strips this branch from a release bundle. */}
+      {__DEV__ ? (
+        <Section>
+          <Row
+            ios="hammer"
+            android="build"
+            label={m.settings_devForcePro()}
+            toggle={{
+              value: forcedPro,
+              disabled: false,
+              onValueChange: (next) => {
+                devForcePro.set(next);
+                setForcedPro(next);
+              },
+            }}
+          />
+        </Section>
+      ) : null}
 
       <Text style={styles.version}>
         SubEye {Constants.expoConfig?.version ?? ""}
@@ -454,68 +406,30 @@ export function SettingsPage() {
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 24, gap: 24 },
 
-  account: { alignItems: "center", paddingTop: 8 },
-  avatar: { width: 104, height: 104, borderRadius: 999 },
-  avatarFallback: {
+  // 30, not the 19 a Row's symbol gets: a circle reads as an avatar only once it
+  // is wider than the glyphs around it, and the row's own padding absorbs it.
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { fontSize: 40, fontWeight: "700", color: colors.muted },
-  accountName: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-    marginTop: 12,
-  },
-  accountEmail: { fontSize: 15, color: colors.muted, marginTop: 2 },
+  avatarText: { fontSize: 14, fontWeight: "600", color: colors.muted },
 
-  groupTitle: {
-    fontSize: 12.5,
-    color: colors.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    paddingHorizontal: 4,
-    paddingBottom: 8,
-  },
-  group: {
+  // Kept locally only for ActionButton, which is a card that is not a Section:
+  // one centred destructive action, no rows, no dividers.
+  card: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 24,
     overflow: "hidden",
   },
-  groupFootnote: {
-    fontSize: 12.5,
-    color: colors.muted,
-    paddingHorizontal: 4,
-    paddingTop: 8,
-  },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-    paddingHorizontal: 16,
-    minHeight: 52,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: DIVIDER_INSET,
-  },
-  rowPressed: { backgroundColor: colors.surfaceAlt },
-  // Not decoration: RN's iOS Switch hardcodes `alignSelf: "flex-start"` under
-  // the caller's style (Libraries/Components/Switch/Switch.js). The cross axis
-  // of a row is vertical, so that pins the switch to the row's TOP and beats the
-  // parent's alignItems — it sat 12pt above the label until this line.
-  toggle: { alignSelf: "center" },
-  rowLabel: { flex: 1, fontSize: 16, color: colors.text },
-  rowLabelAccent: { color: colors.accent, fontWeight: "600" },
-  rowValue: { fontSize: 16, color: colors.muted, flexShrink: 1 },
+  cardPressed: { backgroundColor: colors.surfaceAlt },
 
   action: { alignItems: "center", justifyContent: "center", minHeight: 52 },
   actionText: { fontSize: 16, fontWeight: "600", color: colors.danger },

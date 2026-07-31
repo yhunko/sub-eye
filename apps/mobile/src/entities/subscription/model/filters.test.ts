@@ -4,6 +4,7 @@ import {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
   type SubscriptionListFilters,
+  subscriptionsDueOn,
 } from "./filters";
 
 function sub(
@@ -139,6 +140,41 @@ describe("applySubscriptionFilters — status and category", () => {
     ).toEqual(["3"]);
   });
 
+  // "Active" asks whether it is still yours, and a cancelling subscription is
+  // one you are still paying for — it just has an end date. Excluding it made a
+  // subscription vanish from the default list the moment it was wound down,
+  // which is the one week a user most wants to see it.
+  it("counts a cancelling subscription as active", () => {
+    const winding = sub({
+      id: "4",
+      name: "CleanShot",
+      status: "cancelling",
+      willBeCancelledAt: "2026-09-29T00:00:00.000Z",
+      nextPaymentDate: "2026-09-29T00:00:00.000Z",
+    });
+
+    expect(
+      applySubscriptionFilters([...all, winding], filters()).map((s) => s.id),
+    ).toEqual(["2", "1", "4"]);
+  });
+
+  // ...and it is still reachable under its own status. One subscription, two
+  // true answers — an ENDED one is in neither "active" nor anything but its own.
+  it("keeps a cancelling subscription under its own status, and an ended one out of active", () => {
+    const winding = sub({ id: "4", status: "cancelling" });
+    const ended = sub({ id: "5", status: "cancelled" });
+    const items = [...all, winding, ended];
+
+    expect(
+      applySubscriptionFilters(items, filters({ status: "cancelling" })).map(
+        (s) => s.id,
+      ),
+    ).toEqual(["4"]);
+    expect(
+      applySubscriptionFilters(items, filters()).map((s) => s.id),
+    ).not.toContain("5");
+  });
+
   it("'all' keeps every status", () => {
     expect(
       applySubscriptionFilters(all, filters({ status: "all" })).length,
@@ -212,5 +248,44 @@ describe("applySubscriptionFilters — sort", () => {
     const input = [netflix, spotify];
     applySubscriptionFilters(input, filters({ sort: "name" }));
     expect(input.map((s) => s.id)).toEqual(["1", "2"]);
+  });
+});
+
+describe("subscriptionsDueOn", () => {
+  const due = (
+    id: string,
+    day: string,
+    overrides: Partial<SubscriptionDto> = {},
+  ) => sub({ id, nextPaymentDate: `${day}T00:00:00.000Z`, ...overrides });
+
+  it("keeps only the subscriptions charging on that calendar day", () => {
+    const items = [
+      due("1", "2026-08-01"),
+      due("2", "2026-08-02"),
+      due("3", "2026-08-01"),
+    ];
+    expect(subscriptionsDueOn(items, "2026-08-01").map((s) => s.id)).toEqual([
+      "1",
+      "3",
+    ]);
+  });
+
+  // The server still computes a nextPaymentDate for a dead subscription, so
+  // without the status guard a cancelled row joins a day it will never charge.
+  it("excludes anything that is not billing", () => {
+    const items = [
+      due("1", "2026-08-01", { status: "cancelled" }),
+      due("2", "2026-08-01", { status: "paused" }),
+      due("3", "2026-08-01"),
+    ];
+    expect(subscriptionsDueOn(items, "2026-08-01").map((s) => s.id)).toEqual([
+      "3",
+    ]);
+  });
+
+  it("returns nothing for a malformed day rather than throwing", () => {
+    expect(subscriptionsDueOn([due("1", "2026-08-01")], "nonsense")).toEqual(
+      [],
+    );
   });
 });

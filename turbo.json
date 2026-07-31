@@ -10,6 +10,12 @@
         "src/**/*.js",
         "src/**/*.jsx",
         "src/**/*.json",
+        "src/**/*.astro",
+        "src/**/*.css",
+        "src/**/*.md",
+        "public/**",
+        "astro.config.*",
+        "wrangler.jsonc",
         "tsconfig.json",
         "package.json",
         "bun.lock"
@@ -25,6 +31,9 @@
         "src/**/*.tsx",
         "src/**/*.js",
         "src/**/*.jsx",
+        "src/**/*.astro",
+        "src/**/*.css",
+        "astro.config.*",
         "tsconfig.json",
         "package.json"
       ],
@@ -36,8 +45,13 @@
         "src/**/*.ts",
         "src/**/*.tsx",
         "src/**/*.d.ts",
+        "src/**/*.astro",
+        "src/**/*.css",
+        "astro.config.*",
         "tsconfig.json",
-        "package.json"
+        "package.json",
+        "messages/**",
+        "project.inlang/settings.json"
       ],
       "outputs": ["dist/**/*.d.ts", ".tsbuildinfo"],
       "env": ["NODE_ENV"]
@@ -53,10 +67,14 @@
         "test/**/*.tsx",
         "**/*.test.ts",
         "**/*.test.tsx",
+        "src/pages/**",
+        "astro.config.*",
         "bunfig.toml",
         "test-preload.ts",
         "package.json",
-        "tsconfig.json"
+        "tsconfig.json",
+        "messages/**",
+        "project.inlang/settings.json"
       ],
       "outputs": ["coverage/**", ".nyc_output/**", "test-results/**"],
       "env": ["NODE_ENV", "CI"]

@@ -29,6 +29,12 @@ export function useCreateSubscription() {
   const client = useQueryClient();
 
   return useMutation({
+    // The form dismisses the moment this fires, so a PAUSED mutation — TanStack's
+    // default for an offline write — would close over an unchanged list and say
+    // nothing at all, and then replay whenever connectivity returned, duplicating
+    // whatever the user re-typed in the meantime. Letting the request run and
+    // fail is what makes `notifyWriteFailed` below reachable offline.
+    networkMode: "always",
     mutationFn: async (
       vars: CreateSubscriptionVars,
     ): Promise<SubscriptionDto> => {

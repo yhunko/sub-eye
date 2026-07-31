@@ -11,7 +11,10 @@ export const colors = {
   border: "rgba(255,255,255,0.10)",
   borderStrong: "rgba(255,255,255,0.16)",
   // Green is BRAND + interaction, never "money is good" — every amount in a
-  // spend tracker is money leaving, so amounts stay neutral.
+  // spend tracker is money leaving, so amounts stay neutral. The single
+  // exception is Home's next-month chip, where green marks a smaller bill: that
+  // is a direction of change, not a balance, and it is the one figure here a
+  // user can be pleased about.
   accent: "#33a453",
   accentSoft: "rgba(51,164,83,0.14)",
   // Focus/active affordances only. #33a453 on #0f1115 is 5.92:1 — fine for a
@@ -22,8 +25,10 @@ export const colors = {
   danger: "#f87171",
   dangerSoft: "rgba(248,113,113,0.14)",
   dangerBorder: "rgba(248,113,113,0.32)",
-  // Amber. Only ever "this is suspended", never "this is wrong" — it is the
-  // paused hue, shared by the paused row tint and the Pause swipe action.
+  // Amber = "not yet, but close", never "this is wrong". Two uses, one meaning:
+  // the paused row tint and Pause swipe action (suspended, will come back), and
+  // Home's rail for anything landing inside the next week. `danger` is the step
+  // above it there — imminent, not incorrect.
   warning: "#e0a32e",
   warningSoft: "rgba(224,163,46,0.10)",
 } as const;

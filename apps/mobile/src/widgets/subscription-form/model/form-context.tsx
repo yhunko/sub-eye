@@ -102,6 +102,11 @@ export function SubscriptionFormProvider({
   ) => setValues((previous) => ({ ...previous, [key]: value }));
 
   const submit = () => {
+    // The nav-bar item stays hit-testable through the modal's dismissal
+    // animation, and create is not idempotent — a second tap is a second
+    // subscription. Same guard the category picker's create path uses.
+    if (create.isPending || update.isPending) return;
+
     const result = validateSubscriptionForm(values);
     if (!result.ok) {
       setErrors(result.errors);

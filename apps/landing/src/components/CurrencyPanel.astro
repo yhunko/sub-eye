@@ -1,0 +1,71 @@
+---
+import { copyFor } from "../i18n";
+import { currencyMockup } from "../lib/currencies";
+import { money } from "../lib/format";
+import type { Locale } from "../lib/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const { rows, total, homeCurrency } = currencyMockup(locale);
+
+// A row already denominated in the reader's own currency converts to itself and
+// says nothing — the point of the panel is the arithmetic. The total is still
+// the whole basket.
+const converted = rows.filter((row) => row.currency !== homeCurrency);
+---
+
+<div class="fx">
+  <ul>
+    {
+      converted.map((row) => (
+        <li class="fx__row num">
+          <span class="fx__from">{money(row.amount, row.currency)}</span>
+          <span class="fx__to">{money(row.converted, homeCurrency)}</span>
+        </li>
+      ))
+    }
+    <li class="fx__row fx__row--total">
+      <span>{c.panel.totalThisMonth}</span>
+      <span class="fx__sum num">{money(total, homeCurrency)}</span>
+    </li>
+  </ul>
+</div>
+
+<style>
+  .fx {
+    background: var(--surface-alt);
+    border-radius: 16px;
+    padding: 0.5rem 1.13rem;
+  }
+
+  .fx__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-block: 0.69rem;
+    font-size: var(--fs-small);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .fx__from {
+    color: var(--text-muted);
+  }
+
+  .fx__to {
+    font-weight: 600;
+  }
+
+  .fx__row--total {
+    border-bottom: 0;
+    color: var(--text-muted);
+  }
+
+  .fx__sum {
+    font-weight: 700;
+    color: var(--text);
+  }
+</style>

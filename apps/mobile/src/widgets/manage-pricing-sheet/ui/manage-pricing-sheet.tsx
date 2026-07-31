@@ -16,7 +16,12 @@ import {
   useSubscriptionDetail,
 } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
-import { formatMoney, parsePrice } from "@/shared/lib/format";
+import {
+  formatMoney,
+  isFutureDay,
+  parsePrice,
+  toIsoDay,
+} from "@/shared/lib/format";
 import { Field, TextField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
 import { Segmented } from "@/shared/ui/segmented";
@@ -129,7 +134,7 @@ export function ManagePricingSheet({ id }: { id: string }) {
     // A date is only required where one is actually sent: every offer ends on
     // one, but a scheduled change on "next payment" has the server pick it.
     const needsDate = mode === "offer" || effective === "customDate";
-    if (needsDate && date.getTime() <= Date.now()) {
+    if (needsDate && !isFutureDay(date)) {
       setDateError(m.validation_futureDate());
       invalid = true;
     } else {
@@ -145,14 +150,13 @@ export function ManagePricingSheet({ id }: { id: string }) {
             cost: parsedPrice,
             currency,
             mode: effective,
-            customDate:
-              effective === "customDate" ? date.toISOString() : undefined,
+            customDate: effective === "customDate" ? toIsoDay(date) : undefined,
           }
         : {
             kind: offerKind,
             promoCost: parsedPrice,
             currency,
-            endsAt: date.toISOString(),
+            endsAt: toIsoDay(date),
             standardCost: parsedStandard ?? standardFallback,
           };
 

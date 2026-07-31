@@ -5,7 +5,7 @@ import {
   PhaseAlreadyAppliedError,
   SubscriptionNotFoundError,
 } from "../src/domains/subscription/subscriptionErrors";
-import { handleServiceError } from "../src/utils/routeUtils";
+import { handleServiceError, onInvalid } from "../src/utils/routeUtils";
 
 const fakeContext = () => {
   const captured: { body: unknown; status: number } = { body: null, status: 0 };
@@ -77,5 +77,34 @@ describe("handleServiceError", () => {
       success: false,
       error: { code: "INTERNAL_ERROR", message: "Internal Server Error" },
     });
+  });
+});
+
+describe("onInvalid", () => {
+  it("answers a rejected payload in the same envelope as every other error", () => {
+    const { captured, context } = fakeContext();
+
+    onInvalid(
+      { success: false, issues: [{ message: "Date cannot be in the future" }] },
+      context as never,
+    );
+
+    // Without the hook this is valibot's own result object — an `issues` array
+    // and no `error` key — which reaches the client as a codeless failure.
+    expect(captured.status).toBe(400);
+    expect(captured.body).toEqual({
+      success: false,
+      error: {
+        code: "VALIDATION_FAILED",
+        message: "Date cannot be in the future",
+      },
+    });
+  });
+
+  it("lets a valid payload through", () => {
+    const { captured, context } = fakeContext();
+
+    expect(onInvalid({ success: true }, context as never)).toBeUndefined();
+    expect(captured.status).toBe(0);
   });
 });

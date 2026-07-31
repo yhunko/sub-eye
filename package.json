@@ -1,7 +1,7 @@
 {
   "name": "sub-eye",
   "description": "A monorepo template for SubEye subscriptions management app",
-  "version": "4.0.0",
+  "version": "4.1.0-beta.1",
   "author": "Yehor Hunko",
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",
@@ -19,7 +19,7 @@
     "syncpack": "^14.3.0",
     "turbo": "^2.9.6",
     "typescript": "^5.9.3",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.114.0"
   },
   "homepage": "https://github.com/yhunko/sub-eye",
   "keywords": [
@@ -35,21 +35,22 @@
   "scripts": {
     "build": "turbo build",
     "check:boundaries": "depcruise --config dependency-cruiser.cjs apps packages",
-    "check:circular": "bun run check:circular:server && bun run check:circular:packages && bun run check:circular:mobile",
-    "check:circular:server": "madge --circular --extensions ts,tsx apps/server/src",
-    "check:circular:packages": "madge --circular --extensions ts packages/currency/src packages/pricing/src packages/shared/src packages/spend/src",
+    "check:circular": "bun run check:circular:server && bun run check:circular:packages && bun run check:circular:mobile && bun run check:circular:landing",
+    "check:circular:landing": "madge --circular --extensions ts apps/landing/src",
     "check:circular:mobile": "madge --circular --extensions ts,tsx --ts-config apps/mobile/tsconfig.json apps/mobile/src",
-    "deploy:dev": "turbo build && wrangler -c apps/server/dev.wrangler.jsonc deploy --minify",
+    "check:circular:packages": "madge --circular --extensions ts packages/currency/src packages/pricing/src packages/shared/src packages/spend/src",
+    "check:circular:server": "madge --circular --extensions ts,tsx apps/server/src",
+    "deploy:dev": "turbo build --filter=@subeye/server && wrangler -c apps/server/dev.wrangler.jsonc deploy --minify",
     "deps:fix": "syncpack fix",
     "deps:format": "syncpack format",
     "deps:lint": "syncpack lint",
     "deps:majors": "bun x npm-check-updates --workspaces --root --format group",
-    "deps:update": "bun x npm-check-updates --workspaces --root --target minor -u && bun install && bun run deps:fix",
     "deps:up": "bun x npm-check-updates --workspaces --root --interactive",
+    "deps:update": "bun x npm-check-updates --workspaces --root --target minor -u && bun install && bun run deps:fix",
     "dev": "turbo dev",
-    "dev:server": "turbo dev --filter=@subeye/server",
-    "dev:mobile": "bun run --cwd apps/server build && bun run --cwd apps/mobile start",
     "dev:lan": "bun run --cwd apps/server dev:lan",
+    "dev:mobile": "bun run --cwd apps/server build && bun run --cwd apps/mobile start",
+    "dev:server": "turbo dev --filter=@subeye/server",
     "format": "biome format --write .",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

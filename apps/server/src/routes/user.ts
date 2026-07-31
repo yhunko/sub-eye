@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { UserService } from "../domains/user/userService";
 import { protect } from "../middleware/auth";
 import { requireUserId } from "../utils/authUtils";
+import { handleServiceError, onInvalid } from "../utils/routeUtils";
 
 export const userRouter = new Hono()
   .get("/preferences", protect, async (context) => {
@@ -14,7 +15,7 @@ export const userRouter = new Hono()
   .patch(
     "/preferences",
     protect,
-    vValidator("json", UpdateUserPreferencesSchema),
+    vValidator("json", UpdateUserPreferencesSchema, onInvalid),
     async (context) => {
       const userId = requireUserId(context);
 
@@ -26,8 +27,7 @@ export const userRouter = new Hono()
 
         return context.json(preferences);
       } catch (error) {
-        console.error("[user] failed to update preferences", error);
-        return context.json({ error: "Failed to update preferences" }, 400);
+        return handleServiceError(context, error);
       }
     },
   );

@@ -1,11 +1,12 @@
 # sub-eye
 
-Subscription tracking. Bun + Turbo monorepo: a Hono API on Cloudflare Workers
-and an Expo mobile client over four pure packages.
+Subscription tracking. Bun + Turbo monorepo: a Hono API on Cloudflare Workers,
+an Expo mobile client, and a static marketing site, over four pure packages.
 
 ```
 apps/server       Hono API — Cloudflare Worker, Neon Postgres via Drizzle, Clerk auth
 apps/mobile       Expo (React Native, expo-router) — the only client
+apps/landing      subeye.cc — Astro 6, static, zero client JS, en + uk
 packages/shared   schemas, DTOs, domain utils — consumed by everything
 packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
 packages/spend    pure occurrence engine (payment projection, aggregates)
@@ -23,6 +24,7 @@ bun install
 bun run dev:server        # wrangler dev
 bun run dev:mobile        # build server types, then Metro
 bun run dev:lan           # server on 0.0.0.0:8788 for on-device testing
+bun run --cwd apps/landing dev   # astro dev on :4321
 ```
 
 ```bash
@@ -35,6 +37,15 @@ bun run check:circular    # madge
 
 Run `type-check`, `test`, and `check:boundaries` before calling work done.
 `bun run lint:fix` and `bun run format` write.
+
+**Never run `expo` from the repo root** — always `--cwd apps/mobile`, or `cd`
+into it. The Expo CLI resolves a "project" from the nearest `package.json` and
+will happily adopt the monorepo root: `expo prebuild` there writes an
+`{"expo": {}}` app.json, adds `expo`/`react`/`react-native` to the ROOT
+dependencies, and reformats the root `tsconfig.json`, stripping its comments.
+It scaffolds silently and none of it belongs here. That stray root `app.json`
+was committed once already, which is what made every later root invocation look
+legitimate.
 
 ## Conventions
 
@@ -56,6 +67,17 @@ caller error by returning `null`; the server converts that into a domain error.
 
 **Commits are conventional** — commitlint gates them and semantic-release reads
 them to cut versions.
+
+**`.astro` files are not linted by Biome.** Biome sees an Astro file's
+frontmatter but not its template, so every variable the markup renders looks
+unused. They are excluded in `biome.jsonc`; `apps/landing` runs `astro check` as
+its `type-check` and enables `noUnusedLocals` to cover the gap. Adding a new
+file type to a workspace also means adding its glob to `turbo.json` — the input
+lists are explicit, and a missing glob silently replays a stale cached build.
+
+**The production release builds the server only**
+(`turbo build --filter=@subeye/server`). A broken marketing page must not be
+able to block an API deploy; `apps/landing` ships separately to Cloudflare.
 
 ## Comments
 

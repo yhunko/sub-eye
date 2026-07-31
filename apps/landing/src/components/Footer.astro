@@ -1,0 +1,70 @@
+---
+import { copyFor } from "../i18n";
+import {
+  type Locale,
+  otherLocale,
+  path,
+  privacyEmail,
+  type SitePage,
+} from "../lib/site";
+
+interface Props {
+  locale: Locale;
+  page?: SitePage;
+}
+
+const { locale, page } = Astro.props;
+const c = copyFor(locale);
+const other = otherLocale(locale);
+---
+
+<footer class="foot">
+  <div class="shell foot__inner">
+    <p class="foot__rights">&copy; 2026 {c.footer.rights}</p>
+    <nav class="foot__links" aria-label={c.footer.contact}>
+      <a href={path(locale, "support")}>{c.footer.support}</a>
+      <a href={path(locale, "terms-of-service")}>{c.footer.terms}</a>
+      <a href={path(locale, "privacy-policy")}>{c.footer.privacy}</a>
+      <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>
+      <a href={path(other, page)} hreflang={other} lang={other} rel="alternate">
+        {c.otherLangName}
+      </a>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    margin-top: 6rem;
+    border-top: 1px solid var(--border);
+    padding-block: 1.75rem 3.5rem;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+  }
+
+  .foot a {
+    transition: color 160ms var(--ease);
+  }
+
+  .foot a:hover {
+    color: var(--text);
+  }
+
+  .foot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .foot__rights {
+    margin: 0;
+  }
+</style>
