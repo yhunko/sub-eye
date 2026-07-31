@@ -1,3 +1,4 @@
+export { fromIsoDay, isFutureDay, toIsoDay } from "./day";
 export {
   CURRENCY_CODES,
   currencyLabel,
@@ -10,5 +11,6 @@ export {
   formatCountdown,
   formatDate,
   formatDaysUntil,
+  formatRemaining,
   formatShortDate,
 } from "./when";

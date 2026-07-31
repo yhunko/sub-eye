@@ -22,7 +22,7 @@ import { UpcomingRail } from "./upcoming-rail";
 // what needs me, where does it go. The rail is capped at five events, not a
 // window onto everything — the Subscriptions tab stays the full list.
 export function HomePage() {
-  const { data, isPending, isError, refetch } = useDashboard();
+  const { data, isError, fetchStatus, refetch } = useDashboard();
   const isPro = usePro();
   // The list the Subscriptions tab already fetches and MMKV already persists.
   // Every attention event is derived from fields it carries, so a server
@@ -34,18 +34,30 @@ export function HomePage() {
     [subscriptions.data],
   );
 
-  if (isPending || subscriptions.isPending) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
+  // An offline query does not fail, it PAUSES: status stays "pending" and
+  // `isError` never becomes true, so a first launch with nothing cached would
+  // otherwise spin forever with nothing to say. It resumes on its own once
+  // connectivity returns.
+  const offline =
+    fetchStatus === "paused" || subscriptions.fetchStatus === "paused";
 
-  if (isError) {
+  // Gated on there being nothing to paint, never on `isError` alone. The cache
+  // is hydrated before the first frame so this screen opens with numbers; a
+  // failed background revalidate must not take them away again.
+  if (!data || subscriptions.isPending) {
+    if (!isError && !offline) {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      );
+    }
+
     return (
       <View style={styles.centered}>
-        <Text style={styles.error}>{m.home_loadError()}</Text>
+        <Text style={styles.error}>
+          {offline ? m.common_offline() : m.home_loadError()}
+        </Text>
         <Pressable style={styles.retry} onPress={() => void refetch()}>
           <Text style={styles.retryText}>{m.common_retry()}</Text>
         </Pressable>

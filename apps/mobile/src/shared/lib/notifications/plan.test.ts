@@ -7,6 +7,9 @@ import type { NotificationSettings } from "./settings";
 // the message functions so this stays a pure unit test of the projection.
 // Each stub echoes its inputs so an assertion can tell the shapes apart.
 mock.module("@/shared/i18n", () => ({
+  // Unused here, but `plan` imports the format barrel, which reaches `when` —
+  // and `when` asks the stubbed barrel for this at import time.
+  dateLocale: () => "en-GB",
   m: {
     notif_whenToday: () => "today",
     notif_whenTomorrow: () => "tomorrow",
@@ -264,6 +267,29 @@ describe("planReminders", () => {
       [2026, 7, 1],
       [2026, 7, 2],
     ]);
+  });
+
+  // The status footnote asks for one slot MORE than it can schedule, because
+  // getting that extra one back is the only evidence a reminder was really
+  // dropped. An exactly-full plan must not answer yes — the screen would claim a
+  // truncation that never happened.
+  it("returns more than the budget only when something was really dropped", () => {
+    const days = (count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        sub({
+          id: `sub_${index}`,
+          name: `s${index}`,
+          nextPaymentDate: `2026-08-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`,
+        }),
+      );
+
+    // One monthly subscription is exactly REMINDER_LOOKAHEAD mornings.
+    expect(
+      planReminders(days(1), settings(), NOW, REMINDER_LOOKAHEAD + 1),
+    ).toHaveLength(REMINDER_LOOKAHEAD);
+    expect(
+      planReminders(days(2), settings(), NOW, REMINDER_LOOKAHEAD + 1),
+    ).toHaveLength(REMINDER_LOOKAHEAD + 1);
   });
 });
 

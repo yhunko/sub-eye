@@ -89,6 +89,16 @@ async function ensureChannels(): Promise<void> {
 let syncGeneration = 0;
 
 /**
+ * Whether the last rebuild had more reminder mornings than it could schedule.
+ *
+ * Measured, not inferred from the pending count: `pending.length >=
+ * REMINDER_BUDGET` also claimed a truncation over an exactly-full plan that
+ * dropped nothing, and again whenever a pending test notification made up the
+ * difference. An untruthful status line is worse than none — degrade to the count.
+ */
+let planTruncated = false;
+
+/**
  * Keeps `readNotificationHealth` from sampling the pending list mid-rebuild.
  * A rebuild cancels everything before it schedules anything, so a read landing
  * inside that window returns zero over a schedule that is about to exist.
@@ -133,6 +143,7 @@ async function rebuild(
   const current = () => generation === syncGeneration;
 
   await Notifications.cancelAllScheduledNotificationsAsync();
+  planTruncated = false;
 
   if (!settings.renewals && !settings.trials) return;
 
@@ -144,7 +155,17 @@ async function rebuild(
 
   await ensureChannels();
 
-  for (const reminder of planReminders(subscriptions, settings, new Date())) {
+  // Asked for one more than can be scheduled: getting it back is the only
+  // evidence that anything was actually dropped.
+  const plan = planReminders(
+    subscriptions,
+    settings,
+    new Date(),
+    REMINDER_BUDGET + 1,
+  );
+  planTruncated = plan.length > REMINDER_BUDGET;
+
+  for (const reminder of plan.slice(0, REMINDER_BUDGET)) {
     // Checked EVERY iteration, not once at the top. Scheduling is up to 56
     // awaited native calls, and the settings screen can start a second sync in
     // the middle of them: that run's cancel-all wipes what this one has written
@@ -221,7 +242,7 @@ export async function readNotificationHealth(): Promise<NotificationHealth> {
     muted,
     scheduled: pending.length,
     nextFireAt: times[0] === undefined ? null : new Date(times[0]),
-    atBudget: pending.length >= REMINDER_BUDGET,
+    atBudget: planTruncated,
   };
 }
 

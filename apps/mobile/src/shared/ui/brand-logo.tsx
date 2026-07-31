@@ -13,7 +13,7 @@ import { colors } from "./theme";
 // that still covers the box's real pixel size.
 const FAVICON_SIZES = [16, 32, 64, 128, 256];
 
-const logoUrl = (domain: string, size: number) => {
+export const brandLogoUrl = (domain: string, size: number) => {
   const physical = PixelRatio.getPixelSizeForLayoutSize(size);
   const bucket = FAVICON_SIZES.find((value) => value >= physical) ?? 256;
   return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${bucket}`;
@@ -31,7 +31,11 @@ export function BrandLogo({
   /** Drains the colour out of a logo whose subscription is over. */
   dimmed?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
+  // WHICH domain failed, not merely that one did. The add/edit form keeps a
+  // single avatar mounted across every brand the user picks, so a boolean stayed
+  // true for the life of the modal and every later choice rendered as the letter
+  // tile — the picker looked like it had not applied anything.
+  const [failedDomain, setFailedDomain] = useState<string | null>(null);
   // A full circle, not a squircle: most favicons are a logo on an opaque white
   // plate, and a rounded square leaves that plate reading as a white card behind
   // the mark. Clipped round it reads as the avatar it is meant to be.
@@ -42,7 +46,7 @@ export function BrandLogo({
     ...(dimmed ? { opacity: 0.4 } : null),
   };
 
-  if (!brandDomain || failed) {
+  if (!brandDomain || failedDomain === brandDomain) {
     return (
       <View style={[styles.fallback, box]}>
         <Text style={[styles.initial, { fontSize: size * 0.42 }]}>
@@ -55,9 +59,9 @@ export function BrandLogo({
   return (
     <Image
       accessibilityIgnoresInvertColors
-      source={{ uri: logoUrl(brandDomain, size) }}
+      source={{ uri: brandLogoUrl(brandDomain, size) }}
       style={[styles.image, box]}
-      onError={() => setFailed(true)}
+      onError={() => setFailedDomain(brandDomain)}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { useSignInWithApple } from "@clerk/clerk-expo";
+import { useSignIn, useSignInWithApple } from "@clerk/clerk-expo";
 import {
   AppleAuthenticationButton,
   AppleAuthenticationButtonStyle,
@@ -26,11 +26,21 @@ const APPLE = "Apple";
  */
 export function useAppleSignIn(onError: (message: string) => void) {
   const { startAppleAuthenticationFlow } = useSignInWithApple();
+  // The hook returns no `isLoaded` of its own, and before Clerk resolves it
+  // returns a null session WITHOUT presenting Apple's sheet — indistinguishable
+  // from a cancel, and the screen mounts before the handshake finishes. Read the
+  // flag off `useSignIn`, which is one of the two the hook gates on, and report
+  // it the way the credential form does.
+  const { isLoaded } = useSignIn();
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
   const start = async () => {
     if (pending) return;
+    if (!isLoaded) {
+      onError(m.auth_errorNotReady());
+      return;
+    }
     setPending(true);
     try {
       const { createdSessionId, setActive } =
@@ -44,8 +54,8 @@ export function useAppleSignIn(onError: (message: string) => void) {
         return;
       }
 
-      // No session and no throw means the user dismissed Apple's sheet (the hook
-      // swallows ERR_REQUEST_CANCELED) or Clerk had not loaded yet. Neither is a
+      // Past the guard above, a session-less return with no throw can only be a
+      // dismissed Apple sheet (the hook swallows ERR_REQUEST_CANCELED). Not a
       // failure worth a red banner over — the user is looking at the screen they
       // chose to come back to.
     } catch {

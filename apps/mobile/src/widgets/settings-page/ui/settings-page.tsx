@@ -23,6 +23,8 @@ import {
   cancelReminders,
   readNotificationSettings,
 } from "@/shared/lib/notifications";
+import { clearQueryCache } from "@/shared/lib/query";
+import { clearWidget } from "@/shared/lib/widget";
 import { Divider, Row, Section } from "@/shared/ui/list-row";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { presentChoice } from "@/shared/ui/present-choice";
@@ -188,6 +190,29 @@ export function SettingsPage() {
       },
     ]);
 
+  // Ends the session and takes this account's data off the device with it.
+  //
+  // Three stores outlive a Clerk session because none of them is React state:
+  // the pending reminders name subscriptions on the lock screen, the widget
+  // snapshot sits in the shared App Group on the Home Screen, and the Query
+  // cache is keyed WITHOUT a user id and re-hydrated from MMKV at module load —
+  // so the next account signs in onto the previous one's numbers.
+  //
+  // Order is load-bearing. The cache is cleared AFTER the session ends: a
+  // mounted screen's observer refetches the instant its query is removed, so
+  // clearing first only refills it under the account that is still signed in.
+  // And housekeeping never decides whether the session ends — a rejected native
+  // call used to leave the user signed in with nothing shown.
+  const endSession = async (end: () => Promise<unknown> | undefined) => {
+    await cancelReminders().catch(() => {});
+    clearWidget();
+    try {
+      await end();
+    } finally {
+      clearQueryCache();
+    }
+  };
+
   const confirmSignOut = () =>
     Alert.alert(
       m.settings_signOutConfirmTitle(),
@@ -198,17 +223,19 @@ export function SettingsPage() {
           text: m.settings_signOut(),
           style: "destructive",
           // The (tabs) layout guards on Clerk's isSignedIn and redirects to
-          // /sign-in on its own, so there is nothing to navigate here. Drop the
-          // pending reminders first: they are scheduled on the device and would
-          // keep naming this account's subscriptions on the lock screen.
-          onPress: () => void cancelReminders().then(() => signOut()),
+          // /sign-in on its own, so there is nothing to navigate here.
+          onPress: () =>
+            void endSession(() => signOut()).catch(notifyWriteFailed),
         },
       ],
     );
 
   // Clerk's user.delete() ends the session, and the `user.deleted` webhook is
   // what removes the Postgres rows (routes/webhooks/clerk) — deleting here does
-  // NOT need a server call of its own.
+  // NOT need a server call of its own. The one thing it cannot cover is Apple's
+  // 5.1.1(v) token revocation: `/auth/revoke` needs the Services ID and the .p8
+  // client secret, which must never be in a client binary, so that obligation
+  // belongs to the `user.deleted` webhook or to Clerk.
   const confirmDelete = () =>
     Alert.alert(
       m.settings_deleteAccountConfirmTitle(),
@@ -218,12 +245,10 @@ export function SettingsPage() {
         {
           text: m.action_delete(),
           style: "destructive",
-          // Same reason as sign-out, more so: the account is gone but its
-          // locally-scheduled reminders would outlive it.
+          // Same reason as sign-out, more so: the account is gone but every
+          // local trace of it would outlive it.
           onPress: () =>
-            void cancelReminders().then(() =>
-              user?.delete().catch(notifyWriteFailed),
-            ),
+            void endSession(() => user?.delete()).catch(notifyWriteFailed),
         },
       ],
     );

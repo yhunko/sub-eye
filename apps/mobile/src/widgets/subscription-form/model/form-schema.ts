@@ -1,6 +1,7 @@
 import { SubscriptionPeriod } from "@subeye/shared";
-// Straight from the money module, not the format barrel: the barrel also carries
+// Straight from the leaf modules, not the format barrel: the barrel also carries
 // `when`, which reaches the Paraglide runtime and the native layer behind it.
+import { fromIsoDay, isFutureDay, toIsoDay } from "@/shared/lib/format/day";
 import { parsePrice } from "@/shared/lib/format/money";
 
 // The shared enum, not a parallel string union: SubscriptionPeriod is a TS
@@ -97,7 +98,9 @@ export function makeInitialFormValues({
     currency: subscription?.currency ?? preferredCurrency,
     every: subscription ? String(subscription.every) : "1",
     period: subscription?.period ?? SubscriptionPeriod.MONTH,
-    paymentDate: subscription ? new Date(subscription.paymentDate) : new Date(),
+    paymentDate: subscription
+      ? fromIsoDay(subscription.paymentDate)
+      : new Date(),
     categoryId: subscription?.categoryId ?? null,
     brandDomain: subscription?.brandDomain ?? "",
     // An offer is a creation-time concept; editing one is what the
@@ -134,7 +137,7 @@ export function validateSubscriptionForm(
 
   if (values.offerMode !== "none") {
     // Rule 1, moved out of the browser: the offer has to end in the future.
-    if (!values.offerEndsAt || values.offerEndsAt.getTime() <= Date.now()) {
+    if (!values.offerEndsAt || !isFutureDay(values.offerEndsAt)) {
       errors.offerEndsAt = "futureDate";
     }
 
@@ -157,7 +160,7 @@ export function validateSubscriptionForm(
       intro = {
         kind: values.offerMode,
         promoCost: promoCost ?? 0,
-        endsAt: values.offerEndsAt.toISOString(),
+        endsAt: toIsoDay(values.offerEndsAt),
       };
     }
   }
@@ -172,7 +175,7 @@ export function validateSubscriptionForm(
       currency,
       every: every as number,
       period: values.period,
-      paymentDate: values.paymentDate.toISOString(),
+      paymentDate: toIsoDay(values.paymentDate),
       categoryId: values.categoryId,
       brandDomain: normalizeBrandDomain(values.brandDomain),
       intro,

@@ -166,6 +166,14 @@ export function SubscriptionsPage() {
   const statusSet = filters.status !== DEFAULT_SUBSCRIPTION_FILTERS.status;
   const categorySet = filters.categoryId !== null;
 
+  // Grouping by category is dropped for the same reason the category FILTER
+  // below is: a free account cannot create or assign one, so the choice sorts
+  // every subscription into a single uncategorised section. The lock row that
+  // replaces the filter carries the upsell for both.
+  const groups = isPro
+    ? GROUPS
+    : GROUPS.filter((option) => option.value !== "category");
+
   /**
    * Without Pro the category filter is a single row into the paywall rather
    * than a submenu of choices the account cannot make; with Pro but no
@@ -244,14 +252,14 @@ export function SubscriptionsPage() {
     },
     {
       type: "submenu" as const,
-      label: labelWith(m.subs_groupBy(), GROUPS, filters.group, groupSet),
+      label: labelWith(m.subs_groupBy(), groups, filters.group, groupSet),
       icon: {
         type: "sfSymbol" as const,
         name: groupSet
           ? ("square.grid.2x2.fill" as const)
           : ("square.grid.2x2" as const),
       },
-      items: GROUPS.map((option) => ({
+      items: groups.map((option) => ({
         type: "action" as const,
         label: option.label(),
         state: checked(filters.group === option.value),

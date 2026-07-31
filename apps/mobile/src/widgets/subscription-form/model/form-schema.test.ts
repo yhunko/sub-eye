@@ -13,7 +13,9 @@ const base: SubscriptionFormValues = {
   currency: "uah",
   every: "1",
   period: SubscriptionPeriod.MONTH,
-  paymentDate: new Date("2026-09-01T00:00:00.000Z"),
+  // Local, not `new Date("…Z")` — this is what a date picker hands back, and
+  // the whole point of the coercion is that the two are not the same day.
+  paymentDate: new Date(2026, 8, 1),
   categoryId: null,
   brandDomain: "",
   offerMode: "none",
@@ -56,6 +58,11 @@ describe("makeInitialFormValues", () => {
       categoryId: "cat-1",
       brandDomain: "spotify.com",
     });
+    // The picker reads local components, so a stored UTC day rebuilt as an
+    // instant shows the day before west of UTC — and saving an untouched form
+    // then writes that earlier day back.
+    expect(values.paymentDate.getMonth()).toBe(7);
+    expect(values.paymentDate.getDate()).toBe(15);
   });
 });
 

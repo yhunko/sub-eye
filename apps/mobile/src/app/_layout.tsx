@@ -24,6 +24,13 @@ import { colors } from "@/shared/ui/theme";
 // is also what reports a render crash to Sentry.
 export { AppErrorBoundary as ErrorBoundary };
 
+// A deep link builds the root stack from the URL ALONE. Without an anchor the
+// locked Home Screen widget's `subeye://paywall` opens a modal that is the only
+// route in the stack, so every dismiss — including the one right after a
+// completed purchase — is a GO_BACK no navigator handles. `(tabs)` puts the app
+// underneath it. Named `anchor`; expo-router still accepts `initialRouteName`.
+export const unstable_settings = { anchor: "(tabs)" };
+
 // HOLD THE SPLASH ACROSS THE JS BOOT. Left to itself the native splash hides as
 // soon as the root view exists — which is long before the bundle has evaluated,
 // so the whole startup is a pure-black screen rather than the app's own

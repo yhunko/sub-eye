@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { usePauseSubscription } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
+import { isFutureDay, toIsoDay } from "@/shared/lib/format";
 import { NativeDateField } from "@/shared/ui/native-date-field";
 import { colors } from "@/shared/ui/theme";
 
@@ -29,12 +30,12 @@ export function PauseSheet({ id }: { id: string }) {
   const [error, setError] = useState<string>();
 
   const submit = () => {
-    if (resumeAt.getTime() <= Date.now()) {
+    if (!isFutureDay(resumeAt)) {
       setError(m.validation_futureDate());
       return;
     }
 
-    pause.mutate({ id, resumeAt: resumeAt.toISOString() });
+    pause.mutate({ id, resumeAt: toIsoDay(resumeAt) });
     router.back();
   };
 

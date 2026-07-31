@@ -47,6 +47,23 @@ export const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Everything cached, in memory and on disk. Call it when the session ends.
+ *
+ * No query key carries a user id, so the cache is only ever "the signed-in
+ * account's data" by convention — and the blob below is re-hydrated at module
+ * load, before Clerk has resolved anyone. Without this the next account to sign
+ * in on the device paints the previous one's subscriptions, and sits on them for
+ * a full `staleTime` because TanStack considers them fresh.
+ *
+ * Removing the blob as well as clearing the client covers a kill between the
+ * two: the subscriber's write is throttled by a second.
+ */
+export function clearQueryCache(): void {
+  queryClient.clear();
+  mmkvStorage.removeItem(CACHE_KEY);
+}
+
 const MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 // Bump this on any over-the-air update that changes a persisted DTO shape. A

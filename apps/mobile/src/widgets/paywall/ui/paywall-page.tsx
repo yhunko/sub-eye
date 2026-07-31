@@ -50,6 +50,14 @@ const FEATURES: {
     title: m.paywall_featureCategories,
     body: m.paywall_featureCategoriesBody,
   },
+  // The widget's own lock card is the surface that deep-links here, so the
+  // screen it lands on has to name it. Same strings that card renders.
+  {
+    ios: "square.grid.2x2",
+    android: "widgets",
+    title: m.paywall_lockWidgets,
+    body: m.paywall_lockWidgetsBody,
+  },
 ];
 
 /**
@@ -85,12 +93,19 @@ export function PaywallPage() {
     };
   }, []);
 
+  // Never a bare router.back(): the locked widget deep-links straight here, and
+  // a modal that IS the whole stack has no navigator to hand GO_BACK to.
+  const dismiss = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/");
+  };
+
   const buy = async () => {
     if (!pkg) return;
     setBusy(true);
     try {
       // `false` is a cancellation — a no-op, never an error toast.
-      if (await purchasePro(pkg)) router.back();
+      if (await purchasePro(pkg)) dismiss();
     } catch {
       Alert.alert(m.paywall_purchaseFailed());
     } finally {
@@ -103,12 +118,15 @@ export function PaywallPage() {
     try {
       if (await restorePro()) {
         Alert.alert(m.paywall_restoreDone());
-        router.back();
+        dismiss();
       } else {
         Alert.alert(m.paywall_restoreNone());
       }
     } catch {
-      Alert.alert(m.paywall_restoreNone());
+      // A throw is the store failing to answer, NOT an answer of "nothing to
+      // restore" — telling a paying customer their purchase does not exist is
+      // how a transient outage becomes a refund request.
+      Alert.alert(m.paywall_restoreFailed());
     } finally {
       setBusy(false);
     }
@@ -122,7 +140,7 @@ export function PaywallPage() {
           title: m.paywall_title(),
           headerLeft: () => (
             <Pressable
-              onPress={() => router.back()}
+              onPress={dismiss}
               hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel={m.common_cancel()}
