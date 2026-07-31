@@ -159,6 +159,7 @@ private struct Delta: View {
 private struct RenewalRow: View {
   let item: WidgetItem
   let logo: Data?
+  let locale: String?
 
   var body: some View {
     HStack(spacing: 8) {
@@ -170,7 +171,7 @@ private struct RenewalRow: View {
           .lineLimit(1)
         HStack(spacing: 4) {
           Text(item.amount)
-          if let dueText = item.dueText {
+          if let dueText = item.dueText(locale: locale) {
             Text("·")
             Text(dueText)
           }
@@ -234,34 +235,41 @@ private struct SmallWidget: View {
   let snapshot: Snapshot
   let logos: [String: Data]
 
+  /// "today · +4 also due". Two muted facts about the same payment, so they take
+  /// one line rather than two — in a square this small the vertical room buys
+  /// more than the separation does.
+  private func footnote(for item: WidgetItem) -> String? {
+    let parts = [item.dueText(locale: snapshot.locale), snapshot.alsoDue]
+      .compactMap { $0 }
+    return parts.isEmpty ? nil : parts.joined(separator: " · ")
+  }
+
   var body: some View {
     if let item = snapshot.items.first {
-      VStack(alignment: .leading, spacing: 0) {
+      // No "next payment" caption. A small widget showing one brand, one price
+      // and a due date IS the next payment; the caption spent a whole line
+      // restating the layout, and the rows it left had to be jammed together at
+      // spacing 0 to fit — which buried the subscription's own name between a
+      // label and a 24pt number.
+      VStack(alignment: .leading, spacing: 4) {
         Logo(name: item.name, data: item.domain.flatMap { logos[$0] }, size: 32)
-        Spacer(minLength: 8)
-        Caption(text: snapshot.nextLabel)
+        Spacer(minLength: 6)
         Text(item.name)
-          .font(.system(size: 14, weight: .bold))
+          .font(.system(size: 16, weight: .semibold))
           .foregroundStyle(Theme.text)
           .lineLimit(1)
-          .padding(.top, 3)
+          .minimumScaleFactor(0.7)
         Text(item.amount)
-          .font(.system(size: 24, weight: .heavy))
+          .font(.system(size: 26, weight: .heavy))
           .foregroundStyle(Theme.text)
           .lineLimit(1)
           .minimumScaleFactor(0.5)
-        if let dueText = item.dueText {
-          Text(dueText)
-            .font(.system(size: 12, weight: .semibold))
+        if let footnote = footnote(for: item) {
+          Text(footnote)
+            .font(.system(size: 11.5, weight: .medium))
             .foregroundStyle(Theme.muted)
             .lineLimit(1)
-        }
-        if let alsoDue = snapshot.alsoDue {
-          Text(alsoDue)
-            .font(.system(size: 10.5))
-            .foregroundStyle(Theme.muted)
-            .lineLimit(1)
-            .padding(.top, 2)
+            .minimumScaleFactor(0.8)
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -318,7 +326,11 @@ private struct MediumWidget: View {
         } else {
           ForEach(snapshot.items) { item in
             Link(destination: deepLink("/subscriptions/\(item.id)") ?? URL(string: "subeye://")!) {
-              RenewalRow(item: item, logo: item.domain.flatMap { logos[$0] })
+              RenewalRow(
+                item: item,
+                logo: item.domain.flatMap { logos[$0] },
+                locale: snapshot.locale
+              )
             }
           }
         }

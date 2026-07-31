@@ -1,5 +1,5 @@
 import type { UpcomingRenewalDto } from "@subeye/shared";
-import { m } from "@/shared/i18n";
+import { dateLocale, m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
 
 /** Bump when a field the Swift `Codable` reads is renamed, removed or retyped. */
@@ -39,7 +39,6 @@ export type WidgetSnapshot = {
   lockCta: string;
   monthLabel: string;
   monthTotal: string;
-  nextLabel: string;
   upcomingLabel: string;
   emptyLabel: string;
   /** Absolute amount; the arrow carries the sign. Null when there is nothing to compare. */
@@ -49,6 +48,14 @@ export type WidgetSnapshot = {
   deltaUp: boolean;
   /** "+2 also due" under the small widget's headline event, or null. */
   alsoDue: string | null;
+  /**
+   * The tag the extension formats `WidgetItem.date` with — the ONE string it
+   * still words itself, and therefore the one place it can contradict the app.
+   * Without this it falls back to the extension process's own `Locale.current`,
+   * which follows the DEVICE, so an app running under a per-app language shows
+   * "Next payment · сьогодні" with an English label above it.
+   */
+  locale: string;
   items: WidgetItem[];
 };
 
@@ -70,10 +77,10 @@ export function buildWidgetSnapshot(
     lockTitle: m.paywall_lockWidgets(),
     lockCta: m.paywall_unlock(),
     monthLabel: m.widget_thisMonth(),
-    nextLabel: m.detail_nextPayment(),
     upcomingLabel: m.widget_upcoming(),
     emptyLabel: m.widget_nothingDue(),
     deltaLabel: m.widget_vsLastMonth(),
+    locale: dateLocale(),
   };
 
   // A locked snapshot carries no figures at all. The widget is on a Home Screen

@@ -15,13 +15,15 @@ struct Snapshot: Decodable {
   let lockCta: String
   let monthLabel: String
   let monthTotal: String
-  let nextLabel: String
   let upcomingLabel: String
   let emptyLabel: String
   let delta: String?
   let deltaLabel: String
   let deltaUp: Bool
   let alsoDue: String?
+  /// The app's own locale tag, used for the one string the extension still
+  /// words itself. See `WidgetItem.dueText(locale:)`.
+  let locale: String?
   let items: [WidgetItem]
 }
 
@@ -49,7 +51,13 @@ struct WidgetItem: Decodable, Identifiable {
   /// Days are counted in the DEVICE's calendar, the same choice the reminder
   /// planner makes: "today" is a wall-clock question, and it should be answered
   /// where the user physically is.
-  var dueText: String? {
+  ///
+  /// The LANGUAGE is the app's, not the device's. `RelativeDateTimeFormatter`
+  /// defaults to the extension process's `Locale.current`, which follows the
+  /// DEVICE — so an app running under a per-app language drew English labels
+  /// from the snapshot over a Ukrainian "сьогодні" formatted here. The calendar
+  /// stays `.current` on purpose; only the wording is pinned.
+  func dueText(locale: String?) -> String? {
     guard let due else { return nil }
 
     let calendar = Calendar.current
@@ -60,7 +68,12 @@ struct WidgetItem: Decodable, Identifiable {
         to: calendar.startOfDay(for: due)
       ).day ?? 0
 
-    return Self.relative.localizedString(from: DateComponents(day: days))
+    let formatter = RelativeDateTimeFormatter()
+    // `.named` is what turns 0 and 1 into "today" and "tomorrow" rather than
+    // "in 0 days" and "in 1 day".
+    formatter.dateTimeStyle = .named
+    formatter.locale = locale.map(Locale.init(identifier:)) ?? Locale.current
+    return formatter.localizedString(from: DateComponents(day: days))
   }
 
   private static let isoWithFractionalSeconds: ISO8601DateFormatter = {
@@ -69,13 +82,6 @@ struct WidgetItem: Decodable, Identifiable {
     return formatter
   }()
   private static let iso = ISO8601DateFormatter()
-  private static let relative: RelativeDateTimeFormatter = {
-    let formatter = RelativeDateTimeFormatter()
-    // `.named` is what turns 0 and 1 into "today" and "tomorrow" rather than
-    // "in 0 days" and "in 1 day".
-    formatter.dateTimeStyle = .named
-    return formatter
-  }()
 }
 
 enum WidgetStore {
