@@ -112,11 +112,12 @@ export const en = {
     freeName: "Free",
     freeSuffix: "always",
     freeBody:
-      "Unlimited subscriptions. The whole dashboard. Search, filters, every lifecycle action. Multi-currency at daily rates. Not a trial and not a teaser.",
+      "Unlimited subscriptions. The whole dashboard. Search, filters, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. Not a trial and not a teaser.",
     freeItems: [
       "Unlimited subscriptions",
       "Spend, forecast and six-month trend",
       "Pause, cancel, renew",
+      "Renewal reminders, the day before",
       "Five currencies at daily rates",
       "English and Ukrainian",
     ],
@@ -126,7 +127,7 @@ export const en = {
     proBody:
       "Everything above, plus the parts that watch the calendar for you.",
     proItems: [
-      "Renewal reminders, the day before",
+      "Choose when every reminder lands",
       "Trial-ending alerts",
       "Price-change tracking",
       "Categories and the spend breakdown",
@@ -170,6 +171,7 @@ export const en = {
   },
 
   footer: {
+    support: "Support",
     terms: "Terms of service",
     privacy: "Privacy policy",
     contact: "Contact",

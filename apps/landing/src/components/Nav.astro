@@ -1,11 +1,11 @@
 ---
 import { copyFor } from "../i18n";
-import { type LegalPage, type Locale, otherLocale, path } from "../lib/site";
+import { type Locale, otherLocale, path, type SitePage } from "../lib/site";
 import Mark from "./Mark.astro";
 
 interface Props {
   locale: Locale;
-  page?: LegalPage;
+  page?: SitePage;
 }
 
 const { locale, page } = Astro.props;

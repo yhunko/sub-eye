@@ -17,14 +17,21 @@ export const defaultLocale: Locale = "en";
 export const legalPages = ["terms-of-service", "privacy-policy"] as const;
 export type LegalPage = (typeof legalPages)[number];
 
+/**
+ * `support` backs the App Store Connect Support URL. It is deliberately outside
+ * `legalPages`: that list is the four-URL contract the shipped binary opens, and
+ * adding a fifth member would silently widen it.
+ */
+export type SitePage = LegalPage | "support";
+
 export const isLocale = (value: unknown): value is Locale =>
   locales.includes(value as Locale);
 
 /** Every path on this site is locale-prefixed and trailing-slashed. */
-export const path = (locale: Locale, page?: LegalPage): string =>
+export const path = (locale: Locale, page?: SitePage): string =>
   page ? `/${locale}/${page}/` : `/${locale}/`;
 
-export const canonical = (locale: Locale, page?: LegalPage): string =>
+export const canonical = (locale: Locale, page?: SitePage): string =>
   `${SITE}${path(locale, page)}`;
 
 /** The locale a language switch should offer, given the one being viewed. */

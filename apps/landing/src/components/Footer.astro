@@ -1,16 +1,16 @@
 ---
 import { copyFor } from "../i18n";
 import {
-  type LegalPage,
   type Locale,
   otherLocale,
   path,
   privacyEmail,
+  type SitePage,
 } from "../lib/site";
 
 interface Props {
   locale: Locale;
-  page?: LegalPage;
+  page?: SitePage;
 }
 
 const { locale, page } = Astro.props;
@@ -22,6 +22,7 @@ const other = otherLocale(locale);
   <div class="shell foot__inner">
     <p class="foot__rights">&copy; 2026 {c.footer.rights}</p>
     <nav class="foot__links" aria-label={c.footer.contact}>
+      <a href={path(locale, "support")}>{c.footer.support}</a>
       <a href={path(locale, "terms-of-service")}>{c.footer.terms}</a>
       <a href={path(locale, "privacy-policy")}>{c.footer.privacy}</a>
       <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>

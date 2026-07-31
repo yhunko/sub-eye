@@ -2,17 +2,17 @@
 import { copyFor } from "../i18n";
 import {
   canonical,
-  type LegalPage,
   locales,
   type Locale,
   proPrice,
   SITE,
+  type SitePage,
 } from "../lib/site";
 import "../styles/global.css";
 
 interface Props {
   locale: Locale;
-  page?: LegalPage;
+  page?: SitePage;
   title: string;
   description: string;
   /** Only the marketing pages carry product markup; the legal pages are documents. */

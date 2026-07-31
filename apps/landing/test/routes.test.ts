@@ -42,6 +42,17 @@ describe("legal route contract", () => {
     }
   });
 
+  // The Support URL submitted to App Store Connect. Not part of CONTRACT above:
+  // the binary never opens it, a reviewer does, and a 404 there is a 1.5 bounce.
+  it("serves a support page per locale", () => {
+    for (const locale of locales) {
+      expect({
+        url: `${SITE}/${locale}/support/`,
+        exists: existsSync(join(ROOT, "src", "pages", locale, "support.astro")),
+      }).toEqual({ url: `${SITE}/${locale}/support/`, exists: true });
+    }
+  });
+
   it("serves a marketing page per locale, none at the bare root", () => {
     for (const locale of locales) {
       expect(
