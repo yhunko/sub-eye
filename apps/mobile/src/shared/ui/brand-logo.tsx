@@ -13,6 +13,9 @@ import { colors } from "./theme";
 // that still covers the box's real pixel size.
 const FAVICON_SIZES = [16, 32, 64, 128, 256];
 
+/** Share of the circle's diameter the logo itself occupies. See `inner`. */
+const LOGO_INSET = 0.84;
+
 export const brandLogoUrl = (domain: string, size: number) => {
   const physical = PixelRatio.getPixelSizeForLayoutSize(size);
   const bucket = FAVICON_SIZES.find((value) => value >= physical) ?? 256;
@@ -45,6 +48,15 @@ export function BrandLogo({
     borderRadius: size / 2,
     ...(dimmed ? { opacity: 0.4 } : null),
   };
+  // Favicons split into two shapes and the circle treats them differently. A
+  // mark on a plate (openai, adobe, icloud) has its own margin and survives the
+  // clip; a full-bleed one (netflix's N) runs to the canvas edge, and a circle
+  // inscribed in that square cuts ~29% off each side — which sliced the flat top
+  // and bottom off the N. Insetting the image inside the circle gives the second
+  // kind the margin it never had, at the cost of drawing the first kind slightly
+  // smaller. Not the inscribed square (0.707), which would guarantee no clipping
+  // and leave every plate logo visibly adrift in its own circle.
+  const inner = Math.round(size * LOGO_INSET);
 
   if (!brandDomain || failedDomain === brandDomain) {
     return (
@@ -57,17 +69,24 @@ export function BrandLogo({
   }
 
   return (
-    <Image
-      accessibilityIgnoresInvertColors
-      source={{ uri: brandLogoUrl(brandDomain, size) }}
-      style={[styles.image, box]}
-      onError={() => setFailedDomain(brandDomain)}
-    />
+    <View style={[styles.plate, box]}>
+      <Image
+        accessibilityIgnoresInvertColors
+        // Still the full box's pixel size: the bucket picker rounds DOWN, and
+        // asking for the inset size drops a 40pt row from the 128 bucket to 64.
+        source={{ uri: brandLogoUrl(brandDomain, size) }}
+        style={{ width: inner, height: inner, borderRadius: inner / 2 }}
+        resizeMode="contain"
+        onError={() => setFailedDomain(brandDomain)}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  image: {
+  plate: {
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.surfaceAlt,
   },
   fallback: {

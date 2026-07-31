@@ -182,6 +182,7 @@
   "form_category": "Категорія",
   "form_categoryNone": "Без категорії",
   "form_categoryCreate": "Створити «{name}»",
+  "form_categorySearchOrCreate": "Пошук або створення",
   "category_editTitle": "Редагувати категорію",
   "category_newTitle": "Нова категорія",
   "category_add": "Додати категорію",
