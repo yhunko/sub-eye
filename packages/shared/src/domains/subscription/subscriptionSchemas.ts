@@ -46,13 +46,27 @@ const isoDateSchema = pipe(
   check((value) => !Number.isNaN(Date.parse(value)), "Invalid date"),
 );
 
-/** An ISO date that must still be ahead of us. Enforced on both clients. */
+/**
+ * An ISO date that must still be ahead of us — a BACKSTOP, not the UX rule.
+ *
+ * Compared against the START of the current UTC day, the mirror of
+ * `pastIsoDateSchema` below and for the same reason: a picker hands back a
+ * calendar day at midnight, and a user west of UTC is on a day the server has
+ * already left. At 20:00 in UTC-5 the server's "now" is tomorrow, so a strict
+ * `> Date.now()` rejected the user's *tomorrow* — the one date they wanted, and
+ * the only one the control let them pick.
+ *
+ * Rejecting only what is unambiguously past costs at most a day of slack here.
+ * The real rule is `isFutureDay` on the client, which knows the device's own
+ * calendar and enforces "strictly after today" in it.
+ */
 const futureIsoDateSchema = pipe(
   isoDateSchema,
-  check(
-    (value) => Date.parse(value) > Date.now(),
-    "Date must be in the future",
-  ),
+  check((value) => {
+    const startOfUtcToday = new Date();
+    startOfUtcToday.setUTCHours(0, 0, 0, 0);
+    return Date.parse(value) >= startOfUtcToday.getTime();
+  }, "Date must be in the future"),
 );
 
 /**

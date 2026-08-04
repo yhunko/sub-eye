@@ -7,7 +7,10 @@ import { AppState } from "react-native";
 import { useDashboard, useMonthlySummary } from "@/entities/dashboard";
 import { usePro } from "@/entities/pro";
 import { subscriptionsQuery } from "@/entities/subscription";
-import { useSeedPreferredCurrency } from "@/entities/user";
+import {
+  useSeedPreferredCurrency,
+  useSeedPreferredTimezone,
+} from "@/entities/user";
 import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
 import {
@@ -152,9 +155,20 @@ export default function TabsLayout() {
   return <Tabs />;
 }
 
-/** Renders nothing; gives a brand-new account the device region's currency. */
-function PreferredCurrencySeed() {
+/**
+ * Renders nothing; gives a brand-new account the device region's currency and
+ * the device's timezone.
+ *
+ * The subscription count is read HERE rather than inside the timezone hook:
+ * `entities/user` reaching into `entities/subscription` is a same-layer edge
+ * FSD rejects, so the app layer composes the two.
+ */
+function PreferenceSeeds() {
+  const { data } = useQuery(subscriptionsQuery());
+
   useSeedPreferredCurrency();
+  useSeedPreferredTimezone(data && data.length === 0);
+
   return null;
 }
 
@@ -186,7 +200,7 @@ function Tabs() {
       <ReminderSync />
       <WidgetSync />
       <ReminderTapRouter />
-      <PreferredCurrencySeed />
+      <PreferenceSeeds />
       <NativeTabs
         minimizeBehavior="onScrollDown"
         tintColor={colors.accent}

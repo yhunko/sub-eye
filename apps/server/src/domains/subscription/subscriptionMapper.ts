@@ -17,6 +17,7 @@ export class SubscriptionMapper {
     lastPaymentDate: string | null,
     phases: PhaseProjection,
     category: EmbeddedCategory | null,
+    timezone?: string,
   ): SubscriptionDto {
     const paymentDate = SubscriptionMapper.normalizeDate(
       subscription.paymentDate,
@@ -29,11 +30,18 @@ export class SubscriptionMapper {
     // materialized cache that the pause/cancel writes keep current, so a
     // pause whose `resume_at` has passed, or a `cancelling` row whose
     // `cancelled_at` has elapsed, still reads correctly in between.
-    const status = deriveSubscriptionStatus({
-      willBeCancelledAt,
-      pausedAt: subscription.pausedAt,
-      resumeAt: subscription.resumeAt,
-    });
+    //
+    // The timezone decides which calendar day those dates are measured against;
+    // without it the transitions land on 00:00 UTC. See `deriveSubscriptionStatus`.
+    const status = deriveSubscriptionStatus(
+      {
+        willBeCancelledAt,
+        pausedAt: subscription.pausedAt,
+        resumeAt: subscription.resumeAt,
+      },
+      new Date(),
+      timezone,
+    );
 
     return {
       id: subscription.id,

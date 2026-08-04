@@ -1,3 +1,4 @@
+import { DateTimezoneUtils } from "../../utils/dateTimezoneUtils";
 import type { SubscriptionStatus } from "./subscriptionStatus";
 
 export const subscriptionLifecycleStatuses = [
@@ -30,9 +31,15 @@ const getEffectiveCancellationDate = (input: LifecycleInput): Date | null => {
   return willBeCancelledAt;
 };
 
+/**
+ * `willBeCancelledAt` is a calendar day, so "has it passed" is answered against
+ * the account's current day — never a raw instant, which flips at 00:00 UTC.
+ * See the note on `deriveSubscriptionStatus`, which this must agree with.
+ */
 export const getSubscriptionLifecycleStatus = (
   input: LifecycleInput,
   now: Date = new Date(),
+  timezone?: string,
 ): SubscriptionLifecycleStatus => {
   const effectiveCancellation = getEffectiveCancellationDate(input);
 
@@ -40,7 +47,9 @@ export const getSubscriptionLifecycleStatus = (
     return "active";
   }
 
-  if (effectiveCancellation.getTime() > now.getTime()) {
+  const today = DateTimezoneUtils.currentCalendarDay(now, timezone).getTime();
+
+  if (effectiveCancellation.getTime() > today) {
     return "cancelledButActive";
   }
 

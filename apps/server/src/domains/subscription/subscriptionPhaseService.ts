@@ -400,6 +400,7 @@ export class SubscriptionPhaseService {
       lastPaymentDate,
       projection,
       category,
+      preferences.preferredTimezone,
     );
   }
 
@@ -449,7 +450,14 @@ export class SubscriptionPhaseService {
 
     const boundaryTime = Date.parse(boundary);
     if (Number.isNaN(boundaryTime)) throw new InvalidScheduledDateError();
-    if (boundaryTime <= Date.now()) throw new ScheduledDateMustBeFutureError();
+    // Against the start of the UTC day, not the instant — same backstop rule as
+    // `futureIsoDateSchema`. A boundary is a calendar day, and `Date.now()`
+    // rejected the tomorrow of anyone west of UTC after their early evening.
+    const startOfUtcToday = new Date();
+    startOfUtcToday.setUTCHours(0, 0, 0, 0);
+    if (boundaryTime < startOfUtcToday.getTime()) {
+      throw new ScheduledDateMustBeFutureError();
+    }
 
     const cancellationTime = willBeCancelledAt
       ? Date.parse(willBeCancelledAt)

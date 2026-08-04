@@ -339,9 +339,17 @@ export class SubscriptionService {
     }
 
     const userPreferences = await deps.userService.getUserPreferences(userId);
+    // The user's calendar DAY, not `new Date()`. `cancelled_at` is a day value
+    // everywhere else — the client renders it in UTC and `shouldIncludeOccurrence`
+    // compares it against day-valued occurrences — and west of UTC a raw
+    // instant lands on tomorrow's UTC day, so an evening "cancel now" read as
+    // still cancelling until the following morning.
     const willBeCancelledAt =
       mode === "immediate"
-        ? new Date()
+        ? DateTimezoneUtils.currentCalendarDay(
+            new Date(),
+            userPreferences.preferredTimezone,
+          )
         : new Date(
             SubscriptionCalculator.calculatePaymentDates(
               existing,
@@ -354,10 +362,10 @@ export class SubscriptionService {
     // the real reversion price instead of stranding the user on the trial cost.
     const updated = await deps.repository.update(id, {
       willBeCancelledAt,
-      status: SubscriptionService.currentStatus({
-        ...existing,
-        willBeCancelledAt,
-      }),
+      status: SubscriptionService.currentStatus(
+        { ...existing, willBeCancelledAt },
+        userPreferences.preferredTimezone,
+      ),
     });
 
     const finalRecord = updated;
@@ -442,7 +450,19 @@ export class SubscriptionService {
     if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-    if (SubscriptionService.currentStatus(existing) === "paused") {
+
+    // Loaded BEFORE the guard, not after: the guard and the DTO's `status` must
+    // answer "is this paused" in the same calendar, or for a few hours around a
+    // resume date the list advertises `pause` and this throws AlreadyPaused.
+    const { preferences, rates } =
+      await SubscriptionService.getPreferencesAndRates(userId, deps);
+
+    if (
+      SubscriptionService.currentStatus(
+        existing,
+        preferences.preferredTimezone,
+      ) === "paused"
+    ) {
       throw new AlreadyPausedError();
     }
 
@@ -452,8 +472,6 @@ export class SubscriptionService {
       resumeAt: payload.resumeAt ?? null,
     });
 
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
     const phases = await deps.phaseRepository.findBySubscriptionId(id);
 
     return SubscriptionService.mapToDto(updated, preferences, rates, phases);
@@ -474,11 +492,18 @@ export class SubscriptionService {
     if (!existing || existing.userId !== userId) {
       throw new SubscriptionNotFoundError();
     }
-    if (SubscriptionService.currentStatus(existing) !== "paused") {
+    // Before the guard, for the same reason as `pauseSubscription`.
+    const preferences = await deps.userService.getUserPreferences(userId);
+
+    if (
+      SubscriptionService.currentStatus(
+        existing,
+        preferences.preferredTimezone,
+      ) !== "paused"
+    ) {
       throw new NotPausedError();
     }
 
-    const preferences = await deps.userService.getUserPreferences(userId);
     const nextOccurrence = RecurrenceUtils.getNextOccurrence(
       DateTimezoneUtils.toCalendarDay(existing.paymentDate),
       existing.every,
@@ -612,6 +637,7 @@ export class SubscriptionService {
       lastPaymentDate,
       projection,
       category,
+      preferences.preferredTimezone,
     );
   }
 
@@ -723,18 +749,25 @@ export class SubscriptionService {
    * says `paused`, and a guard on the column refuses an action the same row
    * advertises in `allowedActions`.
    */
-  private static currentStatus(record: {
-    willBeCancelledAt: Date | string | null;
-    pausedAt: string | null;
-    resumeAt: string | null;
-  }): SubscriptionStatus {
-    return deriveSubscriptionStatus({
-      willBeCancelledAt: SubscriptionService.normalizeDate(
-        record.willBeCancelledAt,
-      ),
-      pausedAt: record.pausedAt,
-      resumeAt: record.resumeAt,
-    });
+  private static currentStatus(
+    record: {
+      willBeCancelledAt: Date | string | null;
+      pausedAt: string | null;
+      resumeAt: string | null;
+    },
+    timezone?: string,
+  ): SubscriptionStatus {
+    return deriveSubscriptionStatus(
+      {
+        willBeCancelledAt: SubscriptionService.normalizeDate(
+          record.willBeCancelledAt,
+        ),
+        pausedAt: record.pausedAt,
+        resumeAt: record.resumeAt,
+      },
+      new Date(),
+      timezone,
+    );
   }
 
   static normalizeDate(value?: string | Date | null): string | null {

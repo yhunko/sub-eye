@@ -259,6 +259,25 @@ Android app widget is RemoteViews/Glance and shares none of this code.
 - New keys are `prefix_camelCase` and must be added to **both** catalogs.
 - **Every `Intl` date format takes `dateLocale()`** from `shared/i18n` — never a hardcoded tag and never the account's `preferences.locale`, which this client cannot write and which printed English months under a Ukrainian UI. It returns the *device's* full tag (day-first vs month-first is regional, not linguistic) but only while that tag still speaks the app's language. A test stub for `@/shared/i18n` must include it: the format barrel reaches `when`, which asks for it at import time, and a missing export is an import-time crash in an unrelated test file.
 
+## Dates
+
+A stored date is a **calendar day**, written as its UTC midnight by `toIsoDay`
+and read back with `timeZone: "UTC"`. Two rules follow, and breaking either is
+silent:
+
+- **Never compare a stored date against `Date.now()`.** Reduce now to a day
+  first — `todayAsDay()` in `shared/lib/format/day.ts` — and compare day to day.
+  Against an instant, "has this day passed" is answered on UTC's clock: today's
+  payment left the Home rail at 03:00 in Kyiv, and during the *previous evening*
+  west of UTC. `isFutureDay` and `daysUntil` are the other two callers.
+- **`todayAsDay` is the DEVICE's day, not the account's `preferredTimezone`.**
+  Same choice the reminder planner makes for its firing instants: "has this day
+  arrived" is a wall-clock question. The server answers the same question in the
+  account's zone for the lifecycle `status` it ships, and the two can differ by a
+  day — but never contradictorily, because `deriveAttention` branches on the
+  server's `status` before it consults its own clock. `useSeedPreferredTimezone`
+  is what stops that gap opening for a new account.
+
 ## UI
 
 RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`). Cap layout-critical text with `maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}`; leave prose uncapped for accessibility.
