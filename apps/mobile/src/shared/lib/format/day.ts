@@ -15,17 +15,31 @@ export function toIsoDay(date: Date): string {
 }
 
 /**
+ * Today, in the same encoding every stored date uses.
+ *
+ * The DEVICE's calendar day, not UTC's — the same choice the reminder planner
+ * makes, and for the same reason: "has this day arrived" is a wall-clock
+ * question and should be answered where the user physically is. Comparing a
+ * stored day against a raw `Date.now()` instead answers it on UTC's clock,
+ * which in Kyiv retires today's events at 03:00 and west of UTC retires them
+ * during the previous evening.
+ */
+export function todayAsDay(now: Date = new Date()): number {
+  return Date.parse(toIsoDay(now));
+}
+
+/**
  * Whether the day a picker value will be STORED as is still ahead.
  *
- * Guarding on the picker's own instant instead accepts a value that is already
- * past: `toIsoDay` moves a local day back to its UTC midnight, so west of UTC
- * the stored instant is up to one offset behind the one the guard inspected.
- * In UTC-7 after 17:00 that lets "pause until tomorrow" through and stores a
- * pause `deriveSubscriptionStatus` immediately reads as lapsed — the tap does
- * nothing, with no error. The same gap expires an intro offer on creation.
+ * Both sides are days. Guarding on the picker's own instant instead accepts a
+ * value that is already past: `toIsoDay` moves a local day back to its UTC
+ * midnight, so west of UTC the stored instant is up to one offset behind the one
+ * the guard inspected. In UTC-7 after 17:00 that let "pause until tomorrow"
+ * through and stored a pause `deriveSubscriptionStatus` immediately read as
+ * lapsed — the tap did nothing, with no error.
  */
 export function isFutureDay(date: Date, now: Date = new Date()): boolean {
-  return Date.parse(toIsoDay(date)) > now.getTime();
+  return Date.parse(toIsoDay(date)) > todayAsDay(now);
 }
 
 /**

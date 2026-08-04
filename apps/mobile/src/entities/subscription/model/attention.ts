@@ -1,4 +1,5 @@
 import type { SubscriptionDto } from "@subeye/shared";
+import { todayAsDay } from "@/shared/lib/format";
 
 /**
  * The events Home surfaces, in the order they matter when two land on the same
@@ -64,7 +65,11 @@ export function deriveAttention(
   now: Date = new Date(),
   limit = 5,
 ): AttentionEvent[] {
-  const from = now.getTime();
+  // Today as a DAY, not as an instant. Every date below is a calendar day, so
+  // comparing them against `now.getTime()` retired an event the moment its UTC
+  // midnight passed — a payment due today vanished from the rail at 03:00 in
+  // Kyiv, and during the previous evening for anyone west of UTC.
+  const from = todayAsDay(now);
   const events: AttentionEvent[] = [];
 
   const ahead = (iso: string | null): iso is string => {

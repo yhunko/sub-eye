@@ -69,8 +69,13 @@ struct SubEyeProvider: TimelineProvider {
       // render time, so without a daily redraw a row written today would still
       // read "tomorrow" the morning the payment actually lands — and the month
       // total would carry into the next month.
+      //
+      // UTC midnight, because that is when `dueText` changes its answer: the day
+      // difference it renders is counted in a UTC calendar, like every other
+      // date in the app. Redrawing at the device's midnight instead left the
+      // wording stale for the length of the user's offset.
       let midnight =
-        Calendar.current.nextDate(
+        WidgetItem.utcCalendar.nextDate(
           after: Date(),
           matching: DateComponents(hour: 0, minute: 0),
           matchingPolicy: .nextTime)

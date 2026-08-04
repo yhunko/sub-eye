@@ -1,4 +1,4 @@
-export { fromIsoDay, isFutureDay, toIsoDay } from "./day";
+export { fromIsoDay, isFutureDay, todayAsDay, toIsoDay } from "./day";
 export {
   CURRENCY_CODES,
   currencyLabel,

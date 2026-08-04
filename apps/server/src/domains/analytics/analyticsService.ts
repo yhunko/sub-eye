@@ -10,7 +10,6 @@ import {
   isCurrentlyActiveSubscription,
 } from "@subeye/shared";
 import { AnalyticsCalculator } from "@subeye/spend";
-import { eachDayOfInterval, endOfWeek, startOfWeek } from "date-fns";
 import { CategoryService } from "../category/categoryService";
 import { SubscriptionService } from "../subscription/subscriptionService";
 import { UserService } from "../user/userService";
@@ -44,15 +43,15 @@ export class AnalyticsService {
       deps.categoryService.getCategories(userId),
     ]);
 
-    const today = DateTimezoneUtils.startOfDay(now, timezone);
-    const oneYearFromNow = DateTimezoneUtils.shiftMonths(today, 12, timezone);
+    // The user's current calendar day, as the UTC midnight every stored date is
+    // expressed in — not `startOfDay(now, timezone)`, which is that day's start
+    // as an INSTANT and therefore a different value from the days it is compared
+    // against everywhere below.
+    const today = DateTimezoneUtils.currentCalendarDay(now, timezone);
+    const oneYearFromNow = DateTimezoneUtils.shiftCalendarMonths(today, 12);
     const analyticsEligibleSubscriptions = subscriptions.filter(
       (subscription) =>
-        AnalyticsCalculator.hasUpcomingOccurrence(
-          subscription,
-          today,
-          timezone,
-        ),
+        AnalyticsCalculator.hasUpcomingOccurrence(subscription, today),
     );
     const currentlyActiveSubscriptions = analyticsEligibleSubscriptions.filter(
       (subscription) => isCurrentlyActiveSubscription(subscription.status),
@@ -72,7 +71,6 @@ export class AnalyticsService {
       currentlyActiveSubscriptions,
       today,
       preferredCurrencyCode,
-      timezone,
     ).slice(0, 5);
 
     const {
@@ -88,7 +86,7 @@ export class AnalyticsService {
     const nextMonthForecast =
       AnalyticsCalculator.buildMonthlyTrend(
         currentlyActiveSubscriptions,
-        DateTimezoneUtils.shiftMonths(today, 1, timezone),
+        DateTimezoneUtils.shiftCalendarMonths(today, 1),
         1,
         timezone,
       )[0]?.amount ?? 0;
@@ -107,7 +105,6 @@ export class AnalyticsService {
         currentlyActiveSubscriptions,
         today,
         oneYearFromNow,
-        timezone,
       ).toFixed(2),
     );
 
@@ -136,15 +133,16 @@ export class AnalyticsService {
 
     const monthOffsets = [-1, 0, 1, 2, 3, 4, 5, 6];
 
+    const today = DateTimezoneUtils.currentCalendarDay(now, timezone);
+
     const trend: MonthlySpendTrendPoint[] = monthOffsets.map((offset) => {
-      const monthRef = DateTimezoneUtils.shiftMonths(now, offset, timezone);
-      const monthStart = DateTimezoneUtils.startOfMonth(monthRef, timezone);
-      const monthEnd = DateTimezoneUtils.endOfMonth(monthRef, timezone);
+      const monthRef = DateTimezoneUtils.shiftCalendarMonths(today, offset);
+      const monthStart = DateTimezoneUtils.startOfCalendarMonth(monthRef);
+      const monthEnd = DateTimezoneUtils.endOfCalendarMonth(monthRef);
       const total = AnalyticsCalculator.sumSpendInRange(
         subscriptions,
         monthStart,
         monthEnd,
-        timezone,
       );
       return {
         date: monthStart.toISOString(),
@@ -182,42 +180,40 @@ export class AnalyticsService {
     const { subscriptions, timezone, preferredCurrencyCode, now } =
       await AnalyticsService.getAnalyticsContext(userId, deps);
 
-    const nowZoned = DateTimezoneUtils.toZoned(now, timezone);
-    const startOfCurrentWeek = DateTimezoneUtils.startOfDay(
-      startOfWeek(nowZoned, { weekStartsOn: 1 }),
-      timezone,
+    // The user's timezone decides which week they are in; the bounds are then
+    // calendar days, like the occurrences they bracket. Monday is found from the
+    // UTC weekday — `date-fns` `startOfWeek` reads the HOST's, which lands on a
+    // different instant for every server that is not itself on UTC.
+    const today = DateTimezoneUtils.currentCalendarDay(now, timezone);
+    const startOfCurrentWeek = DateTimezoneUtils.shiftCalendarDays(
+      today,
+      -((today.getUTCDay() + 6) % 7),
     );
-    const endOfCurrentWeek = DateTimezoneUtils.endOfDay(
-      endOfWeek(nowZoned, { weekStartsOn: 1 }),
-      timezone,
+    const endOfCurrentWeek = DateTimezoneUtils.endOfCalendarDay(
+      DateTimezoneUtils.shiftCalendarDays(startOfCurrentWeek, 6),
     );
 
     const totalThisWeek = AnalyticsCalculator.sumSpendInRange(
       subscriptions,
       startOfCurrentWeek,
       endOfCurrentWeek,
-      timezone,
     );
 
     const totalUpcomingWeek = AnalyticsCalculator.sumSpendInRange(
       subscriptions,
-      DateTimezoneUtils.startOfDay(now, timezone),
+      today,
       endOfCurrentWeek,
-      timezone,
     );
 
-    const daysInWeek = eachDayOfInterval({
-      start: startOfCurrentWeek,
-      end: endOfCurrentWeek,
-    });
-
-    const trend = daysInWeek.map((day) => {
-      const dayStart = DateTimezoneUtils.startOfDay(day, timezone);
+    const trend = Array.from({ length: 7 }, (_, index) => {
+      const dayStart = DateTimezoneUtils.shiftCalendarDays(
+        startOfCurrentWeek,
+        index,
+      );
       const dailyTotal = AnalyticsCalculator.sumSpendInRange(
         subscriptions,
         dayStart,
-        DateTimezoneUtils.endOfDay(dayStart, timezone),
-        timezone,
+        DateTimezoneUtils.endOfCalendarDay(dayStart),
       );
       return {
         date: dayStart.toISOString(),

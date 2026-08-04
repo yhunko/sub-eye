@@ -4,7 +4,6 @@ import {
   type RecurringSubscription,
   SubscriptionCalculator,
 } from "@subeye/spend";
-import { isSameDay } from "date-fns";
 
 /** How the user asked for the new price to take effect. */
 export type ScheduleEffectiveAtRequest = {
@@ -12,25 +11,22 @@ export type ScheduleEffectiveAtRequest = {
   customDate?: string | null;
 };
 
-/** Floors a date to midnight *in the given timezone*, returned as an ISO instant. */
-export const toStartOfDayInTimezone = (
-  date: string,
-  timezone?: string,
-): string => {
-  const zoned = DateTimezoneUtils.toZoned(date, timezone);
-  zoned.setHours(0, 0, 0, 0);
-  return zoned.toISOString();
-};
+/**
+ * Floors a phase boundary to the UTC midnight of its calendar day.
+ *
+ * UTC, not the account's timezone. A boundary is a calendar DAY — the client
+ * picks "1 September" and reads it back with `timeZone: "UTC"` — so flooring in
+ * Europe/Kyiv stored `2026-08-31T21:00Z` and the app then printed the trial as
+ * ending on 31 August. See `DateTimezoneUtils.toCalendarDay`.
+ */
+export const toStartOfUtcDay = (date: string): string =>
+  DateTimezoneUtils.currentCalendarDay(date, "UTC").toISOString();
 
-export const isSameCalendarDayInTimezone = (
+export const isSameUtcDay = (
   left: string | Date,
   right: string | Date,
-  timezone?: string,
 ): boolean =>
-  isSameDay(
-    DateTimezoneUtils.toZoned(left, timezone),
-    DateTimezoneUtils.toZoned(right, timezone),
-  );
+  DateTimezoneUtils.isSameCalendarDay(new Date(left), new Date(right));
 
 /**
  * The instant of the subscription's next renewal.
@@ -50,14 +46,12 @@ const resolveNextOccurrenceEffectiveAt = (
   if (Date.parse(nextPaymentDate) > Date.now()) return nextPaymentDate;
 
   const nextOccurrence = RecurrenceUtils.addPeriod(
-    DateTimezoneUtils.toZoned(nextPaymentDate, timezone),
+    DateTimezoneUtils.toCalendarDay(nextPaymentDate),
     subscription.every,
     subscription.period,
-    {
-      anchorDate: DateTimezoneUtils.toZoned(subscription.paymentDate, timezone),
-    },
+    { anchorDate: DateTimezoneUtils.toCalendarDay(subscription.paymentDate) },
   );
-  return nextOccurrence.toISOString();
+  return new Date(nextOccurrence.getTime()).toISOString();
 };
 
 /**
@@ -81,21 +75,12 @@ export const resolveScheduledEffectiveAt = (
   }
   if (!request.customDate) return null;
 
-  const customEffectiveAt = toStartOfDayInTimezone(
-    request.customDate,
-    timezone,
-  );
+  const customEffectiveAt = toStartOfUtcDay(request.customDate);
   const nextOccurrenceEffectiveAt = resolveNextOccurrenceEffectiveAt(
     subscription,
     timezone,
   );
-  if (
-    isSameCalendarDayInTimezone(
-      customEffectiveAt,
-      nextOccurrenceEffectiveAt,
-      timezone,
-    )
-  ) {
+  if (isSameUtcDay(customEffectiveAt, nextOccurrenceEffectiveAt)) {
     return nextOccurrenceEffectiveAt;
   }
   return customEffectiveAt;

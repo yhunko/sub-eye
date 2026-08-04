@@ -27,6 +27,14 @@ const compactSheet = {
   sheetAllowedDetents: "fitToContents" as const,
 };
 
+// A deep link builds the stack from the URL ALONE, so `subeye:///subscriptions/x`
+// — a widget row, or a tapped reminder — pushed the detail screen as the ONLY
+// route in this navigator: no back button, and the tab bar is hidden on that
+// screen by design, so the app was a dead end until it was force-quit. The
+// anchor puts the list underneath it. Same fix as the root layout's `(tabs)`
+// anchor, one level down.
+export const unstable_settings = { anchor: "index" };
+
 export default function SubscriptionsTabLayout() {
   return (
     <Stack screenOptions={nativeHeaderChrome}>

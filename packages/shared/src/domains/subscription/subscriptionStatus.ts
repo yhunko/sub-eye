@@ -1,3 +1,5 @@
+import { DateTimezoneUtils } from "../../utils/dateTimezoneUtils";
+
 /**
  * The persisted lifecycle status of a subscription.
  *
@@ -39,36 +41,61 @@ const toTime = (value?: string | null): number | null => {
 /**
  * The status a subscription *should* have right now, given its date columns.
  *
- * Used in two places: as the source of truth for the one-off backfill that
- * populates `subscriptions.status` (the SQL in `0000_v4_baseline.sql` must agree
- * with this function), and as the reference implementation the pause/cancel
- * services write through.
+ * The reference implementation the pause/cancel services write through. (It was
+ * also the spec for the one-off `status` backfill in `0000_v4_baseline.sql`;
+ * that SQL compares against `now() at time zone 'utc'` and no longer matches
+ * this function at a day boundary. The backfill has run on every branch and is
+ * baseline-only — treat the SQL as history, not as a second implementation to
+ * keep in step.)
  *
  * Precedence: cancellation outranks pause. A subscription that is both paused
  * and cancelled is cancelled — the pause is irrelevant once billing has stopped.
+ *
+ * TWO KINDS OF VALUE ARE COMPARED HERE, and mixing them up is the whole reason
+ * this function takes a `timezone`:
+ *
+ * - `willBeCancelledAt` and `resumeAt` are CALENDAR DAYS. "Has that day arrived
+ *   for this user" is a day-versus-day question, so both are compared against
+ *   the account's current calendar day. Against a raw instant they flip at
+ *   00:00 UTC instead: three hours late in Kyiv, and — far worse — during the
+ *   *evening before* for anyone west of UTC, who would watch a subscription
+ *   read "Ended" on a day they still had access.
+ * - `pausedAt` is an INSTANT: the moment the user tapped pause. It must stay
+ *   one. Floored to its day it would read as "paused since midnight", and
+ *   `isOccurrencePaused` would then exclude a charge that was actually taken
+ *   that morning — a pause silently rewriting money already spent.
  */
 export const deriveSubscriptionStatus = (
   input: StatusInput,
   now: Date = new Date(),
+  timezone?: string,
 ): SubscriptionStatus => {
-  const target = now.getTime();
+  const today = DateTimezoneUtils.currentCalendarDay(now, timezone).getTime();
   const cancelAt = toTime(input.willBeCancelledAt);
 
   if (cancelAt !== null) {
-    return cancelAt > target ? "cancelling" : "cancelled";
+    // Floored to its own day before comparing. An IMMEDIATE cancellation is the
+    // one writer that has a time of day to lose — "access ends now" — and left
+    // unfloored it reads as `cancelling` for the rest of that day, which is a
+    // subscription the user just killed still advertising itself as live.
+    const cancelDay = DateTimezoneUtils.currentCalendarDay(
+      new Date(cancelAt),
+      "UTC",
+    ).getTime();
+    return cancelDay > today ? "cancelling" : "cancelled";
   }
 
   const pausedAt = toTime(input.pausedAt);
 
-  if (pausedAt === null || pausedAt > target) {
+  if (pausedAt === null || pausedAt > now.getTime()) {
     return "active";
   }
 
   const resumeAt = toTime(input.resumeAt);
 
   // An open-ended pause (no resume date) stays paused until it is resumed
-  // explicitly. A pause whose resume date has passed has lapsed on its own.
-  if (resumeAt !== null && resumeAt <= target) {
+  // explicitly. A pause whose resume day has arrived has lapsed on its own.
+  if (resumeAt !== null && resumeAt <= today) {
     return "active";
   }
 

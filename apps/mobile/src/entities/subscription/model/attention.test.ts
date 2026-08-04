@@ -216,3 +216,40 @@ describe("deriveAttention", () => {
     expect(new Set(events.map((event) => event.key)).size).toBe(3);
   });
 });
+
+describe("deriveAttention — today's events", () => {
+  // The rail is a list of calendar days, so an event stops being "ahead" when
+  // its DAY has passed, not when its UTC midnight has. Compared against the raw
+  // instant, a payment due today disappeared from Home the moment UTC ticked
+  // over — 03:00 in Kyiv, and during the previous evening west of UTC, where
+  // the row vanished on a day it had not even arrived on yet.
+  it("keeps a payment due today on the rail all day", () => {
+    const dueToday = makeSubscription({
+      id: "sub_today",
+      nextPaymentDate: "2026-07-01T00:00:00.000Z",
+    });
+
+    for (const clock of [
+      "2026-07-01T00:00:00.000Z", // midnight UTC
+      "2026-07-01T03:00:00.000Z", // mid-morning in Kyiv
+      "2026-07-01T23:59:00.000Z", // the last minute of the UTC day
+    ]) {
+      const events = deriveAttention([dueToday], new Date(clock));
+      expect(events.map((event) => event.kind)).toEqual(["payment"]);
+    }
+  });
+
+  it("drops it once the day itself has passed", () => {
+    const events = deriveAttention(
+      [
+        makeSubscription({
+          id: "sub_yesterday",
+          nextPaymentDate: "2026-06-30T00:00:00.000Z",
+        }),
+      ],
+      new Date("2026-07-01T00:00:00.000Z"),
+    );
+
+    expect(events).toEqual([]);
+  });
+});

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "@subeye/shared";
 import {
-  isSameCalendarDayInTimezone,
+  isSameUtcDay,
   normalizeAmount,
   normalizeIsoDate,
   resolveScheduledEffectiveAt,
-  toStartOfDayInTimezone,
+  toStartOfUtcDay,
 } from "../src/phaseScheduling";
 
 const subscription = {
@@ -30,9 +30,9 @@ describe("resolveScheduledEffectiveAt", () => {
     expect(Date.parse(effectiveAt as string)).toBeGreaterThan(Date.now());
   });
 
-  // A custom date is floored to midnight IN THE USER'S TIMEZONE. Without the
-  // floor, "1 August" scheduled at 14:00 would leave the old price live for
-  // fourteen hours of a day the user believes is already at the new price.
+  // A custom date is floored to the start of its UTC day. Without the floor,
+  // "1 August" scheduled at 14:00 would leave the old price live for fourteen
+  // hours of a day the user believes is already at the new price.
   it("floors a custom date to start of day", () => {
     const effectiveAt = resolveScheduledEffectiveAt(
       subscription,
@@ -40,9 +40,20 @@ describe("resolveScheduledEffectiveAt", () => {
       "UTC",
     );
 
-    // `DateTimezoneUtils.toZoned` returns a TZDate, whose `toISOString()` keeps
-    // the zone offset instead of normalizing to `Z`. Same instant, offset form.
-    expect(effectiveAt).toBe("2030-08-01T00:00:00.000+00:00");
+    expect(effectiveAt).toBe("2030-08-01T00:00:00.000Z");
+  });
+
+  // The account's timezone must not move a boundary off its calendar day: the
+  // client picks "1 August" and reads it back in UTC, so flooring in Europe/Kyiv
+  // stored 31 July and the app showed the offer ending a day early.
+  it("floors to the same day whatever the account timezone", () => {
+    expect(
+      resolveScheduledEffectiveAt(
+        subscription,
+        { mode: "customDate", customDate: "2030-08-01T00:00:00.000Z" },
+        "Europe/Kyiv",
+      ),
+    ).toBe("2030-08-01T00:00:00.000Z");
   });
 
   // Returning null (rather than throwing) is how a pure package reports a
@@ -72,37 +83,28 @@ describe("resolveScheduledEffectiveAt", () => {
   });
 });
 
-describe("toStartOfDayInTimezone", () => {
-  // Proves the timezone is honoured: midnight in Kyiv (UTC+3 in July) is 21:00
-  // UTC on the previous day. A naive UTC floor would be three hours wrong and
-  // would put the boundary on the wrong calendar day for the user.
-  it("floors to midnight in the given timezone, not UTC", () => {
-    const floored = toStartOfDayInTimezone(
-      "2026-07-15T10:00:00.000Z",
-      "Europe/Kyiv",
+describe("toStartOfUtcDay", () => {
+  // A phase boundary is a calendar day, stored as its UTC midnight — the same
+  // encoding `toIsoDay` writes on the client and `formatDate` reads back. It
+  // must not depend on any zone, and it must come back in the canonical `Z`
+  // form: these strings are sliced to `YYYY-MM-DD` by both clients.
+  it("floors to the UTC midnight of the day, in Z form", () => {
+    expect(toStartOfUtcDay("2026-07-15T10:00:00.000Z")).toBe(
+      "2026-07-15T00:00:00.000Z",
     );
-    // Offset form, because `toZoned` returns a TZDate.
-    expect(floored).toBe("2026-07-15T00:00:00.000+03:00");
-    // ...which is the same instant as 21:00 UTC on the previous day.
-    expect(Date.parse(floored)).toBe(Date.parse("2026-07-14T21:00:00.000Z"));
+    expect(toStartOfUtcDay("2026-07-15T00:00:00.000Z")).toBe(
+      "2026-07-15T00:00:00.000Z",
+    );
   });
 });
 
-describe("isSameCalendarDayInTimezone", () => {
-  it("compares by calendar day in the given timezone", () => {
+describe("isSameUtcDay", () => {
+  it("compares by UTC calendar day", () => {
     expect(
-      isSameCalendarDayInTimezone(
-        "2026-07-15T00:30:00.000Z",
-        "2026-07-15T23:30:00.000Z",
-        "UTC",
-      ),
+      isSameUtcDay("2026-07-15T00:30:00.000Z", "2026-07-15T23:30:00.000Z"),
     ).toBe(true);
     expect(
-      isSameCalendarDayInTimezone(
-        "2026-07-15T23:30:00.000Z",
-        "2026-07-16T00:30:00.000Z",
-        "UTC",
-      ),
+      isSameUtcDay("2026-07-15T23:30:00.000Z", "2026-07-16T00:30:00.000Z"),
     ).toBe(false);
   });
 });

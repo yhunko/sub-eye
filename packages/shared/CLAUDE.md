@@ -26,10 +26,26 @@ migration. See the comment in `subscriptionStatus.ts`.
 
 ## Invariants
 
-1. **`deriveSubscriptionStatus` must agree with the backfill SQL** in
-   `apps/server/drizzle/0000_v4_baseline.sql`. It is both the reference implementation the
-   pause/cancel services write through and the spec that one-off backfill
-   implements. Change one, change both. Cancellation outranks pause.
+1. **`deriveSubscriptionStatus` is the reference implementation the pause/cancel
+   services write through.** Cancellation outranks pause. It must be called with
+   the account's `preferredTimezone` wherever one is in hand — the transitions it
+   decides land on a calendar day boundary, and without a zone that boundary is
+   00:00 UTC rather than the start of the user's day.
+
+   It no longer has to match the backfill SQL in
+   `apps/server/drizzle/0000_v4_baseline.sql`, which compares against
+   `now() at time zone 'utc'` and can therefore disagree at a day boundary. That
+   backfill has run on every branch and is baseline-only: the SQL is history, not
+   a second implementation to keep in step. `test/status-backfill-parity.test.ts`
+   is opt-in and inherits the same caveat.
+
+   **The date columns are not all the same kind of value, and this is the trap.**
+   `willBeCancelledAt` and `resumeAt` are calendar DAYS, compared day-to-day.
+   `pausedAt` is an INSTANT — the moment the user tapped pause — and must stay
+   one: floored to its day it would read as "paused since midnight" and
+   `isOccurrencePaused` would drop a charge that was really taken that morning.
+   `willBeCancelledAt` is written as a day by both writers, but the immediate
+   cancel had to be taught to; it is floored on read anyway.
 2. **`getAllowedActions` is the only place lifecycle affordances are decided.**
    It ships on every `SubscriptionDto` so the client renders what the server
    permits instead of re-deriving the rules and drifting. Never re-implement

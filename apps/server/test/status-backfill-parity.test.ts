@@ -1,5 +1,11 @@
 // Runs against a live database. Skipped unless PARITY_DATABASE_URL is set:
 //   PARITY_DATABASE_URL=<branch url> bun test ./test/status-backfill-parity.test.ts
+//
+// HISTORICAL. It checked the one-off v4 `status` backfill, which has since run
+// on every branch. `deriveSubscriptionStatus` is called here without a timezone,
+// so it answers on the UTC day while the services that maintain the column now
+// answer on the account's — expect a mismatch for any row sitting exactly on a
+// transition day. That is drift in this test's premise, not in the column.
 
 import { describe, expect, it } from "bun:test";
 import { neon } from "@neondatabase/serverless";

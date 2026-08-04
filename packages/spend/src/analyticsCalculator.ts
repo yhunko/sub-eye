@@ -14,7 +14,7 @@ import {
   RecurrenceUtils,
   shouldIncludeOccurrence,
 } from "@subeye/shared";
-import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
+import { isAfter, isBefore } from "date-fns";
 import { isOccurrencePaused } from "./pause";
 
 /**
@@ -41,15 +41,11 @@ export class AnalyticsCalculator {
     subscription: SubscriptionDto,
     rangeStart: Date,
     rangeEnd: Date,
-    timezone?: string,
   ): number {
-    const startDateZoned = DateTimezoneUtils.toZoned(
-      subscription.paymentDate,
-      timezone,
-    );
+    const anchor = DateTimezoneUtils.toCalendarDay(subscription.paymentDate);
 
     let occurrence = RecurrenceUtils.getNextOccurrence(
-      startDateZoned,
+      anchor,
       subscription.every,
       subscription.period as SubscriptionPeriod,
       rangeStart,
@@ -88,7 +84,7 @@ export class AnalyticsCalculator {
         occurrence,
         subscription.every,
         subscription.period as SubscriptionPeriod,
-        { anchorDate: startDateZoned },
+        { anchorDate: anchor },
       );
     }
 
@@ -104,16 +100,20 @@ export class AnalyticsCalculator {
     monthCount: number,
     timezone?: string,
   ): MonthlyTrendPoint[] {
+    const base = DateTimezoneUtils.currentCalendarDay(baseDate, timezone);
+
     return Array.from({ length: monthCount }, (_, i) => {
-      const monthRef = DateTimezoneUtils.shiftMonths(baseDate, i, timezone);
-      const mStart = DateTimezoneUtils.startOfMonth(monthRef, timezone);
-      const mEnd = DateTimezoneUtils.endOfMonth(monthRef, timezone);
+      // The month bounds are calendar days, like the occurrences they bracket.
+      // Zoned bounds excluded a charge landing on the 1st for any account west
+      // of UTC, and counted it twice in the month before.
+      const monthRef = DateTimezoneUtils.shiftCalendarMonths(base, i);
+      const mStart = DateTimezoneUtils.startOfCalendarMonth(monthRef);
+      const mEnd = DateTimezoneUtils.endOfCalendarMonth(monthRef);
 
       const payments = AnalyticsCalculator.collectPaymentsInRange(
         subscriptions,
         mStart,
         mEnd,
-        timezone,
       );
 
       const total = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -148,7 +148,9 @@ export class AnalyticsCalculator {
       }
 
       return {
-        date: format(mStart, "yyyy-MM-dd"),
+        // `date-fns` `format` reads the HOST's calendar; the month it labelled
+        // was one day off whenever the bound was not a host-local midnight.
+        date: mStart.toISOString().slice(0, 10),
         amount: Number(total.toFixed(2)),
         subscriptions: Array.from(subMap.values()).map((s) => ({
           ...s,
@@ -168,18 +170,13 @@ export class AnalyticsCalculator {
     subscriptions: SubscriptionDto[],
     today: Date,
     preferredCurrencyCode: string,
-    timezone?: string,
   ): UpcomingRenewalDto[] {
     const renewals: UpcomingRenewalDto[] = [];
-    const todayStart = DateTimezoneUtils.startOfDay(today, timezone).getTime();
+    const todayStart = today.getTime();
 
     for (const subscription of subscriptions) {
-      const paymentDateZoned = DateTimezoneUtils.toZoned(
-        subscription.paymentDate,
-        timezone,
-      );
       const occurrence = RecurrenceUtils.getNextOccurrence(
-        paymentDateZoned,
+        DateTimezoneUtils.toCalendarDay(subscription.paymentDate),
         subscription.every,
         subscription.period as SubscriptionPeriod,
         today,
@@ -214,11 +211,13 @@ export class AnalyticsCalculator {
           occurrence,
         ),
         currencyCode: preferredCurrencyCode,
-        nextPaymentDate: occurrence.toISOString(),
+        nextPaymentDate: new Date(occurrence.getTime()).toISOString(),
+        // Both sides are UTC midnights — the occurrence by construction, `today`
+        // because the caller passes `currentCalendarDay`. Re-flooring either in
+        // the account's zone is what used to make this disagree with the same
+        // countdown computed on the client.
         daysUntil: Math.round(
-          (DateTimezoneUtils.startOfDay(occurrence, timezone).getTime() -
-            todayStart) /
-            (24 * 60 * 60 * 1000),
+          (occurrence.getTime() - todayStart) / (24 * 60 * 60 * 1000),
         ),
       });
     }
@@ -240,16 +239,21 @@ export class AnalyticsCalculator {
     remainingThisMonth: number;
     totalUpcomingMonth: number;
   } {
-    const monthStart = DateTimezoneUtils.startOfMonth(today, timezone);
-    const monthEnd = DateTimezoneUtils.endOfMonth(today, timezone);
-    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const day = DateTimezoneUtils.currentCalendarDay(today, timezone);
+    const monthStart = DateTimezoneUtils.startOfCalendarMonth(day);
+    const monthEnd = DateTimezoneUtils.endOfCalendarMonth(day);
+    // Stepped in calendar days rather than `eachDayOfInterval`, which walks the
+    // HOST's zone and would shift every row of the forecast off a UTC midnight.
+    const daysInMonth = Array.from(
+      { length: monthEnd.getUTCDate() },
+      (_, index) => DateTimezoneUtils.shiftCalendarDays(monthStart, index),
+    );
 
     // Collect all payment occurrences in the month
     const monthPayments = AnalyticsCalculator.collectPaymentsInRange(
       subscriptions,
       monthStart,
       monthEnd,
-      timezone,
     );
 
     const forecast: DashboardAnalyticsDto["cashFlowForecast"] = [];
@@ -258,12 +262,12 @@ export class AnalyticsCalculator {
 
     for (const targetDate of daysInMonth) {
       const dueToday = monthPayments.filter((payment) =>
-        DateTimezoneUtils.isSameDay(payment.date, targetDate, timezone),
+        DateTimezoneUtils.isSameCalendarDay(payment.date, targetDate),
       );
       const dailyAmount = dueToday.reduce((sum, p) => sum + p.amount, 0);
       cumulative += dailyAmount;
 
-      if (!isBefore(targetDate, today)) {
+      if (!isBefore(targetDate, day)) {
         remainingThisMonth += dailyAmount;
       }
 
@@ -391,17 +395,11 @@ export class AnalyticsCalculator {
     subscriptions: SubscriptionDto[],
     rangeStart: Date,
     rangeEnd: Date,
-    timezone?: string,
   ): number {
     return subscriptions.reduce(
       (sum, sub) =>
         sum +
-        AnalyticsCalculator.calculateSpendInRange(
-          sub,
-          rangeStart,
-          rangeEnd,
-          timezone,
-        ),
+        AnalyticsCalculator.calculateSpendInRange(sub, rangeStart, rangeEnd),
       0,
     );
   }
@@ -409,14 +407,9 @@ export class AnalyticsCalculator {
   static hasUpcomingOccurrence(
     subscription: SubscriptionDto,
     fromDate: Date,
-    timezone?: string,
   ): boolean {
-    const paymentDateZoned = DateTimezoneUtils.toZoned(
-      subscription.paymentDate,
-      timezone,
-    );
     const nextOccurrence = RecurrenceUtils.getNextOccurrence(
-      paymentDateZoned,
+      DateTimezoneUtils.toCalendarDay(subscription.paymentDate),
       subscription.every,
       subscription.period as SubscriptionPeriod,
       fromDate,
@@ -435,17 +428,13 @@ export class AnalyticsCalculator {
     subscriptions: SubscriptionDto[],
     rangeStart: Date,
     rangeEnd: Date,
-    timezone?: string,
   ): PaymentOccurrence[] {
     const payments: PaymentOccurrence[] = [];
 
     for (const subscription of subscriptions) {
-      const paymentDateZoned = DateTimezoneUtils.toZoned(
-        subscription.paymentDate,
-        timezone,
-      );
+      const anchor = DateTimezoneUtils.toCalendarDay(subscription.paymentDate);
       let occurrence = RecurrenceUtils.getNextOccurrence(
-        paymentDateZoned,
+        anchor,
         subscription.every,
         subscription.period as SubscriptionPeriod,
         rangeStart,
@@ -473,7 +462,7 @@ export class AnalyticsCalculator {
             occurrence,
             subscription.every,
             subscription.period as SubscriptionPeriod,
-            { anchorDate: paymentDateZoned },
+            { anchorDate: anchor },
           );
           continue;
         }
@@ -491,7 +480,7 @@ export class AnalyticsCalculator {
           occurrence,
           subscription.every,
           subscription.period as SubscriptionPeriod,
-          { anchorDate: paymentDateZoned },
+          { anchorDate: anchor },
         );
       }
     }

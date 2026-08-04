@@ -1,22 +1,23 @@
 import { dateLocale, m } from "@/shared/i18n";
+import { todayAsDay } from "./day";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Whole calendar days from `now` to `isoDate`, in UTC.
+ * Whole calendar days from today to `isoDate`.
  *
- * ponytail: UTC, not the user's IANA zone. The server already returns a
- * timezone-correct `daysUntil` on every dashboard renewal — this local version
- * only covers the subscriptions list, where a row that flips a day early at
- * 02:00 in a UTC+3 zone is cosmetic. Swap in the resolved timezone here if that
- * ever bites.
+ * Both sides are day values, so the subtraction is exact. "Today" comes from
+ * the DEVICE's calendar (`todayAsDay`) rather than from UTC's: the two differ
+ * for the length of the user's offset, which is a countdown reading "tomorrow"
+ * for something due today between midnight and 03:00 in Kyiv.
  */
 export function daysUntil(isoDate: string, now: Date = new Date()): number {
   const target = Date.parse(isoDate);
   if (Number.isNaN(target)) return 0;
-  const startOfTarget = Math.floor(target / DAY_MS);
-  const startOfNow = Math.floor(now.getTime() / DAY_MS);
-  return startOfTarget - startOfNow;
+  // Floored rather than trusted: a stored day is already a UTC midnight, but a
+  // legacy row predating the normalisation carries a time of day.
+  const startOfTarget = Math.floor(target / DAY_MS) * DAY_MS;
+  return Math.round((startOfTarget - todayAsDay(now)) / DAY_MS);
 }
 
 /**
