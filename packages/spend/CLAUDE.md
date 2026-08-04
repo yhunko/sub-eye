@@ -22,10 +22,20 @@ it or on its sibling `calculateSpendInRange`.
    `{ anchorDate }`. Without it, a subscription anchored on the 31st lands on Feb 28 and then
    *stays* on the 28th forever. With it, March returns to the 31st. Every loop in this package
    already passes the anchor — do not drop it.
-3. **Timezone is threaded end to end.** Every public function takes an optional IANA `timezone`
-   and passes it to `DateTimezoneUtils`. A month boundary is start-of-month *there*, not on the
-   server host. Dropping the parameter silently shifts a whole month of spend for any user not
-   on UTC.
+3. **A date is a calendar day, and the calendar is UTC.** `paymentDate` and every occurrence
+   derived from it are the UTC midnight of a day — that is how the client writes them
+   (`toIsoDay`) and reads them back (`timeZone: "UTC"`). Anchor a recurrence with
+   `DateTimezoneUtils.toCalendarDay`, bracket a range with `startOfCalendarMonth` /
+   `endOfCalendarMonth` / `shiftCalendarDays`, and compare with `isSameCalendarDay`. **Never
+   walk or floor a stored date through the account's `timezone`**: the wall clock it preserves
+   moves the occurrence off its day at the next DST change, which is how one charge came to
+   read as the 5th in the app and the 6th on the invoice.
+
+   The account's IANA `timezone` decides only **which** day or month it currently is for the
+   user — `DateTimezoneUtils.currentCalendarDay(now, timezone)` — and the answer is itself a
+   UTC-midnight day, so it compares directly against the values above. That is the only
+   parameter left in this package, and functions that no longer decide "which day" no longer
+   take one.
 4. **Cancellation gating uses `shouldIncludeOccurrence` and `break`s, not `continue`s.** Once
    an occurrence falls at or after the effective cancellation date, the projection stops — all
    later occurrences are unreachable too. This is deliberate; changing it to `continue` would

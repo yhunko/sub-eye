@@ -255,8 +255,11 @@ export function SubscriptionFormPage() {
           </View>
         </Field>
 
+        {/* The ANCHOR, not the next charge — every future occurrence is
+            projected from it, so it is usually in the past. Labelled "next
+            payment" it read as a bug on every subscription older than a cycle. */}
         <NativeDateField
-          label={m.form_nextPayment()}
+          label={m.form_firstPayment()}
           value={values.paymentDate}
           onChange={(date) => set("paymentDate", date)}
         />

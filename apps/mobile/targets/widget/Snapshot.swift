@@ -48,24 +48,26 @@ struct WidgetItem: Decodable, Identifiable {
   /// due this morning rendered as "20 minutes ago" — technically true, useless
   /// on a widget, and it would have flipped wording several times a day.
   ///
-  /// Days are counted in the DEVICE's calendar, the same choice the reminder
-  /// planner makes: "today" is a wall-clock question, and it should be answered
-  /// where the user physically is.
+  /// Days are counted in a UTC calendar, NOT the device's. A payment date is a
+  /// calendar day stored as its UTC midnight, and every surface in the app reads
+  /// it that way (`formatDate` pins `timeZone: "UTC"`, the reminder planner
+  /// walks `getUTC*`). Counting in the device's zone made this widget the only
+  /// place answering in a different calendar: the same charge read "tomorrow" on
+  /// the detail screen and "the day after" here for a user east of UTC, and one
+  /// day early for anyone west of it.
   ///
   /// The LANGUAGE is the app's, not the device's. `RelativeDateTimeFormatter`
   /// defaults to the extension process's `Locale.current`, which follows the
   /// DEVICE — so an app running under a per-app language drew English labels
-  /// from the snapshot over a Ukrainian "сьогодні" formatted here. The calendar
-  /// stays `.current` on purpose; only the wording is pinned.
+  /// from the snapshot over a Ukrainian "сьогодні" formatted here.
   func dueText(locale: String?) -> String? {
     guard let due else { return nil }
 
-    let calendar = Calendar.current
     let days =
-      calendar.dateComponents(
+      Self.utcCalendar.dateComponents(
         [.day],
-        from: calendar.startOfDay(for: Date()),
-        to: calendar.startOfDay(for: due)
+        from: Self.utcCalendar.startOfDay(for: Date()),
+        to: Self.utcCalendar.startOfDay(for: due)
       ).day ?? 0
 
     let formatter = RelativeDateTimeFormatter()
@@ -75,6 +77,13 @@ struct WidgetItem: Decodable, Identifiable {
     formatter.locale = locale.map(Locale.init(identifier:)) ?? Locale.current
     return formatter.localizedString(from: DateComponents(day: days))
   }
+
+  /// The calendar every day-valued field in this app is expressed in.
+  static let utcCalendar: Calendar = {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
+    return calendar
+  }()
 
   private static let isoWithFractionalSeconds: ISO8601DateFormatter = {
     let formatter = ISO8601DateFormatter()

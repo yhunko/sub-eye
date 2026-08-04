@@ -5,7 +5,7 @@ import {
   normalizeIsoDate,
   resolveScheduledEffectiveAt,
   selectDuePhases,
-  toStartOfDayInTimezone,
+  toStartOfUtcDay,
 } from "@subeye/pricing";
 import type {
   PricePhaseKind,
@@ -273,13 +273,7 @@ export class SubscriptionPhaseService {
       deps,
     );
 
-    const { preferences } =
-      await SubscriptionPhaseService.getPreferencesAndRates(userId, deps);
-
-    const endsAt = toStartOfDayInTimezone(
-      args.endsAt,
-      preferences.preferredTimezone,
-    );
+    const endsAt = toStartOfUtcDay(args.endsAt);
     SubscriptionPhaseService.assertPhaseWindow(existing, endsAt);
 
     const overrideCurrency = args.overrideCurrency ?? existing.currency;

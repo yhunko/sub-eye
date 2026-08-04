@@ -67,6 +67,44 @@ describe("SubscriptionCalculator.calculateBillingDetails", () => {
 });
 
 describe("SubscriptionCalculator.calculatePaymentDates", () => {
+  // A payment date is a CALENDAR DAY stored as its UTC midnight, so walking the
+  // recurrence must not go through the account's timezone. Anchored on 6 Feb
+  // (UTC+2 in Kyiv) and projected into August (UTC+3), a zoned walk preserved
+  // the 02:00 wall clock and landed on 2026-08-05T23:00Z — which every reader in
+  // the app prints as the 5th, one day before the charge. The user saw the app
+  // say "tomorrow" while the widget said "the day after".
+  it("keeps an occurrence on its UTC day across a DST change in the account timezone", () => {
+    const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
+      {
+        every: 1,
+        period: SubscriptionPeriod.MONTH,
+        paymentDate: "2026-02-06T00:00:00.000Z",
+      },
+      "Europe/Kyiv",
+      new Date("2026-08-04T07:00:00.000Z"),
+    );
+
+    expect(nextPaymentDate).toBe("2026-08-06T00:00:00.000Z");
+  });
+
+  // West of UTC the comparison date is the other half of the same rule: with
+  // "today" floored to an account-zone midnight (05:00Z in New York) a payment
+  // due TODAY at 00:00Z read as already past, and the walk stepped a whole
+  // period forward — the subscription silently skipped a month.
+  it("returns today's payment for an account west of UTC", () => {
+    const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
+      {
+        every: 1,
+        period: SubscriptionPeriod.MONTH,
+        paymentDate: "2026-01-04T00:00:00.000Z",
+      },
+      "America/New_York",
+      new Date("2026-08-04T14:00:00.000Z"),
+    );
+
+    expect(nextPaymentDate).toBe("2026-08-04T00:00:00.000Z");
+  });
+
   // Proves the anchor semantics: paymentDate is the FIRST payment, not the next
   // one. From a Jan 10 anchor, viewed on Mar 15, the next payment is Apr 10 and
   // the last was Mar 10 — both derived by walking the recurrence, not stored.

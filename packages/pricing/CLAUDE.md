@@ -59,13 +59,16 @@ and `subscriptionLifecycleStatuses` stay in **`@subeye/shared`**. That is cycle 
 an oversight: `shouldIncludeOccurrence` is consumed by `@subeye/spend`, so moving it here would
 make `pricing` and `spend` import each other through a shared leaf. Leave them where they are.
 
-## Timezone strings carry an offset, not `Z`
+## A phase boundary is a calendar day, floored in UTC
 
-`toStartOfDayInTimezone` builds on `DateTimezoneUtils.toZoned`, which returns a `TZDate`. Its
-`toISOString()` therefore yields `2026-07-15T00:00:00.000+03:00`, not the UTC-normalized
-`2026-07-14T21:00:00.000Z`. Same instant, different string. These values are written to
-`startsAt`/`endsAt`, so **compare phase boundaries as instants (`Date.parse`), never as
-strings.** This is pre-existing behaviour, preserved deliberately by the extraction.
+`toStartOfUtcDay` floors to the UTC midnight of the day — the same encoding the client writes
+with `toIsoDay` and reads back with `timeZone: "UTC"` — and returns the canonical `Z` form.
+
+It used to be `toStartOfDayInTimezone`, flooring in the account's zone, and it wrote
+`2026-07-15T00:00:00.000+03:00` into `startsAt`/`endsAt`. That instant is 21:00 on the 14th in
+UTC, so an offer the user ended on the 15th was displayed, reminded on, and compared as the
+14th. Do not reintroduce a zoned floor here, and do not compare these values as strings —
+`Date.parse` still, because a boundary may predate the fix.
 
 ## Two traps that were live bugs — keep their tests passing
 

@@ -43,23 +43,20 @@ const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({
   status: "active",
 });
 
-describe("DateTimezoneUtils.shiftMonths", () => {
+describe("DateTimezoneUtils.shiftCalendarMonths", () => {
   it("clamps month-end dates instead of overflowing into next month", () => {
-    const january31 = new Date("2025-01-31T12:00:00.000Z");
-    const shifted = DateTimezoneUtils.shiftMonths(january31, 1, "UTC");
+    const january31 = new Date("2025-01-31T00:00:00.000Z");
+    const shifted = DateTimezoneUtils.shiftCalendarMonths(january31, 1);
 
-    expect(shifted.getUTCFullYear()).toBe(2025);
-    expect(shifted.getUTCMonth()).toBe(1);
-    expect(shifted.getUTCDate()).toBe(28);
-    expect(shifted.getUTCHours()).toBe(12);
+    expect(shifted.toISOString()).toBe("2025-02-28T00:00:00.000Z");
   });
 
   it("does not mutate the source date object", () => {
-    const source = new Date("2025-01-31T12:00:00.000Z");
+    const source = new Date("2025-01-31T00:00:00.000Z");
 
-    DateTimezoneUtils.shiftMonths(source, 1, "UTC");
+    DateTimezoneUtils.shiftCalendarMonths(source, 1);
 
-    expect(source.toISOString()).toBe("2025-01-31T12:00:00.000Z");
+    expect(source.toISOString()).toBe("2025-01-31T00:00:00.000Z");
   });
 });
 

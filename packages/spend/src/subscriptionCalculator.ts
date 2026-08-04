@@ -71,11 +71,11 @@ export class SubscriptionCalculator {
     relativeTo: Date = DateTimezoneUtils.now(timezone),
   ): { nextPaymentDate: string; lastPaymentDate: string | null } {
     const every = subscription.every;
-    const startDate = DateTimezoneUtils.toZoned(
-      subscription.paymentDate,
+    const startDate = DateTimezoneUtils.toCalendarDay(subscription.paymentDate);
+    const comparisonDate = DateTimezoneUtils.currentCalendarDay(
+      relativeTo,
       timezone,
     );
-    const comparisonDate = DateTimezoneUtils.startOfDay(relativeTo, timezone);
 
     const nextPayment = RecurrenceUtils.getNextOccurrence(
       startDate,
@@ -90,9 +90,14 @@ export class SubscriptionCalculator {
       comparisonDate,
     );
 
+    // Through `new Date` first: a `TZDate`'s own `toISOString()` emits the
+    // offset form (`…+00:00`), and these strings are compared and sliced as
+    // plain UTC instants by both clients.
     return {
-      nextPaymentDate: nextPayment.toISOString(),
-      lastPaymentDate: lastPayment ? lastPayment.toISOString() : null,
+      nextPaymentDate: new Date(nextPayment.getTime()).toISOString(),
+      lastPaymentDate: lastPayment
+        ? new Date(lastPayment.getTime()).toISOString()
+        : null,
     };
   }
 

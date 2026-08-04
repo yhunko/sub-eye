@@ -1,4 +1,4 @@
-import { buildPhaseProjection, toStartOfDayInTimezone } from "@subeye/pricing";
+import { buildPhaseProjection, toStartOfUtcDay } from "@subeye/pricing";
 import type {
   AddSubscriptionInput,
   BulkDeleteSubscriptionsInput,
@@ -210,16 +210,14 @@ export class SubscriptionService {
 
     // Validate the starting offer before any write. `neon-http` has no
     // interactive transactions, so a late throw leaves an orphan row behind.
-    // The offer boundary is floored to midnight in the USER'S timezone — the
-    // same flooring startPhase applies — so "ends later today" must be
-    // rejected here, not after the insert.
+    // The offer boundary is floored to the UTC day — the same flooring
+    // startPhase applies — so "ends later today" must be rejected here, not
+    // after the insert.
     const { intro, ...createPayload } = payload;
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
 
-    const introEndsAt = intro
-      ? toStartOfDayInTimezone(intro.endsAt, preferences.preferredTimezone)
-      : null;
+    const introEndsAt = intro ? toStartOfUtcDay(intro.endsAt) : null;
     if (introEndsAt && Date.parse(introEndsAt) <= Date.now()) {
       throw new ScheduledDateMustBeFutureError();
     }
@@ -482,20 +480,20 @@ export class SubscriptionService {
 
     const preferences = await deps.userService.getUserPreferences(userId);
     const nextOccurrence = RecurrenceUtils.getNextOccurrence(
-      DateTimezoneUtils.toZoned(
-        existing.paymentDate,
-        preferences.preferredTimezone,
-      ),
+      DateTimezoneUtils.toCalendarDay(existing.paymentDate),
       existing.every,
       existing.period as SubscriptionPeriod,
-      new Date(),
+      DateTimezoneUtils.currentCalendarDay(
+        new Date(),
+        preferences.preferredTimezone,
+      ),
     );
 
     const updated = await deps.repository.update(id, {
       status: "active",
       pausedAt: null,
       resumeAt: null,
-      paymentDate: nextOccurrence.toISOString(),
+      paymentDate: new Date(nextOccurrence.getTime()).toISOString(),
     });
 
     const rates = await deps.currencyService.getRates(
