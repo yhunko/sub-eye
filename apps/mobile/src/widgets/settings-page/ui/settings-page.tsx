@@ -200,8 +200,24 @@ export function SettingsPage() {
       {/* The plan and the way to recover it are one subject, so they are one
           cell. Restore is here and not only on the paywall because guideline
           3.1.1 wants it findable: a reviewer who cannot find it rejects the
-          build. */}
+          build.
+
+          Buying used to hang off the account row, which went with Clerk. Every
+          other route to the paywall is a locked feature, so without this row
+          someone who simply wants to pay has nowhere to press. */}
       <Section footnote={isPro ? undefined : m.settings_proPitch()}>
+        {isPro ? null : (
+          <>
+            <Row
+              ios="sparkles"
+              android="auto_awesome"
+              label={m.paywall_title()}
+              value={m.paywall_unlock()}
+              onPress={() => router.push("/paywall")}
+            />
+            <Divider />
+          </>
+        )}
         <Row
           ios="arrow.clockwise"
           android="refresh"
