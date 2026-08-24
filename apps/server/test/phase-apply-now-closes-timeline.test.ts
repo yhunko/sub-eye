@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { SubscriptionPhaseService } from "../src/domains/subscription/subscriptionPhaseService";
 
 const now = Date.now();

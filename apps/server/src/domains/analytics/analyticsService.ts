@@ -1,11 +1,11 @@
-import { CurrencyUtils } from "@subeye/money";
 import type {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
   WeeklyRenewalsSummaryDto,
-} from "@subeye/shared";
-import { isCurrentlyActiveSubscription } from "@subeye/shared";
+} from "@subeye/model";
+import { isCurrentlyActiveSubscription } from "@subeye/model";
+import { CurrencyUtils } from "@subeye/money";
 import { AnalyticsCalculator } from "@subeye/spend";
 import { DateTimezoneUtils } from "@subeye/time";
 import { CategoryService } from "../category/categoryService";

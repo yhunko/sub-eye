@@ -1,4 +1,4 @@
-import type { PricePhaseKind, SubscriptionStatus } from "@subeye/shared";
+import type { PricePhaseKind, SubscriptionStatus } from "@subeye/model";
 
 /**
  * English is the shape of the whole dictionary. It lives here rather than in

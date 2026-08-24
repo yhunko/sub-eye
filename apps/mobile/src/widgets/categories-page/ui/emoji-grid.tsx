@@ -1,4 +1,4 @@
-import { CATEGORY_EMOJI_GROUPS } from "@subeye/shared";
+import { CATEGORY_EMOJI_GROUPS } from "@subeye/model";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/shared/ui/theme";
 
@@ -28,7 +28,7 @@ function toRows(emojis: readonly string[]): (string | null)[][] {
  *
  * `categoryEmojiSchema` validates against exactly these, so an emoji invented
  * client-side is a 422 the user cannot act on — which is why the groups are
- * exported from @subeye/shared rather than restated here.
+ * exported from @subeye/model rather than restated here.
  *
  * ponytail: one vertical scroll, not a tabbed group selector. 120 tiles is a
  * page, not a dataset — no virtualisation, no selected-group state, and the

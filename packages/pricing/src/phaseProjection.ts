@@ -1,10 +1,10 @@
-import type { RateTable } from "@subeye/money";
 import type {
   PricePhaseDto,
   PricePhaseKind,
   SubscriptionDto,
   SubscriptionPeriod,
-} from "@subeye/shared";
+} from "@subeye/model";
+import type { RateTable } from "@subeye/money";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { getEffectivePhase, getUpcomingPhase } from "./phaseSelection";
 

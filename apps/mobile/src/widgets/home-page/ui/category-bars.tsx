@@ -1,4 +1,4 @@
-import type { CategorySpendingDto } from "@subeye/shared";
+import type { CategorySpendingDto } from "@subeye/model";
 import { StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import { QueryClient } from "@tanstack/react-query";
 
 // The entity builds on the real apiClient, whose env module validates the

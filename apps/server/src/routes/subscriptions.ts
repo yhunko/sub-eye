@@ -10,7 +10,7 @@ import {
   RenewSubscriptionSchema,
   StartPhaseSchema,
   UpdateSubscriptionSchema,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { Hono } from "hono";
 import { object, string } from "valibot";
 import { SubscriptionPhaseService } from "../domains/subscription/subscriptionPhaseService";

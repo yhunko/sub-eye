@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useMemo, useRef } from "react";

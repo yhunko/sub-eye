@@ -1,4 +1,4 @@
-import type { CategoryDto, UpdateCategoryInput } from "@subeye/shared";
+import type { CategoryDto, UpdateCategoryInput } from "@subeye/model";
 import {
   queryOptions,
   useMutation,

@@ -1,6 +1,6 @@
+import type { UpdateUserPreferences, UserPreferences } from "@subeye/model";
+import { DEFAULT_DATE_FORMAT } from "@subeye/model";
 import { CurrencyUtils } from "@subeye/money";
-import type { UpdateUserPreferences, UserPreferences } from "@subeye/shared";
-import { DEFAULT_DATE_FORMAT } from "@subeye/shared";
 import { UserRepository } from "./userRepository";
 
 type UserRow = {

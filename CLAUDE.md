@@ -7,14 +7,14 @@ an Expo mobile client, and a static marketing site, over four pure packages.
 apps/server       Hono API — Cloudflare Worker, Neon Postgres via Drizzle, Clerk auth
 apps/mobile       Expo (React Native, expo-router) — the only client
 apps/landing      subeye.cc — Astro 6, static, zero client JS, en + uk
-packages/shared   schemas, DTOs, domain utils — consumed by everything
+packages/model    records, DTOs, valibot schemas — consumed by everything
 packages/time     UTC calendar days and recurrence. A leaf — imports nothing.
 packages/money    currency codes, rate tables, conversion, FX document parsing
 packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
 packages/spend    pure occurrence engine (payment projection, aggregates)
 ```
 
-Each of `apps/*` and `packages/shared|time|money|pricing|spend` has its own `CLAUDE.md`
+Each of `apps/*` and `packages/model|time|money|pricing|spend` has its own `CLAUDE.md`
 with the invariants for that area. Read the one you are touching — those carry
 the rules that actually bite.
 

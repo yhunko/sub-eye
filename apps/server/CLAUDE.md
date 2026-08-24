@@ -44,7 +44,7 @@ subscription row.
 | `src/domains/subscription/subscriptionPhaseService.ts` | All phase logic — create, cancel, apply, reconcile |
 | `src/domains/subscription/subscriptionPricePhaseRepository.ts` | Phase persistence; owns `db` |
 | `src/domains/subscription/subscriptionService.ts` | Subscription CRUD; calls the phase service |
-| `packages/shared/src/domains/subscription/subscriptionLifecycle.ts` | Derives lifecycle status from `willBeCancelledAt` |
+| `packages/model/src/domains/subscription/subscriptionLifecycle.ts` | Derives lifecycle status from `willBeCancelledAt` |
 
 ---
 
@@ -112,7 +112,7 @@ fail if it actually ran — `turbo test --force` is what checks the claim.
 ## Adding a new phase kind
 
 1. Add the value to `pricePhaseKindEnum` in `src/db/schema.ts` and to the
-   Valibot schema in `packages/shared/.../pricePhaseSchemas.ts`.
+   Valibot schema in `packages/model/.../pricePhaseSchemas.ts`.
 2. Decide how `startPricingSchedule` lays it down — most kinds are "override
    phase now + `standard` phase after `endsAt`".
 3. Make sure `applyDuePhases` can settle it: it must have a `startsAt` and a

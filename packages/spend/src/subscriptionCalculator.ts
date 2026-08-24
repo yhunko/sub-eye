@@ -1,8 +1,8 @@
-import { CurrencyUtils, type RateTable } from "@subeye/money";
 import type {
   SubscriptionBillingDetails,
   SubscriptionPeriod,
-} from "@subeye/shared";
+} from "@subeye/model";
+import { CurrencyUtils, type RateTable } from "@subeye/money";
 import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 
 /** The minimum shape needed to price a subscription. A DB row satisfies it. */

@@ -1,4 +1,4 @@
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 // Straight from the leaf modules, not the format barrel: the barrel also carries
 // `when`, which reaches the Paraglide runtime and the native layer behind it.
 import { fromIsoDay, isFutureDay, toIsoDay } from "@/shared/lib/format/day";

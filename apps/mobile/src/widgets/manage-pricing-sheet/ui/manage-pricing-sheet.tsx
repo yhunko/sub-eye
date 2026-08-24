@@ -1,4 +1,4 @@
-import type { StartPhaseInput } from "@subeye/shared";
+import type { StartPhaseInput } from "@subeye/model";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {

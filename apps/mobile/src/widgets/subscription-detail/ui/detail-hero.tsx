@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from "@subeye/shared";
+import type { SubscriptionStatus } from "@subeye/model";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";

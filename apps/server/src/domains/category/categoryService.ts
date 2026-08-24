@@ -3,7 +3,7 @@ import type {
   CreateCategoryInput,
   DeleteCategoriesResponse,
   UpdateCategoryInput,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { CategoryNotFoundError } from "./categoryErrors";
 import { CategoryRepository } from "./categoryRepository";
 

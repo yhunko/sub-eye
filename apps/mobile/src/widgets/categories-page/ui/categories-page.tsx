@@ -1,4 +1,4 @@
-import type { CategoryDto } from "@subeye/shared";
+import type { CategoryDto } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";

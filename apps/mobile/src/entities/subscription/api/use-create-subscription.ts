@@ -1,4 +1,4 @@
-import type { SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import type { SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { dashboardKeys } from "@/entities/dashboard";
 import { apiClient, assertOk } from "@/shared/api";

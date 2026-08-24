@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { ALL_KEY, groupSubscriptions, UNGROUPED_KEY } from "./grouping";
 import { makeSubscription } from "./subscription.fixture";
 

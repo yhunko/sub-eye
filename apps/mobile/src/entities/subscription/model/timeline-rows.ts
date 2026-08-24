@@ -1,4 +1,4 @@
-import type { PricePhaseDto } from "@subeye/shared";
+import type { PricePhaseDto } from "@subeye/model";
 // Straight from the money module, not the format barrel: the barrel also carries
 // `when`, which reaches the Paraglide runtime and drags the whole i18n/native
 // stack in behind a currency format.

@@ -1,4 +1,4 @@
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { StyleSheet, Text, View } from "react-native";
 import type {
   SubscriptionGroupBy,

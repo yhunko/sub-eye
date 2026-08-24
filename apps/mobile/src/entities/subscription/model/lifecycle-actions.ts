@@ -1,7 +1,7 @@
 import type {
   SubscriptionAllowedAction,
   SubscriptionStatus,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import { Alert } from "react-native";

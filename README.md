@@ -14,10 +14,11 @@ A [Bun](https://bun.sh) + [Turborepo](https://turborepo.dev) monorepo: a
 | --- | --- |
 | [`apps/server`](apps/server) | The API. Hono on Cloudflare Workers, Neon Postgres via Drizzle, Clerk auth. [Details](apps/server/README.md) |
 | [`apps/mobile`](apps/mobile) | The client. Expo + expo-router, iOS and Android |
-| `packages/shared` | Schemas, DTOs and domain utils shared by every workspace |
+| `packages/model` | Records, DTOs and valibot schemas shared by every workspace |
+| `packages/time` | UTC calendar days and recurrence. A leaf — imports nothing |
+| `packages/money` | Currency codes, rate tables, conversion, FX document parsing |
 | `packages/pricing` | Pure pricing-phase model — trials, intro discounts, scheduled price changes |
 | `packages/spend` | Pure occurrence engine — payment projection and spend aggregates |
-| `packages/currency` | The `RateTable` type |
 
 Packages export TypeScript source directly (no build step). The lone exception
 is `@subeye/server/client`, a types-only build that hands the mobile app the

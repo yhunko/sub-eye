@@ -1,5 +1,5 @@
+import { type PricePhaseKind, SubscriptionPeriod } from "@subeye/model";
 import { buildPhaseProjection, type PricePhaseInput } from "@subeye/pricing";
-import { type PricePhaseKind, SubscriptionPeriod } from "@subeye/shared";
 import { differenceInCalendarDays, differenceInCalendarMonths } from "date-fns";
 
 /**

@@ -4,7 +4,7 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
     "@subeye/pricing": "workspace:*",
-    "@subeye/shared": "workspace:*",
+    "@subeye/model": "workspace:*",
     "astro": "^6.4.8",
     "date-fns": "^4.1.0"
   },

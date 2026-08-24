@@ -3,7 +3,7 @@ import {
   CreateCategorySchema,
   DeleteCategoriesInputSchema,
   UpdateCategorySchema,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { Hono } from "hono";
 import { object, string } from "valibot";
 import { CategoryService } from "../domains/category/categoryService";

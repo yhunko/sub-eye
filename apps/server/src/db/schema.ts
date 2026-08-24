@@ -1,4 +1,4 @@
-import { SubscriptionPeriod, subscriptionStatuses } from "@subeye/shared";
+import { SubscriptionPeriod, subscriptionStatuses } from "@subeye/model";
 import {
   boolean,
   index,
@@ -29,7 +29,7 @@ export const pricePhaseKindEnum = pgEnum("price_phase_kind", [
 /**
  * Persisted lifecycle status. Before v4 this was derived in JS on every read
  * from `subscriptions.cancelled_at`, which made SQL-side filtering impossible.
- * The member order must match `subscriptionStatuses` in @subeye/shared.
+ * The member order must match `subscriptionStatuses` in @subeye/model.
  */
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
   ...subscriptionStatuses,

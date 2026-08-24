@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@subeye/money": "workspace:*",
-    "@subeye/shared": "workspace:*",
+    "@subeye/model": "workspace:*",
     "@subeye/spend": "workspace:*",
     "@subeye/time": "workspace:*",
     "date-fns": "^4.1.0"

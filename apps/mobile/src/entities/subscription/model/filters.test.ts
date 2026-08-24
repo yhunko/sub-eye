@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,

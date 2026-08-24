@@ -45,7 +45,7 @@ the current charge.
    `resolveScheduledEffectiveAt` returns `null` for `mode: "customDate"` with no `customDate`;
    the server caller converts that into `CustomDateRequiredError`. Do not import server error
    classes here. Note the mode literal is `customDate`, not `custom` —
-   `scheduledPriceChangeModes` in `@subeye/shared` is `["nextOccurrence", "customDate"]`.
+   `scheduledPriceChangeModes` in `@subeye/model` is `["nextOccurrence", "customDate"]`.
 
 ## What stays in apps/server, deliberately
 
@@ -55,7 +55,7 @@ the current charge.
 `assertPhaseWindow` (which throws four different error classes and reads lifecycle status).
 
 `getSubscriptionLifecycleStatus`, `shouldIncludeOccurrence`, `isCurrentlyActiveSubscription`
-and `subscriptionLifecycleStatuses` stay in **`@subeye/shared`**. That is cycle avoidance, not
+and `subscriptionLifecycleStatuses` stay in **`@subeye/model`**. That is cycle avoidance, not
 an oversight: `shouldIncludeOccurrence` is consumed by `@subeye/spend`, so moving it here would
 make `pricing` and `spend` import each other through a shared leaf. Leave them where they are.
 

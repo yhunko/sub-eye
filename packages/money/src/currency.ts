@@ -1,4 +1,4 @@
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import type { RateTable } from "./rateTable";
 
 export class CurrencyUtils {

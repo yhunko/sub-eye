@@ -1,4 +1,4 @@
-import type { ApiErrorBody, ApiErrorCode } from "@subeye/shared";
+import type { ApiErrorBody, ApiErrorCode } from "@subeye/model";
 import type { Context } from "hono";
 import { reportServerException } from "./analytics";
 

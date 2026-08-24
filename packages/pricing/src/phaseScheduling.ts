@@ -1,4 +1,4 @@
-import type { ScheduledPriceChangeMode } from "@subeye/shared";
+import type { ScheduledPriceChangeMode } from "@subeye/model";
 import {
   type RecurringSubscription,
   SubscriptionCalculator,

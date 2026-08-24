@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from "@subeye/shared";
+import type { SubscriptionStatus } from "@subeye/model";
 
 // The single design-token source. Dark-only — there is no light theme, and
 // app.json pins userInterfaceStyle: "dark" so the OS never fights us.

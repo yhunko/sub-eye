@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { PricePhaseDto } from "@subeye/shared";
+import type { PricePhaseDto } from "@subeye/model";
 import { deriveAttention } from "./attention";
 import { makeSubscription } from "./subscription.fixture";
 

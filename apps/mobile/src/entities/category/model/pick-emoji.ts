@@ -1,4 +1,4 @@
-import { CATEGORY_EMOJIS } from "@subeye/shared";
+import { CATEGORY_EMOJIS } from "@subeye/model";
 
 /**
  * The emoji a newly-created category gets, derived from its name.

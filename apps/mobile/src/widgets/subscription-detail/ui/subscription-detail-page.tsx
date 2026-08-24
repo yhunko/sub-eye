@@ -1,5 +1,5 @@
-import type { SubscriptionDto } from "@subeye/shared";
-import { isCurrentlyActiveSubscription } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
+import { isCurrentlyActiveSubscription } from "@subeye/model";
 
 import { Stack } from "expo-router";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";

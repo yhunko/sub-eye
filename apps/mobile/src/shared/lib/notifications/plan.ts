@@ -1,5 +1,5 @@
-import type { PricePhaseDto, SubscriptionDto } from "@subeye/shared";
-import { SubscriptionPeriod } from "@subeye/shared";
+import type { PricePhaseDto, SubscriptionDto } from "@subeye/model";
+import { SubscriptionPeriod } from "@subeye/model";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
 import type { NotificationSettings } from "./settings";

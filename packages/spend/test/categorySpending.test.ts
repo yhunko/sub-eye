@@ -3,7 +3,7 @@ import {
   type CategoryDto,
   type SubscriptionDto,
   SubscriptionPeriod,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { AnalyticsCalculator } from "../src/analyticsCalculator";
 
 function createSubscription({

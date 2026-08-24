@@ -1,4 +1,4 @@
-import type { ApiErrorCode } from "@subeye/shared";
+import type { ApiErrorCode } from "@subeye/model";
 
 export class CategoryNotFoundError extends Error {
   readonly status = 404 as const;

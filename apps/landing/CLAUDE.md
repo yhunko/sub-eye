@@ -68,7 +68,7 @@ parameter, so they cost the visitor nothing. `src/lib/timeline.ts` **throws at
 build time** if the phase model stops returning three ordered phases with the
 trial live — a page that lies about the product must not ship.
 
-Likewise the lifecycle mockup maps `subscriptionStatuses` from `@subeye/shared`,
+Likewise the lifecycle mockup maps `subscriptionStatuses` from `@subeye/model`,
 and both copy dictionaries type their status labels as
 `Record<SubscriptionStatus, string>`. A new status fails `astro check` rather
 than rendering a gap.

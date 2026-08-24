@@ -1,7 +1,7 @@
 // Currency presentation for the mobile client, and the only place it is defined.
 //
 // The table stays local rather than shared: importing a symbol lookup from
-// @subeye/shared would drag that whole barrel (valibot schemas, date-fns
+// @subeye/model would drag that whole barrel (valibot schemas, date-fns
 // timezone utils) into the Metro bundle. The server only rounds amounts and
 // sends the currency code; symbols and grouping exist nowhere else, so there is
 // nothing to keep in sync. These five codes are the complete set the product

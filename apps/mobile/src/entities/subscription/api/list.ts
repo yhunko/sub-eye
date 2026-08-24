@@ -1,4 +1,4 @@
-import type { SubscriptionDto, SubscriptionListPageDto } from "@subeye/shared";
+import type { SubscriptionDto, SubscriptionListPageDto } from "@subeye/model";
 import { type QueryClient, queryOptions } from "@tanstack/react-query";
 import { apiClient, assertOk } from "@/shared/api";
 

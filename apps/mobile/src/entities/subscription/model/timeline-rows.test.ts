@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { PricePhaseDto } from "@subeye/shared";
+import type { PricePhaseDto } from "@subeye/model";
 import { toTimelineRows } from "./timeline-rows";
 
 const phase = (over: Partial<PricePhaseDto> = {}): PricePhaseDto => ({

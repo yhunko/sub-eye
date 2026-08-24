@@ -1,5 +1,5 @@
-import type { SubscriptionDto, SubscriptionStatus } from "@subeye/shared";
-import { isCurrentlyActiveSubscription } from "@subeye/shared";
+import type { SubscriptionDto, SubscriptionStatus } from "@subeye/model";
+import { isCurrentlyActiveSubscription } from "@subeye/model";
 import type { SubscriptionGroupBy } from "./grouping";
 
 export type SubscriptionSort = "next" | "name" | "cost";
@@ -23,7 +23,7 @@ export type SubscriptionListFilters = {
  * "Active" is a QUESTION, not a column value: is this still mine?
  *
  * `cancelling` answers yes. It is an active subscription that happens to have
- * an end date — it still bills, still gives access, and `@subeye/shared` already
+ * an end date — it still bills, still gives access, and `@subeye/model` already
  * encodes exactly that for spend, which is why this reuses the predicate rather
  * than restating it. Hiding one from the default list meant a subscription the
  * user is still paying for vanished the moment they scheduled its cancellation.

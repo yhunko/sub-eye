@@ -3,7 +3,7 @@ import {
   deriveSubscriptionStatus,
   getSubscriptionLifecycleStatus,
   subscriptionStatuses,
-} from "@subeye/shared";
+} from "@subeye/model";
 
 const now = new Date("2026-07-20T12:00:00.000Z");
 const future = "2026-09-01T00:00:00.000Z";

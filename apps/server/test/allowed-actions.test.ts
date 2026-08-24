@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { getAllowedActions } from "@subeye/shared";
+import { getAllowedActions } from "@subeye/model";
 
 describe("getAllowedActions", () => {
   const cases: Array<{

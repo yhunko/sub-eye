@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 import { QueryClient } from "@tanstack/react-query";
 import { makeSubscription } from "../model/subscription.fixture";
 

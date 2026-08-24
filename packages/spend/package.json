@@ -9,7 +9,7 @@
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
     "@subeye/money": "workspace:*",
-    "@subeye/shared": "workspace:*",
+    "@subeye/model": "workspace:*",
     "@subeye/time": "workspace:*",
     "date-fns": "^4.1.0"
   },

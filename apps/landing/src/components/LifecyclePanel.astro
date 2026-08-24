@@ -1,5 +1,5 @@
 ---
-import { subscriptionStatuses } from "@subeye/shared";
+import { subscriptionStatuses } from "@subeye/model";
 import { copyFor } from "../i18n";
 import type { Locale } from "../lib/site";
 
@@ -10,7 +10,7 @@ interface Props {
 const { locale } = Astro.props;
 const c = copyFor(locale);
 
-// Mapped from @subeye/shared rather than listed here, and `c.status` is a
+// Mapped from @subeye/model rather than listed here, and `c.status` is a
 // `Record<SubscriptionStatus, string>` — a new status in the app fails
 // `astro check` instead of quietly leaving a gap in the mockup.
 ---

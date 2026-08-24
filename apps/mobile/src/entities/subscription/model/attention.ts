@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 import { todayAsDay } from "@/shared/lib/format";
 
 /**

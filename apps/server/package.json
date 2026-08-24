@@ -14,7 +14,7 @@
     "@neondatabase/serverless": "^1.0.2",
     "@subeye/money": "workspace:*",
     "@subeye/pricing": "workspace:*",
-    "@subeye/shared": "workspace:*",
+    "@subeye/model": "workspace:*",
     "@subeye/spend": "workspace:*",
     "@subeye/time": "workspace:*",
     "date-fns": "^4.1.0",

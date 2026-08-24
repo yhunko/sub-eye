@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import type { UserPreferences } from "@subeye/shared";
+import type { UserPreferences } from "@subeye/model";
 
 // The entity builds on the real apiClient, whose env module validates the
 // EXPO_PUBLIC_* vars at import time — set them before the dynamic import below.

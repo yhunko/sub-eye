@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 
 export type SubscriptionGroupBy = "none" | "category" | "period" | "currency";
 

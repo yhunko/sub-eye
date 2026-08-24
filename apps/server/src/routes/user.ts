@@ -1,5 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
-import { UpdateUserPreferencesSchema } from "@subeye/shared";
+import { UpdateUserPreferencesSchema } from "@subeye/model";
 import { Hono } from "hono";
 import { UserService } from "../domains/user/userService";
 import { protect } from "../middleware/auth";

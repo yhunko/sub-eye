@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { SubscriptionCategoryNotFoundError } from "../src/domains/subscription/subscriptionErrors";
 import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
 

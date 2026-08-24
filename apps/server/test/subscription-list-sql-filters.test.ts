@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
 
 const preferences = {

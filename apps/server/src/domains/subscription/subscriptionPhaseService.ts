@@ -1,3 +1,11 @@
+import type {
+  PricePhaseKind,
+  SchedulePriceChangeInput,
+  StartPhaseInput,
+  SubscriptionDto,
+  UserPreferences,
+} from "@subeye/model";
+import { getSubscriptionLifecycleStatus } from "@subeye/model";
 import {
   buildPhaseProjection,
   getEffectivePhase,
@@ -7,14 +15,6 @@ import {
   selectDuePhases,
   toStartOfUtcDay,
 } from "@subeye/pricing";
-import type {
-  PricePhaseKind,
-  SchedulePriceChangeInput,
-  StartPhaseInput,
-  SubscriptionDto,
-  UserPreferences,
-} from "@subeye/shared";
-import { getSubscriptionLifecycleStatus } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";

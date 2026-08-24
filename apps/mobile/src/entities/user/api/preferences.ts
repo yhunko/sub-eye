@@ -1,4 +1,4 @@
-import type { UpdateUserPreferences, UserPreferences } from "@subeye/shared";
+import type { UpdateUserPreferences, UserPreferences } from "@subeye/model";
 import {
   queryOptions,
   useMutation,

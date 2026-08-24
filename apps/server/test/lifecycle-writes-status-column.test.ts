@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
 
 const preferences = {
@@ -49,7 +49,7 @@ function buildDeps(record: Record<string, unknown>) {
   return { deps, updates };
 }
 
-// packages/shared invariant 1: deriveSubscriptionStatus is what the lifecycle
+// packages/model invariant 1: deriveSubscriptionStatus is what the lifecycle
 // services write through. The column is the only thing findPageByUserId's
 // `?status=` filter can see, so a mutation that skips it makes a cancelled
 // subscription match `?status=active` and never match `?status=cancelled`.

@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from "@subeye/shared";
+import type { SubscriptionStatus } from "@subeye/model";
 import { and, asc, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";

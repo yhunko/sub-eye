@@ -1,4 +1,4 @@
-import type { StartPhaseInput, SubscriptionDto } from "@subeye/shared";
+import type { StartPhaseInput, SubscriptionDto } from "@subeye/model";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, assertOk } from "@/shared/api";
 import { notifyWriteFailed } from "@/shared/ui/notify";

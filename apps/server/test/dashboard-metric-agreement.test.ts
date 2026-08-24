@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { AnalyticsCalculator } from "@subeye/spend";
 import { AnalyticsService } from "../src/domains/analytics/analyticsService";
 

@@ -1,9 +1,9 @@
-import type { PhaseProjection } from "@subeye/pricing";
 import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
-} from "@subeye/shared";
-import { deriveSubscriptionStatus, getAllowedActions } from "@subeye/shared";
+} from "@subeye/model";
+import { deriveSubscriptionStatus, getAllowedActions } from "@subeye/model";
+import type { PhaseProjection } from "@subeye/pricing";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 
 /** The category, embedded on the DTO so the client renders a chip without a second request. */

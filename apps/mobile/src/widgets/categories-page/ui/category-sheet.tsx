@@ -1,4 +1,4 @@
-import type { UpdateCategoryInput } from "@subeye/shared";
+import type { UpdateCategoryInput } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";

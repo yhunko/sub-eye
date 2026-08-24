@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { TZDate } from "@date-fns/tz";
-import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { AnalyticsCalculator } from "../src/analyticsCalculator";
 

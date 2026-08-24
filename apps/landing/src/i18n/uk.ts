@@ -1,4 +1,4 @@
-import type { PricePhaseKind, SubscriptionStatus } from "@subeye/shared";
+import type { PricePhaseKind, SubscriptionStatus } from "@subeye/model";
 import type { Copy } from "./en";
 
 /** Ukrainian has one/few/many, so a bare `n === 1` would read wrong at 3 and 30. */

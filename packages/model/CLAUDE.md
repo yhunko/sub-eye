@@ -1,4 +1,4 @@
-# @subeye/shared — schemas, DTOs, and the status vocabulary
+# @subeye/model — records, DTOs, and the status vocabulary
 
 Consumed by every other workspace, so this is the one package where a careless
 rename lands in the API contract, the mobile client, and the database at once.
@@ -52,7 +52,7 @@ migration. See the comment in `subscriptionStatus.ts`.
    the rules client-side; add the case here.
 3. **Everything public is re-exported through the barrels.** `src/index.ts`
    re-exports each domain's `index.ts`. A symbol not exported there is not
-   importable by consumers, who only ever import `@subeye/shared`.
+   importable by consumers, who only ever import `@subeye/model`.
 4. **`@subeye/time` is the only package this one may import.** `pricing`,
    `spend`, and the server all depend on this package, so any other edge outward
    becomes a cycle — `time` is safe only because it is a leaf and imports

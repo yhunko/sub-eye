@@ -1,4 +1,3 @@
-import { buildPhaseProjection, toStartOfUtcDay } from "@subeye/pricing";
 import type {
   AddSubscriptionInput,
   BulkDeleteSubscriptionsInput,
@@ -11,8 +10,9 @@ import type {
   SubscriptionStatus,
   UpdateSubscriptionInput,
   UserPreferences,
-} from "@subeye/shared";
-import { deriveSubscriptionStatus } from "@subeye/shared";
+} from "@subeye/model";
+import { deriveSubscriptionStatus } from "@subeye/model";
+import { buildPhaseProjection, toStartOfUtcDay } from "@subeye/pricing";
 import { SubscriptionCalculator } from "@subeye/spend";
 import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { CategoryRepository } from "../category/categoryRepository";
