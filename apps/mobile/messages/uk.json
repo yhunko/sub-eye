@@ -106,6 +106,7 @@
   "paywall_lockWidgetsBody": "Наступний платіж і сума за місяць — без відкривання застосунку.",
   "notif_renewalTitle": "{name} поновлюється {when}",
   "notif_renewalBody": "Буде списано {amount}.",
+  "notif_renewalBodyNoAmount": "Буде здійснено списання.",
   "when_today": "Сьогодні",
   "when_tomorrow": "Завтра",
   "when_inDays": "через {days} дн.",

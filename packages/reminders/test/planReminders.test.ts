@@ -1,48 +1,45 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "@subeye/model";
-import type { ReminderInput } from "./plan";
-import type { NotificationSettings } from "./settings";
+import {
+  planReminders,
+  REMINDER_LOOKAHEAD,
+  type ReminderCopy,
+  type ReminderInput,
+  type ReminderSettings,
+} from "../src";
 
-// Paraglide's runtime touches expo-localization through the i18n barrel; stub
-// the message functions so this stays a pure unit test of the projection.
 // Each stub echoes its inputs so an assertion can tell the shapes apart.
-mock.module("@/shared/i18n", () => ({
-  // Unused here, but `plan` imports the format barrel, which reaches `when` —
-  // and `when` asks the stubbed barrel for this at import time.
-  dateLocale: () => "en-GB",
-  m: {
-    notif_whenToday: () => "today",
-    notif_whenTomorrow: () => "tomorrow",
-    notif_whenInDays: ({ days }: { days: number }) => `in ${days} days`,
-    notif_renewalTitle: ({ name, when }: { name: string; when: string }) =>
-      `${name} renews ${when}`,
-    notif_renewalBody: ({ amount }: { amount: string }) => amount,
-    notif_renewalDigestTitle: ({ when }: { when: string }) =>
-      `Renewing ${when}`,
-    notif_renewalDigestTitleMixed: () => "Upcoming renewals",
-    notif_trialTitle: ({ name, when }: { name: string; when: string }) =>
-      `${name} trial ends ${when}`,
-    notif_trialBody: ({ amount }: { amount: string }) => `trial ${amount}`,
-    notif_trialBodyNoAmount: () => "trial no amount",
-    notif_trialDigestTitle: ({ when }: { when: string }) =>
-      `Trials ending ${when}`,
-    notif_trialDigestTitleMixed: () => "Trials ending soon",
-    notif_digestBody: ({ names, amount }: { names: string; amount: string }) =>
-      `${names} · ${amount}`,
-    notif_digestMore: ({ names, count }: { names: string; count: number }) =>
-      `${names} and ${count} more`,
-  },
-}));
-
-const { planReminders, REMINDER_LOOKAHEAD } = await import("./plan");
+// `money` mirrors `formatMoney`: the symbol for a known code, the code itself
+// for anything else.
+const testCopy: ReminderCopy = {
+  whenToday: () => "today",
+  whenTomorrow: () => "tomorrow",
+  whenInDays: ({ days }) => `in ${days} days`,
+  renewalTitle: ({ name, when }) => `${name} renews ${when}`,
+  renewalBody: ({ amount }) => amount,
+  renewalBodyNoAmount: () => "renewal no amount",
+  renewalDigestTitle: ({ when }) => `Renewing ${when}`,
+  renewalDigestTitleMixed: () => "Upcoming renewals",
+  trialTitle: ({ name, when }) => `${name} trial ends ${when}`,
+  trialBody: ({ amount }) => `trial ${amount}`,
+  trialBodyNoAmount: () => "trial no amount",
+  trialDigestTitle: ({ when }) => `Trials ending ${when}`,
+  trialDigestTitleMixed: () => "Trials ending soon",
+  digestBody: ({ names, amount }) => `${names} · ${amount}`,
+  digestMore: ({ names, count }) => `${names} and ${count} more`,
+  money: (amount, currency) =>
+    currency === "uah"
+      ? `₴${amount.toFixed(2)}`
+      : `${amount.toFixed(2)} ${currency.toUpperCase()}`,
+};
 
 // Local time, so `now` is comparable to the device-zone instants the planner
 // returns regardless of which zone the test runs in.
 const NOW = new Date(2026, 6, 1, 12);
 
 const settings = (
-  overrides: Partial<NotificationSettings> = {},
-): NotificationSettings => ({
+  overrides: Partial<ReminderSettings> = {},
+): ReminderSettings => ({
   renewals: true,
   renewalLeadDays: [1],
   trials: false,
@@ -94,6 +91,7 @@ describe("planReminders", () => {
       [sub()],
       settings({ hour: 7, minute: 30 }),
       NOW,
+      testCopy,
     );
 
     // 1 August renews -> 31 July 07:30, rolling back over the month boundary.
@@ -115,9 +113,23 @@ describe("planReminders", () => {
       [sub({ billing: billing(410, "uah", "usd") })],
       settings(),
       NOW,
+      testCopy,
     );
 
     expect(reminders[0]?.body).toBe("₴410.00");
+  });
+
+  // `renewalBody` formats an amount unconditionally, so an amount that could
+  // not be converted would read "₴0.00 will be charged".
+  it("names no figure when the renewal amount is unknown", () => {
+    const reminders = planReminders(
+      [sub({ billing: billing(0) })],
+      settings(),
+      NOW,
+      testCopy,
+    );
+
+    expect(reminders[0]?.body).toBe("renewal no amount");
   });
 
   it("totals a digest in the preferred currency across mixed originals", () => {
@@ -132,6 +144,7 @@ describe("planReminders", () => {
       ],
       settings(),
       NOW,
+      testCopy,
     );
 
     expect(reminders[0]?.body).toBe("Netflix, Spotify · ₴500.00");
@@ -142,6 +155,7 @@ describe("planReminders", () => {
       [sub({ nextPaymentDate: "2026-12-31T00:00:00.000Z" })],
       settings(),
       NOW,
+      testCopy,
     );
 
     expect(reminders).toHaveLength(REMINDER_LOOKAHEAD);
@@ -155,7 +169,7 @@ describe("planReminders", () => {
 
   it("skips a subscription that is not billing", () => {
     expect(
-      planReminders([sub({ status: "cancelling" })], settings(), NOW),
+      planReminders([sub({ status: "cancelling" })], settings(), NOW, testCopy),
     ).toEqual([]);
   });
 
@@ -166,6 +180,7 @@ describe("planReminders", () => {
       [sub(), sub({ id: "sub_2", name: "Spotify", billing: billing(50) })],
       settings(),
       NOW,
+      testCopy,
     );
 
     expect(reminders).toHaveLength(REMINDER_LOOKAHEAD);
@@ -181,6 +196,7 @@ describe("planReminders", () => {
       ),
       settings(),
       NOW,
+      testCopy,
     );
 
     expect(reminders[0]?.body).toBe("a, b, c and 2 more · ₴500.00");
@@ -201,6 +217,7 @@ describe("planReminders", () => {
       ],
       settings({ renewalLeadDays: [1, 3] }),
       NOW,
+      testCopy,
     );
 
     const merged = reminders.find((r) => r.title === "Upcoming renewals");
@@ -215,6 +232,7 @@ describe("planReminders", () => {
       [sub()],
       settings({ renewalLeadDays: [0, 3] }),
       NOW,
+      testCopy,
     );
 
     const first = reminders.filter(
@@ -239,6 +257,7 @@ describe("planReminders", () => {
       ],
       settings({ renewalLeadDays: [0, 1] }),
       NOW,
+      testCopy,
     );
 
     for (const reminder of reminders) {
@@ -258,6 +277,7 @@ describe("planReminders", () => {
       ),
       settings(),
       NOW,
+      testCopy,
       3,
     );
 
@@ -285,10 +305,10 @@ describe("planReminders", () => {
 
     // One monthly subscription is exactly REMINDER_LOOKAHEAD mornings.
     expect(
-      planReminders(days(1), settings(), NOW, REMINDER_LOOKAHEAD + 1),
+      planReminders(days(1), settings(), NOW, testCopy, REMINDER_LOOKAHEAD + 1),
     ).toHaveLength(REMINDER_LOOKAHEAD);
     expect(
-      planReminders(days(2), settings(), NOW, REMINDER_LOOKAHEAD + 1),
+      planReminders(days(2), settings(), NOW, testCopy, REMINDER_LOOKAHEAD + 1),
     ).toHaveLength(REMINDER_LOOKAHEAD + 1);
   });
 });
@@ -310,6 +330,7 @@ describe("planReminders — trials", () => {
       [trialSub()],
       settings({ renewals: false, trials: true }),
       NOW,
+      testCopy,
     );
 
     expect(reminders).toHaveLength(1);
@@ -323,6 +344,7 @@ describe("planReminders — trials", () => {
       [trialSub({ upcomingPhase: null })],
       settings({ renewals: false, trials: true }),
       NOW,
+      testCopy,
     );
 
     expect(reminders[0]?.body).toBe("trial no amount");
@@ -348,6 +370,7 @@ describe("planReminders — trials", () => {
       ],
       settings({ renewals: false, trials: true }),
       NOW,
+      testCopy,
     );
 
     expect(reminders).toEqual([]);
@@ -360,6 +383,7 @@ describe("planReminders — trials", () => {
       [trialSub({ id: "trial_1" }), sub({ id: "sub_2", name: "Spotify" })],
       settings({ renewals: true, trials: true }),
       NOW,
+      testCopy,
     );
 
     const sameMorning = reminders.filter(
@@ -379,6 +403,7 @@ describe("planReminders — trials", () => {
       [trialSub({ id: "t1" }), trialSub({ id: "t2", name: "Notion" })],
       settings({ renewals: false, trials: true }),
       NOW,
+      testCopy,
     );
 
     expect(reminders).toHaveLength(1);
@@ -392,7 +417,37 @@ describe("planReminders — trials", () => {
         [trialSub()],
         settings({ renewals: false, trials: false }),
         NOW,
+        testCopy,
       ),
     ).toEqual([]);
+  });
+});
+
+describe("planReminders — the shared recurrence engine", () => {
+  // The private engine this replaced checked only `status === "active"`, which
+  // happens to be right — this pins the shared one to the same rule.
+  it("produces nothing for a paused subscription", () => {
+    // The control: the same subscription, active, DOES produce reminders.
+    // Without it the assertion below would pass for the wrong reason.
+    expect(
+      planReminders([sub()], settings(), NOW, testCopy).length,
+    ).toBeGreaterThan(0);
+    expect(
+      planReminders([sub({ status: "paused" })], settings(), NOW, testCopy),
+    ).toHaveLength(0);
+  });
+
+  // Jan 31 monthly clamps to Feb 28 and then returns to Mar 31. Measuring from
+  // the anchor every time is what makes that work — stepping from the clamped
+  // occurrence would drag every later one back to the 28th and keep it there.
+  it("clamps a month-end occurrence without dragging the rest back", () => {
+    const reminders = planReminders(
+      [sub({ nextPaymentDate: "2027-01-31T00:00:00.000Z" })],
+      settings({ renewalLeadDays: [0] }),
+      new Date(2027, 0, 1),
+      testCopy,
+    );
+
+    expect(reminders.map((r) => r.fireAt.getDate())).toEqual([31, 28, 31]);
   });
 });

@@ -13,11 +13,12 @@ packages/money    currency codes, rate tables, conversion, FX document parsing
 packages/lifecycle status derivation, allowed actions, pure cancel/renew/pause/resume
 packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
 packages/spend    pure occurrence engine (payment projection, aggregates)
+packages/reminders what to remind about and when — copy injected, no OS types
 ```
 
-Each of `apps/*` and `packages/model|time|money|lifecycle|pricing|spend` has its
-own `CLAUDE.md` with the invariants for that area. Read the one you are touching —
-those carry the rules that actually bite.
+Each of `apps/*` and `packages/model|time|money|lifecycle|pricing|spend|reminders`
+has its own `CLAUDE.md` with the invariants for that area. Read the one you are
+touching — those carry the rules that actually bite.
 
 ## Commands
 

@@ -1,19 +1,18 @@
-import * as Notifications from "expo-notifications";
-import { useEffect, useRef } from "react";
-import { Platform } from "react-native";
-import { m } from "@/shared/i18n";
 import {
+  effectiveSettings,
   planReminders,
   REMINDER_BUDGET,
   type ReminderInput,
   type ReminderKind,
+  type ReminderSettings,
   type ReminderTarget,
-} from "./plan";
-import {
-  effectiveSettings,
-  type NotificationSettings,
-  readNotificationSettings,
-} from "./settings";
+} from "@subeye/reminders";
+import * as Notifications from "expo-notifications";
+import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
+import { m } from "@/shared/i18n";
+import { reminderCopy } from "./copy";
+import { readNotificationSettings } from "./settings";
 import { createSettleBarrier } from "./settle-barrier";
 import { triggerTime } from "./trigger-time";
 
@@ -29,21 +28,24 @@ import { triggerTime } from "./trigger-time";
  * the list or with the settings.
  */
 
-export type { ReminderInput, ReminderTarget } from "./plan";
 export {
-  DEFAULT_NOTIFICATION_SETTINGS,
+  DEFAULT_REMINDER_SETTINGS,
   effectiveSettings,
   FREE_LEAD_DAYS,
   LEAD_DAY_CHOICES,
-  type NotificationSettings,
-  readNotificationSettings,
+  type ReminderInput,
+  type ReminderSettings,
+  type ReminderTarget,
   toggleLeadDay,
+} from "@subeye/reminders";
+export {
+  readNotificationSettings,
   writeNotificationSettings,
 } from "./settings";
 
 /** The stored settings with the Pro gate already applied, for callers that
  * only hold `isPro` and have no reason to touch storage themselves. */
-export const readEffectiveSettings = (isPro: boolean): NotificationSettings =>
+export const readEffectiveSettings = (isPro: boolean): ReminderSettings =>
   effectiveSettings(readNotificationSettings(), isPro);
 
 /**
@@ -130,14 +132,14 @@ export async function ensureNotificationPermission(): Promise<boolean> {
  */
 export function syncReminders(
   subscriptions: readonly ReminderInput[],
-  settings: NotificationSettings,
+  settings: ReminderSettings,
 ): Promise<void> {
   return syncBarrier.track(rebuild(subscriptions, settings));
 }
 
 async function rebuild(
   subscriptions: readonly ReminderInput[],
-  settings: NotificationSettings,
+  settings: ReminderSettings,
 ): Promise<void> {
   const generation = ++syncGeneration;
   const current = () => generation === syncGeneration;
@@ -161,6 +163,7 @@ async function rebuild(
     subscriptions,
     settings,
     new Date(),
+    reminderCopy,
     REMINDER_BUDGET + 1,
   );
   planTruncated = plan.length > REMINDER_BUDGET;

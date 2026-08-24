@@ -1,13 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import {
-  DEFAULT_NOTIFICATION_SETTINGS,
+  DEFAULT_REMINDER_SETTINGS,
   effectiveSettings,
   FREE_LEAD_DAYS,
   toggleLeadDay,
-} from "./settings";
+} from "../src";
 
 const pro = {
-  ...DEFAULT_NOTIFICATION_SETTINGS,
+  ...DEFAULT_REMINDER_SETTINGS,
   renewals: true,
   renewalLeadDays: [0, 3, 7],
   trials: true,

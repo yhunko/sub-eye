@@ -106,6 +106,7 @@
   "paywall_lockWidgetsBody": "See your next payment and this month's total without opening the app.",
   "notif_renewalTitle": "{name} renews {when}",
   "notif_renewalBody": "{amount} will be charged.",
+  "notif_renewalBodyNoAmount": "You will be charged.",
   "when_today": "Today",
   "when_tomorrow": "Tomorrow",
   "when_inDays": "in {days} days",

@@ -18,7 +18,7 @@ import {
   ensureNotificationPermission,
   LEAD_DAY_CHOICES,
   type NotificationHealth,
-  type NotificationSettings,
+  type ReminderSettings,
   readNotificationHealth,
   readNotificationSettings,
   sendTestNotification,
@@ -80,7 +80,7 @@ type Status = {
 /** What is on the schedule, for the row's second line. */
 function scheduleSummary(
   health: NotificationHealth,
-  settings: NotificationSettings,
+  settings: ReminderSettings,
 ): string {
   if (!settings.renewals && !settings.trials) return m.notifs_summaryOff();
   if (health.scheduled === 0) return m.notifs_summaryNone();
@@ -109,7 +109,7 @@ function scheduleSummary(
  */
 function describeStatus(
   health: NotificationHealth | null,
-  settings: NotificationSettings,
+  settings: ReminderSettings,
 ): Status {
   if (!health) {
     return {
@@ -312,15 +312,12 @@ export function NotificationsPage() {
     void syncReminders(subscriptionData, view).then(refresh);
   }, [view, subscriptionData, refresh]);
 
-  const apply = (patch: Partial<NotificationSettings>) =>
+  const apply = (patch: Partial<ReminderSettings>) =>
     setSettings(writeNotificationSettings(patch));
 
   const status = describeStatus(health, view);
 
-  const enable = async (
-    patch: Partial<NotificationSettings>,
-    enabled: boolean,
-  ) => {
+  const enable = async (patch: Partial<ReminderSettings>, enabled: boolean) => {
     if (!enabled) {
       apply(patch);
       return;

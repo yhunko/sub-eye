@@ -1,42 +1,12 @@
-import type { PricePhaseDto, SubscriptionDto } from "@subeye/model";
-import { SubscriptionPeriod } from "@subeye/model";
-import { m } from "@/shared/i18n";
-import { formatMoney } from "@/shared/lib/format";
-import type { NotificationSettings } from "./settings";
-
-/**
- * The fields scheduling actually reads, not the whole 24-field DTO. A
- * `SubscriptionDto` satisfies this structurally, so callers still pass the list
- * straight through — but `shared/` stays off the entity layer's fixture, which
- * `mobile-fsd-no-shared-upward` would reject, and the test builds inputs by hand.
- *
- * The two phase fields are optional so a test fixture can omit them; a
- * subscription with no trial reads identically to one that never had phases.
- */
-export type ReminderInput = Pick<
-  SubscriptionDto,
-  "id" | "name" | "every" | "period" | "nextPaymentDate" | "status" | "billing"
-> & {
-  pricePhases?: readonly Pick<PricePhaseDto, "kind" | "endsAt" | "isActive">[];
-  upcomingPhase?: Pick<PricePhaseDto, "billing"> | null;
-};
-
-export type ReminderKind = "renewal" | "trialEnd";
-
-/** Where a tap on the notification should land. Read by the app-layer router. */
-export type ReminderTarget =
-  | { screen: "subscription"; id: string }
-  | { screen: "due"; date: string }
-  | { screen: "list" };
-
-/** One local notification to schedule. Plain data — no expo types in here. */
-export type Reminder = {
-  kind: ReminderKind;
-  fireAt: Date;
-  title: string;
-  body: string;
-  target: ReminderTarget;
-};
+import type { SubscriptionDto } from "@subeye/model";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
+import type {
+  Reminder,
+  ReminderCopy,
+  ReminderInput,
+  ReminderKind,
+} from "./reminder";
+import type { ReminderSettings } from "./settings";
 
 /**
  * iOS keeps only the **64 soonest** pending local notifications per app and
@@ -77,59 +47,6 @@ type ReminderEvent = {
   amount: number;
   currency: string;
 };
-
-/**
- * `nextPaymentDate` and friends are UTC-midnight calendar dates, and the rest of
- * the app reads them that way (`formatDate` pins `timeZone: "UTC"`). So the
- * projection walks UTC components — `date-fns` would apply the device's zone and
- * let a DST shift move a renewal across midnight.
- *
- * ponytail: `Date.UTC` rather than `@subeye/spend`. This is `nextPaymentDate`
- * plus an interval, not a spend derivation; the package is not a mobile
- * dependency and would cost bundle weight for arithmetic the platform does. If
- * a real edge case ever needs proration or pause windows, swap it in — and note
- * that pure packages take `now` as a parameter and never touch a clock.
- */
-function addUtcMonths(date: Date, months: number): Date {
-  // Clamp to the target month's last day: the 31st of a 30-day month would
-  // otherwise overflow into the next one (Jan 31 + 1 month → Mar 3).
-  const target = new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1),
-  );
-  const lastDay = new Date(
-    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
-  ).getUTCDate();
-  target.setUTCDate(Math.min(date.getUTCDate(), lastDay));
-  return target;
-}
-
-/**
- * The `step`-th occurrence after `anchor`, always measured from the anchor
- * rather than by repeated stepping — stepping would let a clamped month
- * (Jan 31 → Feb 28) drag every later occurrence back with it.
- */
-function occurrenceAfter(
-  anchor: Date,
-  every: number,
-  period: SubscriptionPeriod,
-  step: number,
-): Date {
-  const count = every * step;
-  const year = anchor.getUTCFullYear();
-  const month = anchor.getUTCMonth();
-  const day = anchor.getUTCDate();
-
-  switch (period) {
-    case SubscriptionPeriod.DAY:
-      return new Date(Date.UTC(year, month, day + count));
-    case SubscriptionPeriod.WEEK:
-      return new Date(Date.UTC(year, month, day + count * 7));
-    case SubscriptionPeriod.MONTH:
-      return addUtcMonths(anchor, count);
-    case SubscriptionPeriod.YEAR:
-      return addUtcMonths(anchor, count * 12);
-  }
-}
 
 /**
  * The instant a reminder for `date` fires: `leadDays` earlier, at the configured
@@ -177,7 +94,7 @@ function renewalEvents(subscription: ReminderInput): ReminderEvent[] {
   // inside its final paid period and will not be charged again.
   if (subscription.status !== "active") return [];
 
-  const anchor = new Date(subscription.nextPaymentDate);
+  const anchor = DateTimezoneUtils.toCalendarDay(subscription.nextPaymentDate);
   if (Number.isNaN(anchor.getTime())) return [];
 
   const events: ReminderEvent[] = [];
@@ -186,7 +103,15 @@ function renewalEvents(subscription: ReminderInput): ReminderEvent[] {
       eventOf(
         subscription,
         "renewal",
-        occurrenceAfter(anchor, subscription.every, subscription.period, step),
+        // `every * step` measured from the anchor on every iteration, never by
+        // stepping from the last occurrence: a clamped month (Jan 31 → Feb 28)
+        // would otherwise drag every later occurrence back with it. `addPeriod`
+        // anchors on the date it is handed, which is the anchor.
+        RecurrenceUtils.addPeriod(
+          anchor,
+          subscription.every * step,
+          subscription.period,
+        ),
         subscription.billing,
       ),
     );
@@ -224,18 +149,21 @@ function trialEndEvent(subscription: ReminderInput): ReminderEvent | null {
 }
 
 /** "today" / "tomorrow" / "in N days" — lowercase, for use inside a sentence. */
-function whenPhrase(leadDays: number): string {
-  if (leadDays <= 0) return m.notif_whenToday();
-  if (leadDays === 1) return m.notif_whenTomorrow();
-  return m.notif_whenInDays({ days: leadDays });
+function whenPhrase(leadDays: number, copy: ReminderCopy): string {
+  if (leadDays <= 0) return copy.whenToday();
+  if (leadDays === 1) return copy.whenTomorrow();
+  return copy.whenInDays({ days: leadDays });
 }
 
 /** "Netflix, Spotify and 2 more" — never a bare count, which needs plurals. */
-function nameList(events: readonly ReminderEvent[]): string {
+function nameList(
+  events: readonly ReminderEvent[],
+  copy: ReminderCopy,
+): string {
   const names = events.map((event) => event.name);
   if (names.length <= DIGEST_NAME_LIMIT) return names.join(", ");
 
-  return m.notif_digestMore({
+  return copy.digestMore({
     names: names.slice(0, DIGEST_NAME_LIMIT).join(", "),
     count: names.length - DIGEST_NAME_LIMIT,
   });
@@ -262,21 +190,27 @@ function describe(
   kind: ReminderKind,
   fireAt: Date,
   events: readonly ReminderEvent[],
+  copy: ReminderCopy,
 ): Reminder {
   const first = events[0];
   if (!first) throw new Error("empty reminder group");
 
-  const when = whenPhrase(leadDaysOf(first, fireAt));
+  const when = whenPhrase(leadDaysOf(first, fireAt), copy);
 
   if (events.length === 1) {
     if (kind === "renewal") {
       return {
         kind,
         fireAt,
-        title: m.notif_renewalTitle({ name: first.name, when }),
-        body: m.notif_renewalBody({
-          amount: formatMoney(first.amount, first.currency),
-        }),
+        title: copy.renewalTitle({ name: first.name, when }),
+        // An amount that could not be converted is 0, and naming it would
+        // promise a charge of nothing. Same fork as the trial branch below.
+        body:
+          first.amount > 0
+            ? copy.renewalBody({
+                amount: copy.money(first.amount, first.currency),
+              })
+            : copy.renewalBodyNoAmount(),
         target: { screen: "subscription", id: first.subscriptionId },
       };
     }
@@ -286,13 +220,13 @@ function describe(
     return {
       kind,
       fireAt,
-      title: m.notif_trialTitle({ name: first.name, when }),
+      title: copy.trialTitle({ name: first.name, when }),
       body:
         first.amount > 0
-          ? m.notif_trialBody({
-              amount: formatMoney(first.amount, first.currency),
+          ? copy.trialBody({
+              amount: copy.money(first.amount, first.currency),
             })
-          : m.notif_trialBodyNoAmount(),
+          : copy.trialBodyNoAmount(),
       target: { screen: "subscription", id: first.subscriptionId },
     };
   }
@@ -305,13 +239,13 @@ function describe(
   // event has a figure: one unknown price would silently understate the rest,
   // and a total that is quietly too low is worse than no total.
   const total = events.every((event) => event.amount > 0)
-    ? formatMoney(
+    ? copy.money(
         Number(events.reduce((sum, event) => sum + event.amount, 0).toFixed(2)),
         first.currency,
       )
     : null;
 
-  const names = nameList(events);
+  const names = nameList(events, copy);
 
   return {
     kind,
@@ -319,12 +253,12 @@ function describe(
     title:
       kind === "renewal"
         ? sameDay
-          ? m.notif_renewalDigestTitle({ when })
-          : m.notif_renewalDigestTitleMixed()
+          ? copy.renewalDigestTitle({ when })
+          : copy.renewalDigestTitleMixed()
         : sameDay
-          ? m.notif_trialDigestTitle({ when })
-          : m.notif_trialDigestTitleMixed(),
-    body: total ? m.notif_digestBody({ names, amount: total }) : names,
+          ? copy.trialDigestTitle({ when })
+          : copy.trialDigestTitleMixed(),
+    body: total ? copy.digestBody({ names, amount: total }) : names,
     // The due screen filters on `nextPaymentDate`, so only a renewal group can
     // point at it — a trial-end group shares a date with nothing that screen
     // knows how to look up and would open an empty list. A mixed-day group has
@@ -347,13 +281,15 @@ function describe(
  * banners on the same minute whenever lead times overlap, which is the exact
  * thing this exists to prevent.
  *
- * Pure: takes `now`, never reads a clock, never touches `expo-notifications` or
- * storage. The effectful wrapper in `./index` is a thin shell over this.
+ * Pure: takes `now` and its copy, never reads a clock, never touches
+ * `expo-notifications` or storage. The effectful wrapper in the app is a thin
+ * shell over this.
  */
 export function planReminders(
   subscriptions: readonly ReminderInput[],
-  settings: NotificationSettings,
+  settings: ReminderSettings,
   now: Date,
+  copy: ReminderCopy,
   budget: number = REMINDER_BUDGET,
 ): Reminder[] {
   const events: ReminderEvent[] = [];
@@ -413,5 +349,5 @@ export function planReminders(
   return [...groups.values()]
     .sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime())
     .slice(0, budget)
-    .map((group) => describe(group.kind, group.fireAt, group.events));
+    .map((group) => describe(group.kind, group.fireAt, group.events, copy));
 }

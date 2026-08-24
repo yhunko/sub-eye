@@ -127,6 +127,11 @@ the app already holds, rebuilt wholesale (cancel-all → recompute → reschedul
 every foreground. Wholesale is what makes it idempotent: no stored notification
 ids, no reconciliation, nothing to drift.
 
+WHAT to remind about lives in `@subeye/reminders`; this directory is the platform
+half — scheduling, MMKV storage, tap routing, and `copy.ts`, which renders the
+planner's strings from `m`. A pure package cannot import paraglide, so the copy
+is injected rather than looked up.
+
 - **iOS keeps only the 64 soonest pending local notifications and silently drops
   the rest.** No error, no warning. `REMINDER_BUDGET = 56` leaves headroom. This
   ceiling is why `planReminders` **groups by firing instant**: every event landing
