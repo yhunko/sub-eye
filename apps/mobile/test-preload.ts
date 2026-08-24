@@ -92,3 +92,16 @@ mock.module("react-native-mmkv", () => {
 mock.module("expo-router", () => ({
   useRouter: () => ({ push: () => {}, back: () => {} }),
 }));
+
+/**
+ * `expo-crypto` is a native module — `randomUUID` calls straight into it, and
+ * merely importing the package pulls in `expo/src/async-require/setup`, which
+ * reads `__DEV__` and dies before any of that.
+ *
+ * Delegates to Bun's Web Crypto rather than returning a counter: `newId` in the
+ * store ports is the only source of record ids, and a stub that repeated itself
+ * would make a uniqueness test pass against a store that overwrites rows.
+ */
+mock.module("expo-crypto", () => ({
+  randomUUID: () => crypto.randomUUID(),
+}));
