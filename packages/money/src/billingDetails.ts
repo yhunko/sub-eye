@@ -14,10 +14,13 @@ export type BillableAmount = {
 };
 
 const getExchangeRate = (
-  from: string,
-  to: string,
+  fromCode: string,
+  toCode: string,
   rates: RateTable,
 ): number => {
+  const from = CurrencyUtils.normalizeCode(fromCode);
+  const to = CurrencyUtils.normalizeCode(toCode);
+
   if (from === to) return 1;
   const rate = rates[from];
   if (!rate) return 1;
