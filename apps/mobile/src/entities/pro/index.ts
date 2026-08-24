@@ -5,6 +5,5 @@ export {
   purchasePro,
   restorePro,
   usePro,
-  useProIdentity,
 } from "./model/purchases";
 export { ProLock } from "./ui/pro-lock";

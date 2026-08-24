@@ -9,7 +9,7 @@ import { colors } from "./theme";
  * shows a blank window — the red box is a development-only affordance, so in
  * production the app simply stops with nothing on screen and nothing logged.
  *
- * Deliberately plain: no Clerk, no Query, no navigation. This renders when
+ * Deliberately plain: no Query, no navigation. This renders when
  * something in that stack has already failed, so anything it touches is a second
  * crash with no handler left above it. `retry` is expo-router's own — it remounts
  * the subtree rather than restarting the app.

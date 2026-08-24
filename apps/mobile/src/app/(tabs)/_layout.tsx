@@ -1,7 +1,6 @@
-import { useAuth } from "@clerk/clerk-expo";
 import { applyDuePhases } from "@subeye/store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Redirect, useRouter, useSegments } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
@@ -11,7 +10,6 @@ import {
   invalidateSubscriptionData,
   subscriptionsQuery,
 } from "@/entities/subscription";
-import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
 import {
   readEffectiveSettings,
@@ -24,8 +22,7 @@ import { colors } from "@/shared/ui/theme";
 
 /**
  * Renders nothing; keeps the device's pending reminders in step with the
- * subscription list. Mounted here rather than in the root layout so it only runs
- * for a signed-in user.
+ * subscription list.
  *
  * Rebuilds the whole schedule — cancel all, recompute, re-schedule — on every
  * foreground and whenever the list changes. Wholesale is what makes it
@@ -135,24 +132,6 @@ function ReminderTapRouter() {
 // minimizeBehavior="onScrollDown": the iOS 26 pill tab bar collapses as a list
 // scrolls down and re-expands on scroll up.
 export default function TabsLayout() {
-  const { isLoaded, isSignedIn } = useAuth();
-
-  // Clerk's isLoaded waits on a client handshake — a network round-trip, not a
-  // SecureStore read. Blocking on it left a returning user staring at a black
-  // screen, so the device's own record of the last session decides what to mount
-  // and the store paints real numbers off MMKV immediately.
-  //
-  // The hint is trusted in BOTH directions on purpose: rendering nothing while
-  // undecided is the same black screen by another name. Clerk still has the
-  // final say — it redirects here when it resolves to signed-out, and (auth)
-  // redirects back when it resolves to signed-in, so a stale hint in either
-  // direction costs one redirect and never data. Every request carries a real
-  // token and the server 401s without one.
-  if (!isLoaded) {
-    return sessionHint.read() ? <Tabs /> : <Redirect href="/sign-in" />;
-  }
-  if (!isSignedIn) return <Redirect href="/sign-in" />;
-
   return <Tabs />;
 }
 

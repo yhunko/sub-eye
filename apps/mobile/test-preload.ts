@@ -13,11 +13,9 @@ import { mock } from "bun:test";
  * must not be able to break the suite that way again.
  *
  * `??=`, so a real `.env` still wins — a local run stays faithful to the build
- * it mirrors. Tests that assert on a URL set `EXPO_PUBLIC_API_URL` themselves
- * before importing the client; this is only a floor.
+ * it mirrors. A floor for a var that no longer exists is the same trap in
+ * reverse, so this list tracks `env.ts` exactly.
  */
-process.env.EXPO_PUBLIC_API_URL ??= "https://api.test";
-process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??= "pk_test_x";
 process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ??= "test_x";
 
 /**
@@ -47,8 +45,8 @@ mock.module("react-native", () => ({
  * Same problem, third time: `@sentry/react-native` reaches
  * `react-native/Libraries/TurboModule/TurboModuleRegistry`, past the stub above.
  * Crash reporting is deliberately woven into the low layers — the query client,
- * the token bridge, the error boundary — so the modules that import it are
- * exactly the ones a pure-logic test pulls in for a query key or a type.
+ * the error boundary — so the modules that import it are exactly the ones a
+ * pure-logic test pulls in for a query key or a type.
  *
  * A no-op stub is also the behaviour under test: nothing should report from a
  * test run.
@@ -56,7 +54,6 @@ mock.module("react-native", () => ({
 mock.module("@sentry/react-native", () => ({
   init: () => {},
   captureException: () => {},
-  setUser: () => {},
   wrap: (component: unknown) => component,
 }));
 

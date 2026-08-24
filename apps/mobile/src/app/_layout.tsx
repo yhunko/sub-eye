@@ -1,4 +1,3 @@
-import { ClerkProvider } from "@clerk/clerk-expo";
 import * as Sentry from "@sentry/react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -7,9 +6,6 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useProIdentity } from "@/entities/pro";
-import { tokenCache, useClerkTokenBridge } from "@/shared/auth";
-import { env } from "@/shared/config/env";
 import { useAppLocale } from "@/shared/i18n";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import { queryClient } from "@/shared/lib/query";
@@ -35,10 +31,10 @@ export const unstable_settings = { anchor: "(tabs)" };
 // so the whole startup is a pure-black screen rather than the app's own
 // background. Measured on a cold start: ~2.5s of black.
 //
-// Nothing here waits on the network, and after the offline flip there is no
-// network to wait on: `sessionHint` and the store document are both MMKV reads,
-// so by the time React commits its first frame the tab tree already has real
-// numbers in it — the splash hands straight over to a populated screen.
+// Nothing here waits on the network, and there is no network to wait on: the
+// store document is a synchronous MMKV read, so by the time React commits its
+// first frame the tab tree already has real numbers in it — the splash hands
+// straight over to a populated screen.
 //
 // Module scope on purpose: this has to run before the first native frame.
 void SplashScreen.preventAutoHideAsync().catch(() => {
@@ -57,28 +53,8 @@ setTimeout(() => {
   void SplashScreen.hideAsync();
 }, 5000);
 
-// Renders nothing; feeds Clerk's session token into the shared transport.
-function TokenBridge() {
-  useClerkTokenBridge();
-  return null;
-}
-
-// Renders nothing; aliases RevenueCat's app user id onto the Clerk user id.
-// Importing @/entities/pro is also what configures the SDK — that happens once,
-// at module load, before this ever mounts.
-function ProIdentityBridge() {
-  useProIdentity();
-  return null;
-}
-
 // FSD app layer: global providers + the native stack.
 //
-// PROVIDER ORDER IS LOAD-BEARING:
-//   ClerkProvider (tokenCache: expo-secure-store)
-//     -> TokenBridge          wires getToken() into shared/api/client
-//       -> QueryClientProvider
-//         -> Stack
-// Clerk sits ABOVE Query so the token getter is set before any request fires.
 // Re-keying the Stack on locale makes an Android per-app language change
 // re-render every screen's strings.
 function RootLayout() {
@@ -96,37 +72,27 @@ function RootLayout() {
         void SplashScreen.hideAsync();
       }}
     >
-      {/* The auth screens have no native header, so they measure their own
-          insets. Everything else rides the native header/tab chrome. */}
       <SafeAreaProvider>
-        <ClerkProvider
-          publishableKey={env.CLERK_PUBLISHABLE_KEY}
-          tokenCache={tokenCache}
-        >
-          <TokenBridge />
-          <ProIdentityBridge />
-          {/* Dark-only app: force light status-bar icons regardless of OS appearance. */}
-          <StatusBar style="light" />
-          <QueryClientProvider client={queryClient}>
-            <Stack
-              key={locale}
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.bg },
-              }}
-            >
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="(auth)" />
-              {/* Root-level so every gated surface — a tab, a nested stack, a
-                  sheet — can `router.push("/paywall")` and land on the same
-                  screen. It brings its own header options. */}
-              <Stack.Screen
-                name="paywall"
-                options={{ presentation: "modal", headerShown: true }}
-              />
-            </Stack>
-          </QueryClientProvider>
-        </ClerkProvider>
+        {/* Dark-only app: force light status-bar icons regardless of OS appearance. */}
+        <StatusBar style="light" />
+        <QueryClientProvider client={queryClient}>
+          <Stack
+            key={locale}
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.bg },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            {/* Root-level so every gated surface — a tab, a nested stack, a
+                sheet — can `router.push("/paywall")` and land on the same
+                screen. It brings its own header options. */}
+            <Stack.Screen
+              name="paywall"
+              options={{ presentation: "modal", headerShown: true }}
+            />
+          </Stack>
+        </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

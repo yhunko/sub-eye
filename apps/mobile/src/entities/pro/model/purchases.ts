@@ -1,5 +1,4 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import Purchases, {
   type CustomerInfo,
   PURCHASES_ERROR_CODE,
@@ -64,10 +63,10 @@ function apply(customerInfo: CustomerInfo | null): void {
   emit();
 }
 
-// CONFIGURE ANONYMOUSLY, ALIAS THE CLERK ID IN LATER (`useProIdentity`).
-// Passing the Clerk id straight to `configure` cannot work — module scope runs
-// before Clerk has a session — and it would strand a purchase made before
-// sign-in on an anonymous customer nobody ever looks at again.
+// CONFIGURE ANONYMOUSLY. There is no account to alias the customer onto, so the
+// entitlement lives on the Apple Account: a non-consumable restores through it,
+// which is what `restorePro` has always actually used. The cost is that a
+// granted entitlement has no findable id in the RevenueCat dashboard.
 try {
   Purchases.configure({ apiKey: env.REVENUECAT_IOS_KEY, appUserID: null });
   Purchases.addCustomerInfoUpdateListener(apply);
@@ -90,37 +89,6 @@ try {
 /** Whether this device may use the Pro features. Re-renders when that changes. */
 export function usePro(): boolean {
   return useSyncExternalStore(subscribe, currentPro);
-}
-
-/**
- * Renders nothing; keeps RevenueCat's app user id equal to the Clerk user id.
- *
- * That identity is what makes a granted entitlement findable in the dashboard
- * and what joins a purchase to the server's PostHog `distinct_id`.
- */
-export function useProIdentity(): void {
-  const { isSignedIn, userId } = useAuth();
-
-  useEffect(() => {
-    if (userId) {
-      void Purchases.logIn(userId)
-        .then((result) => apply(result.customerInfo))
-        .catch(() => {
-          // Offline. The alias is retried on the next auth change or launch.
-        });
-      return;
-    }
-
-    // Explicitly false, not merely falsy: before Clerk resolves, `isSignedIn` is
-    // undefined and logging out then would discard a real customer.
-    if (isSignedIn === false) {
-      void Purchases.logOut()
-        .then(apply)
-        .catch(() => {
-          // Already anonymous — logOut throws on that, and it is not an error.
-        });
-    }
-  }, [isSignedIn, userId]);
 }
 
 /**

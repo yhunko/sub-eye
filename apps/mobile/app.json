@@ -16,7 +16,6 @@
       "bundleIdentifier": "cc.subeye.app",
       "appleTeamId": "Z6KADG969Z",
       "icon": "./icon.icon",
-      "usesAppleSignIn": true,
       "backgroundColor": "#0f1115",
       "entitlements": {
         "com.apple.security.application-groups": ["group.cc.subeye.app"]
@@ -120,13 +119,6 @@
           }
         }
       ],
-      [
-        "expo-secure-store",
-        {
-          "faceIDPermission": false
-        }
-      ],
-      "expo-apple-authentication",
       "expo-notifications",
       [
         "expo-splash-screen",

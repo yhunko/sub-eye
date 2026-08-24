@@ -4,8 +4,8 @@ import { reportError } from "./sentry";
 /**
  * A domain error carrying a 4xx status is expected, not a bug: 404 is a row
  * deleted from another screen, 400 a transition the form already explains. The
- * use-cases in @subeye/store carry the same `status` the transport's ApiError
- * did, so one shape covers both.
+ * use-cases in @subeye/store put that code on a `status` field, so this reads
+ * the shape rather than the class.
  */
 const isExpected = (error: unknown): boolean => {
   const status = (error as { status?: unknown } | null | undefined)?.status;
@@ -42,7 +42,17 @@ export const queryClient = new QueryClient({
   },
 });
 
-/** Everything Query holds in memory. The store itself is erased separately. */
-export function clearQueryCache(): void {
-  queryClient.clear();
+/**
+ * Drop everything Query holds and repaint whatever is on screen. The store
+ * document itself is erased separately, and before this.
+ *
+ * `resetQueries`, NOT `clear()`. Clearing REMOVES each query, and a mounted
+ * observer goes on rendering the data of the query that was removed under it
+ * until something else re-renders it. That was invisible while this only ran on
+ * sign-out, because the redirect to /sign-in unmounted the whole tab tree a
+ * frame later; with no auth left, "Erase all data" leaves every screen mounted
+ * and the erased numbers stayed on Home until the next cold start.
+ */
+export function resetQueryCache(): Promise<void> {
+  return queryClient.resetQueries();
 }

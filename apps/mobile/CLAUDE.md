@@ -1,6 +1,6 @@
 # @subeye/mobile — Agent Guidelines
 
-`apps/mobile` (`@subeye/mobile`) is the **v4 SubEye client**: an Expo (React Native, expo-router) app over the pruned Hono API in `apps/server`. It replaces the retired React/Vite web client. Read this before touching mobile code.
+`apps/mobile` (`@subeye/mobile`) is the **v4 SubEye client**: an Expo (React Native, expo-router) app that runs entirely on the device — no API, no database, no accounts. It replaces the retired React/Vite web client. Read this before touching mobile code.
 
 **Nine screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
 
@@ -16,8 +16,6 @@ apps/mobile/src/
   widgets/<name>-page/    page composition (ui/, index.ts)
   entities/<domain>/      domain data + query hooks (api/, model/, index.ts)
   shared/
-    api/                  the ONLY apiClient (hc<ServerRpcType> + createAuthFetch)
-    auth/                 Clerk token bridge + SecureStore token cache
     config/env.ts         EXPO_PUBLIC_* validation
     lib/                  query client, store (MMKV ports + FX), mmkv, focus
     i18n/                 Paraglide bootstrap + locale resolution
@@ -40,18 +38,16 @@ apps/mobile/src/
 `src/app/` is the **only** route directory.
 
 - **Route files are thin adapters.** A route reads params (`useLocalSearchParams`) and renders a page component from a widget's public API. Nothing else. Any non-route file placed in `src/app/` silently becomes a route.
-- **`_layout.tsx` is the FSD app layer.** The root provider order is **load-bearing**:
+- **`_layout.tsx` is the FSD app layer.** The provider chain is short and nothing in it waits on anything:
 
   ```
-  SafeAreaProvider               only the (auth) screens read insets from it
-    └ ClerkProvider (tokenCache: expo-secure-store)
-      └ TokenBridge              wires getToken() into shared/api/client
-        └ QueryClientProvider    NOT PersistQueryClientProvider — see Transport
-          └ Stack
+  GestureHandlerRootView
+    └ SafeAreaProvider           the detail hero reads insets from it
+      └ QueryClientProvider      NOT PersistQueryClientProvider — see Data
+        └ Stack
   ```
 
-  Clerk sits **above** Query so the token getter is wired before the first request fires. Reordering breaks auth on the first request after a cold start.
-- **The app never blocks on Clerk.** `(tabs)/_layout.tsx` mounts the tab tree from `sessionHint` (an MMKV boolean the token bridge writes) while `isLoaded` is still false, so a cold start paints the persisted Query cache instead of a black screen — `isLoaded` waits on a network handshake, and nothing holds the splash by then. Clerk still decides: a *resolved* signed-out state redirects. Because a refetch can now fire before the bridge exists, `shared/api/client.ts` makes the first request **await** the bridge (3s ceiling) rather than sending it anonymous.
+- **Nothing gates the tab tree.** `(tabs)/_layout.tsx` is `return <Tabs />`: there is no session to resolve, and the store paints real numbers off MMKV on the first frame. `ReminderSync`, `WidgetSync` and `DuePhaseSync` therefore run unconditionally, which is the point — they used to be reachable only behind a sign-in.
 - `_layout.tsx` does a bare side-effect import — `import "@/shared/lib/focus"` (`AppState` → `focusManager`). **It has no binding — do not let an auto-import cleanup delete it**, or every foreground refetch dies app-wide. There is no `online` counterpart any more: with no network on the read path, `onlineManager` has no source and no query can ever PAUSE.
 - **Every layout a deep link can land inside needs an `unstable_settings` anchor.** A deep link builds the stack from the URL alone, so `subeye:///subscriptions/x` — a widget row, a tapped reminder — mounted the detail screen as the *only* route in the subscriptions stack: no back button, and that screen hides the tab bar by design, so the app was a dead end until it was force-quit. The root layout anchors `(tabs)`; `(tabs)/subscriptions/_layout.tsx` anchors `index`. Adding a new deep-linked route means checking the anchor of every layout above it.
 - **Sheets are native `formSheet` routes**, the only sheet mechanism in the app: Manage-pricing, Pause, the category editor, and the list-options sheet that is now **Android's fallback only**. `presentation: "formSheet"` with `sheetGrabberVisible: true`, plus a fixed detent for anything holding a ScrollView (a `flex: 1` scroller has no intrinsic height, so `fitToContents` can measure to nothing). There is **no NiceModal / modal-manager equivalent** — the navigator owns presentation.
@@ -72,15 +68,10 @@ apps/mobile/src/
 - **`scrollEdgeEffects` only blurs content passing under HEADER ITEMS.** Home shipped `headerShown: false` and therefore had nothing behind its status bar — cards slid up into bare pixels. It has a header again, and the two things in it are the argument for it: the **current month**, which every figure on the screen is scoped to and which the hero never names, and the **same `+` bar button the subscriptions list carries**. A header repeating the tab's own word is still not worth the fold.
 - **A nested horizontal ScrollView sets `automaticallyAdjustContentInsets={false}`** (Home's upcoming rail). Without it the inner scroller inherits the outer one's automatic inset and starts pushed in by the status-bar height.
 
-## Transport
+## Data
 
-- `shared/api/client.ts` holds the **only** `apiClient`. It is built **once at module load** over a single mutable module-level `getToken`; `useClerkTokenBridge` swaps it via `setTokenGetter`. **Never rebuild the client on auth change, and never reset the getter on sign-out** — `getToken()` returns null when signed out, so anonymous and signed-in are both correct with no reset.
-- **`getToken()` is NOT offline-cached.** `ClerkProvider` is constructed with `publishableKey` and `tokenCache` only — no `__experimental_resourceCache` — so the token cache is in-memory and roughly 60 seconds wide, and `tokenCache` (SecureStore) holds refresh material rather than a usable session JWT. Every cold start needs a live `/v1/client` round-trip before Clerk can resolve signed-in, so **offline is a logout in practice**. `shared/auth/session-hint` exists to hide the resulting blank frame, not to fix it.
-- `hc` comes from **`hono` directly**, not from `@subeye/server/client`. That export is a **types-only build** (`apps/server/dist/src/client.d.ts`) — it provides `ServerRpcType`, not a runtime factory. This is the documented exception to the root CLAUDE.md "packages export source" rule: Metro is not Vite, and dragging the server source into the mobile typecheck is not a DX win.
-- The server sets `.basePath("/api")`, which Hono RPC reflects as the **`.api` accessor** at call sites (`apiClient.api.analytics.…`). Base URL = **`EXPO_PUBLIC_API_URL` verbatim** — appending `/api` here doubles the prefix and every request 404s at `/api/api/…`.
-- **Every non-2xx throws an `ApiError`** carrying `status` and the server's machine-readable `code` (from `{ success:false, error:{ code, message } }`). Branch on `error.code`, never on `error.message` — the message is human copy and will change.
-- **`assertOk(res)` before `res.json()`.** Hono RPC leaks the route's error-response shapes into the success type; `assertOk` narrows to the 2xx branch.
-- **`createAuthFetch` casts its result to `typeof fetch`.** `bun-types` (in scope for `bun:test`) augments the global fetch with a required `preconnect` static that a React Native transport does not implement, and Hono's `fetch` option demands `typeof fetch`. The cast is at the boundary; Hono only ever invokes the call signature.
+- **There is no transport.** Every read and write goes through `@subeye/store`'s use-cases over the MMKV ports in `shared/lib/store`. A use-case reports a caller error by putting a 4xx `status` on the thrown error, which is the shape `shared/lib/query.ts` filters on before reporting to Sentry.
+- **The only outbound requests left are third-party, and none of them is on the read path**: the FX rate CDN (`shared/lib/store/fx.ts`), Brandfetch search and the Google favicon fallback (`shared/ui/brand-logo.tsx`, `widgets/subscription-form/model/brand-search.ts`), plus Sentry and RevenueCat. Adding anything else means adding a network dependency to an app that has none.
 - **THE STORE IS THE CACHE. There is no Query persister** — no `PersistQueryClientProvider`, no `persistQueryClientSubscribe`, no dehydrated blob, no `buster`. `shared/lib/store` reads one JSON document out of MMKV synchronously, so the numbers are simply already there; Query is an in-memory view over it with `staleTime: 0` and no `retry`. **Do not reintroduce a persister** — it would be a second, staler copy of a store that is already on disk, and its `isRestoring` gate pauses every query until the restore resolves.
 - **Writes are not optimistic, deliberately.** A local write has no latency window to be optimistic in: mutate, then `invalidateSubscriptionData` (`entities/subscription/api/invalidate.ts`), which covers the list, every detail entry, and BOTH analytics keys — the monthly summary is `["analytics", …]` and does not share the dashboard's root.
 - **There is no pull-to-refresh.** Revalidation is invisible: `shared/lib/focus.ts` wires `AppState` into TanStack's `focusManager`, so returning to the app refetches everything stale (>5 min) behind the cached screen. RN has no `visibilitychange`, so **without that bridge `refetchOnWindowFocus` silently does nothing** — which is why a `RefreshControl` used to be load-bearing. Do not add one back.
@@ -90,7 +81,7 @@ apps/mobile/src/
 
 `shared/lib/sentry.ts` owns `Sentry.init` and is the only file that imports
 `@sentry/react-native` outside `_layout.tsx`. Everything else reports through
-`reportError` / `setSentryUser`. Org **`pe-yhunko`**, project **`subeye`**,
+`reportError`. Org **`pe-yhunko`**, project **`subeye`**,
 **EU region**. The slug in `app.json` must match the real project exactly — a
 wrong one is not a warning, it is `400 One or more projects are invalid` and a
 dead production build (see below).
@@ -119,12 +110,12 @@ dead production build (see below).
   swallows every queryFn throw, so without it reporting would cover render
   crashes and almost nothing else), and the SDK's own global handlers. A 4xx
   `ApiError` is filtered out — 401 is an expired session, not a bug.
-- **Identity lives in `shared/auth/token-bridge.ts`**, which already watches
-  Clerk. Id only — never email, username, subscription name, amount or note.
+- **An event carries no identity at all.** There is no account, so there is no
+  id to attach — and never an email, a subscription name, an amount or a note.
 - **`@sentry/react-native` is stubbed in `test-preload.ts`.** It reaches
   `react-native/Libraries/TurboModule/...`, past the `react-native` stub, so any
-  test that transitively imports the query client or the token bridge dies on a
-  Flow parse error without it.
+  test that transitively imports the query client dies on a Flow parse error
+  without it.
 
 ## Reminders (local notifications)
 
@@ -390,7 +381,7 @@ centres the capsule, the 64pt subscription rows keep both.
 
 ## Environment
 
-`EXPO_PUBLIC_*` vars are inlined by Metro **at bundle time** — changing `.env` needs a Metro **restart**, not a reload. They are validated at module load in `shared/config/env.ts`, which throws loudly on a missing var. On-device dev must point `EXPO_PUBLIC_API_URL` at a device-reachable host (LAN IP or tunnel) — **never `localhost`**, because the request originates on the phone.
+`EXPO_PUBLIC_*` vars are inlined by Metro **at bundle time** — changing `.env` needs a Metro **restart**, not a reload. They are validated at module load in `shared/config/env.ts`, which throws loudly on a missing var, and `test-preload.ts` carries a floor for each **required** one. `EXPO_PUBLIC_REVENUECAT_IOS_KEY` is the only required var; Sentry and Brandfetch are optional by design and the comments on them say why. A floor for a var that no longer exists is the same trap in reverse — keep the two lists equal.
 
 Build numbers (`ios.buildNumber` / `android.versionCode`) are **EAS-owned — never hand-edit**. The marketing version is per-profile in `app.config.js`: production uses the hand-set `expo.version` in `app.json`; every other profile uses the fixed `BETA_VERSION` and lets the EAS build number move.
 
