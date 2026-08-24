@@ -139,6 +139,18 @@ export const eraseDoc = (): void => {
   mmkv.remove(SLOTS[0]);
   mmkv.remove(SLOTS[1]);
   mmkv.remove(POINTER);
+  // `remove` only tombstones. MMKV appends to an mmap file and never shrinks it
+  // on its own, so without this every version of the document the user ever had
+  // stays readable in `Documents/mmkv/subeye.store` — and Documents is inside
+  // the device backup set, so it travels into backups too. Measured on a real
+  // store: 128 KB of erased subscriptions before, 16 KB after.
+  //
+  // ponytail: trim TRUNCATES, it does not zero. The one page MMKV keeps can
+  // still hold fragments of the last document written into it, so this shrinks
+  // the residue rather than guaranteeing none. Zeroing would mean overwriting
+  // each slot with filler before removing it; that is worth doing only if
+  // "erase" ever has to stand up to someone reading the raw container.
+  mmkv.trim();
 };
 
 /**

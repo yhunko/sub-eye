@@ -75,6 +75,9 @@ mock.module("react-native-mmkv", () => {
       getString: (key: string) => store.get(key) as string | undefined,
       set: (key: string, value: boolean | string) => store.set(key, value),
       remove: (key: string) => store.delete(key),
+      // Compaction has no meaning for a Map, but eraseDoc calls it and a
+      // missing method is a TypeError rather than a no-op.
+      trim: () => {},
     }),
   };
 });
