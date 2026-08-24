@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@subeye/currency": "workspace:*",
+    "@subeye/money": "workspace:*",
     "@subeye/shared": "workspace:*",
     "@subeye/spend": "workspace:*",
     "@subeye/time": "workspace:*",

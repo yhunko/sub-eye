@@ -92,6 +92,7 @@
         "@clerk/hono": "^0.1.13",
         "@hono/valibot-validator": "^0.6.1",
         "@neondatabase/serverless": "^1.0.2",
+        "@subeye/money": "workspace:*",
         "@subeye/pricing": "workspace:*",
         "@subeye/shared": "workspace:*",
         "@subeye/spend": "workspace:*",
@@ -108,15 +109,18 @@
         "drizzle-kit": "^0.31.10",
       },
     },
-    "packages/currency": {
-      "name": "@subeye/currency",
+    "packages/money": {
+      "name": "@subeye/money",
       "version": "0.0.1",
+      "dependencies": {
+        "@subeye/shared": "workspace:*",
+      },
     },
     "packages/pricing": {
       "name": "@subeye/pricing",
       "version": "0.0.1",
       "dependencies": {
-        "@subeye/currency": "workspace:*",
+        "@subeye/money": "workspace:*",
         "@subeye/shared": "workspace:*",
         "@subeye/spend": "workspace:*",
         "@subeye/time": "workspace:*",
@@ -136,7 +140,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
-        "@subeye/currency": "workspace:*",
+        "@subeye/money": "workspace:*",
         "@subeye/shared": "workspace:*",
         "@subeye/time": "workspace:*",
         "date-fns": "^4.1.0",
@@ -1100,11 +1104,11 @@
 
     "@stripe/stripe-js": ["@stripe/stripe-js@5.6.0", "", {}, "sha512-w8CEY73X/7tw2KKlL3iOk679V9bWseE4GzNz3zlaYxcTjmcmWOathRb0emgo/QQ3eoNzmq68+2Y2gxluAv3xGw=="],
 
-    "@subeye/currency": ["@subeye/currency@workspace:packages/currency"],
-
     "@subeye/landing": ["@subeye/landing@workspace:apps/landing"],
 
     "@subeye/mobile": ["@subeye/mobile@workspace:apps/mobile"],
+
+    "@subeye/money": ["@subeye/money@workspace:packages/money"],
 
     "@subeye/pricing": ["@subeye/pricing@workspace:packages/pricing"],
 

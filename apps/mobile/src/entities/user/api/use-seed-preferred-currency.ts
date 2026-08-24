@@ -11,8 +11,8 @@ import { preferencesQuery, useUpdatePreferences } from "./preferences";
  * a user in Berlin meets their first Home screen denominated in hryvnia.
  *
  * Kept in step by hand rather than imported: `CurrencyUtils.DEFAULT_CURRENCY_CODE`
- * lives in @subeye/shared, and pulling that barrel in for one string would drag
- * the valibot schemas and date-fns timezone utils into the Metro bundle.
+ * lives in @subeye/money, and one string does not justify a package edge the
+ * mobile app otherwise has no reason to carry.
  */
 const SERVER_DEFAULT_CURRENCY = "uah";
 

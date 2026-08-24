@@ -38,7 +38,7 @@
     "check:circular": "bun run check:circular:server && bun run check:circular:packages && bun run check:circular:mobile && bun run check:circular:landing",
     "check:circular:landing": "madge --circular --extensions ts apps/landing/src",
     "check:circular:mobile": "madge --circular --extensions ts,tsx --ts-config apps/mobile/tsconfig.json apps/mobile/src",
-    "check:circular:packages": "madge --circular --extensions ts packages/currency/src packages/pricing/src packages/shared/src packages/spend/src packages/time/src",
+    "check:circular:packages": "madge --circular --extensions ts packages/money/src packages/pricing/src packages/shared/src packages/spend/src packages/time/src",
     "check:circular:server": "madge --circular --extensions ts,tsx apps/server/src",
     "deploy:dev": "turbo build --filter=@subeye/server && wrangler -c apps/server/dev.wrangler.jsonc deploy --minify",
     "deps:fix": "syncpack fix",

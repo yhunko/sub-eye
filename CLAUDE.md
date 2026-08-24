@@ -8,12 +8,13 @@ apps/server       Hono API — Cloudflare Worker, Neon Postgres via Drizzle, Cle
 apps/mobile       Expo (React Native, expo-router) — the only client
 apps/landing      subeye.cc — Astro 6, static, zero client JS, en + uk
 packages/shared   schemas, DTOs, domain utils — consumed by everything
+packages/time     UTC calendar days and recurrence. A leaf — imports nothing.
+packages/money    currency codes, rate tables, conversion, FX document parsing
 packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
 packages/spend    pure occurrence engine (payment projection, aggregates)
-packages/currency the RateTable type. That is all it is.
 ```
 
-Each of `apps/*` and `packages/shared|pricing|spend` has its own `CLAUDE.md`
+Each of `apps/*` and `packages/shared|time|money|pricing|spend` has its own `CLAUDE.md`
 with the invariants for that area. Read the one you are touching — those carry
 the rules that actually bite.
 
@@ -91,7 +92,7 @@ the next reader has to re-verify against reality, and it rots silently.
 
 The bar, both from this repo:
 
-- [packages/currency/src/rateTable.ts](packages/currency/src/rateTable.ts) —
+- [packages/money/src/rateTable.ts](packages/money/src/rateTable.ts) —
   warns that converting *into* the base currency is a division. Earns its place.
 - [apps/server/test/phase-apply-now-closes-timeline.test.ts](apps/server/test/phase-apply-now-closes-timeline.test.ts)
   — each assertion names the failure mode it prevents.

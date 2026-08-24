@@ -4,5 +4,4 @@ export * from "./domains/category";
 export * from "./domains/subscription";
 export * from "./schemas/userSchemas";
 export * from "./types";
-export * from "./utils/currencyUtils";
 export * from "./utils/dateFormatUtils";

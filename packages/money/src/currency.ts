@@ -1,4 +1,5 @@
-import { SubscriptionPeriod } from "../types";
+import { SubscriptionPeriod } from "@subeye/shared";
+import type { RateTable } from "./rateTable";
 
 export class CurrencyUtils {
   public static readonly DEFAULT_CURRENCY_CODE = "uah";
@@ -37,7 +38,7 @@ export class CurrencyUtils {
     amount: number,
     fromCode: string,
     toCode: string,
-    rates: Record<string, number>,
+    rates: RateTable,
   ): number {
     const from = CurrencyUtils.normalizeCode(fromCode);
     const to = CurrencyUtils.normalizeCode(toCode);

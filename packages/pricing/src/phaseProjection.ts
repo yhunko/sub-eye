@@ -1,4 +1,4 @@
-import type { RateTable } from "@subeye/currency";
+import type { RateTable } from "@subeye/money";
 import type {
   PricePhaseDto,
   PricePhaseKind,

@@ -1,6 +1,11 @@
-import { describe, expect, it } from "bun:test";
-import { CurrencyUtils } from "@subeye/shared";
-import { deriveRatesFor } from "../src/domains/currency/currencyService";
+import { describe, expect, it, test } from "bun:test";
+import {
+  CurrencyUtils,
+  deriveRatesFor,
+  fxVersionCandidates,
+  readFxDocument,
+  STORED_BASE,
+} from "../src";
 
 // "units of <code> per 1 USD"
 const usdRates = { usd: 1, uah: 41.5, eur: 0.92 };
@@ -50,5 +55,40 @@ describe("deriveRatesFor", () => {
     expect(derived.bad).toBeUndefined();
     expect(derived.worse).toBeUndefined();
     expect(Object.values(derived).every(Number.isFinite)).toBe(true);
+  });
+});
+
+describe("readFxDocument", () => {
+  test("pulls the stored base's table and the document date", () => {
+    const result = readFxDocument({
+      date: "2026-08-24",
+      [STORED_BASE]: { uah: 41.2, eur: 0.86 },
+    });
+
+    expect(result).toEqual({
+      rates: { uah: 41.2, eur: 0.86 },
+      rateDate: "2026-08-24",
+    });
+  });
+
+  // A malformed document must not throw on a background refresh path — the
+  // caller falls through to the next version candidate instead.
+  test("returns null when the base key is missing or not an object", () => {
+    expect(readFxDocument({ date: "2026-08-24" })).toBeNull();
+    expect(
+      readFxDocument({ date: "2026-08-24", [STORED_BASE]: "nope" }),
+    ).toBeNull();
+  });
+});
+
+describe("fxVersionCandidates", () => {
+  // The publisher's immutable build can lag the UTC date, so yesterday is tried
+  // before falling back to the mutable `latest` tag.
+  test("today, then yesterday, then latest", () => {
+    expect(fxVersionCandidates(new Date("2026-03-01T04:00:00.000Z"))).toEqual([
+      "2026.3.1",
+      "2026.2.28",
+      "latest",
+    ]);
   });
 });

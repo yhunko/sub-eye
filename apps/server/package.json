@@ -12,6 +12,7 @@
     "@clerk/hono": "^0.1.13",
     "@hono/valibot-validator": "^0.6.1",
     "@neondatabase/serverless": "^1.0.2",
+    "@subeye/money": "workspace:*",
     "@subeye/pricing": "workspace:*",
     "@subeye/shared": "workspace:*",
     "@subeye/spend": "workspace:*",

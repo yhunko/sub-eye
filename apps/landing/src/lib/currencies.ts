@@ -1,4 +1,4 @@
-import { CurrencyUtils } from "@subeye/shared";
+import { CurrencyUtils } from "@subeye/money";
 import type { Locale } from "./site";
 
 /**
@@ -6,7 +6,7 @@ import type { Locale } from "./site";
  *
  * `RateTable` is keyed by the *preferred* currency: each value is how many units
  * of that currency equal one unit of the preferred one, so converting in is a
- * division (see `packages/currency/src/rateTable.ts`). Building both tables from
+ * division (see `packages/money/src/rateTable.ts`). Building both tables from
  * one FX pair is what stops the two locales quoting totals that disagree.
  */
 
