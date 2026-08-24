@@ -1,43 +1,7 @@
-import type { UserPreferences } from "@subeye/model";
-import { DEFAULT_DATE_FORMAT } from "@subeye/model";
-import { CurrencyUtils } from "@subeye/money";
-import { UserRepository } from "./userRepository";
-
-type UserRow = {
-  preferredCurrency: string;
-  timezone: string;
-  dateFormat: string;
-  locale: string;
-  theme: string;
-};
-
-type UserServiceDeps = {
-  userRepository: {
-    findById: (userId: string) => Promise<UserRow | null>;
-    upsert: (userId: string, values: Partial<UserRow>) => Promise<UserRow>;
-  };
-};
-
-const defaultDeps: UserServiceDeps = { userRepository: UserRepository };
-
-const DEFAULTS: UserPreferences = {
-  preferredCurrency: CurrencyUtils.DEFAULT_CURRENCY_CODE,
-  preferredTimezone: "UTC",
-  dateFormat: DEFAULT_DATE_FORMAT,
-  locale: "en",
-  theme: "system",
-};
-
-const toPreferences = (row: UserRow | null): UserPreferences =>
-  row
-    ? {
-        preferredCurrency: CurrencyUtils.normalizeCode(row.preferredCurrency),
-        preferredTimezone: row.timezone,
-        dateFormat: row.dateFormat,
-        locale: row.locale,
-        theme: row.theme,
-      }
-    : { ...DEFAULTS };
+import type { UpdateUserPreferences, UserPreferences } from "@subeye/model";
+import type { Ports } from "@subeye/store";
+import { readPreferences, writePreferences } from "@subeye/store";
+import { createPorts } from "../ports";
 
 export class UserService {
   /**
@@ -47,30 +11,16 @@ export class UserService {
    */
   static async getUserPreferences(
     userId: string,
-    deps: UserServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<UserPreferences> {
-    return toPreferences(await deps.userRepository.findById(userId));
+    return readPreferences(ports);
   }
 
   static async updateUserPreferences(
     userId: string,
-    patch: Partial<UserPreferences>,
-    deps: UserServiceDeps = defaultDeps,
+    patch: UpdateUserPreferences,
+    ports: Ports = createPorts(userId),
   ): Promise<UserPreferences> {
-    const values: Partial<UserRow> = {};
-
-    if (patch.preferredCurrency !== undefined) {
-      values.preferredCurrency = CurrencyUtils.normalizeCode(
-        patch.preferredCurrency,
-      );
-    }
-    if (patch.preferredTimezone !== undefined) {
-      values.timezone = patch.preferredTimezone;
-    }
-    if (patch.dateFormat !== undefined) values.dateFormat = patch.dateFormat;
-    if (patch.locale !== undefined) values.locale = patch.locale;
-    if (patch.theme !== undefined) values.theme = patch.theme;
-
-    return toPreferences(await deps.userRepository.upsert(userId, values));
+    return writePreferences(ports, patch);
   }
 }

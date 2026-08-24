@@ -57,6 +57,15 @@ const phaseRow = () => ({
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
 });
 
+const userRow = () => ({
+  id: OWNER,
+  preferredCurrency: "usd",
+  timezone: "UTC",
+  dateFormat: "DD/MM/YYYY",
+  locale: "en",
+  theme: "system",
+});
+
 /**
  * Repositories over arrays, filtering exactly the way the SQL does: a
  * `findByUserId` filters, a `findById` does not, and every write carries the
@@ -68,6 +77,7 @@ const fakeDeps = () => {
   const subscriptions = [subscriptionRow()];
   const categories = [categoryRow()];
   const phases = [phaseRow()];
+  const users = [userRow()];
   const writes: string[] = [];
 
   const deps: PortDeps = {
@@ -142,25 +152,19 @@ const fakeDeps = () => {
       },
     },
     users: {
-      getUserPreferences: async () => ({
-        preferredCurrency: "usd",
-        preferredTimezone: "UTC",
-        dateFormat: "DD/MM/YYYY",
-        locale: "en",
-        theme: "system",
-      }),
-      updateUserPreferences: async () => ({
-        preferredCurrency: "usd",
-        preferredTimezone: "UTC",
-        dateFormat: "DD/MM/YYYY",
-        locale: "en",
-        theme: "system",
-      }),
+      findById: async (id) => users.find((row) => row.id === id) ?? null,
+      upsert: async (id, values) => {
+        const existing = users.find((row) => row.id === id);
+        if (existing) return Object.assign(existing, values);
+        const created = { ...userRow(), id, ...values };
+        users.push(created);
+        return created;
+      },
     },
     currency: { getRates: async () => ({}) },
   };
 
-  return { deps, subscriptions, categories, phases, writes };
+  return { deps, subscriptions, categories, phases, users, writes };
 };
 
 // @subeye/store has no `userId` on any record — the ~15 ownership checks the
@@ -261,5 +265,35 @@ describe("the subscription port maps the stored row", () => {
     await ports.subscriptions.update("sub_a", { willBeCancelledAt: null });
 
     expect(subscriptions[0]?.willBeCancelledAt).toBeNull();
+  });
+});
+
+describe("the preferences port", () => {
+  it("reads a user with no row as the defaults rather than throwing", async () => {
+    const { deps } = fakeDeps();
+
+    // Every request needs a timezone and a currency, and the row is only
+    // written when the user first changes something. A throw here would take
+    // out every read for a brand-new account.
+    expect(await createPorts(INTRUDER, deps).preferences.read()).toEqual({
+      preferredCurrency: "uah",
+      preferredTimezone: "UTC",
+      dateFormat: "DD/MM/YYYY",
+      locale: "en",
+      theme: "system",
+    });
+  });
+
+  it("maps the record's names onto the column names", async () => {
+    const { deps, users } = fakeDeps();
+
+    const written = await createPorts(OWNER, deps).preferences.write({
+      preferredTimezone: "Europe/Kyiv",
+    });
+
+    // The record says `preferredTimezone`; the column is `timezone`.
+    expect(users[0]?.timezone).toBe("Europe/Kyiv");
+    expect(written.preferredTimezone).toBe("Europe/Kyiv");
+    expect(written.locale).toBe("en");
   });
 });

@@ -294,7 +294,9 @@ export class AnalyticsCalculator {
    */
   static buildCategorySpending(
     subscriptions: SubscriptionDto[],
-    categories: CategoryDto[],
+    // Only the three fields it reads: the store's category record carries no
+    // `userId`, and a full `CategoryDto` is more than this needs.
+    categories: Pick<CategoryDto, "id" | "name" | "emoji">[],
   ): CategorySpendingDto[] {
     const map = new Map<string | null, CategorySpendingDto>();
 

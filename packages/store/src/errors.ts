@@ -9,6 +9,15 @@ export class SubscriptionNotFoundError extends Error {
   }
 }
 
+export class CategoryNotFoundError extends Error {
+  readonly status = 404 as const;
+  readonly code: ApiErrorCode = "CATEGORY_NOT_FOUND";
+  constructor() {
+    super("Category not found");
+    this.name = "CategoryNotFoundError";
+  }
+}
+
 export class SubscriptionCategoryNotFoundError extends Error {
   readonly status = 404 as const;
   readonly code: ApiErrorCode = "CATEGORY_NOT_FOUND";

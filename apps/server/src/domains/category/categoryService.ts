@@ -4,142 +4,81 @@ import type {
   DeleteCategoriesResponse,
   UpdateCategoryInput,
 } from "@subeye/model";
-import { CategoryNotFoundError } from "./categoryErrors";
+import type { CategoryRecord, Ports } from "@subeye/store";
+import {
+  createCategory,
+  deleteCategories,
+  deleteCategory,
+  listCategories,
+  updateCategory,
+} from "@subeye/store";
+import { createPorts } from "../ports";
 import { CategoryRepository } from "./categoryRepository";
-
-type CategoryServiceDeps = {
-  repository: typeof CategoryRepository;
-};
-
-const defaultDeps: CategoryServiceDeps = {
-  repository: CategoryRepository,
-};
 
 export class CategoryService {
   static async getCategories(
     userId: string,
-    deps: CategoryServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<CategoryDto[]> {
-    const categories = await deps.repository.findByUserId(userId);
-    return categories.map(CategoryService.toDto);
-  }
-
-  static async getCategoryById(
-    id: string,
-    userId: string,
-    deps: CategoryServiceDeps = defaultDeps,
-  ): Promise<CategoryDto> {
-    const category = await deps.repository.findById(id);
-
-    if (!category || category.userId !== userId) {
-      throw new CategoryNotFoundError();
-    }
-
-    return CategoryService.toDto(category);
+    return (await listCategories(ports)).map((category) =>
+      CategoryService.toDto(category, userId),
+    );
   }
 
   static async createCategory(
     userId: string,
     payload: CreateCategoryInput,
-    deps: CategoryServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<CategoryDto> {
-    const created = await deps.repository.create({
-      userId,
-      name: payload.name,
-      emoji: payload.emoji,
-    });
-
-    return CategoryService.toDto(created);
+    return CategoryService.toDto(await createCategory(ports, payload), userId);
   }
 
   static async updateCategory(
     id: string,
     userId: string,
     payload: UpdateCategoryInput,
-    deps: CategoryServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<CategoryDto> {
-    const existing = await deps.repository.findById(id);
-
-    if (!existing || existing.userId !== userId) {
-      throw new CategoryNotFoundError();
-    }
-
-    const updated = await deps.repository.update(id, userId, payload);
-    return CategoryService.toDto(updated);
+    return CategoryService.toDto(
+      await updateCategory(ports, id, payload),
+      userId,
+    );
   }
 
   static async deleteCategory(
     id: string,
     userId: string,
-    deps: CategoryServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<void> {
-    const existing = await deps.repository.findById(id);
-
-    if (!existing || existing.userId !== userId) {
-      throw new CategoryNotFoundError();
-    }
-
-    await deps.repository.delete(id, userId);
+    return deleteCategory(ports, id);
   }
 
   static async deleteCategories(
     ids: string[],
     userId: string,
-    deps: CategoryServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<DeleteCategoriesResponse> {
-    const uniqueIds = Array.from(
-      new Set(ids.map((id) => id.trim()).filter((id) => id.length > 0)),
-    );
-
-    if (uniqueIds.length === 0) {
-      throw new CategoryNotFoundError();
-    }
-
-    // neon-http has no interactive transactions, so validate-then-delete runs
-    // sequentially. The delete itself is a single `IN (...)` statement.
-    const existingCategories = await deps.repository.findByIdsForUser(
-      userId,
-      uniqueIds,
-    );
-
-    if (existingCategories.length !== uniqueIds.length) {
-      throw new CategoryNotFoundError();
-    }
-
-    const deletedCount = await deps.repository.deleteByIdsForUser(
-      userId,
-      uniqueIds,
-    );
-
-    if (deletedCount !== uniqueIds.length) {
-      throw new CategoryNotFoundError();
-    }
-
-    return { deletedCount };
+    return deleteCategories(ports, ids);
   }
 
-  static async deleteAllForUser(
-    userId: string,
-    deps: CategoryServiceDeps = defaultDeps,
-  ): Promise<void> {
-    await deps.repository.deleteByUserId(userId);
+  /** Account deletion, from the Clerk `user.deleted` webhook. */
+  static async deleteAllForUser(userId: string): Promise<void> {
+    await CategoryRepository.deleteByUserId(userId);
   }
 
-  private static toDto(category: {
-    id: string;
-    userId: string;
-    name: string;
-    emoji: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): CategoryDto {
+  /**
+   * The tenant is not on the record — the store is single-tenant — so the DTO
+   * gets it back from the request. Nothing in the client reads it; it is on the
+   * wire contract and stays until the contract changes.
+   */
+  private static toDto(category: CategoryRecord, userId: string): CategoryDto {
     return {
       id: category.id,
-      userId: category.userId,
+      userId,
       name: category.name,
       emoji: category.emoji,
-      createdAt: category.createdAt.toISOString(),
-      updatedAt: category.updatedAt.toISOString(),
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
     };
   }
 }

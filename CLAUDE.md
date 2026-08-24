@@ -1,7 +1,8 @@
 # sub-eye
 
 Subscription tracking. Bun + Turbo monorepo: a Hono API on Cloudflare Workers,
-an Expo mobile client, and a static marketing site, over four pure packages.
+an Expo mobile client, and a static marketing site, over seven pure packages
+and one that owns storage.
 
 ```
 apps/server       Hono API — Cloudflare Worker, Neon Postgres via Drizzle, Clerk auth
@@ -14,10 +15,12 @@ packages/lifecycle status derivation, allowed actions, pure cancel/renew/pause/r
 packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
 packages/spend    pure occurrence engine (payment projection, aggregates)
 packages/reminders what to remind about and when — copy injected, no OS types
+packages/store     storage ports + use-cases — the only package that does IO
 ```
 
-Each of `apps/*` and `packages/model|time|money|lifecycle|pricing|spend|reminders`
-has its own `CLAUDE.md` with the invariants for that area. Read the one you are
+Each of `apps/*` and
+`packages/model|time|money|lifecycle|pricing|spend|reminders|store` has its own
+`CLAUDE.md` with the invariants for that area. Read the one you are
 touching — those carry the rules that actually bite.
 
 ## Commands

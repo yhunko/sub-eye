@@ -1,0 +1,49 @@
+# @subeye/store — ports and use-cases
+
+The only package that touches IO, and only through injected ports. It must never
+import a database driver, `fetch`, or a platform API. The server supplies
+Drizzle adapters today (`apps/server/src/domains/ports.ts`); the mobile app
+supplies MMKV adapters in the offline plan.
+
+## Shape
+
+Every use-case is `(ports, ...args)`. Every mutation is the same three steps:
+read the record, call a pure function from `lifecycle`/`pricing`, write the
+patch. A pure function returning `null` becomes a throw from `errors.ts` here —
+that conversion is this package's job and nowhere else's.
+
+Nothing reads a clock or invents an id on its own: `ports.now()` and
+`ports.newId()`, never `new Date()` or a uuid call.
+
+## Invariants
+
+- **Single tenant.** There is no `userId` on any record. A multi-tenant host
+  supplies the tenant in its port implementation — and it is the ONLY thing
+  standing between one account and another's data.
+- **`appliedAt` is the idempotency anchor.** `applyPhaseByWorkflow` and
+  `applyBoundary` are no-ops once it is set. Never apply a phase without
+  checking it, and never clear it.
+- **Phases apply lazily, on read.** There is no scheduler. `applyDuePhases` runs
+  from `getSubscription` and from nowhere else. A boundary therefore fires the
+  next time that subscription is opened, not at the instant it comes due — and
+  `listSubscriptions` must never settle one. `test/listDoesNotWrite.test.ts`
+  pins both halves.
+- **`applyPhaseNow` must close the timeline it moves.** Stamping `appliedAt` and
+  copying the price is not enough — it must also close the preceding phase's
+  `endsAt` and pull the applied phase's `startsAt` back to now if it was in the
+  future. `test/phaseApplyNow.test.ts` is the regression.
+- **Cancelling does not delete pending phases.** Keeping them is what lets renew
+  restore the real reversion price instead of stranding the user on the trial
+  cost.
+- **The status column is written on every lifecycle mutation**, derived from the
+  date columns. A stale column hides a subscription from every filter.
+- **Which list feeds which metric is load-bearing.** See the comment in
+  `analytics.ts`. `yearlyForecast` is a range sum, not `burnRate × 12` — a
+  cancelling subscription keeps a full run-rate but contributes fewer charges.
+
+## Tests
+
+Drive `test/inMemoryPorts.ts`, never a per-test fake, and assert on state read
+back through `dump()`. Reading state back catches a use-case that forgot to
+write; a spy only proves a call happened. `test/fixtures.ts` holds the records
+and the single injected `NOW` every test shares.

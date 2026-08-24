@@ -1,3 +1,5 @@
+import { DEFAULT_DATE_FORMAT } from "@subeye/model";
+import { CurrencyUtils } from "@subeye/money";
 import type {
   CategoryRecord,
   Ports,
@@ -21,7 +23,7 @@ import type {
   SubscriptionRecord as SubscriptionRow,
 } from "./subscription/subscriptionRepository";
 import { SubscriptionRepository } from "./subscription/subscriptionRepository";
-import { UserService } from "./user/userService";
+import { UserRepository } from "./user/userRepository";
 
 /**
  * Everything the ports reach for, named structurally so a test can substitute
@@ -71,11 +73,8 @@ export type PortDeps = {
     delete(id: string, userId: string): Promise<void>;
   };
   users: {
-    getUserPreferences(userId: string): Promise<PreferencesRecord>;
-    updateUserPreferences(
-      userId: string,
-      patch: Partial<PreferencesRecord>,
-    ): Promise<PreferencesRecord>;
+    findById(userId: string): Promise<UserRow | null>;
+    upsert(userId: string, values: Partial<UserRow>): Promise<UserRow>;
   };
   currency: { getRates(base: string): Promise<Record<string, number>> };
 };
@@ -84,9 +83,52 @@ export const defaultPortDeps: PortDeps = {
   subscriptions: SubscriptionRepository,
   phases: SubscriptionPricePhaseRepository,
   categories: CategoryRepository,
-  users: UserService,
+  users: UserRepository,
   currency: CurrencyService,
 };
+
+/** The preference columns, which the `users` table names differently. */
+type UserRow = {
+  preferredCurrency: string;
+  timezone: string;
+  dateFormat: string;
+  locale: string;
+  theme: string;
+};
+
+const PREFERENCE_DEFAULTS: PreferencesRecord = {
+  preferredCurrency: CurrencyUtils.DEFAULT_CURRENCY_CODE,
+  preferredTimezone: "UTC",
+  dateFormat: DEFAULT_DATE_FORMAT,
+  locale: "en",
+  theme: "system",
+};
+
+/** A user with no row yet reads as the defaults rather than as an error. */
+const toPreferencesRecord = (row: UserRow | null): PreferencesRecord =>
+  row
+    ? {
+        preferredCurrency: CurrencyUtils.normalizeCode(row.preferredCurrency),
+        preferredTimezone: row.timezone,
+        dateFormat: row.dateFormat,
+        locale: row.locale,
+        theme: row.theme,
+      }
+    : { ...PREFERENCE_DEFAULTS };
+
+const toPreferenceColumns = (
+  patch: Partial<PreferencesRecord>,
+): Partial<UserRow> => ({
+  ...(patch.preferredCurrency !== undefined
+    ? { preferredCurrency: patch.preferredCurrency }
+    : {}),
+  ...(patch.preferredTimezone !== undefined
+    ? { timezone: patch.preferredTimezone }
+    : {}),
+  ...(patch.dateFormat !== undefined ? { dateFormat: patch.dateFormat } : {}),
+  ...(patch.locale !== undefined ? { locale: patch.locale } : {}),
+  ...(patch.theme !== undefined ? { theme: patch.theme } : {}),
+});
 
 /** ISO-8601, uniformly — a `numeric`-mode column and a `Date` both land here. */
 const iso = (value: string | Date): string =>
@@ -182,8 +224,11 @@ export const createPorts = (
   rates: { forBase: (base) => deps.currency.getRates(base) },
 
   preferences: {
-    read: () => deps.users.getUserPreferences(userId),
-    write: (patch) => deps.users.updateUserPreferences(userId, patch),
+    read: async () => toPreferencesRecord(await deps.users.findById(userId)),
+    write: async (patch) =>
+      toPreferencesRecord(
+        await deps.users.upsert(userId, toPreferenceColumns(patch)),
+      ),
   },
 
   subscriptions: {
