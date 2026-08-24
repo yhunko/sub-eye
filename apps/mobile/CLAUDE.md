@@ -24,6 +24,12 @@ apps/mobile/src/
     ui/                   theme tokens, nativeHeaderChrome
 ```
 
+- **Domain rules live in `packages/*`, not here.** This app holds routes, page
+  composition, data hooks and platform adapters. Anything that projects an
+  occurrence, derives a status, converts money or decides what is legal belongs
+  to `@subeye/{time,money,model,lifecycle,pricing,spend,reminders,store}` — and
+  re-deriving one here is how the client and the server drift apart. Formatting
+  a value the DTO already carries is presentation and stays.
 - **There is NO `features` layer.** With seven screens it is ceremony. Page composition goes in `widgets/`, domain data in `entities/`. `dependency-cruiser` fails the build if `src/features/` appears (`mobile-no-features-layer`).
 - **Public API per slice via `index.ts`.** Import `@/entities/dashboard`, never `@/entities/dashboard/api/use-dashboard`.
 - **Path alias `@/* → src/*`** (tsconfig `paths`; Metro and `bun test` both resolve it).
@@ -68,7 +74,8 @@ apps/mobile/src/
 
 ## Transport
 
-- `shared/api/client.ts` holds the **only** `apiClient`. It is built **once at module load** over a single mutable module-level `getToken`; `useClerkTokenBridge` swaps it via `setTokenGetter`. **Never rebuild the client on auth change, and never reset the getter on sign-out** — Clerk's `getToken()` is offline-cached and returns null when signed out, so anonymous and signed-in are both correct with no reset.
+- `shared/api/client.ts` holds the **only** `apiClient`. It is built **once at module load** over a single mutable module-level `getToken`; `useClerkTokenBridge` swaps it via `setTokenGetter`. **Never rebuild the client on auth change, and never reset the getter on sign-out** — `getToken()` returns null when signed out, so anonymous and signed-in are both correct with no reset.
+- **`getToken()` is NOT offline-cached.** `ClerkProvider` is constructed with `publishableKey` and `tokenCache` only — no `__experimental_resourceCache` — so the token cache is in-memory and roughly 60 seconds wide, and `tokenCache` (SecureStore) holds refresh material rather than a usable session JWT. Every cold start needs a live `/v1/client` round-trip before Clerk can resolve signed-in, so **offline is a logout in practice**. `shared/auth/session-hint` exists to hide the resulting blank frame, not to fix it.
 - `hc` comes from **`hono` directly**, not from `@subeye/server/client`. That export is a **types-only build** (`apps/server/dist/src/client.d.ts`) — it provides `ServerRpcType`, not a runtime factory. This is the documented exception to the root CLAUDE.md "packages export source" rule: Metro is not Vite, and dragging the server source into the mobile typecheck is not a DX win.
 - The server sets `.basePath("/api")`, which Hono RPC reflects as the **`.api` accessor** at call sites (`apiClient.api.analytics.…`). Base URL = **`EXPO_PUBLIC_API_URL` verbatim** — appending `/api` here doubles the prefix and every request 404s at `/api/api/…`.
 - **Every non-2xx throws an `ApiError`** carrying `status` and the server's machine-readable `code` (from `{ success:false, error:{ code, message } }`). Branch on `error.code`, never on `error.message` — the message is human copy and will change.
@@ -132,23 +139,14 @@ half — scheduling, MMKV storage, tap routing, and `copy.ts`, which renders the
 planner's strings from `m`. A pure package cannot import paraglide, so the copy
 is injected rather than looked up.
 
-- **iOS keeps only the 64 soonest pending local notifications and silently drops
-  the rest.** No error, no warning. `REMINDER_BUDGET = 56` leaves headroom. This
-  ceiling is why `planReminders` **groups by firing instant**: every event landing
-  on one morning becomes one digest notification, so the budget counts *reminder
-  mornings*, not subscriptions × lead times. Grouping by `(instant, leadDays)`
-  instead would put two banners on the same minute whenever lead times overlap.
-- **Every amount in a reminder is the PREFERRED currency**, never the one the
-  subscription was entered in — `billing.preferred.amount`, already converted by
-  the server. `ReminderInput` deliberately omits `cost`/`currency` so the
-  original is not reachable from the planner at all. A trial prices from
-  `upcomingPhase.billing`, not the subscription's, whose own billing during a
-  trial is the trial price (usually zero). A digest totals only when every event
-  has an amount: one unknown price would silently understate the sum.
-- **Fire instants are built in the DEVICE's zone, not the account's
-  `preferredTimezone`.** A DATE trigger takes an absolute instant but "09:00,
-  three days before" is wall-clock, and the reminder should land at 09:00 where
-  the user physically is. Settings already shows the two can disagree.
+- **The plan is capped at `REMINDER_BUDGET`** (56, exported by
+  `@subeye/reminders`) because iOS silently drops all but the 64 soonest pending
+  local notifications. `syncReminders` asks the planner for `BUDGET + 1` so it
+  can report truncation, then schedules the first `BUDGET`. The reasons behind
+  the number — grouping, sort-then-trim, the device zone, the currency rule —
+  are invariants of the planner and documented in
+  [packages/reminders/CLAUDE.md](../../packages/reminders/CLAUDE.md). Do not
+  restate them here, and do not re-derive any of them in this app.
 - **`syncReminders` takes settings ALREADY GATED** — run them through
   `effectiveSettings`. `shared/` cannot import `entities/pro` without an upward
   FSD edge, and reading the entitlement inside would put the Pro gate in a second
@@ -398,7 +396,7 @@ Build numbers (`ios.buildNumber` / `android.versionCode`) are **EAS-owned — ne
 
 ## Testing
 
-`bun test ./src` — `bun:test`, there is no vitest anywhere in the repo. Test **pure logic only** — locale resolution, transport error mapping, and later the pricing/spend derivations. **No React Native component renders** (no renderer is configured, and it is out of scope). Co-locate tests as `*.test.ts` next to the module.
+`bun run --cwd apps/mobile test` — `bun:test`, there is no vitest anywhere in the repo. **Run it from this workspace, never `bun test apps/mobile/src` from the root**: `bunfig.toml` here preloads `test-preload.ts`, and without it the first transitive `react-native` import aborts the whole file on a Flow parse error. Test **pure logic only** — locale resolution, transport error mapping, view-shaping over DTO fields. Domain derivations are tested in their own package. **No React Native component renders** (no renderer is configured, and it is out of scope). Co-locate tests as `*.test.ts` next to the module.
 
 ## Commands
 

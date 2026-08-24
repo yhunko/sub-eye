@@ -1,3 +1,4 @@
+import { shouldIncludeOccurrence } from "@subeye/lifecycle";
 import type { SubscriptionDto } from "@subeye/model";
 import { todayAsDay } from "@/shared/lib/format";
 
@@ -114,17 +115,15 @@ export function deriveAttention(
     // form field for it ever lands.
     //
     // A paused subscription's `nextPaymentDate` is a charge the pause will
-    // swallow, and a cancelling one's can sit past the day access ends — the
-    // server drops both from its own projections (`shouldIncludeOccurrence`),
-    // and advertising a charge that will never be taken is the same lie here.
-    const cancelsFirst =
-      subscription.willBeCancelledAt !== null &&
-      Date.parse(subscription.nextPaymentDate) >=
-        Date.parse(subscription.willBeCancelledAt);
-
+    // swallow, and a cancelling one's can sit past the day access ends. Both are
+    // dropped from the server's own projections, so advertising either here
+    // would contradict the totals on the same screen.
     if (
       subscription.status !== "paused" &&
-      !cancelsFirst &&
+      shouldIncludeOccurrence(
+        subscription,
+        new Date(subscription.nextPaymentDate),
+      ) &&
       ahead(subscription.nextPaymentDate)
     ) {
       events.push({

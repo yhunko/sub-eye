@@ -14,6 +14,13 @@ Planning only. No `expo-notifications`, no OS types, no storage, no catalog.
   notifications per app and silently drops the rest — no error, no warning.
   The budget counts reminder MORNINGS, not subscriptions, because reminders at
   the same instant are grouped into one digest.
+- Every amount is the PREFERRED currency, never the one the subscription was
+  entered in — `billing.preferred.amount`, already converted upstream.
+  `ReminderInput` omits `cost`/`currency` so the original is not reachable from
+  the planner at all. A trial prices from `upcomingPhase.billing`, not the
+  subscription's own, which during a trial is the trial price (usually zero). A
+  digest totals only when every event has an amount: one unknown price would
+  silently understate the sum.
 - Sort THEN trim. The budget must keep the soonest reminders, because those are
   the ones iOS would have kept anyway and the ones the user needs first.
 - `fireInstant` builds in the DEVICE's zone, deliberately not the account's.
