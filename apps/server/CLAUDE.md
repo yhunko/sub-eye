@@ -16,6 +16,11 @@ src/middleware/         auth, error mapping
 leaf — it never imports a service. `bun run check:boundaries` fails the build on
 a violation (`server-repository-is-leaf`).
 
+**The rules live in `@subeye/store`.** A service here is an adapter: it builds
+that package's `Ports` for the authenticated user (`src/domains/ports.ts`) and
+delegates. Do not add domain logic to a service — put it in the store, where the
+mobile app will reach it too.
+
 Most of this file is about pricing phases, because that is where the sharp edges
 are.
 
@@ -41,9 +46,10 @@ subscription row.
 
 | File | Role |
 | --- | --- |
-| `src/domains/subscription/subscriptionPhaseService.ts` | All phase logic — create, cancel, apply, reconcile |
+| `packages/store/src/phaseUseCases.ts` | All phase logic — create, cancel, apply, settle |
+| `packages/store/src/subscriptionUseCases.ts` | Subscription CRUD and the lifecycle transitions |
+| `src/domains/ports.ts` | The `Ports` for one user — every tenant filter lives here |
 | `src/domains/subscription/subscriptionPricePhaseRepository.ts` | Phase persistence; owns `db` |
-| `src/domains/subscription/subscriptionService.ts` | Subscription CRUD; calls the phase service |
 | `packages/lifecycle/src/lifecycleStatus.ts` | Derives lifecycle status from `willBeCancelledAt` |
 
 ---
@@ -57,14 +63,23 @@ set**. This is what makes the apply path safe to call repeatedly from any
 number of entry points. Never apply a phase without checking `appliedAt` first,
 and never clear it.
 
+### The store is single-tenant; this app is not
+
+No record in `@subeye/store` carries a `userId`. The ownership checks the
+services used to make (`existing.userId !== userId`) did not move with the
+logic — they were replaced by `createPorts(userId)`, which filters every read
+and puts the tenant in the WHERE clause of every write. `byId` answers `null`
+for another user's row rather than handing it over. A port implementation
+without that filter hands every user everyone else's data and nothing else in
+the suite notices; `test/server-ports.test.ts` is what catches it.
+
 ### Phases are applied lazily, on read
 
 There is no scheduler. The list read (`GET /subscriptions`) is pure: it loads
-phase rows via `loadPhasesFor` and never writes. The single-subscription read
-(`GET /subscriptions/:id`) is the one read allowed to write — it calls
-`applyDuePhases`, which finds phases whose `startsAt` has passed and whose
-`appliedAt` is null (`selectDuePhases`) and settles them via
-`applyPhaseByWorkflow`.
+phase rows and maps them, and never writes. The single-subscription read
+(`GET /subscriptions/:id`) is the one read allowed to write — `getSubscription`
+calls `applyDuePhases`, which finds phases whose `startsAt` has passed and whose
+`appliedAt` is null (`selectDuePhases`) and settles them.
 
 This means **a phase boundary fires the next time the user opens that
 subscription, not at the instant it comes due.** That is the intended v4
@@ -74,17 +89,17 @@ list read.
 ### `db.batch`, never `db.transaction`
 
 Neon's `neon-http` driver has **no interactive transactions** —
-`db.transaction()` throws at runtime. `applyPhase` uses
-`deps.phaseRepository.applyBoundaryBatch(...)` to group its writes atomically.
-Any new multi-statement group that must be atomic uses `db.batch([...])`.
+`db.transaction()` throws at runtime. The store's `phases.applyBoundary` port is
+one call precisely so a host can group its four writes; here that is
+`applyBoundaryBatch`, which uses `db.batch([...])`. Any new multi-statement
+group that must be atomic does the same.
 
-### Services take a `deps` param; repositories own `db`
+### Services take an optional `ports` param; repositories own `db`
 
-`SubscriptionPhaseServiceDeps` is
-`{ repository, phaseRepository, currencyService, userService }`,
-defaulting to the real implementations. Tests pass fakes. Services must not
-import `db` directly — that is the repository's job, and repositories are
-leaves (they never import a service).
+A service signature ends in `ports: Ports = createPorts(userId)`. Tests pass a
+`createPorts(userId, fakeDeps)`. Services must not import `db` directly — that
+is the repository's job, and repositories are leaves (they never import a
+service).
 
 ---
 
@@ -113,8 +128,8 @@ fail if it actually ran — `turbo test --force` is what checks the claim.
 
 1. Add the value to `pricePhaseKindEnum` in `src/db/schema.ts` and to the
    Valibot schema in `packages/model/.../pricePhaseSchemas.ts`.
-2. Decide how `startPricingSchedule` lays it down — most kinds are "override
-   phase now + `standard` phase after `endsAt`".
+2. Decide how `startPricingSchedule` (in `packages/store`) lays it down — most
+   kinds are "override phase now + `standard` phase after `endsAt`".
 3. Make sure `applyDuePhases` can settle it: it must have a `startsAt` and a
    null `appliedAt`.
-4. Add a case to `test/subscription-phase-service.test.ts`.
+4. Add a case to `packages/store/test/phaseUseCases.test.ts`.

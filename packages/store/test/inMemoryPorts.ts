@@ -98,6 +98,7 @@ export function inMemoryPorts(seed?: {
       },
     },
     phases: {
+      all: async () => [...phases],
       bySubscription: async (subscriptionId) =>
         phases.filter((p) => p.subscriptionId === subscriptionId),
       replaceAll: async (subscriptionId, records) => {

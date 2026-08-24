@@ -1,4 +1,4 @@
-import type { UpdateUserPreferences, UserPreferences } from "@subeye/model";
+import type { UserPreferences } from "@subeye/model";
 import { DEFAULT_DATE_FORMAT } from "@subeye/model";
 import { CurrencyUtils } from "@subeye/money";
 import { UserRepository } from "./userRepository";
@@ -54,7 +54,7 @@ export class UserService {
 
   static async updateUserPreferences(
     userId: string,
-    patch: UpdateUserPreferences,
+    patch: Partial<UserPreferences>,
     deps: UserServiceDeps = defaultDeps,
   ): Promise<UserPreferences> {
     const values: Partial<UserRow> = {};

@@ -1,5 +1,5 @@
 import type { SubscriptionStatus } from "@subeye/model";
-import { and, asc, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { subscriptionsTable } from "../../db/schema";
 
@@ -106,14 +106,25 @@ export class SubscriptionRepository {
     return subscription;
   }
 
+  /**
+   * The tenant is part of the WHERE, not a check the caller is trusted to have
+   * made. `@subeye/store` is single-tenant by construction, so this is the only
+   * layer that still knows subscriptions belong to anyone.
+   */
   static async update(
     id: string,
+    userId: string,
     data: Partial<SubscriptionInsert>,
   ): Promise<SubscriptionRecord> {
     const [updated] = await db
       .update(subscriptionsTable)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(subscriptionsTable.id, id))
+      .where(
+        and(
+          eq(subscriptionsTable.id, id),
+          eq(subscriptionsTable.userId, userId),
+        ),
+      )
       .returning();
 
     if (!updated) {
@@ -123,17 +134,15 @@ export class SubscriptionRepository {
     return updated;
   }
 
-  static async delete(id: string): Promise<void> {
-    await db.delete(subscriptionsTable).where(eq(subscriptionsTable.id, id));
-  }
-
-  static async countByUserId(userId: string): Promise<number> {
-    const [result] = await db
-      .select({ count: count() })
-      .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId));
-
-    return result?.count ?? 0;
+  static async delete(id: string, userId: string): Promise<void> {
+    await db
+      .delete(subscriptionsTable)
+      .where(
+        and(
+          eq(subscriptionsTable.id, id),
+          eq(subscriptionsTable.userId, userId),
+        ),
+      );
   }
 
   static async deleteByUserId(userId: string): Promise<void> {

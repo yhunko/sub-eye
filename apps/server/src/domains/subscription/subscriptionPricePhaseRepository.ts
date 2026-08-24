@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
   subscriptionPricePhasesTable,
@@ -9,39 +9,17 @@ export type PricePhaseRecord = typeof subscriptionPricePhasesTable.$inferSelect;
 export type PricePhaseInsert = typeof subscriptionPricePhasesTable.$inferInsert;
 
 export class SubscriptionPricePhaseRepository {
+  static async findByUserId(userId: string): Promise<PricePhaseRecord[]> {
+    return db
+      .select()
+      .from(subscriptionPricePhasesTable)
+      .where(eq(subscriptionPricePhasesTable.userId, userId))
+      .orderBy(asc(subscriptionPricePhasesTable.startsAt));
+  }
+
   static async findBySubscriptionId(
     subscriptionId: string,
-  ): Promise<PricePhaseRecord[]> {
-    return db
-      .select()
-      .from(subscriptionPricePhasesTable)
-      .where(eq(subscriptionPricePhasesTable.subscriptionId, subscriptionId))
-      .orderBy(asc(subscriptionPricePhasesTable.startsAt));
-  }
-
-  static async findBySubscriptionIds(
-    ids: string[],
-  ): Promise<PricePhaseRecord[]> {
-    if (ids.length === 0) return [];
-
-    return db
-      .select()
-      .from(subscriptionPricePhasesTable)
-      .where(inArray(subscriptionPricePhasesTable.subscriptionId, ids))
-      .orderBy(asc(subscriptionPricePhasesTable.startsAt));
-  }
-
-  static async findById(id: string): Promise<PricePhaseRecord | null> {
-    const [result] = await db
-      .select()
-      .from(subscriptionPricePhasesTable)
-      .where(eq(subscriptionPricePhasesTable.id, id));
-
-    return result ?? null;
-  }
-
-  static async findPendingBySubscriptionId(
-    subscriptionId: string,
+    userId: string,
   ): Promise<PricePhaseRecord[]> {
     return db
       .select()
@@ -49,7 +27,25 @@ export class SubscriptionPricePhaseRepository {
       .where(
         and(
           eq(subscriptionPricePhasesTable.subscriptionId, subscriptionId),
-          isNull(subscriptionPricePhasesTable.appliedAt),
+          eq(subscriptionPricePhasesTable.userId, userId),
+        ),
+      )
+      .orderBy(asc(subscriptionPricePhasesTable.startsAt));
+  }
+
+  static async findBySubscriptionIds(
+    ids: string[],
+    userId: string,
+  ): Promise<PricePhaseRecord[]> {
+    if (ids.length === 0) return [];
+
+    return db
+      .select()
+      .from(subscriptionPricePhasesTable)
+      .where(
+        and(
+          inArray(subscriptionPricePhasesTable.subscriptionId, ids),
+          eq(subscriptionPricePhasesTable.userId, userId),
         ),
       )
       .orderBy(asc(subscriptionPricePhasesTable.startsAt));
@@ -63,48 +59,28 @@ export class SubscriptionPricePhaseRepository {
     return db.insert(subscriptionPricePhasesTable).values(rows).returning();
   }
 
-  static async update(
-    id: string,
-    data: Partial<PricePhaseInsert>,
-  ): Promise<PricePhaseRecord> {
-    const [updated] = await db
-      .update(subscriptionPricePhasesTable)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(subscriptionPricePhasesTable.id, id))
-      .returning();
+  static async deleteMany(ids: string[], userId: string): Promise<void> {
+    if (ids.length === 0) return;
 
-    if (!updated) {
-      throw new Error("Failed to update price phase");
-    }
-
-    return updated;
-  }
-
-  static async deleteById(id: string): Promise<void> {
-    await db
-      .delete(subscriptionPricePhasesTable)
-      .where(eq(subscriptionPricePhasesTable.id, id));
-  }
-
-  static async deletePendingBySubscriptionId(
-    subscriptionId: string,
-  ): Promise<void> {
     await db
       .delete(subscriptionPricePhasesTable)
       .where(
         and(
-          eq(subscriptionPricePhasesTable.subscriptionId, subscriptionId),
-          isNull(subscriptionPricePhasesTable.appliedAt),
+          inArray(subscriptionPricePhasesTable.id, ids),
+          eq(subscriptionPricePhasesTable.userId, userId),
         ),
       );
   }
 
-  static async deleteAllBySubscriptionId(
-    subscriptionId: string,
-  ): Promise<void> {
+  static async deleteById(id: string, userId: string): Promise<void> {
     await db
       .delete(subscriptionPricePhasesTable)
-      .where(eq(subscriptionPricePhasesTable.subscriptionId, subscriptionId));
+      .where(
+        and(
+          eq(subscriptionPricePhasesTable.id, id),
+          eq(subscriptionPricePhasesTable.userId, userId),
+        ),
+      );
   }
 
   /**
@@ -119,6 +95,7 @@ export class SubscriptionPricePhaseRepository {
    */
   static async applyBoundaryBatch(args: {
     subscriptionId: string;
+    userId: string;
     cost: string;
     currency: string;
     phaseId: string;
@@ -134,7 +111,12 @@ export class SubscriptionPricePhaseRepository {
           currency: args.currency,
           updatedAt: new Date(),
         })
-        .where(eq(subscriptionsTable.id, args.subscriptionId)),
+        .where(
+          and(
+            eq(subscriptionsTable.id, args.subscriptionId),
+            eq(subscriptionsTable.userId, args.userId),
+          ),
+        ),
       db
         .update(subscriptionPricePhasesTable)
         .set({
@@ -142,7 +124,12 @@ export class SubscriptionPricePhaseRepository {
           startsAt: args.startsAt,
           updatedAt: new Date(),
         })
-        .where(eq(subscriptionPricePhasesTable.id, args.phaseId)),
+        .where(
+          and(
+            eq(subscriptionPricePhasesTable.id, args.phaseId),
+            eq(subscriptionPricePhasesTable.userId, args.userId),
+          ),
+        ),
     ];
 
     if (args.precedingPhaseId) {
@@ -150,7 +137,12 @@ export class SubscriptionPricePhaseRepository {
         db
           .update(subscriptionPricePhasesTable)
           .set({ endsAt: args.appliedAt, updatedAt: new Date() })
-          .where(eq(subscriptionPricePhasesTable.id, args.precedingPhaseId)),
+          .where(
+            and(
+              eq(subscriptionPricePhasesTable.id, args.precedingPhaseId),
+              eq(subscriptionPricePhasesTable.userId, args.userId),
+            ),
+          ),
       );
     }
 

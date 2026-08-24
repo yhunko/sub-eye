@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { categoriesTable } from "../../db/schema";
 
@@ -49,18 +49,6 @@ export class CategoryRepository {
       );
   }
 
-  static async countByUserId(
-    userId: string,
-    database: typeof db = db,
-  ): Promise<number> {
-    const [result] = await database
-      .select({ count: count() })
-      .from(categoriesTable)
-      .where(eq(categoriesTable.userId, userId));
-
-    return result?.count ?? 0;
-  }
-
   static async create(
     data: CategoryInsert,
     database: typeof db = db,
@@ -77,15 +65,19 @@ export class CategoryRepository {
     return category;
   }
 
+  /** The tenant is part of the WHERE — see `SubscriptionRepository.update`. */
   static async update(
     id: string,
+    userId: string,
     data: Partial<CategoryInsert>,
     database: typeof db = db,
   ): Promise<CategoryRecord> {
     const [updated] = await database
       .update(categoriesTable)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(categoriesTable.id, id))
+      .where(
+        and(eq(categoriesTable.id, id), eq(categoriesTable.userId, userId)),
+      )
       .returning();
 
     if (!updated) {
@@ -95,24 +87,16 @@ export class CategoryRepository {
     return updated;
   }
 
-  static async delete(id: string, database: typeof db = db): Promise<void> {
-    await database.delete(categoriesTable).where(eq(categoriesTable.id, id));
-  }
-
-  static async deleteByIds(
-    ids: string[],
+  static async delete(
+    id: string,
+    userId: string,
     database: typeof db = db,
-  ): Promise<number> {
-    if (ids.length === 0) {
-      return 0;
-    }
-
-    const deleted = await database
+  ): Promise<void> {
+    await database
       .delete(categoriesTable)
-      .where(inArray(categoriesTable.id, ids))
-      .returning({ id: categoriesTable.id });
-
-    return deleted.length;
+      .where(
+        and(eq(categoriesTable.id, id), eq(categoriesTable.userId, userId)),
+      );
   }
 
   static async deleteByIdsForUser(

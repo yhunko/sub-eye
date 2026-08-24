@@ -64,7 +64,7 @@ export class CategoryService {
       throw new CategoryNotFoundError();
     }
 
-    const updated = await deps.repository.update(id, payload);
+    const updated = await deps.repository.update(id, userId, payload);
     return CategoryService.toDto(updated);
   }
 
@@ -79,7 +79,7 @@ export class CategoryService {
       throw new CategoryNotFoundError();
     }
 
-    await deps.repository.delete(id);
+    await deps.repository.delete(id, userId);
   }
 
   static async deleteCategories(

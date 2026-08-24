@@ -1,11 +1,3 @@
-import type { TransitionInput, TransitionPatch } from "@subeye/lifecycle";
-import {
-  cancel,
-  deriveSubscriptionStatus,
-  pause,
-  renew,
-  resume,
-} from "@subeye/lifecycle";
 import type {
   AddSubscriptionInput,
   BulkDeleteSubscriptionsInput,
@@ -14,83 +6,48 @@ import type {
   PauseSubscriptionInput,
   RenewSubscriptionInput,
   SubscriptionDto,
-  SubscriptionPeriod,
-  SubscriptionStatus,
   UpdateSubscriptionInput,
-  UserPreferences,
 } from "@subeye/model";
-import { buildPhaseProjection, toStartOfUtcDay } from "@subeye/pricing";
-import { SubscriptionCalculator } from "@subeye/spend";
+import type { Ports } from "@subeye/store";
 import {
-  AlreadyPausedError,
-  NotPausedError,
-  ScheduledDateMustBeFutureError,
+  addSubscription,
+  cancelSubscription,
+  deleteSubscription,
+  getSubscription,
+  listSubscriptions,
+  pauseSubscription,
+  renewSubscription,
+  resumeSubscription,
   SubscriptionCategoryNotFoundError,
-  SubscriptionNotFoundError,
+  toSubscriptionDto,
+  updateSubscription,
 } from "@subeye/store";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
+import {
+  createPorts,
+  toPricePhaseRecord,
+  toSubscriptionRecord,
+} from "../ports";
 import { UserService } from "../user/userService";
-import type { EmbeddedCategory } from "./subscriptionMapper";
-import { SubscriptionMapper } from "./subscriptionMapper";
-import { SubscriptionPhaseService } from "./subscriptionPhaseService";
-import type { PricePhaseRecord } from "./subscriptionPricePhaseRepository";
 import { SubscriptionPricePhaseRepository } from "./subscriptionPricePhaseRepository";
-import type {
-  SubscriptionInsert,
-  SubscriptionRecord,
-} from "./subscriptionRepository";
 import { SubscriptionRepository } from "./subscriptionRepository";
 
-export type SubscriptionServiceDeps = {
-  repository: typeof SubscriptionRepository;
-  phaseRepository: typeof SubscriptionPricePhaseRepository;
-  currencyService: typeof CurrencyService;
-  userService: typeof UserService;
-  categoryRepository: typeof CategoryRepository;
-};
-
-type CancellationMode = "periodEnd" | "immediate";
-
-export const defaultDeps: SubscriptionServiceDeps = {
-  repository: SubscriptionRepository,
-  phaseRepository: SubscriptionPricePhaseRepository,
-  currencyService: CurrencyService,
-  userService: UserService,
-  categoryRepository: CategoryRepository,
-};
-
+/**
+ * The transport-side adapter over `@subeye/store`. Every rule lives in the
+ * store; what is left here is the tenant (supplied through `createPorts`) and
+ * the paged list read, whose filtering and ordering stay in SQL.
+ */
 export class SubscriptionService {
   /**
    * The full, unfiltered mapped list. Used by analytics, which needs every
-   * subscription regardless of status. The filtered/paged list read is
-   * `getSubscriptionsPage`, which pushes filtering into SQL.
+   * subscription regardless of status.
    */
   static async getSubscriptions(
     userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto[]> {
-    const [subscriptions, preferences] = await Promise.all([
-      deps.repository.findByUserId(userId),
-      deps.userService.getUserPreferences(userId),
-    ]);
-
-    const [rates, phasesById] = await Promise.all([
-      deps.currencyService.getRates(preferences.preferredCurrency),
-      SubscriptionPhaseService.loadPhasesFor(
-        subscriptions.map((s) => s.id),
-        deps,
-      ),
-    ]);
-
-    return subscriptions.map((subscription) =>
-      SubscriptionService.mapToDto(
-        subscription,
-        preferences,
-        rates,
-        phasesById.get(subscription.id) ?? [],
-      ),
-    );
+    return listSubscriptions(ports);
   }
 
   /**
@@ -102,14 +59,13 @@ export class SubscriptionService {
   static async getSubscriptionsPage(
     userId: string,
     params: GetSubscriptionsParams,
-    deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<{ items: SubscriptionDto[]; nextCursor: string | null }> {
     const search = params.search?.trim().toLowerCase();
     const sortBy = params.sortBy ?? "nextPaymentDate";
     const direction = params.direction ?? "asc";
 
-    const preferences = await deps.userService.getUserPreferences(userId);
-    const { rows, nextCursor } = await deps.repository.findPageByUserId({
+    const preferences = await UserService.getUserPreferences(userId);
+    const { rows, nextCursor } = await SubscriptionRepository.findPageByUserId({
       userId,
       search: search && search.length > 0 ? search : undefined,
       status: params.status ?? "active",
@@ -120,14 +76,24 @@ export class SubscriptionService {
       limit: params.limit ?? 50,
     });
 
-    const [rates, phasesById, categories] = await Promise.all([
-      deps.currencyService.getRates(preferences.preferredCurrency),
-      SubscriptionPhaseService.loadPhasesFor(
+    const [rates, phases, categories] = await Promise.all([
+      CurrencyService.getRates(preferences.preferredCurrency),
+      SubscriptionPricePhaseRepository.findBySubscriptionIds(
         rows.map((row) => row.id),
-        deps,
+        userId,
       ),
-      deps.categoryRepository.findByUserId(userId),
+      CategoryRepository.findByUserId(userId),
     ]);
+
+    const phasesBySubscription = new Map<
+      string,
+      ReturnType<typeof toPricePhaseRecord>[]
+    >();
+    for (const phase of phases) {
+      const list = phasesBySubscription.get(phase.subscriptionId) ?? [];
+      list.push(toPricePhaseRecord(phase));
+      phasesBySubscription.set(phase.subscriptionId, list);
+    }
 
     const categoriesById = new Map(
       categories.map((category) => [
@@ -136,14 +102,16 @@ export class SubscriptionService {
       ]),
     );
 
+    const now = new Date();
     const items = rows
       .map((row) =>
-        SubscriptionService.mapToDto(
-          row,
+        toSubscriptionDto(
+          toSubscriptionRecord(row),
+          phasesBySubscription.get(row.id) ?? [],
           preferences,
           rates,
-          phasesById.get(row.id) ?? [],
           row.categoryId ? (categoriesById.get(row.categoryId) ?? null) : null,
+          now,
         ),
       )
       .sort((a, b) => {
@@ -167,686 +135,121 @@ export class SubscriptionService {
   static async getSubscriptionById(
     id: string,
     userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    const existing = await deps.repository.findById(id);
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-
-    // Lazy write-on-read, scoped to ONE subscription: if a phase boundary has
-    // passed, apply it now so the row and the timeline agree. This is the only
-    // read that may write, and only when there is genuinely something due.
-    await SubscriptionPhaseService.applyDuePhases(id, deps);
-
-    const subscription = (await deps.repository.findById(id)) ?? existing;
-    const preferences = await deps.userService.getUserPreferences(userId);
-    const [rates, phases, category] = await Promise.all([
-      deps.currencyService.getRates(preferences.preferredCurrency),
-      deps.phaseRepository.findBySubscriptionId(id),
-      subscription.categoryId
-        ? deps.categoryRepository.findById(subscription.categoryId)
-        : null,
-    ]);
-
-    return SubscriptionService.mapToDto(
-      subscription,
-      preferences,
-      rates,
-      phases,
-      category
-        ? { id: category.id, name: category.name, emoji: category.emoji }
-        : null,
-    );
+    return getSubscription(ports, id);
   }
 
   static async addSubscription(
     userId: string,
     payload: AddSubscriptionInput,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    await SubscriptionService.assertCategoryBelongsToUser(
-      userId,
-      payload.categoryId,
-      deps,
-    );
-
-    // Validate the starting offer before any write. `neon-http` has no
-    // interactive transactions, so a late throw leaves an orphan row behind.
-    // The offer boundary is floored to the UTC day — the same flooring
-    // startPhase applies — so "ends later today" must be rejected here, not
-    // after the insert.
-    const { intro, ...createPayload } = payload;
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
-
-    const introEndsAt = intro ? toStartOfUtcDay(intro.endsAt) : null;
-    if (introEndsAt && Date.parse(introEndsAt) <= Date.now()) {
-      throw new ScheduledDateMustBeFutureError();
-    }
-
-    const created = await deps.repository.create(
-      SubscriptionService.toInsertPayload(userId, createPayload),
-    );
-
-    const result = created;
-
-    const dto = SubscriptionService.mapToDto(result, preferences, rates, []);
-
-    // Start the subscription on its trial / intro offer (the standard price is
-    // the cost just created). Returns the DTO with the resulting price phases.
-    if (intro && introEndsAt) {
-      return SubscriptionPhaseService.startPhase(
-        result.id,
-        userId,
-        {
-          kind: intro.kind,
-          promoCost: intro.promoCost,
-          currency: result.currency,
-          endsAt: introEndsAt,
-          standardCost: Number(result.cost),
-        },
-        deps,
-      );
-    }
-
-    return dto;
+    return addSubscription(ports, payload);
   }
 
   static async updateSubscription(
     id: string,
     userId: string,
     payload: UpdateSubscriptionInput,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    const existing = await deps.repository.findById(id);
-
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-
-    await SubscriptionService.assertCategoryBelongsToUser(
-      userId,
-      payload.categoryId,
-      deps,
-    );
-
-    // A direct price/currency edit supersedes any pending pricing schedule.
-    if (SubscriptionService.isDirectPriceChange(existing, payload)) {
-      await SubscriptionPhaseService.clearPendingPhases(id, deps);
-    }
-
-    const updated = await deps.repository.update(id, {
-      ...SubscriptionService.toUpdatePayload(payload),
-    });
-
-    const result = updated;
-
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
-
-    const phasesAfter = await deps.phaseRepository.findBySubscriptionId(id);
-
-    return SubscriptionService.mapToDto(
-      result,
-      preferences,
-      rates,
-      phasesAfter,
-    );
+    return updateSubscription(ports, id, payload);
   }
 
   static async deleteSubscription(
     id: string,
     userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<void> {
-    const existing = await deps.repository.findById(id);
-
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-
-    await SubscriptionPhaseService.clearPendingPhases(id, deps);
-
-    await deps.repository.delete(id);
+    return deleteSubscription(ports, id);
   }
 
   /** Cancel at the end of the current paid period (access kept until then). */
   static async cancelSubscription(
     id: string,
     userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    return SubscriptionService.applyCancellation(id, userId, "periodEnd", deps);
+    return cancelSubscription(ports, id, "periodEnd");
   }
 
   /** Cancel right away — access ends now. */
   static async cancelSubscriptionImmediately(
     id: string,
     userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    return SubscriptionService.applyCancellation(id, userId, "immediate", deps);
+    return cancelSubscription(ports, id, "immediate");
   }
 
-  private static async applyCancellation(
-    id: string,
-    userId: string,
-    mode: CancellationMode,
-    deps: SubscriptionServiceDeps,
-  ): Promise<SubscriptionDto> {
-    const existing = await deps.repository.findById(id);
-
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-
-    const userPreferences = await deps.userService.getUserPreferences(userId);
-
-    // Cancelling does NOT delete the pending pricing schedule: nothing fires it
-    // automatically any more, and keeping the rows is what lets renew restore
-    // the real reversion price instead of stranding the user on the trial cost.
-    const now = new Date();
-    const updated = await deps.repository.update(
-      id,
-      SubscriptionService.toLifecycleUpdate(
-        existing,
-        cancel(
-          SubscriptionService.toTransitionInput(existing),
-          mode,
-          now,
-          userPreferences.preferredTimezone,
-        ),
-        now,
-        userPreferences.preferredTimezone,
-      ),
-    );
-
-    const finalRecord = updated;
-
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
-    const phases = await deps.phaseRepository.findBySubscriptionId(id);
-
-    return SubscriptionService.mapToDto(
-      finalRecord,
-      preferences,
-      rates,
-      phases,
-    );
-  }
-
-  /**
-   * Resume a cancelling/cancelled subscription (clears the cancellation).
-   *
-   * `paymentDate` re-anchors the billing cycle to the day the subscription
-   * actually started again. Every future occurrence is projected FROM that
-   * anchor (`getNextOccurrence`), so renewing a long-dead monthly subscription
-   * without it would keep billing on the old day-of-month and immediately
-   * project a payment that already passed.
-   *
-   * It is optional because the two renewable states want different things: a
-   * still-billing `cancelling` subscription never stopped, so moving its anchor
-   * would shift a cycle that was never interrupted. Only an ENDED one is asked
-   * for a date.
-   */
   static async renewSubscription(
     id: string,
     userId: string,
     payload: RenewSubscriptionInput = { paymentDate: null },
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    const existing = await deps.repository.findById(id);
-
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
-
-    const now = new Date();
-    const updated = await deps.repository.update(
-      id,
-      SubscriptionService.toLifecycleUpdate(
-        existing,
-        renew(
-          SubscriptionService.toTransitionInput(existing),
-          payload.paymentDate ?? null,
-          now,
-        ),
-        now,
-        preferences.preferredTimezone,
-      ),
-    );
-
-    const withRenewalWorkflow = updated;
-
-    const phases = await deps.phaseRepository.findBySubscriptionId(id);
-    return SubscriptionService.mapToDto(
-      withRenewalWorkflow,
-      preferences,
-      rates,
-      phases,
-    );
+    return renewSubscription(ports, id, payload.paymentDate ?? null);
   }
 
-  /**
-   * Pause billing. Spend is skipped per occurrence from `pausedAt` until
-   * `resumeAt` (exclusive); an omitted `resumeAt` pauses indefinitely.
-   */
   static async pauseSubscription(
     id: string,
     userId: string,
     payload: PauseSubscriptionInput,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    const existing = await deps.repository.findById(id);
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-
-    // Loaded BEFORE the guard, not after: the guard and the DTO's `status` must
-    // answer "is this paused" in the same calendar, or for a few hours around a
-    // resume date the list advertises `pause` and this throws AlreadyPaused.
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
-
-    const now = new Date();
-    const patch = pause(
-      SubscriptionService.toTransitionInput(existing),
-      payload.resumeAt ?? null,
-      now,
-      preferences.preferredTimezone,
-    );
-
-    if (!patch) {
-      throw new AlreadyPausedError();
-    }
-
-    const updated = await deps.repository.update(
-      id,
-      SubscriptionService.toLifecycleUpdate(
-        existing,
-        patch,
-        now,
-        preferences.preferredTimezone,
-      ),
-    );
-
-    const phases = await deps.phaseRepository.findBySubscriptionId(id);
-
-    return SubscriptionService.mapToDto(updated, preferences, rates, phases);
+    return pauseSubscription(ports, id, payload.resumeAt ?? null);
   }
 
-  /**
-   * Resume billing: clear the pause and roll `payment_date` forward to the next
-   * occurrence in the future. Without the roll-forward the anchor still points
-   * at a date inside the pause and the dashboard shows a charge that never
-   * happened.
-   */
   static async resumeSubscription(
     id: string,
     userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<SubscriptionDto> {
-    const existing = await deps.repository.findById(id);
-    if (!existing || existing.userId !== userId) {
-      throw new SubscriptionNotFoundError();
-    }
-    // Before the guard, for the same reason as `pauseSubscription`.
-    const preferences = await deps.userService.getUserPreferences(userId);
-
-    const now = new Date();
-    const patch = resume(
-      SubscriptionService.toTransitionInput(existing),
-      now,
-      preferences.preferredTimezone,
-    );
-
-    if (!patch) {
-      throw new NotPausedError();
-    }
-
-    const updated = await deps.repository.update(
-      id,
-      SubscriptionService.toLifecycleUpdate(
-        existing,
-        patch,
-        now,
-        preferences.preferredTimezone,
-      ),
-    );
-
-    const rates = await deps.currencyService.getRates(
-      preferences.preferredCurrency,
-    );
-    const phases = await deps.phaseRepository.findBySubscriptionId(id);
-
-    return SubscriptionService.mapToDto(updated, preferences, rates, phases);
+    return resumeSubscription(ports, id);
   }
 
-  static async deleteAllForUser(
-    userId: string,
-    deps: SubscriptionServiceDeps = defaultDeps,
-  ): Promise<void> {
-    const existing = await deps.repository.findByUserId(userId);
-
-    await Promise.all(
-      existing.map(async (subscription) => {
-        await SubscriptionPhaseService.clearPendingPhases(
-          subscription.id,
-          deps,
-        );
-      }),
-    );
-
-    await deps.repository.deleteByUserId(userId);
+  /**
+   * Account deletion, from the Clerk `user.deleted` webhook. The price phases
+   * go with the rows — `subscription_price_phases` is `ON DELETE CASCADE`.
+   */
+  static async deleteAllForUser(userId: string): Promise<void> {
+    await SubscriptionRepository.deleteByUserId(userId);
   }
 
   static async bulkDeleteSubscriptions(
     userId: string,
     input: BulkDeleteSubscriptionsInput,
-    deps: SubscriptionServiceDeps = defaultDeps,
   ): Promise<{ deletedCount: number }> {
-    const subscriptions = await deps.repository.findManyByIds(input.ids);
+    const owned = (await SubscriptionRepository.findManyByIds(input.ids))
+      .filter((subscription) => subscription.userId === userId)
+      .map((subscription) => subscription.id);
 
-    const userSubscriptionIds = subscriptions
-      .filter((sub) => sub.userId === userId)
-      .map((sub) => sub.id);
+    if (owned.length === 0) return { deletedCount: 0 };
 
-    if (userSubscriptionIds.length === 0) {
-      return { deletedCount: 0 };
-    }
-
-    await Promise.all(
-      userSubscriptionIds.map(async (id) => {
-        const sub = subscriptions.find((s) => s.id === id);
-        if (sub) {
-          await SubscriptionPhaseService.clearPendingPhases(sub.id, deps);
-        }
-      }),
-    );
-
-    const deletedCount = await deps.repository.deleteMany(userSubscriptionIds);
-
-    return { deletedCount };
+    return { deletedCount: await SubscriptionRepository.deleteMany(owned) };
   }
 
   static async bulkUpdateCategory(
     userId: string,
     input: BulkUpdateCategoryInput,
-    deps: SubscriptionServiceDeps = defaultDeps,
+    ports: Ports = createPorts(userId),
   ): Promise<{ updatedCount: number }> {
-    await SubscriptionService.assertCategoryBelongsToUser(
-      userId,
-      input.categoryId,
-      deps,
-    );
-
-    const subscriptions = await deps.repository.findManyByIds(input.ids);
-
-    const userSubscriptionIds = subscriptions
-      .filter((sub) => sub.userId === userId)
-      .map((sub) => sub.id);
-
-    if (userSubscriptionIds.length === 0) {
-      return { updatedCount: 0 };
-    }
-
-    const updatedCount = await deps.repository.updateCategoryMany(
-      userSubscriptionIds,
-      input.categoryId,
-    );
-
-    return { updatedCount };
-  }
-
-  static mapToDto(
-    subscription: SubscriptionRecord,
-    preferences: UserPreferences,
-    rates: Record<string, number>,
-    phases: PricePhaseRecord[] = [],
-    category: EmbeddedCategory | null = null,
-  ): SubscriptionDto {
-    const billing = SubscriptionCalculator.calculateBillingDetails(
-      subscription,
-      preferences.preferredCurrency,
-      rates,
-    );
-    const { nextPaymentDate, lastPaymentDate } =
-      SubscriptionCalculator.calculatePaymentDates(
-        subscription,
-        preferences.preferredTimezone,
-      );
-
-    const projection = buildPhaseProjection(
-      { every: subscription.every, period: subscription.period },
-      phases,
-      preferences.preferredCurrency,
-      rates,
-    );
-
-    return SubscriptionMapper.toDto(
-      subscription,
-      billing,
-      nextPaymentDate,
-      lastPaymentDate,
-      projection,
-      category,
-      preferences.preferredTimezone,
-    );
-  }
-
-  private static toInsertPayload(
-    userId: string,
-    payload: AddSubscriptionInput,
-  ): SubscriptionInsert {
-    const willBeCancelledAt = SubscriptionService.normalizeTimestamp(
-      payload.willBeCancelledAt,
-    );
-
-    return {
-      userId,
-      ...SubscriptionService.toDbPayload(payload),
-      willBeCancelledAt: willBeCancelledAt ?? undefined,
-    } as SubscriptionInsert;
-  }
-
-  private static toUpdatePayload(
-    payload: UpdateSubscriptionInput,
-  ): Partial<SubscriptionInsert> {
-    const { willBeCancelledAt, ...restPayload } = payload;
-    const dbPayload = SubscriptionService.toDbPayload(restPayload);
-    const normalizedCancellation =
-      SubscriptionService.normalizeTimestamp(willBeCancelledAt);
-
-    if (willBeCancelledAt !== undefined) {
-      dbPayload.willBeCancelledAt = normalizedCancellation;
-    }
-
-    return SubscriptionService.stripUndefined(dbPayload);
-  }
-
-  private static toDbPayload(
-    payload: AddSubscriptionInput | UpdateSubscriptionInput,
-  ): Partial<SubscriptionInsert> {
-    const { willBeCancelledAt: _willBeCancelledAt, ...rest } = payload;
-
-    return {
-      ...rest,
-      cost: rest.cost !== undefined ? rest.cost.toString() : undefined,
-      paymentDate:
-        rest.paymentDate !== undefined
-          ? new Date(rest.paymentDate).toISOString()
-          : undefined,
-    };
-  }
-
-  private static stripUndefined<T extends Record<string, unknown>>(
-    value: T,
-  ): Partial<T> {
-    return Object.fromEntries(
-      Object.entries(value).filter(
-        ([, entryValue]) => entryValue !== undefined,
-      ),
-    ) as Partial<T>;
-  }
-
-  static async getPreferencesAndRates(
-    userId: string,
-    deps: SubscriptionServiceDeps,
-  ): Promise<{ preferences: UserPreferences; rates: Record<string, number> }> {
-    const preferences = await deps.userService.getUserPreferences(userId);
-    const rates = await deps.currencyService.getRates(
-      preferences.preferredCurrency,
-    );
-
-    return { preferences, rates };
-  }
-
-  private static async assertCategoryBelongsToUser(
-    userId: string,
-    categoryId: string | null | undefined,
-    deps: SubscriptionServiceDeps,
-  ): Promise<void> {
-    if (categoryId === undefined || categoryId === null) {
-      return;
-    }
-
-    const category = await deps.categoryRepository.findById(categoryId);
-    if (!category) {
+    if (input.categoryId && !(await ports.categories.byId(input.categoryId))) {
       throw new SubscriptionCategoryNotFoundError();
     }
 
-    if (category.userId !== userId) {
-      throw new SubscriptionCategoryNotFoundError();
-    }
-  }
+    const owned = (await SubscriptionRepository.findManyByIds(input.ids))
+      .filter((subscription) => subscription.userId === userId)
+      .map((subscription) => subscription.id);
 
-  private static normalizeTimestamp(
-    value?: string | null,
-  ): Date | null | undefined {
-    if (value === undefined) {
-      return undefined;
-    }
-
-    if (!value) {
-      return null;
-    }
-
-    return new Date(value);
-  }
-
-  /** The record as the pure transitions read it: every date an ISO string. */
-  private static toTransitionInput(
-    record: SubscriptionRecord,
-  ): TransitionInput {
-    return {
-      paymentDate: record.paymentDate,
-      every: record.every,
-      period: record.period as SubscriptionPeriod,
-      willBeCancelledAt: SubscriptionService.normalizeDate(
-        record.willBeCancelledAt,
-      ),
-      pausedAt: record.pausedAt,
-      resumeAt: record.resumeAt,
-    };
-  }
-
-  private static toLifecycleUpdate(
-    record: SubscriptionRecord,
-    patch: TransitionPatch,
-    now: Date,
-    timezone?: string,
-  ): Partial<SubscriptionInsert> {
-    const { willBeCancelledAt, ...rest } = patch;
+    if (owned.length === 0) return { updatedCount: 0 };
 
     return {
-      ...rest,
-      // Keyed on presence, not on value, and `cancelled_at` is the one
-      // Date-mode column. Collapsing this to `willBeCancelledAt ? … : null`
-      // type-checks and passes every test, and silently un-cancels every
-      // subscription anyone pauses or resumes: neither transition touches the
-      // cancellation, so the key is absent rather than null.
-      ...("willBeCancelledAt" in patch
-        ? {
-            willBeCancelledAt: willBeCancelledAt
-              ? new Date(willBeCancelledAt)
-              : null,
-          }
-        : {}),
-      status: SubscriptionService.currentStatus(
-        { ...record, ...patch },
-        now,
-        timezone,
+      updatedCount: await SubscriptionRepository.updateCategoryMany(
+        owned,
+        input.categoryId,
       ),
     };
-  }
-
-  /**
-   * The status the row's date columns say it has right now. Every lifecycle
-   * guard reads this rather than `record.status`, which is a cache the client
-   * never sees: the DTO derives its status on read, so a dated pause whose
-   * `resume_at` has elapsed reads `active` everywhere while the column still
-   * says `paused`, and a guard on the column refuses an action the same row
-   * advertises in `allowedActions`.
-   *
-   * `now` is the same instant the transition ran against. Read twice, a clock
-   * that crosses midnight in between decides the patch on one calendar day and
-   * the status column on the next.
-   */
-  private static currentStatus(
-    record: {
-      willBeCancelledAt: Date | string | null;
-      pausedAt: string | null;
-      resumeAt: string | null;
-    },
-    now: Date,
-    timezone?: string,
-  ): SubscriptionStatus {
-    return deriveSubscriptionStatus(
-      {
-        willBeCancelledAt: SubscriptionService.normalizeDate(
-          record.willBeCancelledAt,
-        ),
-        pausedAt: record.pausedAt,
-        resumeAt: record.resumeAt,
-      },
-      now,
-      timezone,
-    );
-  }
-
-  static normalizeDate(value?: string | Date | null): string | null {
-    if (!value) return null;
-    return value instanceof Date
-      ? value.toISOString()
-      : new Date(value).toISOString();
-  }
-
-  private static isDirectPriceChange(
-    subscription: SubscriptionRecord,
-    payload: UpdateSubscriptionInput,
-  ): boolean {
-    if (payload.cost === undefined && payload.currency === undefined) {
-      return false;
-    }
-
-    const existingCost = Number(subscription.cost);
-    const nextCost = payload.cost ?? existingCost;
-
-    const existingCurrency = subscription.currency;
-    const nextCurrency = payload.currency ?? existingCurrency;
-
-    return (
-      SubscriptionService.normalizeAmount(nextCost) !==
-        SubscriptionService.normalizeAmount(existingCost) ||
-      nextCurrency !== existingCurrency
-    );
-  }
-
-  static normalizeAmount(value: number): string {
-    return value.toFixed(2);
   }
 }

@@ -28,6 +28,12 @@ export type CategoryPort = {
 };
 
 export type PricePhasePort = {
+  /**
+   * Every phase in the store. `listSubscriptions` groups these in memory
+   * rather than asking per subscription — a host backed by a network database
+   * would otherwise issue one round trip per row on the analytics path.
+   */
+  all(): Promise<PricePhaseRecord[]>;
   bySubscription(subscriptionId: string): Promise<PricePhaseRecord[]>;
   replaceAll(
     subscriptionId: string,
