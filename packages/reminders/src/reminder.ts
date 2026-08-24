@@ -50,10 +50,40 @@ export type ReminderCopy = {
   money(amount: number, currency: string): string;
 };
 
+/**
+ * A recurrence the OS can re-fire on its own, forever.
+ *
+ * The numbers are expo's, and each unit uses a different convention. Getting one
+ * wrong produces a reminder on the wrong day rather than an error, so they are
+ * pinned by concrete assertions in `test/repeatRule.test.ts`.
+ */
+export type RepeatRule =
+  | { unit: "daily"; hour: number; minute: number }
+  /** `weekday` is 1–7, Sunday = 1 — expo's convention, NOT `Date.getDay()`'s 0–6. */
+  | { unit: "weekly"; weekday: number; hour: number; minute: number }
+  /** `day` is 1-based, like `Date.getDate()`. */
+  | { unit: "monthly"; day: number; hour: number; minute: number }
+  /** `month` is 0-BASED, like `Date.getMonth()`. January is 0. */
+  | {
+      unit: "yearly";
+      month: number;
+      day: number;
+      hour: number;
+      minute: number;
+    };
+
+export type ReminderSchedule =
+  | { repeats: false; fireAt: Date }
+  /**
+   * `firstAt` is the next instant the rule matches — for ordering and for the
+   * health screen only. The OS owns every firing after it, including that one.
+   */
+  | { repeats: true; rule: RepeatRule; firstAt: Date };
+
 /** One local notification to schedule. Plain data — no expo types in here. */
 export type Reminder = {
   kind: ReminderKind;
-  fireAt: Date;
+  schedule: ReminderSchedule;
   title: string;
   body: string;
   target: ReminderTarget;

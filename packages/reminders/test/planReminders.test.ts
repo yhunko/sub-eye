@@ -3,6 +3,7 @@ import { SubscriptionPeriod } from "@subeye/model";
 import {
   planReminders,
   REMINDER_LOOKAHEAD,
+  type Reminder,
   type ReminderCopy,
   type ReminderInput,
   type ReminderSettings,
@@ -76,6 +77,14 @@ const sub = (overrides: Partial<ReminderInput> = {}): ReminderInput => ({
   ...overrides,
 });
 
+/** The instant a reminder is anchored on: its one-shot date, or a rule's first firing. */
+const at = (reminder?: Reminder): Date =>
+  reminder === undefined
+    ? new Date(0)
+    : reminder.schedule.repeats
+      ? reminder.schedule.firstAt
+      : reminder.schedule.fireAt;
+
 /** [year, month, day, hour, minute] in the DEVICE zone — where reminders fire. */
 const localParts = (date: Date) => [
   date.getFullYear(),
@@ -95,9 +104,7 @@ describe("planReminders", () => {
     );
 
     // 1 August renews -> 31 July 07:30, rolling back over the month boundary.
-    expect(localParts(reminders[0]?.fireAt ?? new Date())).toEqual([
-      2026, 6, 31, 7, 30,
-    ]);
+    expect(localParts(at(reminders[0]))).toEqual([2026, 6, 31, 7, 30]);
     expect(reminders[0]?.title).toBe("Netflix renews tomorrow");
     expect(reminders[0]?.body).toBe("₴100.00");
     expect(reminders[0]?.target).toEqual({
@@ -160,7 +167,7 @@ describe("planReminders", () => {
 
     expect(reminders).toHaveLength(REMINDER_LOOKAHEAD);
     // 31 Dec, then 31 Jan, then 28 Feb (clamped) — each reminder a day earlier.
-    expect(reminders.map((r) => localParts(r.fireAt))).toEqual([
+    expect(reminders.map((r) => localParts(at(r)))).toEqual([
       [2026, 11, 30, 9, 0],
       [2027, 0, 30, 9, 0],
       [2027, 1, 27, 9, 0],
@@ -222,9 +229,7 @@ describe("planReminders", () => {
 
     const merged = reminders.find((r) => r.title === "Upcoming renewals");
     expect(merged?.target).toEqual({ screen: "list" });
-    expect(localParts(merged?.fireAt ?? new Date())).toEqual([
-      2026, 7, 1, 9, 0,
-    ]);
+    expect(localParts(at(merged))).toEqual([2026, 7, 1, 9, 0]);
   });
 
   it("gives each lead time its own reminder", () => {
@@ -236,10 +241,10 @@ describe("planReminders", () => {
     );
 
     const first = reminders.filter(
-      (r) => r.fireAt.getMonth() === 6 || r.fireAt.getDate() === 1,
+      (r) => at(r).getMonth() === 6 || at(r).getDate() === 1,
     );
     // 1 Aug renewal -> 29 July (3 days) and 1 Aug (same day).
-    expect(first.map((r) => localParts(r.fireAt))).toContainEqual([
+    expect(first.map((r) => localParts(at(r)))).toContainEqual([
       2026, 6, 29, 9, 0,
     ]);
     expect(first.map((r) => r.title)).toContain("Netflix renews today");
@@ -273,6 +278,10 @@ describe("planReminders", () => {
           name: `s${index}`,
           // A distinct day each, so nothing groups and every one costs a slot.
           nextPaymentDate: `2026-08-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`,
+          // `every: 2` keeps them ineligible for a repeat rule, so every
+          // occurrence still costs its own slot — which is what this measures.
+          // A repeating group takes ONE slot and would leave nothing to trim.
+          every: 2,
         }),
       ),
       settings(),
@@ -282,7 +291,7 @@ describe("planReminders", () => {
     );
 
     expect(reminders).toHaveLength(3);
-    expect(reminders.map((r) => localParts(r.fireAt).slice(0, 3))).toEqual([
+    expect(reminders.map((r) => localParts(at(r)).slice(0, 3))).toEqual([
       [2026, 6, 31],
       [2026, 7, 1],
       [2026, 7, 2],
@@ -300,6 +309,9 @@ describe("planReminders", () => {
           id: `sub_${index}`,
           name: `s${index}`,
           nextPaymentDate: `2026-08-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`,
+          // Same reason as the budget test above: one-shots are what fill a
+          // budget, so a repeat-eligible fixture would never overflow it.
+          every: 2,
         }),
       );
 
@@ -310,6 +322,133 @@ describe("planReminders", () => {
     expect(
       planReminders(days(2), settings(), NOW, testCopy, REMINDER_LOOKAHEAD + 1),
     ).toHaveLength(REMINDER_LOOKAHEAD + 1);
+  });
+});
+
+describe("planReminders — repeating triggers", () => {
+  // Renewing on the 14th with a one-day lead is day 13 of every month, which is
+  // a rule the OS can hold on its own. The whole point of Plan C: one permanent
+  // slot instead of three that expire.
+  const repeatable = () => sub({ nextPaymentDate: "2026-08-14T00:00:00.000Z" });
+
+  it("replaces the projection with one repeating trigger", () => {
+    const reminders = planReminders([repeatable()], settings(), NOW, testCopy);
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.schedule).toEqual({
+      repeats: true,
+      rule: { unit: "monthly", day: 13, hour: 9, minute: 0 },
+      firstAt: new Date(2026, 7, 13, 9, 0),
+    });
+  });
+
+  // Without the `break` after a repeating event the same pair also emits
+  // REMINDER_LOOKAHEAD one-shots, and the user gets a repeating banner plus
+  // three more on the same mornings.
+  it("never pairs a repeat rule with one-shots for the same lead", () => {
+    const reminders = planReminders([repeatable()], settings(), NOW, testCopy);
+
+    expect(reminders.filter((r) => !r.schedule.repeats)).toEqual([]);
+  });
+
+  // Two subscriptions on the same rule share ONE trigger and one banner. Giving
+  // each its own would be a notification-spam regression, every month, forever.
+  it("groups two subscriptions onto one rule with a digest body", () => {
+    const reminders = planReminders(
+      [
+        repeatable(),
+        sub({
+          id: "sub_2",
+          name: "Spotify",
+          nextPaymentDate: "2026-08-14T00:00:00.000Z",
+          billing: billing(50),
+        }),
+      ],
+      settings(),
+      NOW,
+      testCopy,
+    );
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.title).toBe("Renewing tomorrow");
+    expect(reminders[0]?.body).toBe("Netflix, Spotify · ₴150.00");
+  });
+
+  // Permanent coverage must not be crowded out by a burst of near-term
+  // one-shots, however much sooner they fire.
+  it("gives repeating triggers the budget before one-shots", () => {
+    const reminders = planReminders(
+      [
+        repeatable(),
+        // Renewing on the 1st is day 0 with a one-day lead — one-shot, and it
+        // fires nearly two weeks before the repeating one does.
+        sub({ id: "sub_2", name: "Spotify" }),
+      ],
+      settings(),
+      NOW,
+      testCopy,
+      1,
+    );
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.title).toBe("Netflix renews tomorrow");
+  });
+
+  // A daily plan reminded "today" and "in 3 days" is the SAME daily rule twice.
+  // They collapse, and the dedupe stops the survivor naming the service twice.
+  it("collapses two lead times that produce the same rule", () => {
+    const reminders = planReminders(
+      [sub({ period: SubscriptionPeriod.DAY })],
+      settings({ renewalLeadDays: [0, 3] }),
+      NOW,
+      testCopy,
+    );
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.schedule).toMatchObject({
+      rule: { unit: "daily", hour: 9, minute: 0 },
+    });
+  });
+
+  // `firstAt` is what the ordering and the "renews tomorrow" phrase are built
+  // from, so a rule whose first match has already gone by must advance to the
+  // next one rather than describe a morning in the past.
+  it("anchors firstAt on the next match, not a lead day already gone", () => {
+    const reminders = planReminders(
+      [repeatable()],
+      settings(),
+      // The 13th, after the 09:00 firing — the lead day for the August charge.
+      new Date(2026, 7, 13, 12),
+      testCopy,
+    );
+
+    expect(at(reminders[0])).toEqual(new Date(2026, 8, 13, 9, 0));
+    expect(reminders[0]?.title).toBe("Netflix renews tomorrow");
+  });
+
+  // The two modes coexist: renewing on the 30th is a day February lacks, so
+  // that subscription keeps exactly today's expiring projection.
+  it("leaves an ineligible subscription on the one-shot path", () => {
+    const reminders = planReminders(
+      [
+        repeatable(),
+        sub({
+          id: "sub_2",
+          name: "Spotify",
+          nextPaymentDate: "2026-08-30T00:00:00.000Z",
+        }),
+      ],
+      settings(),
+      NOW,
+      testCopy,
+    );
+
+    expect(reminders.map((r) => r.schedule.repeats)).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
   });
 });
 
@@ -387,7 +526,7 @@ describe("planReminders — trials", () => {
     );
 
     const sameMorning = reminders.filter(
-      (r) => r.fireAt.getDate() === 31 && r.fireAt.getMonth() === 6,
+      (r) => at(r).getDate() === 31 && at(r).getMonth() === 6,
     );
     expect(sameMorning).toHaveLength(2);
     expect(sameMorning.map((r) => r.kind).sort()).toEqual([
@@ -448,6 +587,6 @@ describe("planReminders — the shared recurrence engine", () => {
       testCopy,
     );
 
-    expect(reminders.map((r) => r.fireAt.getDate())).toEqual([31, 28, 31]);
+    expect(reminders.map((r) => at(r).getDate())).toEqual([31, 28, 31]);
   });
 });

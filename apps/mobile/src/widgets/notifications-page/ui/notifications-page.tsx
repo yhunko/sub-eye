@@ -157,7 +157,14 @@ function describeStatus(
     android: "check_circle",
     value: m.notifs_permAllowed(),
     subtitle: scheduleSummary(health, settings),
-    footnote: health.atBudget ? m.notifs_atBudget() : undefined,
+    // A count on its own reads as a countdown — "12, then silence" — which is
+    // what the schedule used to be. Truncation still outranks the reassurance:
+    // it is the only one of the two the user can act on.
+    footnote: health.atBudget
+      ? m.notifs_atBudget()
+      : health.repeating > 0
+        ? m.notifs_repeats()
+        : undefined,
     needsDeviceSettings: false,
   };
 }

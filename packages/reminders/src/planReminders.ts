@@ -1,10 +1,12 @@
-import type { SubscriptionDto } from "@subeye/model";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import type {
   Reminder,
   ReminderCopy,
   ReminderInput,
   ReminderKind,
+  ReminderSchedule,
+  RepeatRule,
 } from "./reminder";
 import type { ReminderSettings } from "./settings";
 
@@ -72,6 +74,76 @@ function fireInstant(
     hour,
     minute,
   );
+}
+
+/**
+ * The recurrence the OS can re-fire forever for this subscription and lead time,
+ * or `null` to fall back to the one-shot `DATE` triggers.
+ *
+ * `null` is not a shortfall to be optimised away. A repeating trigger keeps
+ * firing whatever the subscription becomes, and the app is not open to notice a
+ * date-driven transition — so anything carrying a pending one is refused
+ * deliberately. Loosening this brings back reminders for subscriptions the user
+ * already cancelled, which costs more trust than the missing coverage is worth.
+ *
+ * Cancelling, pausing and editing all happen IN the app, which rebuilds the
+ * whole schedule on the spot; only the dates move on their own.
+ */
+export function repeatRuleFor(
+  subscription: ReminderInput,
+  leadDays: number,
+  hour: number,
+  minute: number,
+): RepeatRule | null {
+  // `active` already excludes a pending cancellation: a future cancellation
+  // derives as `cancelling`, never as `active`.
+  if (subscription.status !== "active") return null;
+  // A price change on a known date makes the amount baked into the body wrong.
+  if (subscription.upcomingPhase) return null;
+  if (
+    subscription.pricePhases?.some(
+      (phase) => phase.isActive && phase.kind === "trial",
+    )
+  ) {
+    return null;
+  }
+  // `every: 3` is quarterly, and no calendar unit means "every third month".
+  if (subscription.every !== 1) return null;
+
+  const anchor = DateTimezoneUtils.toCalendarDay(subscription.nextPaymentDate);
+  if (Number.isNaN(anchor.getTime())) return null;
+
+  // The calendar date the reminder lands on. `Date.UTC` rolls a negative day
+  // back over month and year boundaries, exactly as `fireInstant` does.
+  const fireDay = new Date(
+    Date.UTC(
+      anchor.getUTCFullYear(),
+      anchor.getUTCMonth(),
+      anchor.getUTCDate() - leadDays,
+    ),
+  );
+
+  switch (subscription.period) {
+    case SubscriptionPeriod.DAY:
+      return { unit: "daily", hour, minute };
+    case SubscriptionPeriod.WEEK:
+      return { unit: "weekly", weekday: fireDay.getUTCDay() + 1, hour, minute };
+    case SubscriptionPeriod.MONTH: {
+      const day = anchor.getUTCDate() - leadDays;
+      // Above 28 the rule silently does not fire in February — a missed renewal
+      // once a year. Below 1 the lead crosses into the previous month, where
+      // "three days before the 2nd" is a different day every time.
+      if (day < 1 || day > 28) return null;
+      return { unit: "monthly", day, hour, minute };
+    }
+    case SubscriptionPeriod.YEAR: {
+      const month = fireDay.getUTCMonth();
+      const day = fireDay.getUTCDate();
+      // 29 February exists one year in four; the other three go quiet.
+      if (month === 1 && day === 29) return null;
+      return { unit: "yearly", month, day, hour, minute };
+    }
+  }
 }
 
 const eventOf = (
@@ -186,22 +258,27 @@ function leadDaysOf(event: ReminderEvent, fireAt: Date): number {
   return Math.round((eventDay - fireDay) / 86_400_000);
 }
 
+const scheduledAt = (schedule: ReminderSchedule): Date =>
+  schedule.repeats ? schedule.firstAt : schedule.fireAt;
+
 function describe(
   kind: ReminderKind,
-  fireAt: Date,
+  schedule: ReminderSchedule,
   events: readonly ReminderEvent[],
   copy: ReminderCopy,
 ): Reminder {
   const first = events[0];
   if (!first) throw new Error("empty reminder group");
 
-  const when = whenPhrase(leadDaysOf(first, fireAt), copy);
+  // A repeat rule fires the same number of days ahead of the charge every time,
+  // so the phrase computed from its first firing stays true for all of them.
+  const when = whenPhrase(leadDaysOf(first, scheduledAt(schedule)), copy);
 
   if (events.length === 1) {
     if (kind === "renewal") {
       return {
         kind,
-        fireAt,
+        schedule,
         title: copy.renewalTitle({ name: first.name, when }),
         // An amount that could not be converted is 0, and naming it would
         // promise a charge of nothing. Same fork as the trial branch below.
@@ -219,7 +296,7 @@ function describe(
     // cannot name a figure, and inventing "0.00" would invert the message.
     return {
       kind,
-      fireAt,
+      schedule,
       title: copy.trialTitle({ name: first.name, when }),
       body:
         first.amount > 0
@@ -249,7 +326,7 @@ function describe(
 
   return {
     kind,
-    fireAt,
+    schedule,
     title:
       kind === "renewal"
         ? sameDay
@@ -270,16 +347,56 @@ function describe(
   };
 }
 
+type ReminderGroup = {
+  kind: ReminderKind;
+  schedule: ReminderSchedule;
+  events: ReminderEvent[];
+};
+
+function addTo(
+  groups: Map<string, ReminderGroup>,
+  key: string,
+  schedule: ReminderSchedule,
+  event: ReminderEvent,
+): void {
+  const group = groups.get(key);
+  if (!group) {
+    groups.set(key, { kind: event.kind, schedule, events: [event] });
+    return;
+  }
+
+  // A daily plan with lead times {0,1} projects two occurrences onto the same
+  // morning. They are two real charges, but naming the service twice in one
+  // banner reads as a bug — keep the soonest.
+  if (
+    group.events.some((held) => held.subscriptionId === event.subscriptionId)
+  ) {
+    return;
+  }
+  group.events.push(event);
+}
+
 /**
- * Every reminder worth scheduling right now, soonest first.
+ * Every reminder worth scheduling right now — repeating ones first, then the
+ * one-shots soonest first.
  *
- * Events are grouped by **firing instant**, not by subscription: two renewals
- * that would both fire at 09:00 tomorrow become one banner naming both. That is
- * what keeps the schedule inside the iOS ceiling once several lead times are in
- * play — the budget counts mornings, not subscriptions — and it is also the
+ * Two modes. A `(subscription, lead)` pair whose recurrence the OS can express
+ * — see `repeatRuleFor` — becomes ONE repeating trigger that fires forever, and
+ * contributes no one-shot occurrences at all; scheduling both would double-notify
+ * on the same morning. Everything else keeps the one-shot projection unchanged.
+ *
+ * Events are grouped so that one banner covers a whole morning: one-shots by
+ * **firing instant**, repeating ones by **serialised rule**, so two monthly
+ * subscriptions that both fire on day 14 share a single permanent trigger. That
+ * is what keeps the schedule inside the iOS ceiling once several lead times are
+ * in play — the budget counts mornings, not subscriptions — and it is also the
  * better lock screen. Grouping by `(instant, leadDays)` instead would put two
  * banners on the same minute whenever lead times overlap, which is the exact
  * thing this exists to prevent.
+ *
+ * Repeating groups take the budget first. A repeating trigger is permanent
+ * coverage and must not be crowded out by a burst of near-term one-shots; they
+ * are bounded by subscription count × lead count, so they cannot run away.
  *
  * Pure: takes `now` and its copy, never reads a clock, never touches
  * `expo-notifications` or storage. The effectful wrapper in the app is a thin
@@ -292,62 +409,76 @@ export function planReminders(
   copy: ReminderCopy,
   budget: number = REMINDER_BUDGET,
 ): Reminder[] {
-  const events: ReminderEvent[] = [];
+  const oneShot = new Map<string, ReminderGroup>();
+  const repeating = new Map<string, ReminderGroup>();
 
   for (const subscription of subscriptions) {
-    if (settings.renewals) events.push(...renewalEvents(subscription));
+    const collect = (
+      events: readonly ReminderEvent[],
+      leads: readonly number[],
+      // A trial ends once, so a trial stream never earns a rule however plain
+      // the subscription is.
+      recurs: boolean,
+    ) => {
+      for (const lead of leads) {
+        const rule = recurs
+          ? repeatRuleFor(subscription, lead, settings.hour, settings.minute)
+          : null;
+
+        for (const event of events) {
+          const fireAt = fireInstant(
+            event.date,
+            lead,
+            settings.hour,
+            settings.minute,
+          );
+          // A trigger in the past fires immediately on iOS. Skip rather than nag.
+          if (fireAt.getTime() <= now.getTime()) continue;
+
+          if (rule) {
+            // The first occurrence still ahead is the next instant the rule
+            // matches, because eligibility is exactly what guarantees the rule
+            // and the projection describe the same recurrence. The OS owns
+            // every firing after it, so this pair is done — the `break` is what
+            // stops it also emitting the one-shots it would double-notify with.
+            addTo(
+              repeating,
+              `${event.kind}:${JSON.stringify(rule)}`,
+              { repeats: true, rule, firstAt: fireAt },
+              event,
+            );
+            break;
+          }
+
+          addTo(
+            oneShot,
+            `${event.kind}:${fireAt.getTime()}`,
+            { repeats: false, fireAt },
+            event,
+          );
+        }
+      }
+    };
+
+    if (settings.renewals) {
+      collect(renewalEvents(subscription), settings.renewalLeadDays, true);
+    }
     if (settings.trials) {
       const trial = trialEndEvent(subscription);
-      if (trial) events.push(trial);
+      if (trial) collect([trial], settings.trialLeadDays, false);
     }
   }
 
-  const groups = new Map<
-    string,
-    { kind: ReminderKind; fireAt: Date; events: ReminderEvent[] }
-  >();
+  const soonestFirst = (a: ReminderGroup, b: ReminderGroup) =>
+    scheduledAt(a.schedule).getTime() - scheduledAt(b.schedule).getTime();
 
-  for (const event of events) {
-    const leadDays =
-      event.kind === "renewal"
-        ? settings.renewalLeadDays
-        : settings.trialLeadDays;
-
-    for (const lead of leadDays) {
-      const fireAt = fireInstant(
-        event.date,
-        lead,
-        settings.hour,
-        settings.minute,
-      );
-      // A trigger in the past fires immediately on iOS. Skip rather than nag.
-      if (fireAt.getTime() <= now.getTime()) continue;
-
-      const key = `${event.kind}:${fireAt.getTime()}`;
-      const group = groups.get(key);
-      if (!group) {
-        groups.set(key, { kind: event.kind, fireAt, events: [event] });
-        continue;
-      }
-
-      // A daily plan with lead times {0,1} projects two occurrences onto the
-      // same morning. They are two real charges, but naming the service twice
-      // in one banner reads as a bug — keep the soonest.
-      if (
-        group.events.some(
-          (held) => held.subscriptionId === event.subscriptionId,
-        )
-      ) {
-        continue;
-      }
-      group.events.push(event);
-    }
-  }
-
-  // Sort THEN trim: the budget must keep the soonest reminders, because those
-  // are the ones iOS would have kept anyway and the ones the user needs first.
-  return [...groups.values()]
-    .sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime())
+  // Sort THEN trim: within each mode the budget must keep the soonest, because
+  // those are the ones iOS would have kept anyway and the ones the user needs
+  // first.
+  return [
+    ...[...repeating.values()].sort(soonestFirst),
+    ...[...oneShot.values()].sort(soonestFirst),
+  ]
     .slice(0, budget)
-    .map((group) => describe(group.kind, group.fireAt, group.events, copy));
+    .map((group) => describe(group.kind, group.schedule, group.events, copy));
 }

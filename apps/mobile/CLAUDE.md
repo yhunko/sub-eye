@@ -167,6 +167,14 @@ is injected rather than looked up.
   0-based in `Date`. This shipped wrong once and was silent: the count stayed
   correct, so the status section read "nothing scheduled" over a full, working
   schedule. Anything user-facing must degrade to the count, never to a claim.
+- **A REPEATING trigger reads back with the components it recurs over MISSING** —
+  no `year` at all, and no `month` for a `MONTHLY` one — so it has no instant to
+  read and `trigger-time.ts` computes the next match instead. Android is a third
+  set of conventions again: the components sit at the TOP level rather than under
+  `dateComponents`, and `month` comes back 0-based there against iOS's 1-based.
+  Both are tested against the real shapes. `repeatsForever` is what lets the
+  status section stop reading a pending count as a countdown — see the two-mode
+  model in [packages/reminders/CLAUDE.md](../../packages/reminders/CLAUDE.md).
 - **Taps route through `useLastNotificationResponse`**, never
   `addNotificationResponseReceivedListener` — the listener only fires while the
   app is already running, and a reminder is usually tapped from a lock screen with

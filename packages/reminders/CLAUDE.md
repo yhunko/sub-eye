@@ -35,10 +35,66 @@ Planning only. No `expo-notifications`, no OS types, no storage, no catalog.
   for that reason — they are what stop a blob written by an older build from
   becoming a crash loop.
 
-## Runway
+## Runway — the two modes
 
-`REMINDER_LOOKAHEAD = 3` one-shot occurrences per subscription means the
-schedule covers roughly `min(3, 56/N)` months before it silently runs out, where
-N is the active subscription count. Plan C replaces the expressible recurrences
-with repeating OS triggers to make that indefinite. Until then, this ceiling is
-real — do not describe reminders as permanent.
+`planReminders` returns a `ReminderSchedule`, not a firing instant. It is either
+a one-shot `fireAt` or a `RepeatRule` the OS re-fires forever, and the app maps
+the second onto expo's `DAILY` / `WEEKLY` / `MONTHLY` / `YEARLY` triggers.
+
+- **Repeating.** One pending slot, one banner, no expiry. A `(subscription,
+  lead)` pair that earns a rule contributes NO one-shot occurrences — scheduling
+  both double-notifies on the same morning, which is what the `break` in the
+  event loop prevents. Repeating groups take the budget FIRST: permanent
+  coverage must not be crowded out by a burst of near-term one-shots, and they
+  are bounded by subscription count × lead count.
+- **One-shot.** Unchanged: `REMINDER_LOOKAHEAD = 3` projected occurrences per
+  subscription, past triggers skipped, grouped by firing instant. On its own
+  this covers roughly `min(3, 56/N)` months and then runs out silently, which is
+  why it is now the FALLBACK rather than the whole design.
+
+Grouping is what keeps both inside the ceiling: one-shots group by firing
+instant, repeating ones by **serialised rule**, so two monthly subscriptions
+that both fire on day 14 share a single permanent trigger with a digest body.
+Without that each eligible subscription takes its own slot and its own banner
+every month — a notification-spam regression, not a saving.
+
+## Eligibility is a correctness rule, not a coverage knob
+
+`repeatRuleFor` returns `null` for anything below, and `null` means "use a
+one-shot", not "this could be better".
+
+| Condition | Why |
+|---|---|
+| `status === "active"` | An OS trigger keeps firing whatever the subscription becomes. A future cancellation already derives as `cancelling`, so this covers pending ones too. |
+| `upcomingPhase == null` | The amount is baked into the body at schedule time. A price change on a known date makes it wrong. |
+| no active `trial` phase | Same failure: the trial ends and the price changes. |
+| `every === 1` | `MONTHLY` means every month. `every: 3` has no calendar unit. |
+| monthly fire day in `1..28` | Above 28 the trigger silently does not fire in February. Below 1 the lead crosses into the previous month, where the day-of-month differs every time. |
+| yearly fire day is not 29 February | Exists one year in four; the other three go quiet. |
+
+**Do not loosen these to cover more subscriptions.** The danger is not a missing
+reminder — it is a reminder that keeps arriving for a subscription the user
+cancelled, or naming a price that changed, months after the fact, with the app
+never opened to notice. That erodes trust in every other reminder. The excluded
+cases are not degraded: they keep exactly the one-shot behaviour they had.
+
+Cancelling, pausing, resuming and editing all happen IN the app, which rebuilds
+the whole schedule on the spot. Only date-driven transitions can happen while it
+is closed, and the predicate is exactly the set of subscriptions that have none
+pending.
+
+## The three numbering conventions
+
+Each repeating unit uses a different range, and getting one wrong produces a
+reminder on the wrong day rather than an error. Assert the concrete numbers, not
+the `unit` — `test/repeatRule.test.ts` does, and
+`expo-notifications`'s own `getNextTriggerDateAsync` is the on-device oracle.
+
+| Field | Range | Verified against |
+|---|---|---|
+| `weekly.weekday` | **1–7, Sunday = 1** — not `Date.getDay()`'s 0–6 | `WeeklyTriggerRecord` passes it straight to `DateComponents.weekday`; Android to `Calendar.DAY_OF_WEEK` |
+| `monthly.day` | 1-based, like `Date.getDate()` | passed through untouched on both platforms |
+| `yearly.month` | **0-based. January is 0.** | `YearlyTriggerRecord` writes `month: self.month + 1` |
+
+Reading them back out of the OS is a different set of conventions again, and
+lives in `apps/mobile/src/shared/lib/notifications/trigger-time.ts`.
