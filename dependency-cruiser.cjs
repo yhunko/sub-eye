@@ -1,7 +1,7 @@
 /**
  * Architecture boundary enforcement. Run with `bun run check:boundaries`.
  *
- * Encodes four invariants:
+ * Encodes five invariants:
  *  1. Packages never depend on apps.
  *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
  *     (a layer may only import from lower layers). There is no `features`
@@ -9,6 +9,9 @@
  *  3. Server layering: repositories are leaves (never import services).
  *  4. Mobile reaches the server ONLY through the typed RPC client at
  *     `@subeye/server/client` — never a deep import into apps/server/src.
+ *  5. Package layering: time/money/model are leaves, lifecycle/pricing/spend/
+ *     reminders derive from them and never from each other's tier peers where
+ *     forbidden, and store sits on top alone.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -21,6 +24,43 @@ module.exports = {
       severity: "error",
       from: { path: "^packages/" },
       to: { path: "^apps/" },
+    },
+    // --- package layering
+    //
+    // Like the mobile FSD rules below, these match the ALIAS STRING
+    // (`@subeye/…`): the root tsconfig declares no `paths`, so the specifier
+    // stays unresolved and dependency-cruiser keeps it raw in `resolved`.
+    {
+      name: "package-layering",
+      comment:
+        "Package layering: time/money/model are leaves; lifecycle/pricing/spend/reminders derive from them; store sits on top and is the only package allowed IO (through injected ports). An edge in the other direction means the concern is in the wrong package.",
+      severity: "error",
+      from: { path: "^packages/(time|money|model)/" },
+      to: { path: "^@subeye/(lifecycle|pricing|spend|reminders|store)(/|$)" },
+    },
+    {
+      name: "no-derived-to-store",
+      comment:
+        "Pure derivation packages must not depend on @subeye/store. store composes them, never the reverse.",
+      severity: "error",
+      from: { path: "^packages/(lifecycle|pricing|spend|reminders)/" },
+      to: { path: "^@subeye/store(/|$)" },
+    },
+    {
+      name: "no-pricing-to-spend",
+      comment:
+        "pricing must not import spend. The edge existed only because phaseScheduling reached for calculatePaymentDates; that is recurrence and lives in @subeye/time.",
+      severity: "error",
+      from: { path: "^packages/pricing/" },
+      to: { path: "^@subeye/spend(/|$)" },
+    },
+    {
+      name: "no-spend-to-pricing",
+      comment:
+        "spend must not import pricing. They are siblings: store composes both, neither composes the other.",
+      severity: "error",
+      from: { path: "^packages/spend/" },
+      to: { path: "^@subeye/pricing(/|$)" },
     },
     {
       name: "mobile-server-only-via-client",
