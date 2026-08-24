@@ -49,6 +49,7 @@
         "@sentry/react-native": "~7.11.0",
         "@subeye/lifecycle": "workspace:*",
         "@subeye/model": "workspace:*",
+        "@subeye/money": "workspace:*",
         "@subeye/reminders": "workspace:*",
         "@subeye/server": "workspace:*",
         "@subeye/store": "workspace:*",

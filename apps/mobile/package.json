@@ -23,6 +23,7 @@
     "@subeye/lifecycle": "workspace:*",
     "@subeye/server": "workspace:*",
     "@subeye/model": "workspace:*",
+    "@subeye/money": "workspace:*",
     "@subeye/reminders": "workspace:*",
     "@subeye/store": "workspace:*",
     "@tanstack/query-async-storage-persister": "^5.100.10",

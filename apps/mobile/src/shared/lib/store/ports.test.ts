@@ -275,6 +275,20 @@ describe("phases", () => {
   });
 });
 
+describe("rates", () => {
+  // The wiring, not the derivation — an unwired rates port answers {} and every
+  // amount on the dashboard silently stays in its own currency.
+  it("is backed by the on-device rate table", async () => {
+    const rates = await localPorts.rates.forBase("uah");
+
+    // Deliberately provenance-agnostic: whether the seed or a cached refresh
+    // backs it is fx.test.ts's business. An unwired port answers {} and fails
+    // both of these.
+    expect(rates.uah).toBe(1);
+    expect(rates.usd).toBeGreaterThan(0);
+  });
+});
+
 describe("preferences", () => {
   it("reads the defaults on a cold install", async () => {
     expect(await localPorts.preferences.read()).toEqual({

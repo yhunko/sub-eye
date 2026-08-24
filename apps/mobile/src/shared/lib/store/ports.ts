@@ -1,6 +1,7 @@
 import type { Ports } from "@subeye/store";
 import * as Crypto from "expo-crypto";
 import { readDoc, type StoreDoc, writeDoc } from "./document";
+import { ratesPort } from "./fx";
 
 /**
  * Read-modify-write of the whole document, which is every mutation here.
@@ -19,7 +20,7 @@ export const localPorts: Ports = {
   now: () => new Date(),
   newId: () => Crypto.randomUUID(),
 
-  rates: { forBase: async () => ({}) },
+  rates: ratesPort,
 
   preferences: {
     read: async () => readDoc().preferences,
