@@ -1,5 +1,4 @@
 {
-  "//": "expo.version is bumped BY HAND and deliberately not synced from package.json: semantic-release publishes 5.0.0-beta.1 on dev, and a prerelease suffix is not a valid CFBundleShortVersionString — iOS rejects the build.",
   "expo": {
     "name": "SubEye",
     "slug": "sub-eye",

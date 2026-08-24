@@ -3,7 +3,10 @@
 // "(42)" beside the version — so beta pins a fixed marketing string and lets the
 // build number do the moving: TestFlight/Play show "4.0.0 (42)". iOS forbids a
 // suffix like "4.0.0-42", so the build number cannot live in the marketing
-// string. Production keeps the deliberate semver from app.json, bumped by hand.
+// string. Production keeps the deliberate semver from app.json, which is bumped
+// by hand and deliberately NOT synced from package.json: semantic-release
+// publishes 5.0.0-beta.1 on dev, and a prerelease suffix is not a valid
+// CFBundleShortVersionString — iOS rejects the build.
 //
 // Plain JS (not .ts) on purpose: eas-cli reads this config under Node and its
 // TypeScript loader chokes on app.config.ts.
