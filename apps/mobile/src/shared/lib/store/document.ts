@@ -131,7 +131,13 @@ export const readDoc = (): StoreDoc => {
 
 export const writeDoc = (next: StoreDoc): void => {
   const [, idle] = slots();
-  mmkv.set(idle, JSON.stringify(next));
+  const raw = JSON.stringify(next);
+  mmkv.set(idle, raw);
+  // `set` reports nothing, so a write that did not land is silent — and moving
+  // the pointer onto that slot makes readDoc fall back to the OTHER one, i.e.
+  // the previous document. That reads as rows coming back from the dead rather
+  // than as a failed write. Throwing here surfaces it as the failed write it is.
+  if (mmkv.getString(idle) !== raw) throw new Error("store write did not land");
   mmkv.set(POINTER, idle);
 };
 

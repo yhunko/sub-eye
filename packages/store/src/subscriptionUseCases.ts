@@ -23,11 +23,7 @@ import {
   buildSubscriptionDto,
   loadSubscriptionDto,
 } from "./loadSubscriptionDto";
-import {
-  applyDuePhases,
-  clearPendingPhases,
-  startPhase,
-} from "./phaseUseCases";
+import { applyDuePhases, startPhase } from "./phaseUseCases";
 import type { Ports } from "./ports";
 import type { PricePhaseRecord, SubscriptionRecord } from "./records";
 import { toSubscriptionDto } from "./toSubscriptionDto";
@@ -167,7 +163,7 @@ export const updateSubscription = async (
 
   // A direct price/currency edit supersedes any pending pricing schedule.
   if (isDirectPriceChange(existing, input)) {
-    await clearPendingPhases(ports, id);
+    await ports.phases.replacePending(id, []);
   }
 
   const patch = toUpdatePatch(input);

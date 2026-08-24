@@ -101,6 +101,15 @@ export const localPorts: Ports = {
           ...records,
         ];
       }),
+    replacePending: async (subscriptionId, records) =>
+      mutate((doc) => {
+        doc.phases = [
+          ...doc.phases.filter(
+            (p) => p.subscriptionId !== subscriptionId || p.appliedAt,
+          ),
+          ...records,
+        ];
+      }),
     applyBoundary: async (args) =>
       mutate((doc) => {
         doc.phases = doc.phases.map((phase) => {

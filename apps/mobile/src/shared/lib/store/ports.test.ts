@@ -203,6 +203,34 @@ describe("phases", () => {
     ).toEqual(["p2"]);
   });
 
+  // A caller cannot filter the applied phases itself: a boundary firing between
+  // its read and its write would be dropped along with the price that boundary
+  // already put on the row.
+  it("swaps only the pending phases, keeping the applied timeline", async () => {
+    await localPorts.phases.replaceAll("s1", [
+      phase({
+        id: "p1",
+        subscriptionId: "s1",
+        appliedAt: "2026-01-01T00:00:00.000Z",
+      }),
+      phase({ id: "p2", subscriptionId: "s1" }),
+    ]);
+    await localPorts.phases.replaceAll("s2", [
+      phase({ id: "p3", subscriptionId: "s2" }),
+    ]);
+
+    await localPorts.phases.replacePending("s1", [
+      phase({ id: "p4", subscriptionId: "s1" }),
+    ]);
+
+    expect(
+      (await localPorts.phases.bySubscription("s1")).map((p) => p.id),
+    ).toEqual(["p1", "p4"]);
+    expect(
+      (await localPorts.phases.bySubscription("s2")).map((p) => p.id),
+    ).toEqual(["p3"]);
+  });
+
   it("removes a phase by id", async () => {
     await localPorts.phases.replaceAll("s1", [
       phase({ id: "p1", subscriptionId: "s1" }),

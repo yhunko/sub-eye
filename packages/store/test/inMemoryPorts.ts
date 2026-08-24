@@ -107,6 +107,15 @@ export function inMemoryPorts(seed?: {
         }
         phases.push(...records);
       },
+      replacePending: async (subscriptionId, records) => {
+        for (let i = phases.length - 1; i >= 0; i--) {
+          const phase = phases[i]!;
+          if (phase.subscriptionId === subscriptionId && !phase.appliedAt) {
+            phases.splice(i, 1);
+          }
+        }
+        phases.push(...records);
+      },
       applyBoundary: async (args) => {
         const phase = phases.find((p) => p.id === args.phaseId);
         if (phase) {

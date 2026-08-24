@@ -40,6 +40,19 @@ export type PricePhasePort = {
     records: PricePhaseRecord[],
   ): Promise<void>;
   /**
+   * Swap a subscription's PENDING phases for `records`, keeping whatever reads
+   * as applied at write time.
+   *
+   * Separate from `replaceAll` because a caller cannot select the applied ones
+   * itself: between its read and its write a boundary can fire, and writing
+   * back the snapshot drops the phase that just applied — leaving the row on
+   * the new price with nothing on the timeline to explain it.
+   */
+  replacePending(
+    subscriptionId: string,
+    records: PricePhaseRecord[],
+  ): Promise<void>;
+  /**
    * Fires a phase boundary: stamps the phase applied, closes the phase it
    * supersedes, and copies the new price onto the subscription. One call
    * because the four writes must land together — a host with transactions

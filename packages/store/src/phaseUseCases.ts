@@ -78,9 +78,7 @@ export const schedulePriceChange = async (
   if (effectiveAt === null) throw new CustomDateRequiredError();
   assertPhaseWindow(existing, effectiveAt, now);
 
-  const phases = await ports.phases.bySubscription(id);
-  await ports.phases.replaceAll(id, [
-    ...phases.filter((phase) => phase.appliedAt),
+  await ports.phases.replacePending(id, [
     {
       id: ports.newId(),
       subscriptionId: id,
@@ -171,18 +169,6 @@ export const applyPhaseByWorkflow = async (
   if (!subscription) return;
 
   await applyPhase(ports, subscription, phase);
-};
-
-/** Drop the pending phases of a subscription, keeping the applied timeline. */
-export const clearPendingPhases = async (
-  ports: Ports,
-  subscriptionId: string,
-): Promise<void> => {
-  const phases = await ports.phases.bySubscription(subscriptionId);
-  const applied = phases.filter((phase) => phase.appliedAt);
-  if (applied.length === phases.length) return;
-
-  await ports.phases.replaceAll(subscriptionId, applied);
 };
 
 const startPricingSchedule = async (
