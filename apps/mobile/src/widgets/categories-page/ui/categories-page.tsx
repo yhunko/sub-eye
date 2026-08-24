@@ -43,6 +43,10 @@ function CategoryRow({
   // A ref, not state: a tap on an open row closes it instead of navigating, and
   // tracking that in state would re-render the row on every swipe.
   const isOpen = useRef(false);
+  // The finger lifting at the end of a swipe also fires the row's press — see
+  // the long note in ../../subscriptions-page/ui/subscription-row.tsx. Here it
+  // opened the category editor on top of the revealed delete.
+  const dragged = useRef(false);
 
   const renderRightActions = useCallback(
     () => (
@@ -80,6 +84,12 @@ function CategoryRow({
       onSwipeableWillOpen={() => {
         if (swipeRef.current) onSwipeOpen(swipeRef.current);
       }}
+      onSwipeableOpenStartDrag={() => {
+        dragged.current = true;
+      }}
+      onSwipeableCloseStartDrag={() => {
+        dragged.current = true;
+      }}
       onSwipeableOpen={() => {
         isOpen.current = true;
       }}
@@ -90,7 +100,11 @@ function CategoryRow({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${row.emoji} ${row.name}`}
+        onPressIn={() => {
+          dragged.current = false;
+        }}
         onPress={() => {
+          if (dragged.current) return;
           if (isOpen.current) {
             swipeRef.current?.close();
             return;

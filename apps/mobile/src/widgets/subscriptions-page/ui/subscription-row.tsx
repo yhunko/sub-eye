@@ -95,6 +95,15 @@ export const SubscriptionRow = memo(function SubscriptionRow({
   // A ref, not state: a tap on an open row should close it instead of
   // navigating, and re-rendering the row to track that would defeat the memo.
   const isOpen = useRef(false);
+  // The swipe and the row's own press are in two different gesture systems —
+  // the pan is gesture-handler's, `Pressable` is RN's responder — and the finger
+  // lifting inside the row fires BOTH, so a swipe used to open the actions and
+  // push the detail screen at the same time. `isOpen` hid it from the second
+  // swipe onwards, which is why it only ever looked like a first-swipe bug.
+  //
+  // Cleared on touch-down rather than consumed by the press: a swipe does not
+  // always produce one, and a flag left standing would eat the next real tap.
+  const dragged = useRef(false);
 
   const actions = useMemo(
     () =>
@@ -196,6 +205,12 @@ export const SubscriptionRow = memo(function SubscriptionRow({
       onSwipeableWillOpen={() => {
         if (swipeRef.current) onSwipeOpen(swipeRef.current);
       }}
+      onSwipeableOpenStartDrag={() => {
+        dragged.current = true;
+      }}
+      onSwipeableCloseStartDrag={() => {
+        dragged.current = true;
+      }}
       onSwipeableOpen={() => {
         isOpen.current = true;
       }}
@@ -215,7 +230,11 @@ export const SubscriptionRow = memo(function SubscriptionRow({
         ]
           .filter(Boolean)
           .join(", ")}
+        onPressIn={() => {
+          dragged.current = false;
+        }}
         onPress={() => {
+          if (dragged.current) return;
           if (isOpen.current) {
             swipeRef.current?.close();
             return;
