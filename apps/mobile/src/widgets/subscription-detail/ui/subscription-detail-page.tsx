@@ -91,8 +91,13 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // reading it printed English months under a Ukrainian UI.
   const locale = dateLocale();
   const rows = useMemo(
-    () => toTimelineRows(subscription?.pricePhases ?? [], locale),
-    [subscription?.pricePhases, locale],
+    () =>
+      toTimelineRows(
+        subscription?.pricePhases ?? [],
+        locale,
+        subscription?.upcomingPhase?.id ?? null,
+      ),
+    [subscription?.pricePhases, subscription?.upcomingPhase?.id, locale],
   );
 
   // Called unconditionally, before any early return — the mutations behind it

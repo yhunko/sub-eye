@@ -15,7 +15,14 @@ const KIND_LABEL: Record<Row["kind"], (() => string) | null> = {
 };
 
 export function TimelineRow({ row, last }: { row: Row; last?: boolean }) {
-  const label = KIND_LABEL[row.kind];
+  // `scheduledChange` is the one kind whose label reads as a state. Once the
+  // change has taken effect the phase simply IS the price, so it drops the
+  // badge the way `standard` does — keeping it made an applied change look
+  // like it had not happened yet.
+  const label =
+    row.kind === "scheduledChange" && !row.isUpcoming
+      ? null
+      : KIND_LABEL[row.kind];
   const range = row.to
     ? m.phase_range({ from: row.from, to: row.to })
     : m.phase_since({ date: row.from });
