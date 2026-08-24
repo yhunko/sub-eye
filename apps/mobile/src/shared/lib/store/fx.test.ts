@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { fxDocumentUrl, fxVersionCandidates } from "@subeye/money";
-import { __testing, ratesPort, refreshRates } from "./fx";
+import { __testing, cachedRateDate, ratesPort, refreshRates } from "./fx";
 
 const NOW = new Date("2026-08-24T09:00:00.000Z");
 
@@ -142,6 +142,42 @@ describe("refreshRates", () => {
 
     expect(await refreshRates(new Date("2026-08-24T23:59:00.000Z"))).toBe(true);
     expect(urls).toEqual([]);
+  });
+
+  // What the foreground sync in (tabs)/_layout keys its invalidation on. It has
+  // to move for a fetch that landed and hold still for a no-op, or the money
+  // screens either never repaint at the new rates or repaint at every
+  // foreground for nothing.
+  it("moves the cached rate date only when a fetch actually lands", async () => {
+    expect(cachedRateDate()).toBeNull();
+
+    stubFetch([document("2026-08-24", 50)]);
+    await refreshRates(NOW);
+    expect(cachedRateDate()).toBe("2026-08-24");
+
+    stubFetch([document("2026-08-24", 99)]);
+    await refreshRates(new Date("2026-08-24T23:59:00.000Z"));
+    expect(cachedRateDate()).toBe("2026-08-24");
+
+    stubFetch([document("2026-08-25", 99)]);
+    await refreshRates(new Date("2026-08-25T09:00:00.000Z"));
+    expect(cachedRateDate()).toBe("2026-08-25");
+  });
+
+  // Offline must not look like a new build, or every foreground with no network
+  // would repaint the money screens.
+  it("leaves the cached rate date alone when every candidate fails", async () => {
+    stubFetch([document("2026-08-23", 50)]);
+    await refreshRates(new Date("2026-08-23T09:00:00.000Z"));
+
+    stubFetch([
+      new Error("offline"),
+      new Error("offline"),
+      new Error("offline"),
+    ]);
+    await refreshRates(NOW);
+
+    expect(cachedRateDate()).toBe("2026-08-23");
   });
 
   it("refetches once the UTC day has rolled over", async () => {

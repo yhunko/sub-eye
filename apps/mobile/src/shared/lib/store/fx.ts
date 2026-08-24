@@ -54,6 +54,16 @@ export const ratesPort: RatesPort = {
 };
 
 /**
+ * Which build the cache is holding, or `null` for "the bundled seed".
+ *
+ * The only way to tell a refresh that CHANGED the table from one that found the
+ * cache already current — `refreshRates` reports both as success. Callers that
+ * repaint converted money need the difference.
+ */
+export const cachedRateDate = (): string | null =>
+  readCache()?.rateDate ?? null;
+
+/**
  * Pull the CDN's immutable build for today into the cache, walking back to
  * yesterday and then `latest` because the publisher's build can lag the UTC
  * date.

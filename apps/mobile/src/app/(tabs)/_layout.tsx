@@ -16,7 +16,7 @@ import {
   syncReminders,
   useReminderTap,
 } from "@/shared/lib/notifications";
-import { localPorts } from "@/shared/lib/store";
+import { cachedRateDate, localPorts, refreshRates } from "@/shared/lib/store";
 import { syncWidget } from "@/shared/lib/widget";
 import { colors } from "@/shared/ui/theme";
 
@@ -182,6 +182,38 @@ function DuePhaseSync() {
 }
 
 /**
+ * Renders nothing; pulls the day's FX build into the cache.
+ *
+ * `ratesPort` never fetches, so without this the app converts every foreign
+ * subscription at the rates pinned in `fx-seed.json` at build time — forever,
+ * and silently, because a stale rate still produces a plausible number.
+ *
+ * Invalidates only when the cached build actually MOVED. `refreshRates` reports
+ * success both for a fetch that landed and for a cache that was already today's,
+ * and the second is the common case — treating it as a change would repaint
+ * every money screen on every foreground for nothing.
+ */
+function RatesSync() {
+  const client = useQueryClient();
+
+  useEffect(() => {
+    const refresh = async () => {
+      const before = cachedRateDate();
+      await refreshRates(new Date());
+      if (cachedRateDate() !== before) await invalidateSubscriptionData(client);
+    };
+
+    void refresh();
+    const listener = AppState.addEventListener("change", (status) => {
+      if (status === "active") void refresh();
+    });
+    return () => listener.remove();
+  }, [client]);
+
+  return null;
+}
+
+/**
  * True while a subscription's own screen is on top of the stack.
  *
  * UIKit hides the tab bar on a pushed screen with `hidesBottomBarWhenPushed`,
@@ -210,6 +242,7 @@ function Tabs() {
       <WidgetSync />
       <ReminderTapRouter />
       <DuePhaseSync />
+      <RatesSync />
       <NativeTabs
         minimizeBehavior="onScrollDown"
         tintColor={colors.accent}
