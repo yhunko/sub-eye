@@ -1,15 +1,12 @@
 /**
  * Architecture boundary enforcement. Run with `bun run check:boundaries`.
  *
- * Encodes five invariants:
+ * Encodes three invariants:
  *  1. Packages never depend on apps.
  *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
  *     (a layer may only import from lower layers). There is no `features`
  *     layer — seven screens do not justify one.
- *  3. Server layering: repositories are leaves (never import services).
- *  4. Mobile reaches the server ONLY through the typed RPC client at
- *     `@subeye/server/client` — never a deep import into apps/server/src.
- *  5. Package layering: time/money/model are leaves, lifecycle/pricing/spend/
+ *  3. Package layering: time/money/model are leaves, lifecycle/pricing/spend/
  *     reminders derive from them and never from each other's tier peers where
  *     forbidden, and store sits on top alone.
  *
@@ -20,7 +17,7 @@ module.exports = {
     {
       name: "no-package-to-app",
       comment:
-        "packages/* are environment-agnostic contracts or infrastructure adapters. They must never import an application (apps/*) — including the server db, domains, or routes. Dependencies flow apps → packages, never the reverse.",
+        "packages/* are environment-agnostic contracts or infrastructure adapters. They must never import an application (apps/*). Dependencies flow apps → packages, never the reverse.",
       severity: "error",
       from: { path: "^packages/" },
       to: { path: "^apps/" },
@@ -62,14 +59,6 @@ module.exports = {
       from: { path: "^packages/spend/" },
       to: { path: "^@subeye/pricing(/|$)" },
     },
-    {
-      name: "mobile-server-only-via-client",
-      comment:
-        "apps/mobile reaches the server ONLY through the typed RPC client at '@subeye/server/client' (a types-only build under apps/server/dist). Deep imports into apps/server/src are forbidden — they drag server internals into the app and bypass the RPC contract.",
-      severity: "error",
-      from: { path: "^apps/mobile/" },
-      to: { path: "^apps/server/src/" },
-    },
     // --- apps/mobile FSD: app → widgets → entities → shared (NO features layer)
     //
     // These match the ALIAS STRING (`@/widgets/…`), not a resolved path: the
@@ -108,14 +97,6 @@ module.exports = {
       severity: "error",
       from: { path: "^apps/mobile/src/" },
       to: { path: "^(@/features/|apps/mobile/src/features/)" },
-    },
-    {
-      name: "server-repository-is-leaf",
-      comment:
-        "Server layering: repositories own DB access and must not depend on services (Route → Service → Repository).",
-      severity: "error",
-      from: { path: "Repository\\.ts$" },
-      to: { path: "Service\\.ts$" },
     },
     {
       name: "no-circular",

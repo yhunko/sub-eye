@@ -113,12 +113,12 @@ Then:
   `captureException` can reject or throw, guard it.
 - **A global handler** for errors outside React's tree. `@sentry/react-native`
   installs one on init; verify it rather than adding a second.
-- **Identity:** `Sentry.setUser({ id: userId })` when Clerk resolves, `null` on
-  sign-out. `useProIdentity` in `src/entities/pro/model/purchases.ts` is the
-  existing hook doing exactly this shape for RevenueCat — follow it, or extend
-  it, but do not add a third auth-watching effect to the root layout.
-- **Never send** email, username, subscription names, amounts or notes. The id
-  alone is what joins to the server's PostHog `distinct_id`.
+- ~~**Identity:** `Sentry.setUser({ id: userId })` when Clerk resolves, `null` on
+  sign-out.~~ **Superseded by v5:** there is no account and no identifier to
+  attach. `shared/lib/sentry.ts` ships `sendDefaultPii: false` and sets no user,
+  so an event carries the device and the stack and nothing else. The PostHog
+  join this brief describes went away with the server.
+- **Never send** email, username, subscription names, amounts or notes.
 
 ### What does NOT need changing
 

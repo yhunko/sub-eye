@@ -107,11 +107,10 @@ worth having. `type-check` **is** `astro check`; it is not optional here.
 1. **`turbo.json` had no `.astro` in its input globs.** They are there now
    (`build`, `dev`, `type-check`, `test`). Adding a new file type without adding
    its glob means Turbo replays a stale cached build after you edit a page.
-2. **The production release workflow builds the server only**
-   (`turbo build --filter=@subeye/server`). A marketing-site typo must never be
-   able to block an API deploy. The repo-wide quality gate still runs first, on
-   purpose — a landing type error should fail CI, just not between the database
-   migration and the Worker deploy.
+2. **CI never deploys this site.** Both release workflows run the repo-wide
+   quality gate and semantic-release and stop; `apps/landing` ships only when
+   someone runs `bun run --cwd apps/landing deploy`. A landing type error still
+   fails CI — it just cannot block a release.
 
 ## Commands
 

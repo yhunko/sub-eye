@@ -124,8 +124,8 @@ Do not hand-roll StoreKit.
 ### Configuration
 
 `src/shared/config/env.ts` validates at module load and throws before React
-renders a frame. Add the key there as **required**, the same as the Clerk key —
-a paywall that silently fails to configure is worse than a boot error:
+renders a frame. Add the key there as **required** — a paywall that silently
+fails to configure is worse than a boot error:
 
 ```
 EXPO_PUBLIC_REVENUECAT_IOS_KEY
@@ -135,17 +135,18 @@ Then add it to `apps/mobile/.env` (the `test_…` key for local work) and note i
 the commit message that `eas env:create` is needed for `production` **and**
 `preview` with the `appl_…` key before any store build.
 
-Configure once at app start, in `src/app/_layout.tsx`. The provider order there
-is already load-bearing (Clerk → TokenBridge → Query → Stack); configure
-RevenueCat with **`appUserID: null`** and then call `Purchases.logIn(clerkUserId)`
-when Clerk resolves a session, `Purchases.logOut()` on sign-out. Configuring
-anonymously and aliasing later is what lets a purchase made before sign-in
-survive; passing the Clerk id straight to `configure` cannot, because at module
-scope there is no session yet.
+Configure once at app start, in `src/app/_layout.tsx`, with
+**`appUserID: null`**.
 
-The app user id **is the Clerk user id**. That is what makes a granted
-entitlement findable in the dashboard (part 4) and what joins a purchase to the
-server's PostHog `distinct_id`.
+> **Superseded by the offline flip (v5).** This brief was written while Clerk
+> existed, and it went on to say the app should call `Purchases.logIn(clerkUserId)`
+> once a session resolved, so that the RevenueCat app user id **was** the Clerk
+> user id. Accounts are gone: `entities/pro/model/purchases.ts` configures with
+> `appUserID: null` and never calls `logIn` or `logOut`, so **the app user id is
+> an anonymous, device-local `$RCAnonymousID:…`**. A purchase is tied to the
+> Apple Account that paid for it and is recovered with Restore purchases, not by
+> signing in. Part 4 below is affected: there is no Clerk id to search the
+> dashboard by.
 
 ### The entitlement
 
@@ -290,10 +291,14 @@ Tier 1 instead; it is the supported path and needs no Xcode scheme editing.
 
 ### Production and sandbox — the sanctioned way
 
-RevenueCat dashboard → **Customers** → search your **Clerk user id**
-(`user_2…`; sign in on the device once so the customer exists) → the
+RevenueCat dashboard → **Customers** → find your customer → the
 **Entitlements** card → **Grant** → `pro` → *Until date*, pick something absurd
 like 2099-01-01 since this is a lifetime product.
+
+Since v5 the app user id is anonymous (`$RCAnonymousID:…`), so there is no
+account id to search by. Sort Customers by *Last seen* and pick the one from the
+device you just opened, or read the id off the device — `Purchases.getAppUserID()`
+returns it.
 
 It takes effect immediately, but the client caches `CustomerInfo` — refresh it
 in-app (or cold-start) to see it. Granted entitlements are prefixed `rc_promo`
@@ -304,7 +309,7 @@ it only removes the sandbox half.
 Scriptable equivalent, if you would rather not click:
 
 ```bash
-curl -X POST "https://api.revenuecat.com/v2/projects/$PROJECT_ID/customers/$CLERK_USER_ID/actions/grant_entitlement" \
+curl -X POST "https://api.revenuecat.com/v2/projects/$PROJECT_ID/customers/$APP_USER_ID/actions/grant_entitlement" \
   -H "Authorization: Bearer $RC_SECRET_KEY" -H "Content-Type: application/json" \
   -d '{"entitlement_id":"'"$ENTITLEMENT_ID"'","expires_at":4070908800000}'
 ```

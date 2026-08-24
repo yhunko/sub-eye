@@ -1,12 +1,15 @@
 # sub-eye
 
-Subscription tracking. Bun + Turbo monorepo: a Hono API on Cloudflare Workers,
-an Expo mobile client, and a static marketing site, over seven pure packages
-and one that owns storage.
+Subscription tracking. Bun + Turbo monorepo: an Expo mobile client and a static
+marketing site, over seven pure packages and one that owns storage.
+
+**There is no server, no database and no account.** Everything the app holds
+lives in MMKV on the device; `@subeye/store`'s ports are implemented against it
+in `apps/mobile/src/shared/lib/store`. The only network calls left are Sentry,
+RevenueCat, Brandfetch, Google favicons and the daily FX document from jsDelivr.
 
 ```
-apps/server       Hono API — Cloudflare Worker, Neon Postgres via Drizzle, Clerk auth
-apps/mobile       Expo (React Native, expo-router) — the only client
+apps/mobile       Expo (React Native, expo-router) — the app
 apps/landing      subeye.cc — Astro 6, static, zero client JS, en + uk
 packages/model    records, DTOs, valibot schemas — consumed by everything
 packages/time     UTC calendar days and recurrence. A leaf — imports nothing.
@@ -27,9 +30,7 @@ touching — those carry the rules that actually bite.
 
 ```bash
 bun install
-bun run dev:server        # wrangler dev
-bun run dev:mobile        # build server types, then Metro
-bun run dev:lan           # server on 0.0.0.0:8788 for on-device testing
+bun run dev:mobile        # Metro
 bun run --cwd apps/landing dev   # astro dev on :4321
 ```
 
@@ -56,14 +57,10 @@ legitimate.
 ## Conventions
 
 **Packages export source.** Every `@subeye/*` package points `exports` at
-`./src/index.ts` and type-checks with `noEmit` — no build step, no `dist`. The
-one exception is `@subeye/server/client`, a types-only `tsc` build that exists
-solely to hand `ServerRpcType` to the mobile app; see
-[apps/mobile/CLAUDE.md](apps/mobile/CLAUDE.md) for why Metro forces that.
+`./src/index.ts` and type-checks with `noEmit` — no build step, no `dist`.
 
 **Boundaries are enforced, not suggested.** `dependency-cruiser.cjs` fails the
-build on: a package importing from `apps/` (`no-package-to-app`), a server
-repository importing a service (`server-repository-is-leaf`), a mobile FSD
+build on: a package importing from `apps/` (`no-package-to-app`), a mobile FSD
 layer importing upward, `src/features/` appearing in mobile, and any cycle.
 It also enforces the package layering: `time`/`money`/`model` may not import a
 package above them (`package-layering`), the four derivation packages may not
@@ -78,7 +75,7 @@ dependency-cruiser keeps it raw. A rule written against `^packages/…` in its
 
 **Purity in packages.** Every package except `store` takes `now` as a parameter
 and never touches `db`, `fetch`, or a clock. A pure function reports a caller
-error by returning `null`; the server converts that into a domain error.
+error by returning `null`; the caller turns that into a message.
 `store` is impure only through its injected `StoragePort`, and a test
 (`packages/store/test/noDrivers.test.ts`) keeps a concrete driver out of it —
 dependency-cruiser cannot, because its `exclude` drops every npm module from
@@ -94,9 +91,10 @@ its `type-check` and enables `noUnusedLocals` to cover the gap. Adding a new
 file type to a workspace also means adding its glob to `turbo.json` — the input
 lists are explicit, and a missing glob silently replays a stale cached build.
 
-**The production release builds the server only**
-(`turbo build --filter=@subeye/server`). A broken marketing page must not be
-able to block an API deploy; `apps/landing` ships separately to Cloudflare.
+**CI releases, it does not deploy.** Both workflows run the repo-wide quality
+gate and then semantic-release, and stop there. `apps/landing` ships to
+Cloudflare on its own (`bun run --cwd apps/landing deploy`) and the app ships
+through EAS.
 
 ## Comments
 
@@ -112,8 +110,8 @@ The bar, both from this repo:
 
 - [packages/money/src/rateTable.ts](packages/money/src/rateTable.ts) —
   warns that converting *into* the base currency is a division. Earns its place.
-- [apps/server/test/phase-apply-now-closes-timeline.test.ts](apps/server/test/phase-apply-now-closes-timeline.test.ts)
-  — each assertion names the failure mode it prevents.
+- [packages/store/test](packages/store/test) — each assertion names the failure
+  mode it prevents rather than restating the call.
 
 Neither restates code. Both would cost someone an hour if deleted.
 

@@ -262,10 +262,16 @@ six pages.
 This is the actual blocker, and it is writing, not engineering. The pages must
 state, at minimum:
 
-- **Collected:** email address, name/username, Clerk user id, and the
+> **Superseded by v5.** The list below was written for the v4 stack. The pages
+> shipped: `apps/landing/src/pages/{en,uk}/privacy-policy.astro` is the source of
+> truth. Nothing is collected but diagnostics and a purchase, the processors are
+> Sentry, RevenueCat, Brandfetch, Google and **jsDelivr**, and deletion is
+> Settings → Erase all data.
+
+- **Collected:** ~~email address, name/username, Clerk user id, and~~ the
   subscription data the user enters (service names, amounts, dates, notes).
-- **Processors, with regions:** Clerk (auth), Neon (Postgres), Cloudflare (API
-  hosting), PostHog EU (error telemetry), and **Brandfetch** (brand logo search).
+- **Processors, with regions:** ~~Clerk (auth), Neon (Postgres), Cloudflare (API
+  hosting), PostHog EU (error telemetry), and~~ **Brandfetch** (brand logo search).
 - **Brandfetch specifically:** when the user searches for a brand in the add/edit
   form, **what they type is sent to `api.brandfetch.io`** with their IP. Nothing
   else goes with it — no account id, no subscription data — and results are never
