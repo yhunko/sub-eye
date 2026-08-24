@@ -12,12 +12,9 @@ import type {
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/shared";
-import {
-  DateTimezoneUtils,
-  deriveSubscriptionStatus,
-  RecurrenceUtils,
-} from "@subeye/shared";
+import { deriveSubscriptionStatus } from "@subeye/shared";
 import { SubscriptionCalculator } from "@subeye/spend";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";

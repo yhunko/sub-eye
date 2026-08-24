@@ -1,9 +1,9 @@
 import type { ScheduledPriceChangeMode } from "@subeye/shared";
-import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/shared";
 import {
   type RecurringSubscription,
   SubscriptionCalculator,
 } from "@subeye/spend";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 
 /** How the user asked for the new price to take effect. */
 export type ScheduleEffectiveAtRequest = {

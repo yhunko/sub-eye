@@ -3,11 +3,8 @@ import type {
   SubscriptionBillingDetails,
   SubscriptionPeriod,
 } from "@subeye/shared";
-import {
-  CurrencyUtils,
-  DateTimezoneUtils,
-  RecurrenceUtils,
-} from "@subeye/shared";
+import { CurrencyUtils } from "@subeye/shared";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 
 /** The minimum shape needed to price a subscription. A DB row satisfies it. */
 export type BillableSubscription = {

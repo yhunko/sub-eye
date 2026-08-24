@@ -10,6 +10,7 @@
     "@subeye/currency": "workspace:*",
     "@subeye/shared": "workspace:*",
     "@subeye/spend": "workspace:*",
+    "@subeye/time": "workspace:*",
     "date-fns": "^4.1.0"
   },
   "scripts": {

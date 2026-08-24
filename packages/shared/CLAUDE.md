@@ -4,8 +4,8 @@ Consumed by every other workspace, so this is the one package where a careless
 rename lands in the API contract, the mobile client, and the database at once.
 Source-only: `exports` points at `./src/index.ts`, `noEmit`, no `dist`.
 
-Valibot for every schema. `date-fns` + `@date-fns/tz` for every date operation —
-never hand-rolled arithmetic.
+Valibot for every schema. Every date operation goes through `@subeye/time` —
+never hand-rolled arithmetic, never a raw `Date` getter.
 
 ## Two status vocabularies exist. Do not compare across them.
 
@@ -53,11 +53,12 @@ migration. See the comment in `subscriptionStatus.ts`.
 3. **Everything public is re-exported through the barrels.** `src/index.ts`
    re-exports each domain's `index.ts`. A symbol not exported there is not
    importable by consumers, who only ever import `@subeye/shared`.
-4. **This package is a leaf.** It imports from no other `@subeye/*` package,
-   and it must stay that way — `pricing`, `spend`, and the server all depend on
-   it, so any edge outward becomes a cycle. `shouldIncludeOccurrence` and
-   `isCurrentlyActiveSubscription` live here rather than in `@subeye/pricing`
-   for exactly this reason: `@subeye/spend` consumes them.
+4. **`@subeye/time` is the only package this one may import.** `pricing`,
+   `spend`, and the server all depend on this package, so any other edge outward
+   becomes a cycle — `time` is safe only because it is a leaf and imports
+   nothing back. `shouldIncludeOccurrence` and `isCurrentlyActiveSubscription`
+   live here rather than in `@subeye/pricing` for exactly this reason:
+   `@subeye/spend` consumes them.
 
 ## Tests
 

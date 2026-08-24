@@ -1,11 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { TZDate } from "@date-fns/tz";
-import {
-  DateTimezoneUtils,
-  RecurrenceUtils,
-  type SubscriptionDto,
-  SubscriptionPeriod,
-} from "@subeye/shared";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { AnalyticsCalculator } from "../src/analyticsCalculator";
 
 const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({

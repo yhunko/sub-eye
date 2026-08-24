@@ -95,6 +95,7 @@
         "@subeye/pricing": "workspace:*",
         "@subeye/shared": "workspace:*",
         "@subeye/spend": "workspace:*",
+        "@subeye/time": "workspace:*",
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.14",
@@ -118,6 +119,7 @@
         "@subeye/currency": "workspace:*",
         "@subeye/shared": "workspace:*",
         "@subeye/spend": "workspace:*",
+        "@subeye/time": "workspace:*",
         "date-fns": "^4.1.0",
       },
     },
@@ -125,8 +127,7 @@
       "name": "@subeye/shared",
       "version": "0.0.1",
       "dependencies": {
-        "@date-fns/tz": "^1.4.1",
-        "date-fns": "^4.1.0",
+        "@subeye/time": "workspace:*",
         "valibot": "^1.3.1",
       },
     },
@@ -137,6 +138,15 @@
         "@date-fns/tz": "^1.4.1",
         "@subeye/currency": "workspace:*",
         "@subeye/shared": "workspace:*",
+        "@subeye/time": "workspace:*",
+        "date-fns": "^4.1.0",
+      },
+    },
+    "packages/time": {
+      "name": "@subeye/time",
+      "version": "0.0.1",
+      "dependencies": {
+        "@date-fns/tz": "^1.4.1",
         "date-fns": "^4.1.0",
       },
     },
@@ -1103,6 +1113,8 @@
     "@subeye/shared": ["@subeye/shared@workspace:packages/shared"],
 
     "@subeye/spend": ["@subeye/spend@workspace:packages/spend"],
+
+    "@subeye/time": ["@subeye/time@workspace:packages/time"],
 
     "@swc/helpers": ["@swc/helpers@0.5.23", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw=="],
 

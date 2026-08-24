@@ -9,11 +9,8 @@ import type {
   SubscriptionPeriod,
   UpcomingRenewalDto,
 } from "@subeye/shared";
-import {
-  DateTimezoneUtils,
-  RecurrenceUtils,
-  shouldIncludeOccurrence,
-} from "@subeye/shared";
+import { shouldIncludeOccurrence } from "@subeye/shared";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { isAfter, isBefore } from "date-fns";
 import { isOccurrencePaused } from "./pause";
 

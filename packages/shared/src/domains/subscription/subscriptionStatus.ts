@@ -1,4 +1,4 @@
-import { DateTimezoneUtils } from "../../utils/dateTimezoneUtils";
+import { DateTimezoneUtils } from "@subeye/time";
 
 /**
  * The persisted lifecycle status of a subscription.

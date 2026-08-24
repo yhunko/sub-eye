@@ -6,7 +6,14 @@ import {
   isBefore,
   isSameDay,
 } from "date-fns";
-import { SubscriptionPeriod } from "../types";
+
+/**
+ * The recurrence vocabulary, declared here rather than imported so this package
+ * stays a leaf. `SubscriptionPeriod` — the string enum every caller actually
+ * holds — is assignable to this union, so adding a member there without adding
+ * it here fails at the call site rather than silently falling through.
+ */
+export type RecurrencePeriod = "day" | "week" | "month" | "year";
 
 export class RecurrenceUtils {
   private static normalizeDateInput(value: Date | string): Date {
@@ -57,7 +64,7 @@ export class RecurrenceUtils {
   static addPeriod(
     date: Date,
     amount: number,
-    period: SubscriptionPeriod,
+    period: RecurrencePeriod,
     options?: {
       anchorDate?: Date | string;
     },
@@ -67,17 +74,17 @@ export class RecurrenceUtils {
       : date;
 
     switch (period) {
-      case SubscriptionPeriod.DAY:
+      case "day":
         return addDays(date, amount);
-      case SubscriptionPeriod.WEEK:
+      case "week":
         return addWeeks(date, amount);
-      case SubscriptionPeriod.MONTH:
+      case "month":
         return RecurrenceUtils.addMonthsWithAnchor(
           date,
           amount,
           anchor.getDate(),
         );
-      case SubscriptionPeriod.YEAR:
+      case "year":
         return RecurrenceUtils.addYearsWithAnchor(
           date,
           amount,
@@ -96,7 +103,7 @@ export class RecurrenceUtils {
   static getNextOccurrence(
     startDate: Date | string,
     every: number,
-    period: SubscriptionPeriod,
+    period: RecurrencePeriod,
     relativeTo: Date = new Date(),
   ): Date {
     let current = RecurrenceUtils.normalizeDateInput(startDate);
@@ -119,7 +126,7 @@ export class RecurrenceUtils {
   static getPreviousOccurrence(
     startDate: Date | string,
     every: number,
-    period: SubscriptionPeriod,
+    period: RecurrencePeriod,
     relativeTo: Date = new Date(),
   ): Date | null {
     const start = RecurrenceUtils.normalizeDateInput(startDate);
