@@ -96,19 +96,25 @@ describe("formatDaysUntil", () => {
 });
 
 describe("daysUntil", () => {
+  // `now` is built from the LOCAL clock while the targets stay `…Z`, because
+  // that is the asymmetry `daysUntil` exists to handle: it counts from the
+  // device's calendar day to a stored UTC midnight. A `…Z` literal for `now`
+  // would name a different device day everywhere but UTC, which is how every
+  // case here quietly depended on the machine running the suite.
+
   // Whole-day difference, not elapsed hours: 23:00 today → 01:00 tomorrow is 1 day.
   it("counts calendar days, not 24h blocks", () => {
-    const now = new Date("2026-07-20T23:00:00.000Z");
+    const now = new Date(2026, 6, 20, 23, 0);
     expect(daysUntil("2026-07-21T01:00:00.000Z", now)).toBe(1);
   });
 
   it("returns 0 for a date later the same day", () => {
-    const now = new Date("2026-07-20T01:00:00.000Z");
+    const now = new Date(2026, 6, 20, 1, 0);
     expect(daysUntil("2026-07-20T23:00:00.000Z", now)).toBe(0);
   });
 
   it("returns a negative count for a past date", () => {
-    const now = new Date("2026-07-20T12:00:00.000Z");
+    const now = new Date(2026, 6, 20, 12, 0);
     expect(daysUntil("2026-07-18T12:00:00.000Z", now)).toBe(-2);
   });
 });
