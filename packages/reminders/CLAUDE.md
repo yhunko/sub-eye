@@ -21,6 +21,13 @@ Planning only. No `expo-notifications`, no OS types, no storage, no catalog.
   subscription's own, which during a trial is the trial price (usually zero). A
   digest totals only when every event has an amount: one unknown price would
   silently understate the sum.
+- Both event streams cover `cancelling`, not just `active`, and stop at the
+  first date `shouldIncludeOccurrence` excludes — `edit` can push
+  `willBeCancelledAt` past several payments (or past a trial's conversion), and
+  those charges still land. A trial-end warning is a CHARGE warning: it goes
+  away only when the cancellation beats the conversion, not when one exists. The
+  planner and `subscriptionsDueOn` must agree here, because a digest deep-links
+  into that screen. This is a DATE question; do not answer it from the status.
 - Sort THEN trim. The budget must keep the soonest reminders, because those are
   the ones iOS would have kept anyway and the ones the user needs first.
 - `fireInstant` builds in the DEVICE's zone, deliberately not the account's.

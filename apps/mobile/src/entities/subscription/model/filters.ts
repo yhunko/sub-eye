@@ -1,4 +1,7 @@
-import { isCurrentlyActiveSubscription } from "@subeye/lifecycle";
+import {
+  isCurrentlyActiveSubscription,
+  shouldIncludeOccurrence,
+} from "@subeye/lifecycle";
 import type { SubscriptionDto, SubscriptionStatus } from "@subeye/model";
 import type { SubscriptionGroupBy } from "./grouping";
 
@@ -61,9 +64,11 @@ export const DEFAULT_SUBSCRIPTION_FILTERS: SubscriptionListFilters = {
  * the zone every date in this app is stored and rendered in.
  *
  * Backs the deep link on a digest reminder: a notification that named three
- * services has to open a screen showing exactly those three. Active only, for
- * the same reason the planner schedules active only — the server still computes
- * a `nextPaymentDate` for a cancelled subscription, and it will never be taken.
+ * services has to open a screen showing exactly those three — so the test for
+ * "does this charge" has to be the planner's, not a narrower one. A dead or
+ * paused subscription still carries a `nextPaymentDate` that will never be
+ * taken; a `cancelling` one is charged for every occurrence strictly before
+ * `willBeCancelledAt` and belongs on the day it lands on.
  *
  * Compares the ISO prefix rather than re-parsing: `nextPaymentDate` is always
  * UTC midnight, so the first ten characters ARE the calendar day, and `new Date`
@@ -76,7 +81,11 @@ export function subscriptionsDueOn(
   return items
     .filter(
       (item) =>
-        item.status === "active" && item.nextPaymentDate.slice(0, 10) === day,
+        item.nextPaymentDate.slice(0, 10) === day &&
+        isCurrentlyActiveSubscription(item.status) &&
+        // UTC midnight, so this parse carries no zone — unlike comparing `day`
+        // itself, which is why the day test above stays a string prefix.
+        shouldIncludeOccurrence(item, new Date(item.nextPaymentDate)),
     )
     .sort((a, b) => b.billing.preferred.amount - a.billing.preferred.amount);
 }

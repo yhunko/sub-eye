@@ -292,8 +292,11 @@ matches it via `isCurrentlyActiveSubscription` rather than `status === "active"`
 — excluding it made a subscription the user is still paying for vanish from the
 default list the moment they wound it down. It stays reachable under
 `cancelling` too: one subscription, two true answers. The reminder planner and
-`subscriptionsDueOn` deliberately keep the strict `=== "active"` test — those
-answer "will money move", not "is this still mine".
+`subscriptionsDueOn` answer "will money move" rather than "is this still mine",
+and that is the SAME test plus a date: `isCurrentlyActiveSubscription` and then
+`shouldIncludeOccurrence` per occurrence. A strict `=== "active"` there dropped
+every charge between now and a cancellation set months out — silently, with no
+server to fall back on.
 
 **A cancelling subscription is asked "when do I lose it", never "when do I pay
 next".** `shouldIncludeOccurrence` is a strict `<`, and an end-of-period cancel

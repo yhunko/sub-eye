@@ -73,6 +73,7 @@ const sub = (overrides: Partial<ReminderInput> = {}): ReminderInput => ({
   period: SubscriptionPeriod.MONTH,
   nextPaymentDate: "2026-08-01T00:00:00.000Z",
   status: "active",
+  willBeCancelledAt: null,
   billing: billing(100),
   ...overrides,
 });
@@ -174,9 +175,46 @@ describe("planReminders", () => {
     ]);
   });
 
-  it("skips a subscription that is not billing", () => {
+  // "Cancelling" is not "never charged again": `edit` can push the cancellation
+  // months past the next payment, and every occurrence strictly before it is
+  // billed. Reminding about none of them is the silent failure this pins —
+  // there is no server to catch it, and the app is not open to notice.
+  it("reminds about the charges a cancelling subscription still takes", () => {
+    const reminders = planReminders(
+      [
+        sub({
+          status: "cancelling",
+          willBeCancelledAt: "2026-09-01T00:00:00.000Z",
+        }),
+      ],
+      settings(),
+      NOW,
+      testCopy,
+    );
+
+    // Only the 1 Aug charge: the 1 Sep occurrence lands ON the cancellation and
+    // is never billed, so the stream stops there rather than at the lookahead.
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.schedule.repeats).toBe(false);
+    expect(localParts(at(reminders[0]))).toEqual([2026, 6, 31, 9, 0]);
+  });
+
+  // The end-of-period cancel, which is what the button produces: the date IS
+  // the next payment date, `shouldIncludeOccurrence` is a strict `<`, and the
+  // honest answer stays "no further charges".
+  it("stays silent when the cancellation lands on the next payment", () => {
     expect(
-      planReminders([sub({ status: "cancelling" })], settings(), NOW, testCopy),
+      planReminders(
+        [
+          sub({
+            status: "cancelling",
+            willBeCancelledAt: "2026-08-01T00:00:00.000Z",
+          }),
+        ],
+        settings(),
+        NOW,
+        testCopy,
+      ),
     ).toEqual([]);
   });
 
@@ -476,6 +514,43 @@ describe("planReminders — trials", () => {
     expect(reminders[0]?.title).toBe("Netflix trial ends tomorrow");
     // 250 from `upcomingPhase`, NOT 0 from the trial's own `cost`.
     expect(reminders[0]?.body).toBe("trial ₴250.00");
+  });
+
+  // A trial cancelled with a date past its end still converts on that date and
+  // takes the charge, so the warning is exactly as due as it was before.
+  it("warns for a cancelling trial whose cancellation lands after it converts", () => {
+    const reminders = planReminders(
+      [
+        trialSub({
+          status: "cancelling",
+          willBeCancelledAt: "2026-10-01T00:00:00.000Z",
+        }),
+      ],
+      settings({ renewals: false, trials: true }),
+      NOW,
+      testCopy,
+    );
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.title).toBe("Netflix trial ends tomorrow");
+  });
+
+  // Cancelled out before it converts: nothing is ever charged, and "you are
+  // about to start paying" would be the opposite of true.
+  it("stays silent when the cancellation lands on the trial end", () => {
+    expect(
+      planReminders(
+        [
+          trialSub({
+            status: "cancelling",
+            willBeCancelledAt: "2026-08-01T00:00:00.000Z",
+          }),
+        ],
+        settings({ renewals: false, trials: true }),
+        NOW,
+        testCopy,
+      ),
+    ).toEqual([]);
   });
 
   it("still warns when the follow-on price is unknown", () => {

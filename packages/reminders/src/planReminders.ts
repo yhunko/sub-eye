@@ -1,3 +1,7 @@
+import {
+  isCurrentlyActiveSubscription,
+  shouldIncludeOccurrence,
+} from "@subeye/lifecycle";
 import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import type {
@@ -161,32 +165,34 @@ const eventOf = (
 });
 
 function renewalEvents(subscription: ReminderInput): ReminderEvent[] {
-  // `subscriptionStatuses`, NOT the lifecycle vocabulary — comparing across the
-  // two silently never matches. Only `active` renews: `cancelling` is already
-  // inside its final paid period and will not be charged again.
-  if (subscription.status !== "active") return [];
+  // Asked of a lifecycle predicate, never spelled out here: these are
+  // `subscriptionStatuses` and comparing them against the lifecycle vocabulary
+  // silently never matches. `cancelling` DOES still renew — `edit` can push the
+  // cancellation past one or more payments, so the status alone never proves
+  // "no further charges" and only the dates below decide.
+  if (!isCurrentlyActiveSubscription(subscription.status)) return [];
 
   const anchor = DateTimezoneUtils.toCalendarDay(subscription.nextPaymentDate);
   if (Number.isNaN(anchor.getTime())) return [];
 
   const events: ReminderEvent[] = [];
   for (let step = 0; step < REMINDER_LOOKAHEAD; step++) {
-    events.push(
-      eventOf(
-        subscription,
-        "renewal",
-        // `every * step` measured from the anchor on every iteration, never by
-        // stepping from the last occurrence: a clamped month (Jan 31 → Feb 28)
-        // would otherwise drag every later occurrence back with it. `addPeriod`
-        // anchors on the date it is handed, which is the anchor.
-        RecurrenceUtils.addPeriod(
-          anchor,
-          subscription.every * step,
-          subscription.period,
-        ),
-        subscription.billing,
-      ),
+    // `every * step` measured from the anchor on every iteration, never by
+    // stepping from the last occurrence: a clamped month (Jan 31 → Feb 28)
+    // would otherwise drag every later occurrence back with it. `addPeriod`
+    // anchors on the date it is handed, which is the anchor.
+    const date = RecurrenceUtils.addPeriod(
+      anchor,
+      subscription.every * step,
+      subscription.period,
     );
+    // The same strict `<` spend and the detail screen bill on, so the two
+    // surfaces agree: an end-of-period cancel sets `willBeCancelledAt` TO the
+    // next payment date and that occurrence is never charged. Occurrences only
+    // move forward, so the first one excluded ends the stream.
+    if (!shouldIncludeOccurrence(subscription, date)) break;
+
+    events.push(eventOf(subscription, "renewal", date, subscription.billing));
   }
   return events;
 }
@@ -201,7 +207,7 @@ function renewalEvents(subscription: ReminderInput): ReminderEvent[] {
  * with no known follow-on price still earns a reminder — it just names no sum.
  */
 function trialEndEvent(subscription: ReminderInput): ReminderEvent | null {
-  if (subscription.status !== "active") return null;
+  if (!isCurrentlyActiveSubscription(subscription.status)) return null;
 
   const trial = subscription.pricePhases?.find(
     (phase) => phase.isActive && phase.kind === "trial",
@@ -210,6 +216,10 @@ function trialEndEvent(subscription: ReminderInput): ReminderEvent | null {
 
   const date = new Date(trial.endsAt);
   if (Number.isNaN(date.getTime())) return null;
+  // This warns about a CHARGE, so a cancellation that lands first cancels the
+  // warning with it — the same strict `<` the renewal stream stops on. One that
+  // lands after does not: the trial still converts and that charge is taken.
+  if (!shouldIncludeOccurrence(subscription, date)) return null;
 
   const next = subscription.upcomingPhase?.billing;
   return eventOf(subscription, "trialEnd", date, {

@@ -283,6 +283,27 @@ describe("subscriptionsDueOn", () => {
     ]);
   });
 
+  // The digest that deep-links here can now name a cancelling subscription, and
+  // a screen that dropped it would open a list missing the row the notification
+  // just promised.
+  it("keeps a cancelling subscription still charged on that day", () => {
+    const items = [
+      due("1", "2026-08-01", {
+        status: "cancelling",
+        willBeCancelledAt: "2026-11-01T00:00:00.000Z",
+      }),
+      // End-of-period cancel: the cancellation IS the payment date, so that
+      // charge is never taken.
+      due("2", "2026-08-01", {
+        status: "cancelling",
+        willBeCancelledAt: "2026-08-01T00:00:00.000Z",
+      }),
+    ];
+    expect(subscriptionsDueOn(items, "2026-08-01").map((s) => s.id)).toEqual([
+      "1",
+    ]);
+  });
+
   it("returns nothing for a malformed day rather than throwing", () => {
     expect(subscriptionsDueOn([due("1", "2026-08-01")], "nonsense")).toEqual(
       [],

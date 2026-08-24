@@ -10,7 +10,14 @@ import type { PricePhaseDto, SubscriptionDto } from "@subeye/model";
  */
 export type ReminderInput = Pick<
   SubscriptionDto,
-  "id" | "name" | "every" | "period" | "nextPaymentDate" | "status" | "billing"
+  | "id"
+  | "name"
+  | "every"
+  | "period"
+  | "nextPaymentDate"
+  | "status"
+  | "billing"
+  | "willBeCancelledAt"
 > & {
   pricePhases?: readonly Pick<PricePhaseDto, "kind" | "endsAt" | "isActive">[];
   upcomingPhase?: Pick<PricePhaseDto, "billing"> | null;

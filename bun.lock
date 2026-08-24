@@ -114,6 +114,7 @@
       "name": "@subeye/reminders",
       "version": "0.0.1",
       "dependencies": {
+        "@subeye/lifecycle": "workspace:*",
         "@subeye/model": "workspace:*",
         "@subeye/time": "workspace:*",
       },

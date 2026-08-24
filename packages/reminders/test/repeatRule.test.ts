@@ -23,6 +23,7 @@ const monthlyOnThe14th = {
   period: SubscriptionPeriod.MONTH,
   nextPaymentDate: "2026-09-14T00:00:00.000Z",
   status: "active" as const,
+  willBeCancelledAt: null,
   billing: {
     original: { currencyCode: "usd", monthly: 15 },
     preferred: {
@@ -90,9 +91,24 @@ describe("repeatRuleFor", () => {
   // trigger keeps firing whatever the subscription becomes, and the app is not
   // open to notice a date-driven transition.
   test.each([
-    ["paused", { status: "paused" as const }],
-    ["cancelling", { status: "cancelling" as const }],
-    ["cancelled", { status: "cancelled" as const }],
+    ["paused", { status: "paused" as const, willBeCancelledAt: null }],
+    // Dated, not bare: a cancelling subscription now DOES earn one-shot renewal
+    // reminders for the charges before that date, and a repeat rule would keep
+    // firing straight past it.
+    [
+      "cancelling",
+      {
+        status: "cancelling" as const,
+        willBeCancelledAt: "2027-06-14T00:00:00.000Z",
+      },
+    ],
+    [
+      "cancelled",
+      {
+        status: "cancelled" as const,
+        willBeCancelledAt: "2026-01-14T00:00:00.000Z",
+      },
+    ],
   ])("a %s subscription is refused", (_label, patch) => {
     expect(
       repeatRuleFor({ ...monthlyOnThe14th, ...patch }, 1, 9, 0),
