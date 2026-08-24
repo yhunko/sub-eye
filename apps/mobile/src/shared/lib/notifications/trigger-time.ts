@@ -111,8 +111,16 @@ const isAndroidRecurrence = (raw: Trigger): boolean =>
  * The iOS pattern, or `null` if these components describe one absolute instant
  * or nothing usable. No year is what marks a recurrence; an `hour` is what
  * separates one from a fragment too partial to build anything out of.
+ *
+ * Nullish is one of those "nothing usable" cases and is handled HERE rather
+ * than at each call site: a `UNTimeIntervalNotificationTrigger` reads back
+ * carrying `dateComponents: null`, not with the key absent, so a caller testing
+ * for `undefined` lets the null straight through.
  */
-function iosRecurrence(parts: Components): Recurrence | null {
+function iosRecurrence(
+  parts: Components | null | undefined,
+): Recurrence | null {
+  if (!parts) return null;
   if (typeof parts.year === "number" || typeof parts.hour !== "number") {
     return null;
   }
@@ -140,10 +148,7 @@ export function repeatsForever(trigger: unknown): boolean {
 
   const raw = trigger as Trigger;
   if (isAndroidRecurrence(raw)) return true;
-  return (
-    raw.dateComponents !== undefined &&
-    iosRecurrence(raw.dateComponents) !== null
-  );
+  return iosRecurrence(raw.dateComponents) !== null;
 }
 
 export function triggerTime(trigger: unknown, now: number): number | null {

@@ -175,4 +175,25 @@ describe("repeatsForever", () => {
     expect(repeatsForever({ type: "timeInterval", seconds: 5 })).toBe(false);
     expect(repeatsForever(null)).toBe(false);
   });
+
+  // Copied off a device, not hand-written: iOS turns a DATE trigger into a
+  // UNTimeIntervalNotificationTrigger and reports `dateComponents` as an
+  // explicit NULL rather than omitting the key. Testing for `undefined` let it
+  // through, and reading `.year` off it threw inside `readNotificationHealth` —
+  // so one ordinary one-shot in the pending list took down the whole status
+  // read, and the screen sat on "checking" with no count and no next fire time.
+  it("survives the explicit null iOS reports for a one-shot", () => {
+    const asReadFromTheDevice = {
+      class: "UNTimeIntervalNotificationTrigger",
+      dateComponents: null,
+      repeats: false,
+      seconds: 479840.6148300171,
+      type: "timeInterval",
+    };
+
+    expect(repeatsForever(asReadFromTheDevice)).toBe(false);
+    expect(triggerTime(asReadFromTheDevice, NOW)).toBe(
+      NOW + 479840.6148300171 * 1000,
+    );
+  });
 });
