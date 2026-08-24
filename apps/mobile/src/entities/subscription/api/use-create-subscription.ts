@@ -1,62 +1,40 @@
-import type { SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
+import type { AddSubscriptionInput, SubscriptionDto } from "@subeye/model";
+import { addSubscription } from "@subeye/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { dashboardKeys } from "@/entities/dashboard";
-import { apiClient, assertOk } from "@/shared/api";
+import { localPorts } from "@/shared/lib/store";
 import { notifyWriteFailed } from "@/shared/ui/notify";
+import { invalidateSubscriptionData } from "./invalidate";
 import { subscriptionKeys } from "./list";
 
-type CreateSubscriptionVars = {
-  name: string;
-  cost: number;
-  currency: string;
-  every: number;
-  period: SubscriptionPeriod;
-  paymentDate: string;
-  categoryId: string | null;
-  /** The optional starting offer: begin on a free trial or an intro discount. */
-  intro: { kind: "trial" | "intro"; promoCost: number; endsAt: string } | null;
-};
-
 /**
- * The one non-optimistic write in the app.
- *
- * There is no id to patch into the cache until the server assigns one, and
- * inventing a temporary row that then has to be swapped out buys nothing on a
- * sheet that dismisses immediately. The list invalidation is what makes the new
- * subscription appear.
+ * What the form collects. The three fields it does not are supplied below —
+ * they used to arrive as `AddSubscriptionSchema` defaults applied by the
+ * server's validator, and with no request to parse there is nothing else left
+ * to apply them. Omitting them writes `undefined` into the document, where
+ * JSON.stringify drops the key entirely.
  */
+type CreateSubscriptionVars = Omit<
+  AddSubscriptionInput,
+  "autoPaid" | "notes" | "willBeCancelledAt"
+>;
+
 export function useCreateSubscription() {
   const client = useQueryClient();
 
   return useMutation({
-    // The form dismisses the moment this fires, so a PAUSED mutation — TanStack's
-    // default for an offline write — would close over an unchanged list and say
-    // nothing at all, and then replay whenever connectivity returned, duplicating
-    // whatever the user re-typed in the meantime. Letting the request run and
-    // fail is what makes `notifyWriteFailed` below reachable offline.
-    networkMode: "always",
-    mutationFn: async (
-      vars: CreateSubscriptionVars,
-    ): Promise<SubscriptionDto> => {
-      const response = await apiClient.api.subscriptions.$post({ json: vars });
-      assertOk(response);
-      return response.json();
-    },
+    mutationFn: (vars: CreateSubscriptionVars): Promise<SubscriptionDto> =>
+      addSubscription(localPorts, {
+        autoPaid: false,
+        notes: null,
+        willBeCancelledAt: null,
+        ...vars,
+      }),
     onError: notifyWriteFailed,
     onSuccess: (created) => {
-      // Seed the detail entry so opening the new subscription is instant.
+      // Seed the detail entry so opening the new subscription is instant. It is
+      // the one write with no entry to invalidate — the id did not exist yet.
       client.setQueryData(subscriptionKeys.detail(created.id), created);
     },
-    onSettled: () =>
-      Promise.all([
-        client.invalidateQueries({
-          queryKey: subscriptionKeys.list(),
-          refetchType: "active",
-        }),
-        client.invalidateQueries({
-          queryKey: dashboardKeys.all,
-          refetchType: "active",
-        }),
-      ]),
+    onSettled: () => invalidateSubscriptionData(client),
   });
 }

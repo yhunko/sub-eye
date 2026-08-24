@@ -1,18 +1,14 @@
 import type { CancelSubscriptionMode, SubscriptionDto } from "@subeye/model";
+import {
+  cancelSubscription,
+  pauseSubscription,
+  renewSubscription,
+  resumeSubscription,
+} from "@subeye/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient, assertOk } from "@/shared/api";
+import { localPorts } from "@/shared/lib/store";
 import { notifyWriteFailed } from "@/shared/ui/notify";
-import { buildOptimisticSubscriptionMutation } from "../model/optimistic-mutation";
-
-/**
- * The four lifecycle transitions. Each patches `status` so the badge flips on
- * the same frame as the tap.
- *
- * None of them patches `allowedActions`: which actions become legal is the
- * server's call (`getAllowedActions`), and re-deriving it here is exactly the
- * duplicated state machine that DTO field exists to prevent. It arrives correct
- * with the response, well before the user can open the action sheet again.
- */
+import { invalidateSubscriptionData } from "./invalidate";
 
 type PauseSubscriptionVars = { id: string; resumeAt: string | null };
 
@@ -24,82 +20,36 @@ type PauseSubscriptionVars = { id: string; resumeAt: string | null };
 export function usePauseSubscription() {
   const client = useQueryClient();
 
-  return useMutation(
-    buildOptimisticSubscriptionMutation<PauseSubscriptionVars>({
-      client,
-      subscriptionId: (vars) => vars.id,
-      affectsSpend: true,
-      onFailure: notifyWriteFailed,
-      patch: (vars) => ({
-        status: "paused",
-        pausedAt: new Date().toISOString(),
-        resumeAt: vars.resumeAt,
-      }),
-      mutationFn: async (vars): Promise<SubscriptionDto> => {
-        const response = await apiClient.api.subscriptions[":id"].pause.$post({
-          param: { id: vars.id },
-          json: { resumeAt: vars.resumeAt },
-        });
-        assertOk(response);
-        return response.json();
-      },
-    }),
-  );
+  return useMutation({
+    mutationFn: (vars: PauseSubscriptionVars): Promise<SubscriptionDto> =>
+      pauseSubscription(localPorts, vars.id, vars.resumeAt),
+    onError: notifyWriteFailed,
+    onSettled: () => invalidateSubscriptionData(client),
+  });
 }
 
 export function useResumeSubscription() {
   const client = useQueryClient();
 
-  return useMutation(
-    buildOptimisticSubscriptionMutation<{ id: string }>({
-      client,
-      subscriptionId: (vars) => vars.id,
-      affectsSpend: true,
-      onFailure: notifyWriteFailed,
-      // The payment anchor rolls forward on the server; clearing the pause state
-      // is all the badge needs until the real row lands.
-      patch: () => ({ status: "active", pausedAt: null, resumeAt: null }),
-      mutationFn: async (vars): Promise<SubscriptionDto> => {
-        const response = await apiClient.api.subscriptions[":id"].resume.$post({
-          param: { id: vars.id },
-        });
-        assertOk(response);
-        return response.json();
-      },
-    }),
-  );
+  return useMutation({
+    mutationFn: (vars: { id: string }): Promise<SubscriptionDto> =>
+      resumeSubscription(localPorts, vars.id),
+    onError: notifyWriteFailed,
+    onSettled: () => invalidateSubscriptionData(client),
+  });
 }
 
-type CancelSubscriptionVars = {
-  id: string;
-  mode: CancelSubscriptionMode;
-};
+type CancelSubscriptionVars = { id: string; mode: CancelSubscriptionMode };
 
 export function useCancelSubscription() {
   const client = useQueryClient();
 
-  return useMutation(
-    buildOptimisticSubscriptionMutation<CancelSubscriptionVars>({
-      client,
-      subscriptionId: (vars) => vars.id,
-      affectsSpend: true,
-      onFailure: notifyWriteFailed,
-      // "periodEnd" keeps billing until the paid period closes -> `cancelling`.
-      // "immediate" stops it now -> `cancelled`. The exact willBeCancelledAt is
-      // the server's to compute; the status flip is what the badge shows.
-      patch: (vars) => ({
-        status: vars.mode === "immediate" ? "cancelled" : "cancelling",
-      }),
-      mutationFn: async (vars): Promise<SubscriptionDto> => {
-        const response = await apiClient.api.subscriptions[":id"].cancel.$post({
-          param: { id: vars.id },
-          json: { mode: vars.mode },
-        });
-        assertOk(response);
-        return response.json();
-      },
-    }),
-  );
+  return useMutation({
+    mutationFn: (vars: CancelSubscriptionVars): Promise<SubscriptionDto> =>
+      cancelSubscription(localPorts, vars.id, vars.mode),
+    onError: notifyWriteFailed,
+    onSettled: () => invalidateSubscriptionData(client),
+  });
 }
 
 /**
@@ -113,25 +63,13 @@ export function useCancelSubscription() {
 export function useRenewSubscription() {
   const client = useQueryClient();
 
-  return useMutation(
-    buildOptimisticSubscriptionMutation<{ id: string; paymentDate?: string }>({
-      client,
-      subscriptionId: (vars) => vars.id,
-      affectsSpend: true,
-      onFailure: notifyWriteFailed,
-      patch: (vars) => ({
-        status: "active",
-        willBeCancelledAt: null,
-        ...(vars.paymentDate ? { paymentDate: vars.paymentDate } : {}),
-      }),
-      mutationFn: async (vars): Promise<SubscriptionDto> => {
-        const response = await apiClient.api.subscriptions[":id"].renew.$post({
-          param: { id: vars.id },
-          json: { paymentDate: vars.paymentDate ?? null },
-        });
-        assertOk(response);
-        return response.json();
-      },
-    }),
-  );
+  return useMutation({
+    mutationFn: (vars: {
+      id: string;
+      paymentDate?: string;
+    }): Promise<SubscriptionDto> =>
+      renewSubscription(localPorts, vars.id, vars.paymentDate ?? null),
+    onError: notifyWriteFailed,
+    onSettled: () => invalidateSubscriptionData(client),
+  });
 }

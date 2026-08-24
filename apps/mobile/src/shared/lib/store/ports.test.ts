@@ -292,8 +292,10 @@ describe("rates", () => {
 describe("preferences", () => {
   it("reads the defaults on a cold install", async () => {
     expect(await localPorts.preferences.read()).toEqual({
-      preferredCurrency: "uah",
-      preferredTimezone: "UTC",
+      // Device-seeded on the cold path; the values themselves are
+      // document.test.ts's business.
+      preferredCurrency: "eur",
+      preferredTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       dateFormat: "DD/MM/YYYY",
       locale: "en",
       theme: "system",

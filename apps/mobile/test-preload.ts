@@ -105,3 +105,21 @@ mock.module("expo-router", () => ({
 mock.module("expo-crypto", () => ({
   randomUUID: () => crypto.randomUUID(),
 }));
+
+/**
+ * `expo-localization` is a native module. The store's cold path reads the
+ * device's region currency through it, so a test that only wanted `readDoc`
+ * dies on import without this.
+ *
+ * Reports a region whose currency SubEye DOES support, so the store's seed test
+ * asserts adoption rather than the fallback — the wiring is what breaks
+ * silently, and `supportedCurrencyCode` is covered on its own in
+ * shared/lib/format/money.test.ts.
+ */
+const deviceLocales = [
+  { languageCode: "en", languageTag: "en-DE", currencyCode: "EUR" },
+];
+mock.module("expo-localization", () => ({
+  getLocales: () => deviceLocales,
+  useLocales: () => deviceLocales,
+}));

@@ -12,7 +12,6 @@ import { tokenCache, useClerkTokenBridge } from "@/shared/auth";
 import { env } from "@/shared/config/env";
 import { useAppLocale } from "@/shared/i18n";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
-import "@/shared/lib/online"; // side-effect only: registers onlineManager↔NetInfo once
 import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
@@ -36,10 +35,10 @@ export const unstable_settings = { anchor: "(tabs)" };
 // so the whole startup is a pure-black screen rather than the app's own
 // background. Measured on a cold start: ~2.5s of black.
 //
-// Nothing here waits on the network. `sessionHint` and the MMKV query cache are
-// both read synchronously, so by the time React commits its first frame the
-// tab tree already has real numbers in it — the splash hands straight over to a
-// populated screen.
+// Nothing here waits on the network, and after the offline flip there is no
+// network to wait on: `sessionHint` and the store document are both MMKV reads,
+// so by the time React commits its first frame the tab tree already has real
+// numbers in it — the splash hands straight over to a populated screen.
 //
 // Module scope on purpose: this has to run before the first native frame.
 void SplashScreen.preventAutoHideAsync().catch(() => {
@@ -77,7 +76,7 @@ function ProIdentityBridge() {
 // PROVIDER ORDER IS LOAD-BEARING:
 //   ClerkProvider (tokenCache: expo-secure-store)
 //     -> TokenBridge          wires getToken() into shared/api/client
-//       -> PersistQueryClientProvider (MMKV persister)
+//       -> QueryClientProvider
 //         -> Stack
 // Clerk sits ABOVE Query so the token getter is set before any request fires.
 // Re-keying the Stack on locale makes an Android per-app language change

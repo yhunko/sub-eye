@@ -192,12 +192,7 @@ export function ManagePricingSheet({ id }: { id: string }) {
               style={styles.primary}
               accessibilityRole="button"
               onPress={() => {
-                applyNow.mutate({
-                  id,
-                  phaseId: pending.id,
-                  cost: pending.cost,
-                  currency: pending.currency,
-                });
+                applyNow.mutate({ id, phaseId: pending.id });
                 router.back();
               }}
             >

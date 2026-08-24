@@ -1,16 +1,16 @@
 import { useAuth } from "@clerk/clerk-expo";
-import { useQuery } from "@tanstack/react-query";
+import { applyDuePhases } from "@subeye/store";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redirect, useRouter, useSegments } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import { useDashboard, useMonthlySummary } from "@/entities/dashboard";
 import { usePro } from "@/entities/pro";
-import { subscriptionsQuery } from "@/entities/subscription";
 import {
-  useSeedPreferredCurrency,
-  useSeedPreferredTimezone,
-} from "@/entities/user";
+  invalidateSubscriptionData,
+  subscriptionsQuery,
+} from "@/entities/subscription";
 import { sessionHint } from "@/shared/auth";
 import { m } from "@/shared/i18n";
 import {
@@ -18,6 +18,7 @@ import {
   syncReminders,
   useReminderTap,
 } from "@/shared/lib/notifications";
+import { localPorts } from "@/shared/lib/store";
 import { syncWidget } from "@/shared/lib/widget";
 import { colors } from "@/shared/ui/theme";
 
@@ -139,7 +140,7 @@ export default function TabsLayout() {
   // Clerk's isLoaded waits on a client handshake — a network round-trip, not a
   // SecureStore read. Blocking on it left a returning user staring at a black
   // screen, so the device's own record of the last session decides what to mount
-  // and the synchronously-hydrated Query cache paints real numbers immediately.
+  // and the store paints real numbers off MMKV immediately.
   //
   // The hint is trusted in BOTH directions on purpose: rendering nothing while
   // undecided is the same black screen by another name. Clerk still has the
@@ -156,18 +157,47 @@ export default function TabsLayout() {
 }
 
 /**
- * Renders nothing; gives a brand-new account the device region's currency and
- * the device's timezone.
+ * Renders nothing; settles price-phase boundaries that have come due.
  *
- * The subscription count is read HERE rather than inside the timezone hook:
- * `entities/user` reaching into `entities/subscription` is a same-layer edge
- * FSD rejects, so the app layer composes the two.
+ * There is no scheduler and there never was — a phase fires when the
+ * subscription it belongs to is READ, which `getSubscription` does for the
+ * detail screen. A subscription the user never opens never settles, so this
+ * covers the rest of the list on every foreground.
+ *
+ * Reads the phase rows rather than the list: `PricePhaseDto` carries no
+ * `appliedAt`, and `upcomingPhase` skips anything already past its start — so
+ * neither DTO field can tell a pending phase from a settled one. Production
+ * holds zero phase rows, which makes the early return the normal path.
  */
-function PreferenceSeeds() {
-  const { data } = useQuery(subscriptionsQuery());
+function DuePhaseSync() {
+  const client = useQueryClient();
 
-  useSeedPreferredCurrency();
-  useSeedPreferredTimezone(data && data.length === 0);
+  useEffect(() => {
+    const pendingPhases = async () =>
+      (await localPorts.phases.all()).filter((phase) => !phase.appliedAt);
+
+    const settle = async () => {
+      const pending = await pendingPhases();
+      if (!pending.length) return;
+
+      for (const id of new Set(pending.map((p) => p.subscriptionId))) {
+        await applyDuePhases(localPorts, id);
+      }
+
+      // Pending only shrinks by being applied, so this is the exact signal that
+      // something moved. Without it a merely SCHEDULED change would invalidate
+      // every screen on every foreground for nothing.
+      if ((await pendingPhases()).length !== pending.length) {
+        await invalidateSubscriptionData(client);
+      }
+    };
+
+    void settle();
+    const listener = AppState.addEventListener("change", (status) => {
+      if (status === "active") void settle();
+    });
+    return () => listener.remove();
+  }, [client]);
 
   return null;
 }
@@ -200,7 +230,7 @@ function Tabs() {
       <ReminderSync />
       <WidgetSync />
       <ReminderTapRouter />
-      <PreferenceSeeds />
+      <DuePhaseSync />
       <NativeTabs
         minimizeBehavior="onScrollDown"
         tintColor={colors.accent}

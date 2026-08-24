@@ -1,4 +1,4 @@
-import type { CategoryDto } from "@subeye/model";
+import type { CategoryRecord } from "@subeye/store";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
@@ -33,7 +33,7 @@ function CategoryRow({
   onDelete,
   onSwipeOpen,
 }: {
-  row: CategoryDto;
+  row: CategoryRecord;
   count: number;
   onPress: () => void;
   onDelete: () => void;

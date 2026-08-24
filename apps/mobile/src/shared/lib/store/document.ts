@@ -4,7 +4,11 @@ import type {
   PricePhaseRecord,
   SubscriptionRecord,
 } from "@subeye/store";
+import { getLocales } from "expo-localization";
 import { createMMKV } from "react-native-mmkv";
+// Straight from ./format/money rather than the format barrel: that barrel pulls
+// when.ts, which pulls the i18n runtime and Paraglide into the store layer.
+import { supportedCurrencyCode } from "@/shared/lib/format/money";
 
 // Its own instance id, so the store cannot collide with the Query persister and
 // the device flags on the default instance (see ../mmkv.ts). MMKV v4 is Nitro:
@@ -24,9 +28,42 @@ const mmkv = createMMKV({ id: "subeye.store" });
 const SLOTS = ["subeye.doc.a", "subeye.doc.b"] as const;
 const POINTER = "subeye.doc.active";
 
+// Both fall back rather than throw: they run on readDoc's path, which must
+// survive a device that reports neither.
+function deviceTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+function deviceCurrency(): string {
+  try {
+    return supportedCurrencyCode(getLocales()[0]?.currencyCode) ?? "uah";
+  } catch {
+    return "uah";
+  }
+}
+
+/**
+ * The preferences a store that has never been written reads as.
+ *
+ * The two that change what a number MEANS come from the device, and this cold
+ * path is the only place they are ever guessed: the first write persists them
+ * and the stored value is authoritative from then on. That is the whole of the
+ * device-zone-versus-stored-zone question — there is no second source to
+ * disagree with.
+ *
+ * `locale` and `theme` are not seeded because nothing reads them: the app takes
+ * its language from the OS (per-app language, see shared/i18n) and is dark-only.
+ *
+ * Computed once at module load — readDoc runs on every port read, and neither
+ * of these can change without the process restarting.
+ */
 export const DEFAULT_PREFERENCES: PreferencesRecord = {
-  preferredCurrency: "uah",
-  preferredTimezone: "UTC",
+  preferredCurrency: deviceCurrency(),
+  preferredTimezone: deviceTimezone(),
   dateFormat: "DD/MM/YYYY",
   locale: "en",
   theme: "system",

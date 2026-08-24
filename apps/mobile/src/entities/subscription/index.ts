@@ -1,4 +1,5 @@
 export { subscriptionDetailQuery, useSubscriptionDetail } from "./api/detail";
+export { invalidateSubscriptionData } from "./api/invalidate";
 export {
   getCachedSubscriptionRow,
   subscriptionKeys,

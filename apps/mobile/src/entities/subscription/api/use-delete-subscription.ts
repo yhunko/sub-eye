@@ -1,27 +1,25 @@
+import { deleteSubscription } from "@subeye/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient, assertOk } from "@/shared/api";
+import { localPorts } from "@/shared/lib/store";
 import { notifyWriteFailed } from "@/shared/ui/notify";
-import { buildOptimisticSubscriptionMutation } from "../model/optimistic-mutation";
+import { invalidateSubscriptionData } from "./invalidate";
+import { subscriptionKeys } from "./list";
 
 export function useDeleteSubscription() {
   const client = useQueryClient();
 
-  return useMutation(
-    buildOptimisticSubscriptionMutation<{ id: string }>({
-      client,
-      subscriptionId: (vars) => vars.id,
-      removes: true,
-      affectsSpend: true,
-      onFailure: notifyWriteFailed,
-      mutationFn: async (vars) => {
-        const response = await apiClient.api.subscriptions[":id"].$delete({
-          param: { id: vars.id },
-        });
-        assertOk(response);
-        // DELETE answers { success: true }, not a subscription — there is
-        // nothing to write back, and the row is already gone from the caches.
-        return null;
-      },
-    }),
-  );
+  return useMutation({
+    mutationFn: (vars: { id: string }): Promise<void> =>
+      deleteSubscription(localPorts, vars.id),
+    onError: notifyWriteFailed,
+    onSuccess: (_result, vars) => {
+      // Dropped, not invalidated: the row is gone, so a refetch of this key
+      // would only throw SubscriptionNotFound at whatever is still mounted.
+      client.removeQueries({
+        queryKey: subscriptionKeys.detail(vars.id),
+        exact: true,
+      });
+    },
+    onSettled: () => invalidateSubscriptionData(client),
+  });
 }

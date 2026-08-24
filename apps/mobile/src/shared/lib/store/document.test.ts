@@ -22,8 +22,15 @@ describe("readDoc", () => {
     expect(doc.subscriptions).toEqual([]);
     expect(doc.categories).toEqual([]);
     expect(doc.phases).toEqual([]);
-    expect(doc.preferences.preferredCurrency).toBe("uah");
-    expect(doc.preferences.preferredTimezone).toBe("UTC");
+    // The device's region currency, not the "uah" a fresh server row used to
+    // carry — a first Home screen in Berlin denominated in hryvnia is what the
+    // deleted seed hooks existed to prevent.
+    expect(doc.preferences.preferredCurrency).toBe("eur");
+    // The device's own zone, whatever the machine running this is set to — the
+    // cold path adopts it, and every later read takes the stored value.
+    expect(doc.preferences.preferredTimezone).toBe(
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
   });
 
   // A blob written by an older build, or a truncated one, must not take the app
@@ -32,7 +39,7 @@ describe("readDoc", () => {
     __testing.writeSlotRaw("active", "{not json");
 
     expect(readDoc().subscriptions).toEqual([]);
-    expect(readDoc().preferences.preferredCurrency).toBe("uah");
+    expect(readDoc().preferences.preferredCurrency).toBe("eur");
   });
 
   // A document from a build that predates a field must not read as undefined
@@ -55,7 +62,7 @@ describe("readDoc", () => {
       JSON.stringify({ v: 1, preferences: "x" }),
     );
 
-    expect(readDoc().preferences.preferredCurrency).toBe("uah");
+    expect(readDoc().preferences.preferredCurrency).toBe("eur");
   });
 });
 
