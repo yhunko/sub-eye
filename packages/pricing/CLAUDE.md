@@ -41,23 +41,14 @@ the current charge.
    window opens — the user is not on the new price yet. (Before v4 Plan 4 this was a hand-rolled
    scan for an active `trial`/`intro`, which silently reported `standard` for an in-force
    `scheduledChange` and could disagree with `isActive` when windows overlapped.)
-5. **A pure function reports a caller error by returning `null`, never by throwing.**
+5. **`resolveScheduledEffectiveAt` takes `now` as a parameter.** It used to read `Date.now()`
+   and could not be tested at a day boundary — the case where the next renewal falls earlier
+   today and the change must step forward a full period rather than land in the past.
+6. **A pure function reports a caller error by returning `null`, never by throwing.**
    `resolveScheduledEffectiveAt` returns `null` for `mode: "customDate"` with no `customDate`;
    the server caller converts that into `CustomDateRequiredError`. Do not import server error
    classes here. Note the mode literal is `customDate`, not `custom` —
    `scheduledPriceChangeModes` in `@subeye/model` is `["nextOccurrence", "customDate"]`.
-
-## What stays in apps/server, deliberately
-
-`SubscriptionPhaseService` keeps everything that awaits a repository or throws a domain error:
-`startTrial`, `addIntroDiscount`, `schedulePriceChange`, `cancelPhase`, `applyPhaseNow`,
-`applyPhaseByWorkflow`, `applyDuePhases`, `reconcilePhases`, `clearPendingPhases`, and
-`assertPhaseWindow` (which throws four different error classes and reads lifecycle status).
-
-`getSubscriptionLifecycleStatus`, `shouldIncludeOccurrence`, `isCurrentlyActiveSubscription`
-and `subscriptionLifecycleStatuses` stay in **`@subeye/model`**. That is cycle avoidance, not
-an oversight: `shouldIncludeOccurrence` is consumed by `@subeye/spend`, so moving it here would
-make `pricing` and `spend` import each other through a shared leaf. Leave them where they are.
 
 ## A phase boundary is a calendar day, floored in UTC
 

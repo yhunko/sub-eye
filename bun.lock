@@ -140,7 +140,6 @@
       "dependencies": {
         "@subeye/model": "workspace:*",
         "@subeye/money": "workspace:*",
-        "@subeye/spend": "workspace:*",
         "@subeye/time": "workspace:*",
         "date-fns": "^4.1.0",
       },

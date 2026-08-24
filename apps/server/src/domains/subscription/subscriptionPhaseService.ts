@@ -115,6 +115,7 @@ export class SubscriptionPhaseService {
     const effectiveAt = resolveScheduledEffectiveAt(
       existing,
       payload,
+      new Date(),
       preferences.preferredTimezone,
     );
     if (effectiveAt === null) throw new CustomDateRequiredError();

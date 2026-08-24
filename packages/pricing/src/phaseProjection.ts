@@ -4,8 +4,7 @@ import type {
   SubscriptionDto,
   SubscriptionPeriod,
 } from "@subeye/model";
-import type { RateTable } from "@subeye/money";
-import { SubscriptionCalculator } from "@subeye/spend";
+import { buildBillingDetails, type RateTable } from "@subeye/money";
 import { getEffectivePhase, getUpcomingPhase } from "./phaseSelection";
 
 /** The minimum shape of a stored pricing-phase row. A DB row satisfies it. */
@@ -50,7 +49,7 @@ const toPricePhaseDto = (
   now: Date,
 ): PricePhaseDto => {
   const cost = Number(phase.cost);
-  const billing = SubscriptionCalculator.calculateBillingDetailsForPricing(
+  const billing = buildBillingDetails(
     {
       amount: Number.isFinite(cost) ? cost : 0,
       currency: phase.currency,
