@@ -6,7 +6,6 @@ import { AnalyticsCalculator } from "../src/analyticsCalculator";
 
 const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({
   id: "sub_31st",
-  userId: "user_01",
   name: "iCloud+",
   cost: 9.99,
   currency: "usd",
@@ -36,6 +35,13 @@ const createMonthlySubscription = (paymentDate: string): SubscriptionDto => ({
   lastPaymentDate: null,
   willBeCancelledAt: null,
   scheduledPriceChange: null,
+  pricePhases: [],
+  effectivePhaseKind: "standard",
+  upcomingPhase: null,
+  pausedAt: null,
+  resumeAt: null,
+  allowedActions: [],
+  category: null,
   status: "active",
 });
 
@@ -97,7 +103,6 @@ describe("AnalyticsCalculator.buildMonthlyTrend", () => {
       [
         {
           id: "702a6247-6791-410f-9a0c-de0ac961950b",
-          userId: "user_35yJSSLK75bNqDN4q0hqDalK69r",
           name: "iCloud+",
           cost: 2.99,
           currency: "usd",
@@ -127,6 +132,13 @@ describe("AnalyticsCalculator.buildMonthlyTrend", () => {
           lastPaymentDate: "2026-02-27T22:00:00.000Z",
           willBeCancelledAt: null,
           scheduledPriceChange: null,
+          pricePhases: [],
+          effectivePhaseKind: "standard",
+          upcomingPhase: null,
+          pausedAt: null,
+          resumeAt: null,
+          allowedActions: [],
+          category: null,
           status: "active",
         },
       ],
@@ -157,7 +169,6 @@ describe("AnalyticsCalculator — cancelled subscriptions", () => {
       subscription,
       new Date("2025-03-01T00:00:00.000Z"),
       new Date("2025-03-31T23:59:59.999Z"),
-      "UTC",
     );
 
     expect(total).toBeCloseTo(9.99);
@@ -175,7 +186,6 @@ describe("AnalyticsCalculator — cancelled subscriptions", () => {
       subscription,
       new Date("2025-04-01T00:00:00.000Z"),
       new Date("2025-04-30T23:59:59.999Z"),
-      "UTC",
     );
 
     expect(total).toBe(0);
@@ -193,13 +203,11 @@ describe("AnalyticsCalculator — cancelled subscriptions", () => {
       subscription,
       new Date("2025-01-01T00:00:00.000Z"),
       new Date("2025-01-31T23:59:59.999Z"),
-      "UTC",
     );
     const febTotal = AnalyticsCalculator.calculateSpendInRange(
       subscription,
       new Date("2025-02-01T00:00:00.000Z"),
       new Date("2025-02-28T23:59:59.999Z"),
-      "UTC",
     );
 
     expect(janTotal).toBeCloseTo(9.99);

@@ -148,12 +148,14 @@
       "name": "@subeye/spend",
       "version": "0.0.1",
       "dependencies": {
-        "@date-fns/tz": "^1.4.1",
         "@subeye/lifecycle": "workspace:*",
         "@subeye/model": "workspace:*",
         "@subeye/money": "workspace:*",
         "@subeye/time": "workspace:*",
         "date-fns": "^4.1.0",
+      },
+      "devDependencies": {
+        "@date-fns/tz": "^1.4.1",
       },
     },
     "packages/time": {
