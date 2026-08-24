@@ -1,5 +1,5 @@
+import { isCurrentlyActiveSubscription } from "@subeye/lifecycle";
 import type { SubscriptionDto, SubscriptionStatus } from "@subeye/model";
-import { isCurrentlyActiveSubscription } from "@subeye/model";
 import type { SubscriptionGroupBy } from "./grouping";
 
 export type SubscriptionSort = "next" | "name" | "cost";

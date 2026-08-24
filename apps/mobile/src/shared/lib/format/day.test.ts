@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { deriveSubscriptionStatus } from "@subeye/model";
+import { deriveSubscriptionStatus } from "@subeye/lifecycle";
 import { fromIsoDay, isFutureDay, toIsoDay } from "./day";
 
 // Resolved rather than read straight off the env, because `TZ` is usually

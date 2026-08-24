@@ -44,7 +44,7 @@ subscription row.
 | `src/domains/subscription/subscriptionPhaseService.ts` | All phase logic — create, cancel, apply, reconcile |
 | `src/domains/subscription/subscriptionPricePhaseRepository.ts` | Phase persistence; owns `db` |
 | `src/domains/subscription/subscriptionService.ts` | Subscription CRUD; calls the phase service |
-| `packages/model/src/domains/subscription/subscriptionLifecycle.ts` | Derives lifecycle status from `willBeCancelledAt` |
+| `packages/lifecycle/src/lifecycleStatus.ts` | Derives lifecycle status from `willBeCancelledAt` |
 
 ---
 

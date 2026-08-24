@@ -1,3 +1,4 @@
+import { getSubscriptionLifecycleStatus } from "@subeye/lifecycle";
 import type {
   PricePhaseKind,
   SchedulePriceChangeInput,
@@ -5,7 +6,6 @@ import type {
   SubscriptionDto,
   UserPreferences,
 } from "@subeye/model";
-import { getSubscriptionLifecycleStatus } from "@subeye/model";
 import {
   buildPhaseProjection,
   getEffectivePhase,

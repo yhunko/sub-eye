@@ -1,3 +1,11 @@
+import type { TransitionInput, TransitionPatch } from "@subeye/lifecycle";
+import {
+  cancel,
+  deriveSubscriptionStatus,
+  pause,
+  renew,
+  resume,
+} from "@subeye/lifecycle";
 import type {
   AddSubscriptionInput,
   BulkDeleteSubscriptionsInput,
@@ -11,10 +19,8 @@ import type {
   UpdateSubscriptionInput,
   UserPreferences,
 } from "@subeye/model";
-import { deriveSubscriptionStatus } from "@subeye/model";
 import { buildPhaseProjection, toStartOfUtcDay } from "@subeye/pricing";
 import { SubscriptionCalculator } from "@subeye/spend";
-import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { CategoryRepository } from "../category/categoryRepository";
 import { CurrencyService } from "../currency/currencyService";
 import { UserService } from "../user/userService";
@@ -336,34 +342,25 @@ export class SubscriptionService {
     }
 
     const userPreferences = await deps.userService.getUserPreferences(userId);
-    // The user's calendar DAY, not `new Date()`. `cancelled_at` is a day value
-    // everywhere else — the client renders it in UTC and `shouldIncludeOccurrence`
-    // compares it against day-valued occurrences — and west of UTC a raw
-    // instant lands on tomorrow's UTC day, so an evening "cancel now" read as
-    // still cancelling until the following morning.
-    const willBeCancelledAt =
-      mode === "immediate"
-        ? DateTimezoneUtils.currentCalendarDay(
-            new Date(),
-            userPreferences.preferredTimezone,
-          )
-        : new Date(
-            SubscriptionCalculator.calculatePaymentDates(
-              existing,
-              userPreferences.preferredTimezone,
-            ).nextPaymentDate,
-          );
 
     // Cancelling does NOT delete the pending pricing schedule: nothing fires it
     // automatically any more, and keeping the rows is what lets renew restore
     // the real reversion price instead of stranding the user on the trial cost.
-    const updated = await deps.repository.update(id, {
-      willBeCancelledAt,
-      status: SubscriptionService.currentStatus(
-        { ...existing, willBeCancelledAt },
+    const now = new Date();
+    const updated = await deps.repository.update(
+      id,
+      SubscriptionService.toLifecycleUpdate(
+        existing,
+        cancel(
+          SubscriptionService.toTransitionInput(existing),
+          mode,
+          now,
+          userPreferences.preferredTimezone,
+        ),
+        now,
         userPreferences.preferredTimezone,
       ),
-    });
+    );
 
     const finalRecord = updated;
 
@@ -392,13 +389,6 @@ export class SubscriptionService {
    * still-billing `cancelling` subscription never stopped, so moving its anchor
    * would shift a cycle that was never interrupted. Only an ENDED one is asked
    * for a date.
-   *
-   * Renewing also clears any pause. A paused subscription is offered `cancel`,
-   * and a cancelled one is offered `renew`, so the pause columns outlive the
-   * cancellation they were buried under — left in place they return the
-   * restarted subscription to an indefinite pause, which drops every future
-   * occurrence from spend. Renew means live again; nothing else can clear them
-   * from here, because `resume` is not offered on a cancelled subscription.
    */
   static async renewSubscription(
     id: string,
@@ -412,19 +402,27 @@ export class SubscriptionService {
       throw new SubscriptionNotFoundError();
     }
 
-    const updated = await deps.repository.update(id, {
-      willBeCancelledAt: null,
-      pausedAt: null,
-      resumeAt: null,
-      status: "active",
-      ...(payload.paymentDate ? { paymentDate: payload.paymentDate } : {}),
-    });
+    const { preferences, rates } =
+      await SubscriptionService.getPreferencesAndRates(userId, deps);
+
+    const now = new Date();
+    const updated = await deps.repository.update(
+      id,
+      SubscriptionService.toLifecycleUpdate(
+        existing,
+        renew(
+          SubscriptionService.toTransitionInput(existing),
+          payload.paymentDate ?? null,
+          now,
+        ),
+        now,
+        preferences.preferredTimezone,
+      ),
+    );
 
     const withRenewalWorkflow = updated;
 
     const phases = await deps.phaseRepository.findBySubscriptionId(id);
-    const { preferences, rates } =
-      await SubscriptionService.getPreferencesAndRates(userId, deps);
     return SubscriptionService.mapToDto(
       withRenewalWorkflow,
       preferences,
@@ -454,20 +452,27 @@ export class SubscriptionService {
     const { preferences, rates } =
       await SubscriptionService.getPreferencesAndRates(userId, deps);
 
-    if (
-      SubscriptionService.currentStatus(
-        existing,
-        preferences.preferredTimezone,
-      ) === "paused"
-    ) {
+    const now = new Date();
+    const patch = pause(
+      SubscriptionService.toTransitionInput(existing),
+      payload.resumeAt ?? null,
+      now,
+      preferences.preferredTimezone,
+    );
+
+    if (!patch) {
       throw new AlreadyPausedError();
     }
 
-    const updated = await deps.repository.update(id, {
-      status: "paused",
-      pausedAt: new Date().toISOString(),
-      resumeAt: payload.resumeAt ?? null,
-    });
+    const updated = await deps.repository.update(
+      id,
+      SubscriptionService.toLifecycleUpdate(
+        existing,
+        patch,
+        now,
+        preferences.preferredTimezone,
+      ),
+    );
 
     const phases = await deps.phaseRepository.findBySubscriptionId(id);
 
@@ -492,31 +497,26 @@ export class SubscriptionService {
     // Before the guard, for the same reason as `pauseSubscription`.
     const preferences = await deps.userService.getUserPreferences(userId);
 
-    if (
-      SubscriptionService.currentStatus(
-        existing,
-        preferences.preferredTimezone,
-      ) !== "paused"
-    ) {
+    const now = new Date();
+    const patch = resume(
+      SubscriptionService.toTransitionInput(existing),
+      now,
+      preferences.preferredTimezone,
+    );
+
+    if (!patch) {
       throw new NotPausedError();
     }
 
-    const nextOccurrence = RecurrenceUtils.getNextOccurrence(
-      DateTimezoneUtils.toCalendarDay(existing.paymentDate),
-      existing.every,
-      existing.period as SubscriptionPeriod,
-      DateTimezoneUtils.currentCalendarDay(
-        new Date(),
+    const updated = await deps.repository.update(
+      id,
+      SubscriptionService.toLifecycleUpdate(
+        existing,
+        patch,
+        now,
         preferences.preferredTimezone,
       ),
     );
-
-    const updated = await deps.repository.update(id, {
-      status: "active",
-      pausedAt: null,
-      resumeAt: null,
-      paymentDate: new Date(nextOccurrence.getTime()).toISOString(),
-    });
 
     const rates = await deps.currencyService.getRates(
       preferences.preferredCurrency,
@@ -738,6 +738,52 @@ export class SubscriptionService {
     return new Date(value);
   }
 
+  /** The record as the pure transitions read it: every date an ISO string. */
+  private static toTransitionInput(
+    record: SubscriptionRecord,
+  ): TransitionInput {
+    return {
+      paymentDate: record.paymentDate,
+      every: record.every,
+      period: record.period as SubscriptionPeriod,
+      willBeCancelledAt: SubscriptionService.normalizeDate(
+        record.willBeCancelledAt,
+      ),
+      pausedAt: record.pausedAt,
+      resumeAt: record.resumeAt,
+    };
+  }
+
+  private static toLifecycleUpdate(
+    record: SubscriptionRecord,
+    patch: TransitionPatch,
+    now: Date,
+    timezone?: string,
+  ): Partial<SubscriptionInsert> {
+    const { willBeCancelledAt, ...rest } = patch;
+
+    return {
+      ...rest,
+      // Keyed on presence, not on value, and `cancelled_at` is the one
+      // Date-mode column. Collapsing this to `willBeCancelledAt ? … : null`
+      // type-checks and passes every test, and silently un-cancels every
+      // subscription anyone pauses or resumes: neither transition touches the
+      // cancellation, so the key is absent rather than null.
+      ...("willBeCancelledAt" in patch
+        ? {
+            willBeCancelledAt: willBeCancelledAt
+              ? new Date(willBeCancelledAt)
+              : null,
+          }
+        : {}),
+      status: SubscriptionService.currentStatus(
+        { ...record, ...patch },
+        now,
+        timezone,
+      ),
+    };
+  }
+
   /**
    * The status the row's date columns say it has right now. Every lifecycle
    * guard reads this rather than `record.status`, which is a cache the client
@@ -745,6 +791,10 @@ export class SubscriptionService {
    * `resume_at` has elapsed reads `active` everywhere while the column still
    * says `paused`, and a guard on the column refuses an action the same row
    * advertises in `allowedActions`.
+   *
+   * `now` is the same instant the transition ran against. Read twice, a clock
+   * that crosses midnight in between decides the patch on one calendar day and
+   * the status column on the next.
    */
   private static currentStatus(
     record: {
@@ -752,6 +802,7 @@ export class SubscriptionService {
       pausedAt: string | null;
       resumeAt: string | null;
     },
+    now: Date,
     timezone?: string,
   ): SubscriptionStatus {
     return deriveSubscriptionStatus(
@@ -762,7 +813,7 @@ export class SubscriptionService {
         pausedAt: record.pausedAt,
         resumeAt: record.resumeAt,
       },
-      new Date(),
+      now,
       timezone,
     );
   }

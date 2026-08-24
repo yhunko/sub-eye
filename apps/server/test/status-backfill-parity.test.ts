@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from "bun:test";
 import { neon } from "@neondatabase/serverless";
-import { deriveSubscriptionStatus } from "@subeye/model";
+import { deriveSubscriptionStatus } from "@subeye/lifecycle";
 
 const url = process.env.PARITY_DATABASE_URL;
 

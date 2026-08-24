@@ -1,3 +1,4 @@
+import { shouldIncludeOccurrence } from "@subeye/lifecycle";
 import type {
   CategoryDto,
   CategorySpendingDto,
@@ -9,7 +10,6 @@ import type {
   SubscriptionPeriod,
   UpcomingRenewalDto,
 } from "@subeye/model";
-import { shouldIncludeOccurrence } from "@subeye/model";
 import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { isAfter, isBefore } from "date-fns";
 import { isOccurrencePaused } from "./pause";

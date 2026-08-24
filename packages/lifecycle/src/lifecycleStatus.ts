@@ -1,5 +1,5 @@
+import type { SubscriptionStatus } from "@subeye/model";
 import { DateTimezoneUtils } from "@subeye/time";
-import type { SubscriptionStatus } from "./subscriptionStatus";
 
 export const subscriptionLifecycleStatuses = [
   "active",

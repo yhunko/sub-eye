@@ -3,7 +3,7 @@ import {
   deriveSubscriptionStatus,
   getSubscriptionLifecycleStatus,
   subscriptionStatuses,
-} from "@subeye/model";
+} from "../src";
 
 const now = new Date("2026-07-20T12:00:00.000Z");
 const future = "2026-09-01T00:00:00.000Z";
@@ -17,7 +17,7 @@ describe("deriveSubscriptionStatus — day boundaries", () => {
     const lateOnTheThirtyFirst = new Date("2026-08-31T22:00:00.000Z");
     const input = { willBeCancelledAt: "2026-09-01T00:00:00.000Z" };
 
-    expect(deriveSubscriptionStatus(input, lateOnTheThirtyFirst)).toBe(
+    expect(deriveSubscriptionStatus(input, lateOnTheThirtyFirst, "UTC")).toBe(
       "cancelling",
     );
     expect(
@@ -32,9 +32,9 @@ describe("deriveSubscriptionStatus — day boundaries", () => {
     const eveningOfTheThirtyFirst = new Date("2026-09-01T00:30:00.000Z");
     const input = { willBeCancelledAt: "2026-09-01T00:00:00.000Z" };
 
-    expect(deriveSubscriptionStatus(input, eveningOfTheThirtyFirst)).toBe(
-      "cancelled",
-    );
+    expect(
+      deriveSubscriptionStatus(input, eveningOfTheThirtyFirst, "UTC"),
+    ).toBe("cancelled");
     expect(
       deriveSubscriptionStatus(
         input,

@@ -1,10 +1,10 @@
+import { isCurrentlyActiveSubscription } from "@subeye/lifecycle";
 import type {
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
   WeeklyRenewalsSummaryDto,
 } from "@subeye/model";
-import { isCurrentlyActiveSubscription } from "@subeye/model";
 import { CurrencyUtils } from "@subeye/money";
 import { AnalyticsCalculator } from "@subeye/spend";
 import { DateTimezoneUtils } from "@subeye/time";

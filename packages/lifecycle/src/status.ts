@@ -1,29 +1,16 @@
+import type {
+  SubscriptionAllowedAction,
+  SubscriptionStatus,
+} from "@subeye/model";
 import { DateTimezoneUtils } from "@subeye/time";
 
-/**
- * The persisted lifecycle status of a subscription.
- *
- * Before v4 this was derived on every read from the single nullable column
- * `subscriptions.cancelled_at` (see `subscriptionLifecycle.ts`), which meant it
- * could not be filtered in SQL and could not express "paused until 15 March".
- * The order below is the order of the `subscription_status` pgEnum — do not
- * reorder it without a migration.
- *
- * - `active`     — billing normally
- * - `paused`     — temporarily suspended; occurrences inside the pause window
- *                  contribute nothing to spend
- * - `cancelling` — cancelled but still inside the paid period (this is the value
- *                  the old derived code spelled `cancelledButActive`)
- * - `cancelled`  — the paid period has elapsed
- */
-export const subscriptionStatuses = [
-  "active",
-  "paused",
-  "cancelling",
-  "cancelled",
-] as const;
-
-export type SubscriptionStatus = (typeof subscriptionStatuses)[number];
+// The vocabulary itself lives in @subeye/model — its DTO schemas validate
+// against it, so it cannot live in a package that imports model.
+export {
+  subscriptionAllowedActions,
+  subscriptionStatuses,
+} from "@subeye/model";
+export type { SubscriptionAllowedAction, SubscriptionStatus };
 
 type StatusInput = {
   willBeCancelledAt?: string | null;
@@ -101,21 +88,6 @@ export const deriveSubscriptionStatus = (
 
   return "paused";
 };
-
-export const subscriptionAllowedActions = [
-  "edit",
-  "pause",
-  "resume",
-  "cancel",
-  "renew",
-  "delete",
-  "addPhase",
-  "applyPhaseNow",
-  "cancelPhase",
-] as const;
-
-export type SubscriptionAllowedAction =
-  (typeof subscriptionAllowedActions)[number];
 
 /**
  * The single source of truth for which lifecycle actions are legal. Returned

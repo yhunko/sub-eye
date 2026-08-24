@@ -1,8 +1,8 @@
+import { deriveSubscriptionStatus, getAllowedActions } from "@subeye/lifecycle";
 import type {
   SubscriptionBillingDetails,
   SubscriptionDto,
 } from "@subeye/model";
-import { deriveSubscriptionStatus, getAllowedActions } from "@subeye/model";
 import type { PhaseProjection } from "@subeye/pricing";
 import type { SubscriptionRecord } from "./subscriptionRepository";
 

@@ -19,13 +19,13 @@ import {
   transform,
   variant,
 } from "valibot";
-import { SubscriptionPeriod } from "../../types";
-import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
-import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
 import {
+  SubscriptionPeriod,
   subscriptionAllowedActions,
   subscriptionStatuses,
-} from "./subscriptionStatus";
+} from "../../types";
+import { PricePhaseDtoSchema, pricePhaseKinds } from "./pricePhaseSchemas";
+import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
 
 const currencyCodeSchema = pipe(
   string(),
