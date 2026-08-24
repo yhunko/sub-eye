@@ -9,8 +9,7 @@
   "dependencies": {
     "@subeye/money": "workspace:*",
     "@subeye/model": "workspace:*",
-    "@subeye/time": "workspace:*",
-    "date-fns": "^4.1.0"
+    "@subeye/time": "workspace:*"
   },
   "scripts": {
     "lint": "biome check .",

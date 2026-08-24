@@ -229,8 +229,8 @@ describe("AnalyticsCalculator — cancelled subscriptions", () => {
     );
 
     // March: payment on March 13 (< April 13) → included
-    expect(trend[0].amount).toBeCloseTo(9.99);
+    expect(trend[0]!.amount).toBeCloseTo(9.99);
     // April: payment on April 13 === willBeCancelledAt → excluded
-    expect(trend[1].amount).toBe(0);
+    expect(trend[1]!.amount).toBe(0);
   });
 });

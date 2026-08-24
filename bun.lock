@@ -141,7 +141,6 @@
         "@subeye/model": "workspace:*",
         "@subeye/money": "workspace:*",
         "@subeye/time": "workspace:*",
-        "date-fns": "^4.1.0",
       },
     },
     "packages/spend": {

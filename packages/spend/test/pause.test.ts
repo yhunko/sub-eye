@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { isOccurrencePaused } from "../src/pause";
+import { isOccurrencePaused, type PauseWindow } from "../src/pause";
 
 // Paused 2026-01-10, resuming 2026-03-15.
 const window = {
@@ -10,7 +10,7 @@ const window = {
 describe("isOccurrencePaused", () => {
   const cases: Array<{
     name: string;
-    window: typeof window | Record<string, null>;
+    window: PauseWindow;
     at: string;
     expected: boolean;
   }> = [
@@ -78,9 +78,9 @@ describe("isOccurrencePaused", () => {
 
   for (const testCase of cases) {
     it(testCase.name, () => {
-      expect(
-        isOccurrencePaused(testCase.window as never, new Date(testCase.at)),
-      ).toBe(testCase.expected);
+      expect(isOccurrencePaused(testCase.window, new Date(testCase.at))).toBe(
+        testCase.expected,
+      );
     });
   }
 });
