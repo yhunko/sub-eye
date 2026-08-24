@@ -127,6 +127,10 @@ module.exports = {
   ],
   options: {
     tsConfig: { fileName: "tsconfig.json" },
+    // Without this, `import type` is erased before the graph is built and every
+    // rule below silently ignores it — and with `verbatimModuleSyntax` on, most
+    // cross-package and cross-layer edges in this repo ARE type-only.
+    tsPreCompilationDeps: true,
     exclude: {
       path: "(^node_modules)|(/dist/)|(/coverage/)",
     },
