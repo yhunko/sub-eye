@@ -17,6 +17,7 @@
     "@subeye/pricing": "workspace:*",
     "@subeye/model": "workspace:*",
     "@subeye/spend": "workspace:*",
+    "@subeye/store": "workspace:*",
     "@subeye/time": "workspace:*",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.2",

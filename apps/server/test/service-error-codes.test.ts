@@ -4,7 +4,7 @@ import {
   NotPausedError,
   PhaseAlreadyAppliedError,
   SubscriptionNotFoundError,
-} from "../src/domains/subscription/subscriptionErrors";
+} from "@subeye/store";
 import { handleServiceError, onInvalid } from "../src/utils/routeUtils";
 
 const fakeContext = () => {

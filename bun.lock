@@ -99,6 +99,7 @@
         "@subeye/money": "workspace:*",
         "@subeye/pricing": "workspace:*",
         "@subeye/spend": "workspace:*",
+        "@subeye/store": "workspace:*",
         "@subeye/time": "workspace:*",
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.45.2",
@@ -164,6 +165,18 @@
       },
       "devDependencies": {
         "@date-fns/tz": "^1.4.1",
+      },
+    },
+    "packages/store": {
+      "name": "@subeye/store",
+      "version": "0.0.1",
+      "dependencies": {
+        "@subeye/lifecycle": "workspace:*",
+        "@subeye/model": "workspace:*",
+        "@subeye/money": "workspace:*",
+        "@subeye/pricing": "workspace:*",
+        "@subeye/spend": "workspace:*",
+        "@subeye/time": "workspace:*",
       },
     },
     "packages/time": {
@@ -1141,6 +1154,8 @@
     "@subeye/server": ["@subeye/server@workspace:apps/server"],
 
     "@subeye/spend": ["@subeye/spend@workspace:packages/spend"],
+
+    "@subeye/store": ["@subeye/store@workspace:packages/store"],
 
     "@subeye/time": ["@subeye/time@workspace:packages/time"],
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "@subeye/model";
-import { SubscriptionCategoryNotFoundError } from "../src/domains/subscription/subscriptionErrors";
+import { SubscriptionCategoryNotFoundError } from "@subeye/store";
 import { SubscriptionService } from "../src/domains/subscription/subscriptionService";
 
 const addPayload = {
