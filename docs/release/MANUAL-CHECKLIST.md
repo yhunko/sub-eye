@@ -213,6 +213,30 @@ consistent with it.
    Search History is the brand picker: the text typed into it goes to
    Brandfetch. **Not** linked — no account id or Clerk token travels with that
    request, and the app never stores the results.
+
+   ### The table above is superseded by the offline flip (Plan B)
+
+   With accounts and the API gone, there is no email address, no name and no
+   user id to collect, and the subscriptions you type never leave the device —
+   data that stays on the device is not "collected" under Apple's definition.
+   Declare this instead:
+
+   | Category | Type | Linked to the user |
+   | --- | --- | --- |
+   | Diagnostics | Crash Data | **no** |
+   | Purchases | Purchase History | **no** |
+   | Browsing/Search | Search History | **no** |
+
+   Nothing is linked any more, because there is no identifier left to link it
+   to: `shared/lib/sentry.ts` sets `sendDefaultPii: false` and attaches no user,
+   and `entities/pro/model/purchases.ts` configures RevenueCat with
+   `appUserID: null`, which makes the app user id anonymous and device-local.
+
+   **`app.json`'s `NSPrivacyCollectedDataTypes` still declares the old seven and
+   still says `Linked: true`.** Editing it is a mobile change and is deliberately
+   not part of the Plan B server-removal commits — do it before the first
+   submission, and keep it matching the table above, or the manifest and the
+   App Store Connect answers disagree.
 4. Age rating: 4+. No objectionable content.
 5. **Encryption:** `usesNonExemptEncryption` is already `false` in `app.json`,
    so App Store Connect should not ask. If it does, answer that you use only

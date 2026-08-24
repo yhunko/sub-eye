@@ -25,12 +25,12 @@ export const en = {
   meta: {
     title: "SubEye — know what your subscriptions cost",
     description:
-      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No bank login, no inbox scanning. iPhone.",
+      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No account, no bank login, no network. iPhone.",
   },
 
   hero: {
     title: "Know what your subscriptions cost. All of them.",
-    lead: "You type in what you pay. SubEye tells you what it costs now, what it becomes, and the day it leaves your account.",
+    lead: "You type in what you pay. SubEye tells you what it costs now, what it becomes, and the day it leaves your account — with nothing to sign up for and no network to be on.",
     status: "Coming to the App Store",
     platform: "iPhone",
     ctaHow: "See how it works",
@@ -61,15 +61,19 @@ export const en = {
   },
 
   bank: {
-    title: "SubEye never touches your bank.",
-    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay. That is the whole trade — a minute of typing, and nobody gets a key to your accounts.",
+    title: "SubEye never touches your bank. Or the network.",
+    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay, and then keeps it on the phone — no account to create, no server holding a copy. The other half of that trade is honest: your subscriptions are on that phone. An iPhone backup carries them to a new one, and there is no sync between two devices.",
     denials: [
       "No bank linking",
       "No email scanning",
       "No “we found 3 subscriptions”",
     ],
     /** `languages` is appended at the call site — it is one string, not two. */
-    pills: ["Nothing sold, nothing tracked", "Delete your account, for real"],
+    pills: [
+      "Nothing sold, nothing tracked",
+      "No sign-up, nothing to sign in to",
+      "Works with the network off",
+    ],
   },
 
   does: {
@@ -114,6 +118,7 @@ export const en = {
     freeBody:
       "Unlimited subscriptions. The whole dashboard. Search, filters, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. Not a trial and not a teaser.",
     freeItems: [
+      "No account, and it works offline",
       "Unlimited subscriptions",
       "Spend, forecast and six-month trend",
       "Pause, cancel, renew",
@@ -152,11 +157,11 @@ export const en = {
       },
       {
         q: "Is my data safe?",
-        a: "SubEye stores your email, your name, an account id, and the subscriptions you typed in. None of it is sold, none of it feeds advertising, and there is no tracking. Deleting your account in Settings removes the account and every subscription in it, for real. The full list of processors is in the privacy policy.",
+        a: "It never leaves your phone. There is no account, no server and no database behind SubEye — nothing to breach, nothing to sell, and nobody to hand it to. Settings → Erase all data removes every subscription, reminder and setting from the device, for real. The handful of services the app still talks to, and exactly what each one sees, is in the privacy policy.",
       },
       {
         q: "Do I need an account?",
-        a: "Yes. Your subscriptions live on the server so they survive a lost phone, a new phone and a reinstall. Sign in with email, Google, GitHub or Apple.",
+        a: "No. There is nothing to sign up for and nothing to sign in to — open the app and start typing. Your subscriptions live on the phone, which is what an iPhone backup carries to a new one. There is no sync between two devices today.",
       },
       {
         q: "What happens when a price changes?",
