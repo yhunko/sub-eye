@@ -14,7 +14,6 @@ export function DatesStepPage() {
       <Stack.Screen
         options={{
           title: m.form_titleNew(),
-          headerBackButtonDisplayMode: "minimal",
         }}
       />
       <StepScreen>

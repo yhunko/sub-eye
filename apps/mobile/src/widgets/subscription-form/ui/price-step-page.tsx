@@ -21,9 +21,6 @@ export function PriceStepPage() {
       <Stack.Screen
         options={{
           title: m.form_titleNew(),
-          // Otherwise the back button spells out the previous screen's title,
-          // which on a stepped form is this screen's title as well.
-          headerBackButtonDisplayMode: "minimal",
         }}
       />
       <StepScreen>

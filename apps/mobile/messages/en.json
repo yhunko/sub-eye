@@ -186,8 +186,6 @@
   "form_currency": "Currency",
   "form_category": "Category",
   "form_categoryNone": "None",
-  "form_categoryCreate": "Create “{name}”",
-  "form_categorySearchOrCreate": "Search or create",
   "category_editTitle": "Edit category",
   "category_newTitle": "New category",
   "category_add": "Add category",

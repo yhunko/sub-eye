@@ -1,10 +1,20 @@
 import {
+  router,
   Stack,
   useGlobalSearchParams,
   useLocalSearchParams,
 } from "expo-router";
 import { useRef } from "react";
-import { nativeHeaderChrome } from "@/shared/ui/header";
+import { m } from "@/shared/i18n";
+import {
+  categorySheetChrome,
+  nativeHeaderChrome,
+  nativeSearchBarChrome,
+} from "@/shared/ui/header";
+import {
+  categoryAddHeaderOptions,
+  categorySearch,
+} from "@/widgets/categories-page";
 import { SubscriptionFormProvider } from "@/widgets/subscription-form";
 
 /**
@@ -29,6 +39,10 @@ import { SubscriptionFormProvider } from "@/widgets/subscription-form";
 // only route in this stack — no back button, and no form for it to write into.
 export const unstable_settings = { anchor: "index" };
 
+// The singleton, not `useRouter()`: these options are built once, outside the
+// component, so they never carry a hook's identity into a screen descriptor.
+const openNewCategory = () => router.push("/subscription-form/category/new");
+
 export default function SubscriptionFormLayout() {
   // `?id=` lands in different places depending on how the modal was opened: a
   // push attaches it to THIS route, a deep link (`subeye:///subscription-form
@@ -44,11 +58,43 @@ export default function SubscriptionFormLayout() {
 
   return (
     <SubscriptionFormProvider id={id}>
-      <Stack screenOptions={nativeHeaderChrome}>
+      <Stack
+        screenOptions={{
+          ...nativeHeaderChrome,
+          // Every screen in here is pushed from "New subscription", so the
+          // default back label repeated that title on all of them — a whole
+          // header slot spent saying where you already know you are. The
+          // chevron alone still says "back".
+          headerBackButtonDisplayMode: "minimal",
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="price" />
         <Stack.Screen name="dates" />
-        <Stack.Screen name="category" />
+        {/* The picker's chrome is declared HERE and not on the screen: none of
+            it depends on anything the screen holds, and options set from inside
+            a screen are re-pushed through `navigation.setOptions` on every
+            render — which for a search field means rebuilding the whole
+            UISearchController once per keystroke. Same reason the subscriptions
+            list declares its field on its layout.
+
+            The field only filters now. Typing a name that matched nothing used
+            to be the sole way to create one; that is the `+` and the shared
+            sheet, so the placeholder is no longer hiding a feature. */}
+        <Stack.Screen
+          name="category/index"
+          options={{
+            title: m.form_category(),
+            headerSearchBarOptions: {
+              ...nativeSearchBarChrome,
+              placeholder: m.subs_searchPlaceholder(),
+              onChangeText: (event) =>
+                categorySearch.set(event.nativeEvent.text),
+            },
+            ...categoryAddHeaderOptions(openNewCategory),
+          }}
+        />
+        <Stack.Screen name="category/new" options={categorySheetChrome} />
         <Stack.Screen name="brand" />
       </Stack>
     </SubscriptionFormProvider>

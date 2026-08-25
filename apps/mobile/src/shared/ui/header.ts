@@ -82,6 +82,24 @@ export const nativeSheetChrome = {
   contentStyle: { backgroundColor: colors.bg },
 };
 
+// The category editor's sheet — the one sheet in the app that KEEPS its header.
+// Save and delete used to be buttons under a 120-tile emoji grid, which put both
+// of them below the fold of a 0.9 detent: committing a name you had already
+// typed meant scrolling past every emoji first. The sheet's own nav bar is the
+// only slot that cannot scroll away.
+//
+// `headerShown` has to be set back on explicitly — `nativeSheetChrome` turns it
+// off, and spreading `nativeHeaderChrome` only STYLES a header, it does not
+// enable one.
+//
+// Shared because two stacks present this sheet: Settings creates and edits
+// through it, and the subscription form creates through it.
+export const categorySheetChrome = {
+  ...nativeSheetChrome,
+  ...nativeHeaderChrome,
+  headerShown: true,
+};
+
 // The same field, moved into the nav bar itself (iOS 26 `integrated`).
 //
 // The form's brand step has a step indicator to show before anything else, and
