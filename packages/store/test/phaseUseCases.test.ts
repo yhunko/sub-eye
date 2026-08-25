@@ -3,8 +3,6 @@ import { cancelPhase, startPhase } from "../src";
 import { NOW, phaseRecord, subscriptionRecord } from "./fixtures";
 import { inMemoryPorts } from "./inMemoryPorts";
 
-const ENDS_AT = "2026-10-23T00:00:00.000Z";
-
 const portsFor = (phases = [] as ReturnType<typeof phaseRecord>[]) =>
   inMemoryPorts({
     now: NOW,
@@ -13,40 +11,42 @@ const portsFor = (phases = [] as ReturnType<typeof phaseRecord>[]) =>
   });
 
 describe("startPhase", () => {
-  it("routes kind=trial to the trial schedule: sets the price now and lays down two phases", async () => {
+  // A price of ZERO is a free stretch, and the only difference it makes is the
+  // kind stored against it — the form that produced this asked one question.
+  it("records a zero price as a trial phase, and starts it now", async () => {
     const ports = portsFor();
 
     await startPhase(ports, "sub_1", {
-      kind: "trial",
+      kind: "temporaryPrice",
       promoCost: 0,
-      endsAt: ENDS_AT,
+      startMode: "now",
+      payments: 1,
       standardCost: 12,
     });
 
     const { subscriptions, phases } = ports.dump();
 
-    // The row's own cost is what the user pays right now, so it moves to the
-    // trial price immediately.
     expect(subscriptions[0]?.cost).toBe("0.00");
     expect(subscriptions[0]?.currency).toBe("usd");
 
-    // Two phases: the trial (applied now) + the standard revert.
     expect(phases.map((phase) => phase.kind)).toEqual(["trial", "standard"]);
     expect(phases[0]?.cost).toBe("0.00");
     expect(phases[0]?.appliedAt).toBe(NOW.toISOString());
-    expect(phases[0]?.endsAt).toBe(ENDS_AT);
     expect(phases[1]?.cost).toBe("12.00");
-    expect(phases[1]?.startsAt).toBe(ENDS_AT);
+    // One charge at zero, reverting on the next.
+    expect(phases[0]?.endsAt).toBe("2026-10-05T00:00:00.000Z");
+    expect(phases[1]?.startsAt).toBe("2026-10-05T00:00:00.000Z");
     expect(phases[1]?.appliedAt).toBeNull();
   });
 
-  it("routes kind=intro to the intro schedule", async () => {
+  it("records a price above zero as an intro phase", async () => {
     const ports = portsFor();
 
     await startPhase(ports, "sub_1", {
-      kind: "intro",
+      kind: "temporaryPrice",
       promoCost: 5,
-      endsAt: ENDS_AT,
+      startMode: "now",
+      payments: 3,
       standardCost: 12,
     });
 
@@ -56,13 +56,78 @@ describe("startPhase", () => {
     ]);
   });
 
+  // The whole point of counting charges instead of asking for a date. The
+  // anchor is the 5th and `now` is 24 Aug, so the discounted charges are 5 Sep,
+  // 5 Oct and 5 Nov — and the revert has to land on 5 Dec, the FIRST charge at
+  // the standard price again. A boundary of 5 Nov would silently buy two
+  // discounted payments instead of three.
+  it("closes an intro window on the charge after the last discounted one", async () => {
+    const ports = portsFor();
+
+    await startPhase(ports, "sub_1", {
+      kind: "temporaryPrice",
+      promoCost: 5,
+      startMode: "nextPayment",
+      payments: 3,
+      standardCost: 12,
+    });
+
+    const { phases } = ports.dump();
+
+    expect(phases[0]?.startsAt).toBe("2026-09-05T00:00:00.000Z");
+    expect(phases[0]?.endsAt).toBe("2026-12-05T00:00:00.000Z");
+    expect(phases[1]?.startsAt).toBe("2026-12-05T00:00:00.000Z");
+  });
+
+  // A promo taken mid-cycle does not discount the period already paid for.
+  // Writing the promo onto the row here is what made the app report a discount
+  // a month before it existed.
+  it("leaves today's price alone when the intro starts at the next payment", async () => {
+    const ports = portsFor();
+
+    await startPhase(ports, "sub_1", {
+      kind: "temporaryPrice",
+      promoCost: 5,
+      startMode: "nextPayment",
+      payments: 3,
+      standardCost: 12,
+    });
+
+    const { subscriptions, phases } = ports.dump();
+
+    expect(subscriptions[0]?.cost).toBe("15.00");
+    // Unapplied, so the ordinary due-phase machinery flips the row when the
+    // charge actually arrives.
+    expect(phases[0]?.appliedAt).toBeNull();
+  });
+
+  it("moves the price immediately when the intro starts now", async () => {
+    const ports = portsFor();
+
+    await startPhase(ports, "sub_1", {
+      kind: "temporaryPrice",
+      promoCost: 5,
+      startMode: "now",
+      payments: 1,
+      standardCost: 12,
+    });
+
+    const { subscriptions, phases } = ports.dump();
+
+    expect(subscriptions[0]?.cost).toBe("5.00");
+    expect(phases[0]?.appliedAt).toBe(NOW.toISOString());
+    // One discounted charge (5 Sep), reverting at the next one.
+    expect(phases[0]?.endsAt).toBe("2026-10-05T00:00:00.000Z");
+  });
+
   it("replaces an existing schedule rather than appending to it", async () => {
     const ports = portsFor([phaseRecord({ id: "phase_old" })]);
 
     await startPhase(ports, "sub_1", {
-      kind: "trial",
+      kind: "temporaryPrice",
       promoCost: 0,
-      endsAt: ENDS_AT,
+      startMode: "now",
+      payments: 1,
       standardCost: 12,
     });
 

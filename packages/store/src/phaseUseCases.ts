@@ -13,6 +13,7 @@ import {
   selectDuePhases,
   toStartOfUtcDay,
 } from "@subeye/pricing";
+import { RecurrenceUtils } from "@subeye/time";
 import {
   CannotScheduleCancelledError,
   CustomDateRequiredError,
@@ -50,14 +51,51 @@ export const startPhase = async (
   }
 
   return startPricingSchedule(ports, id, {
-    overrideKind: payload.kind,
+    // One input, two stored kinds. The user is doing ONE thing — putting a
+    // different price on the next few charges — so the form asks once; but a
+    // free stretch and a discounted one read differently in the price history,
+    // and `kind` is a persisted enum, so the distinction is derived here rather
+    // than asked for.
+    overrideKind: payload.promoCost > 0 ? "intro" : "trial",
     overrideCost: payload.promoCost,
     overrideCurrency: payload.currency,
-    endsAt: payload.endsAt,
+    window: {
+      by: "payments",
+      count: payload.payments,
+      from: payload.startMode,
+    },
     standardCost: payload.standardCost,
     standardCurrency: payload.currency,
   });
 };
+
+/**
+ * A trial or intro whose window is a DATE.
+ *
+ * The shape CREATION uses: a brand-new subscription's offer runs from its first
+ * payment to a day the user picked, and there is no history to be off by one
+ * against. Managing an existing subscription goes through `startPhase`, which
+ * counts charges instead.
+ */
+export const startDatedOffer = (
+  ports: Ports,
+  id: string,
+  args: {
+    kind: Extract<PricePhaseKind, "trial" | "intro">;
+    promoCost: number;
+    currency?: string;
+    endsAt: string;
+    standardCost: number;
+  },
+): Promise<SubscriptionDto> =>
+  startPricingSchedule(ports, id, {
+    overrideKind: args.kind,
+    overrideCost: args.promoCost,
+    overrideCurrency: args.currency,
+    window: { by: "date", endsAt: args.endsAt },
+    standardCost: args.standardCost,
+    standardCurrency: args.currency,
+  });
 
 /** Schedule a one-off change of the standard price on a future date. */
 export const schedulePriceChange = async (
@@ -171,6 +209,63 @@ export const applyPhaseByWorkflow = async (
   await applyPhase(ports, subscription, phase);
 };
 
+/**
+ * The window an override occupies.
+ *
+ * `payments` is the shape an offer is actually negotiated in — "99 for three
+ * months, then back to 199" — and deriving the boundary here rather than asking
+ * a caller for a date is what makes the half-open window safe: the revert lands
+ * on the (count + 1)-th charge by construction, so neither the UI nor the user
+ * can be off by one payment.
+ */
+type OverrideWindow =
+  | { by: "date"; endsAt: string }
+  | { by: "payments"; count: number; from: "now" | "nextPayment" };
+
+const resolveOverrideWindow = (
+  subscription: SubscriptionRecord,
+  window: OverrideWindow,
+  now: Date,
+): { startsAt: string; endsAt: string; deferred: boolean } => {
+  if (window.by === "date") {
+    return {
+      startsAt: now.toISOString(),
+      endsAt: toStartOfUtcDay(window.endsAt),
+      deferred: false,
+    };
+  }
+
+  const period = subscription.period as "day" | "week" | "month" | "year";
+  // The first charge the discount covers. `getNextOccurrence` counts a payment
+  // falling TODAY as the next one, which is the honest reading: it has not been
+  // taken yet.
+  const firstCharge = RecurrenceUtils.getNextOccurrence(
+    subscription.paymentDate,
+    subscription.every,
+    period,
+    now,
+  );
+
+  // Walk `count` whole cycles past the first discounted charge. The result is
+  // the first charge at the standard price again, which is exactly where the
+  // half-open window has to close.
+  let boundary = firstCharge;
+  for (let taken = 0; taken < window.count; taken += 1) {
+    boundary = RecurrenceUtils.addPeriod(boundary, subscription.every, period, {
+      anchorDate: firstCharge,
+    });
+  }
+
+  return {
+    startsAt:
+      window.from === "now"
+        ? now.toISOString()
+        : toStartOfUtcDay(firstCharge.toISOString()),
+    endsAt: toStartOfUtcDay(boundary.toISOString()),
+    deferred: window.from === "nextPayment",
+  };
+};
+
 const startPricingSchedule = async (
   ports: Ports,
   id: string,
@@ -178,7 +273,7 @@ const startPricingSchedule = async (
     overrideKind: Extract<PricePhaseKind, "trial" | "intro">;
     overrideCost: number;
     overrideCurrency?: string;
-    endsAt: string;
+    window: OverrideWindow;
     standardCost: number;
     standardCurrency?: string;
   },
@@ -186,18 +281,28 @@ const startPricingSchedule = async (
   const existing = await requireSubscription(ports, id);
   const now = ports.now();
 
-  const endsAt = toStartOfUtcDay(args.endsAt);
+  const { startsAt, endsAt, deferred } = resolveOverrideWindow(
+    existing,
+    args.window,
+    now,
+  );
   assertPhaseWindow(existing, endsAt, now);
 
   const overrideCurrency = args.overrideCurrency ?? existing.currency;
   const standardCurrency = args.standardCurrency ?? existing.currency;
-  const startsAt = now.toISOString();
+  const writtenAt = now.toISOString();
 
-  // The override price is what the user pays right now.
-  await ports.subscriptions.update(id, {
-    cost: normalizeAmount(args.overrideCost),
-    currency: overrideCurrency,
-  });
+  // Only an offer that is live NOW moves the row. A deferred one must leave
+  // today's price alone — the period the user has already paid for was not
+  // discounted, and rewriting it here is what made the app claim a discount a
+  // month before it existed. Its phase carries no `appliedAt`, so the ordinary
+  // due-phase machinery flips the row when the charge actually arrives.
+  if (!deferred) {
+    await ports.subscriptions.update(id, {
+      cost: normalizeAmount(args.overrideCost),
+      currency: overrideCurrency,
+    });
+  }
 
   // A trial/intro defines a fresh pricing schedule — replace any existing one.
   await ports.phases.replaceAll(id, [
@@ -209,9 +314,9 @@ const startPricingSchedule = async (
       currency: overrideCurrency,
       startsAt,
       endsAt,
-      appliedAt: startsAt,
-      createdAt: startsAt,
-      updatedAt: startsAt,
+      appliedAt: deferred ? null : writtenAt,
+      createdAt: writtenAt,
+      updatedAt: writtenAt,
     },
     {
       id: ports.newId(),
@@ -222,8 +327,8 @@ const startPricingSchedule = async (
       startsAt: endsAt,
       endsAt: null,
       appliedAt: null,
-      createdAt: startsAt,
-      updatedAt: startsAt,
+      createdAt: writtenAt,
+      updatedAt: writtenAt,
     },
   ]);
 

@@ -24,6 +24,7 @@
     "@subeye/money": "workspace:*",
     "@subeye/reminders": "workspace:*",
     "@subeye/store": "workspace:*",
+    "@subeye/time": "workspace:*",
     "@tanstack/react-query": "^5.100.10",
     "date-fns": "^4.1.0",
     "expo": "~57.0.7",

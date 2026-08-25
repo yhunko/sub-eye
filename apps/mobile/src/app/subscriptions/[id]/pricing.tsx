@@ -4,7 +4,7 @@ import {
   type SheetIntent,
 } from "@/widgets/manage-pricing-sheet";
 
-const INTENTS: SheetIntent[] = ["pending", "schedule", "trial", "intro"];
+const INTENTS: SheetIntent[] = ["pending", "schedule", "temporary"];
 
 const asIntent = (value: string | undefined): SheetIntent =>
   // Anything else — a hand-typed deep link, or the confirm-only "end the offer

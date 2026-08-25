@@ -26,16 +26,17 @@ export type PricingMenuItem = {
 const LABEL: Record<PricingIntent, () => string> = {
   pending: m.pricing_pendingTitle,
   schedule: m.pricing_scheduleTitle,
-  trial: m.pricing_trialTitle,
-  intro: m.pricing_introTitle,
+  temporary: m.pricing_temporaryTitle,
   endOffer: m.pricing_endOfferTitle,
 };
 
 const ICON: Record<PricingIntent, { ios: SFSymbol; android: AndroidSymbol }> = {
   pending: { ios: "clock.badge.checkmark", android: "schedule" },
-  schedule: { ios: "calendar.badge.clock", android: "edit_calendar" },
-  trial: { ios: "gift", android: "redeem" },
-  intro: { ios: "percent", android: "percent" },
+  // The price itself against a discount on it — which is the whole difference
+  // between the two things you can do to one. Arrows were tried and read as
+  // navigation rather than as meaning.
+  schedule: { ios: "banknote", android: "payments" },
+  temporary: { ios: "percent", android: "percent" },
   endOffer: { ios: "forward.end", android: "skip_next" },
 };
 
@@ -48,7 +49,7 @@ const ICON: Record<PricingIntent, { ios: SFSymbol; android: AndroidSymbol }> = {
  * first — a menu is where UIKit puts a choice between actions, and it is one tap
  * closer from both.
  *
- * Three of them open the sheet straight at their own form. "End the offer early"
+ * Two of them open the sheet straight at their own form. "End the offer early"
  * has no form — it is one confirm and one write — so it never routes.
  */
 export function usePricingMenu(id: string): PricingMenuItem[] {
@@ -92,8 +93,7 @@ export function usePricingMenu(id: string): PricingMenuItem[] {
         })
       : undefined,
     schedule: m.pricing_scheduleHint(),
-    trial: m.pricing_trialHint(),
-    intro: m.pricing_introHint(),
+    temporary: m.pricing_temporaryHint(),
     endOffer: reversion
       ? m.pricing_endOfferHint({ date: formatShortDate(reversion.startsAt) })
       : undefined,

@@ -384,7 +384,15 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             />
             <View style={styles.alertText}>
               <Text style={styles.alertTitle}>
-                {m.detail_priceChangeTitle()}
+                {/* Only the payment that is ACTUALLY at the new price may be
+                    called the next one. An intro discount reverting in three
+                    months is an upcoming phase too, and the flat headline
+                    claimed its change landed on a charge that is still at the
+                    old price — contradicting the very sentence beneath it. */}
+                {Date.parse(subscription.nextPaymentDate) >=
+                Date.parse(scheduledPriceChange.effectiveAt)
+                  ? m.detail_priceChangeTitle()
+                  : m.detail_priceChangeLaterTitle()}
               </Text>
               <Text style={styles.alertBody}>
                 {m.detail_priceChangeBody({

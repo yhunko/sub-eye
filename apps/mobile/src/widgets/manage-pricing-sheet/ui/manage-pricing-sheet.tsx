@@ -16,10 +16,10 @@ import {
   formatShortDate,
 } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
-import { OfferView, PendingView, ScheduleView } from "./pricing-views";
+import { PendingView, ScheduleView, TemporaryPriceView } from "./pricing-views";
 
 /** The intents that need a screen. "End the offer early" is a confirm, not a form. */
-export type SheetIntent = "pending" | "schedule" | "trial" | "intro";
+export type SheetIntent = "pending" | "schedule" | "temporary";
 
 /**
  * One pricing intent, opened straight at its own form.
@@ -92,10 +92,9 @@ export function ManagePricingSheet({
           onClose={close}
           onSubmit={start}
         />
-      ) : intent === "trial" || intent === "intro" ? (
-        <OfferView
+      ) : intent === "temporary" ? (
+        <TemporaryPriceView
           subscription={subscription}
-          kind={intent}
           subtitle={subtitle}
           onClose={close}
           onSubmit={start}

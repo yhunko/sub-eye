@@ -32,6 +32,19 @@ Nothing reads a clock or invents an id on its own: `ports.now()` and
   copying the price is not enough — it must also close the preceding phase's
   `endsAt` and pull the applied phase's `startsAt` back to now if it was in the
   future. `test/phaseApplyNow.test.ts` is the regression.
+- **An intro discount is measured in CHARGES, not in days.** `startPhase` takes
+  `payments` + `startMode` and `startPricingSchedule` derives the boundary from
+  the recurrence — `count` whole cycles past the first discounted charge, which
+  lands the revert on the first charge at the standard price again. Asking a
+  caller for an `endsAt` is what made the half-open window off by one payment:
+  the date of the LAST discounted charge silently bought one fewer. Creation
+  still passes a date (`startDatedOffer`) because a brand-new subscription's
+  offer has no history to be off against.
+- **A deferred offer must not move the row.** `startMode: "nextPayment"` leaves
+  `cost` alone and writes the phase with `appliedAt: null`, so the ordinary
+  due-phase machinery flips the price when the charge arrives. Writing it
+  immediately made the app report a discount a month before it existed, on a
+  period the user had already paid full price for.
 - **Cancelling does not delete pending phases.** Keeping them is what lets renew
   restore the real reversion price instead of stranding the user on the trial
   cost.

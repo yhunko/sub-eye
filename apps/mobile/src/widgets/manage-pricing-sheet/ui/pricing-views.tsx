@@ -1,8 +1,10 @@
 import type {
+  OfferStartMode,
   PricePhaseDto,
   StartPhaseInput,
   SubscriptionDto,
 } from "@subeye/model";
+import { RecurrenceUtils } from "@subeye/time";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -249,54 +251,164 @@ export function ScheduleView({
   );
 }
 
+/** How many charges a fresh offer covers until told otherwise. */
+const DEFAULT_OFFER_PAYMENTS = 3;
+const MAX_OFFER_PAYMENTS = 60;
+
 /**
- * A trial or an intro discount: a price that runs until a date and then reverts.
+ * The charge the offer reverts on: `count` whole cycles past the first covered
+ * one.
  *
- * The date comes FIRST because it is the decision. Both prices are prefilled
- * with the answer that is almost always right — nothing, then what is being paid
- * today — so an untouched form is already correct.
+ * `RecurrenceUtils` and not hand-rolled month maths, because this must agree
+ * with `startPricingSchedule`, which derives the authoritative boundary the
+ * same way — a preview that disagreed with the write would be worse than no
+ * preview at all. Month-end anchoring (the 31st) is exactly why neither side
+ * adds months by hand.
  */
-export function OfferView({
+const revertDate = (
+  subscription: SubscriptionDto,
+  count: number,
+): Date | null => {
+  const first = new Date(subscription.nextPaymentDate);
+  if (Number.isNaN(first.getTime())) return null;
+
+  let boundary = first;
+  for (let taken = 0; taken < count; taken += 1) {
+    boundary = RecurrenceUtils.addPeriod(
+      boundary,
+      subscription.every,
+      subscription.period,
+      { anchorDate: first },
+    );
+  }
+  return boundary;
+};
+
+/** The last charge the offer still covers. */
+const lastCoveredDate = (
+  subscription: SubscriptionDto,
+  count: number,
+): Date | null => revertDate(subscription, count - 1);
+
+/** − N + . The one control that turns "three months" into a date nobody types. */
+function Stepper({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (next: number) => void;
+}) {
+  const step = (delta: number) => {
+    const next = value + delta;
+    if (next < min || next > max) return;
+    onChange(next);
+  };
+
+  return (
+    <View style={styles.stepper}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="−"
+        disabled={value <= min}
+        onPress={() => step(-1)}
+        style={({ pressed }) => [
+          styles.stepperButton,
+          value <= min && styles.stepperButtonOff,
+          pressed && styles.stepperButtonPressed,
+        ]}
+      >
+        <SymbolView
+          name={{ ios: "minus", android: "remove" }}
+          size={17}
+          tintColor={value <= min ? colors.muted : colors.text}
+          weight="semibold"
+        />
+      </Pressable>
+      <Text
+        style={styles.stepperValue}
+        accessibilityLiveRegion="polite"
+        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+      >
+        {value}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="+"
+        disabled={value >= max}
+        onPress={() => step(1)}
+        style={({ pressed }) => [
+          styles.stepperButton,
+          value >= max && styles.stepperButtonOff,
+          pressed && styles.stepperButtonPressed,
+        ]}
+      >
+        <SymbolView
+          name={{ ios: "plus", android: "add" }}
+          size={17}
+          tintColor={value >= max ? colors.muted : colors.text}
+          weight="semibold"
+        />
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * A different price for the next few charges, then back to normal.
+ *
+ * ONE form, where there were two. "Free trial" and "intro discount" were the
+ * same three fields with the price prefilled to 0 — the user had to pick
+ * between two menu entries that produced identical screens and identical
+ * timelines, and neither name fitted the cases people actually have: a promo
+ * mid-subscription, a retention offer taken while cancelling, a goodwill month.
+ * A price of 0 is free; anything above it is a discount; the store decides
+ * which kind to record. Nothing else about them ever differed.
+ *
+ * The length is a number of CHARGES, not a date. Asking for a date was the
+ * whole problem: the window is half-open, so the date of the last covered
+ * payment silently bought one payment fewer, and the user had to do calendar
+ * arithmetic to find a date the app already knows.
+ *
+ * `startMode` is the other half. An offer taken mid-cycle begins at the NEXT
+ * charge — the period already paid for was not discounted — and defaulting to
+ * that is why the form no longer rewrites today's price behind the user.
+ */
+export function TemporaryPriceView({
   subscription,
-  kind,
   subtitle,
   onClose,
   onSubmit,
 }: {
   subscription: SubscriptionDto;
-  kind: "trial" | "intro";
   subtitle: string;
   onClose: () => void;
   onSubmit: (phase: StartPhaseInput) => void;
 }) {
-  const [date, setDate] = useState(tomorrow);
+  const [startMode, setStartMode] = useState<OfferStartMode>("nextPayment");
+  const [payments, setPayments] = useState(DEFAULT_OFFER_PAYMENTS);
   const [promo, setPromo] = useState("");
   const [standard, setStandard] = useState("");
   const [promoError, setPromoError] = useState<string>();
   const [standardError, setStandardError] = useState<string>();
-  const [dateError, setDateError] = useState<string>();
 
   const { currency, every, period } = subscription;
   // The price the offer reverts to defaults to what is being paid today, which
   // is right whenever the offer is a discount on the current plan.
   const standardFallback = subscription.cost;
 
-  // A blank price on a free trial means free. On an intro it means unanswered,
-  // and blank must not quietly become a zero the store then rejects.
-  const parsedPromo =
-    kind === "trial" && promo.trim() === "" ? 0 : parsePrice(promo);
+  // A blank field means free, and the placeholder says so. Typing is only
+  // needed for the discount case.
+  const parsedPromo = promo.trim() === "" ? 0 : parsePrice(promo);
   const parsedStandard =
     standard.trim() === "" ? standardFallback : parsePrice(standard);
 
   const submit = () => {
-    if (parsedPromo === null) {
+    if (parsedPromo === null || parsedPromo < 0) {
       setPromoError(m.validation_invalidNumber());
-      return;
-    }
-    // A "discount" of nothing is a free trial. Forcing the distinction keeps the
-    // price timeline honest about what was signed up for.
-    if (kind === "intro" && parsedPromo <= 0) {
-      setPromoError(m.validation_positiveNumber());
       return;
     }
     setPromoError(undefined);
@@ -311,17 +423,12 @@ export function OfferView({
     }
     setStandardError(undefined);
 
-    if (!isFutureDay(date)) {
-      setDateError(m.validation_futureDate());
-      return;
-    }
-    setDateError(undefined);
-
     onSubmit({
-      kind,
+      kind: "temporaryPrice",
       promoCost: parsedPromo,
       currency,
-      endsAt: toIsoDay(date),
+      startMode,
+      payments,
       standardCost: parsedStandard,
     });
   };
@@ -331,31 +438,60 @@ export function OfferView({
     parsedStandard ?? standardFallback,
     currency,
   );
-  const day = formatShortDate(toIsoDay(date));
+  const reverts = revertDate(subscription, payments);
+  const lastCovered = lastCoveredDate(subscription, payments);
 
   return (
     <>
       <SheetHeader
-        title={
-          kind === "trial" ? m.pricing_trialTitle() : m.pricing_introTitle()
-        }
+        title={m.pricing_temporaryTitle()}
         subtitle={subtitle}
         onClose={onClose}
       />
 
-      <NativeDateField
-        label={m.form_offerEndsAt()}
-        value={date}
-        minimumDate={tomorrow()}
-        onChange={setDate}
-        error={dateError}
-      />
+      <Field label={m.pricing_offerStarts()}>
+        <View style={styles.choices}>
+          <ChoiceRow
+            title={m.pricing_startNextPayment()}
+            subtitle={formatShortDate(subscription.nextPaymentDate)}
+            selected={startMode === "nextPayment"}
+            onPress={() => setStartMode("nextPayment")}
+          />
+          <ChoiceRow
+            title={m.pricing_startNow()}
+            subtitle={m.pricing_startNowHint()}
+            selected={startMode === "now"}
+            onPress={() => setStartMode("now")}
+          />
+        </View>
+      </Field>
+
+      <Field label={m.pricing_offerLength()}>
+        <Stepper
+          value={payments}
+          min={1}
+          max={MAX_OFFER_PAYMENTS}
+          onChange={setPayments}
+        />
+        {/* Shown before a price is even typed: the count is the commitment, so
+            the date it lands on must never be something the user has to work
+            out — that arithmetic was the bug. */}
+        {reverts ? (
+          <Text style={styles.stepperHint}>
+            {m.pricing_offerRevertsOn({
+              date: formatShortDate(reverts.toISOString()),
+            })}
+          </Text>
+        ) : null}
+      </Field>
 
       <AmountField
         label={m.form_offerCost()}
         value={promo}
         onChangeText={setPromo}
-        placeholder={kind === "trial" ? "0" : undefined}
+        // The placeholder is the whole reason this is one form rather than two:
+        // it says, without a second menu entry, that free is just a price.
+        placeholder="0"
         hint={
           parsedPromo !== null && parsedPromo <= 0
             ? m.pricing_free()
@@ -373,22 +509,28 @@ export function OfferView({
         error={standardError}
       />
 
-      {parsedStandard !== null && parsedStandard > 0 && parsedPromo !== null ? (
+      {parsedStandard !== null &&
+      parsedStandard > 0 &&
+      parsedPromo !== null &&
+      reverts &&
+      lastCovered ? (
         <Outcome
           title={m.pricing_summaryTitle()}
           lines={[
-            parsedPromo <= 0
-              ? m.form_summaryTrial({
-                  date: day,
-                  price: standardText,
-                  cadence,
-                })
-              : m.form_summaryIntro({
-                  promo: formatMoney(parsedPromo, currency),
-                  date: day,
-                  price: standardText,
-                  cadence,
-                }),
+            // Named dates rather than a count: Ukrainian agrees its plural with
+            // the number, and "з 25 вер. по 25 лис." says the same thing
+            // without needing to. "Free" reads as a price in the same slot.
+            m.pricing_summaryOfferWindow({
+              promo:
+                parsedPromo > 0
+                  ? formatMoney(parsedPromo, currency)
+                  : m.pricing_free(),
+              first: formatShortDate(subscription.nextPaymentDate),
+              last: formatShortDate(lastCovered.toISOString()),
+              price: standardText,
+              cadence,
+              revert: formatShortDate(reverts.toISOString()),
+            }),
           ]}
         />
       ) : null}
@@ -516,6 +658,38 @@ const styles = StyleSheet.create({
   amountHint: { fontSize: 13, color: colors.muted },
 
   choices: { gap: 8 },
+
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    padding: 4,
+  },
+  stepperButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceAlt,
+  },
+  stepperButtonOff: { opacity: 0.4 },
+  stepperButtonPressed: { opacity: 0.6 },
+  // Wide enough for two digits so the buttons do not shuffle sideways as the
+  // number grows.
+  stepperValue: {
+    minWidth: 44,
+    textAlign: "center",
+    fontSize: 19,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  stepperHint: { marginTop: 8, fontSize: 12.5, color: colors.muted },
 
   outcome: {
     marginBottom: 18,

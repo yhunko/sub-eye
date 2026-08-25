@@ -23,7 +23,7 @@ import {
   buildSubscriptionDto,
   loadSubscriptionDto,
 } from "./loadSubscriptionDto";
-import { applyDuePhases, startPhase } from "./phaseUseCases";
+import { applyDuePhases, startDatedOffer } from "./phaseUseCases";
 import type { Ports } from "./ports";
 import type { PricePhaseRecord, SubscriptionRecord } from "./records";
 import { toSubscriptionDto } from "./toSubscriptionDto";
@@ -139,7 +139,7 @@ export const addSubscription = async (
   // Start the subscription on its trial / intro offer (the standard price is
   // the cost just created). Returns the DTO with the resulting price phases.
   if (intro && introEndsAt) {
-    return startPhase(ports, created.id, {
+    return startDatedOffer(ports, created.id, {
       kind: intro.kind,
       promoCost: intro.promoCost,
       currency: created.currency,

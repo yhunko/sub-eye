@@ -6,6 +6,7 @@ import {
   integer,
   literal,
   maxLength,
+  maxValue,
   minLength,
   minValue,
   nullable,
@@ -197,30 +198,44 @@ export const SchedulePriceChangeSchema = strictObject({
   customDate: optional(nullable(isoDateSchema)),
 });
 
+/** Where a temporary price's window opens. See `StartPhaseSchema`. */
+export const offerStartModes = ["now", "nextPayment"] as const;
+export type OfferStartMode = (typeof offerStartModes)[number];
+
 const positiveCostSchema = pipe(
   number(),
   check((value) => value > 0, "Cost must be greater than zero"),
 );
 
 /**
- * One payload for every way of putting a price on the timeline:
- *  - `trial` / `intro` start an override now that reverts to `standardCost`
- *    on `endsAt`;
- *  - `scheduledChange` replaces the standard price on a future date.
+ * One payload for every way of putting a price on the timeline. There are only
+ * TWO, because there are only two things that can happen to a price:
+ *  - `temporaryPrice` charges `promoCost` for `payments` charges from
+ *    `startMode`, then reverts to `standardCost`. **A price of 0 is a free
+ *    stretch** — a free month and a discounted month are the same mechanic, and
+ *    splitting them into "trial" and "intro discount" gave the user two
+ *    identical forms to choose between. The store still records the resulting
+ *    phase as `trial` or `intro` so the price history can tell them apart.
+ *  - `scheduledChange` replaces the standard price for good.
  */
 export const StartPhaseSchema = variant("kind", [
   strictObject({
-    kind: literal("trial"),
+    kind: literal("temporaryPrice"),
+    /** 0 is free. Anything above it is a discount. Same window either way. */
     promoCost: pipe(number(), minValue(0)),
     currency: optional(currencyCodeSchema),
-    endsAt: futureIsoDateSchema,
-    standardCost: positiveCostSchema,
-  }),
-  strictObject({
-    kind: literal("intro"),
-    promoCost: positiveCostSchema,
-    currency: optional(currencyCodeSchema),
-    endsAt: futureIsoDateSchema,
+    /**
+     * Where the window opens. `nextPayment` leaves today's price alone: the
+     * period already paid for was not discounted, and an offer taken mid-cycle
+     * starts at the next charge, not the moment it was written down.
+     */
+    startMode: picklist(offerStartModes),
+    /**
+     * How many charges the offer covers. A COUNT, not an end date — the store
+     * derives the boundary from the recurrence, so the half-open window can no
+     * longer be off by one payment in either direction.
+     */
+    payments: pipe(number(), integer(), minValue(1), maxValue(60)),
     standardCost: positiveCostSchema,
   }),
   strictObject({

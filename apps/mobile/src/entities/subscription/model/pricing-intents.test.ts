@@ -10,18 +10,28 @@ const phase = (kind: PricePhaseDto["kind"]): PricePhaseDto =>
   ({ id: `${kind}-1`, kind }) as PricePhaseDto;
 
 describe("pricingIntentsFor", () => {
-  it("always offers the three that create a phase — an action that appears\n     only sometimes reads as a bug", () => {
+  // TWO, not three. A free stretch is a temporary price of zero, so it shares
+  // the one entry rather than sitting beside it as an identical second form.
+  it("always offers the two that create a phase — an action that appears\n     only sometimes reads as a bug", () => {
     expect(pricingIntentsFor({ upcomingPhase: null })).toEqual([
       "schedule",
-      "trial",
-      "intro",
+      "temporary",
     ]);
   });
 
-  it("offers the queued change only when the upcoming phase IS one", () => {
+  it("offers the queued change for anything waiting that is not the reversion", () => {
     expect(
       pricingIntentsFor({ upcomingPhase: phase("scheduledChange") }),
     ).toContain("pending");
+    // A temporary price starting at the next payment is pending too. Without
+    // this, an offer the user had just scheduled could not be inspected or
+    // cancelled — only overwritten by scheduling another one.
+    expect(pricingIntentsFor({ upcomingPhase: phase("intro") })).toContain(
+      "pending",
+    );
+    expect(pricingIntentsFor({ upcomingPhase: phase("trial") })).toContain(
+      "pending",
+    );
     expect(
       pricingIntentsFor({ upcomingPhase: phase("standard") }),
     ).not.toContain("pending");
@@ -37,11 +47,7 @@ describe("pricingIntentsFor", () => {
   });
 
   it("tolerates a subscription that has not loaded yet", () => {
-    expect(pricingIntentsFor(undefined)).toEqual([
-      "schedule",
-      "trial",
-      "intro",
-    ]);
+    expect(pricingIntentsFor(undefined)).toEqual(["schedule", "temporary"]);
   });
 });
 
@@ -51,6 +57,9 @@ describe("queuedPriceChange / offerReversion", () => {
     const reverting = { upcomingPhase: phase("standard") };
 
     expect(queuedPriceChange(scheduled)?.kind).toBe("scheduledChange");
+    expect(queuedPriceChange({ upcomingPhase: phase("intro") })?.kind).toBe(
+      "intro",
+    );
     expect(queuedPriceChange(reverting)).toBeNull();
     expect(offerReversion(reverting)?.kind).toBe("standard");
     expect(offerReversion(scheduled)).toBeNull();
