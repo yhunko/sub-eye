@@ -61,3 +61,23 @@ export const nativeSearchBarChrome = {
   textColor: colors.text,
   barTintColor: colors.surfaceAlt,
 };
+
+// The app's form-sheet chrome. Every sheet in the app is a native `formSheet`
+// route — the navigator owns presentation, so there is no dialog manager
+// anywhere — and all of them want the same grabber and the same dark surface.
+//
+// A FIXED tall detent rather than `fitToContents`: every sheet that spreads this
+// holds a `flex: 1` ScrollView, which has no intrinsic height, so asking the
+// sheet to size itself to its contents can measure to nothing. A sheet that
+// cannot overflow (the pause date field) overrides the detent instead.
+//
+// `as const` on the whole object would make `sheetAllowedDetents` a readonly
+// tuple, which the navigator's mutable `number[]` will not accept — so only the
+// string literals are pinned.
+export const nativeSheetChrome = {
+  presentation: "formSheet" as const,
+  sheetGrabberVisible: true,
+  sheetAllowedDetents: [0.9],
+  headerShown: false,
+  contentStyle: { backgroundColor: colors.bg },
+};

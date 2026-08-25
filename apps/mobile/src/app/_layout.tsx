@@ -11,7 +11,7 @@ import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppSt
 import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
-import { nativeHeaderChrome } from "@/shared/ui/header";
+import { nativeHeaderChrome, nativeSheetChrome } from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
 
 // expo-router looks for this exact named export on a layout and uses it as the
@@ -54,18 +54,22 @@ setTimeout(() => {
   void SplashScreen.hideAsync();
 }, 5000);
 
-// A fixed tall detent, not "fitToContents": the document is a `flex: 1`
-// ScrollView, which has no intrinsic height for the sheet to measure. It KEEPS
-// its header — a policy runs well past the fold, and the sheet's own nav bar is
-// the only place its title cannot scroll away from.
+// The legal sheet KEEPS its header — a policy runs well past the fold, and the
+// sheet's own nav bar is the only place its title cannot scroll away from.
+// Explicit `headerShown`, because this Stack's screenOptions turn headers off
+// and spreading nativeHeaderChrome does not turn one back on — it only styles
+// one.
 const legalSheet = {
+  ...nativeSheetChrome,
   ...nativeHeaderChrome,
-  presentation: "formSheet" as const,
-  sheetGrabberVisible: true,
-  sheetAllowedDetents: [0.9],
-  // Explicit: this Stack's screenOptions turn headers off, and spreading
-  // nativeHeaderChrome does not turn them back on — it only styles one.
   headerShown: true,
+};
+
+// The pause sheet is a single date field and cannot overflow, so it gets to be
+// exactly as tall as it needs.
+const compactSheet = {
+  ...nativeSheetChrome,
+  sheetAllowedDetents: "fitToContents" as const,
 };
 
 // FSD app layer: global providers + the native stack.
@@ -123,6 +127,51 @@ function RootLayout() {
             <Stack.Screen
               name="subscription-form"
               options={{ presentation: "modal", headerShown: false }}
+            />
+            {/* A subscription's own screen, and the three sheets it opens, are
+                root routes for the same reason the form is one: Home's upcoming
+                rail, the list, the due digest, a widget row and a tapped
+                reminder all open it, and from Home it was a CROSS-TAB push —
+                expo-router switched to the subscriptions tab and pushed the
+                detail in one commit, so the tab changed underneath and the push
+                animation was swallowed by the switch. From the root it slides
+                over whichever tab is showing and `back` returns to it.
+
+                Pushed over the tab tree, it also covers the native tab bar
+                outright — which is why nothing hides that bar any more. The URL
+                is unchanged (`(tabs)` is a group and never appeared in it), so
+                `subeye:///subscriptions/<id>` still lands here, now with the tab
+                tree anchored underneath instead of alone in a dead-end stack.
+
+                Explicit `headerShown`: this Stack turns headers off, and the
+                page only sets its own options once the subscription has loaded —
+                without it the loading and error states have no nav bar and no
+                way back. */}
+            <Stack.Screen
+              name="subscriptions/[id]/index"
+              options={{
+                ...nativeHeaderChrome,
+                headerShown: true,
+                // The screen underneath is the tab tree, which carries no
+                // title of its own — so the back button fell back to the ROUTE
+                // NAME and read literally "(tabs)". `generic` drops the
+                // previous screen's title, which is the honest answer here
+                // anyway: Home, the list, the due digest and a deep link all
+                // reach this one screen, so there is no single place to name.
+                headerBackButtonDisplayMode: "generic",
+              }}
+            />
+            <Stack.Screen
+              name="subscriptions/[id]/pricing"
+              options={nativeSheetChrome}
+            />
+            <Stack.Screen
+              name="subscriptions/[id]/pause"
+              options={compactSheet}
+            />
+            <Stack.Screen
+              name="subscriptions/[id]/renew"
+              options={compactSheet}
             />
           </Stack>
         </QueryClientProvider>
