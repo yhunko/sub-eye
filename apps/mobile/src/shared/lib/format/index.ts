@@ -1,4 +1,4 @@
-export { fromIsoDay, isFutureDay, todayAsDay, toIsoDay } from "./day";
+export { fromIsoDay, isFutureDay, todayAsDay, toIsoDay, tomorrow } from "./day";
 export {
   CURRENCY_CODES,
   currencyLabel,
@@ -8,6 +8,7 @@ export {
 } from "./money";
 export {
   daysUntil,
+  formatCadence,
   formatCountdown,
   formatDate,
   formatDaysUntil,

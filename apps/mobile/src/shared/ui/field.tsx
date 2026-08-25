@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import { colors } from "./theme";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Chevron } from "./choice-row";
+import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
 
 /** A labelled row with an optional inline error. Both form sheets are built from it. */
 export function Field({
@@ -80,6 +81,59 @@ export function TextField({
   );
 }
 
+/**
+ * A labelled row that DISPLAYS a value and goes somewhere to change it — the
+ * category picker, a date, the pricing sheet.
+ *
+ * `hint` is the same value said another way ("Today", "in 31 days"), which is
+ * what stops a row of digits from being the only thing the user has to read.
+ */
+export function ValueField({
+  label,
+  value,
+  hint,
+  placeholder,
+  error,
+  onPress,
+  trailing,
+}: {
+  label: string;
+  value?: string;
+  hint?: string;
+  /** Shown, muted, when there is no value. */
+  placeholder?: string;
+  error?: string;
+  onPress?: () => void;
+  /** Replaces the chevron for a row that does not push a screen. */
+  trailing?: ReactNode;
+}) {
+  return (
+    <Field label={label} error={error}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label}, ${value ?? placeholder ?? ""}`}
+        disabled={!onPress}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.valueBox,
+          error ? styles.inputError : null,
+          pressed && styles.valueBoxPressed,
+        ]}
+      >
+        <Text
+          style={[styles.value, value ? null : styles.valuePlaceholder]}
+          numberOfLines={1}
+          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+        >
+          {value ?? placeholder}
+        </Text>
+        {hint ? <Text style={styles.valueHint}>{hint}</Text> : null}
+        {trailing ?? (onPress ? <Chevron /> : null)}
+      </Pressable>
+    </Field>
+  );
+}
+
 const styles = StyleSheet.create({
   field: { marginBottom: 16 },
   labelRow: {
@@ -100,5 +154,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   inputError: { borderColor: colors.danger },
+  valueBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  valueBoxPressed: { backgroundColor: colors.surfaceAlt },
+  value: { flex: 1, fontSize: 16, color: colors.text },
+  valuePlaceholder: { color: colors.muted },
+  valueHint: { fontSize: 13, color: colors.muted },
   error: { marginTop: 4, fontSize: 13, color: colors.danger },
 });

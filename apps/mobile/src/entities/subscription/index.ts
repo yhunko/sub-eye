@@ -49,4 +49,11 @@ export {
   type LifecycleActionTarget,
   useLifecycleActionBuilder,
 } from "./model/lifecycle-actions";
+export {
+  offerReversion,
+  type PricingIntent,
+  pricingIntentsFor,
+  queuedPriceChange,
+} from "./model/pricing-intents";
 export { type TimelineRow, toTimelineRows } from "./model/timeline-rows";
+export { type PricingMenuItem, usePricingMenu } from "./model/use-pricing-menu";

@@ -3,22 +3,21 @@ import type {
   SubscriptionStatus,
 } from "@subeye/model";
 import { useRouter } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { usePro } from "@/entities/pro";
 import {
   type LifecycleActionItem,
   useLifecycleActionBuilder,
 } from "@/entities/subscription";
-import { m } from "@/shared/i18n";
-import { presentChoice } from "@/shared/ui/present-choice";
 
 export type { LifecycleActionItem };
 
 /**
- * The detail screen's split of the lifecycle actions: one primary button plus an
- * overflow sheet. The actions themselves — and their confirm flows — come from
- * `useLifecycleActionBuilder`, which the subscriptions list also uses for its
- * swipe actions.
+ * The detail screen's split of the lifecycle actions: one primary button plus
+ * the rest. PRESENTATION is the page's — it has to fold the pricing submenu
+ * into the same overflow, which is none of this hook's business. The actions
+ * themselves, and their confirm flows, come from `useLifecycleActionBuilder`,
+ * which the subscriptions list also uses for its swipe actions.
  */
 export function useLifecycleActions({
   id,
@@ -86,19 +85,5 @@ export function useLifecycleActions({
     [barItems, primary],
   );
 
-  const showOverflow = useCallback(
-    () =>
-      presentChoice(
-        name,
-        m.detail_moreActions(),
-        overflow.map((item) => ({
-          label: item.label,
-          destructive: item.destructive,
-          onPress: item.run,
-        })),
-      ),
-    [name, overflow],
-  );
-
-  return { primary, overflow, showOverflow, pageAction };
+  return { primary, overflow, pageAction };
 }

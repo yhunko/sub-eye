@@ -81,3 +81,20 @@ export const nativeSheetChrome = {
   headerShown: false,
   contentStyle: { backgroundColor: colors.bg },
 };
+
+// The same field, moved into the nav bar itself (iOS 26 `integrated`).
+//
+// The form's brand step has a step indicator to show before anything else, and
+// `stacked` is a full-width band that always sits between the title and the
+// content — so the indicator ended up UNDER the search field, which is not what
+// the step is. Integrated, the field is a trailing item in the nav bar and the
+// content starts where the design says it starts.
+//
+// `allowToolbarIntegration: false` is load-bearing: left at its default, UIKit
+// is free to move the field into a bottom toolbar on iPhone, which is exactly
+// where this screen's own Next button lives.
+export const nativeInlineSearchBarChrome = {
+  ...nativeSearchBarChrome,
+  placement: "integrated" as const,
+  allowToolbarIntegration: false,
+};

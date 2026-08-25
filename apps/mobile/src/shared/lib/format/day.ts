@@ -55,3 +55,14 @@ export function fromIsoDay(iso: string): Date {
     stored.getUTCDate(),
   );
 }
+
+/**
+ * The earliest day a picker may offer for something that has to be ahead of us.
+ *
+ * `isFutureDay` is a strict comparison of calendar days, so TODAY is not a
+ * future date — a field seeded with it looks answered and fails on save. Used as
+ * `minimumDate`, this makes that choice unreachable instead.
+ */
+export function tomorrow(now: Date = new Date()): Date {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+}
