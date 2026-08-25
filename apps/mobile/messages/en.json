@@ -63,7 +63,7 @@
   "settings_sync": "iCloud Sync",
   "settings_syncOffSubtitle": "This device only",
   "settings_syncHint": "Keeps your subscriptions the same on every device signed in to this Apple Account. Off, they stay on this device — a device backup still restores them to a replacement phone.",
-  "settings_syncUnavailableHint": "Sign in to iCloud in the Settings app to sync your subscriptions across devices. Without it they stay on this device.",
+  "settings_syncUnavailableHint": "iCloud is not available on this device. Your subscriptions stay here.",
   "settings_eraseConfirmCloud": "iCloud Sync is on, so this also erases them from your other devices.",
   "settings_notifications": "Notifications",
   "settings_renewalReminders": "Renewal reminders",

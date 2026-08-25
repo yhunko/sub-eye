@@ -49,12 +49,14 @@ const QUOTA_VIOLATION = 2;
 const ENABLED_KEY = "cloud.sync";
 
 /**
- * Whether this device COULD sync: the native module is here and an iCloud
- * account is signed in.
+ * Whether this device COULD sync: the native module is here and the key-value
+ * store is usable.
  *
- * The entitlement alone is not enough. With no account signed in the store
- * accepts every write and drops it, so without this the toggle would flip on and
- * do nothing for the rest of the install.
+ * It does NOT prove an iCloud account is signed in — see the long note on
+ * `isAvailable` in `IcloudKvModule.swift` for why the check that did was wrong
+ * for this app and left the toggle permanently grey. An account that goes away
+ * is handled where it actually happens instead: `observeCloud` switches sync off
+ * on `ACCOUNT_CHANGE`.
  */
 export function cloudSyncAvailable(): boolean {
   try {

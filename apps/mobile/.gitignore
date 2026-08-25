@@ -1,8 +1,17 @@
 # Expo (Continuous Native Generation — native dirs are generated, not committed)
+#
+# ANCHORED with a leading slash, and it has to stay that way: an unanchored
+# `ios/` matches a directory of that name at ANY depth, which silently swallowed
+# `modules/icloud-kv/ios/` — the whole Swift side of the iCloud module plus its
+# podspec. There is no `.easignore`, so EAS archives the git repo and every
+# cloud build shipped without the module: autolinking found nothing, the JS
+# `requireOptionalNativeModule` returned null, and iCloud sync reported itself
+# unavailable on every TestFlight install. Only the generated top-level dirs
+# belong here.
 .expo/
 dist/
-android/
-ios/
+/android/
+/ios/
 
 # Expo-generated env/global types (src/env.d.ts is the committed stand-in)
 expo-env.d.ts
