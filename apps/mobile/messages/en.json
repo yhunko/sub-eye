@@ -80,7 +80,6 @@
   "settings_proActive": "Purchased",
   "settings_proActiveHint": "SubEye Pro is unlocked on this Apple Account. Use Restore purchases to get it back on another device.",
   "settings_restore": "Restore purchases",
-  "settings_devForcePro": "Force Pro (dev)",
   "paywall_title": "SubEye Pro",
   "paywall_subtitle": "One payment. Yours for good.",
   "paywall_featureReminders": "Trial and custom reminders",
@@ -264,7 +263,6 @@
   "period_month": "month",
   "period_year": "year",
   "settings_reminders": "Reminders",
-  "settings_remindersHint": "Renewals, trials, and when they arrive.",
   "settings_on": "On",
   "notif_whenToday": "today",
   "notif_whenTomorrow": "tomorrow",
@@ -320,5 +318,8 @@
   "widget_upcoming": "Upcoming",
   "widget_nothingDue": "Nothing due",
   "widget_alsoDue": "+{count} also due",
-  "widget_vsLastMonth": "vs last month"
+  "widget_vsLastMonth": "vs last month",
+  "settings_madeInUkraine": "Made with ❤️ in Ukraine",
+  "paywall_featureSupport": "Support the developer",
+  "paywall_featureSupportBody": "SubEye is built by one person, in Ukraine. Buying Pro is what keeps it independent — no ads, no tracking, no subscription."
 }

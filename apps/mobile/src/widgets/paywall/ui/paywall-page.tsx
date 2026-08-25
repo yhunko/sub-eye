@@ -56,6 +56,15 @@ const FEATURES: {
     title: m.paywall_lockWidgets,
     body: m.paywall_lockWidgetsBody,
   },
+  // LAST, and not a feature — it is the reason the four above are a one-time
+  // purchase rather than a subscription. It buys the reader nothing, so it
+  // cannot lead; at the end it is the note the price is read against.
+  {
+    ios: "heart",
+    android: "favorite",
+    title: m.paywall_featureSupport,
+    body: m.paywall_featureSupportBody,
+  },
 ];
 
 /**

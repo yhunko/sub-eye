@@ -80,7 +80,6 @@
   "settings_proActive": "Придбано",
   "settings_proActiveHint": "SubEye Pro розблоковано для цього Apple Account. Щоб повернути його на іншому пристрої, скористайтеся відновленням покупок.",
   "settings_restore": "Відновити покупки",
-  "settings_devForcePro": "Примусовий Pro (dev)",
   "paywall_title": "SubEye Pro",
   "paywall_subtitle": "Один платіж. Назавжди ваш.",
   "paywall_featureReminders": "Пробні періоди й власний графік",
@@ -264,7 +263,6 @@
   "period_month": "місяць",
   "period_year": "рік",
   "settings_reminders": "Нагадування",
-  "settings_remindersHint": "Поновлення, пробні періоди й час нагадувань.",
   "settings_on": "Увімкнено",
   "notif_whenToday": "сьогодні",
   "notif_whenTomorrow": "завтра",
@@ -320,5 +318,8 @@
   "widget_upcoming": "Найближчі",
   "widget_nothingDue": "Нічого не заплановано",
   "widget_alsoDue": "+{count} того ж дня",
-  "widget_vsLastMonth": "проти минулого місяця"
+  "widget_vsLastMonth": "проти минулого місяця",
+  "settings_madeInUkraine": "Зроблено з ❤️ в Україні",
+  "paywall_featureSupport": "Підтримка розробника",
+  "paywall_featureSupportBody": "SubEye створює одна людина в Україні. Купівля Pro лишає його незалежним — без реклами, без стеження, без підписки."
 }

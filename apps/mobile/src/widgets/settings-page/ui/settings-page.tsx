@@ -11,8 +11,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  View,
 } from "react-native";
-import { devForcePro, restorePro, usePro } from "@/entities/pro";
+import { restorePro, usePro } from "@/entities/pro";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
@@ -45,6 +46,12 @@ const LANGUAGE_NAMES: Record<AppLocale, string> = {
 /**
  * The door to the notifications screen, and a summary of what is behind it.
  *
+ * A row inside Preferences rather than a section of its own: alone it was a
+ * one-row card with a caption, which is the widest possible frame around the
+ * narrowest possible thing. Next to Categories — the other door to a
+ * `/settings/*` sub-screen — it needs no caption at all, so the footnote it used
+ * to carry is gone rather than moved.
+ *
  * Re-reads on focus: the sub-screen writes straight to MMKV rather than to React
  * state, so coming back from it would otherwise show a stale "Off".
  */
@@ -61,18 +68,13 @@ function NotificationsRow() {
   const on = settings.renewals || settings.trials;
 
   return (
-    <Section
-      title={m.settings_notifications()}
-      footnote={m.settings_remindersHint()}
-    >
-      <Row
-        ios={on ? "bell" : "bell.slash"}
-        android={on ? "notifications" : "notifications_off"}
-        label={m.settings_reminders()}
-        value={on ? m.settings_on() : m.settings_off()}
-        onPress={() => router.push("/settings/notifications")}
-      />
-    </Section>
+    <Row
+      ios={on ? "bell" : "bell.slash"}
+      android={on ? "notifications" : "notifications_off"}
+      label={m.settings_reminders()}
+      value={on ? m.settings_on() : m.settings_off()}
+      onPress={() => router.push("/settings/notifications")}
+    />
   );
 }
 
@@ -185,7 +187,6 @@ export function SettingsPage() {
   const update = useUpdatePreferences();
   const data = preferences.data;
   const [restoring, setRestoring] = useState(false);
-  const [forcedPro, setForcedPro] = useState(devForcePro.get);
 
   // Restoring is the only Pro action that can report "nothing found" as a
   // success, so it always says something — silence would read as a dead button.
@@ -381,6 +382,8 @@ export function SettingsPage() {
             }
           />
           <Divider />
+          <NotificationsRow />
+          <Divider />
           <Row
             ios="globe"
             android="language"
@@ -395,12 +398,25 @@ export function SettingsPage() {
         </Section>
       ) : null}
 
-      {/* Between Preferences and Notifications: it is about the data itself,
-          which is a narrower subject than the app's settings and a wider one
-          than reminders. */}
+      {/* After Preferences: it is about the data itself, which is a narrower
+          subject than the app's settings and the last thing in the list that is
+          still about this install rather than about the app. */}
       <DataSection onErase={confirmErase} />
 
-      <NotificationsRow />
+      {/* __DEV__, not an env var: a flag configuration can enable is a flag that
+          ships enabled one day. Metro strips this branch from a release bundle,
+          and the route it points at strips the screen itself — the label is
+          hardcoded English for the same reason the screen's is. */}
+      {__DEV__ ? (
+        <Section>
+          <Row
+            ios="hammer"
+            android="build"
+            label="Developer"
+            onPress={() => router.push("/settings/developer")}
+          />
+        </Section>
+      ) : null}
 
       <Section title={m.settings_legal()}>
         <Row
@@ -418,29 +434,14 @@ export function SettingsPage() {
         />
       </Section>
 
-      {/* __DEV__, not an env var: a flag configuration can enable is a flag that
-          ships enabled one day. Metro strips this branch from a release bundle. */}
-      {__DEV__ ? (
-        <Section>
-          <Row
-            ios="hammer"
-            android="build"
-            label={m.settings_devForcePro()}
-            toggle={{
-              value: forcedPro,
-              disabled: false,
-              onValueChange: (next) => {
-                devForcePro.set(next);
-                setForcedPro(next);
-              },
-            }}
-          />
-        </Section>
-      ) : null}
-
-      <Text style={styles.version}>
-        SubEye {Constants.expoConfig?.version ?? ""}
-      </Text>
+      {/* Two lines, not one: the version is a support detail someone reads out
+          loud in a bug report, and the other line is not. */}
+      <View style={styles.colophon}>
+        <Text style={styles.version}>
+          SubEye {Constants.expoConfig?.version ?? ""}
+        </Text>
+        <Text style={styles.version}>{m.settings_madeInUkraine()}</Text>
+      </View>
     </ScrollView>
   );
 }
@@ -448,6 +449,7 @@ export function SettingsPage() {
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 24, gap: 24 },
 
+  colophon: { gap: 2 },
   version: { fontSize: 12.5, color: colors.muted, textAlign: "center" },
   placeholder: { fontSize: 14, color: colors.muted, textAlign: "center" },
 });
