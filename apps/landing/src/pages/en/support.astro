@@ -1,6 +1,6 @@
 ---
+import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } from "@subeye/legal";
 import Legal from "../../layouts/Legal.astro";
-import { operator, privacyEmail } from "../../lib/site";
 ---
 
 <Legal
@@ -16,7 +16,7 @@ import { operator, privacyEmail } from "../../lib/site";
 
   <h2>Where to write</h2>
   <p>
-    <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a> reaches {operator}
+    <a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> reaches {LEGAL_OPERATOR}
     directly. Expect a reply within a few days; anything about your personal data
     is answered within 30 days, as the <a href="/en/privacy-policy/"
       >privacy policy</a

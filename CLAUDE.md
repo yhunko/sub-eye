@@ -13,6 +13,7 @@ apps/mobile       Expo (React Native, expo-router) — the app
 apps/landing      subeye.cc — Astro 6, static, zero client JS, en + uk
 packages/model    records, DTOs, valibot schemas — consumed by everything
 packages/time     UTC calendar days and recurrence. A leaf — imports nothing.
+packages/legal    the privacy policy and terms as data — the app and the site render the same words
 packages/money    currency codes, rate tables, conversion, FX document parsing
 packages/lifecycle status derivation, allowed actions, pure cancel/renew/pause/resume
 packages/pricing  pure phase model (trial/intro/scheduledChange/standard)
@@ -22,8 +23,8 @@ packages/store     storage ports + use-cases — the only package that does IO
 ```
 
 Each of `apps/*` and
-`packages/model|time|money|lifecycle|pricing|spend|reminders|store` has its own
-`CLAUDE.md` with the invariants for that area. Read the one you are
+`packages/model|time|legal|money|lifecycle|pricing|spend|reminders|store` has its
+own `CLAUDE.md` with the invariants for that area. Read the one you are
 touching — those carry the rules that actually bite.
 
 ## Commands

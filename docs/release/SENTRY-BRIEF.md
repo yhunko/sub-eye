@@ -148,11 +148,14 @@ processor `<dl>`:
 3. Add **Sentry — crash reporting (European Union)**: receives the stack trace,
    device model and OS version of a crash, keyed by the account identifier. No
    subscription data, no email, no session recording.
-4. Bump `legalUpdated` in `apps/landing/src/lib/site.ts`.
-5. Redeploy: `bun run --cwd apps/landing build && bun run --cwd apps/landing deploy`.
+4. Bump `updated` on that document in `packages/legal/src/privacy-policy.ts`.
+5. Redeploy: `bun run --cwd apps/landing build && bun run --cwd apps/landing deploy`,
+   and ship an app build — the copy is bundled now, so the site alone does not
+   update what a user reads in Settings.
 
-Both locales, and mirror the wording — `test/routes.test.ts` does not check copy,
-so nothing will catch a policy that exists in English only.
+The copy itself lives in `packages/legal`, once, for both surfaces. Edit both
+locales together: `content.test.ts` catches a lost section, not a stale
+translation.
 
 ### Gates
 

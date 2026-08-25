@@ -6,9 +6,9 @@
  *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
  *     (a layer may only import from lower layers). There is no `features`
  *     layer — seven screens do not justify one.
- *  3. Package layering: time/money/model are leaves, lifecycle/pricing/spend/
- *     reminders derive from them and never from each other's tier peers where
- *     forbidden, and store sits on top alone.
+ *  3. Package layering: legal/time/money/model are leaves, lifecycle/pricing/
+ *     spend/reminders derive from them and never from each other's tier peers
+ *     where forbidden, and store sits on top alone.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -27,6 +27,14 @@ module.exports = {
     // Like the mobile FSD rules below, these match the ALIAS STRING
     // (`@subeye/…`): the root tsconfig declares no `paths`, so the specifier
     // stays unresolved and dependency-cruiser keeps it raw in `resolved`.
+    {
+      name: "legal-is-a-leaf",
+      comment:
+        "@subeye/legal is published prose — the two documents both clients render — and imports nothing at all. An edge out of it means product logic is being computed into text that a user has agreed to, which is how a policy starts describing a build rather than a promise.",
+      severity: "error",
+      from: { path: "^packages/legal/" },
+      to: { path: "^@subeye/" },
+    },
     {
       name: "package-layering",
       comment:

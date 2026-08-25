@@ -19,6 +19,7 @@ network off.
 | [`apps/landing`](apps/landing) | [subeye.cc](https://www.subeye.cc) — Astro, static, zero client JS |
 | `packages/model` | Records, DTOs and valibot schemas shared by every workspace |
 | `packages/time` | UTC calendar days and recurrence. A leaf — imports nothing |
+| `packages/legal` | The privacy policy and terms of service as data, en + uk. Also a leaf |
 | `packages/money` | Currency codes, rate tables, conversion, FX document parsing |
 | `packages/lifecycle` | Status derivation, allowed actions, pure cancel/renew/pause/resume |
 | `packages/pricing` | Pure pricing-phase model — trials, intro discounts, scheduled price changes |

@@ -1,0 +1,32 @@
+---
+import type { Inline } from "@subeye/legal";
+import { type Locale, path } from "../lib/site";
+
+interface Props {
+  runs: Inline[];
+  locale: Locale;
+}
+
+const { runs, locale } = Astro.props;
+---
+{
+  runs.map((run) =>
+    typeof run === "string" ? (
+      run
+    ) : "code" in run ? (
+      // `code` before `b` — a code run may carry `b`, and the other order
+      // narrows a bolded domain to the wrong branch.
+      run.b ? (
+        <strong><code>{run.code}</code></strong>
+      ) : (
+        <code>{run.code}</code>
+      )
+    ) : "b" in run ? (
+      <strong>{run.b}</strong>
+    ) : "mailto" in run ? (
+      <a href={`mailto:${run.mailto}`}>{run.mailto}</a>
+    ) : (
+      <a href={path(locale, run.doc)}>{run.text}</a>
+    ),
+  )
+}

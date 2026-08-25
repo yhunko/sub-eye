@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { getLegalDoc, type Inline } from "@subeye/legal";
 // Reaching into apps/mobile deliberately, and only from a test: that module
 // imports nothing at all, and its five codes are the claim this page makes out
 // loud. A sixth currency in the app should fail here, not ship a page that says
@@ -73,5 +74,32 @@ describe("pro price", () => {
     expect(money(proPrice.eur, "eur")).toBe("€9.99");
     // Trailing symbol, non-breaking space — see the note in src/lib/format.ts.
     expect(money(proPrice.uah, "uah", 0)).toBe("199\u00a0₴");
+  });
+
+  // `@subeye/legal` may not import this file — a package importing an app is a
+  // boundary error — so the terms quote the price as a formatted literal, and
+  // this is what stops the two drifting. A price change that misses the terms
+  // leaves a document the user agreed to quoting the old number, which is why
+  // it has to fail here rather than anywhere later.
+  it("is quoted by the terms of service, in both languages", () => {
+    const plain = (run: Inline) =>
+      typeof run === "string"
+        ? run
+        : "code" in run
+          ? run.code
+          : "b" in run
+            ? run.b
+            : "";
+
+    for (const locale of ["en", "uk"]) {
+      const prose = getLegalDoc("terms-of-service", locale)
+        .sections.flatMap((section) => section.blocks)
+        .flatMap((block) => ("p" in block ? block.p : []))
+        .map(plain)
+        .join("");
+
+      expect(prose).toContain(money(proPrice.usd, "usd"));
+      expect(prose).toContain(money(proPrice.uah, "uah", 0));
+    }
   });
 });

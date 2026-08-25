@@ -27,6 +27,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@astrojs/sitemap": "^3.7.3",
+        "@subeye/legal": "workspace:*",
         "@subeye/model": "workspace:*",
         "@subeye/pricing": "workspace:*",
         "astro": "^6.4.8",
@@ -44,6 +45,7 @@
         "@bacons/apple-targets": "^5.0.0",
         "@react-native-community/datetimepicker": "9.1.0",
         "@sentry/react-native": "~7.11.0",
+        "@subeye/legal": "workspace:*",
         "@subeye/lifecycle": "workspace:*",
         "@subeye/model": "workspace:*",
         "@subeye/money": "workspace:*",
@@ -78,6 +80,10 @@
         "@inlang/paraglide-js": "^2.18.0",
         "@types/react": "~19.2.4",
       },
+    },
+    "packages/legal": {
+      "name": "@subeye/legal",
+      "version": "0.0.1",
     },
     "packages/lifecycle": {
       "name": "@subeye/lifecycle",
@@ -898,6 +904,8 @@
     "@sqlite.org/sqlite-wasm": ["@sqlite.org/sqlite-wasm@3.48.0-build4", "", { "bin": { "sqlite-wasm": "bin/index.js" } }, "sha512-hI6twvUkzOmyGZhQMza1gpfqErZxXRw6JEsiVjUbo7tFanVD+8Oil0Ih3l2nGzHdxPI41zFmfUQG7GHqhciKZQ=="],
 
     "@subeye/landing": ["@subeye/landing@workspace:apps/landing"],
+
+    "@subeye/legal": ["@subeye/legal@workspace:packages/legal"],
 
     "@subeye/lifecycle": ["@subeye/lifecycle@workspace:packages/lifecycle"],
 

@@ -33,11 +33,11 @@ Exactly those. With the `/en` prefix, with trailing slashes, on the `www` host.
 
 > **Correction to DESIGN-BRIEF.md.** That file states the contract as
 > `/terms-of-service/` and `/uk/terms-of-service/` — English at the bare root.
-> **That is stale.** Commit `769852a` changed the app to prefix *every* locale,
-> English included. `apps/mobile/src/shared/config/legal-url.ts` builds
-> `${SITE}/${locale}/${page}/` and `legal-url.test.ts` pins all four strings.
-> Serving English at the root leaves the shipped binary pointing at 404s, and
-> changing the scheme back costs a new App Store build. Build the four URLs above.
+> **That is stale.** Commit `769852a` changed the scheme to prefix *every*
+> locale, English included, and `apps/landing/test/routes.test.ts` pins all four
+> strings. The app no longer requests them — `@subeye/legal` ships the documents
+> inside the binary — but App Store Connect holds the privacy-policy URL as
+> metadata and a reviewer follows it. Build the four URLs above.
 
 If the marketing page slips, ship the legal pages alone first. They are the
 blocker; the marketing page is not.
@@ -131,12 +131,12 @@ mockups show (`Active · Paused · Cancelling · Cancelled`) are
 claim lives there too. Import them rather than retyping — a sixth currency should
 break the build, not quietly make the page wrong.
 
-**Mirror the legal-URL contract with a test.** `apps/mobile` has
-`legal-url.test.ts` pinning the four strings the app requests. Add the opposite
-assertion here: a `bun:test` file that reads the built route manifest (or the
-i18n config) and asserts the site *serves* exactly those four paths. The contract
-then fails at CI on either side of the break rather than in App Store review.
-This repo uses `bun:test` everywhere — there is no vitest.
+**Pin the legal-URL contract with a test.** `test/routes.test.ts` asserts the
+site serves exactly those four paths, against the page files that exist. It is
+now the only place they are pinned — the app-side half was deleted with
+`legal-url.ts` when the documents moved into the bundle — so it fails at CI
+rather than in App Store review. This repo uses `bun:test` everywhere; there is
+no vitest.
 
 **Do not reuse:** `apps/mobile`'s Paraglide message catalog (those are app
 strings for seven screens, unrelated to marketing copy), the mobile theme module

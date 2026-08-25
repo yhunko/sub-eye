@@ -66,6 +66,7 @@
   "settings_legal": "Legal",
   "settings_terms": "Terms of service",
   "settings_privacy": "Privacy policy",
+  "legal_updated": "Last updated",
   "settings_erase": "Erase all data",
   "settings_eraseConfirmTitle": "Erase all data?",
   "settings_eraseConfirmBody": "Every subscription, reminder and setting is removed from this device. This cannot be undone.",

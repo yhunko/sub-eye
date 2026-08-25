@@ -179,8 +179,9 @@ The existing pattern to copy is `app/(tabs)/subscriptions/form/` —
   `ErrorCode.UserCancelledError` as a no-op, not an error toast.
 - **"Restore purchases" is mandatory** (Guideline 3.1.1). Put it *both* inside
   the paywall and in Settings — a reviewer who cannot find it rejects the build.
-- The paywall must link Terms and Privacy. `src/shared/config/legal.ts` exports
-  `termsUrl()` and `privacyUrl()`, already locale-aware.
+- The paywall must link Terms and Privacy. Both push `/legal/[doc]`, a native
+  formSheet that renders `@subeye/legal` from the bundle — no browser hand-off,
+  and it works offline.
 - Strings in **both** `messages/en.json` and `messages/uk.json`, then
   `bun run --cwd apps/mobile i18n:generate`. Access as `m.paywall_*()`.
 

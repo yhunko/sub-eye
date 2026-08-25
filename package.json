@@ -37,7 +37,7 @@
     "check:circular": "bun run check:circular:packages && bun run check:circular:mobile && bun run check:circular:landing",
     "check:circular:landing": "madge --circular --extensions ts apps/landing/src",
     "check:circular:mobile": "madge --circular --extensions ts,tsx --ts-config apps/mobile/tsconfig.json apps/mobile/src",
-    "check:circular:packages": "madge --circular --extensions ts packages/lifecycle/src packages/model/src packages/money/src packages/pricing/src packages/reminders/src packages/spend/src packages/store/src packages/time/src",
+    "check:circular:packages": "madge --circular --extensions ts packages/legal/src packages/lifecycle/src packages/model/src packages/money/src packages/pricing/src packages/reminders/src packages/spend/src packages/store/src packages/time/src",
     "deps:fix": "syncpack fix",
     "deps:format": "syncpack format",
     "deps:lint": "syncpack lint",

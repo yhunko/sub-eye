@@ -11,6 +11,7 @@ import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppSt
 import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
+import { nativeHeaderChrome } from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
 
 // expo-router looks for this exact named export on a layout and uses it as the
@@ -53,6 +54,20 @@ setTimeout(() => {
   void SplashScreen.hideAsync();
 }, 5000);
 
+// A fixed tall detent, not "fitToContents": the document is a `flex: 1`
+// ScrollView, which has no intrinsic height for the sheet to measure. It KEEPS
+// its header — a policy runs well past the fold, and the sheet's own nav bar is
+// the only place its title cannot scroll away from.
+const legalSheet = {
+  ...nativeHeaderChrome,
+  presentation: "formSheet" as const,
+  sheetGrabberVisible: true,
+  sheetAllowedDetents: [0.9],
+  // Explicit: this Stack's screenOptions turn headers off, and spreading
+  // nativeHeaderChrome does not turn them back on — it only styles one.
+  headerShown: true,
+};
+
 // FSD app layer: global providers + the native stack.
 //
 // Re-keying the Stack on locale makes an Android per-app language change
@@ -91,6 +106,10 @@ function RootLayout() {
               name="paywall"
               options={{ presentation: "modal", headerShown: true }}
             />
+            {/* Root-level for the same reason, and it has one more: the paywall
+                is itself a root screen, so a sheet pushed from under its
+                Restore button lands ON it rather than behind it. */}
+            <Stack.Screen name="legal/[doc]" options={legalSheet} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

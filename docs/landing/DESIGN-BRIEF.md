@@ -173,10 +173,14 @@ must resolve, with trailing slashes, exactly:
 ```
 
 **Every locale is prefixed, English included** — not the bare root. This changed
-in commit `769852a`; `apps/mobile/src/shared/config/legal-url.ts` builds
-`${SITE}/${locale}/${page}/` and `legal-url.test.ts` pins all four strings.
-Proposing a different scheme means a code change and a new App Store build — so
-say so loudly if you do.
+in commit `769852a`; `apps/landing/test/routes.test.ts` pins all four strings.
+The scheme is App Store Connect metadata a reviewer follows, so proposing a
+different one still means new store metadata — say so loudly if you do.
+
+**Superseded 2026-08-25:** the pages no longer own their own copy. Both
+documents live in `@subeye/legal` and are rendered by `LegalBody.astro`, which
+is also what the app renders in its legal sheet. Design the page; edit the words
+in the package or the two surfaces drift.
 
 The legal pages open from inside a dark app, so they should feel like the same
 product: readable measure, real hierarchy, same palette. Not a document dump.

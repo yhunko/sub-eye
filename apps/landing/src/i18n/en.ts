@@ -186,6 +186,5 @@ export const en = {
   legal: {
     updated: "Last updated",
     backHome: "Back to SubEye",
-    contents: "On this page",
   },
 };

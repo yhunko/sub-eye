@@ -1,119 +1,17 @@
 ---
+import { getLegalDoc } from "@subeye/legal";
+import LegalBody from "../../components/LegalBody.astro";
 import Legal from "../../layouts/Legal.astro";
-import { money } from "../../lib/format";
-import { operator, privacyEmail, proPrice } from "../../lib/site";
+
+const doc = getLegalDoc("terms-of-service", "en");
 ---
 
 <Legal
   locale="en"
   page="terms-of-service"
-  title="Terms of service"
-  description="The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it."
+  title={doc.title}
+  description={doc.description}
+  updated={doc.updated}
 >
-  <p>
-    These terms are the agreement between you and SubEye. They are deliberately
-    short, because the app is deliberately small.
-  </p>
-
-  <h2>Who you are agreeing with</h2>
-  <p>
-    SubEye is built and operated by {operator}, an individual based in Ukraine.
-    Contact: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
-  </p>
-
-  <h2>What SubEye is</h2>
-  <p>
-    An iPhone app for recording subscriptions you already have and seeing what
-    they cost. It is a record of what you tell it. It has no connection to your
-    bank, it does not read your email, it cannot see your actual charges, and it
-    cannot cancel anything on your behalf.
-  </p>
-  <p>
-    There is no account and no SubEye server. Everything you enter is stored on
-    your device, which means <strong
-      >the data exists in exactly one place and keeping it is up to you.</strong
-    > An iPhone backup is what carries it to a new phone; nothing syncs between two
-    devices, and nothing can be restored from here.
-  </p>
-  <p>
-    <strong
-      >Every figure in the app is arithmetic on the numbers you entered.</strong
-    > If a price you typed is wrong, or a merchant charges something different, or
-    an exchange rate moves, the app will be wrong too. It is a tracker, not a statement,
-    and it is not financial advice.
-  </p>
-
-  <h2>Using it</h2>
-  <p>
-    You must be 16 or older, and you must not use SubEye to break the law or to
-    attack the services it depends on.
-  </p>
-
-  <h2>Your data is yours</h2>
-  <p>
-    The subscriptions, notes and categories you enter belong to you, and they
-    stay on your device — SubEye never receives them, so there is nothing here
-    to claim ownership of, nothing to sell, and nothing to hand to anyone else.
-    See the <a href="/en/privacy-policy/">privacy policy</a>.
-  </p>
-
-  <h2>Free and Pro</h2>
-  <p>
-    The free version is not a trial. Unlimited subscriptions, the whole
-    dashboard, search and filters, every lifecycle action, a renewal reminder
-    the day before, and multi-currency conversion are free and stay free.
-  </p>
-  <p>
-    <strong>SubEye Pro is a single payment of {money(proPrice.usd, "usd")}</strong
-    >, or the equivalent set for your App Store storefront — about {
-      money(proPrice.uah, "uah", 0)
-    } in Ukraine. It is not a subscription and it does not renew. It unlocks
-    control over when reminders land, trial-ending and price-change tracking,
-    and categories with the spend breakdown.
-  </p>
-  <p>
-    Purchases are made through Apple, under Apple's terms. Refunds are handled
-    by Apple, not by SubEye.
-  </p>
-
-  <h2>Notifications</h2>
-  <p>
-    Renewal reminders are scheduled on your device by iOS. If you deny
-    notification permission, turn the device off, or force-quit the app for a
-    long time, iOS may not deliver them. <strong
-      >Do not rely on SubEye as your only defence against an unwanted
-      renewal.</strong
-    >
-  </p>
-
-  <h2>Availability</h2>
-  <p>
-    SubEye is provided as it is, with no warranty of any kind. It is a small
-    independent app: it may change, may stop being updated, and may one day be
-    withdrawn from the App Store. A copy already installed keeps working
-    offline, because there is no service behind it to switch off. Nothing here
-    excludes liability that cannot lawfully be excluded, but otherwise liability
-    is limited to what you paid for SubEye Pro, if anything.
-  </p>
-
-  <h2>Ending it</h2>
-  <p>
-    You can stop at any time: Settings → Erase all data clears the device, and
-    deleting the app removes the rest. Neither needs anyone's permission and
-    neither can be undone.
-  </p>
-
-  <h2>Changes</h2>
-  <p>
-    These terms may change. The date at the top of this page will change with
-    them, and a material change will be announced in the app before it takes
-    effect. Continuing to use SubEye after that means you accept the new terms.
-  </p>
-
-  <h2>Law</h2>
-  <p>
-    These terms are governed by the law of Ukraine. If you are a consumer in the
-    European Union or the United Kingdom, this does not remove the protections
-    of your own country's law.
-  </p>
+  <LegalBody doc={doc} locale="en" />
 </Legal>

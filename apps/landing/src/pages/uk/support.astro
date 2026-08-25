@@ -1,6 +1,6 @@
 ---
+import { LEGAL_CONTACT_EMAIL } from "@subeye/legal";
 import Legal from "../../layouts/Legal.astro";
-import { privacyEmail } from "../../lib/site";
 ---
 
 <Legal
@@ -16,7 +16,7 @@ import { privacyEmail } from "../../lib/site";
 
   <h2>Куди писати</h2>
   <p>
-    <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a> — це пряма адреса Єгора
+    <a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> — це пряма адреса Єгора
     Гунька. Відповідь зазвичай протягом кількох днів; на запити щодо ваших
     персональних даних — протягом 30 днів, як каже <a
       href="/uk/privacy-policy/">політика конфіденційності</a

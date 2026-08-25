@@ -127,16 +127,15 @@ path, and the site serves no Ukrainian locale at all.
 about it lives in this monorepo. `docs/landing/DESIGN-BRIEF.md` is the brief for
 the redesign that serves these routes.
 
-**Decided 2026-07-27:** the redesign serves `/en` and `/uk`, so the app prefixes
-**every** locale, English included. `legalUrl()` in
-`apps/mobile/src/shared/config/legal-url.ts` builds exactly those four and
-`legal-url.test.ts` pins them. That means **the redesign shipping those four
-routes is on the submission critical path.** If the scheme changes again,
-`legal-url.ts` is the only place it is encoded and the test will tell you.
+**Decided 2026-07-27:** the redesign serves `/en` and `/uk`, so every locale is
+prefixed, English included. `apps/landing/test/routes.test.ts` pins the four.
 
-Two consequences live in the shipped app today: App Store Connect requires a
-resolving Privacy Policy URL (a 404 is a rejection before review starts), and
-Settings → Privacy 404s for every user.
+**Superseded 2026-08-25** for the app half: `@subeye/legal` puts both documents
+in the bundle, and Settings → Legal and the paywall now open a native sheet
+rather than a browser. The site is still on the submission critical path, but
+only through metadata — App Store Connect requires a resolving Privacy Policy
+URL and a reviewer follows it, so a 404 is a rejection before review starts.
+Nothing inside the app 404s any more.
 
 The privacy policy must state, at minimum:
 

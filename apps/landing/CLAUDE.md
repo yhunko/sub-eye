@@ -20,10 +20,11 @@ https://www.subeye.cc/uk/terms-of-service/
 https://www.subeye.cc/uk/privacy-policy/
 ```
 
-`apps/mobile/src/shared/config/legal-url.ts` builds exactly these and pins them
-in its own test. **App Store Connect rejects a 404 privacy policy**, and
-Settings → Legal opens them in front of a reviewer. Three things produce them
-and all three must agree:
+**App Store Connect rejects a 404 privacy policy**, so these four have to
+resolve even though the app itself no longer opens them: since `@subeye/legal`,
+Settings → Legal and the paywall render the documents in a native sheet from the
+shipped bundle. The URLs are metadata now — a reviewer follows them, a binary
+does not. Three things produce them and all three must agree:
 
 | where | what |
 | --- | --- |
@@ -33,6 +34,28 @@ and all three must agree:
 
 `test/routes.test.ts` asserts all of it against the page files that exist. If it
 fails, do not "fix" the test — a scheme change costs a new App Store build.
+
+## The legal pages own no copy
+
+Both documents live in [`@subeye/legal`](../../packages/legal) as data, and the
+four `.astro` pages are ten lines each: fetch the doc, hand it to
+`components/LegalBody.astro`, which maps blocks onto the `h2`/`p`/`ul`/`dl`/
+`strong`/`code` tags `layouts/Legal.astro` already styles. `apps/mobile` renders
+the same object natively in its legal sheet, so **editing the words here is
+impossible by design** — change them in the package or the app and the site say
+different things to the same user.
+
+Two things follow. `Legal.astro`'s `updated` prop is optional and comes off the
+document, so the support page — which shares the layout but is not a revised
+document — no longer prints a date. And the layout formats that date with
+`timeZone: "UTC"`, because an ISO day parses to UTC midnight and a build machine
+west of UTC would otherwise print the day before, only on that machine.
+
+`privacyEmail` and `operator` moved into the package as `LEGAL_CONTACT_EMAIL`
+and `LEGAL_OPERATOR`; the footer and both support pages import them from there.
+`proPrice` stayed in `src/lib/site.ts` — a package cannot import an app — so the
+terms quote it as formatted literals and `test/pricing.test.ts` pins the two
+against each other.
 
 ## Zero client JavaScript, and it has to stay zero
 

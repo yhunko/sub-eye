@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
+    "@subeye/legal": "workspace:*",
     "@subeye/pricing": "workspace:*",
     "@subeye/model": "workspace:*",
     "astro": "^6.4.8",

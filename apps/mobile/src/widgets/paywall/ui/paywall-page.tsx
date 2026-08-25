@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,7 +18,6 @@ import {
   restorePro,
   usePro,
 } from "@/entities/pro";
-import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { nativeHeaderChrome } from "@/shared/ui/header";
@@ -213,16 +211,16 @@ export function PaywallPage() {
 
         <View style={styles.legal}>
           <Pressable
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(termsUrl())}
+            accessibilityRole="button"
+            onPress={() => router.push("/legal/terms-of-service")}
             hitSlop={8}
           >
             <Text style={styles.legalLink}>{m.settings_terms()}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
           <Pressable
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(privacyUrl())}
+            accessibilityRole="button"
+            onPress={() => router.push("/legal/privacy-policy")}
             hitSlop={8}
           >
             <Text style={styles.legalLink}>{m.settings_privacy()}</Text>

@@ -190,6 +190,5 @@ export const uk: Copy = {
   legal: {
     updated: "Оновлено",
     backHome: "Назад на SubEye",
-    contents: "На цій сторінці",
   },
 };

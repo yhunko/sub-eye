@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { devForcePro, restorePro, usePro } from "@/entities/pro";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
-import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
 import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
@@ -292,14 +291,14 @@ export function SettingsPage() {
           ios="doc.text"
           android="description"
           label={m.settings_terms()}
-          onPress={() => void Linking.openURL(termsUrl())}
+          onPress={() => router.push("/legal/terms-of-service")}
         />
         <Divider />
         <Row
           ios="hand.raised"
           android="privacy_tip"
           label={m.settings_privacy()}
-          onPress={() => void Linking.openURL(privacyUrl())}
+          onPress={() => router.push("/legal/privacy-policy")}
         />
       </Section>
 

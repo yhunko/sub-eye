@@ -2,7 +2,7 @@
 import Footer from "../components/Footer.astro";
 import Nav from "../components/Nav.astro";
 import { copyFor } from "../i18n";
-import { legalUpdated, type Locale, path, type SitePage } from "../lib/site";
+import { type Locale, path, type SitePage } from "../lib/site";
 import Base from "./Base.astro";
 
 interface Props {
@@ -10,16 +10,24 @@ interface Props {
   page: SitePage;
   title: string;
   description: string;
+  /** ISO day. Omitted by the support page, which is not a revised document. */
+  updated?: string;
 }
 
-const { locale, page, title, description } = Astro.props;
+const { locale, page, title, description, updated } = Astro.props;
 const c = copyFor(locale);
 
-const updated = new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-}).format(new Date(legalUpdated));
+// `timeZone: "UTC"` because an ISO day parses to UTC midnight: without it the
+// printed date is a day early whenever the machine running `astro build` sits
+// west of UTC, which is silent and only reproduces on that machine.
+const updatedLabel = updated
+  ? new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(updated))
+  : null;
 ---
 
 <Base locale={locale} page={page} title={title} description={description}>
@@ -33,10 +41,14 @@ const updated = new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
         <a href={path(locale)}>{c.legal.backHome}</a>
       </p>
       <h1>{title}</h1>
-      <p class="legal__updated">
-        {c.legal.updated}
-        <time datetime={legalUpdated}>{updated}</time>
-      </p>
+      {
+        updatedLabel ? (
+          <p class="legal__updated">
+            {c.legal.updated}
+            <time datetime={updated}>{updatedLabel}</time>
+          </p>
+        ) : null
+      }
       <div class="legal__body">
         <slot />
       </div>
