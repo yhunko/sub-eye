@@ -58,10 +58,18 @@ Do it once per team:
    Register.
 2. **App IDs → `cc.subeye.app`** —
    <https://developer.apple.com/account/resources/identifiers/list/bundleId>
-   Tick **App Groups**, press its **Configure**, tick `group.cc.subeye.app`,
-   Continue → Save. Untick nothing. Sign in with Apple is dead weight since v5
-   removed accounts, but removing a capability from a registered App ID
-   invalidates every provisioning profile for it — leave it alone.
+   Tick **App Groups**, press its **Configure**, tick `group.cc.subeye.app`.
+   Tick **iCloud** as well — the store's sync switch needs
+   `com.apple.developer.ubiquity-kvstore-identifier`, and the capability is what
+   grants it. Continue → Save.
+
+   **Untick nothing, and do not try.** Sign in with Apple is dead weight since
+   v5 removed accounts, but it CANNOT be removed: Apple answers "The bundle
+   'NS5LM36RJ8' cannot be deleted. Delete all the Apps related to this bundle to
+   proceed" because the bundle has an App Store Connect app record. That is its
+   generic entity error, not a real delete — it is not asking you to delete
+   anything you would want to. It costs nothing to leave on, because nothing
+   writes `com.apple.developer.applesignin` into the entitlements any more.
 3. **App IDs → ➕** for the widget — App IDs → App → Continue. Description
    `SubEye Widget`, Bundle ID **Explicit** = **`cc.subeye.app.widget`**. Tick
    **App Groups** → Configure → tick `group.cc.subeye.app` → Continue →

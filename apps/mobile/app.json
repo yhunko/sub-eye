@@ -18,7 +18,8 @@
       "icon": "./icon.icon",
       "backgroundColor": "#0f1115",
       "entitlements": {
-        "com.apple.security.application-groups": ["group.cc.subeye.app"]
+        "com.apple.security.application-groups": ["group.cc.subeye.app"],
+        "com.apple.developer.ubiquity-kvstore-identifier": "$(TeamIdentifierPrefix)$(CFBundleIdentifier)"
       },
       "config": {
         "usesNonExemptEncryption": false

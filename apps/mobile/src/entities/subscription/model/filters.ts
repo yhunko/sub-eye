@@ -3,15 +3,24 @@ import {
   shouldIncludeOccurrence,
 } from "@subeye/lifecycle";
 import type { SubscriptionDto, SubscriptionStatus } from "@subeye/model";
-import type { SubscriptionGroupBy } from "./grouping";
+import { SUBSCRIPTION_GROUP_BYS, type SubscriptionGroupBy } from "./grouping";
 
-export type SubscriptionSort = "next" | "name" | "cost";
+// Arrays first, types derived from them. The stored-filter parser below has to
+// check a value it read off disk against the allowed set, and a hand-written
+// second copy of these lists is a silent bug waiting: add a sort, forget the
+// list, and the new one is the only one that never survives a restart.
+export const SUBSCRIPTION_SORTS = ["next", "name", "cost"] as const;
+export type SubscriptionSort = (typeof SUBSCRIPTION_SORTS)[number];
+
+export const SUBSCRIPTION_STATUS_FILTERS = [
+  "all",
+  "active",
+  "paused",
+  "cancelling",
+  "cancelled",
+] as const;
 export type SubscriptionStatusFilter =
-  | "all"
-  | "active"
-  | "paused"
-  | "cancelling"
-  | "cancelled";
+  (typeof SUBSCRIPTION_STATUS_FILTERS)[number];
 
 export type SubscriptionListFilters = {
   search: string;
@@ -129,4 +138,60 @@ export function applySubscriptionFilters(
         return Date.parse(a.nextPaymentDate) - Date.parse(b.nextPaymentDate);
     }
   });
+}
+
+const oneOf = <T extends string>(
+  allowed: readonly T[],
+  value: unknown,
+  fallback: T,
+): T => (allowed.includes(value as T) ? (value as T) : fallback);
+
+/**
+ * A filter set read back off the device, validated down to something the list
+ * can actually apply.
+ *
+ * Never throws and never trusts: the blob was written by an older build, or by
+ * a build that spelled a status differently, and an unrecognised value would
+ * silently match no rows — an empty list with no visible reason is the worst
+ * outcome this whole feature can produce. Anything unknown falls back to its
+ * default rather than being kept.
+ *
+ * **`search` is always empty, whatever was stored.** The text belongs to the
+ * native UISearchBar, which this cannot pre-fill — restoring the term would
+ * narrow the list to something the user cannot see, cannot explain and cannot
+ * clear without guessing. The other four all announce themselves: the header's
+ * menu button is tinted and filled whenever one of them is hiding rows.
+ *
+ * A `categoryId` whose category has since been deleted is left as it is. It
+ * narrows the list to nothing, but the lit menu button and the "nothing matches"
+ * empty state both say so, and clearing it here would need the category list,
+ * which this cannot reach.
+ */
+export function parseStoredFilters(raw: unknown): SubscriptionListFilters {
+  const stored = (
+    typeof raw === "object" && raw !== null ? raw : {}
+  ) as Partial<SubscriptionListFilters>;
+
+  return {
+    search: "",
+    status: oneOf(
+      SUBSCRIPTION_STATUS_FILTERS,
+      stored.status,
+      DEFAULT_SUBSCRIPTION_FILTERS.status,
+    ),
+    categoryId:
+      typeof stored.categoryId === "string" && stored.categoryId
+        ? stored.categoryId
+        : null,
+    sort: oneOf(
+      SUBSCRIPTION_SORTS,
+      stored.sort,
+      DEFAULT_SUBSCRIPTION_FILTERS.sort,
+    ),
+    group: oneOf(
+      SUBSCRIPTION_GROUP_BYS,
+      stored.group,
+      DEFAULT_SUBSCRIPTION_FILTERS.group,
+    ),
+  };
 }

@@ -72,7 +72,7 @@ function BrandAvatar() {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${m.form_brand()}, ${domain || m.form_brandNone()}`}
-      onPress={() => router.push("/subscriptions/form/brand")}
+      onPress={() => router.push("/subscription-form/brand")}
       style={({ pressed }) => [styles.brand, pressed && styles.brandPressed]}
     >
       {domain ? (
@@ -116,7 +116,7 @@ function CategoryRow() {
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${value}`}
         onPress={() =>
-          router.push(isPro ? "/subscriptions/form/category" : "/paywall")
+          router.push(isPro ? "/subscription-form/category" : "/paywall")
         }
         style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
       >

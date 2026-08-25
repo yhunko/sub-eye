@@ -1,5 +1,6 @@
 import type { Ports } from "@subeye/store";
 import * as Crypto from "expo-crypto";
+import { pushToCloud } from "./cloud";
 import { readDoc, type StoreDoc, writeDoc } from "./document";
 import { ratesPort } from "./fx";
 
@@ -8,11 +9,19 @@ import { ratesPort } from "./fx";
  *
  * A throw inside `change` never reaches `writeDoc`, so a rejected write leaves
  * the store exactly as it was.
+ *
+ * The cloud push hangs off THIS rather than off `writeDoc`, for two reasons: it
+ * is the single funnel every mutation in the app goes through, and `cloud` reads
+ * and writes the document itself — hooking the writer would be a cycle, which
+ * `check:circular` fails the build on. It runs after the write lands, so a
+ * failed upload cannot cost a saved subscription, and it no-ops unless the user
+ * has switched sync on.
  */
 const mutate = <T>(change: (doc: StoreDoc) => T): T => {
   const doc = readDoc();
   const result = change(doc);
   writeDoc(doc);
+  pushToCloud();
   return result;
 };
 

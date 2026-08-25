@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { m } from "@/shared/i18n";
 import { BrandLogo } from "@/shared/ui/brand-logo";
+import { nativeSearchBarChrome } from "@/shared/ui/header";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
 import { brandSearchQuery, POPULAR_BRANDS } from "../model/brand-search";
 import { useSubscriptionForm } from "../model/form-context";
@@ -76,12 +77,8 @@ export function BrandPickerPage() {
         options={{
           title: m.form_brand(),
           headerSearchBarOptions: {
-            placement: "stacked",
-            hideWhenScrolling: false,
+            ...nativeSearchBarChrome,
             placeholder: m.form_brandSearch(),
-            autoCapitalize: "none",
-            tintColor: colors.accent,
-            textColor: colors.text,
             onChangeText: (event) => setSearch(event.nativeEvent.text),
           },
         }}

@@ -110,6 +110,20 @@ function RootLayout() {
                 is itself a root screen, so a sheet pushed from under its
                 Restore button lands ON it rather than behind it. */}
             <Stack.Screen name="legal/[doc]" options={legalSheet} />
+            {/* Root-level for the same reason as the paywall: four surfaces open
+                it — Home's `+`, the list's `+`, Home's first-run empty state and
+                the detail screen's Edit — and two of them live in a different
+                tab from the list. Nested under `(tabs)/subscriptions` it was a
+                cross-tab push: expo-router had to switch tabs and present the
+                modal in one commit, so the tab visibly changed underneath and
+                the modal's slide-up was swallowed by the switch. From the root
+                it presents over whichever tab is showing and nothing moves
+                behind it. headerShown: false because the nested layout inside
+                brings its own nav bar. */}
+            <Stack.Screen
+              name="subscription-form"
+              options={{ presentation: "modal", headerShown: false }}
+            />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -2,7 +2,7 @@ import { applyDuePhases } from "@subeye/store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSegments } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { useDashboard, useMonthlySummary } from "@/entities/dashboard";
 import { usePro } from "@/entities/pro";
@@ -16,7 +16,13 @@ import {
   syncReminders,
   useReminderTap,
 } from "@/shared/lib/notifications";
-import { cachedRateDate, localPorts, refreshRates } from "@/shared/lib/store";
+import {
+  cachedRateDate,
+  localPorts,
+  observeCloud,
+  pushToCloud,
+  refreshRates,
+} from "@/shared/lib/store";
 import { syncWidget } from "@/shared/lib/widget";
 import { colors } from "@/shared/ui/theme";
 
@@ -214,6 +220,44 @@ function RatesSync() {
 }
 
 /**
+ * Renders nothing; folds edits made on the user's other devices into this one.
+ *
+ * Mounted unconditionally, like its neighbours, and `observeCloud` decides for
+ * itself whether there is anything to listen to — the switch can be flipped in
+ * Settings while this is mounted, and a gate here would leave the listener
+ * subscribed to the wrong answer until the next remount.
+ *
+ * Invalidating is the whole point of the callback: the document changed
+ * underneath a screen that is already rendering it, and there is no write here
+ * for Query to have observed.
+ */
+function CloudSync() {
+  const client = useQueryClient();
+
+  useEffect(() => {
+    const unsubscribe = observeCloud(() => {
+      void invalidateSubscriptionData(client);
+    });
+
+    // Push on foreground as well as on write. Every mutation reconciles, so this
+    // only ever catches what a mutation could not: the app killed between the
+    // local write and the upload, and a write iOS refused at the time. It is a
+    // local diff over ~70 keys and sends nothing when they already agree.
+    pushToCloud();
+    const listener = AppState.addEventListener("change", (status) => {
+      if (status === "active") pushToCloud();
+    });
+
+    return () => {
+      listener.remove();
+      unsubscribe();
+    };
+  }, [client]);
+
+  return null;
+}
+
+/**
  * True while a subscription's own screen is on top of the stack.
  *
  * UIKit hides the tab bar on a pushed screen with `hidesBottomBarWhenPushed`,
@@ -225,11 +269,37 @@ function RatesSync() {
  * matches the category editor, which is a sheet floating over the tab bar and
  * must not hide it, and the pair keeps the bar hidden while the detail screen's
  * own pause/pricing sheets sit on top of it.
+ *
+ * A ROOT-LEVEL modal is the case the segments cannot answer. `useSegments`
+ * describes the route on top, so while `/subscription-form` or `/paywall` is
+ * presented it stops mentioning the tabs at all — and this went false, un-hiding
+ * a tab bar nobody could see behind the modal. Swiping the edit sheet down then
+ * revealed that bar for the length of the dismissal before the segments caught
+ * up and hid it again: a tab bar that appears and instantly vanishes.
+ *
+ * So while one of those covers the tabs, hold the last answer rather than
+ * recomputing a wrong one. Opened from Home or the list it holds `false` and the
+ * bar stays put; opened from a subscription it holds `true` and the bar stays
+ * hidden all the way through the dismissal.
  */
+const COVERING_ROUTES = ["subscription-form", "paywall"];
+
 function useSubscriptionDetailFocused(): boolean {
   const segments = useSegments();
   const index = segments.indexOf("subscriptions");
-  return index !== -1 && segments[index + 1] === "[id]";
+  const onDetail = index !== -1 && segments[index + 1] === "[id]";
+
+  // `segments[0]` is "(tabs)" for everything inside the tab tree, so a root
+  // modal is the only thing that can put one of these first.
+  const covered = COVERING_ROUTES.includes(segments[0] ?? "");
+
+  // Adjusting state during render — React's own pattern for a value derived
+  // from props that must survive a period when the source stops being reliable.
+  // An effect would land a frame late, which is exactly the flash being fixed.
+  const [held, setHeld] = useState(onDetail);
+  if (!covered && held !== onDetail) setHeld(onDetail);
+
+  return covered ? held : onDetail;
 }
 
 function Tabs() {
@@ -243,6 +313,7 @@ function Tabs() {
       <ReminderTapRouter />
       <DuePhaseSync />
       <RatesSync />
+      <CloudSync />
       <NativeTabs
         minimizeBehavior="onScrollDown"
         tintColor={colors.accent}

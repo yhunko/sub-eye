@@ -8,6 +8,12 @@ lives in MMKV on the device; `@subeye/store`'s ports are implemented against it
 in `apps/mobile/src/shared/lib/store`. The only network calls left are Sentry,
 RevenueCat, Brandfetch, Google favicons and the daily FX document from jsDelivr.
 
+The one exception is **iCloud key-value sync**, which is off by default and is
+the only path that ever sends a user's own data anywhere. It is Apple's
+transport, not ours — still no server and still no account — and it is a switch
+in Settings → Data precisely because "it stays on your phone" is a promise the
+landing page makes. See `apps/mobile/src/shared/lib/store/cloud.ts`.
+
 ```
 apps/mobile       Expo (React Native, expo-router) — the app
 apps/landing      subeye.cc — Astro 6, static, zero client JS, en + uk

@@ -3,6 +3,7 @@ import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import {
   applySubscriptionFilters,
   DEFAULT_SUBSCRIPTION_FILTERS,
+  parseStoredFilters,
   type SubscriptionListFilters,
   subscriptionsDueOn,
 } from "./filters";
@@ -308,5 +309,55 @@ describe("subscriptionsDueOn", () => {
     expect(subscriptionsDueOn([due("1", "2026-08-01")], "nonsense")).toEqual(
       [],
     );
+  });
+});
+
+describe("parseStoredFilters", () => {
+  it("restores every remembered dimension", () => {
+    expect(
+      parseStoredFilters({
+        status: "cancelled",
+        categoryId: "cat_1",
+        sort: "cost",
+        group: "period",
+      }),
+    ).toEqual({
+      search: "",
+      status: "cancelled",
+      categoryId: "cat_1",
+      sort: "cost",
+      group: "period",
+    });
+  });
+
+  // The native UISearchBar owns its text and cannot be pre-filled, so a restored
+  // term would narrow the list to something with no visible cause — and, since
+  // the field now hides until pulled down, nothing on screen to explain it.
+  it("never restores the search term", () => {
+    expect(parseStoredFilters({ search: "netflix" }).search).toBe("");
+  });
+
+  it.each([
+    ["status", { status: "archived" }],
+    ["sort", { sort: "cheapest" }],
+    ["group", { group: "colour" }],
+  ])("falls back to the default for an unknown %s", (key, patch) => {
+    const parsed = parseStoredFilters(patch) as Record<string, unknown>;
+    expect(parsed[key]).toBe(
+      (DEFAULT_SUBSCRIPTION_FILTERS as Record<string, unknown>)[key],
+    );
+  });
+
+  // A build that renamed a value must not leave the list matching nothing with
+  // no way for the user to work out why.
+  it("survives a blob that is not an object at all", () => {
+    expect(parseStoredFilters(null)).toEqual(DEFAULT_SUBSCRIPTION_FILTERS);
+    expect(parseStoredFilters("[]")).toEqual(DEFAULT_SUBSCRIPTION_FILTERS);
+    expect(parseStoredFilters(7)).toEqual(DEFAULT_SUBSCRIPTION_FILTERS);
+  });
+
+  it("treats a non-string or empty categoryId as no category", () => {
+    expect(parseStoredFilters({ categoryId: 12 }).categoryId).toBeNull();
+    expect(parseStoredFilters({ categoryId: "" }).categoryId).toBeNull();
   });
 });

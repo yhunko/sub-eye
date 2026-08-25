@@ -68,6 +68,7 @@ export function Row({
   value,
   onPress,
   accent,
+  destructive,
   toggle,
   accessory,
 }: RowLeading & {
@@ -78,6 +79,12 @@ export function Row({
   onPress?: () => void;
   /** Tints the row as an action rather than a destination. */
   accent?: boolean;
+  /**
+   * The same idea as `accent`, in red: an action that destroys something. Wins
+   * over `accent` if both are passed, because the warning is the load-bearing
+   * half — but passing both is a caller error, not a supported combination.
+   */
+  destructive?: boolean;
   toggle?: {
     value: boolean;
     disabled: boolean;
@@ -99,13 +106,23 @@ export function Row({
           <SymbolView
             name={{ ios, android }}
             size={19}
-            tintColor={accent ? colors.accent : colors.muted}
+            tintColor={
+              destructive
+                ? colors.danger
+                : accent
+                  ? colors.accent
+                  : colors.muted
+            }
             weight="regular"
           />
         ) : null)}
       <View style={styles.middle}>
         <Text
-          style={[styles.label, accent && styles.labelAccent]}
+          style={[
+            styles.label,
+            accent && styles.labelAccent,
+            destructive && styles.labelDestructive,
+          ]}
           // TWO lines, not one. A label that fits in English is not a label that
           // fits — "Trial ending reminders" is half again as long in Ukrainian
           // and was truncating into the switch. Wrapping is what UIKit does.
@@ -148,7 +165,7 @@ export function Row({
           and UIKit gives those no chevron — the same reason ActionButton has
           none. Restore, Open device settings and Send a test all read as
           navigation until this. */}
-      {onPress && !accent && !toggle && !accessory ? (
+      {onPress && !accent && !destructive && !toggle && !accessory ? (
         <SymbolView
           name={{ ios: "chevron.right", android: "chevron_right" }}
           size={13}
@@ -244,6 +261,7 @@ const styles = StyleSheet.create({
   middle: { flex: 1, minWidth: 0 },
   label: { fontSize: 16, color: colors.text },
   labelAccent: { color: colors.accent, fontWeight: "600" },
+  labelDestructive: { color: colors.danger, fontWeight: "600" },
   subtitle: { fontSize: 12.5, color: colors.muted, marginTop: 1 },
   value: { fontSize: 16, color: colors.muted, flexShrink: 1 },
 });

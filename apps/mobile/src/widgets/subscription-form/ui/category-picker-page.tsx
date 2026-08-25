@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { categoriesQuery, useCreateCategory } from "@/entities/category";
 import { m } from "@/shared/i18n";
+import { nativeSearchBarChrome } from "@/shared/ui/header";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
 import { useSubscriptionForm } from "../model/form-context";
@@ -73,17 +74,13 @@ export function CategoryPickerPage() {
         options={{
           title: m.form_category(),
           headerSearchBarOptions: {
-            placement: "stacked",
-            // The list is the whole screen and this field is how you get through
-            // it, so it stays put rather than retracting on the first scroll.
-            hideWhenScrolling: false,
+            ...nativeSearchBarChrome,
             // Not the list's plain "Search": typing a name that matches nothing
             // offers to create it, and that is the only way to make a category
             // from here. A field labelled "Search" hides the feature entirely.
             placeholder: m.form_categorySearchOrCreate(),
+            // A category name is a proper noun, so this one field capitalises.
             autoCapitalize: "sentences",
-            tintColor: colors.accent,
-            textColor: colors.text,
             onChangeText: (event) => setSearch(event.nativeEvent.text),
           },
         }}

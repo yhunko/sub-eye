@@ -27,3 +27,37 @@ export const nativeHeaderChrome = {
         headerShadowVisible: false,
       } as const)),
 };
+
+// The app's search-field chrome, spread into a screen's `headerSearchBarOptions`
+// — the search counterpart of `nativeHeaderChrome`. Three screens carry a field:
+// the list, the category picker and the brand picker.
+//
+// `placement: "stacked"` + `hideWhenScrolling: false` is a real UISearchBar
+// pinned under the nav bar that never leaves. Not `automatic`: UIKit picks the
+// placement itself there and can put the field in a bottom toolbar on iPhone.
+//
+// The platform's own pull-down-to-reveal (`true`, as Mail and Settings do) was
+// tried and reverted. It reads well and it removes the placeholder flash below
+// for free — nothing is rendered to repaint — but the reveal needs the content
+// to out-measure the screen, and buying that with a height floor on the list
+// leaves a short list scrollable into blank space. A field that is simply
+// always there costs nothing and hides nothing.
+//
+// `barTintColor` is NOT styling — it sets `searchTextField.backgroundColor`, and
+// leaving it unset is what made the field flash near-WHITE for ~200ms every time
+// its screen came back to the top of the stack. UIKit's default fill is
+// translucent light: it reads dark-grey while it has the app's own near-black
+// behind it, and blows out over whatever a push/pop transition puts there
+// instead. Measured returning from a subscription — the band around the field
+// peaked at 0.47 luminance against a resting 0.11, for 12 frames. An opaque fill
+// has nothing to sample and cannot flash. An older note claimed a custom
+// barTintColor renders the magnifier glyph black; it does not on
+// react-native-screens 4.25 — verified on iOS 26.
+export const nativeSearchBarChrome = {
+  placement: "stacked" as const,
+  hideWhenScrolling: false,
+  autoCapitalize: "none" as const,
+  tintColor: colors.accent,
+  textColor: colors.text,
+  barTintColor: colors.surfaceAlt,
+};

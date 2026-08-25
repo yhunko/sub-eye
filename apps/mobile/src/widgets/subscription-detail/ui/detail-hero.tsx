@@ -16,6 +16,22 @@ const NAV_BAR_HEIGHT = 44;
  */
 const OVERSCAN = 12;
 
+/**
+ * How far the banner reaches ABOVE the screen, so a rubber-band pull cannot drag
+ * page background into view behind it.
+ *
+ * The hero scrolls with the content, so on an overscroll it travels down and
+ * whatever sits above it is exposed — a hard black strip under the nav bar,
+ * which is the same seam `OVERSCAN` exists to prevent, just produced by a
+ * gesture instead of by rounding. Extending the artwork past any reachable pull
+ * is cheaper than an animated stretchy header: no scroll handler, no
+ * `Animated.ScrollView`, and nothing that runs per frame.
+ *
+ * It is added to the margin AND paid back as padding, so no content moves — only
+ * the artwork grows upward into space that is off-screen at rest.
+ */
+const OVERSCROLL_REACH = 420;
+
 // References, not calls — a module-level table must hold the message function or
 // the string freezes in whichever locale was active at import.
 const STATUS_LABEL: Record<SubscriptionStatus, () => string> = {
@@ -62,6 +78,14 @@ function Backdrop({ domain }: { domain: string | null }) {
           resizeMode="cover"
         />
       ) : null}
+      {/* TWO scrims, not one stretched over the taller box. The gradient's own
+          stops are percentages, so covering the overscroll reach with it would
+          slide 52% and 100% down with the extra height and leave the VISIBLE
+          band sitting in the dark end of the ramp — the brand wash would go
+          uniformly murky. Instead the reach gets a flat scrim at exactly the
+          gradient's 0% value, which makes the join invisible, and the gradient
+          keeps the geometry it was tuned for. */}
+      <View style={styles.scrimReach} />
       <View style={styles.scrim} />
     </View>
   );
@@ -132,7 +156,9 @@ export function DetailHero({
   // and the negative margin would just hide the top of the banner behind it.
   const insets = useSafeAreaInsets();
   const reach =
-    Platform.OS === "ios" ? insets.top + NAV_BAR_HEIGHT + OVERSCAN : 0;
+    Platform.OS === "ios"
+      ? insets.top + NAV_BAR_HEIGHT + OVERSCAN + OVERSCROLL_REACH
+      : 0;
 
   return (
     <View
@@ -213,10 +239,27 @@ const styles = StyleSheet.create({
     transform: [{ scale: 2.6 }],
     filter: [{ saturate: 2.6 }, { brightness: 0.85 }],
   },
+  // Only the part of the banner that is ever on screen at rest. `top` is the
+  // overscroll reach, so this begins exactly where the flat scrim above it ends
+  // and at the same 0.40 — one continuous wash across the join.
   scrim: {
-    ...StyleSheet.absoluteFill,
+    position: "absolute",
+    top: OVERSCROLL_REACH,
+    left: 0,
+    right: 0,
+    bottom: 0,
     experimental_backgroundImage:
       "linear-gradient(180deg, rgba(15,17,21,0.40) 0%, rgba(15,17,21,0.72) 52%, rgba(15,17,21,0.93) 100%)",
+  },
+  // The reach itself: a flat scrim at the gradient's starting value. Only ever
+  // seen mid-pull, and only the last few points of it.
+  scrimReach: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: OVERSCROLL_REACH,
+    backgroundColor: "rgba(15,17,21,0.40)",
   },
 
   identity: { flexDirection: "row", alignItems: "center", gap: 14 },

@@ -11,7 +11,15 @@ import { SubscriptionFormProvider } from "@/widgets/subscription-form";
  *
  * The provider wraps the Stack rather than sitting inside a screen, so the form
  * and the picker share one draft and it unmounts with the modal.
+ *
+ * It sits at the ROOT rather than under `(tabs)/subscriptions`, because Home
+ * opens it too — see the root layout's screen for what a cross-tab push did to
+ * the presentation animation.
  */
+// `subeye:///subscription-form/brand` would otherwise mount the picker as the
+// only route in this stack — no back button, and no form for it to write into.
+export const unstable_settings = { anchor: "index" };
+
 export default function SubscriptionFormLayout() {
   const { id } = useLocalSearchParams<{ id?: string }>();
 

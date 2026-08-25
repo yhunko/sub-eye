@@ -20,15 +20,18 @@ No agent can do any of it.
 >   webhook purge Postgres, leaving the Apple token live. That gap is gone
 >   rather than fixed.
 >
-> The Sign in with Apple capability stays in the entitlements file: removing a
-> capability from a registered App ID invalidates every provisioning profile.
+> The Sign in with Apple capability stays enabled on the App ID. The entitlement
+> itself is gone as of the offline flip, but the capability cannot be switched
+> off — and removing one from a registered App ID invalidates every provisioning
+> profile for it anyway.
 
 **Already done, kept only for the record:**
 
 | Step | State |
 | --- | --- |
 | `eas init` | ✅ 2026-07-27 — `projectId e52f6dbb-…`, `owner yehor.hunko`. The project had never been linked, and with `appVersionSource: "remote"` that had been blocking every EAS build of every profile. |
-| Sign in with Apple — Apple Developer capability + Clerk SSO connection | ✅ 2026-07-27, and **obsolete since v5**. `bun run prebuild` writes `com.apple.developer.applesignin: ["Default"]` into `ios/SubEye/SubEye.entitlements` and it is still in the binary; nothing calls it. The flow was never exercised and never will be. Leave the capability alone — see the banner above. |
+| Sign in with Apple — Apple Developer capability + Clerk SSO connection | ✅ 2026-07-27, and **obsolete since v5**. The entitlement is gone: `app.json` no longer asks for it and prebuild writes only `aps-environment` and the App Group into `ios/SubEye/SubEye.entitlements`. The capability is still enabled on the App ID and cannot be removed — Apple answers "The bundle 'NS5LM36RJ8' cannot be deleted" to the console and to EAS alike, because the bundle has an App Store Connect app record. That mismatch is why every iOS build needs `EXPO_NO_CAPABILITY_SYNC=1`: EAS derives the capabilities from the entitlements and cannot apply the `APPLE_ID_AUTH: OFF` it computes. Leave the capability alone — see the banner above. Retried 2026-08-25 from the console with only that box unticked: same error. It is not worth another attempt — the only route is deleting the App Store Connect record, which is a far bigger loss than an inert checkbox. |
+| iCloud — key-value storage | ✅ 2026-08-25, enabled **by hand** on `cc.subeye.app` (with CloudKit support and a container; only the key-value half is used). **It had to be by hand, and so will the next one.** `EXPO_NO_CAPABILITY_SYNC=1` is permanent for this app because of the Sign-in-with-Apple mismatch above, so EAS never pushes a capability to the portal again: from here on, **every new entitlement means a manual portal step, or the build dies in "Planning build"**. Enabling it does not fix a build on its own either — Xcode reuses the cached profile it already has, so the locally cached profile must be deleted too (same step 4 as the App Group in TESTFLIGHT-STEPS). |
 
 ---
 

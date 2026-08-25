@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import Constants from "expo-constants";
 import { useFocusEffect, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Linking,
-  Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,12 +22,18 @@ import {
   readNotificationSettings,
 } from "@/shared/lib/notifications";
 import { resetQueryCache } from "@/shared/lib/query";
-import { eraseDoc } from "@/shared/lib/store";
+import {
+  clearCloud,
+  cloudSyncAvailable,
+  cloudSyncEnabled,
+  eraseDoc,
+  setCloudSyncEnabled,
+} from "@/shared/lib/store";
 import { clearWidget } from "@/shared/lib/widget";
 import { Divider, Row, Section } from "@/shared/ui/list-row";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { presentChoice } from "@/shared/ui/present-choice";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 
 // Endonyms, not translations: a Ukrainian speaker looking for their language in
 // an English UI scans for "Українська", not for "Ukrainian".
@@ -70,35 +77,96 @@ function NotificationsRow() {
 }
 
 /**
- * A standalone centered action in its own card — the shape iOS gives "Sign Out"
- * on the Apple Account screen. No icon and no chevron: the row goes nowhere, it
- * does something, and a chevron would promise a screen that does not exist.
+ * The one switch in the app that sends anything anywhere.
+ *
+ * It is a switch and not a default because "everything stays on this phone" is
+ * what the app promises; and it is free rather than Pro because insurance behind
+ * a paywall reads as a threat in a way a capability does not.
+ *
+ * The footnote does the real work here. Two different things are commonly called
+ * "iCloud" and only one of them is this: the store already rides along in device
+ * BACKUP with the switch off, which is what covers a lost phone. What this buys
+ * is a second device, so the copy has to say that rather than "keep your data
+ * safe" — a user who reads this as backup will turn it off and think they have
+ * lost nothing.
+ *
+ * Availability is read on focus, not once: signing into iCloud happens in the
+ * Settings app, which means leaving and coming back to this screen.
  */
-function ActionButton({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress?: () => void;
-}) {
+function DataSection({ onErase }: { onErase: () => void }) {
+  // iOS only, and absent rather than disabled on Android: there is no Android
+  // equivalent of NSUbiquitousKeyValueStore, and a permanently dead switch
+  // offering to "sign in to iCloud" is worse than no switch. The SECTION still
+  // renders there — Erase lives in it, and gating the whole thing would take the
+  // only way to wipe the app off Android entirely.
+  const canSync = Platform.OS === "ios";
+  const [available, setAvailable] = useState(cloudSyncAvailable);
+  const [enabled, setEnabled] = useState(cloudSyncEnabled);
+  const [busy, setBusy] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setAvailable(cloudSyncAvailable());
+      // The observer switches sync off by itself when a different Apple Account
+      // signs in, so the stored flag can move without this screen touching it.
+      setEnabled(cloudSyncEnabled());
+    }, []),
+  );
+
+  const toggle = (next: boolean) => {
+    setBusy(true);
+    try {
+      setCloudSyncEnabled(next);
+      setEnabled(next);
+    } finally {
+      setBusy(false);
+    }
+    // Linking folds the other devices' records into the document underneath
+    // every mounted screen, so the caches have to be dropped rather than nudged.
+    if (next) void resetQueryCache();
+  };
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={!onPress}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        styles.action,
-        pressed && styles.cardPressed,
-      ]}
+    <Section
+      title={m.settings_data()}
+      // The footnote belongs to the switch, so it only appears with it. Under a
+      // lone Erase row it would read as a caption for the wipe.
+      footnote={
+        canSync
+          ? available
+            ? m.settings_syncHint()
+            : m.settings_syncUnavailableHint()
+          : undefined
+      }
     >
-      <Text
-        style={styles.actionText}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {label}
-      </Text>
-    </Pressable>
+      {canSync ? (
+        <>
+          <Row
+            ios={enabled ? "icloud.fill" : "icloud.slash"}
+            android={enabled ? "cloud_done" : "cloud_off"}
+            label={m.settings_sync()}
+            subtitle={enabled ? undefined : m.settings_syncOffSubtitle()}
+            toggle={{
+              value: enabled,
+              disabled: busy || !available,
+              onValueChange: toggle,
+            }}
+          />
+          <Divider />
+        </>
+      ) : null}
+      {/* Last in the group and red, the way UIKit orders a destructive row: it
+          is the same subject as the switch above it — where this data lives and
+          whether it exists — and it used to sit below Legal, three sections away
+          from anything about data. */}
+      <Row
+        ios="trash"
+        android="delete"
+        label={m.settings_erase()}
+        destructive
+        onPress={onErase}
+      />
+    </Section>
   );
 }
 
@@ -161,19 +229,24 @@ export function SettingsPage() {
       },
     ]);
 
-  // Three copies of the data outlive the store document, and none of them is
+  // FOUR copies of the data outlive the store document, and none of them is
   // React state: the pending reminders name subscriptions on the lock screen,
-  // the widget snapshot sits in the shared App Group on the Home Screen, and
-  // the Query cache would repaint the erased numbers from memory.
+  // the widget snapshot sits in the shared App Group on the Home Screen, the
+  // Query cache would repaint the erased numbers from memory, and — since sync
+  // — iCloud holds a record per key that the very next reconcile would pull
+  // straight back onto this device.
   //
-  // ORDER IS LOAD-BEARING. Query is reset LAST, because the reset refetches
-  // every mounted screen — doing it before `eraseDoc` only refills it from the
-  // document that is still on disk. And housekeeping never decides whether the
-  // erase happens: the native calls run first precisely so a rejected one
-  // cannot leave the document behind.
+  // ORDER IS LOAD-BEARING. iCloud is cleared BEFORE the document, because
+  // `clearCloud` is a no-op once sync has nothing left to be enabled about, and
+  // Query is reset LAST, because the reset refetches every mounted screen —
+  // doing it before `eraseDoc` only refills it from the document that is still
+  // on disk. Housekeeping never decides whether the erase happens: the native
+  // calls run first precisely so a rejected one cannot leave the document
+  // behind.
   const eraseAll = async () => {
     await cancelReminders().catch(() => {});
     try {
+      clearCloud();
       clearWidget();
     } finally {
       eraseDoc();
@@ -181,15 +254,25 @@ export function SettingsPage() {
     }
   };
 
+  // The confirmation names iCloud only when there is an iCloud copy to name.
+  // "This cannot be undone" is a much bigger claim once the erase reaches the
+  // user's other devices, and a user who has never switched sync on should not
+  // be made to think about it.
   const confirmErase = () =>
-    Alert.alert(m.settings_eraseConfirmTitle(), m.settings_eraseConfirmBody(), [
-      { text: m.common_cancel(), style: "cancel" },
-      {
-        text: m.settings_erase(),
-        style: "destructive",
-        onPress: () => void eraseAll().catch(notifyWriteFailed),
-      },
-    ]);
+    Alert.alert(
+      m.settings_eraseConfirmTitle(),
+      cloudSyncEnabled()
+        ? `${m.settings_eraseConfirmBody()}\n\n${m.settings_eraseConfirmCloud()}`
+        : m.settings_eraseConfirmBody(),
+      [
+        { text: m.common_cancel(), style: "cancel" },
+        {
+          text: m.settings_erase(),
+          style: "destructive",
+          onPress: () => void eraseAll().catch(notifyWriteFailed),
+        },
+      ],
+    );
 
   return (
     <ScrollView
@@ -203,9 +286,37 @@ export function SettingsPage() {
 
           Buying used to hang off the account row, which went with Clerk. Every
           other route to the paywall is a locked feature, so without this row
-          someone who simply wants to pay has nowhere to press. */}
-      <Section footnote={isPro ? undefined : m.settings_proPitch()}>
-        {isPro ? null : (
+          someone who simply wants to pay has nowhere to press.
+
+          Once bought, the row does NOT disappear — it flips. With nothing here
+          but Restore, the only way to find out whether an Apple Account already
+          owned Pro was to press Restore and read the alert, which is a purchase
+          button's worth of anxiety for a question the screen can just answer.
+          The footnote flips with it and is what makes Restore below make sense:
+          the entitlement lives on the Apple Account, not on this install. */}
+      <Section
+        footnote={isPro ? m.settings_proActiveHint() : m.settings_proPitch()}
+      >
+        {isPro ? (
+          <>
+            <Row
+              // `leading`, not the `ios`/`android` pair, for the one row that
+              // needs a tinted glyph: the pair is always drawn muted, and the
+              // green seal IS the answer to "do I have this?" — read before any
+              // of the words are.
+              leading={
+                <SymbolView
+                  name={{ ios: "checkmark.seal.fill", android: "verified" }}
+                  size={19}
+                  tintColor={colors.accent}
+                />
+              }
+              label={m.paywall_title()}
+              value={m.settings_proActive()}
+            />
+            <Divider />
+          </>
+        ) : (
           <>
             <Row
               ios="sparkles"
@@ -284,6 +395,11 @@ export function SettingsPage() {
         </Section>
       ) : null}
 
+      {/* Between Preferences and Notifications: it is about the data itself,
+          which is a narrower subject than the app's settings and a wider one
+          than reminders. */}
+      <DataSection onErase={confirmErase} />
+
       <NotificationsRow />
 
       <Section title={m.settings_legal()}>
@@ -301,8 +417,6 @@ export function SettingsPage() {
           onPress={() => router.push("/legal/privacy-policy")}
         />
       </Section>
-
-      <ActionButton label={m.settings_erase()} onPress={confirmErase} />
 
       {/* __DEV__, not an env var: a flag configuration can enable is a flag that
           ships enabled one day. Metro strips this branch from a release bundle. */}
@@ -333,20 +447,6 @@ export function SettingsPage() {
 
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 24, gap: 24 },
-
-  // Kept locally only for ActionButton, which is a card that is not a Section:
-  // one centred destructive action, no rows, no dividers.
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    overflow: "hidden",
-  },
-  cardPressed: { backgroundColor: colors.surfaceAlt },
-
-  action: { alignItems: "center", justifyContent: "center", minHeight: 52 },
-  actionText: { fontSize: 16, fontWeight: "600", color: colors.danger },
 
   version: { fontSize: 12.5, color: colors.muted, textAlign: "center" },
   placeholder: { fontSize: 14, color: colors.muted, textAlign: "center" },

@@ -123,3 +123,18 @@ mock.module("expo-localization", () => ({
   getLocales: () => deviceLocales,
   useLocales: () => deviceLocales,
 }));
+
+/**
+ * `expo-modules-core` reaches react-native through deep paths the stub above
+ * cannot intercept, and the store's iCloud adapter imports it at module load —
+ * so a test that only wanted `readDoc` dies on a Flow parse error without this.
+ *
+ * `null` is not a convenience: it is the honest answer. There is no native side
+ * in a test run, which is the same state as an Android device or a simulator
+ * with no iCloud account, and every caller in shared/lib/store/cloud already has
+ * to handle it. Returning a fake store instead would test a sync that cannot
+ * exist here.
+ */
+mock.module("expo-modules-core", () => ({
+  requireOptionalNativeModule: () => null,
+}));
