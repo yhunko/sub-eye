@@ -272,6 +272,22 @@ the App Store Connect API key, which is the mistake that looks identical and
 fails silently in a release build. Generate a shared secret only if RevenueCat's
 config page still flags one as missing after the IAP key is uploaded.
 
+### Accessibility Nutrition Label (optional)
+
+Answer **Yes**, then tick **two**. Every claim here is public and Apple's
+criterion is *all* fundamental and primary functionality, so an unverified tick
+is worse than an empty one.
+
+| Feature | Answer | Why |
+| --- | --- | --- |
+| Dark Interface | **yes** | dark-only, and `app.json` pins `userInterfaceStyle: "dark"` |
+| Sufficient Contrast | **yes** | measured against real backgrounds: text 17.2:1, muted-on-surface 6.6:1, accent 5.9:1, warning 8.5:1, paused chip 11.2:1 |
+| Larger Text | no | `LAYOUT_FONT_SCALE_MAX = 1.3` caps Dynamic Type on buttons, rows, fields, chips and section headings; the criterion wants the largest accessibility size |
+| Captions, Audio Descriptions | no | there is no audio or video in the app |
+| VoiceOver, Voice Control | not yet | `accessibilityLabel` is spread over ~20 files, but nothing has been walked end to end — and these two are the ones people actually depend on |
+| Differentiate Without Color Alone | not yet | amber vs red carry urgency in Home's rail; the day count is almost certainly beside it, but that wants confirming rather than assuming |
+| Reduced Motion | not yet | one custom animation in the whole app, a scroll-linked hero that runs nothing per frame, so there is probably nothing to remove — but no `isReduceMotionEnabled` check exists to say so |
+
 ### The rest
 
 - **Age rating:** **every row of all seven steps is NO**, which lands on 4+.
