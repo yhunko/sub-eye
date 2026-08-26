@@ -25,7 +25,7 @@ export const en = {
   meta: {
     title: "SubEye — know what your subscriptions cost",
     description:
-      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No account, no bank login, no network. iPhone.",
+      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No account, no bank login, works with the network off. iPhone.",
   },
 
   hero: {
@@ -62,7 +62,7 @@ export const en = {
 
   bank: {
     title: "SubEye never touches your bank. Or the network.",
-    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay, and then keeps it on the phone — no account to create, no server holding a copy. The other half of that trade is honest: your subscriptions are on that phone. An iPhone backup carries them to a new one, and there is no sync between two devices.",
+    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay, and then keeps it on the phone — no account to create, no server holding a copy. The other half of that trade is honest: your subscriptions are on that phone. An iPhone backup carries them to a new one, and if you want a second device to see the same list, iCloud Sync is a switch in Settings — off until you turn it on, and it goes to your own iCloud, never to us.",
     denials: [
       "No bank linking",
       "No email scanning",
@@ -80,7 +80,7 @@ export const en = {
     title: "What it does",
     money: {
       title: "One number, with a denominator.",
-      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast, six months of trend, your most expensive subscription, and where the money actually goes.",
+      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast and whether it moved up or down, what the next twelve months come to, and where the money actually goes.",
     },
     lifecycle: {
       title: "Pause it, cancel it, change your mind.",
@@ -116,14 +116,15 @@ export const en = {
     freeName: "Free",
     freeSuffix: "always",
     freeBody:
-      "Unlimited subscriptions. The whole dashboard. Search, filters, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. Not a trial and not a teaser.",
+      "Unlimited subscriptions. The whole dashboard. Search, sorting, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. iCloud Sync between your own devices. Not a trial and not a teaser.",
     freeItems: [
       "No account, and it works offline",
       "Unlimited subscriptions",
-      "Spend, forecast and six-month trend",
+      "Spend, next month, and the year ahead",
       "Pause, cancel, renew",
       "Renewal reminders, the day before",
       "Five currencies at daily rates",
+      "iCloud Sync across your own devices",
       "English and Ukrainian",
     ],
     proName: "Pro",
@@ -134,8 +135,9 @@ export const en = {
     proItems: [
       "Choose when every reminder lands",
       "Trial-ending alerts",
-      "Price-change tracking",
-      "Categories and the spend breakdown",
+      "Price history on every subscription",
+      "Categories, category filters and the breakdown",
+      "Home Screen widgets",
     ],
     joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
     storefrontTitle: "Priced for where you live.",
@@ -157,11 +159,11 @@ export const en = {
       },
       {
         q: "Is my data safe?",
-        a: "It never leaves your phone. There is no account, no server and no database behind SubEye — nothing to breach, nothing to sell, and nobody to hand it to. Settings → Erase all data removes every subscription, reminder and setting from the device, for real. The handful of services the app still talks to, and exactly what each one sees, is in the privacy policy.",
+        a: "It stays on your phone. There is no account, no server and no database behind SubEye — nothing to breach, nothing to sell, and nobody to hand it to. The one exception is iCloud Sync, off until you switch it on in Settings: it copies your subscriptions into your own iCloud so a second device can read them. That is Apple's storage, not ours, and we still never see them. Settings → Erase all data removes every subscription, reminder and setting from the device — and from iCloud too, if sync is on. The handful of services the app talks to, and exactly what each one sees, is in the privacy policy.",
       },
       {
         q: "Do I need an account?",
-        a: "No. There is nothing to sign up for and nothing to sign in to — open the app and start typing. Your subscriptions live on the phone, which is what an iPhone backup carries to a new one. There is no sync between two devices today.",
+        a: "Not a SubEye one — there is nothing to sign up for and nothing to sign in to. Open the app and start typing. Your subscriptions live on the phone, and an iPhone backup carries them to a new one. If you want two devices to hold the same list, turn on iCloud Sync: it rides the Apple Account you are already signed in to, and it is off until you ask for it.",
       },
       {
         q: "What happens when a price changes?",

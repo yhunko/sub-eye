@@ -6,11 +6,11 @@ const EN: LegalDoc = {
   title: "Privacy policy",
   description:
     "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-  updated: "2026-07-28",
+  updated: "2026-08-26",
   lead: [
     {
       p: [
-        "SubEye is a subscription tracker for iPhone. You type in what you pay and it tells you what that costs. There is no account, no sign-in and no SubEye server: everything you enter is stored on your own device and stays there. It has no access to your bank, no access to your email, and it does not go looking for subscriptions on your behalf.",
+        "SubEye is a subscription tracker for iPhone. You type in what you pay and it tells you what that costs. There is no account, no sign-in and no SubEye server: everything you enter is stored on your own device and stays there unless you switch on iCloud Sync yourself, which copies it to your own iCloud and never to us. It has no access to your bank, no access to your email, and it does not go looking for subscriptions on your behalf.",
       ],
     },
   ],
@@ -36,7 +36,7 @@ const EN: LegalDoc = {
           ul: [
             [
               { b: "The subscriptions you enter:" },
-              " service name, website, amount, currency, billing period, payment dates, category, price history and any note you write. All of it typed by you, all of it held in the app's own storage on the phone. It is never uploaded, and there is nowhere for it to be uploaded to.",
+              " service name, website, amount, currency, billing period, payment dates, category, price history and any note you write. All of it typed by you, all of it held in the app's own storage on the phone. SubEye never uploads it and has nowhere to upload it to; the one thing that ever copies it off the phone is iCloud Sync, which you switch on yourself and which is described below.",
             ],
             [
               { b: "Your settings and reminders," },
@@ -57,6 +57,10 @@ const EN: LegalDoc = {
       blocks: [
         {
           ul: [
+            [
+              { b: "Your subscriptions, but only if you turn on iCloud Sync:" },
+              " the switch in Settings → Data copies them into your own iCloud so that your other devices can show the same list. It is off until you turn it on, it goes to Apple rather than to SubEye, and switching it off again leaves the copy already in your iCloud until you erase it.",
+            ],
             [
               { b: "Technical data that any web request carries" },
               " — an IP address and a device user agent — seen by the services listed below at the moment the app talks to one of them.",
@@ -84,7 +88,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "These are every third party the app can reach, and each one is reached only when the app has a reason to. None of them receives your subscriptions, and none of them is given a name, an email address or an account identifier, because SubEye holds none of those.",
+            "These are every third party the app can reach, and each one is reached only when the app has a reason to. None of them receives your subscriptions — the single exception is Apple's iCloud, and only once you have switched iCloud Sync on yourself. None of them is given a name, an email address or an account identifier, because SubEye holds none of those.",
           ],
         },
         {
@@ -124,9 +128,9 @@ const EN: LegalDoc = {
               ],
             },
             {
-              term: "Apple — the App Store",
+              term: "Apple — the App Store and iCloud",
               desc: [
-                "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms.",
+                "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them.",
               ],
             },
           ],
@@ -163,6 +167,11 @@ const EN: LegalDoc = {
         },
         {
           p: [
+            "iCloud Sync is the exception, and it is consent: it does nothing until you turn it on, and turning it on is the permission. Even then the copy goes to your own iCloud rather than to SubEye, so there is no point at which SubEye is the recipient of it.",
+          ],
+        },
+        {
+          p: [
             {
               b: "Your data is not sold, not shared with advertisers, not used to profile you, and not used to train anything.",
             },
@@ -190,7 +199,7 @@ const EN: LegalDoc = {
             {
               b: "Settings → Erase all data removes every subscription, reminder and setting from the device in one step.",
             },
-            " It is immediate, it is a real deletion rather than a flag, and it cannot be undone. There is no copy anywhere else to ask anyone to delete — and because there is no copy anywhere else, an iPhone backup you made earlier is the only thing that can bring the data back.",
+            " It is immediate, it is a real deletion rather than a flag, and it cannot be undone. With iCloud Sync on it clears the iCloud copy as well, which is what takes the data off your other devices. There is no further copy to ask anyone to delete — and because there is none, an iPhone backup you made earlier is the only thing that can bring the data back.",
           ],
         },
         {
@@ -224,7 +233,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "SubEye is not directed at children and does not knowingly collect data from anyone under 16. Since there is no account and nothing is uploaded, there is nothing held here to delete on a child's behalf — but if something about this concerns you, write to ",
+            "SubEye is not directed at children and does not knowingly collect data from anyone under 16. Since there is no account, and nothing is uploaded unless iCloud Sync is switched on, there is nothing held here to delete on a child's behalf — but if something about this concerns you, write to ",
             { mailto: "privacy@subeye.cc" },
             ".",
           ],
@@ -251,11 +260,11 @@ const UK: LegalDoc = {
   title: "Політика конфіденційності",
   description:
     "Які дані збирає SubEye, хто їх обробляє, скільки вони зберігаються і як їх видалити.",
-  updated: "2026-07-28",
+  updated: "2026-08-26",
   lead: [
     {
       p: [
-        "SubEye — це застосунок для iPhone, який веде облік ваших підписок. Ви вводите те, що платите, а він показує, скільки це коштує. Тут немає ні акаунта, ні входу, ні сервера SubEye: усе, що ви вводите, зберігається на вашому власному пристрої і залишається там. Застосунок не має доступу ні до вашого банку, ні до вашої пошти і не шукає підписки замість вас.",
+        "SubEye — це застосунок для iPhone, який веде облік ваших підписок. Ви вводите те, що платите, а він показує, скільки це коштує. Тут немає ні акаунта, ні входу, ні сервера SubEye: усе, що ви вводите, зберігається на вашому власному пристрої і залишається там, доки ви самі не ввімкнете синхронізацію з iCloud, яка копіює ці дані у ваш власний iCloud, а не до нас. Застосунок не має доступу ні до вашого банку, ні до вашої пошти і не шукає підписки замість вас.",
       ],
     },
   ],
@@ -281,7 +290,7 @@ const UK: LegalDoc = {
           ul: [
             [
               { b: "Підписки, які ви вводите:" },
-              " назва сервісу, сайт, сума, валюта, період оплати, дати платежів, категорія, історія цін і будь-яка нотатка, яку ви написали. Усе це вводите ви, і все це лежить у власному сховищі застосунку на телефоні. Воно нікуди не вивантажується — і вивантажувати його просто нікуди.",
+              " назва сервісу, сайт, сума, валюта, період оплати, дати платежів, категорія, історія цін і будь-яка нотатка, яку ви написали. Усе це вводите ви, і все це лежить у власному сховищі застосунку на телефоні. SubEye нікуди його не вивантажує, та й вивантажувати нікуди; єдине, що взагалі копіює ці дані з телефона, — синхронізація з iCloud, яку вмикаєте ви самі і яку описано нижче.",
             ],
             [
               { b: "Ваші налаштування та нагадування," },
@@ -302,6 +311,12 @@ const UK: LegalDoc = {
       blocks: [
         {
           ul: [
+            [
+              {
+                b: "Ваші підписки — але лише якщо ви ввімкнете синхронізацію з iCloud:",
+              },
+              " перемикач у «Налаштування → Дані» копіює їх у ваш власний iCloud, щоб інші ваші пристрої показували той самий список. Він вимкнений, доки ви його не ввімкнете, дані йдуть до Apple, а не до SubEye, і після вимкнення копія лишається у вашому iCloud, доки ви її не зітрете.",
+            ],
             [
               { b: "Технічні дані, які несе будь-який запит" },
               " — IP-адресу та user agent пристрою. Їх бачать перелічені нижче сервіси в той момент, коли застосунок звертається до одного з них.",
@@ -329,7 +344,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Ось усі треті сторони, до яких застосунок узагалі може звернутися, і звертається він до кожної лише тоді, коли має для цього причину. Жодна з них не отримує ваших підписок і жодній не передають ні імені, ні пошти, ні ідентифікатора акаунта — бо нічого з цього SubEye не має.",
+            "Ось усі треті сторони, до яких застосунок узагалі може звернутися, і звертається він до кожної лише тоді, коли має для цього причину. Жодна з них не отримує ваших підписок — єдиний виняток це iCloud від Apple, і тільки після того, як ви самі ввімкнете синхронізацію. Жодній із них не передають ні імені, ні пошти, ні ідентифікатора акаунта — бо нічого з цього SubEye не має.",
           ],
         },
         {
@@ -369,9 +384,9 @@ const UK: LegalDoc = {
               ],
             },
             {
-              term: "Apple — App Store",
+              term: "Apple — App Store та iCloud",
               desc: [
-                "Обробляє покупку, якщо ви купуєте SubEye Pro, згідно з власною політикою конфіденційності Apple. SubEye ніколи не бачить ваших платіжних даних. Якщо ви робите резервну копію iPhone в iCloud, ваші дані SubEye лежать усередині цієї копії — на умовах Apple.",
+                "Обробляє покупку, якщо ви купуєте SubEye Pro, згідно з власною політикою конфіденційності Apple. SubEye ніколи не бачить ваших платіжних даних. Якщо ви робите резервну копію iPhone в iCloud, ваші дані SubEye лежать усередині цієї копії — на умовах Apple. А якщо ви ввімкнете синхронізацію з iCloud, ваші підписки також записуються у ваше власне сховище iCloud, щоб їх бачили інші ваші пристрої: вони лежать під вашим Apple Account, на умовах Apple, і SubEye їх усе одно не отримує.",
               ],
             },
           ],
@@ -408,6 +423,11 @@ const UK: LegalDoc = {
         },
         {
           p: [
+            "Синхронізація з iCloud — виняток, і підстава тут згода: вона не робить нічого, доки ви її не ввімкнете, і саме це ввімкнення є дозволом. Та й тоді копія йде у ваш власний iCloud, а не до SubEye, тож SubEye у жодний момент не є її одержувачем.",
+          ],
+        },
+        {
+          p: [
             {
               b: "Ваші дані не продаються, не передаються рекламодавцям, не використовуються для профілювання і не використовуються для навчання чого-небудь.",
             },
@@ -435,7 +455,7 @@ const UK: LegalDoc = {
             {
               b: "«Налаштування → Стерти всі дані» прибирає з пристрою всі підписки, нагадування й налаштування за один крок.",
             },
-            " Це відбувається одразу, це справжнє видалення, а не позначка, і скасувати його неможливо. Просити когось видалити копію не треба, бо копії ніде немає, — і саме тому єдине, що може повернути ці дані, це резервна копія iPhone, зроблена раніше.",
+            " Це відбувається одразу, це справжнє видалення, а не позначка, і скасувати його неможливо. Якщо синхронізація з iCloud ввімкнена, стирається й копія в iCloud — саме це прибирає дані з інших ваших пристроїв. Іншої копії, яку треба було б у когось просити видалити, немає, — і саме тому єдине, що може повернути ці дані, це резервна копія iPhone, зроблена раніше.",
           ],
         },
         {
@@ -469,7 +489,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "SubEye не призначений для дітей і свідомо не збирає дані осіб, молодших за 16 років. Оскільки акаунта немає і нічого нікуди не вивантажується, тут просто немає що видаляти від імені дитини — але якщо вас щось у цьому непокоїть, напишіть на ",
+            "SubEye не призначений для дітей і свідомо не збирає дані осіб, молодших за 16 років. Оскільки акаунта немає, а без увімкненої синхронізації з iCloud нічого нікуди не вивантажується, тут просто немає що видаляти від імені дитини — але якщо вас щось у цьому непокоїть, напишіть на ",
             { mailto: "privacy@subeye.cc" },
             ".",
           ],

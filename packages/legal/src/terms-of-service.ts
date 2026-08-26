@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Terms of service",
   description:
     "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-  updated: "2026-07-28",
+  updated: "2026-08-26",
   lead: [
     {
       p: [
@@ -43,7 +43,7 @@ const EN: LegalDoc = {
             {
               b: "the data exists in exactly one place and keeping it is up to you.",
             },
-            " An iPhone backup is what carries it to a new phone; nothing syncs between two devices, and nothing can be restored from here.",
+            " An iPhone backup is what carries it to a new phone. iCloud Sync, off unless you turn it on, is the one way a second device sees the same list: it goes to your own iCloud under Apple's terms, not to a SubEye server, and nothing can be restored from here.",
           ],
         },
         {
@@ -86,14 +86,14 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "The free version is not a trial. Unlimited subscriptions, the whole dashboard, search and filters, every lifecycle action, a renewal reminder the day before, and multi-currency conversion are free and stay free.",
+            "The free version is not a trial. Unlimited subscriptions, the whole dashboard, search and sorting, every lifecycle action, a renewal reminder the day before, multi-currency conversion, and iCloud Sync between your own devices are free and stay free.",
           ],
         },
         {
           p: [
             { b: "SubEye Pro is a single payment of $11.99" },
             // \u00a0 is the site formatter's non-breaking space, not a plain one.
-            ", or the equivalent set for your App Store storefront — about 199\u00a0₴ in Ukraine. It is not a subscription and it does not renew. It unlocks control over when reminders land, trial-ending and price-change tracking, and categories with the spend breakdown.",
+            ", or the equivalent set for your App Store storefront — about 199\u00a0₴ in Ukraine. It is not a subscription and it does not renew. It unlocks control over when reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, and the Home Screen widgets.",
           ],
         },
         {
@@ -170,7 +170,7 @@ const UK: LegalDoc = {
   title: "Умови користування",
   description:
     "Домовленість між вами і SubEye: що робить застосунок, скільки коштує Pro, кому належать дані та як припинити користування.",
-  updated: "2026-07-28",
+  updated: "2026-08-26",
   lead: [
     {
       p: [
@@ -207,7 +207,7 @@ const UK: LegalDoc = {
             {
               b: "ці дані існують рівно в одному місці, і дбати про них — вам.",
             },
-            " На новий телефон їх переносить резервна копія iPhone; між двома пристроями нічого не синхронізується, і відновити щось звідси неможливо.",
+            " На новий телефон їх переносить резервна копія iPhone. Синхронізація з iCloud, вимкнена, доки ви її не ввімкнете, — єдиний спосіб, у який той самий список бачить другий пристрій: дані йдуть у ваш власний iCloud на умовах Apple, а не на сервер SubEye, і відновити щось звідси неможливо.",
           ],
         },
         {
@@ -250,14 +250,14 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Безкоштовна версія — це не тріал. Необмежена кількість підписок, уся панель, пошук і фільтри, усі дії з підписками, нагадування за день до списання та мультивалютність безкоштовні й такими лишаються.",
+            "Безкоштовна версія — це не тріал. Необмежена кількість підписок, уся панель, пошук і сортування, усі дії з підписками, нагадування за день до списання, мультивалютність та синхронізація з iCloud між вашими пристроями безкоштовні й такими лишаються.",
           ],
         },
         {
           p: [
             // \u00a0 is the site formatter's non-breaking space, not a plain one.
             { b: "SubEye Pro — це один платіж 199\u00a0₴" },
-            " в Україні або еквівалент, встановлений для вашої вітрини App Store — близько $11.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань, відстеження кінця пробного періоду та змін ціни, а також категорії з розподілом витрат.",
+            " в Україні або еквівалент, встановлений для вашої вітрини App Store — близько $11.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань, нагадування про кінець пробного періоду, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, а також віджети на екрані «Дім».",
           ],
         },
         {

@@ -55,24 +55,28 @@ import Legal from "../../layouts/Legal.astro";
   <h2>Erasing your data</h2>
   <p>
     Settings → Erase all data, in the app. It removes every subscription,
-    reminder and setting from the device, immediately and for good. There is no
-    account to close and nothing to request from here — your data was never
-    anywhere else — and it cannot be undone.
+    reminder and setting from the device, immediately and for good. If iCloud
+    Sync is on it clears the iCloud copy too, which is what takes the data off
+    your other devices. There is no account to close and nothing to request from
+    here, and it cannot be undone.
   </p>
 
   <h2>Moving to a new phone</h2>
   <p>
     Restore the new phone from an iPhone backup and SubEye comes back with
-    everything in it. That is the only route: your subscriptions live on the
-    device, there is no account holding a copy, and nothing syncs between two
-    phones. If you are switching without a backup, write them down first.
+    everything in it. That works with iCloud Sync off, because the app's storage
+    is inside the backup. The other route is Settings → Data → iCloud Sync,
+    switched on for the same Apple Account on both phones: the two lists are
+    merged rather than one overwriting the other, so neither side loses
+    anything. If you are switching without a backup and without sync, write them
+    down first.
   </p>
 
   <h2>What SubEye cannot do</h2>
   <p>
     It does not connect to your bank, it does not read your email, it cannot see
-    your real charges, and it cannot cancel a subscription on your behalf. It
-    also cannot sync two phones or recover data from a phone you no longer
+    your real charges, and it cannot cancel a subscription on your behalf. With
+    iCloud Sync off it also cannot recover data from a phone you no longer
     have — there is no server behind it holding a copy. Every figure in the app
     is arithmetic on the numbers you typed in — see the <a
       href="/en/terms-of-service/">terms of service</a
