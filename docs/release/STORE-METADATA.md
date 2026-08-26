@@ -243,6 +243,25 @@ The subscriptions a user types are **not** declared: they stay on the device,
 and the one path that moves them (iCloud Sync) writes to the user's own iCloud,
 which the developer cannot read. Neither is collection under Apple's definition.
 
+### App Store Server Notifications (App Information, bottom)
+
+**Set both the production and the sandbox URL to RevenueCat's**, copied from the
+RevenueCat dashboard — the Apple app's config page prints the exact per-app URL.
+There is nothing else they could point at: SubEye has no server.
+
+It matters even though Pro is a non-consumable rather than a subscription,
+because refunds and family-sharing revokes travel that way. The entitlement is
+checked entirely on the device (`entities/pro/model/purchases.ts`), so whatever
+RevenueCat last said *is* what the app believes; without the notification URL it
+keeps saying yes after a refund until something forces a receipt refresh.
+
+**The App-Specific Shared Secret is for auto-renewable subscriptions**, which
+this app does not sell. The credential RevenueCat needs for a non-consumable is
+the **In-App Purchase Key** (`.p8`) from Users and Access → Integrations — *not*
+the App Store Connect API key, which is the mistake that looks identical and
+fails silently in a release build. Generate a shared secret only if RevenueCat's
+config page still flags one as missing after the IAP key is uploaded.
+
 ### The rest
 
 - **Age rating:** **every row of all seven steps is NO**, which lands on 4+.
