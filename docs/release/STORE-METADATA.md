@@ -249,5 +249,16 @@ which the developer cannot read. Neither is collection under Apple's definition.
 - **Encryption:** `usesNonExemptEncryption: false` is already in `app.json`, so
   the export-compliance question should not appear. If it does: standard HTTPS
   only.
-- **Primary category:** Finance. Secondary: Utilities.
+- **Category:** primary **Finance**, secondary **Productivity**. Finance is
+  where every subscription tracker a user might compare this to already lives,
+  and category drives browse placement, not search — the charts there are
+  unreachable for a new indie app either way, so pick for relevance. Only Games
+  have subcategories; there is nothing else to fill in.
+  - The one thing to know: **Guideline 3.2.1(viii)** says apps for financial
+    trading, investing or money management should be submitted by the
+    institution performing the service. SubEye performs none — it touches no
+    bank, moves no money and holds no credential — so this should not bite. If
+    a reviewer raises it anyway, the answer is that the app is a manual ledger
+    with no financial service behind it, and the fallback is to swap the two:
+    Productivity primary, Finance secondary.
 - **App Previews:** none. Seven screenshots per locale is enough for 1.0.
