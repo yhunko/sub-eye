@@ -3,7 +3,8 @@ import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
 import { BrandLogo, brandLogoUrl } from "@/shared/ui/brand-logo";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
 /** A standard (non-large) iOS navigation bar, under the status bar inset. */
 const NAV_BAR_HEIGHT = 44;
@@ -31,6 +32,10 @@ const OVERSCAN = 12;
  * the artwork grows upward into space that is off-screen at rest.
  */
 const OVERSCROLL_REACH = 420;
+
+/** A segment value's design size, and the point size it may never shrink past. */
+const SEGMENT_SIZE = 15;
+const SEGMENT_FLOOR = 11;
 
 // References, not calls — a module-level table must hold the message function or
 // the string freezes in whichever locale was active at import.
@@ -102,24 +107,32 @@ function Segment({
   color?: string;
   divided?: boolean;
 }) {
+  const stacked = useLargeText();
+
   return (
-    <View style={[styles.segment, divided ? styles.segmentDivided : null]}>
+    <View
+      style={[
+        styles.segment,
+        stacked && styles.segmentStacked,
+        divided
+          ? stacked
+            ? styles.segmentRuled
+            : styles.segmentDivided
+          : null,
+      ]}
+    >
       <Text
         style={[styles.segmentValue, color ? { color } : null]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.75}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+        // A third of a phone is not a line to shrink into. Down the column each
+        // segment has the full width and nothing left to fight over, so the
+        // value simply wraps.
+        numberOfLines={stacked ? undefined : 1}
+        adjustsFontSizeToFit={!stacked}
+        minimumFontScale={useShrinkFloor(SEGMENT_SIZE, SEGMENT_FLOOR)}
       >
         {value}
       </Text>
-      <Text
-        style={styles.segmentLabel}
-        numberOfLines={1}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {label}
-      </Text>
+      <Text style={styles.segmentLabel}>{label}</Text>
     </View>
   );
 }
@@ -154,6 +167,10 @@ export function DetailHero({
   //
   // iOS only: the Android header is opaque, so there is nothing to show through
   // and the negative margin would just hide the top of the banner behind it.
+  // Three segments across a capsule at the accessibility sizes is three columns
+  // of one syllable each. It becomes a stack, and the pill becomes a card.
+  const stacked = useLargeText();
+
   const insets = useSafeAreaInsets();
   const reach =
     Platform.OS === "ios"
@@ -169,7 +186,7 @@ export function DetailHero({
     >
       <Backdrop domain={brandDomain} />
 
-      <View style={styles.identity}>
+      <View style={[styles.identity, stacked && styles.identityStacked]}>
         <BrandLogo
           name={name}
           brandDomain={brandDomain}
@@ -177,18 +194,12 @@ export function DetailHero({
           dimmed={dead}
         />
         <View style={styles.identityText}>
-          <Text style={styles.name} numberOfLines={2}>
-            {name}
-          </Text>
-          {dateLine ? (
-            <Text style={styles.dateLine} numberOfLines={1}>
-              {dateLine}
-            </Text>
-          ) : null}
+          <Text style={styles.name}>{name}</Text>
+          {dateLine ? <Text style={styles.dateLine}>{dateLine}</Text> : null}
         </View>
       </View>
 
-      <View style={styles.bar}>
+      <View style={[styles.bar, stacked && styles.barStacked]}>
         <Segment label={m.detail_segBilling()} value={cadence} />
         {/* The as-charged amount takes the caption slot instead of a line of its
             own. "Amount" only ever restated the number above it, and the
@@ -263,7 +274,22 @@ const styles = StyleSheet.create({
   },
 
   identity: { flexDirection: "row", alignItems: "center", gap: 14 },
-  identityText: { flex: 1, minWidth: 0 },
+  // Beside a 54pt logo the name gets 298pt, and "Amazon" at 78pt does not fit in
+  // it — it broke MID-WORD. Under the logo it has the whole banner.
+  identityStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  // `flexBasis: "auto"` rather than `flex: 1`: down the column basis 0 would
+  // collapse the text block, because the banner's height is its content's.
+  identityText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "auto",
+    minWidth: 0,
+    alignSelf: "stretch",
+  },
   name: {
     fontSize: 22,
     fontWeight: "800",
@@ -287,18 +313,34 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.09)",
     paddingVertical: 10,
   },
+  // A stack of full-width rows, so the capsule's radius has to come down with
+  // it — 999 on a tall box is a lozenge with its corners eating the text.
+  barStacked: {
+    flexDirection: "column",
+    borderRadius: 20,
+    paddingHorizontal: 4,
+  },
   segment: {
     flex: 1,
     minWidth: 0,
     alignItems: "center",
     paddingHorizontal: 8,
   },
+  segmentStacked: { flex: 0, alignSelf: "stretch", alignItems: "flex-start" },
   segmentDivided: {
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: "rgba(255,255,255,0.18)",
   },
+  // The same rule turned through 90°, now that the segments sit above and below
+  // each other rather than beside.
+  segmentRuled: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.18)",
+  },
   segmentValue: {
-    fontSize: 15,
+    fontSize: SEGMENT_SIZE,
     fontWeight: "700",
     color: colors.text,
     textTransform: "capitalize",

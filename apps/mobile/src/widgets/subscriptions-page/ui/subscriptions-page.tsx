@@ -376,8 +376,11 @@ export function SubscriptionsPage() {
         // `integratedButton` ignores hideWhenScrolling. This placement honours
         // it, and what it is set to is `false` — the field stays put.
         onScrollBeginDrag={closeOpenRow}
-        // ponytail: no getItemLayout. Rows are a fixed ROW_HEIGHT, so
-        // VirtualizedList's own length estimate is exact after the first cell.
+        // ponytail: no getItemLayout. A row is ROW_HEIGHT at every text size a
+        // row's content fits inside, which is all of the normal ones, so
+        // VirtualizedList's own length estimate is exact after the first cell —
+        // and at the accessibility sizes an approximate scrollbar is the right
+        // price for text that is not capped.
         //
         // Headings do NOT stick. They are borderless text on the page
         // background, so a pinned one would have rows sliding visibly through

@@ -19,7 +19,8 @@ import { CurrencyPicker } from "@/shared/ui/currency-picker";
 import { Field, TextField, ValueField } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
 import { Pills } from "@/shared/ui/pills";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText } from "@/shared/ui/use-large-text";
 import { useSubscriptionForm } from "../model/form-context";
 import type { FormErrorCode } from "../model/form-schema";
 
@@ -72,29 +73,27 @@ export const messageFor = (code: FormErrorCode | undefined) =>
 function BrandRow({ onChange }: { onChange: () => void }) {
   const { values } = useSubscriptionForm();
   const domain = values.brandDomain.trim();
+  const stacked = useLargeText();
 
   return (
-    <View style={styles.brand}>
-      {domain ? (
-        <BrandLogo name={values.name} brandDomain={domain} size={36} />
-      ) : (
-        <View style={styles.brandEmpty} />
-      )}
-      <View style={styles.brandText}>
-        <Text style={styles.brandName} numberOfLines={1}>
-          {values.name.trim() || m.form_brandNone()}
-        </Text>
+    <View style={[styles.brand, stacked && styles.brandStacked]}>
+      <View style={styles.brandIdentity}>
         {domain ? (
-          <Text style={styles.brandDomain} numberOfLines={1}>
-            {domain}
+          <BrandLogo name={values.name} brandDomain={domain} size={36} />
+        ) : (
+          <View style={styles.brandEmpty} />
+        )}
+        <View style={styles.brandText}>
+          <Text style={styles.brandName}>
+            {values.name.trim() || m.form_brandNone()}
           </Text>
-        ) : null}
+          {domain ? <Text style={styles.brandDomain}>{domain}</Text> : null}
+        </View>
       </View>
       <Text
         style={styles.brandAction}
         onPress={onChange}
         accessibilityRole="button"
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
       >
         {m.form_brandChange()}
       </Text>
@@ -132,6 +131,7 @@ function CategoryRow() {
 /** What the subscription is called, what it costs, and how often. */
 export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
   const { values, errors, set } = useSubscriptionForm();
+  const stacked = useLargeText();
 
   return (
     <>
@@ -148,7 +148,13 @@ export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
           currency is a trailing accessory inside the price box rather than a
           second labelled row. */}
       <Field label={m.form_price()} error={messageFor(errors.cost)}>
-        <View style={[styles.box, errors.cost ? styles.boxError : null]}>
+        <View
+          style={[
+            styles.box,
+            stacked && styles.boxStacked,
+            errors.cost ? styles.boxError : null,
+          ]}
+        >
           <TextInput
             style={styles.amount}
             value={values.cost}
@@ -173,9 +179,13 @@ export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
           a number nobody bills on — and it stretches to the height of the period
           grid beside it. */}
       <Field label={m.form_every()} error={messageFor(errors.every)}>
-        <View style={styles.everyRow}>
+        <View style={[styles.everyRow, stacked && styles.everyRowStacked]}>
           <TextInput
-            style={[styles.count, errors.every ? styles.boxError : null]}
+            style={[
+              styles.count,
+              stacked && styles.countStacked,
+              errors.every ? styles.boxError : null,
+            ]}
             value={values.every}
             onChangeText={(next) => set("every", next)}
             keyboardType="number-pad"
@@ -350,6 +360,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  // "Change" is a control, and at the accessibility sizes it is 53pt of one —
+  // beside the name there is nothing left of the name to read.
+  brandStacked: { flexDirection: "column", alignItems: "stretch", gap: 10 },
+  // `flexBasis: "auto"` rather than `flex: 1`: down the column basis 0 collapses
+  // the group to nothing, because an auto-height parent has no free space to
+  // grow back into.
+  brandIdentity: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "auto",
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   brandText: { flex: 1, minWidth: 0 },
   brandName: { fontSize: 16, fontWeight: "600", color: colors.text },
   brandDomain: { fontSize: 12.5, color: colors.muted },
@@ -365,6 +390,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
   },
+  // The unit stops being a trailing accessory and becomes the row under the
+  // amount — `CurrencyPicker` turns its own dividing edge with it.
+  boxStacked: { flexDirection: "column", alignItems: "stretch" },
   boxError: { borderColor: colors.danger },
   amount: {
     flex: 1,
@@ -374,6 +402,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   everyRow: { flexDirection: "row", alignItems: "stretch", gap: 10 },
+  // 64pt is two digits at 16pt; at 57pt it is not one. The count takes a line of
+  // its own rather than a width that has to keep guessing.
+  everyRowStacked: { flexDirection: "column", alignItems: "stretch" },
   count: {
     width: 64,
     fontSize: 16,
@@ -384,6 +415,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
   },
+  countStacked: { width: "100%", paddingVertical: 12 },
   periods: { flex: 1 },
   offers: { gap: 8 },
   outcome: {

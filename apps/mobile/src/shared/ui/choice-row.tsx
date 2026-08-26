@@ -2,7 +2,7 @@ import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
+import { colors } from "./theme";
 
 /** The trailing glyph of a row that goes somewhere. */
 export function Chevron() {
@@ -92,10 +92,7 @@ export function ChoiceRow({
       )}
       <View style={styles.text}>
         {badge ? <Text style={styles.badge}>{badge}</Text> : null}
-        <Text
-          style={[styles.title, active && styles.titleSelected]}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
+        <Text style={[styles.title, active && styles.titleSelected]}>
           {title}
         </Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}

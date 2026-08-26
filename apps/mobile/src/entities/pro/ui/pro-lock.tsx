@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 
 /**
  * What a gated surface shows instead of the feature: a card that says what is
@@ -29,12 +29,7 @@ export function ProLock({ title, body }: { title: string; body?: string }) {
         style={styles.icon}
       />
       <View style={styles.text}>
-        <Text
-          style={styles.title}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
-          {title}
-        </Text>
+        <Text style={styles.title}>{title}</Text>
         {body ? <Text style={styles.body}>{body}</Text> : null}
       </View>
       <SymbolView

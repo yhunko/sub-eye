@@ -32,7 +32,8 @@ import {
 } from "@/shared/lib/format";
 import { nativeHeaderChrome } from "@/shared/ui/header";
 import { presentChoice } from "@/shared/ui/present-choice";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 import { chargeBeforeCancellation } from "../model/cancellation";
 import { cycleProgress } from "../model/cycle";
 import { useLifecycleActions } from "../model/use-lifecycle-actions";
@@ -57,6 +58,10 @@ const ACTION_ICON: Record<string, { ios: SFSymbol; android: AndroidSymbol }> = {
   renew: { ios: "arrow.clockwise", android: "refresh" },
   delete: { ios: "trash", android: "delete" },
 };
+
+/** The countdown's design size, and the point size it may never shrink past. */
+const COUNTDOWN_SIZE = 26;
+const COUNTDOWN_FLOOR = 18;
 
 function Track({ value }: { value: number }) {
   return (
@@ -100,6 +105,10 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
     status: subscription?.status ?? "active",
     allowedActions: subscription?.allowedActions ?? [],
   });
+
+  // Same reason: before the early return, because they are hooks.
+  const countdownLines = useLargeText() ? 2 : 1;
+  const countdownFloor = useShrinkFloor(COUNTDOWN_SIZE, COUNTDOWN_FLOOR);
 
   if (!subscription) {
     return (
@@ -416,10 +425,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
         {showDate ? (
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text
-                style={styles.label}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
+              <Text style={styles.label}>
                 {paused
                   ? m.detail_resumes()
                   : endsAt
@@ -427,12 +433,13 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                     : m.detail_nextPayment()}
               </Text>
             </View>
+            {/* "in 2 months and 3 days" is a sentence, so it wraps rather than
+                shrinking once there is a card's width of it. */}
             <Text
               style={styles.countdown}
-              numberOfLines={1}
+              numberOfLines={countdownLines}
               adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+              minimumFontScale={countdownFloor}
             >
               {endsAt
                 ? formatRemaining(daysUntil(date))
@@ -452,7 +459,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             ) : null}
             {/* The whole reason a user opens a cancelling subscription. */}
             {endsAt ? (
-              <Text style={styles.footnote} numberOfLines={1}>
+              <Text style={styles.footnote}>
                 {nextCharge
                   ? m.detail_endsNextCharge({
                       date: formatShortDate(nextCharge),
@@ -466,16 +473,11 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
         {share !== null && dashboard ? (
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text
-                style={styles.label}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
-                {m.detail_spendShare()}
-              </Text>
+              <Text style={styles.label}>{m.detail_spendShare()}</Text>
               <Text style={styles.headValue}>{sharePercent}</Text>
             </View>
             <Track value={share} />
-            <Text style={styles.footnote} numberOfLines={1}>
+            <Text style={styles.footnote}>
               {m.detail_spendShareOf({
                 amount: formatMoney(preferred.monthly, preferred.currencyCode),
                 total: formatMoney(
@@ -497,12 +499,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           />
         ) : (
           <View style={[styles.card, styles.timeline]}>
-            <Text
-              style={styles.label}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {m.detail_timeline()}
-            </Text>
+            <Text style={styles.label}>{m.detail_timeline()}</Text>
             {rows.map((row, index) => (
               <TimelineRow
                 key={row.id}
@@ -548,7 +545,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    // The value drops under the label when the two stop fitting, which at the
+    // accessibility sizes is always. No breakpoint needed: the label's own width
+    // is what decides, so a long translation gets the same treatment.
+    flexWrap: "wrap",
+    columnGap: 10,
+    rowGap: 4,
   },
   headValue: {
     fontSize: 13,
@@ -558,7 +560,7 @@ const styles = StyleSheet.create({
   },
   countdown: {
     marginTop: 10,
-    fontSize: 26,
+    fontSize: COUNTDOWN_SIZE,
     fontWeight: "800",
     letterSpacing: -0.4,
     color: colors.text,

@@ -1,11 +1,18 @@
 import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import type { AttentionEvent, AttentionKind } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { daysUntil, formatDaysUntil, formatMoney } from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 
 // Message-function REFERENCES, invoked at render. Calling m.*() at module scope
 // freezes the string in whichever locale was active at import.
@@ -48,6 +55,7 @@ const ICON = {
 
 /** Home's own horizontal padding, which the rail has to escape. */
 const PAGE_PADDING = 16;
+/** At the default text size. It scales with Dynamic Type — see `cardWidth`. */
 const CARD_WIDTH = 216;
 const GAP = 12;
 
@@ -68,11 +76,19 @@ const GAP = 12;
 export function UpcomingRail({ events }: { events: AttentionEvent[] }) {
   const router = useRouter();
 
+  // The card is the one thing here that cannot grow on its own: a snapping rail
+  // has to know the width it snaps by. So the width follows the text, up to a
+  // card that is the whole screen — past that a wider card would be a card you
+  // cannot see the end of.
+  const { fontScale, width } = useWindowDimensions();
+  const cardWidth = Math.min(
+    Math.round(CARD_WIDTH * Math.max(1, fontScale)),
+    width - PAGE_PADDING * 2,
+  );
+
   return (
     <View>
-      <Text style={styles.title} maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}>
-        {m.home_attention()}
-      </Text>
+      <Text style={styles.title}>{m.home_attention()}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -81,7 +97,7 @@ export function UpcomingRail({ events }: { events: AttentionEvent[] }) {
         // by PAGE_PADDING, which an interval measured from contentOffset 0 does
         // not know about, and every card would rest 16pt off its own edge.
         decelerationRate="fast"
-        snapToOffsets={events.map((_, index) => index * (CARD_WIDTH + GAP))}
+        snapToOffsets={events.map((_, index) => index * (cardWidth + GAP))}
         // The page's vertical scroll view takes UIKit's automatic safe-area
         // inset. Without this the nested horizontal one takes it too and starts
         // the rail pushed in by the status bar's height.
@@ -120,7 +136,11 @@ export function UpcomingRail({ events }: { events: AttentionEvent[] }) {
                   params: { id: event.subscriptionId },
                 })
               }
-              style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.card,
+                { width: cardWidth },
+                pressed && styles.pressed,
+              ]}
             >
               <View style={styles.head}>
                 <BrandLogo
@@ -128,17 +148,11 @@ export function UpcomingRail({ events }: { events: AttentionEvent[] }) {
                   brandDomain={event.brandDomain}
                   size={38}
                 />
-                <Text
-                  style={[styles.amount, stopping && styles.amountStopped]}
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-                >
+                <Text style={[styles.amount, stopping && styles.amountStopped]}>
                   {amount}
                 </Text>
               </View>
-              <Text style={styles.name} numberOfLines={1}>
-                {event.name}
-              </Text>
+              <Text style={styles.name}>{event.name}</Text>
               <View style={styles.whenRow}>
                 <SymbolView
                   name={ICON[event.kind]}
@@ -146,13 +160,7 @@ export function UpcomingRail({ events }: { events: AttentionEvent[] }) {
                   weight="semibold"
                   tintColor={tint}
                 />
-                <Text
-                  style={[styles.detail, { color: tint }]}
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-                >
-                  {detail}
-                </Text>
+                <Text style={[styles.detail, { color: tint }]}>{detail}</Text>
               </View>
             </Pressable>
           );
@@ -173,7 +181,6 @@ const styles = StyleSheet.create({
   rail: { marginHorizontal: -PAGE_PADDING },
   railContent: { paddingHorizontal: PAGE_PADDING, gap: GAP },
   card: {
-    width: CARD_WIDTH,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,

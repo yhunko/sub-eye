@@ -22,7 +22,7 @@ import { Button } from "@/shared/ui/button";
 import { ChoiceRow } from "@/shared/ui/choice-row";
 import { Field } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 import { yearlyDifference } from "../model/yearly-difference";
 
 /** Mirrors the store's `scheduledPriceChangeModes`. */
@@ -51,12 +51,7 @@ export function SheetHeader({
   return (
     <View style={styles.header}>
       <View style={styles.headerText}>
-        <Text
-          style={styles.title}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
-          {title}
-        </Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
       <Pressable
@@ -328,11 +323,7 @@ function Stepper({
           weight="semibold"
         />
       </Pressable>
-      <Text
-        style={styles.stepperValue}
-        accessibilityLiveRegion="polite"
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
+      <Text style={styles.stepperValue} accessibilityLiveRegion="polite">
         {value}
       </Text>
       <Pressable

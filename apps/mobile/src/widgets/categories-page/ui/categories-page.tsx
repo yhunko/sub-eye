@@ -18,7 +18,7 @@ import { categoriesQuery } from "@/entities/category";
 import { subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { RowCheck } from "@/shared/ui/list-row";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 import { categorySearch, useCategorySearch } from "../model/search-store";
 import { useDeleteCategoryConfirm } from "../model/use-delete-category-confirm";
 
@@ -109,19 +109,14 @@ function CategoryRow({
       }}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
+      {/* The emoji is an icon that happens to be a glyph, and it holds a
+          fixed column so the names line up — it is the one thing here that
+          stays put while the text around it grows. */}
       <Text style={styles.emoji} maxFontSizeMultiplier={1}>
         {row.emoji}
       </Text>
-      <Text
-        style={styles.name}
-        numberOfLines={1}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {row.name}
-      </Text>
-      <Text style={styles.count} maxFontSizeMultiplier={1}>
-        {count}
-      </Text>
+      <Text style={styles.name}>{row.name}</Text>
+      <Text style={styles.count}>{count}</Text>
       {trailing}
     </Pressable>
   );
@@ -259,8 +254,6 @@ export function CategoriesPage({ pick }: { pick?: CategoryPick }) {
                   styles.noneName,
                   pick.selectedId === null && styles.nameSelected,
                 ]}
-                numberOfLines={1}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
               >
                 {m.form_categoryNone()}
               </Text>
@@ -337,6 +330,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 13,
     paddingHorizontal: 16,
+    paddingVertical: 10,
     minHeight: 52,
     backgroundColor: colors.surface,
   },

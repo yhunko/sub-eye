@@ -2,7 +2,8 @@ import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
+import { colors } from "./theme";
+import { useLargeText } from "./use-large-text";
 
 /**
  * The inset-grouped list iOS Settings is built from: a rounded card of rows, an
@@ -97,6 +98,11 @@ export function Row({
    */
   accessory?: ReactNode;
 }) {
+  // At the accessibility sizes the label and its value have no chance of
+  // sharing a line, so the value drops into the label's column — which is what
+  // iOS Settings itself does rather than truncating either one.
+  const stacked = useLargeText();
+
   const content = (
     <>
       {/* The union guarantees one branch or the other, but destructuring a
@@ -123,26 +129,21 @@ export function Row({
             accent && styles.labelAccent,
             destructive && styles.labelDestructive,
           ]}
-          // TWO lines, not one. A label that fits in English is not a label that
-          // fits — "Trial ending reminders" is half again as long in Ukrainian
-          // and was truncating into the switch. Wrapping is what UIKit does.
-          numberOfLines={2}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+          // Unbounded, not one line. A label that fits in English is not a label
+          // that fits — "Trial ending reminders" is half again as long in
+          // Ukrainian and was truncating into the switch, and at the
+          // accessibility text sizes even two lines runs out. Wrapping is what
+          // UIKit does, and the row is padding + minHeight so it can follow.
         >
           {label}
         </Text>
-        {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={2}>
-            {subtitle}
-          </Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        {value && stacked ? (
+          <Text style={[styles.value, styles.valueStacked]}>{value}</Text>
         ) : null}
       </View>
-      {value ? (
-        <Text
-          style={styles.value}
-          numberOfLines={1}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
+      {value && !stacked ? (
+        <Text style={styles.value} numberOfLines={1}>
           {value}
         </Text>
       ) : null}
@@ -264,4 +265,7 @@ const styles = StyleSheet.create({
   labelDestructive: { color: colors.danger, fontWeight: "600" },
   subtitle: { fontSize: 12.5, color: colors.muted, marginTop: 1 },
   value: { fontSize: 16, color: colors.muted, flexShrink: 1 },
+  // Under the label rather than beside it. `flexShrink` above is for the row it
+  // no longer sits in; here it would shrink the text against the column.
+  valueStacked: { marginTop: 2, flexShrink: 0 },
 });

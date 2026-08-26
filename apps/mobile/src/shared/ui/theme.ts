@@ -64,8 +64,3 @@ export const statusTint: Record<
   // screen. A dead subscription should recede towards the page background.
   cancelled: { bg: "#131519", border: "rgba(255,255,255,0.06)" },
 };
-
-// Cap Dynamic Type growth on layout-critical text (the fixed-size hero numbers
-// on Home, compact chips) so extreme OS font sizes cannot shatter the layout.
-// Body/prose text stays uncapped — it should scale fully for accessibility.
-export const LAYOUT_FONT_SCALE_MAX = 1.3;

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Chevron } from "./choice-row";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
+import { colors } from "./theme";
+import { useLargeText } from "./use-large-text";
 
 /** A labelled row with an optional inline error. Both form sheets are built from it. */
 export function Field({
@@ -107,6 +108,11 @@ export function ValueField({
   /** Replaces the chevron for a row that does not push a screen. */
   trailing?: ReactNode;
 }) {
+  // The box carries up to three things on one line — the value, the same value
+  // said another way, and a chevron. At the accessibility sizes that is one
+  // line too many, so it becomes a column and everything keeps its full text.
+  const stacked = useLargeText();
+
   return (
     <Field label={label} error={error}>
       <Pressable
@@ -116,14 +122,17 @@ export function ValueField({
         onPress={onPress}
         style={({ pressed }) => [
           styles.valueBox,
+          stacked && styles.valueBoxStacked,
           error ? styles.inputError : null,
           pressed && styles.valueBoxPressed,
         ]}
       >
         <Text
-          style={[styles.value, value ? null : styles.valuePlaceholder]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+          style={[
+            styles.value,
+            stacked && styles.valueStacked,
+            value ? null : styles.valuePlaceholder,
+          ]}
         >
           {value ?? placeholder}
         </Text>
@@ -165,8 +174,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
+  valueBoxStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 6,
+  },
   valueBoxPressed: { backgroundColor: colors.surfaceAlt },
   value: { flex: 1, fontSize: 16, color: colors.text },
+  // `flex: 1` above means basis 0 — down the column that collapses the line to
+  // nothing. Auto basis is what lets it be as tall as the wrapped text.
+  valueStacked: { flexBasis: "auto", flexGrow: 0, alignSelf: "stretch" },
   valuePlaceholder: { color: colors.muted },
   valueHint: { fontSize: 13, color: colors.muted },
   error: { marginTop: 4, fontSize: 13, color: colors.danger },

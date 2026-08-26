@@ -4,6 +4,7 @@ import { m } from "@/shared/i18n";
 import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
 import { presentChoice } from "./present-choice";
 import { colors } from "./theme";
+import { useLargeText } from "./use-large-text";
 
 /**
  * The five supported currencies, chosen from the OS's own sheet — the same
@@ -25,6 +26,9 @@ export function CurrencyPicker({
   onChange: (currencyCode: string) => void;
 }) {
   const label = m.form_currency();
+  // The price box turns into a column at the accessibility sizes, so the edge
+  // that separates the two controls has to turn with it.
+  const stacked = useLargeText();
 
   return (
     <Pressable
@@ -40,7 +44,11 @@ export function CurrencyPicker({
           })),
         )
       }
-      style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.trigger,
+        stacked && styles.triggerStacked,
+        pressed && styles.pressed,
+      ]}
     >
       <Text style={styles.value}>{currencyLabel(value)}</Text>
       <SymbolView
@@ -64,6 +72,12 @@ const styles = StyleSheet.create({
     // as text that happens to sit at the end of the amount.
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: colors.border,
+  },
+  triggerStacked: {
+    borderLeftWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingVertical: 12,
   },
   pressed: { backgroundColor: colors.surfaceAlt },
   value: { fontSize: 16, color: colors.text },

@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
+import { colors } from "./theme";
 
 type Variant = "primary" | "secondary" | "plain";
 
@@ -55,7 +55,6 @@ export function Button({
         <View style={styles.content}>
           {icon}
           <Text
-            maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
             style={[
               styles.label,
               variant === "primary" ? styles.labelPrimary : styles.labelOther,
@@ -72,21 +71,37 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
+  // Padding and a FLOOR, never a fixed height: the label is uncapped Dynamic
+  // Type, and at the accessibility sizes a 16pt label is 57pt tall. A `height`
+  // here is what made the only way to fit it a cap on the text itself.
   base: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
   },
-  content: { flexDirection: "row", alignItems: "center", gap: 9 },
-  primary: { height: 52, backgroundColor: colors.accent },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    flexShrink: 1,
+  },
+  primary: { minHeight: 52, backgroundColor: colors.accent },
   secondary: {
-    height: 50,
+    minHeight: 50,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  plain: { height: 40, paddingHorizontal: 16 },
-  label: { fontSize: 16, fontWeight: "700" },
+  plain: { minHeight: 40, paddingHorizontal: 16 },
+  label: {
+    fontSize: 16,
+    fontWeight: "700",
+    flexShrink: 1,
+    textAlign: "center",
+  },
   labelPrimary: { color: colors.bg },
   labelOther: { color: colors.text, fontSize: 15 },
   labelPlain: { color: colors.muted, fontWeight: "600" },

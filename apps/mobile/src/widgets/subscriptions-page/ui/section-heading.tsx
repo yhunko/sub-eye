@@ -6,7 +6,8 @@ import type {
 } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { currencyLabel, formatMoney } from "@/shared/lib/format";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText } from "@/shared/ui/use-large-text";
 
 // Message-function REFERENCES, invoked at render — m.*() at module scope freezes
 // the string in whichever locale was active at import.
@@ -48,20 +49,12 @@ export function SectionHeading({
   section: SubscriptionSection;
   groupBy: SubscriptionGroupBy;
 }) {
+  const stacked = useLargeText();
+
   return (
-    <View style={styles.heading}>
-      <Text
-        style={styles.title}
-        numberOfLines={1}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {headingFor(section, groupBy)}
-      </Text>
-      <Text
-        style={styles.total}
-        numberOfLines={1}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
+    <View style={[styles.heading, stacked && styles.headingStacked]}>
+      <Text style={styles.title}>{headingFor(section, groupBy)}</Text>
+      <Text style={styles.total}>
         {formatMoney(section.total, section.currencyCode)}
         <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
       </Text>
@@ -78,6 +71,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingTop: 14,
     paddingBottom: 8,
+  },
+  // The total is the reason the heading exists, so it wraps under the name
+  // rather than competing with it for a line neither can win.
+  headingStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 2,
   },
   title: {
     flexShrink: 1,

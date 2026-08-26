@@ -17,7 +17,8 @@ import {
   toIsoDay,
 } from "@/shared/lib/format";
 import { ValueField } from "./field";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
+import { colors } from "./theme";
+import { useLargeText } from "./use-large-text";
 
 /**
  * The OS date picker, behind a row that says what the date MEANS.
@@ -61,6 +62,9 @@ export function NativeDateField({
 }) {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
+  // Beside Done the title gets 190pt, and "Перший" at 61pt does not fit in it —
+  // it broke mid-word. Above Done it has the panel.
+  const stacked = useLargeText();
 
   const day = toIsoDay(value);
   const days = daysUntil(day);
@@ -117,11 +121,8 @@ export function NativeDateField({
           onPress={() => setOpen(false)}
         />
         <View style={[styles.panel, { paddingBottom: insets.bottom + 12 }]}>
-          <View style={styles.head}>
-            <Text
-              style={styles.title}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
+          <View style={[styles.head, stacked && styles.headStacked]}>
+            <Text style={[styles.title, stacked && styles.titleStacked]}>
               {label}
             </Text>
             <Pressable
@@ -161,11 +162,17 @@ const styles = StyleSheet.create({
   },
   head: {
     flexDirection: "row",
-    alignItems: "center",
+    // The label wraps at the accessibility sizes; centred, Done would drift to
+    // the vertical middle of a title three lines tall. It belongs level with
+    // the first line of the words.
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
   },
+  headStacked: { flexDirection: "column", alignItems: "stretch", gap: 8 },
   title: { flex: 1, fontSize: 17, fontWeight: "700", color: colors.text },
+  // `flex: 1` above is basis 0, which down a column collapses the line.
+  titleStacked: { flexBasis: "auto", flexGrow: 0 },
   done: { fontSize: 16, fontWeight: "700", color: colors.accent },
   // UIDatePicker's wheels report no intrinsic height to Yoga; without one the
   // control lays out to zero and never appears. 216 is the control's own: at

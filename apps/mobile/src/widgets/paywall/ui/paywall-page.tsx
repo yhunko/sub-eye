@@ -21,7 +21,7 @@ import {
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { nativeHeaderChrome } from "@/shared/ui/header";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 
 // Message-function references, invoked at render — never m.*() at module scope.
 const FEATURES: {
@@ -179,12 +179,7 @@ export function PaywallPage() {
                 style={styles.featureIcon}
               />
               <View style={styles.featureText}>
-                <Text
-                  style={styles.featureTitle}
-                  maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-                >
-                  {feature.title()}
-                </Text>
+                <Text style={styles.featureTitle}>{feature.title()}</Text>
                 <Text style={styles.featureBody}>{feature.body()}</Text>
               </View>
             </View>

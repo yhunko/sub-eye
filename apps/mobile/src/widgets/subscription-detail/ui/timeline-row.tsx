@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { TimelineRow as Row } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText } from "@/shared/ui/use-large-text";
 
 // Message-function references, invoked at render time — calling m.*() here would
 // freeze the label in whichever locale was active at import. `standard` is
@@ -27,26 +28,18 @@ export function TimelineRow({ row, last }: { row: Row; last?: boolean }) {
     ? m.phase_range({ from: row.from, to: row.to })
     : m.phase_since({ date: row.from });
 
+  const stacked = useLargeText();
+
   return (
-    <View style={[styles.row, last && styles.lastRow]}>
-      <Text
-        style={[styles.price, row.isActive && styles.active]}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
+    <View
+      style={[styles.row, stacked && styles.rowStacked, last && styles.lastRow]}
+    >
+      <Text style={[styles.price, row.isActive && styles.active]}>
         {row.price}
       </Text>
       <View style={styles.meta}>
-        <Text style={styles.range} numberOfLines={1}>
-          {range}
-        </Text>
-        {label ? (
-          <Text
-            style={styles.kind}
-            maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-          >
-            {label()}
-          </Text>
-        ) : null}
+        <Text style={styles.range}>{range}</Text>
+        {label ? <Text style={styles.kind}>{label()}</Text> : null}
       </View>
     </View>
   );
@@ -62,6 +55,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  // The price and the dates it covers are one sentence read left to right; at
+  // the accessibility sizes they are two lines read top to bottom.
+  rowStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 4,
+  },
   // The card the rows now sit in draws its own edge; a divider under the last
   // one would double it.
   lastRow: { borderBottomWidth: 0, paddingBottom: 2 },
@@ -71,7 +71,14 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   active: { color: colors.text, fontWeight: "700" },
-  meta: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  meta: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: 8,
+    rowGap: 4,
+    flexShrink: 1,
+  },
   range: { fontSize: 13, color: colors.muted },
   kind: {
     fontSize: 10.5,

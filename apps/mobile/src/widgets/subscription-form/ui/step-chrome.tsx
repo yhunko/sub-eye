@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 
 const STEPS = [1, 2, 3];
 
@@ -70,10 +70,7 @@ export function StepHeading({ step, title }: { step: number; title: string }) {
           />
         ))}
       </View>
-      <Text
-        style={styles.caption}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
+      <Text style={styles.caption}>
         {`${m.form_stepOf({ step, total: STEPS.length })} · ${title}`}
       </Text>
     </View>

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { m } from "@/shared/i18n";
 import { BrandLogo } from "@/shared/ui/brand-logo";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 import { brandSearchQuery, POPULAR_BRANDS } from "../model/brand-search";
 import { useSubscriptionForm } from "../model/form-context";
 import { normalizeBrandDomain } from "../model/form-schema";
@@ -120,11 +120,7 @@ export function BrandList({
             size={19}
             tintColor={colors.accent}
           />
-          <Text
-            style={styles.useTyped}
-            numberOfLines={1}
-            maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-          >
+          <Text style={styles.useTyped}>
             {m.form_brandUse({ domain: typedDomain })}
           </Text>
         </Pressable>
@@ -165,22 +161,10 @@ function Row({
       >
         {logo}
         <View style={styles.rowText}>
-          <Text
-            style={[styles.rowLabel, selected && styles.rowLabelSelected]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-          >
+          <Text style={[styles.rowLabel, selected && styles.rowLabelSelected]}>
             {label}
           </Text>
-          {caption ? (
-            <Text
-              style={styles.rowCaption}
-              numberOfLines={1}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {caption}
-            </Text>
-          ) : null}
+          {caption ? <Text style={styles.rowCaption}>{caption}</Text> : null}
         </View>
         {selected ? (
           <SymbolView
@@ -213,6 +197,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
+    paddingVertical: 10,
     minHeight: 50,
   },
   rowSelected: { backgroundColor: colors.accentSoft },
