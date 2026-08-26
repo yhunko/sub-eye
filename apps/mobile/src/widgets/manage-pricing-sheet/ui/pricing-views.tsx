@@ -23,6 +23,7 @@ import { ChoiceRow } from "@/shared/ui/choice-row";
 import { Field } from "@/shared/ui/field";
 import { NativeDateField } from "@/shared/ui/native-date-field";
 import { colors } from "@/shared/ui/theme";
+import { useLargeText } from "@/shared/ui/use-large-text";
 import { yearlyDifference } from "../model/yearly-difference";
 
 /** Mirrors the store's `scheduledPriceChangeModes`. */
@@ -48,8 +49,10 @@ export function SheetHeader({
   subtitle: string;
   onClose: () => void;
 }) {
+  const stacked = useLargeText();
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, stacked && styles.headerStacked]}>
       <View style={styles.headerText}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
@@ -58,7 +61,11 @@ export function SheetHeader({
         accessibilityRole="button"
         accessibilityLabel={m.common_cancel()}
         onPress={onClose}
-        style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
+        style={({ pressed }) => [
+          styles.close,
+          stacked && styles.closeStacked,
+          pressed && styles.closePressed,
+        ]}
       >
         <SymbolView
           name={{ ios: "xmark", android: "close" }}
@@ -91,11 +98,22 @@ function AmountField({
   placeholder?: string;
   error?: string;
 }) {
+  const stacked = useLargeText();
+
   return (
     <Field label={label} error={error}>
-      <View style={[styles.amountBox, error ? styles.amountError : null]}>
+      {/* "Зараз ₴534.82" beside the field is a caption at 13pt and half the row
+          at 46 — it drops below the amount rather than squeezing the one control
+          on the screen that decides money. */}
+      <View
+        style={[
+          styles.amountBox,
+          stacked && styles.amountBoxStacked,
+          error ? styles.amountError : null,
+        ]}
+      >
         <TextInput
-          style={styles.amount}
+          style={[styles.amount, stacked && styles.amountStacked]}
           value={value}
           onChangeText={onChangeText}
           keyboardType="decimal-pad"
@@ -621,7 +639,17 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 20,
   },
-  headerText: { flex: 1, minWidth: 0 },
+  // `column-reverse` keeps the close button written after the title — the tab
+  // order a sheet wants — while drawing it above, so the title gets the panel's
+  // full width instead of breaking "звичайна" in half against a 32pt circle.
+  headerStacked: { flexDirection: "column-reverse", alignItems: "stretch" },
+  headerText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "auto",
+    minWidth: 0,
+  },
+  closeStacked: { alignSelf: "flex-end", marginBottom: 12 },
   close: {
     width: 32,
     height: 32,
@@ -644,8 +672,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
   },
+  amountBoxStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 0,
+    paddingBottom: 12,
+  },
   amountError: { borderColor: colors.danger },
-  amount: { flex: 1, fontSize: 16, color: colors.text, paddingVertical: 12 },
+  // The triple rather than `flex: 1`: down the column the shorthand's basis 0
+  // collapses the input to no height.
+  amount: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    fontSize: 16,
+    color: colors.text,
+    paddingVertical: 12,
+  },
+  amountStacked: { flexGrow: 0, flexBasis: "auto", alignSelf: "stretch" },
   amountHint: { fontSize: 13, color: colors.muted },
 
   choices: { gap: 8 },

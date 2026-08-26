@@ -96,7 +96,11 @@ const styles = StyleSheet.create({
   figuresLine: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 10,
+    // The amount takes a line of its own before it breaks in half: "₴4,237." /
+    // "09" is a number a spend tracker has no business printing.
+    flexWrap: "wrap",
+    columnGap: 10,
+    rowGap: 2,
     marginTop: 4,
     marginLeft: 19,
   },

@@ -320,13 +320,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 4,
   },
+  // The triple rather than `flex: 1`, so `segmentStacked` can put the basis
+  // back: down a column, basis 0 collapses the segment to no height.
   segment: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
     minWidth: 0,
     alignItems: "center",
     paddingHorizontal: 8,
   },
-  segmentStacked: { flex: 0, alignSelf: "stretch", alignItems: "flex-start" },
+  segmentStacked: {
+    flexGrow: 0,
+    flexBasis: "auto",
+    alignSelf: "stretch",
+    alignItems: "flex-start",
+  },
   segmentDivided: {
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: "rgba(255,255,255,0.18)",

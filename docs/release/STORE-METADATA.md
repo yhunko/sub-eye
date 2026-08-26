@@ -274,7 +274,7 @@ config page still flags one as missing after the IAP key is uploaded.
 
 ### Accessibility Nutrition Label (optional)
 
-Answer **Yes**, then tick **two**. Every claim here is public and Apple's
+Answer **Yes**, then tick **five**. Every claim here is public and Apple's
 criterion is *all* fundamental and primary functionality, so an unverified tick
 is worse than an empty one.
 
@@ -282,7 +282,7 @@ is worse than an empty one.
 | --- | --- | --- |
 | Dark Interface | **yes** | dark-only, and `app.json` pins `userInterfaceStyle: "dark"` |
 | Sufficient Contrast | **yes** | measured against real backgrounds: text 17.2:1, muted-on-surface 6.6:1, accent 5.9:1, warning 8.5:1, paused chip 11.2:1 |
-| Larger Text | not yet | the blocker is gone — `LAYOUT_FONT_SCALE_MAX` is removed and the containers grow instead — but like VoiceOver this is a claim about what happens on a screen, so it wants one walk through Home, the list, a subscription, the form and Settings at the largest accessibility size before it is ticked |
+| Larger Text | **yes** | `LAYOUT_FONT_SCALE_MAX` is gone: no `maxFontSizeMultiplier` survives on text that carries meaning, rows are padding + `minHeight` instead of a fixed `height`, and `useLargeText()` stacks the label-and-value rows that stop fitting. Walked at `accessibility-extra-extra-extra-large` (RN reports 3.571×) in Ukrainian, which is the longer language: Home, the list and its swipe actions, a subscription, all three form steps and the date picker, Settings, Notifications, Categories and the pricing sheet. Nothing truncates, overlaps or becomes unreachable |
 | Captions, Audio Descriptions | no | there is no audio or video in the app |
 | Differentiate Without Color Alone | **yes** | audited and one failure fixed — `paused` and `cancelling` were carried by the row tint alone. Everywhere else already pairs colour with a shape or a word: the delta chip has an arrow and "more"/"less", the rail has a per-kind SF Symbol and "in N days", the category dot is decorative beside name, share and amount |
 | Reduced Motion | **yes** | the app has no custom animation. Nothing imports an animation API; the only motion is native navigation, native tabs and a swipe that tracks the finger, and the OS handles all of it. There is nothing to remove, which is why no `isReduceMotionEnabled` check exists |

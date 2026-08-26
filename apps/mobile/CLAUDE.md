@@ -332,7 +332,34 @@ silent:
 
 ## UI
 
-RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`). Cap layout-critical text with `maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}`; leave prose uncapped for accessibility.
+RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`).
+
+**Never cap text.** `maxFontSizeMultiplier` is what fails Apple's Larger Text
+criterion, and the Accessibility Nutrition Label claims it — Dynamic Type runs to
+the largest accessibility size on every screen. The container is what gives, not
+the text:
+
+- **Padding + `minHeight`, never a fixed `height`,** on any box that holds text.
+  A `height` is what forces the cap.
+- **`useLargeText()`** (`@/shared/ui/use-large-text`) is true at iOS's
+  accessibility sizes. Rows that pair a label with a value beside it switch to a
+  column there — beside each other, neither fits at any phone width, and
+  shrinking one into an ellipsis is the failure the criterion is about. It is
+  also where a `borderRadius: 999` capsule becomes a rounded rect: the arc of a
+  circle crops the second line of a wrapped label.
+- **`useShrinkFloor(size, floor)`** is the `minimumFontScale` for the two or
+  three headline figures that keep `adjustsFontSizeToFit`. A fixed fraction
+  climbs with Dynamic Type until the figure hits its floor and truncates; this
+  pins the floor to a point size.
+- **`flexGrow`/`flexShrink`/`flexBasis`, not `flex: 1`,** on anything a
+  `*Stacked` style has to re-flex. `flex: 1` is basis 0, which down a column
+  collapses the child to no height — and a later `flexBasis` in the same style
+  array does not reliably win. This silently deleted the date picker's title.
+- `maxFontSizeMultiplier={1}` is legitimate on exactly one thing: an emoji
+  standing in for an icon in a fixed column.
+
+Verify with `xcrun simctl ui <udid> content_size accessibility-extra-extra-extra-large`
+rather than by tapping through Settings.
 
 **Colour means one thing at a time.** `accent` green is brand and interaction, never "money is good" — the sole exception is Home's next-month chip, where it marks a *direction* of change. `danger`/`warning`/`muted` on Home's upcoming rail encode **when** (≤1 day / ≤7 rolling days / later), never what kind of event it is; the kind is carried by an SF Symbol. The one event that opts out is `ends`, which is always green because a cancellation takes money off the bill. Read the comments on the tokens before reusing one.
 

@@ -122,9 +122,7 @@ export function NativeDateField({
         />
         <View style={[styles.panel, { paddingBottom: insets.bottom + 12 }]}>
           <View style={[styles.head, stacked && styles.headStacked]}>
-            <Text style={[styles.title, stacked && styles.titleStacked]}>
-              {label}
-            </Text>
+            <Text style={styles.title}>{label}</Text>
             <Pressable
               accessibilityRole="button"
               onPress={() => setOpen(false)}
@@ -170,9 +168,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headStacked: { flexDirection: "column", alignItems: "stretch", gap: 8 },
-  title: { flex: 1, fontSize: 17, fontWeight: "700", color: colors.text },
-  // `flex: 1` above is basis 0, which down a column collapses the line.
-  titleStacked: { flexBasis: "auto", flexGrow: 0 },
+  // `flexShrink`, NOT `flex: 1`. The shorthand is basis 0, which down the
+  // stacked column collapses the title to no height at all — it disappeared,
+  // leaving a panel of Done and a wheel. Shrink is all the row ever wanted:
+  // `space-between` already puts Done at the far edge.
+  title: { flexShrink: 1, fontSize: 17, fontWeight: "700", color: colors.text },
   done: { fontSize: 16, fontWeight: "700", color: colors.accent },
   // UIDatePicker's wheels report no intrinsic height to Yoga; without one the
   // control lays out to zero and never appears. 216 is the control's own: at

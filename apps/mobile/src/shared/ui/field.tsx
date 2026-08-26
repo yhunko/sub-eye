@@ -180,10 +180,17 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   valueBoxPressed: { backgroundColor: colors.surfaceAlt },
-  value: { flex: 1, fontSize: 16, color: colors.text },
-  // `flex: 1` above means basis 0 — down the column that collapses the line to
-  // nothing. Auto basis is what lets it be as tall as the wrapped text.
-  valueStacked: { flexBasis: "auto", flexGrow: 0, alignSelf: "stretch" },
+  // The triple rather than `flex: 1`: the shorthand is basis 0, and `valueStacked`
+  // has to be able to put the basis back — down a column, basis 0 collapses the
+  // line to no height at all.
+  value: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    fontSize: 16,
+    color: colors.text,
+  },
+  valueStacked: { flexGrow: 0, flexBasis: "auto", alignSelf: "stretch" },
   valuePlaceholder: { color: colors.muted },
   valueHint: { fontSize: 13, color: colors.muted },
   error: { marginTop: 4, fontSize: 13, color: colors.danger },
