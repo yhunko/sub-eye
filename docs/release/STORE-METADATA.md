@@ -239,9 +239,19 @@ declares exactly these three. All "App Functionality", none used for tracking,
 | Purchases | Purchase History | no | RevenueCat with `appUserID: null` |
 | Browsing/Search | Search History | no | text typed into the brand picker goes to Brandfetch |
 
-The subscriptions a user types are **not** declared: they stay on the device,
-and the one path that moves them (iCloud Sync) writes to the user's own iCloud,
-which the developer cannot read. Neither is collection under Apple's definition.
+The first question — *do you or your third-party partners collect data* — is
+**Yes**. Then tick those three boxes and nothing else; each follow-up answers
+purpose **App Functionality**, not for tracking, not linked.
+
+The boxes it is tempting to tick and why they stay empty:
+
+| Tempting | Why not |
+| --- | --- |
+| Other User Content | the subscriptions a user types never leave the device, and the one path that moves them (iCloud Sync) writes to the user's own iCloud, which the developer cannot read — neither is collection under Apple's definition |
+| Payment Info, Other Financial Info | the amounts are typed and stay local, and Apple's own note excludes payment handled outside the app |
+| User ID | RevenueCat runs with `appUserID: null` — anonymous and device-local |
+| Performance Data | `shared/lib/sentry.ts` omits `tracesSampleRate` on purpose: no tracing, no profiling, no replay, no screenshots |
+| Product Interaction | there is no analytics SDK in the app; PostHog never followed the server into the mobile bundle |
 
 ### App Store Server Notifications (App Information, bottom)
 
