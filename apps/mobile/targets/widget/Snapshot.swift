@@ -48,13 +48,17 @@ struct WidgetItem: Decodable, Identifiable {
   /// due this morning rendered as "20 minutes ago" — technically true, useless
   /// on a widget, and it would have flipped wording several times a day.
   ///
-  /// Days are counted in a UTC calendar, NOT the device's. A payment date is a
-  /// calendar day stored as its UTC midnight, and every surface in the app reads
-  /// it that way (`formatDate` pins `timeZone: "UTC"`, the reminder planner
-  /// walks `getUTC*`). Counting in the device's zone made this widget the only
-  /// place answering in a different calendar: the same charge read "tomorrow" on
-  /// the detail screen and "the day after" here for a user east of UTC, and one
-  /// day early for anyone west of it.
+  /// Both sides are day LABELS, and the rule for which calendar names each one
+  /// lives in `src/shared/lib/format/day.ts`: a stored date is decoded in UTC,
+  /// because that is the zone it was written in — but "which day is it now" is a
+  /// wall-clock question, answered where the user physically is. `todayAsDay`
+  /// makes that split, and so do `daysUntil` and the reminder planner's
+  /// `leadDaysOf`.
+  ///
+  /// Reading BOTH sides in UTC — which is what this did — made the widget the
+  /// only surface answering on a different calendar, between local midnight and
+  /// UTC midnight: three hours a night in Kyiv, where the rail said "Renews
+  /// Tomorrow" and the widget beside it said "in 2 days" for the same charge.
   ///
   /// The LANGUAGE is the app's, not the device's. `RelativeDateTimeFormatter`
   /// defaults to the extension process's `Locale.current`, which follows the
@@ -66,7 +70,9 @@ struct WidgetItem: Decodable, Identifiable {
     let days =
       Self.utcCalendar.dateComponents(
         [.day],
-        from: Self.utcCalendar.startOfDay(for: Date()),
+        from: Self.today,
+        // Floored rather than trusted: a stored day is already a UTC midnight,
+        // but a legacy value can carry a time of day.
         to: Self.utcCalendar.startOfDay(for: due)
       ).day ?? 0
 
@@ -78,7 +84,16 @@ struct WidgetItem: Decodable, Identifiable {
     return formatter.localizedString(from: DateComponents(day: days))
   }
 
-  /// The calendar every day-valued field in this app is expressed in.
+  /// The device's calendar day, expressed as the UTC midnight this app stores
+  /// days as. The Swift half of `toIsoDay(new Date())`, and it has to be read
+  /// per call: an extension process outlives midnight.
+  static var today: Date {
+    utcCalendar.date(
+      from: Calendar.current.dateComponents([.year, .month, .day], from: Date()))
+      ?? utcCalendar.startOfDay(for: Date())
+  }
+
+  /// The calendar STORED days are expressed in — not the one "today" is read in.
   static let utcCalendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone

@@ -264,15 +264,22 @@ Android app widget is RemoteViews/Glance and shares none of this code.
   `.after(midnight)` refresh policy is what stops a row written today from still
   reading "tomorrow" the morning the payment lands. Do not replace that policy
   with `.atEnd`.
-- **The day count and that refresh are both in a UTC calendar, never
-  `Calendar.current`.** A payment date is a calendar day stored as its UTC
-  midnight, and every JS reader decodes it that way (`formatDate` pins
-  `timeZone: "UTC"`, `planReminders` walks `getUTC*`). Counting in the device's
-  zone made the widget the only surface answering in a different calendar: the
-  same charge read "tomorrow" on the detail screen and "the day after" here, and
-  a day early for anyone west of UTC. `WidgetItem.utcCalendar` is the one to use,
-  and the timeline refreshes at UTC midnight because that is when the wording
-  changes.
+- **A day count reads the STORED date in UTC and TODAY on the device's clock.**
+  The rule is stated once, in `src/shared/lib/format/day.ts`, and every surface
+  follows it: a payment date is a calendar day written as its UTC midnight, so
+  decoding it uses UTC (`formatDate` pins `timeZone: "UTC"`, `planReminders`
+  walks `getUTC*`) — but "which day is it now" is a wall-clock question and is
+  answered where the user physically is (`todayAsDay` re-anchors the DEVICE's
+  y/m/d through `Date.UTC`, and `leadDaysOf` does the same). `WidgetItem.today`
+  is the Swift half of that, and `utcCalendar` is only for the stored side.
+  Asking UTC for both — which the widget did — made it the one surface on a
+  different calendar between local midnight and UTC midnight: three hours a
+  night in Kyiv, where Home's rail read "Renews Tomorrow" and the widget beside
+  it read "in 2 days" for the same charge. **The timeline refresh moves with
+  it** — `.after` the device's midnight, because that is when the wording
+  changes. `daysUntil`'s Kyiv case in `shared/lib/format/when.test.ts` pins the
+  JS half; the extension has no test harness, so this paragraph is the Swift
+  half's only guard.
 - **`toISOString()` carries milliseconds**, which `ISO8601DateFormatter` drops
   unless given `.withFractionalSeconds`. Parsing it wrong is silent — `date(from:)`
   returns nil and every row renders as "now".

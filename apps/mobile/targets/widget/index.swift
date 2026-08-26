@@ -70,12 +70,13 @@ struct SubEyeProvider: TimelineProvider {
       // read "tomorrow" the morning the payment actually lands — and the month
       // total would carry into the next month.
       //
-      // UTC midnight, because that is when `dueText` changes its answer: the day
-      // difference it renders is counted in a UTC calendar, like every other
-      // date in the app. Redrawing at the device's midnight instead left the
-      // wording stale for the length of the user's offset.
+      // The DEVICE's midnight, because that is when `dueText` changes its
+      // answer — it counts from `WidgetItem.today`, which is the device's
+      // calendar day. Redrawing at UTC midnight instead left the wording stale
+      // for the length of the user's offset, which is the window the widget and
+      // the app used to contradict each other in.
       let midnight =
-        WidgetItem.utcCalendar.nextDate(
+        Calendar.current.nextDate(
           after: Date(),
           matching: DateComponents(hour: 0, minute: 0),
           matchingPolicy: .nextTime)
