@@ -260,10 +260,18 @@ export const SubscriptionRow = memo(function SubscriptionRow({
           >
             {item.name}
           </Text>
+          {/* The status word is on screen, not just in the label above. The
+              tint was carrying `paused` and `cancelling` alone, which fails on
+              colour vision as well as in greyscale — and the date beside it
+              means something different per status (a resume for a paused row,
+              a charge for an active one) while reading identically. Status
+              first, so a narrow row truncates the half that matters least. */}
           <Text style={styles.sub} numberOfLines={1}>
             {cancelled
               ? m.subs_ended({ date: formatShortDate(date) })
-              : formatDaysUntil(daysUntil(date), date)}
+              : statusLabel
+                ? `${statusLabel} · ${formatDaysUntil(daysUntil(date), date)}`
+                : formatDaysUntil(daysUntil(date), date)}
           </Text>
         </View>
 

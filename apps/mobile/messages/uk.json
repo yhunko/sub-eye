@@ -4,6 +4,7 @@
   "tabs_subscriptions": "Підписки",
   "tabs_settings": "Налаштування",
   "home_remainingThisMonth": "Залишилось цього місяця",
+  "home_remainingOfTotal": "{remaining} з {total}",
   "home_loadError": "Не вдалося завантажити ваші суми.",
   "home_nextMonthForecast": "Наступний місяць",
   "home_yearForecast": "Наступні 12 місяців",

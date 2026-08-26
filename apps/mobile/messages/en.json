@@ -4,6 +4,7 @@
   "tabs_subscriptions": "Subscriptions",
   "tabs_settings": "Settings",
   "home_remainingThisMonth": "Left this month",
+  "home_remainingOfTotal": "{remaining} of {total}",
   "home_loadError": "Could not load your numbers.",
   "home_nextMonthForecast": "Next month",
   "home_yearForecast": "Next 12 months",

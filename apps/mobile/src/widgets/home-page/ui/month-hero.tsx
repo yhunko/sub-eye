@@ -72,6 +72,17 @@ export function MonthHero({
         adjustsFontSizeToFit
         minimumFontScale={0.6}
         maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+        // The denominator is punctuation on screen and nothing in speech —
+        // VoiceOver reads the separator as "slash", which turns a ratio into
+        // two unrelated prices. Spell the relationship out instead.
+        accessibilityLabel={
+          monthTotal > 0
+            ? m.home_remainingOfTotal({
+                remaining: formatMoney(remainingThisMonth, currency),
+                total: formatMoney(monthTotal, currency, { decimals: 0 }),
+              })
+            : undefined
+        }
       >
         {whole}
         <Text style={styles.fraction}>{fraction}</Text>

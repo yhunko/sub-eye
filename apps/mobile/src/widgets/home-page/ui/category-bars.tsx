@@ -26,7 +26,19 @@ export function CategoryBars({
         const share = (item.amount / total) * 100;
         const color = categoryColors[index % categoryColors.length];
         return (
-          <View key={item.categoryId ?? "uncategorized"} style={styles.row}>
+          <View
+            key={item.categoryId ?? "uncategorized"}
+            style={styles.row}
+            // Four fragments on screen are one fact in speech. Ungrouped,
+            // VoiceOver hands the name, the share and the amount over as three
+            // separate swipes and the bar as nothing at all.
+            accessible
+            accessibilityLabel={[
+              item.name || m.home_uncategorized(),
+              `${share.toFixed(1)}%`,
+              formatMoney(item.amount, currency),
+            ].join(", ")}
+          >
             <View style={styles.line}>
               <View style={[styles.dot, { backgroundColor: color }]} />
               <Text style={styles.name} numberOfLines={1}>
