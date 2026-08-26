@@ -1,8 +1,12 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { Alert, ScrollView, StyleSheet } from "react-native";
 import { devForcePro } from "@/entities/pro";
+import { writeNotificationSettings } from "@/shared/lib/notifications";
+import { eraseDoc, writeDoc } from "@/shared/lib/store";
 import { Divider, PageFootnote, Row, Section } from "@/shared/ui/list-row";
+import { buildDemoDoc } from "../model/demo-data";
 
 /**
  * Debug-build-only tooling. The route that renders this (`app/(tabs)/settings/
@@ -18,7 +22,42 @@ import { Divider, PageFootnote, Row, Section } from "@/shared/ui/list-row";
  */
 export function DeveloperPage() {
   const router = useRouter();
+  const client = useQueryClient();
   const [forced, setForced] = useState(devForcePro.get);
+
+  // Bare `invalidateQueries()` rather than the entity's own invalidator: this
+  // replaces the WHOLE document, preferences included, so there is no key it
+  // cannot have moved.
+  const reload = () => void client.invalidateQueries();
+
+  const seed = (currency: string, locale: "en" | "uk") => {
+    writeDoc(buildDemoDoc(new Date(), currency, locale));
+    reload();
+    Alert.alert(`Seeded demo data (${currency.toUpperCase()})`);
+  };
+
+  // Both switches on, every lead time armed. They are real UISwitches, and a
+  // UISwitch ignores the synthetic taps the simulator harness sends — this is
+  // the only way to put the notifications screen into its configured state
+  // without a human finger.
+  const armReminders = () => {
+    writeNotificationSettings({
+      renewals: true,
+      trials: true,
+      renewalLeadDays: [1, 3, 7],
+      trialLeadDays: [1, 3],
+    });
+    Alert.alert(
+      "Reminders armed",
+      "Open Notifications to rebuild the schedule.",
+    );
+  };
+
+  const erase = () => {
+    eraseDoc();
+    reload();
+    Alert.alert("Store erased");
+  };
 
   const setPro = (next: boolean) => {
     devForcePro.set(next);
@@ -46,6 +85,39 @@ export function DeveloperPage() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
       >
+        <Section
+          title="Demo data"
+          footnote="Replaces the whole store with the App Store capture set — sixteen subscriptions dated from today, so the same seed keeps working next month. Erase puts it back to first run."
+        >
+          <Row
+            ios="dollarsign.circle"
+            android="attach_money"
+            label="Seed demo data · USD / EN"
+            onPress={() => seed("usd", "en")}
+          />
+          <Divider />
+          <Row
+            ios="hryvniasign.circle"
+            android="currency_exchange"
+            label="Seed demo data · UAH / UK"
+            onPress={() => seed("uah", "uk")}
+          />
+          <Divider />
+          <Row
+            ios="trash"
+            android="delete"
+            label="Erase everything"
+            onPress={() => erase()}
+          />
+          <Divider />
+          <Row
+            ios="bell.badge"
+            android="notifications_active"
+            label="Arm every reminder"
+            onPress={() => armReminders()}
+          />
+        </Section>
+
         <Section
           title="Pro"
           footnote="Unlocks every gate on this device. A device flag, so it survives a reload — the paywall rows below set it too."
