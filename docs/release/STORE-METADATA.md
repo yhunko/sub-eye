@@ -245,7 +245,16 @@ which the developer cannot read. Neither is collection under Apple's definition.
 
 ### The rest
 
-- **Age rating:** 4+, no objectionable content.
+- **Age rating:** **every row of all seven steps is NO**, which lands on 4+.
+  The three that are worth a second's thought and are still NO: *Unrestricted
+  Web Access* — there is no WebView and no in-app browser, the only
+  `Linking.openURL` in the app is a `mailto:` and the legal documents render
+  in-app from `@subeye/legal`; *User-Generated Content* — the user types
+  subscription names for themselves and nothing distributes them; *Advertising*
+  — the paywall sells our own in-app purchase, which is not paid promotion of a
+  third party. *Social Media Disabled for Users Under 13* should grey itself out
+  once Social Media is NO; if it does not, NO is still literal, because there
+  are no social features and the Declared Age Range API is never called.
 - **Encryption:** `usesNonExemptEncryption: false` is already in `app.json`, so
   the export-compliance question should not appear. If it does: standard HTTPS
   only.
