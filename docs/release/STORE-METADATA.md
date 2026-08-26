@@ -261,4 +261,11 @@ which the developer cannot read. Neither is collection under Apple's definition.
     a reviewer raises it anyway, the answer is that the app is a manual ledger
     with no financial service behind it, and the fallback is to swap the two:
     Productivity primary, Finance secondary.
+- **Content Rights:** **Yes, and I have the necessary rights.** The app draws
+  brand logos it does not own — Brandfetch's logo CDN with a Google favicon
+  fallback, fetched at runtime for a domain the user typed, never bundled.
+  Answering "No" would be false. The rights stand on Brandfetch's logo API
+  being built for this and on nominative use of a mark to name the service the
+  user already named. Open question worth checking against Brandfetch's terms,
+  not Apple's: whether the plan in use requires visible attribution.
 - **App Previews:** none. Seven screenshots per locale is enough for 1.0.
