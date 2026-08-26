@@ -284,9 +284,13 @@ is worse than an empty one.
 | Sufficient Contrast | **yes** | measured against real backgrounds: text 17.2:1, muted-on-surface 6.6:1, accent 5.9:1, warning 8.5:1, paused chip 11.2:1 |
 | Larger Text | no | `LAYOUT_FONT_SCALE_MAX = 1.3` caps Dynamic Type on buttons, rows, fields, chips and section headings; the criterion wants the largest accessibility size |
 | Captions, Audio Descriptions | no | there is no audio or video in the app |
-| VoiceOver, Voice Control | not yet | `accessibilityLabel` is spread over ~20 files, but nothing has been walked end to end — and these two are the ones people actually depend on |
-| Differentiate Without Color Alone | not yet | amber vs red carry urgency in Home's rail; the day count is almost certainly beside it, but that wants confirming rather than assuming |
-| Reduced Motion | not yet | one custom animation in the whole app, a scroll-linked hero that runs nothing per frame, so there is probably nothing to remove — but no `isReduceMotionEnabled` check exists to say so |
+| Differentiate Without Color Alone | **yes** | audited and one failure fixed — `paused` and `cancelling` were carried by the row tint alone. Everywhere else already pairs colour with a shape or a word: the delta chip has an arrow and "more"/"less", the rail has a per-kind SF Symbol and "in N days", the category dot is decorative beside name, share and amount |
+| Reduced Motion | **yes** | the app has no custom animation. Nothing imports an animation API; the only motion is native navigation, native tabs and a swipe that tracks the finger, and the OS handles all of it. There is nothing to remove, which is why no `isReduceMotionEnabled` check exists |
+| VoiceOver, Voice Control | not yet | the labels are right by construction now — Home's headline speaks its ratio, category rows group into one utterance, and rows compose name, status and amount. What is still missing is a human walking the app with VoiceOver on a device: traversal order, the native header menus, and the swipe actions cannot be verified from source |
+
+Adding an animation, or a new colour that carries meaning on its own, silently
+falsifies two of those claims. Both are cheap to keep true and expensive to
+notice broken.
 
 ### The rest
 
