@@ -180,6 +180,69 @@ describe("refreshRates", () => {
     expect(cachedRateDate()).toBe("2026-08-23");
   });
 
+  // The publisher's build routinely lags the UTC date, so "not today's" is the
+  // normal state for hours — and the early return above cannot cover it. Without
+  // the throttle every foreground in that window walks all three candidates.
+  it("does not walk the candidates again within the hour", async () => {
+    stubFetch([new Error("404"), document("2026-08-23", 50)]);
+    await refreshRates(NOW);
+
+    const { urls } = stubFetch([document("2026-08-24", 99)]);
+
+    expect(await refreshRates(new Date("2026-08-24T09:30:00.000Z"))).toBe(
+      false,
+    );
+    expect(urls).toEqual([]);
+    expect(cachedRateDate()).toBe("2026-08-23");
+  });
+
+  // Offline is the case that would otherwise retry hardest: it never caches, so
+  // the day-tag return can never fire and every foreground costs three failures.
+  it("throttles the retry after every candidate failed", async () => {
+    stubFetch([
+      new Error("offline"),
+      new Error("offline"),
+      new Error("offline"),
+    ]);
+    await refreshRates(NOW);
+
+    const { urls } = stubFetch([document("2026-08-24", 50)]);
+
+    expect(await refreshRates(new Date("2026-08-24T09:59:00.000Z"))).toBe(
+      false,
+    );
+    expect(urls).toEqual([]);
+  });
+
+  // The other half of the throttle: a build landing at noon must still be picked
+  // up the same afternoon rather than at the next UTC midnight.
+  it("retries once the throttle window has passed", async () => {
+    stubFetch([new Error("404"), new Error("404"), new Error("404")]);
+    await refreshRates(NOW);
+
+    stubFetch([document("2026-08-24", 50)]);
+
+    expect(await refreshRates(new Date("2026-08-24T10:01:00.000Z"))).toBe(true);
+    expect(cachedRateDate()).toBe("2026-08-24");
+  });
+
+  // A table derived from a different base converts every amount by the wrong
+  // factor and never throws, so a cache that does not name STORED_BASE is junk.
+  it("ignores a cache written against another base", async () => {
+    stubFetch([document("2026-08-24", 50)]);
+    await refreshRates(NOW);
+    __testing.writeCache({
+      base: "eur",
+      rates: { usd: 2 },
+      rateDate: "2026-08-24",
+    });
+
+    expect(cachedRateDate()).toBeNull();
+    expect(Object.keys(await ratesPort.forBase("uah")).length).toBeGreaterThan(
+      100,
+    );
+  });
+
   it("refetches once the UTC day has rolled over", async () => {
     stubFetch([document("2026-08-23", 50)]);
     await refreshRates(new Date("2026-08-23T09:00:00.000Z"));

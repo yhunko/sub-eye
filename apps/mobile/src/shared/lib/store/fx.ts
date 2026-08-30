@@ -16,12 +16,28 @@ import seed from "./fx-seed.json";
 // also not user data, so erasing the store has no business clearing it.
 const mmkv = createMMKV({ id: "subeye.fx" });
 const CACHE_KEY = "subeye.fx.usd";
+// The last ATTEMPT, successful or not. Its own key rather than a field in the
+// blob: a failed attempt has no document to write beside it, and recording one
+// must not re-serialise 7 KB of rates.
+const CHECKED_KEY = "subeye.fx.checkedAt";
+
+/**
+ * How long a refresh that did NOT land today's build stands as the answer.
+ *
+ * Without it every foreground re-walks all three candidates whenever the cache
+ * is not today's — which is the whole of a day the publisher's build lags, and
+ * the whole of any stretch spent offline. An hour is short enough that a build
+ * landing at noon is picked up the same afternoon.
+ */
+const RETRY_AFTER_MS = 60 * 60 * 1000;
+
+/** RN's fetch has no default timeout, and a captive portal never answers. */
+const FETCH_TIMEOUT_MS = 8000;
 
 type CachedRates = {
   base: string;
   rates: RateTable;
   rateDate: string;
-  fetchedAt: string;
 };
 
 const seedRates: RateTable = readFxDocument(seed as FxDocument)?.rates ?? {};
@@ -32,7 +48,12 @@ const readCache = (): CachedRates | null => {
 
   try {
     const parsed = JSON.parse(raw) as CachedRates | null;
-    return parsed && typeof parsed.rates === "object" && parsed.rates !== null
+    // The base is checked, not assumed: a table derived from a different base
+    // converts every amount by the wrong factor and never throws.
+    return parsed &&
+      parsed.base === STORED_BASE &&
+      typeof parsed.rates === "object" &&
+      parsed.rates !== null
       ? parsed
       : null;
   } catch {
@@ -63,6 +84,17 @@ export const ratesPort: RatesPort = {
 export const cachedRateDate = (): string | null =>
   readCache()?.rateDate ?? null;
 
+/** Aborts rather than hanging: the caller runs on every foreground. */
+const fetchWithTimeout = async (url: string): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 /**
  * Pull the CDN's immutable build for today into the cache, walking back to
  * yesterday and then `latest` because the publisher's build can lag the UTC
@@ -75,9 +107,24 @@ export const refreshRates = async (now: Date): Promise<boolean> => {
   // The build is immutable per day, so a second fetch cannot change the answer.
   if (readCache()?.rateDate === utcDay(now)) return true;
 
+  // Everything past here is a MISS — the day's build is not in hand. That is the
+  // common state for hours after midnight UTC and for the whole of a flight, and
+  // without a throttle each of those foregrounds spends three requests to learn
+  // what the last one already found out.
+  const checkedAt = Date.parse(mmkv.getString(CHECKED_KEY) ?? "");
+  if (
+    Number.isFinite(checkedAt) &&
+    now.getTime() - checkedAt < RETRY_AFTER_MS
+  ) {
+    return false;
+  }
+  // Stamped before the walk, not after: a throw, an abort or the app being
+  // backgrounded mid-request must still count as an attempt.
+  mmkv.set(CHECKED_KEY, now.toISOString());
+
   for (const version of fxVersionCandidates(now)) {
     try {
-      const response = await fetch(fxDocumentUrl(version));
+      const response = await fetchWithTimeout(fxDocumentUrl(version));
       if (!response.ok) {
         throw new Error(`Currency CDN responded with ${response.status}`);
       }
@@ -95,7 +142,6 @@ export const refreshRates = async (now: Date): Promise<boolean> => {
           // A document without its own date is stamped with the version tag it
           // came from, so the cache still says which build it is.
           rateDate: read.rateDate || version,
-          fetchedAt: now.toISOString(),
         } satisfies CachedRates),
       );
       return true;
@@ -111,5 +157,11 @@ export const refreshRates = async (now: Date): Promise<boolean> => {
 export const __testing = {
   clearCache: (): void => {
     mmkv.remove(CACHE_KEY);
+    mmkv.remove(CHECKED_KEY);
+  },
+  // A successful fetch is otherwise the only writer, and it can never produce
+  // the shapes `readCache` guards against.
+  writeCache: (cache: CachedRates): void => {
+    mmkv.set(CACHE_KEY, JSON.stringify(cache));
   },
 };
