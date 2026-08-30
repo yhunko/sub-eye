@@ -1,22 +1,18 @@
 import { shouldIncludeOccurrence } from "@subeye/lifecycle";
-import type { SubscriptionDto } from "@subeye/model";
+import type { CalendarEventKind, SubscriptionDto } from "@subeye/model";
 import { todayAsDay } from "@/shared/lib/format";
 
 /**
  * The events Home surfaces, in the order they matter when two land on the same
  * day: a price about to change costs money, a charge is money leaving, a resume
  * is a heads-up, an ending is an FYI.
+ *
+ * Aliased rather than restated: the calendar draws the same six kinds off
+ * `CalendarMonthDto`, and two hand-written copies of this union drift the moment
+ * a seventh is added — the rail would render it and the calendar would not, or
+ * the other way round, with nothing failing to say so.
  */
-export const attentionKinds = [
-  "trialEnds",
-  "introEnds",
-  "priceChange",
-  "payment",
-  "resumes",
-  "ends",
-] as const;
-
-export type AttentionKind = (typeof attentionKinds)[number];
+export type AttentionKind = CalendarEventKind;
 
 export type AttentionEvent = {
   /** `${subscriptionId}:${kind}` — one subscription can raise two events. */

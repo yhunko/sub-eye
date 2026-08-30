@@ -101,3 +101,51 @@ export interface DashboardAnalyticsDto {
   categorySpending: CategorySpendingDto[];
   timezone: string;
 }
+
+/**
+ * One dated thing that happens to a subscription.
+ *
+ * The same vocabulary and the same order the mobile client's `deriveAttention`
+ * uses for Home's rail. One list of kinds, so the rail and the calendar cannot
+ * come to different conclusions about what a given day contains.
+ */
+export type CalendarEventKind =
+  | "trialEnds"
+  | "introEnds"
+  | "priceChange"
+  | "payment"
+  | "resumes"
+  | "ends";
+
+export interface CalendarEventDto {
+  /** `${subscriptionId}:${kind}:${date}` — a weekly sub raises one per charge. */
+  key: string;
+  subscriptionId: string;
+  name: string;
+  brandDomain: string | null;
+  kind: CalendarEventKind;
+  date: string;
+  amount: number;
+  currencyCode: string;
+}
+
+export interface CalendarDayDto {
+  date: string;
+  /**
+   * `payment` events ONLY. A phase boundary, a resume and a cancellation are
+   * all dated notices — no money moves on their day — and counting them here
+   * would put a number on the tile that never leaves the account. It is also
+   * what keeps the month total equal to `MonthlySpendSummaryDto`.
+   */
+  total: number;
+  events: CalendarEventDto[];
+}
+
+export interface CalendarMonthDto {
+  /** First day of the month, UTC midnight, like every other stored date. */
+  month: string;
+  currencyCode: string;
+  monthTotal: number;
+  /** Only days that hold something, ascending. */
+  days: CalendarDayDto[];
+}

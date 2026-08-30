@@ -1,5 +1,9 @@
 import { isCurrentlyActiveSubscription } from "@subeye/lifecycle";
 import type {
+  CalendarDayDto,
+  CalendarEventDto,
+  CalendarEventKind,
+  CalendarMonthDto,
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
@@ -174,5 +178,169 @@ const analyticsContext = async (
       ports.now(),
       preferences.preferredTimezone,
     ),
+  };
+};
+
+/**
+ * The same order Home's rail ranks its events in: a price about to change costs
+ * money, a charge is money leaving, a resume is a heads-up, an ending is an FYI.
+ */
+const CALENDAR_RANK: Record<CalendarEventKind, number> = {
+  trialEnds: 0,
+  introEnds: 1,
+  priceChange: 2,
+  payment: 3,
+  resumes: 4,
+  ends: 5,
+};
+
+/**
+ * Everything dated that lands in one calendar month, grouped by day.
+ *
+ * `collectPaymentsInRange` rather than each subscription's `nextPaymentDate`:
+ * a weekly subscription is charged four or five times in a month and every one
+ * of them is a day the user is looking for. Reading the single "next" field
+ * instead is what makes a tile appear on a day with nothing behind it.
+ *
+ * Fed the UNFILTERED list, exactly as `buildMonthlySummary` is. Cancellation and
+ * pause are decided per occurrence inside the projection, so narrowing to
+ * "currently active" first would erase a past month's real charges — and would
+ * put a different total on this screen than the one Home's hero already shows
+ * for the same month.
+ */
+export const buildCalendarMonth = async (
+  ports: Ports,
+  month?: string,
+): Promise<CalendarMonthDto> => {
+  const { subscriptions, preferredCurrencyCode, today } =
+    await analyticsContext(ports);
+
+  const anchor = month ? DateTimezoneUtils.toCalendarDay(month) : today;
+  const monthStart = DateTimezoneUtils.startOfCalendarMonth(anchor);
+  const monthEnd = DateTimezoneUtils.endOfCalendarMonth(anchor);
+
+  const events: CalendarEventDto[] = [];
+
+  for (const payment of AnalyticsCalculator.collectPaymentsInRange(
+    subscriptions,
+    monthStart,
+    monthEnd,
+  )) {
+    // Through `new Date` first: a TZDate's own `toISOString()` emits the offset
+    // form (`…+00:00`), and every date this DTO carries is compared as a plain
+    // UTC instant by the client.
+    const date = new Date(payment.date.getTime()).toISOString();
+    events.push({
+      key: `${payment.subscription.id}:payment:${date}`,
+      subscriptionId: payment.subscription.id,
+      name: payment.subscription.name,
+      brandDomain: payment.subscription.brandDomain,
+      kind: "payment",
+      date,
+      amount: payment.amount,
+      currencyCode: payment.subscription.billing.preferred.currencyCode,
+    });
+  }
+
+  const inMonth = (iso: string | null | undefined): iso is string => {
+    if (!iso) return false;
+    const at = Date.parse(iso);
+    return (
+      !Number.isNaN(at) &&
+      at >= monthStart.getTime() &&
+      at <= monthEnd.getTime()
+    );
+  };
+
+  // The three dated events that are NOT charges. Mirrors `deriveAttention`'s
+  // rules, bounded to the month instead of to "still ahead" — a calendar showing
+  // September has to show September's phase change whether or not it has passed.
+  for (const subscription of subscriptions) {
+    if (subscription.status === "cancelled") continue;
+
+    const base = {
+      subscriptionId: subscription.id,
+      name: subscription.name,
+      brandDomain: subscription.brandDomain,
+    };
+
+    const upcoming = subscription.upcomingPhase;
+    if (upcoming && inMonth(upcoming.startsAt)) {
+      const kind: CalendarEventKind =
+        subscription.effectivePhaseKind === "trial"
+          ? "trialEnds"
+          : subscription.effectivePhaseKind === "intro"
+            ? "introEnds"
+            : "priceChange";
+      events.push({
+        ...base,
+        key: `${subscription.id}:${kind}`,
+        kind,
+        date: upcoming.startsAt,
+        amount: upcoming.billing.preferred.amount,
+        currencyCode: upcoming.billing.preferred.currencyCode,
+      });
+    }
+
+    if (subscription.status === "paused" && inMonth(subscription.resumeAt)) {
+      events.push({
+        ...base,
+        key: `${subscription.id}:resumes`,
+        kind: "resumes",
+        date: subscription.resumeAt,
+        amount: subscription.billing.preferred.amount,
+        currencyCode: subscription.billing.preferred.currencyCode,
+      });
+    }
+
+    if (
+      subscription.status === "cancelling" &&
+      inMonth(subscription.willBeCancelledAt)
+    ) {
+      events.push({
+        ...base,
+        key: `${subscription.id}:ends`,
+        kind: "ends",
+        date: subscription.willBeCancelledAt,
+        amount: subscription.billing.preferred.amount,
+        currencyCode: subscription.billing.preferred.currencyCode,
+      });
+    }
+  }
+
+  const byDay = new Map<string, CalendarEventDto[]>();
+  for (const event of events) {
+    // Sliced to the day rather than trusted whole: an occurrence is already UTC
+    // midnight, but a phase's `startsAt` is an instant and two phases landing on
+    // one day at different times would otherwise open two tiles.
+    const day = `${event.date.slice(0, 10)}T00:00:00.000Z`;
+    const bucket = byDay.get(day);
+    if (bucket) bucket.push(event);
+    else byDay.set(day, [event]);
+  }
+
+  const days: CalendarDayDto[] = [...byDay.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, list]) => ({
+      date,
+      total: Number(
+        list
+          .filter((event) => event.kind === "payment")
+          .reduce((sum, event) => sum + event.amount, 0)
+          .toFixed(2),
+      ),
+      events: list.sort(
+        (a, b) =>
+          CALENDAR_RANK[a.kind] - CALENDAR_RANK[b.kind] || b.amount - a.amount,
+      ),
+    }));
+
+  return {
+    month: new Date(monthStart.getTime()).toISOString(),
+    currencyCode: preferredCurrencyCode,
+    monthTotal: Number(
+      days.reduce((sum, day) => sum + day.total, 0).toFixed(2),
+    ),
+    days,
   };
 };

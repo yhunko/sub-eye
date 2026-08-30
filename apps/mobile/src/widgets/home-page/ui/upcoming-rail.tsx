@@ -12,6 +12,7 @@ import type { AttentionEvent, AttentionKind } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { daysUntil, formatDaysUntil, formatMoney } from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
+import { eventIcon } from "@/shared/ui/event-icon";
 import { colors } from "@/shared/ui/theme";
 
 // Message-function REFERENCES, invoked at render. Calling m.*() at module scope
@@ -40,18 +41,6 @@ function urgencyTint(days: number): string {
   if (days <= 7) return colors.warning;
   return colors.muted;
 }
-
-// `as const satisfies` rather than an annotation: SymbolView's `name` is a union
-// of every symbol name there is, so a `string` here widens out of it and stops
-// type-checking the names at all.
-const ICON = {
-  trialEnds: { ios: "hourglass", android: "hourglass_empty" },
-  introEnds: { ios: "tag", android: "sell" },
-  priceChange: { ios: "arrow.up.right", android: "trending_up" },
-  payment: { ios: "arrow.triangle.2.circlepath", android: "autorenew" },
-  resumes: { ios: "play.circle", android: "play_circle" },
-  ends: { ios: "xmark.circle", android: "cancel" },
-} as const satisfies Record<AttentionKind, unknown>;
 
 /** Home's own horizontal padding, which the rail has to escape. */
 const PAGE_PADDING = 16;
@@ -155,7 +144,7 @@ export function UpcomingRail({ events }: { events: AttentionEvent[] }) {
               <Text style={styles.name}>{event.name}</Text>
               <View style={styles.whenRow}>
                 <SymbolView
-                  name={ICON[event.kind]}
+                  name={eventIcon[event.kind]}
                   size={13}
                   weight="semibold"
                   tintColor={tint}
