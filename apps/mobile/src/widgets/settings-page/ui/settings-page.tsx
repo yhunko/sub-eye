@@ -17,7 +17,7 @@ import { restorePro, usePro } from "@/entities/pro";
 import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
-import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
+import { currencyLabel } from "@/shared/lib/format";
 import {
   cancelReminders,
   readNotificationSettings,
@@ -210,16 +210,6 @@ export function SettingsPage() {
 
   const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const pickCurrency = () =>
-    presentChoice(
-      m.settings_currency(),
-      currencyLabel(data?.preferredCurrency ?? ""),
-      CURRENCY_CODES.map((code) => ({
-        label: currencyLabel(code),
-        onPress: () => update.mutate({ preferredCurrency: code }),
-      })),
-    );
-
   // Only actionable when the stored zone has drifted from the device's — when
   // they already agree there is nothing to choose, so the row loses its chevron.
   const syncTimezone = () =>
@@ -355,7 +345,7 @@ export function SettingsPage() {
             android="credit_card"
             label={m.settings_currency()}
             value={currencyLabel(data.preferredCurrency)}
-            onPress={update.isPending ? undefined : pickCurrency}
+            onPress={() => router.push("/currency")}
           />
           <Divider />
           <Row

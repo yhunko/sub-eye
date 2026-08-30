@@ -6,13 +6,18 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useAppLocale } from "@/shared/i18n";
+import { m, useAppLocale } from "@/shared/i18n";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
-import { nativeHeaderChrome, nativeSheetChrome } from "@/shared/ui/header";
+import {
+  nativeHeaderChrome,
+  nativeSearchBarChrome,
+  nativeSheetChrome,
+} from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
+import { currencySearch } from "@/widgets/currency-page";
 
 // expo-router looks for this exact named export on a layout and uses it as the
 // error boundary for everything below. Without it a throw in any screen is a
@@ -127,6 +132,37 @@ function RootLayout() {
             <Stack.Screen
               name="subscription-form"
               options={{ presentation: "modal", headerShown: false }}
+            />
+            {/* Root-level so it covers the native tab bar, the same argument the
+                subscription detail makes: it is a 156-row list, and a floating
+                tab bar sitting on its last row is a control the screen has no
+                use for. Pushed from the root the bar slides away WITH the push
+                rather than blinking out, which is what faking
+                `hidesBottomBarWhenPushed` from the tab host could never do.
+
+                Settings is the only door, so the back button names it outright —
+                the screen underneath is the tab tree, which carries no title and
+                made the button read literally "(tabs)".
+
+                The search field is declared here rather than on the screen for
+                the reason every other one is: options set inside a screen are
+                re-pushed through `navigation.setOptions` on every render, which
+                for a search field is one UISearchController rebuild per
+                keystroke. */}
+            <Stack.Screen
+              name="currency"
+              options={{
+                ...nativeHeaderChrome,
+                headerShown: true,
+                title: m.settings_currency(),
+                headerBackTitle: m.settings_title(),
+                headerSearchBarOptions: {
+                  ...nativeSearchBarChrome,
+                  placeholder: m.currency_search(),
+                  onChangeText: (event) =>
+                    currencySearch.set(event.nativeEvent.text),
+                },
+              }}
             />
             {/* A subscription's own screen, and the three sheets it opens, are
                 root routes for the same reason the form is one: Home's upcoming

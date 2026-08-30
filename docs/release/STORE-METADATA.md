@@ -56,6 +56,20 @@ Editable any time without a new build — use it for launch notes later.
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
+### What's New in This Version (4000) — 5.1.0
+
+Per version, per locale, and editable until the build is submitted.
+
+```
+Pick any currency, not one of five.
+
+SubEye tracked five currencies. It now knows every one — 156, each with its flag, its full name and its symbol. Search by code or by name, or take one from the short list at the top: your region's currency is already on it.
+
+Every amount shows its own symbol where there is one, and its code where there is not.
+
+Exchange rates are cheaper on your battery too. SubEye stops re-checking once it has the day's rates, and it keeps converting from the last set it has when you are offline.
+```
+
 ### Description (4000)
 
 ```
@@ -137,6 +151,18 @@ SubEye: трекер підписок
 
 ```
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
+```
+
+### What's New in This Version (4000) — 5.1.0
+
+```
+Будь-яка валюта, а не одна з п'яти.
+
+Раніше SubEye знав п'ять валют. Тепер — усі 156, кожна з прапором, повною назвою та символом. Шукайте за кодом чи назвою або оберіть зі списку вгорі: валюта вашого регіону вже там.
+
+Кожна сума показує свій символ, а якщо його немає — код валюти.
+
+Курси оновлюються ощадливіше: SubEye не звертається до мережі, якщо вже має сьогоднішні, і конвертує за останніми відомими, коли ви офлайн.
 ```
 
 ### Description (4000)

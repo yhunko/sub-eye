@@ -15,6 +15,7 @@ import {
   categoryAddHeaderOptions,
   categorySearch,
 } from "@/widgets/categories-page";
+import { currencySearch } from "@/widgets/currency-page";
 import { SubscriptionFormProvider } from "@/widgets/subscription-form";
 
 /**
@@ -95,6 +96,21 @@ export default function SubscriptionFormLayout() {
           }}
         />
         <Stack.Screen name="category/new" options={categorySheetChrome} />
+        {/* Same screen Settings pushes, wired to the draft instead of the
+            preference — and its field belongs on the layout for the same reason
+            the category picker's does. */}
+        <Stack.Screen
+          name="currency"
+          options={{
+            title: m.form_currency(),
+            headerSearchBarOptions: {
+              ...nativeSearchBarChrome,
+              placeholder: m.currency_search(),
+              onChangeText: (event) =>
+                currencySearch.set(event.nativeEvent.text),
+            },
+          }}
+        />
         <Stack.Screen name="brand" />
       </Stack>
     </SubscriptionFormProvider>

@@ -130,6 +130,7 @@ function CategoryRow() {
 
 /** What the subscription is called, what it costs, and how often. */
 export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
+  const router = useRouter();
   const { values, errors, set } = useSubscriptionForm();
   const stacked = useLargeText();
 
@@ -165,7 +166,7 @@ export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
           />
           <CurrencyPicker
             value={values.currency}
-            onChange={(next) => set("currency", next)}
+            onPress={() => router.push("/subscription-form/currency")}
           />
         </View>
       </Field>
