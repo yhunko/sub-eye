@@ -44,3 +44,17 @@ export const otherLocale = (locale: Locale): Locale =>
  * not a launch price, so nothing here expires.
  */
 export const proPrice = { usd: 11.99, uah: 199, eur: 9.99 };
+
+/**
+ * The App Store product page.
+ *
+ * Storefront-neutral on purpose. The link issued at launch was
+ * `https://apps.apple.com/us/app/subeye-subscription-tracker/id6795566917`;
+ * dropping the `/us/` segment is what lets Apple send a reader to their own
+ * storefront instead of parking a Ukrainian visitor in the US store — the same
+ * promise the pricing section makes out loud. The numeric id is the only part
+ * Apple guarantees, so it is the only part written down here.
+ */
+export const APP_STORE_ID = "6795566917";
+
+export const appStoreUrl = `https://apps.apple.com/app/id${APP_STORE_ID}`;

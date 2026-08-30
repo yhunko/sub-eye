@@ -31,7 +31,6 @@ export const en = {
   hero: {
     title: "Know what your subscriptions cost. All of them.",
     lead: "You type in what you pay. SubEye tells you what it costs now, what it becomes, and the day it leaves your account — with nothing to sign up for and no network to be on.",
-    status: "Coming to the App Store",
     platform: "iPhone",
     ctaHow: "See how it works",
     ctaPrice: (free: string, pro: string) => `${free} to start, ${pro} once`,
@@ -173,8 +172,24 @@ export const en = {
   },
 
   cta: {
-    title: "Coming to the App Store.",
-    body: "SubEye is built and heading for review. There is no list to join and nothing to sign up for — the app will simply be there.",
+    title: "SubEye is on the App Store.",
+    body: "Download it, type in the first subscription, and about twenty seconds later the number on the home screen is yours. Nothing to sign up for, nothing to sign in to.",
+    download: "Download SubEye",
+  },
+
+  appStore: {
+    /** Apple's own wording for the badge. The service mark is never translated. */
+    badgeAlt: "Download on the App Store",
+    /** The top bar's button. Not the badge's words — a text button that borrowed
+        them would read as a badge Apple did not draw. */
+    download: "Download",
+    /**
+     * Required wherever the site gives legal notice, once, because the page
+     * carries the badge. The international form: no ® or ℠ symbols, which
+     * Apple restricts to communications distributed only in the United States.
+     */
+    trademark:
+      "Apple, the Apple logo and iPhone are trademarks of Apple Inc., registered in the U.S. and other countries. App Store is a service mark of Apple Inc.",
   },
 
   footer: {

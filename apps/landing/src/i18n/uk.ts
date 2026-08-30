@@ -34,7 +34,6 @@ export const uk: Copy = {
   hero: {
     title: "Знайте, скільки коштують ваші підписки. Усі до одної.",
     lead: "Ви вводите те, що платите. SubEye показує, скільки це коштує зараз, скільки коштуватиме далі і в який день гроші підуть з рахунку, — і для цього не треба ні реєструватися, ні бути в мережі.",
-    status: "Незабаром в App Store",
     platform: "iPhone",
     ctaHow: "Подивитися, як це працює",
     ctaPrice: (free: string, pro: string) =>
@@ -177,8 +176,17 @@ export const uk: Copy = {
   },
 
   cta: {
-    title: "Незабаром в App Store.",
-    body: "SubEye готовий і чекає на перевірку. Ні на що підписуватися не треба і жодних списків очікування немає — застосунок просто з’явиться.",
+    title: "SubEye уже в App Store.",
+    body: "Завантажте, введіть першу підписку — і секунд за двадцять число на головному екрані буде вашим. Реєструватися нема де, входити нема куди.",
+    download: "Завантажити SubEye",
+  },
+
+  appStore: {
+    badgeAlt: "Завантажити в App Store",
+    download: "Завантажити",
+    /** Apple allows the notice to be translated; the marks inside it may not be. */
+    trademark:
+      "Apple, логотип Apple та iPhone — торговельні марки Apple Inc., зареєстровані у США та інших країнах. App Store — знак обслуговування Apple Inc.",
   },
 
   footer: {

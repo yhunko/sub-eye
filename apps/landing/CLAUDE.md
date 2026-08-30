@@ -81,6 +81,41 @@ execute. Everything interactive is a platform feature:
 If something seems to need an island, it does not. There is no framework
 installed to reach for.
 
+## The App Store badge is licensed artwork, not an image
+
+`public/badges/download-on-the-app-store.svg` is Apple's file, fetched from
+`developer.apple.com/assets/elements/badges/` and committed byte-for-byte. It
+is served from this origin because the site references no third-party host at
+runtime and `img-src 'self' data:` would block one anyway.
+
+Apple's marketing guidelines are a licence condition, not advice, and four of
+them shape the markup:
+
+- **One badge per layout.** The hero has it; the fixed bar and the closing card
+  are plain green buttons that carry neither the Apple logo nor the badge's
+  words, because a text button wearing "Download on the App Store" reads as a
+  badge Apple did not draw.
+- **Clear space** of at least a quarter of the badge height, on every side,
+  with nothing in it. `AppStoreBadge.astro` carries that as its own padding so
+  it survives a later change to the row's `gap`, then pulls the artwork back
+  into line with the headline with a negative inline-start margin — the page
+  gutter is the clear space on that side.
+- **Never modify it.** No recolour, no tilt, no animation, and so no hover
+  state either. 54px tall against a 40px floor.
+- **Never build your own localised badge.** Apple ships a Ukrainian one, but
+  only through App Store Marketing Tools, so both locales render the English
+  artwork until someone downloads the real file. The *alt text* is localised;
+  the words `App Store` inside it never are.
+
+The footer's trademark credit line is required once per site wherever legal
+notice is given, and has to credit the Apple logo because the badge carries
+one. `test/appStore.test.ts` pins the placement count, the file's provenance,
+and the marks that must stay in English in both dictionaries.
+
+`src/lib/site.ts` drops the `/us/` storefront from the launch link on purpose —
+`apps.apple.com/app/id…` lets Apple route a reader to their own store, which is
+the same promise the pricing section makes out loud.
+
 ## Numbers come from the product, not from markup
 
 The page's argument is that SubEye models a price over time, so the price

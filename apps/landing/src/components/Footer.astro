@@ -26,6 +26,13 @@ const other = otherLocale(locale);
       </a>
     </nav>
   </div>
+
+  {/* Apple requires the credit line once per site, wherever legal notice is
+      given, whenever the App Store badge is used — and it has to credit the
+      Apple logo too, because the badge carries one. */}
+  <div class="shell">
+    <p class="foot__trademark">{c.appStore.trademark}</p>
+  </div>
 </footer>
 
 <style>
@@ -61,5 +68,15 @@ const other = otherLocale(locale);
 
   .foot__rights {
     margin: 0;
+  }
+
+  /* Left-aligned with the notice above it: `.shell` centres anything narrower
+     than itself, so the measure is capped inside the shell, not on it. */
+  .foot__trademark {
+    margin-top: 1.75rem;
+    max-width: 82ch;
+    font-size: var(--fs-tiny);
+    line-height: 1.5;
+    color: var(--text-muted);
   }
 </style>

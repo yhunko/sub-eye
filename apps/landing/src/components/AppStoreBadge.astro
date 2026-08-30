@@ -1,0 +1,71 @@
+---
+import { copyFor } from "../i18n";
+import { appStoreUrl, type Locale } from "../lib/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+---
+
+{/*
+  Apple's own artwork, vendored byte-for-byte from
+  https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg
+  and served from this origin — the site references no third-party host at
+  runtime, and `img-src 'self' data:` in public/_headers would block it anyway.
+
+  It is the preferred black badge; the grey keyline is part of the artwork and
+  the guidelines say not to touch it, so nothing here recolours, rounds, tilts
+  or animates the image, and there is no hover state for the same reason.
+
+  English on both locales, deliberately. Apple publishes a Ukrainian badge —
+  "Завантажити в App Store", with the service mark left in English — but that
+  artwork is only distributed through App Store Marketing Tools, and the
+  guidelines are explicit that you may never build your own localised badge. To
+  ship the real one: download the Ukrainian black SVG, save it as
+  `public/badges/download-on-the-app-store-uk.svg`, and choose the file by
+  locale here. Until then the English badge is the compliant answer, not a
+  shortcut.
+
+  `test/appStore.test.ts` keeps this the only badge on the site — Apple allows
+  one per layout.
+*/}
+<a class="appstore" href={appStoreUrl}>
+  <img
+    src="/badges/download-on-the-app-store.svg"
+    alt={c.appStore.badgeAlt}
+    width="120"
+    height="40"
+    fetchpriority="high"
+  />
+</a>
+
+<style>
+  /*
+   * 54px against Apple's 40px onscreen floor: it is the hero's primary action
+   * and it has to sit level with the ghost button beside it.
+   *
+   * The padding is the other half of the rule — clear space of at least a
+   * quarter of the badge height on every side, with no type or graphics inside
+   * it. Carrying it on the badge itself is what makes it survive a later
+   * change to the row's `gap`. The negative inline-start margin then pulls the
+   * artwork back into line with the headline above, where the page gutter is
+   * already more clear space than the rule asks for.
+   */
+  .appstore {
+    --badge-h: 3.375rem;
+    display: block;
+    padding: calc(var(--badge-h) / 4);
+    margin-inline-start: calc(var(--badge-h) / -4);
+  }
+
+  /* `height` + `aspect-ratio` rather than the intrinsic ratio, so the box is
+     the right shape before the SVG has loaded and the row never shifts. */
+  .appstore img {
+    height: var(--badge-h);
+    width: auto;
+    aspect-ratio: 119.66407 / 40;
+  }
+</style>

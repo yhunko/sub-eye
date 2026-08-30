@@ -1,4 +1,5 @@
 ---
+import AppStoreBadge from "../components/AppStoreBadge.astro";
 import CurrencyPanel from "../components/CurrencyPanel.astro";
 import Footer from "../components/Footer.astro";
 import LifecyclePanel from "../components/LifecyclePanel.astro";
@@ -12,7 +13,7 @@ import { copyFor } from "../i18n";
 import { money } from "../lib/format";
 import { spendPanel } from "../lib/panels";
 import type { Locale } from "../lib/site";
-import { proPrice } from "../lib/site";
+import { appStoreUrl, proPrice } from "../lib/site";
 import Base from "./Base.astro";
 
 interface Props {
@@ -53,11 +54,13 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
       <p class="lead hero__lead">{c.hero.lead}</p>
 
       <div class="hero__actions">
-        <a class="btn" href="#how">{c.hero.ctaHow}</a>
-        <a class="btn btn--ghost" href="#price">
-          {c.hero.ctaPrice(free, home.price)}
-        </a>
+        <AppStoreBadge locale={locale} />
+        <a class="btn btn--ghost" href="#how">{c.hero.ctaHow}</a>
       </div>
+
+      <p class="hero__price">
+        <a href="#price">{c.hero.ctaPrice(free, home.price)}</a>
+      </p>
 
       <div class="hero__cards">
         <SpendCard locale={locale} />
@@ -214,6 +217,9 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
         <span class="end__icon"><Mark height={32} /></span>
         <h2 class="end__title">{c.cta.title}</h2>
         <p class="lead end__body">{c.cta.body}</p>
+        <p class="end__action">
+          <a class="btn" href={appStoreUrl}>{c.cta.download}</a>
+        </p>
         <p class="end__badge">
           <span class="end__dot" aria-hidden="true"></span>
           {c.hero.platform} · {c.languages}
@@ -253,11 +259,31 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
     max-width: 56ch;
   }
 
+  /* The badge brings Apple's clear space with it as padding, so this row only
+     has to stop stretching it — the gap is spacing, not compliance. */
   .hero__actions {
     margin-top: 2.25rem;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.88rem;
+  }
+
+  .hero__price {
+    margin-top: 0.5rem;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .hero__price a {
+    border-bottom: 1px solid var(--border-strong);
+    padding-bottom: 2px;
+    transition: color 160ms var(--ease);
+  }
+
+  .hero__price a:hover {
+    color: var(--text);
   }
 
   .hero__cards {
@@ -644,6 +670,10 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
   .end__body {
     margin: 1.13rem auto 0;
     max-width: 52ch;
+  }
+
+  .end__action {
+    margin-top: 2rem;
   }
 
   .end__badge {

@@ -10,16 +10,26 @@ content architecture from that attempt was right and the visual system was not.
 
 ## What you're designing
 
-A pre-launch marketing site for **SubEye**, a subscription-tracking iPhone app.
-The app is built and heading for App Store review. The site's job, in order:
+The marketing site for **SubEye**, a subscription-tracking iPhone app. The
+site's job, in order:
 
 1. Make someone want the app.
-2. Capture an email so they hear about launch day.
+2. Send them to the App Store.
 3. Host the Terms and Privacy pages the app links to. (Non-negotiable — see
    *Required routes*.)
 
-There is no App Store link yet. Every download affordance is a **"Coming to the
-App Store"** state plus an email field. Do not fake a live badge.
+**Superseded 2026-08-30 — SubEye shipped.** This section used to say there was
+no App Store link and that every download affordance was a "Coming to the App
+Store" state plus an email field. The app is live at
+`apps.apple.com/app/id6795566917`, the closing card and the fixed bar now say
+so, and the hero carries Apple's real badge. The email field never existed and
+is not coming back; see *Email form*.
+
+Apple's badge comes with rules that outrank any design instinct — one badge per
+layout, minimum 40px tall, a quarter of its height in clear space on every
+side, never recoloured, tilted or animated, never redrawn in another language,
+and credited in the footer. `apps/landing/CLAUDE.md` carries them, and
+`apps/landing/test/appStore.test.ts` enforces the ones a test can reach.
 
 One page, plus two legal pages. English and Ukrainian.
 

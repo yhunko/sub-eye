@@ -1,6 +1,7 @@
 ---
 import { copyFor } from "../i18n";
 import {
+  appStoreUrl,
   canonical,
   locales,
   type Locale,
@@ -38,6 +39,9 @@ const schema = {
       applicationCategory: "FinanceApplication",
       operatingSystem: "iOS",
       url: canonical(locale),
+      // `installUrl`, not `downloadUrl`: the App Store product page is where
+      // the app is installed from, and schema.org's `downloadUrl` means a binary.
+      installUrl: appStoreUrl,
       inLanguage: locale,
       description,
       offers: {
