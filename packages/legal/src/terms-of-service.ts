@@ -93,7 +93,7 @@ const EN: LegalDoc = {
           p: [
             { b: "SubEye Pro is a single payment of $11.99" },
             // \u00a0 is the site formatter's non-breaking space, not a plain one.
-            ", or the equivalent set for your App Store storefront — about 199\u00a0₴ in Ukraine. It is not a subscription and it does not renew. It unlocks control over when reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, and the Home Screen widgets.",
+            ", or the equivalent set for your App Store storefront — about 199\u00a0₴ in Ukraine. It is not a subscription and it does not renew. It unlocks control over when reminders land, trial-ending reminders, the payment calendar, the price history on each subscription, categories with their filter and the spend breakdown, and the Home Screen widgets.",
           ],
         },
         {
@@ -257,7 +257,7 @@ const UK: LegalDoc = {
           p: [
             // \u00a0 is the site formatter's non-breaking space, not a plain one.
             { b: "SubEye Pro — це один платіж 199\u00a0₴" },
-            " в Україні або еквівалент, встановлений для вашої вітрини App Store — близько $11.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань, нагадування про кінець пробного періоду, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, а також віджети на екрані «Дім».",
+            " в Україні або еквівалент, встановлений для вашої вітрини App Store — близько $11.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань, нагадування про кінець пробного періоду, календар платежів, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, а також віджети на екрані «Дім».",
           ],
         },
         {
