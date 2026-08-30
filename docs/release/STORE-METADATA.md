@@ -231,9 +231,16 @@ Pro — це разова покупка, яка ніколи не поновл�
 
 **Sign-in required: NO.** Untick it.
 
-Notes (4000):
+Notes (4000). Carried forward between versions — App Review re-reviews the whole
+build every time, and a reviewer who has never seen the app gets only what is in
+this field. Replace the WHAT CHANGED block per release; leave the rest.
 
 ```
+WHAT CHANGED IN 5.1.0
+The currency list went from 5 codes to 156. To see it: Settings → Currency, or tap the currency beside the amount while adding a subscription — both open the same searchable list. Nothing else moved.
+
+No new permissions, no new data collected and no new outbound requests: the App Privacy answers are unchanged from 5.0.0. Exchange rates come from the same public CDN as before, and a rate table ships inside the binary, so amounts still convert with the network off.
+
 There is no account in this app. No sign-up, no sign-in, no server, no backend of any kind — the app opens straight to the dashboard.
 
 SEEING THE APP WITH DATA
