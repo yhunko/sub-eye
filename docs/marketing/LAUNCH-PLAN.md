@@ -164,7 +164,7 @@ minimum. **[killed]**) Requires Account Holder, Admin, App Manager or Marketing.
 File one now of type **App Launch**, and one for the next update as **App
 Enhancements** written for the Ukrainian storefront — localisation and
 uniqueness are two of Apple's own criteria and SubEye genuinely wins both
-(English + Ukrainian, five currencies, per-storefront pricing, and a price model
+(English + Ukrainian, 156 currencies, per-storefront pricing, and a price model
 no competitor ships).
 
 ### 1.7 App Store Tags

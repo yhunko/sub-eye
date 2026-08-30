@@ -127,9 +127,9 @@ out. **Zero client JavaScript, and the page cannot lie about the product.**
 
 **`@subeye/shared` owns vocabularies the page repeats.** The status words the
 mockups show (`Active · Paused · Cancelling · Cancelled`) are
-`subscriptionStatuses`. The supported currency set behind the "five currencies"
-claim lives there too. Import them rather than retyping — a sixth currency should
-break the build, not quietly make the page wrong.
+`subscriptionStatuses`. The currency COUNT the page states out loud is pinned
+against the app's own catalogue in `test/pricing.test.ts` — a currency added or
+dropped should fail that test, not quietly make the page wrong.
 
 **Pin the legal-URL contract with a test.** `test/routes.test.ts` asserts the
 site serves exactly those four paths, against the page files that exist. It is

@@ -131,10 +131,13 @@ and both copy dictionaries type their status labels as
 `Record<SubscriptionStatus, string>`. A new status fails `astro check` rather
 than rendering a gap.
 
-`test/pricing.test.ts` pins the five currency codes against
+`test/pricing.test.ts` reaches into
 `apps/mobile/src/shared/lib/format/money.ts` — deliberately, and only from a
-test. The page says "five currencies" out loud; a sixth in the app should fail
-here.
+test. The page names the SIZE of the catalogue out loud ("156 currencies"), so
+the test pins that number against `CURRENCY_CODES.length` in both locales, and
+separately asserts that every code the page prints is one the app can hold. It
+used to pin the whole five-code set; the catalogue is the ISO-4217 fiat list now
+and copying it here would be the drift the test exists to prevent.
 
 ## Typography: one face
 

@@ -84,7 +84,7 @@ WHAT YOU GET
 • A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
 • A reminder the day before a renewal, so nothing is a surprise.
-• Five currencies — UAH, USD, EUR, GBP, PLN — converted daily into the one you count in.
+• 156 currencies — every one the world bills in — converted daily into the one you count in.
 • English and Ukrainian, and iCloud Sync when you want the same list on two devices.
 
 NO ACCOUNT. NO BANK. NO NETWORK.
@@ -95,7 +95,7 @@ Your subscriptions stay on your phone. There is no server behind SubEye holding 
 
 SUBEYE PRO — ONE PAYMENT
 
-The free app is not a trial and not a teaser. Unlimited subscriptions, the whole dashboard, every lifecycle action, renewal reminders, five currencies and iCloud Sync are free, and stay free.
+The free app is not a trial and not a teaser. Unlimited subscriptions, the whole dashboard, every lifecycle action, renewal reminders, every currency and iCloud Sync are free, and stay free.
 
 Pro is a single purchase that never renews. It adds:
 • Trial-ending alerts, and reminders at the time you choose
@@ -179,7 +179,7 @@ SubEye показує, скільки коштують ваші підписки
 • Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
 • Нагадування за день до списання, щоб нічого не було несподіванкою.
-• П’ять валют — UAH, USD, EUR, GBP, PLN — за щоденним курсом переводяться в ту, у якій рахуєте ви.
+• 156 валют — усі, якими у світі виставляють рахунки, — за щоденним курсом переводяться в ту, у якій рахуєте ви.
 • Українська та англійська, а якщо потрібен той самий список на двох пристроях — синхронізація через iCloud.
 
 БЕЗ АКАУНТА. БЕЗ БАНКУ. БЕЗ МЕРЕЖІ.
@@ -190,7 +190,7 @@ SubEye показує, скільки коштують ваші підписки
 
 SUBEYE PRO — ОДИН ПЛАТІЖ
 
-Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, уся панель, усі дії з підписками, нагадування про списання, п’ять валют і синхронізація через iCloud безкоштовні й такими лишаються.
+Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, уся панель, усі дії з підписками, нагадування про списання, усі валюти й синхронізація через iCloud безкоштовні й такими лишаються.
 
 Pro — це разова покупка, яка ніколи не поновлюється. Вона додає:
 • Сповіщення про кінець пробного періоду й нагадування в той час, який оберете ви

@@ -86,8 +86,8 @@ export const en = {
       body: "Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Swipe a row and you are only ever offered the actions that are legal for that subscription right now.",
     },
     currency: {
-      title: "Five currencies, one honest total.",
-      body: "UAH, USD, EUR, GBP and PLN, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
+      title: "Every currency, one honest total.",
+      body: "156 currencies, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
     },
   },
 
@@ -122,7 +122,7 @@ export const en = {
       "Spend, next month, and the year ahead",
       "Pause, cancel, renew",
       "Renewal reminders, the day before",
-      "Five currencies at daily rates",
+      "Every currency at daily rates",
       "iCloud Sync across your own devices",
       "English and Ukrainian",
     ],

@@ -63,6 +63,3 @@ export const currencyMockup = (locale: Locale): CurrencyMockup => {
     total: rows.reduce((sum, row) => sum + row.converted, 0),
   };
 };
-
-/** The five codes SubEye supports. Pinned against the app in `test/pricing.test.ts`. */
-export const supportedCurrencies = ["uah", "usd", "eur", "gbp", "pln"] as const;

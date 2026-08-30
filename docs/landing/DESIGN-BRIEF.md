@@ -115,8 +115,9 @@ Exhaustive. Do not invent features.
 - No push server, no notification tokens.
 
 **Handles real money**
-- Five currencies: UAH, USD, EUR, GBP, PLN. Not more — don't imply a row of
-  flags.
+- 156 currencies — the ISO-4217 fiat set. State the number; don't list codes,
+  and don't render a row of flags. The flags belong in the app's own picker,
+  where each one labels a row the reader can tap.
 - Daily exchange rates. Everything re-denominates into your home currency, so a
   mix of dollar and hryvnia subscriptions still adds to one honest total.
 
