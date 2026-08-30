@@ -56,18 +56,22 @@ Editable any time without a new build — use it for launch notes later.
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
-### What's New in This Version (4000) — 5.1.0
+### What's New in This Version (4000) — 5.2.0
 
 Per version, per locale, and editable until the build is submitted.
 
 ```
-Pick any currency, not one of five.
+See the month, not just the next payment.
 
-SubEye tracked five currencies. It now knows every one — 156, each with its flag, its full name and its symbol. Search by code or by name, or take one from the short list at the top: your region's currency is already on it.
+SubEye has a calendar. Every charge in the month on one grid, with what each day comes to printed on the day itself — and an agenda underneath, so you can read the names without tapping anything.
 
-Every amount shows its own symbol where there is one, and its code where there is not.
+Tap a day for its breakdown: what renews, what a trial is about to turn into, what you stop paying for.
 
-Exchange rates are cheaper on your battery too. SubEye stops re-checking once it has the day's rates, and it keeps converting from the last set it has when you are offline.
+It counts every charge, not only the next one. A weekly subscription shows up on all four or five of its days, and the month's total is the same figure the Home screen already gives you.
+
+Choose where your week starts, how many logos fit on a day, and whether the daily totals show at all.
+
+The calendar is part of SubEye Pro.
 ```
 
 ### Description (4000)
@@ -153,16 +157,20 @@ SubEye: трекер підписок
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
 ```
 
-### What's New in This Version (4000) — 5.1.0
+### What's New in This Version (4000) — 5.2.0
 
 ```
-Будь-яка валюта, а не одна з п'яти.
+Дивіться на місяць, а не лише на наступний платіж.
 
-Раніше SubEye знав п'ять валют. Тепер — усі 156, кожна з прапором, повною назвою та символом. Шукайте за кодом чи назвою або оберіть зі списку вгорі: валюта вашого регіону вже там.
+У SubEye з'явився календар. Усі списання місяця на одній сітці, із сумою за кожен день просто на клітинці, а під сіткою — список, у якому видно назви без жодного дотику.
 
-Кожна сума показує свій символ, а якщо його немає — код валюти.
+Торкніться дня, щоб побачити деталі: що поновлюється, що з пробного ось-ось стане платним, за що ви більше не платите.
 
-Курси оновлюються ощадливіше: SubEye не звертається до мережі, якщо вже має сьогоднішні, і конвертує за останніми відомими, коли ви офлайн.
+Календар рахує кожне списання, а не лише найближче. Щотижнева підписка з'являється в усі свої чотири-п'ять днів, а сума за місяць збігається з тією, що вже показує головний екран.
+
+Оберіть, з якого дня починається тиждень, скільки логотипів вміщується в день і чи показувати денні суми взагалі.
+
+Календар — частина SubEye Pro.
 ```
 
 ### Description (4000)
@@ -236,10 +244,10 @@ build every time, and a reviewer who has never seen the app gets only what is in
 this field. Replace the WHAT CHANGED block per release; leave the rest.
 
 ```
-WHAT CHANGED IN 5.1.0
-The currency list went from 5 codes to 156. To see it: Settings → Currency, or tap the currency beside the amount while adding a subscription — both open the same searchable list. Nothing else moved.
+WHAT CHANGED IN 5.2.0
+There is a fourth tab, Calendar: the month's charges on a grid, an agenda under it, and a sheet for any day you tap. It is part of SubEye Pro. The tab is present for everyone — without Pro it shows the bare grid over a card that opens the purchase screen, because a feature that is simply absent tells a user nothing about what they would be buying.
 
-No new permissions, no new data collected and no new outbound requests: the App Privacy answers are unchanged from 5.0.0. Exchange rates come from the same public CDN as before, and a rate table ships inside the binary, so amounts still convert with the network off.
+No new permissions, no new data collected and no new outbound requests: the App Privacy answers are unchanged from 5.0.0. The calendar is computed on the device from the subscriptions already entered; nothing about it leaves the phone, and it works with the network off like the rest of the app.
 
 There is no account in this app. No sign-up, no sign-in, no server, no backend of any kind — the app opens straight to the dashboard.
 
@@ -253,7 +261,7 @@ NETWORK
 The app is fully usable with the network off. The only outbound requests are: a daily exchange-rate file from a public CDN, a brand-logo lookup when a service name is typed into the add form, crash reports, and the App Store purchase check. None of them carries a user identifier — the purchase SDK is configured with an anonymous, device-local app user id.
 
 IN-APP PURCHASE
-"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, pricing phases, categories with the spend breakdown, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
+"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, the payment calendar, pricing phases, categories with the spend breakdown, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
 
 The app is iPhone-only, portrait-only and dark-only by design.
 ```
