@@ -134,6 +134,7 @@ export const en = {
     proItems: [
       "Choose when every reminder lands",
       "Trial-ending alerts",
+      "The payment calendar",
       "Price history on every subscription",
       "Categories, category filters and the breakdown",
       "Home Screen widgets",
