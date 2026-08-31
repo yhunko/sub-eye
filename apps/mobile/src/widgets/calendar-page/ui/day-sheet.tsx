@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useCalendarMonth } from "@/entities/calendar";
 import { m } from "@/shared/i18n";
@@ -6,7 +6,6 @@ import { formatMoney, formatShortDate } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
 import { fullDayLabel, nearbyCountdown, needsDayTotal } from "../model/month";
 import { EventRow } from "./event-row";
-import { SheetHeader } from "./sheet-header";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -44,56 +43,62 @@ export function DaySheet({ date }: { date: string }) {
   const iso = `${date}T00:00:00.000Z`;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.content}
-      stickyHeaderIndices={[0]}
-    >
-      <SheetHeader
-        title={m.due_title({ date: valid ? formatShortDate(iso) : "" })}
-        subtitle={
-          valid
-            ? [fullDayLabel(iso), nearbyCountdown(iso)]
-                .filter(Boolean)
-                .join(" · ")
-            : undefined
-        }
-        onDone={() => router.back()}
+    <>
+      {/* Set here rather than on the layout: it is the one piece of this
+          sheet's chrome that depends on which day was tapped. */}
+      <Stack.Screen
+        options={{
+          title: m.due_title({ date: valid ? formatShortDate(iso) : "" }),
+        }}
       />
-
-      {day && needsDayTotal(day) ? (
-        <View style={styles.summary}>
-          <Text style={styles.summaryLabel}>{m.due_total()}</Text>
-          <Text style={styles.summaryAmount}>
-            {formatMoney(day.total, day.events[0]?.currencyCode ?? "")}
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+      >
+        {valid ? (
+          <Text style={styles.caption}>
+            {[fullDayLabel(iso), nearbyCountdown(iso)]
+              .filter(Boolean)
+              .join(" · ")}
           </Text>
-        </View>
-      ) : null}
+        ) : null}
 
-      {day?.events.length ? (
-        day.events.map((event) => (
-          <EventRow
-            key={event.key}
-            event={event}
-            onPress={() => {
-              // Dismiss first: a push from inside a sheet that stays up leaves
-              // the detail screen behind it.
-              router.back();
-              router.push({
-                pathname: "/subscriptions/[id]",
-                params: { id: event.subscriptionId },
-              });
-            }}
-          />
-        ))
-      ) : (
-        <Text style={styles.empty}>{m.due_empty()}</Text>
-      )}
-    </ScrollView>
+        {day && needsDayTotal(day) ? (
+          <View style={styles.summary}>
+            <Text style={styles.summaryLabel}>{m.due_total()}</Text>
+            <Text style={styles.summaryAmount}>
+              {formatMoney(day.total, day.events[0]?.currencyCode ?? "")}
+            </Text>
+          </View>
+        ) : null}
+
+        {day?.events.length ? (
+          day.events.map((event) => (
+            <EventRow
+              key={event.key}
+              event={event}
+              onPress={() => {
+                // Dismiss first: a push from inside a sheet that stays up leaves
+                // the detail screen behind it.
+                router.back();
+                router.push({
+                  pathname: "/subscriptions/[id]",
+                  params: { id: event.subscriptionId },
+                });
+              }}
+            />
+          ))
+        ) : (
+          <Text style={styles.empty}>{m.due_empty()}</Text>
+        )}
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  caption: { fontSize: 13, color: colors.muted, paddingBottom: 14 },
   summary: {
     flexDirection: "row",
     alignItems: "center",

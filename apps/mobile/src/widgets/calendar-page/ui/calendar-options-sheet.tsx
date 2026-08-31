@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { Fragment } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { m } from "@/shared/i18n";
@@ -11,7 +10,6 @@ import {
   useCalendarSettings,
   WEEK_STARTS,
 } from "../model/settings";
-import { SheetHeader } from "./sheet-header";
 
 const WEEK_LABEL = {
   monday: m.calendar_weekMonday,
@@ -38,16 +36,13 @@ const ICON_COUNTS = Array.from(
  * underneath as each one moves, which is the point of a sheet over a screen.
  */
 export function CalendarOptionsSheet() {
-  const router = useRouter();
   const settings = useCalendarSettings();
 
   return (
     <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
-      stickyHeaderIndices={[0]}
     >
-      <SheetHeader title={m.calendar_options()} onDone={() => router.back()} />
-
       <Section title={m.calendar_weekStart()}>
         {WEEK_STARTS.map((value, index) => (
           <Fragment key={value}>
@@ -98,7 +93,6 @@ export function CalendarOptionsSheet() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
-    paddingTop: 14,
     paddingBottom: 32,
     gap: 22,
     backgroundColor: colors.bg,
