@@ -1,7 +1,7 @@
 {
   "name": "sub-eye",
   "description": "A monorepo template for SubEye subscriptions management app",
-  "version": "5.0.0-beta.5",
+  "version": "5.0.0",
   "author": "Yehor Hunko",
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",
