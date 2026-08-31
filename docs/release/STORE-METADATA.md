@@ -69,7 +69,7 @@ Tap a day for its breakdown: what renews, what a trial is about to turn into, wh
 
 It counts every charge, not only the next one. A weekly subscription shows up on all four or five of its days, and the month's total is the same figure the Home screen already gives you.
 
-Choose where your week starts, how many logos fit on a day, and whether the daily totals show at all.
+Choose where your week starts, and whether the daily totals show at all.
 
 It is free, like the rest of the dashboard.
 ```
@@ -168,7 +168,7 @@ SubEye: трекер підписок
 
 Календар рахує кожне списання, а не лише найближче. Щотижнева підписка з'являється в усі свої чотири-п'ять днів, а сума за місяць збігається з тією, що вже показує головний екран.
 
-Оберіть, з якого дня починається тиждень, скільки логотипів вміщується в день і чи показувати денні суми взагалі.
+Оберіть, з якого дня починається тиждень і чи показувати денні суми взагалі.
 
 Він безкоштовний, як і решта панелі.
 ```
