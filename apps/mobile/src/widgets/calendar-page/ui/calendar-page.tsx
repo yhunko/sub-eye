@@ -1,28 +1,19 @@
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
+import { useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCalendarMonth } from "@/entities/calendar";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
 import { monthIso, monthLabel } from "../model/month";
 import { useCalendarSettings } from "../model/settings";
-import { Agenda } from "./agenda";
 import { WeekdayHeader } from "./month-grid";
 import { MonthPager } from "./month-pager";
+
+/** A standard iOS navigation bar. There is no `useHeaderHeight` in this tree. */
+const NAV_BAR = 44;
 
 function StepButton({
   direction,
@@ -65,10 +56,13 @@ function StepButton({
  * scheduled change can only exist on a Pro install — a paid calendar is denser
  * than a free one without a single gate in this file.
  *
- * ONE vertical scroll view, not a pinned grid over an inner scroller: a nested
- * scroller needs a fixed height for the agenda, and a fixed height on a box
- * full of text is what forces a Dynamic Type cap. The grid inside it pages
- * horizontally, which nests fine — the tab bar swipes on neither platform.
+ * ONLY the week-start row and the controls are fixed. The month's total, its
+ * grid and its agenda all live inside the pager, together, because they are one
+ * month and they have to travel as one: with the agenda below the pager it
+ * showed the month being swiped AWAY from for the whole gesture and then
+ * swapped its contents the instant the grid settled. There is no animation
+ * anywhere in this screen now — the motion is the pager, and everything that
+ * belongs to a month is inside it.
  *
  * The month name is the screen TITLE rather than a line of content. Home
  * already puts the current month in its own header for the same reason: every
@@ -76,43 +70,19 @@ function StepButton({
  */
 export function CalendarPage() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const settings = useCalendarSettings();
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
 
-  const month = useMemo(() => monthIso(offset), [offset]);
+  const month = monthIso(offset);
+  // A cache hit — the pager's own page asked for this month first.
   const calendar = useCalendarMonth(month);
 
-  // The agenda moves WITH the grid, off the same scroll position, rather than
-  // playing its own animation once the swipe has settled. That sequencing was
-  // the complaint: the grid finished, then a moment later the list twitched.
-  //
-  // There is no timing curve here at all — the value is the pager's distance
-  // from a settled page, so the motion is the gesture. Nothing can be
-  // interrupted, nothing can be left mid-flight, and the arrows drive it too
-  // because `scrollToIndex` scrolls.
-  //
-  // Two earlier attempts are worth not repeating. Reanimated's layout
-  // `entering` on a re-keyed child inside a Fabric ScrollView left the agenda
-  // stranded at partial opacity. `Animated.Value` with `useNativeDriver` was
-  // worse: changing month makes `isPending` true for an uncached month, which
-  // unmounted the branch holding the animated view, detached the native node
-  // mid-curve and re-attached it at whatever it last committed — an agenda
-  // stuck fully invisible, which is what swiping into October produced.
-  const { width } = useWindowDimensions();
-  const pageShift = useSharedValue(0);
-
-  const agendaStyle = useAnimatedStyle(() => {
-    // Dimmest exactly at the half-way point, where the contents change.
-    const distance = Math.min(1, Math.abs(pageShift.value) * 2);
-    return {
-      opacity: 1 - distance * 0.85,
-      // A FRACTION of the grid's travel. Matching it exactly would slide the
-      // agenda off screen with nothing following it in; a parallax reads as
-      // one surface at two depths.
-      transform: [{ translateX: -pageShift.value * width * 0.35 }],
-    };
-  });
+  // The fixed block sits outside every scroll view, so nothing hands it UIKit's
+  // automatic inset. iOS only: `nativeHeaderChrome` makes the bar transparent
+  // there and opaque on Android, where content is already laid out below it.
+  const headerTop = Platform.OS === "ios" ? insets.top + NAV_BAR : 0;
 
   const openDay = (date: string) => {
     setSelected(date);
@@ -127,19 +97,16 @@ export function CalendarPage() {
   const goTo = (next: number) => {
     if (next === offset) return;
     setOffset(next);
-
     // The selection names a day in the month being left, so keeping it would
     // light a tile in the new month that shares only its position in the grid.
     setSelected(null);
   };
 
   return (
-    <>
+    <View style={styles.screen}>
       <Stack.Screen options={{ title: monthLabel(month) }} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-      >
+
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <View style={styles.controls}>
           <Pressable
             accessibilityRole="button"
@@ -165,6 +132,11 @@ export function CalendarPage() {
           </View>
         </View>
 
+        {/* Fixed with the title rather than paged, and it is the one figure
+            here that lags a swipe by a beat. The alternative was worse: inside
+            the pager it has to sit BELOW the week-start row, which reads as a
+            total for the grid rather than for the month. It keeps company with
+            the navigation title, which is native and cannot animate either. */}
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>{m.calendar_monthTotal()}</Text>
           <Text style={styles.totalAmount}>
@@ -177,45 +149,29 @@ export function CalendarPage() {
           </Text>
         </View>
 
+        {/* Fixed rather than paged: the seven labels are the same in every
+            month, so sliding them would move letters only to replace them with
+            identical ones. */}
         <WeekdayHeader weekStart={settings.weekStart} />
-        <MonthPager
-          offset={offset}
-          onOffsetChange={goTo}
-          settings={settings}
-          selected={selected}
-          onSelect={openDay}
-          pageShift={pageShift}
-        />
+      </View>
 
-        <View style={styles.divider} />
-        {/* The animated view wraps ALL THREE states rather than only the loaded
-            one. Inside the branch it unmounted the moment an uncached month
-            made `isPending` true, which is precisely when this animation runs.
-
-            It travels the way the grid just did: the list is the same month
-            seen a second way, and sliding it the other way would read as two
-            months moving in opposite directions at once. */}
-        <Animated.View style={agendaStyle}>
-          {calendar.isPending ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : calendar.isError ? (
-            <Text style={styles.failed}>{m.common_loadFailed()}</Text>
-          ) : (
-            <Agenda
-              days={calendar.data?.days ?? []}
-              onOpen={(id) =>
-                router.push({ pathname: "/subscriptions/[id]", params: { id } })
-              }
-            />
-          )}
-        </Animated.View>
-      </ScrollView>
-    </>
+      <MonthPager
+        offset={offset}
+        onOffsetChange={goTo}
+        settings={settings}
+        selected={selected}
+        onSelect={openDay}
+        onOpenSubscription={(id) =>
+          router.push({ pathname: "/subscriptions/[id]", params: { id } })
+        }
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 12, paddingBottom: 24, gap: 10 },
+  screen: { flex: 1, backgroundColor: colors.bg },
+  header: { paddingHorizontal: 12, paddingBottom: 6, gap: 10 },
   controls: {
     flexDirection: "row",
     alignItems: "center",
@@ -259,6 +215,4 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   totalAmount: { fontSize: 20, fontWeight: "700", color: colors.text },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
-  failed: { fontSize: 14, color: colors.muted, textAlign: "center" },
 });

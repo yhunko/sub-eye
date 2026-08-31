@@ -1,10 +1,20 @@
 import { useEffect, useRef } from "react";
-import { type FlatList, useWindowDimensions, View } from "react-native";
-import type { SharedValue } from "react-native-reanimated";
-import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
+import {
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCalendarMonth } from "@/entities/calendar";
+import { m } from "@/shared/i18n";
+import { colors } from "@/shared/ui/theme";
 import { monthGrid, monthIso } from "../model/month";
 import type { CalendarSettings } from "../model/settings";
+import { Agenda } from "./agenda";
 import { MonthCells } from "./month-grid";
 
 /**
@@ -18,37 +28,63 @@ import { MonthCells } from "./month-grid";
  */
 const REACH = 24;
 const PAGES = REACH * 2 + 1;
-
-/** The calendar page's own horizontal padding, which each page fills inside. */
-const PAGE_PADDING = 12;
-
 const OFFSETS = Array.from({ length: PAGES }, (_, index) => index - REACH);
 
+/** Clears the floating tab bar, which no automatic inset reaches in here. */
+const TAB_BAR_CLEARANCE = 76;
+
+/**
+ * ONE month: its total, its grid and its agenda, in a scroller of its own.
+ *
+ * The agenda lives in here rather than under the pager, and that is the whole
+ * point of this file's shape. Below it, the list could only ever dim and slide
+ * a little while still showing the month being swiped AWAY from, then swap its
+ * contents the instant the grid settled — the grid paged between two months
+ * while the list underneath said something else. Inside, the next month's list
+ * arrives with the next month's grid because they are the same surface, and
+ * there is no animation to write at all.
+ *
+ * The cost is a vertical scroller per page, which is why the pager virtualises.
+ */
 function MonthPage({
   offset,
   width,
   settings,
   selected,
   onSelect,
+  onOpenSubscription,
 }: {
   offset: number;
   width: number;
   settings: CalendarSettings;
   selected: string | null;
   onSelect: (date: string) => void;
+  onOpenSubscription: (subscriptionId: string) => void;
 }) {
-  // Each page asks for its own month. Keyed by month, so the two pages either
-  // side are already in cache by the time a swipe reaches them — and the page
-  // the screen is showing shares its entry with the agenda below, which asks
-  // for the same key.
+  const insets = useSafeAreaInsets();
+
+  // Each page asks for its own month, keyed by month — so the pages either side
+  // are already in cache by the time a swipe reaches them.
   const month = monthIso(offset);
-  const { data } = useCalendarMonth(month);
+  const calendar = useCalendarMonth(month);
 
   const cells = monthGrid(month, settings.weekStart);
-  const days = new Map((data?.days ?? []).map((day) => [day.date, day]));
+  const days = new Map(
+    (calendar.data?.days ?? []).map((day) => [day.date, day]),
+  );
 
   return (
-    <View style={{ width }}>
+    <ScrollView
+      style={{ width }}
+      // "never", not "automatic": the fixed header above this pager already
+      // clears the navigation bar, and an automatic inset here would push every
+      // page down by it a second time.
+      contentInsetAdjustmentBehavior="never"
+      contentContainerStyle={[
+        styles.page,
+        { paddingBottom: insets.bottom + TAB_BAR_CLEARANCE },
+      ]}
+    >
       <MonthCells
         cells={cells}
         days={days}
@@ -56,17 +92,22 @@ function MonthPage({
         selected={selected}
         onSelect={onSelect}
       />
-    </View>
+
+      <View style={styles.divider} />
+
+      {calendar.isPending ? (
+        <ActivityIndicator color={colors.accent} />
+      ) : calendar.isError ? (
+        <Text style={styles.failed}>{m.common_loadFailed()}</Text>
+      ) : (
+        <Agenda days={calendar.data?.days ?? []} onOpen={onOpenSubscription} />
+      )}
+    </ScrollView>
   );
 }
 
 /**
- * The month grid, swipeable.
- *
- * The pages are the GRID only — the title, the month total and the agenda are
- * outside it and flip when the swipe settles. Paging the whole screen instead
- * would need a vertical scroller per page, and the agenda is the one part that
- * has to scroll independently of the gesture.
+ * The month, swipeable — grid, total and agenda together.
  *
  * `offset` is owned by the caller, because the arrows and Today move it too.
  * `settledRef` is what stops those two fighting the scroller: without it the
@@ -79,38 +120,20 @@ export function MonthPager({
   settings,
   selected,
   onSelect,
-  pageShift,
+  onOpenSubscription,
 }: {
   offset: number;
   onOffsetChange: (offset: number) => void;
   settings: CalendarSettings;
   selected: string | null;
   onSelect: (date: string) => void;
-  /**
-   * How far this pager sits from a settled page, signed, in pages: 0 when
-   * settled, ±0.5 at the half-way point. The agenda reads it to move WITH the
-   * grid instead of after it — which is the whole complaint about the version
-   * that animated once the swipe had already stopped.
-   */
-  pageShift: SharedValue<number>;
+  onOpenSubscription: (subscriptionId: string) => void;
 }) {
+  // Full-bleed pages: each one carries its own horizontal padding, so the swipe
+  // runs edge to edge the way a calendar's does rather than inside a gutter.
   const { width } = useWindowDimensions();
-  const pageWidth = width - PAGE_PADDING * 2;
   const list = useRef<FlatList<number>>(null);
   const settledRef = useRef(offset);
-
-  // On the UI thread, so the agenda tracks the finger frame for frame. It also
-  // means there is no timing curve at all: nothing to interrupt, nothing to
-  // leave half-finished, and the arrows drive it too because `scrollToIndex`
-  // emits the same events.
-  //
-  // Signed and relative to the NEAREST page, so it crosses zero exactly at the
-  // half-way point — which is where the agenda is dimmest and where its
-  // contents are swapped.
-  const onScroll = useAnimatedScrollHandler((event) => {
-    const page = event.contentOffset.x / (pageWidth || 1);
-    pageShift.value = page - Math.round(page);
-  });
 
   useEffect(() => {
     if (settledRef.current === offset) return;
@@ -119,14 +142,14 @@ export function MonthPager({
   }, [offset]);
 
   return (
-    <Animated.FlatList
+    <FlatList
       ref={list}
       horizontal
       pagingEnabled
       showsHorizontalScrollIndicator={false}
-      // The page's vertical scroll view takes UIKit's automatic safe-area
-      // inset. Without this the nested horizontal one takes it too and starts
-      // the grid pushed down by the status bar's height.
+      // Each page owns a vertical scroller that takes the safe-area inset.
+      // Without this the horizontal one takes it too and starts every page
+      // pushed down by the status bar's height.
       automaticallyAdjustContentInsets={false}
       data={OFFSETS}
       keyExtractor={(item) => String(item)}
@@ -135,28 +158,33 @@ export function MonthPager({
       // where the others are — which is what makes `initialScrollIndex` land
       // without a visible jump on mount.
       getItemLayout={(_, index) => ({
-        length: pageWidth,
-        offset: pageWidth * index,
+        length: width,
+        offset: width * index,
         index,
       })}
-      onScroll={onScroll}
       onMomentumScrollEnd={(event) => {
         const next =
-          Math.round(event.nativeEvent.contentOffset.x / (pageWidth || 1)) -
-          REACH;
+          Math.round(event.nativeEvent.contentOffset.x / (width || 1)) - REACH;
         if (next === settledRef.current) return;
         settledRef.current = next;
         onOffsetChange(next);
       }}
-      renderItem={({ item }: { item: number }) => (
+      renderItem={({ item }) => (
         <MonthPage
           offset={item}
-          width={pageWidth}
+          width={width}
           settings={settings}
           selected={selected}
           onSelect={onSelect}
+          onOpenSubscription={onOpenSubscription}
         />
       )}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  page: { paddingHorizontal: 12, paddingTop: 2, gap: 10 },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
+  failed: { fontSize: 14, color: colors.muted, textAlign: "center" },
+});
