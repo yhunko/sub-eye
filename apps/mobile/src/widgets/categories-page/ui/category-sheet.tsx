@@ -1,4 +1,5 @@
-import type { UpdateCategoryInput } from "@subeye/shared";
+import type { UpdateCategoryInput } from "@subeye/model";
+import type { CategoryRecord } from "@subeye/store";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
@@ -32,7 +33,20 @@ import { EmojiGrid } from "./emoji-grid";
  * the return key submits, and until the user touches the grid the emoji tracks
  * `pickCategoryEmoji(name)`. Picking one is a choice, not a step.
  */
-export function CategorySheet({ id }: { id?: string }) {
+export function CategorySheet({
+  id,
+  onCreated,
+}: {
+  id?: string;
+  /**
+   * Create only. Given one, the sheet WAITS for the write and hands back the
+   * record instead of closing itself — the subscription form needs the new id
+   * to apply it, and the id does not exist until the store answers. Without
+   * one, create stays fire-and-forget: Settings has no use for the id, and
+   * holding the sheet open for a synchronous MMKV write would only add a frame.
+   */
+  onCreated?: (created: CategoryRecord) => void;
+}) {
   const router = useRouter();
   const { data: categories } = useQuery(categoriesQuery());
   const create = useCreateCategory();
@@ -88,11 +102,17 @@ export function CategorySheet({ id }: { id?: string }) {
     }
 
     if (!category) {
+      // The nav-bar item stays hit-testable through the sheet's dismissal
+      // animation, and create is not idempotent — a second tap is a second
+      // category. Only reachable on the `onCreated` path, which is the one that
+      // leaves the sheet up until the write lands.
+      if (create.isPending) return;
+
       create.mutate(
         { name: trimmed, emoji: shownEmoji },
-        { onError: notifyWriteFailed },
+        { onSuccess: onCreated, onError: notifyWriteFailed },
       );
-      router.back();
+      if (!onCreated) router.back();
       return;
     }
 

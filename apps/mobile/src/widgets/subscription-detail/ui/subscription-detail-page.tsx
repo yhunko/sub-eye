@@ -1,7 +1,6 @@
-import type { SubscriptionDto } from "@subeye/shared";
-import { isCurrentlyActiveSubscription } from "@subeye/shared";
+import { isCurrentlyActiveSubscription } from "@subeye/lifecycle";
 
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { useMemo } from "react";
@@ -15,11 +14,16 @@ import {
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
 import { ProLock, usePro } from "@/entities/pro";
-import { toTimelineRows, useSubscriptionDetail } from "@/entities/subscription";
+import {
+  toTimelineRows,
+  usePricingMenu,
+  useSubscriptionDetail,
+} from "@/entities/subscription";
 
 import { dateLocale, m } from "@/shared/i18n";
 import {
   daysUntil,
+  formatCadence,
   formatCountdown,
   formatDate,
   formatMoney,
@@ -27,31 +31,15 @@ import {
   formatShortDate,
 } from "@/shared/lib/format";
 import { nativeHeaderChrome } from "@/shared/ui/header";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { presentChoice } from "@/shared/ui/present-choice";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 import { chargeBeforeCancellation } from "../model/cancellation";
 import { cycleProgress } from "../model/cycle";
 import { useLifecycleActions } from "../model/use-lifecycle-actions";
 import { DetailHero } from "./detail-hero";
 import { EndedEmpty } from "./ended-empty";
 import { TimelineRow } from "./timeline-row";
-
-// "monthly" reads better than "every 1 month", and the plural case is spelled
-// per locale rather than pluralised at runtime — Hermes has no Intl.PluralRules.
-const CADENCE_ONCE: Record<SubscriptionDto["period"], () => string> = {
-  day: m.cadence_day,
-  week: m.cadence_week,
-  month: m.cadence_month,
-  year: m.cadence_year,
-};
-const CADENCE_EVERY: Record<
-  SubscriptionDto["period"],
-  (inputs: { every: number }) => string
-> = {
-  day: m.cadence_everyDays,
-  week: m.cadence_everyWeeks,
-  month: m.cadence_everyMonths,
-  year: m.cadence_everyYears,
-};
 
 // Platform symbols per lifecycle action. Keys come from the action builder;
 // anything unmapped simply shows as a text-only menu row. One table rather than
@@ -71,6 +59,10 @@ const ACTION_ICON: Record<string, { ios: SFSymbol; android: AndroidSymbol }> = {
   delete: { ios: "trash", android: "delete" },
 };
 
+/** The countdown's design size, and the point size it may never shrink past. */
+const COUNTDOWN_SIZE = 26;
+const COUNTDOWN_FLOOR = 18;
+
 function Track({ value }: { value: number }) {
   return (
     <View style={styles.track}>
@@ -82,6 +74,11 @@ function Track({ value }: { value: number }) {
 export function SubscriptionDetailPage({ id }: { id: string }) {
   const { data: subscription, isPending, isError } = useSubscriptionDetail(id);
   const isPro = usePro();
+  const router = useRouter();
+  // Everything you can do to the price, as one nav-bar dropdown. It used to be
+  // a row in the ellipsis menu that opened a screen listing the same four
+  // things; UIKit already has a control for choosing between actions.
+  const pricing = usePricingMenu(id);
   // Warm from the Home tab in the common case; the share card simply does not
   // render until it lands on a cold deep link.
   const { data: dashboard } = useDashboard();
@@ -91,18 +88,27 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // reading it printed English months under a Ukrainian UI.
   const locale = dateLocale();
   const rows = useMemo(
-    () => toTimelineRows(subscription?.pricePhases ?? [], locale),
-    [subscription?.pricePhases, locale],
+    () =>
+      toTimelineRows(
+        subscription?.pricePhases ?? [],
+        locale,
+        subscription?.upcomingPhase?.id ?? null,
+      ),
+    [subscription?.pricePhases, subscription?.upcomingPhase?.id, locale],
   );
 
   // Called unconditionally, before any early return — the mutations behind it
   // are hooks. It tolerates the empty list while the detail is still loading.
-  const { primary, overflow, showOverflow, pageAction } = useLifecycleActions({
+  const { primary, overflow, pageAction } = useLifecycleActions({
     id,
     name: subscription?.name ?? "",
     status: subscription?.status ?? "active",
     allowedActions: subscription?.allowedActions ?? [],
   });
+
+  // Same reason: before the early return, because they are hooks.
+  const countdownLines = useLargeText() ? 2 : 1;
+  const countdownFloor = useShrinkFloor(COUNTDOWN_SIZE, COUNTDOWN_FLOOR);
 
   if (!subscription) {
     return (
@@ -131,10 +137,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       ? formatMoney(subscription.cost, subscription.currency)
       : null;
 
-  const cadence =
-    subscription.every === 1
-      ? CADENCE_ONCE[subscription.period]()
-      : CADENCE_EVERY[subscription.period]({ every: subscription.every });
+  const cadence = formatCadence(subscription.every, subscription.period);
 
   // One card, one question, and the question changes with the status. A paused
   // subscription asks "when does this start costing again"; a cancelled one has
@@ -194,6 +197,73 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // `prominent` variant is UIKit's own filled (glass, on iOS 26) button, and the
   // ellipsis carries a native UIMenu instead of opening an action sheet, which is
   // what the platform expects from a "more" button in a nav bar.
+  // A SUBMENU inside the ellipsis, not a third bar button. Pricing is four
+  // actions, so it needs somewhere to put them — but three glass capsules in a
+  // nav bar is one more than the bar has room to read as chrome.
+  //
+  // Locked, the same entry is a flat action to the paywall rather than a
+  // submenu of things a free user cannot do.
+  const pricingEntry = !pricing.length
+    ? []
+    : [
+        isPro
+          ? ({
+              type: "submenu",
+              label: m.action_managePricing(),
+              icon: { type: "sfSymbol", name: "tag" },
+              // These are LINKS, not a choice. A menu defaults to
+              // `UIMenuOptionsSingleSelection`, which makes UIKit manage the
+              // "on" state itself: it ticked whichever one you last opened and
+              // left the tick there, so the menu claimed a trial was running
+              // because you had looked at the form once.
+              multiselectable: true,
+              items: pricing.map((item) => ({
+                type: "action" as const,
+                label: item.label,
+                // NOT `subtitle`: expo-router writes RNScreens' `subtitle` from
+                // a field called `description`, and it does so AFTER spreading
+                // the rest — so a key of that name is passed through and then
+                // overwritten with undefined. That is why none of these showed.
+                description: item.subtitle,
+                icon: { type: "sfSymbol" as const, name: item.icon.ios },
+                onPress: item.run,
+              })),
+            } as const)
+          : ({
+              type: "action",
+              label: m.action_managePricing(),
+              icon: { type: "sfSymbol", name: "tag" },
+              onPress: () => router.push("/paywall"),
+            } as const),
+      ];
+
+  const showPricing = () =>
+    presentChoice(
+      m.pricing_title(),
+      subscription.name,
+      pricing.map((item) => ({ label: item.label, onPress: item.run })),
+    );
+
+  // Android's equivalent of the submenu: the sheet's own pricing row opens a
+  // second sheet. `presentChoice` fires its handler after the first is
+  // dismissed, so the two never fight over the screen.
+  const showMore = () =>
+    presentChoice(subscription.name, m.detail_moreActions(), [
+      ...(pricing.length
+        ? [
+            {
+              label: m.action_managePricing(),
+              onPress: () => (isPro ? showPricing() : router.push("/paywall")),
+            },
+          ]
+        : []),
+      ...overflow.map((item) => ({
+        label: item.label,
+        destructive: item.destructive,
+        onPress: item.run,
+      })),
+    ]);
+
   const barItems = () => [
     ...(primary
       ? [
@@ -210,7 +280,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           },
         ]
       : []),
-    ...(overflow.length
+    ...(overflow.length || pricingEntry.length
       ? [
           {
             type: "menu" as const,
@@ -218,16 +288,26 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             icon: { type: "sfSymbol" as const, name: "ellipsis" as const },
             menu: {
               title: subscription.name,
-              items: overflow.map((item) => {
-                const icon = ACTION_ICON[item.key];
-                return {
-                  type: "action" as const,
-                  label: item.label,
-                  destructive: item.destructive,
-                  icon: icon && { type: "sfSymbol" as const, name: icon.ios },
-                  onPress: item.run,
-                };
-              }),
+              // Every menu is single-selection UNLESS told otherwise
+              // (`singleSelection: !multiselectable`, so an omitted flag means
+              // ON), and UIKit manages the state of a single-selection menu
+              // itself — it ticked whichever pricing action you last opened and
+              // left the tick there. None of these is ever "selected"; they are
+              // links. The submenu carries the same flag for the same reason.
+              multiselectable: true,
+              items: [
+                ...pricingEntry,
+                ...overflow.map((item) => {
+                  const icon = ACTION_ICON[item.key];
+                  return {
+                    type: "action" as const,
+                    label: item.label,
+                    destructive: item.destructive,
+                    icon: icon && { type: "sfSymbol" as const, name: icon.ios },
+                    onPress: item.run,
+                  };
+                }),
+              ],
             },
           },
         ]
@@ -237,7 +317,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // Android has no bar button items; it keeps the custom view (expo-router only
   // swaps in the native items on iOS) and the OS action sheet behind it.
   const androidActions =
-    primary || overflow.length
+    primary || overflow.length || pricing.length
       ? () => (
           <View style={styles.headerActions}>
             {primary ? (
@@ -255,9 +335,9 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                 />
               </Pressable>
             ) : null}
-            {overflow.length ? (
+            {overflow.length || pricing.length ? (
               <Pressable
-                onPress={showOverflow}
+                onPress={showMore}
                 hitSlop={12}
                 accessibilityRole="button"
                 accessibilityLabel={m.detail_moreActions()}
@@ -313,7 +393,15 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             />
             <View style={styles.alertText}>
               <Text style={styles.alertTitle}>
-                {m.detail_priceChangeTitle()}
+                {/* Only the payment that is ACTUALLY at the new price may be
+                    called the next one. An intro discount reverting in three
+                    months is an upcoming phase too, and the flat headline
+                    claimed its change landed on a charge that is still at the
+                    old price — contradicting the very sentence beneath it. */}
+                {Date.parse(subscription.nextPaymentDate) >=
+                Date.parse(scheduledPriceChange.effectiveAt)
+                  ? m.detail_priceChangeTitle()
+                  : m.detail_priceChangeLaterTitle()}
               </Text>
               <Text style={styles.alertBody}>
                 {m.detail_priceChangeBody({
@@ -337,10 +425,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
         {showDate ? (
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text
-                style={styles.label}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
+              <Text style={styles.label}>
                 {paused
                   ? m.detail_resumes()
                   : endsAt
@@ -348,12 +433,13 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                     : m.detail_nextPayment()}
               </Text>
             </View>
+            {/* "in 2 months and 3 days" is a sentence, so it wraps rather than
+                shrinking once there is a card's width of it. */}
             <Text
               style={styles.countdown}
-              numberOfLines={1}
+              numberOfLines={countdownLines}
               adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+              minimumFontScale={countdownFloor}
             >
               {endsAt
                 ? formatRemaining(daysUntil(date))
@@ -373,7 +459,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             ) : null}
             {/* The whole reason a user opens a cancelling subscription. */}
             {endsAt ? (
-              <Text style={styles.footnote} numberOfLines={1}>
+              <Text style={styles.footnote}>
                 {nextCharge
                   ? m.detail_endsNextCharge({
                       date: formatShortDate(nextCharge),
@@ -387,16 +473,11 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
         {share !== null && dashboard ? (
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text
-                style={styles.label}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
-                {m.detail_spendShare()}
-              </Text>
+              <Text style={styles.label}>{m.detail_spendShare()}</Text>
               <Text style={styles.headValue}>{sharePercent}</Text>
             </View>
             <Track value={share} />
-            <Text style={styles.footnote} numberOfLines={1}>
+            <Text style={styles.footnote}>
               {m.detail_spendShareOf({
                 amount: formatMoney(preferred.monthly, preferred.currencyCode),
                 total: formatMoney(
@@ -418,12 +499,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
           />
         ) : (
           <View style={[styles.card, styles.timeline]}>
-            <Text
-              style={styles.label}
-              maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-            >
-              {m.detail_timeline()}
-            </Text>
+            <Text style={styles.label}>{m.detail_timeline()}</Text>
             {rows.map((row, index) => (
               <TimelineRow
                 key={row.id}
@@ -469,7 +545,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    // The value drops under the label when the two stop fitting, which at the
+    // accessibility sizes is always. No breakpoint needed: the label's own width
+    // is what decides, so a long translation gets the same treatment.
+    flexWrap: "wrap",
+    columnGap: 10,
+    rowGap: 4,
   },
   headValue: {
     fontSize: 13,
@@ -479,7 +560,7 @@ const styles = StyleSheet.create({
   },
   countdown: {
     marginTop: 10,
-    fontSize: 26,
+    fontSize: COUNTDOWN_SIZE,
     fontWeight: "800",
     letterSpacing: -0.4,
     color: colors.text,

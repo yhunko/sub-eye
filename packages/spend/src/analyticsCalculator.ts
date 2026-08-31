@@ -1,3 +1,4 @@
+import { shouldIncludeOccurrence } from "@subeye/lifecycle";
 import type {
   CategoryDto,
   CategorySpendingDto,
@@ -8,12 +9,8 @@ import type {
   SubscriptionDto,
   SubscriptionPeriod,
   UpcomingRenewalDto,
-} from "@subeye/shared";
-import {
-  DateTimezoneUtils,
-  RecurrenceUtils,
-  shouldIncludeOccurrence,
-} from "@subeye/shared";
+} from "@subeye/model";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 import { isAfter, isBefore } from "date-fns";
 import { isOccurrencePaused } from "./pause";
 
@@ -297,7 +294,9 @@ export class AnalyticsCalculator {
    */
   static buildCategorySpending(
     subscriptions: SubscriptionDto[],
-    categories: CategoryDto[],
+    // Only the three fields it reads: the store's category record carries no
+    // `userId`, and a full `CategoryDto` is more than this needs.
+    categories: Pick<CategoryDto, "id" | "name" | "emoji">[],
   ): CategorySpendingDto[] {
     const map = new Map<string | null, CategorySpendingDto>();
 
@@ -488,23 +487,36 @@ export class AnalyticsCalculator {
     return payments;
   }
 
+  /**
+   * What this one charge costs, read off the pricing timeline.
+   *
+   * The WHOLE timeline, not `scheduledPriceChange` — that field is only ever
+   * the NEXT phase, which describes a single transition. An offer that starts
+   * at a future charge and reverts at a later one puts two transitions in front
+   * of today, and pricing off the first alone charged the discounted amount
+   * forever: every occurrence after the offer opened, including the ones past
+   * its end. `pricePhases` arrives sorted and its windows are half-open, so the
+   * first window containing the charge is the one that owns it.
+   *
+   * The row's own price is the fallback, which is what a subscription with no
+   * phases at all, or a charge landing before the first one opens, must use.
+   */
   static resolveOccurrenceAmount(
     subscription: SubscriptionDto,
     occurrence: Date,
   ): number {
-    const scheduled = subscription.scheduledPriceChange;
+    const at = occurrence.getTime();
 
-    if (!scheduled) {
-      return subscription.billing.preferred.amount;
+    for (const phase of subscription.pricePhases) {
+      const startsAt = Date.parse(phase.startsAt);
+      if (Number.isNaN(startsAt) || startsAt > at) continue;
+
+      const endsAt = phase.endsAt ? Date.parse(phase.endsAt) : null;
+      if (endsAt !== null && !Number.isNaN(endsAt) && endsAt <= at) continue;
+
+      return phase.billing.preferred.amount;
     }
 
-    const effectiveAt = Date.parse(scheduled.effectiveAt);
-    if (Number.isNaN(effectiveAt)) {
-      return subscription.billing.preferred.amount;
-    }
-
-    return occurrence.getTime() >= effectiveAt
-      ? scheduled.billing.preferred.amount
-      : subscription.billing.preferred.amount;
+    return subscription.billing.preferred.amount;
   }
 }

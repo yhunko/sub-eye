@@ -1,4 +1,4 @@
-import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 
 /**
  * A complete SubscriptionDto for tests. Test-only, but it lives in src/ so the

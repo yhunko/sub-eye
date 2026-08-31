@@ -7,10 +7,14 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@date-fns/tz": "^1.4.1",
-    "@subeye/currency": "workspace:*",
-    "@subeye/shared": "workspace:*",
+    "@subeye/lifecycle": "workspace:*",
+    "@subeye/money": "workspace:*",
+    "@subeye/model": "workspace:*",
+    "@subeye/time": "workspace:*",
     "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@date-fns/tz": "^1.4.1"
   },
   "scripts": {
     "lint": "biome check .",

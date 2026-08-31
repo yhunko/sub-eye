@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useMemo, useRef } from "react";
@@ -15,12 +15,16 @@ import {
   formatShortDate,
 } from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
-import { colors, LAYOUT_FONT_SCALE_MAX, statusTint } from "@/shared/ui/theme";
+import { colors, statusTint } from "@/shared/ui/theme";
+import { useLargeText } from "@/shared/ui/use-large-text";
 
 /**
- * Rows are a FIXED height. Uniform cells let VirtualizedList's length estimate
- * be exact after the first measured cell, so scrolling a long list never
- * re-flows, and the swipe container underneath needs a concrete height anyway.
+ * A FLOOR, not a height. At every normal text size the row's content is well
+ * under it, so cells stay uniform and VirtualizedList's length estimate is exact
+ * after the first one — but a fixed height is what forced a cap on the text, and
+ * the cap is what fails Apple's Larger Text criterion. `ReanimatedSwipeable`
+ * sizes its container to this row and absolutely-fills the actions behind it, so
+ * it needs no height of its own either.
  */
 const ROW_HEIGHT = 64;
 const ROW_GAP = 8;
@@ -95,6 +99,19 @@ export const SubscriptionRow = memo(function SubscriptionRow({
   // A ref, not state: a tap on an open row should close it instead of
   // navigating, and re-rendering the row to track that would defeat the memo.
   const isOpen = useRef(false);
+  // The swipe and the row's own press are in two different gesture systems —
+  // the pan is gesture-handler's, `Pressable` is RN's responder — and the finger
+  // lifting inside the row fires BOTH, so a swipe used to open the actions and
+  // push the detail screen at the same time. `isOpen` hid it from the second
+  // swipe onwards, which is why it only ever looked like a first-swipe bug.
+  //
+  // Cleared on touch-down rather than consumed by the press: a swipe does not
+  // always produce one, and a flag left standing would eat the next real tap.
+  const dragged = useRef(false);
+
+  // The amount joins the name's column at the accessibility text sizes. Beside
+  // it there is nothing left to shrink: the name is already the flexible half.
+  const stacked = useLargeText();
 
   const actions = useMemo(
     () =>
@@ -143,19 +160,23 @@ export const SubscriptionRow = memo(function SubscriptionRow({
                   weight="semibold"
                 />
               </View>
-              <Text
-                style={styles.actionLabel}
-                numberOfLines={1}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
-                {label}
-              </Text>
+              {/* The caption goes at the accessibility text sizes rather than
+                  growing: three captions at 37pt are wider than the screen, and
+                  a reveal you cannot swipe far enough to see is worse than one
+                  that is glyphs only. It survives as the button's own
+                  accessibility label above, and every action here is also on the
+                  detail screen, where the words have a full width to sit in. */}
+              {stacked ? null : (
+                <Text style={styles.actionLabel} numberOfLines={1}>
+                  {label}
+                </Text>
+              )}
             </Pressable>
           );
         })}
       </View>
     ),
-    [actions, item.status],
+    [actions, item.status, stacked],
   );
 
   // Each status is asking a different question of the same slot. Cancelled is
@@ -196,6 +217,12 @@ export const SubscriptionRow = memo(function SubscriptionRow({
       onSwipeableWillOpen={() => {
         if (swipeRef.current) onSwipeOpen(swipeRef.current);
       }}
+      onSwipeableOpenStartDrag={() => {
+        dragged.current = true;
+      }}
+      onSwipeableCloseStartDrag={() => {
+        dragged.current = true;
+      }}
       onSwipeableOpen={() => {
         isOpen.current = true;
       }}
@@ -215,7 +242,11 @@ export const SubscriptionRow = memo(function SubscriptionRow({
         ]
           .filter(Boolean)
           .join(", ")}
+        onPressIn={() => {
+          dragged.current = false;
+        }}
         onPress={() => {
+          if (dragged.current) return;
           if (isOpen.current) {
             swipeRef.current?.close();
             return;
@@ -237,27 +268,48 @@ export const SubscriptionRow = memo(function SubscriptionRow({
         <View style={styles.middle}>
           <Text
             style={[styles.name, cancelled && styles.spent]}
-            numberOfLines={1}
+            numberOfLines={stacked ? undefined : 1}
           >
             {item.name}
           </Text>
-          <Text style={styles.sub} numberOfLines={1}>
+          {/* The status word is on screen, not just in the label above. The
+              tint was carrying `paused` and `cancelling` alone, which fails on
+              colour vision as well as in greyscale — and the date beside it
+              means something different per status (a resume for a paused row,
+              a charge for an active one) while reading identically. Status
+              first, so a narrow row truncates the half that matters least. */}
+          <Text style={styles.sub} numberOfLines={stacked ? undefined : 1}>
             {cancelled
               ? m.subs_ended({ date: formatShortDate(date) })
-              : formatDaysUntil(daysUntil(date), date)}
+              : statusLabel
+                ? `${statusLabel} · ${formatDaysUntil(daysUntil(date), date)}`
+                : formatDaysUntil(daysUntil(date), date)}
           </Text>
+          {/* One line, one currency. The cadence suffix is what stops a
+              normalised figure from reading as the amount actually charged. */}
+          {stacked ? (
+            <Text
+              style={[
+                styles.amount,
+                styles.amountStacked,
+                cancelled && styles.amountSpent,
+              ]}
+            >
+              {primary}
+              <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
+            </Text>
+          ) : null}
         </View>
 
-        {/* One line, one currency. The cadence suffix is what stops a
-            normalised figure from reading as the amount actually charged. */}
-        <Text
-          style={[styles.amount, cancelled && styles.amountSpent]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
-          {primary}
-          <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
-        </Text>
+        {stacked ? null : (
+          <Text
+            style={[styles.amount, cancelled && styles.amountSpent]}
+            numberOfLines={1}
+          >
+            {primary}
+            <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
+          </Text>
+        )}
       </Pressable>
     </ReanimatedSwipeable>
   );
@@ -275,17 +327,20 @@ const styles = StyleSheet.create({
   // of the bottom-right label. The card inside carries the app's rounding; the
   // clip boundary only has to be square.
   container: {
-    height: ROW_HEIGHT,
+    minHeight: ROW_HEIGHT,
     marginBottom: ROW_GAP,
   },
   row: {
-    height: ROW_HEIGHT,
+    minHeight: ROW_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
     borderWidth: 1,
     borderRadius: RADIUS,
     paddingHorizontal: 10,
+    // Zero at the default size — the content is 29pt inside a 64pt floor — and
+    // the only thing keeping the text off the rounded corners once it grows.
+    paddingVertical: 8,
   },
   middle: { flex: 1, minWidth: 0 },
   // No status badge: the row's own fill carries it, which buys the name the full
@@ -303,6 +358,7 @@ const styles = StyleSheet.create({
     // Digits stop jittering between rows and during optimistic updates.
     fontVariant: ["tabular-nums"],
   },
+  amountStacked: { marginTop: 3 },
   // Nested in the amount so it rides the same baseline; muted and small so the
   // number stays the thing being compared.
   cadence: { fontSize: 11.5, fontWeight: "600", color: colors.muted },
@@ -311,7 +367,9 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    height: ROW_HEIGHT,
+    // Full height of whatever the row grew to, not of what it was: the reveal
+    // is absolutely filled behind a row that is no longer a fixed ROW_HEIGHT.
+    height: "100%",
     paddingLeft: 8,
     // Keeps the outermost label off the clip boundary now that it is square.
     paddingRight: 2,

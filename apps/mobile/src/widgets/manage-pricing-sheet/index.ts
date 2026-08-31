@@ -1,1 +1,4 @@
-export { ManagePricingSheet } from "./ui/manage-pricing-sheet";
+export {
+  ManagePricingSheet,
+  type SheetIntent,
+} from "./ui/manage-pricing-sheet";

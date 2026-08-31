@@ -1,4 +1,4 @@
-import type { UpcomingRenewalDto } from "@subeye/shared";
+import type { UpcomingRenewalDto } from "@subeye/model";
 import { dateLocale, m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
 

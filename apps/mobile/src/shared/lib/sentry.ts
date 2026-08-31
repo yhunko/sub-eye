@@ -29,9 +29,8 @@ Sentry.init({
   // A dev crash already has the red box, a symbolicated stack and Metro. Sending
   // those too only buries the store builds this exists for.
   enabled: !!env.SENTRY_DSN && !__DEV__,
-  // No email, no username, no IP. The Clerk id set by shared/auth/token-bridge
-  // is the only identifier an event carries, and it is what joins to the
-  // server's PostHog distinct_id.
+  // There is no account, so there is no identifier to attach either: an event
+  // carries the device and the stack and nothing else.
   sendDefaultPii: false,
   ignoreErrors: [
     // The user's train went into a tunnel. Already handled everywhere — the
@@ -44,9 +43,9 @@ Sentry.init({
 /**
  * Report an error without being able to become one.
  *
- * The root error boundary calls this when Clerk, Query or the navigator have
- * already failed, so there is no handler left above it: a throw here would
- * replace a rendered "something went wrong" screen with a dead white window.
+ * The root error boundary calls this when Query or the navigator have already
+ * failed, so there is no handler left above it: a throw here would replace a
+ * rendered "something went wrong" screen with a dead white window.
  */
 export function reportError(
   error: unknown,
@@ -57,14 +56,5 @@ export function reportError(
   } catch {
     // Nothing left to do with it. Losing the report is survivable; crashing the
     // crash reporter is not.
-  }
-}
-
-/** The Clerk user id, or null on sign-out. Never an email or a username. */
-export function setSentryUser(userId: string | null): void {
-  try {
-    Sentry.setUser(userId ? { id: userId } : null);
-  } catch {
-    // Identity is an enrichment. Events without it are still worth having.
   }
 }

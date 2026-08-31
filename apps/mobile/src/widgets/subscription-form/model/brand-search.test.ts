@@ -1,11 +1,8 @@
 import { describe, expect, it } from "bun:test";
 
 // brand-search.ts reads the optional Brandfetch id through shared/config/env,
-// which validates the two REQUIRED vars at import time. CI has no .env, so they
-// are set before the dynamic import below — same as cache.test.ts.
-process.env.EXPO_PUBLIC_API_URL = "https://api.test";
-process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??= "pk_test_x";
-
+// which validates the required vars at import time. The dynamic import keeps
+// that load after test-preload.ts has set their floors.
 const { brandSearchUrl, toBrandHits } = await import("./brand-search");
 
 describe("brandSearchUrl", () => {

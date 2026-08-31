@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import {
   isSameUtcDay,
   normalizeAmount,
@@ -11,23 +11,55 @@ import {
 const subscription = {
   every: 1,
   period: SubscriptionPeriod.MONTH,
-  // Anchor far in the past so the next occurrence is always in the future.
   paymentDate: "2020-01-10T00:00:00.000Z",
 };
+
+const now = new Date("2026-08-24T09:00:00.000Z");
 
 describe("resolveScheduledEffectiveAt", () => {
   // "nextOccurrence" means "raise the price at the next renewal, not mid-cycle".
   // The returned instant must land on the 10th, the anchor day.
   it("resolves nextOccurrence to the subscription's next renewal", () => {
-    const effectiveAt = resolveScheduledEffectiveAt(
-      subscription,
-      { mode: "nextOccurrence" },
-      "UTC",
-    );
+    expect(
+      resolveScheduledEffectiveAt(
+        subscription,
+        { mode: "nextOccurrence" },
+        now,
+        "UTC",
+      ),
+    ).toBe("2026-09-10T00:00:00.000Z");
+  });
 
-    expect(effectiveAt).not.toBeNull();
-    expect(new Date(effectiveAt as string).getUTCDate()).toBe(10);
-    expect(Date.parse(effectiveAt as string)).toBeGreaterThan(Date.now());
+  // The renewal falling on today has a midnight that is already past, so it must
+  // step forward a full period — a price change must never be scheduled in the
+  // past. While the function read `Date.now()` this could not be asserted at all.
+  it("steps forward a full period when the renewal is earlier today", () => {
+    expect(
+      resolveScheduledEffectiveAt(
+        subscription,
+        { mode: "nextOccurrence" },
+        new Date("2026-09-10T12:00:00.000Z"),
+        "UTC",
+      ),
+    ).toBe("2026-10-10T00:00:00.000Z");
+  });
+
+  // The step forward is anchored to the ORIGINAL payment date, not to the day it
+  // stepped from: without the anchor a clamped month (31 Jan → 28 Feb) drags
+  // every later boundary back to the 28th and it never returns to the 31st.
+  it("keeps the step forward on the original day of the month", () => {
+    expect(
+      resolveScheduledEffectiveAt(
+        {
+          every: 1,
+          period: SubscriptionPeriod.MONTH,
+          paymentDate: "2026-01-31T00:00:00.000Z",
+        },
+        { mode: "nextOccurrence" },
+        new Date("2026-02-28T12:00:00.000Z"),
+        "UTC",
+      ),
+    ).toBe("2026-03-31T00:00:00.000Z");
   });
 
   // A custom date is floored to the start of its UTC day. Without the floor,
@@ -37,6 +69,7 @@ describe("resolveScheduledEffectiveAt", () => {
     const effectiveAt = resolveScheduledEffectiveAt(
       subscription,
       { mode: "customDate", customDate: "2030-08-01T14:33:07.000Z" },
+      now,
       "UTC",
     );
 
@@ -51,6 +84,7 @@ describe("resolveScheduledEffectiveAt", () => {
       resolveScheduledEffectiveAt(
         subscription,
         { mode: "customDate", customDate: "2030-08-01T00:00:00.000Z" },
+        now,
         "Europe/Kyiv",
       ),
     ).toBe("2030-08-01T00:00:00.000Z");
@@ -60,7 +94,12 @@ describe("resolveScheduledEffectiveAt", () => {
   // caller error. The server turns this into CustomDateRequiredError.
   it("returns null when custom mode has no date", () => {
     expect(
-      resolveScheduledEffectiveAt(subscription, { mode: "customDate" }, "UTC"),
+      resolveScheduledEffectiveAt(
+        subscription,
+        { mode: "customDate" },
+        now,
+        "UTC",
+      ),
     ).toBeNull();
   });
 
@@ -71,11 +110,13 @@ describe("resolveScheduledEffectiveAt", () => {
     const next = resolveScheduledEffectiveAt(
       subscription,
       { mode: "nextOccurrence" },
+      now,
       "UTC",
     );
     const custom = resolveScheduledEffectiveAt(
       subscription,
       { mode: "customDate", customDate: next },
+      now,
       "UTC",
     );
 

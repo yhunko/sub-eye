@@ -10,16 +10,26 @@ content architecture from that attempt was right and the visual system was not.
 
 ## What you're designing
 
-A pre-launch marketing site for **SubEye**, a subscription-tracking iPhone app.
-The app is built and heading for App Store review. The site's job, in order:
+The marketing site for **SubEye**, a subscription-tracking iPhone app. The
+site's job, in order:
 
 1. Make someone want the app.
-2. Capture an email so they hear about launch day.
+2. Send them to the App Store.
 3. Host the Terms and Privacy pages the app links to. (Non-negotiable — see
    *Required routes*.)
 
-There is no App Store link yet. Every download affordance is a **"Coming to the
-App Store"** state plus an email field. Do not fake a live badge.
+**Superseded 2026-08-30 — SubEye shipped.** This section used to say there was
+no App Store link and that every download affordance was a "Coming to the App
+Store" state plus an email field. The app is live at
+`apps.apple.com/app/id6795566917`, the closing card and the fixed bar now say
+so, and the hero carries Apple's real badge. The email field never existed and
+is not coming back; see *Email form*.
+
+Apple's badge comes with rules that outrank any design instinct — one badge per
+layout, minimum 40px tall, a quarter of its height in clear space on every
+side, never recoloured, tilted or animated, never redrawn in another language,
+and credited in the footer. `apps/landing/CLAUDE.md` carries them, and
+`apps/landing/test/appStore.test.ts` enforces the ones a test can reach.
 
 One page, plus two legal pages. English and Ukrainian.
 
@@ -81,9 +91,9 @@ Exhaustive. Do not invent features.
 - One number on the home screen: what is still going to leave your account this
   month, with the month's own progress underneath so the figure has a
   denominator.
-- Next month's forecast, and a six-month spend trend.
-- Your most expensive subscription, called out.
-- Where it goes, by category.
+- Next month's forecast with the direction it moved, and what the next twelve
+  months come to. (The six-bar trend is gone — it was replaced by the delta.)
+- Where it goes, by category. Pro.
 - Anything resuming from a pause soon.
 
 **Tracks the price over time — the unusual one**
@@ -105,8 +115,9 @@ Exhaustive. Do not invent features.
 - No push server, no notification tokens.
 
 **Handles real money**
-- Five currencies: UAH, USD, EUR, GBP, PLN. Not more — don't imply a row of
-  flags.
+- 156 currencies — the ISO-4217 fiat set. State the number; don't list codes,
+  and don't render a row of flags. The flags belong in the app's own picker,
+  where each one labels a row the reader can tap.
 - Daily exchange rates. Everything re-denominates into your home currency, so a
   mix of dollar and hryvnia subscriptions still adds to one honest total.
 
@@ -114,14 +125,20 @@ Exhaustive. Do not invent features.
 - Search, filter by status, sort by next payment / name / cost.
 - Categories with a spend breakdown.
 - Real service logos on the rows.
-- Works offline against cached data; refreshes silently on return.
+- Works offline; there is nothing to be online for.
+- iCloud Sync, off by default, free: a switch in Settings → Data that copies the
+  store document to the user's own iCloud so a second device sees the same list.
+  Apple's transport, not a SubEye server, and still no account.
+- Home Screen widgets. Pro.
 - English and Ukrainian, following the phone's language.
-- Delete your account and everything in it goes, for real.
+- Erase all data wipes the device — and the iCloud copy, when sync is on.
 
 ### Never imply these
 
 No bank linking. No email scanning. No "we'll cancel it for you." No shared or
-family plans. No widgets. No web app. No CSV export yet. No ads. No data sale.
+family plans. No SubEye account, ever — iCloud Sync rides the user's own Apple
+Account and is never described as signing in. No web app. No CSV export yet. No
+ads. No data sale.
 **No Android — do not mention it at all**, not in copy, not in an FAQ, not as a
 greyed-out badge. The product is an iPhone app. Raising the platform question
 only invites it.
@@ -138,8 +155,9 @@ asset on the page after the bank line.
 **Free** — Unlimited subscriptions. The full dashboard. Search, filters, every
 lifecycle action. Multi-currency at daily rates. Not a trial, not a teaser.
 
-**Pro — $11.99 once** — Renewal reminders. Trial-ending and price-change
-tracking. Categories and the spend breakdown. Export.
+**Pro — $11.99 once** — Control over when reminders land. Trial-ending
+reminders. The price history on each subscription. Categories, the category
+filter and the spend breakdown. Home Screen widgets.
 
 Two things have to land:
 
@@ -173,10 +191,14 @@ must resolve, with trailing slashes, exactly:
 ```
 
 **Every locale is prefixed, English included** — not the bare root. This changed
-in commit `769852a`; `apps/mobile/src/shared/config/legal-url.ts` builds
-`${SITE}/${locale}/${page}/` and `legal-url.test.ts` pins all four strings.
-Proposing a different scheme means a code change and a new App Store build — so
-say so loudly if you do.
+in commit `769852a`; `apps/landing/test/routes.test.ts` pins all four strings.
+The scheme is App Store Connect metadata a reviewer follows, so proposing a
+different one still means new store metadata — say so loudly if you do.
+
+**Superseded 2026-08-25:** the pages no longer own their own copy. Both
+documents live in `@subeye/legal` and are rendered by `LegalBody.astro`, which
+is also what the app renders in its legal sheet. Design the page; edit the words
+in the package or the two surfaces drift.
 
 The legal pages open from inside a dark app, so they should feel like the same
 product: readable measure, real hierarchy, same palette. Not a document dump.
@@ -301,8 +323,8 @@ Use the app's real copy:
 
 - Home: **"LEFT THIS MONTH"** · a large amount · a thin progress bar · "Day 18
   of 31" · "Next month · $284"
-- Sections: "Monthly spend / Last six months" · "Most expensive" · "Resuming
-  soon"
+- Sections: "Next month" with an up/down delta chip · "Next 12 months" ·
+  "Upcoming" · "Where it goes"
 - Rows: circular service logo, name, amount, next payment date
 - Status words: Active · Paused · Cancelling · Cancelled
 - Detail: "Current price" · "Next payment" · "Price history"
@@ -323,8 +345,8 @@ The app has one and it's good. Plain, specific, no filler, sentence case, active
 Calibration, from the product:
 
 > "Left this month" · "Could not load your numbers." · "Keep subscription" ·
-> "A reminder the day before a subscription renews." · "Your account and every
-> subscription in it are removed. This cannot be undone."
+> "A reminder the day before a subscription renews." · "Every subscription,
+> reminder and setting is removed from this device. This cannot be undone."
 
 It never apologises, never says "oops," never sells. Headlines say what happens.
 **"See the price change before it hits you"** is the register. "Take control of
@@ -357,11 +379,13 @@ I have it.
 4. **What it does** — three blocks, each with one legible screen or component:
    see the money · manage the lifecycle · mixed currencies, one total.
 5. **Pricing** — two columns, one payment, priced for where you live.
-6. **Email capture**, with the first-100 incentive.
-7. **FAQ** — exactly three: *Why do I have to type everything in?* (because the
-   alternative is your bank password) · *Is my data safe?* (what's stored,
-   where, and that deletion is real) · *Do I need an account?* (yes — so your
-   subscriptions survive a lost phone).
+6. **Closing card.** There is no email capture and no waiting list — the page
+   ships with zero client JavaScript and nothing to POST to.
+7. **FAQ** — *Why do I have to type everything in?* (because the alternative is
+   your bank password) · *Is my data safe?* (what's stored, where, that iCloud
+   Sync is the one opt-in exception, and that deletion is real) · *Do I need an
+   account?* (**no** — not a SubEye one; iCloud Sync uses the Apple Account the
+   phone is already signed in to) · *What happens when a price changes?*
 8. **Footer** — Terms, Privacy, contact, language switch, © SubEye.
 
 **Show me two hero directions:** (a) the timeline *is* the hero, page opens on
@@ -377,19 +401,11 @@ second email field.
 
 ## Email form
 
-Design a native form. **Do not design around an embedded provider widget.**
-
-Assume a POST to one configurable endpoint, JSON `{ email, locale }`, responding
-200 / 409 (already subscribed) / 422 / 429. The provider is undecided, so the
-design must not depend on its markup.
-
-Design all four states: empty, submitting, success, error. **The success state
-is the highest-value moment on the page** — the only point where someone has
-committed to anything — so treat it as a designed state, not a swapped label.
-
-The form needs a real GDPR consent affordance. SubEye serves the EU and Ukraine
-and the page's whole argument is privacy — a pre-ticked box or consent buried
-underneath would contradict it. Design the consent line as part of the form.
+**Cut, and not coming back.** The page was specced with a waiting-list form; it
+shipped without one, and the zero-client-JS budget is now a stated constraint of
+the build, so there is nothing to POST from. The closing card says the app will
+simply be there. Do not re-introduce a form here without also re-arguing that
+budget — see `apps/landing/CLAUDE.md`.
 
 ---
 

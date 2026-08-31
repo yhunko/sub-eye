@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
@@ -152,7 +152,7 @@ export function SubscriptionsPage() {
   );
 
   const openForm = useCallback(
-    () => router.push("/subscriptions/form"),
+    () => router.push("/subscription-form"),
     [router],
   );
 
@@ -292,9 +292,13 @@ export function SubscriptionsPage() {
 
   return (
     <>
+      {/* Only what depends on this screen's own state. The title and the search
+          field are on the layout's <Stack.Screen>, because options set from
+          inside a screen component are re-pushed through `setOptions` on every
+          focus change and every re-render — the filter menu has to be, the
+          search field never did. */}
       <Stack.Screen
         options={{
-          title: m.subscriptions_title(),
           // Native UIBarButtonItems, not custom subviews: iOS 26 gives each item
           // its own glass capsule, `prominent` is UIKit's own filled style, and a
           // `menu` item carries a real UIMenu instead of an action sheet. expo-
@@ -361,32 +365,6 @@ export function SubscriptionsPage() {
               />
             </Pressable>
           ),
-          // `stacked` + `hideWhenScrolling: false` — a field pinned below the
-          // nav bar that never leaves. `automatic` let UIKit pick, and what it
-          // picked was a field that retracts on the first scroll: on a list long
-          // enough to want searching, the control is off-screen exactly when it
-          // is wanted, and getting it back means scrolling to the top first.
-          //
-          // NOT the iOS 26 bottom-of-screen search: that is a tab-bar feature
-          // (`UITab.role = .search`), and expo-router's `NativeTabs.Trigger`
-          // `role` maps to the legacy `UITabBarItem.systemItem` instead — a
-          // normal tab with a magnifying-glass icon. Reaching the real one means
-          // adding a fourth Search tab, which is a screen, not a config change.
-          //
-          // Styling stays minimal so the native control owns its appearance — a
-          // custom barTintColor is what renders the glyph black on the dark
-          // field. onChangeText writes straight to the filter store; no debounce
-          // is needed because nothing fetches.
-          headerSearchBarOptions: {
-            placement: "stacked",
-            hideWhenScrolling: false,
-            placeholder: m.subs_searchPlaceholder(),
-            autoCapitalize: "none",
-            tintColor: colors.accent,
-            textColor: colors.text,
-            onChangeText: (event) =>
-              subscriptionFilters.set({ search: event.nativeEvent.text }),
-          },
         }}
       />
       <SectionList<SubscriptionDto, SubscriptionSection>
@@ -398,14 +376,21 @@ export function SubscriptionsPage() {
         // `integratedButton` ignores hideWhenScrolling. This placement honours
         // it, and what it is set to is `false` — the field stays put.
         onScrollBeginDrag={closeOpenRow}
-        // ponytail: no getItemLayout. Rows are a fixed ROW_HEIGHT, so
-        // VirtualizedList's own length estimate is exact after the first cell.
+        // ponytail: no getItemLayout. A row is ROW_HEIGHT at every text size a
+        // row's content fits inside, which is all of the normal ones, so
+        // VirtualizedList's own length estimate is exact after the first cell —
+        // and at the accessibility sizes an approximate scrollbar is the right
+        // price for text that is not capped.
         //
         // Headings do NOT stick. They are borderless text on the page
         // background, so a pinned one would have rows sliding visibly through
         // its letters — sticking needs a solid or blurred bar behind it, which
         // is chrome this list does not otherwise have.
         stickySectionHeadersEnabled={false}
+        // `grow` ONLY when there is nothing to show, so the empty state can
+        // centre itself. Never unconditionally: a floor under a list shorter
+        // than the screen is scrollable into blank space, which is what a
+        // `flexGrow: 1` here did to a full list.
         contentContainerStyle={[styles.list, !sections.length && styles.grow]}
         ListEmptyComponent={
           <View style={styles.emptyBox}>

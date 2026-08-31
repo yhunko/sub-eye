@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { CATEGORY_EMOJIS } from "@subeye/shared";
+import { CATEGORY_EMOJIS } from "@subeye/model";
 import { pickCategoryEmoji } from "./pick-emoji";
 
 describe("pickCategoryEmoji", () => {

@@ -1,10 +1,14 @@
 import { describe, expect, it } from "bun:test";
+import { getLegalDoc, type Inline } from "@subeye/legal";
 // Reaching into apps/mobile deliberately, and only from a test: that module
-// imports nothing at all, and its five codes are the claim this page makes out
-// loud. A sixth currency in the app should fail here, not ship a page that says
-// "five currencies" while the product supports six.
+// imports nothing at all, and its catalogue is the claim this page makes out
+// loud. The page names a COUNT now rather than five codes, so a currency added
+// or dropped in the app should fail here rather than ship a page that says 156
+// while the product ships something else.
 import { CURRENCY_CODES } from "../../mobile/src/shared/lib/format/money";
-import { currencyMockup, supportedCurrencies } from "../src/lib/currencies";
+import { en } from "../src/i18n/en";
+import { uk } from "../src/i18n/uk";
+import { currencyMockup } from "../src/lib/currencies";
 import { money } from "../src/lib/format";
 import { proPrice } from "../src/lib/site";
 import { priceTimeline } from "../src/lib/timeline";
@@ -59,9 +63,30 @@ describe("currency mockup", () => {
     expect(uk.total).toBeCloseTo(1416.58, 2);
   });
 
-  it("claims exactly the currencies the app ships", () => {
-    const claimed: string[] = [...supportedCurrencies];
-    expect(claimed.sort()).toEqual([...CURRENCY_CODES].sort());
+  // The page prints five symbols of its own rather than importing the app's
+  // catalogue — but a code it prints that the app cannot hold would be a mockup
+  // of something that does not exist.
+  it("only prints currencies the app ships", () => {
+    const printed = new Set([
+      currencyMockup("en").homeCurrency,
+      currencyMockup("uk").homeCurrency,
+      ...currencyMockup("en").rows.map((row) => row.currency),
+      ...Object.keys(proPrice),
+    ]);
+
+    for (const code of printed) expect(CURRENCY_CODES).toContain(code);
+  });
+});
+
+// "the page cannot lie about the product" is the whole reason this workspace has
+// tests at all. Both locales name the size of the catalogue in prose, and prose
+// is exactly what nothing else would catch drifting.
+describe("the currency claim", () => {
+  it("names the number of currencies the app actually ships", () => {
+    const count = String(CURRENCY_CODES.length);
+
+    expect(en.does.currency.body).toContain(count);
+    expect(uk.does.currency.body).toContain(count);
   });
 });
 
@@ -73,5 +98,32 @@ describe("pro price", () => {
     expect(money(proPrice.eur, "eur")).toBe("€9.99");
     // Trailing symbol, non-breaking space — see the note in src/lib/format.ts.
     expect(money(proPrice.uah, "uah", 0)).toBe("199\u00a0₴");
+  });
+
+  // `@subeye/legal` may not import this file — a package importing an app is a
+  // boundary error — so the terms quote the price as a formatted literal, and
+  // this is what stops the two drifting. A price change that misses the terms
+  // leaves a document the user agreed to quoting the old number, which is why
+  // it has to fail here rather than anywhere later.
+  it("is quoted by the terms of service, in both languages", () => {
+    const plain = (run: Inline) =>
+      typeof run === "string"
+        ? run
+        : "code" in run
+          ? run.code
+          : "b" in run
+            ? run.b
+            : "";
+
+    for (const locale of ["en", "uk"]) {
+      const prose = getLegalDoc("terms-of-service", locale)
+        .sections.flatMap((section) => section.blocks)
+        .flatMap((block) => ("p" in block ? block.p : []))
+        .map(plain)
+        .join("");
+
+      expect(prose).toContain(money(proPrice.usd, "usd"));
+      expect(prose).toContain(money(proPrice.uah, "uah", 0));
+    }
   });
 });

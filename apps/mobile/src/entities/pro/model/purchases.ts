@@ -1,5 +1,4 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import Purchases, {
   type CustomerInfo,
   PURCHASES_ERROR_CODE,
@@ -64,10 +63,10 @@ function apply(customerInfo: CustomerInfo | null): void {
   emit();
 }
 
-// CONFIGURE ANONYMOUSLY, ALIAS THE CLERK ID IN LATER (`useProIdentity`).
-// Passing the Clerk id straight to `configure` cannot work — module scope runs
-// before Clerk has a session — and it would strand a purchase made before
-// sign-in on an anonymous customer nobody ever looks at again.
+// CONFIGURE ANONYMOUSLY. There is no account to alias the customer onto, so the
+// entitlement lives on the Apple Account: a non-consumable restores through it,
+// which is what `restorePro` has always actually used. The cost is that a
+// granted entitlement has no findable id in the RevenueCat dashboard.
 try {
   Purchases.configure({ apiKey: env.REVENUECAT_IOS_KEY, appUserID: null });
   Purchases.addCustomerInfoUpdateListener(apply);
@@ -92,35 +91,14 @@ export function usePro(): boolean {
   return useSyncExternalStore(subscribe, currentPro);
 }
 
-/**
- * Renders nothing; keeps RevenueCat's app user id equal to the Clerk user id.
- *
- * That identity is what makes a granted entitlement findable in the dashboard
- * and what joins a purchase to the server's PostHog `distinct_id`.
- */
-export function useProIdentity(): void {
-  const { isSignedIn, userId } = useAuth();
-
-  useEffect(() => {
-    if (userId) {
-      void Purchases.logIn(userId)
-        .then((result) => apply(result.customerInfo))
-        .catch(() => {
-          // Offline. The alias is retried on the next auth change or launch.
-        });
-      return;
-    }
-
-    // Explicitly false, not merely falsy: before Clerk resolves, `isSignedIn` is
-    // undefined and logging out then would discard a real customer.
-    if (isSignedIn === false) {
-      void Purchases.logOut()
-        .then(apply)
-        .catch(() => {
-          // Already anonymous — logOut throws on that, and it is not an error.
-        });
-    }
-  }, [isSignedIn, userId]);
+// Dev-only, and a GLOBAL rather than an exported const so that nothing at all is
+// left behind: the whole `__DEV__` branch below folds away in a release bundle,
+// and with no exported binding there is not even a `{}` to ship. `declare
+// global` is types-only. Written by `@/widgets/developer-page`, read here.
+declare global {
+  // `var`, not `let`: only a `var` declaration becomes a property of
+  // `globalThis` in TypeScript's model, which is how the writer reaches it.
+  var __devPaywall: "loading" | "empty" | undefined;
 }
 
 /**
@@ -131,6 +109,19 @@ export function useProIdentity(): void {
  * Metadata", rather than anything in this file.
  */
 export async function fetchProPackage(): Promise<PurchasesPackage | null> {
+  // Metro inlines `__DEV__` and the minifier drops the branch, so neither the
+  // scenarios nor the global survive into a release bundle.
+  if (__DEV__ && globalThis.__devPaywall) {
+    const scenario = globalThis.__devPaywall;
+    // ONE-SHOT. The paywall opened right after a dev scenario shows that state
+    // and every later open talks to the real store again — so there is no stale
+    // override to reset, and no reset button to forget to press.
+    globalThis.__devPaywall = undefined;
+    // A promise that never settles leaves the paywall's own spinner up; there
+    // is no "loading" flag to fake.
+    if (scenario === "loading") return new Promise(() => {});
+    return null;
+  }
   const { current } = await Purchases.getOfferings();
   if (!current) return null;
   // `lifetime` is the configured package type; the first available package

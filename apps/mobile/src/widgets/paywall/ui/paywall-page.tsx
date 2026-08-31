@@ -1,11 +1,9 @@
 import { Stack, useRouter } from "expo-router";
-import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,52 +11,19 @@ import {
   View,
 } from "react-native";
 import type { PurchasesPackage } from "react-native-purchases";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   fetchProPackage,
   purchasePro,
   restorePro,
   usePro,
 } from "@/entities/pro";
-import { privacyUrl, termsUrl } from "@/shared/config/legal";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { nativeHeaderChrome } from "@/shared/ui/header";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
-
-// Message-function references, invoked at render — never m.*() at module scope.
-const FEATURES: {
-  ios: SFSymbol;
-  android: AndroidSymbol;
-  title: () => string;
-  body: () => string;
-}[] = [
-  {
-    ios: "bell.badge",
-    android: "notifications_active",
-    title: m.paywall_featureReminders,
-    body: m.paywall_featureRemindersBody,
-  },
-  {
-    ios: "tag",
-    android: "sell",
-    title: m.paywall_featurePricing,
-    body: m.paywall_featurePricingBody,
-  },
-  {
-    ios: "chart.pie",
-    android: "pie_chart",
-    title: m.paywall_featureCategories,
-    body: m.paywall_featureCategoriesBody,
-  },
-  // The widget's own lock card is the surface that deep-links here, so the
-  // screen it lands on has to name it. Same strings that card renders.
-  {
-    ios: "square.grid.2x2",
-    android: "widgets",
-    title: m.paywall_lockWidgets,
-    body: m.paywall_lockWidgetsBody,
-  },
-];
+import { colors } from "@/shared/ui/theme";
+import { useLargeText } from "@/shared/ui/use-large-text";
+import { FeatureRail } from "./feature-rail";
 
 /**
  * The one purchase: SubEye Pro, non-consumable, bought once.
@@ -71,6 +36,11 @@ const FEATURES: {
 export function PaywallPage() {
   const router = useRouter();
   const isPro = usePro();
+  const insets = useSafeAreaInsets();
+  // Past the accessibility sizes the purchase block alone is taller than the
+  // screen, so pinning it puts Restore and the legal links where nothing can
+  // reach them. There it goes back into the scroller with everything else.
+  const stacked = useLargeText();
   const [pkg, setPkg] = useState<PurchasesPackage | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -132,6 +102,66 @@ export function PaywallPage() {
     }
   };
 
+  // Rendered either pinned under the scroller or inside it — see `stacked`.
+  const purchase = (
+    <>
+      {/* Not a sixth page, and pinned WITH the price rather than left at the
+            end of the pitch: it is the reason this is a one-time purchase
+            rather than a subscription, so it only does its job while the
+            figure it qualifies is on screen beside it. */}
+      <Text style={styles.support}>{m.paywall_featureSupportBody()}</Text>
+
+      {isPro ? (
+        <Text style={styles.owned}>{m.paywall_owned()}</Text>
+      ) : loading ? (
+        <ActivityIndicator color={colors.accent} style={styles.spinner} />
+      ) : pkg ? (
+        <>
+          <Button
+            label={m.paywall_buy({ price: pkg.product.priceString })}
+            busy={busy}
+            onPress={() => void buy()}
+          />
+          <Text style={styles.footnote}>{m.paywall_oneTime()}</Text>
+        </>
+      ) : (
+        <Text style={styles.footnote}>{m.paywall_unavailable()}</Text>
+      )}
+
+      {/* Mandatory (Guideline 3.1.1), and it stays reachable even while the
+          offering is still loading — a reviewer who cannot find Restore
+          rejects the build. Settings carries the same action. */}
+      <Button
+        label={m.paywall_restore()}
+        variant="plain"
+        disabled={busy}
+        onPress={() => void restore()}
+      />
+
+      {/* A column at the accessibility sizes: side by side these two run off
+          BOTH edges — there is no wrap in a row — and a clipped Privacy policy
+          link is the one thing on this screen a reviewer is guaranteed to
+          look for. The middle dot goes with the row it separated. */}
+      <View style={[styles.legal, stacked && styles.legalStacked]}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/legal/terms-of-service")}
+          hitSlop={8}
+        >
+          <Text style={styles.legalLink}>{m.settings_terms()}</Text>
+        </Pressable>
+        {stacked ? null : <Text style={styles.legalDot}>·</Text>}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/legal/privacy-policy")}
+          hitSlop={8}
+        >
+          <Text style={styles.legalLink}>{m.settings_privacy()}</Text>
+        </Pressable>
+      </View>
+    </>
+  );
+
   return (
     <>
       <Stack.Screen
@@ -155,87 +185,49 @@ export function PaywallPage() {
           ),
         }}
       />
-      <ScrollView
-        style={styles.screen}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-      >
-        <Text style={styles.headline}>{m.paywall_subtitle()}</Text>
+      <View style={styles.screen}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={[
+            styles.content,
+            stacked && { paddingBottom: insets.bottom + 24 },
+          ]}
+        >
+          <Text style={styles.headline}>{m.paywall_subtitle()}</Text>
 
-        <View style={styles.features}>
-          {FEATURES.map((feature) => (
-            <View key={feature.ios} style={styles.feature}>
-              <SymbolView
-                name={{ ios: feature.ios, android: feature.android }}
-                size={20}
-                tintColor={colors.accent}
-                style={styles.featureIcon}
-              />
-              <View style={styles.featureText}>
-                <Text
-                  style={styles.featureTitle}
-                  maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-                >
-                  {feature.title()}
-                </Text>
-                <Text style={styles.featureBody}>{feature.body()}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+          <FeatureRail />
 
-        {isPro ? (
-          <Text style={styles.owned}>{m.paywall_owned()}</Text>
-        ) : loading ? (
-          <ActivityIndicator color={colors.accent} style={styles.spinner} />
-        ) : pkg ? (
-          <>
-            <Button
-              label={m.paywall_buy({ price: pkg.product.priceString })}
-              busy={busy}
-              onPress={() => void buy()}
-            />
-            <Text style={styles.footnote}>{m.paywall_oneTime()}</Text>
-          </>
-        ) : (
-          <Text style={styles.footnote}>{m.paywall_unavailable()}</Text>
+          {stacked ? purchase : null}
+        </ScrollView>
+
+        {stacked ? null : (
+          <View
+            style={[
+              styles.footer,
+              { paddingBottom: Math.max(insets.bottom, 14) },
+            ]}
+          >
+            {purchase}
+          </View>
         )}
-
-        {/* Mandatory (Guideline 3.1.1), and it stays reachable even while the
-            offering is still loading — a reviewer who cannot find Restore
-            rejects the build. Settings carries the same action. */}
-        <Button
-          label={m.paywall_restore()}
-          variant="plain"
-          disabled={busy}
-          onPress={() => void restore()}
-        />
-
-        <View style={styles.legal}>
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(termsUrl())}
-            hitSlop={8}
-          >
-            <Text style={styles.legalLink}>{m.settings_terms()}</Text>
-          </Pressable>
-          <Text style={styles.legalDot}>·</Text>
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(privacyUrl())}
-            hitSlop={8}
-          >
-            <Text style={styles.legalLink}>{m.settings_privacy()}</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, paddingBottom: 40, gap: 16 },
+  // The pitch scrolls, the footer does not. At the default text size there is
+  // nothing to scroll and the whole screen is one view; at the accessibility
+  // sizes this is what gives, rather than the text being capped — which is the
+  // thing that fails Apple's Larger Text criterion.
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 16,
+    gap: 14,
+  },
+  footer: { paddingHorizontal: 20, paddingTop: 6, gap: 12 },
 
   headline: {
     fontSize: 24,
@@ -244,19 +236,13 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  features: {
-    gap: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    padding: 18,
+  support: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.muted,
+    textAlign: "center",
+    paddingHorizontal: 4,
   },
-  feature: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
-  featureIcon: { marginTop: 1 },
-  featureText: { flex: 1, minWidth: 0, gap: 3 },
-  featureTitle: { fontSize: 16, fontWeight: "600", color: colors.text },
-  featureBody: { fontSize: 13.5, lineHeight: 19, color: colors.muted },
 
   spinner: { paddingVertical: 14 },
   owned: {
@@ -274,6 +260,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  legalLink: { fontSize: 13, color: colors.muted },
+  legalStacked: { flexDirection: "column", gap: 12 },
+  legalLink: { fontSize: 13, color: colors.muted, textAlign: "center" },
   legalDot: { fontSize: 13, color: colors.muted },
 });

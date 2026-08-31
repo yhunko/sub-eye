@@ -1,14 +1,14 @@
 /**
  * Architecture boundary enforcement. Run with `bun run check:boundaries`.
  *
- * Encodes four invariants:
+ * Encodes three invariants:
  *  1. Packages never depend on apps.
  *  2. Mobile Feature-Sliced Design layering: app → widgets → entities → shared
  *     (a layer may only import from lower layers). There is no `features`
  *     layer — seven screens do not justify one.
- *  3. Server layering: repositories are leaves (never import services).
- *  4. Mobile reaches the server ONLY through the typed RPC client at
- *     `@subeye/server/client` — never a deep import into apps/server/src.
+ *  3. Package layering: legal/time/money/model are leaves, lifecycle/pricing/
+ *     spend/reminders derive from them and never from each other's tier peers
+ *     where forbidden, and store sits on top alone.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -17,18 +17,55 @@ module.exports = {
     {
       name: "no-package-to-app",
       comment:
-        "packages/* are environment-agnostic contracts or infrastructure adapters. They must never import an application (apps/*) — including the server db, domains, or routes. Dependencies flow apps → packages, never the reverse.",
+        "packages/* are environment-agnostic contracts or infrastructure adapters. They must never import an application (apps/*). Dependencies flow apps → packages, never the reverse.",
       severity: "error",
       from: { path: "^packages/" },
       to: { path: "^apps/" },
     },
+    // --- package layering
+    //
+    // Like the mobile FSD rules below, these match the ALIAS STRING
+    // (`@subeye/…`): the root tsconfig declares no `paths`, so the specifier
+    // stays unresolved and dependency-cruiser keeps it raw in `resolved`.
     {
-      name: "mobile-server-only-via-client",
+      name: "legal-is-a-leaf",
       comment:
-        "apps/mobile reaches the server ONLY through the typed RPC client at '@subeye/server/client' (a types-only build under apps/server/dist). Deep imports into apps/server/src are forbidden — they drag server internals into the app and bypass the RPC contract.",
+        "@subeye/legal is published prose — the two documents both clients render — and imports nothing at all. An edge out of it means product logic is being computed into text that a user has agreed to, which is how a policy starts describing a build rather than a promise.",
       severity: "error",
-      from: { path: "^apps/mobile/" },
-      to: { path: "^apps/server/src/" },
+      from: { path: "^packages/legal/" },
+      to: { path: "^@subeye/" },
+    },
+    {
+      name: "package-layering",
+      comment:
+        "Package layering: time/money/model are leaves; lifecycle/pricing/spend/reminders derive from them; store sits on top and is the only package allowed IO (through injected ports). An edge in the other direction means the concern is in the wrong package.",
+      severity: "error",
+      from: { path: "^packages/(time|money|model)/" },
+      to: { path: "^@subeye/(lifecycle|pricing|spend|reminders|store)(/|$)" },
+    },
+    {
+      name: "no-derived-to-store",
+      comment:
+        "Pure derivation packages must not depend on @subeye/store. store composes them, never the reverse.",
+      severity: "error",
+      from: { path: "^packages/(lifecycle|pricing|spend|reminders)/" },
+      to: { path: "^@subeye/store(/|$)" },
+    },
+    {
+      name: "no-pricing-to-spend",
+      comment:
+        "pricing must not import spend. The edge existed only because phaseScheduling reached for calculatePaymentDates; that is recurrence and lives in @subeye/time.",
+      severity: "error",
+      from: { path: "^packages/pricing/" },
+      to: { path: "^@subeye/spend(/|$)" },
+    },
+    {
+      name: "no-spend-to-pricing",
+      comment:
+        "spend must not import pricing. They are siblings: store composes both, neither composes the other.",
+      severity: "error",
+      from: { path: "^packages/spend/" },
+      to: { path: "^@subeye/pricing(/|$)" },
     },
     // --- apps/mobile FSD: app → widgets → entities → shared (NO features layer)
     //
@@ -70,14 +107,6 @@ module.exports = {
       to: { path: "^(@/features/|apps/mobile/src/features/)" },
     },
     {
-      name: "server-repository-is-leaf",
-      comment:
-        "Server layering: repositories own DB access and must not depend on services (Route → Service → Repository).",
-      severity: "error",
-      from: { path: "Repository\\.ts$" },
-      to: { path: "Service\\.ts$" },
-    },
-    {
       name: "no-circular",
       comment: "Circular dependencies are forbidden.",
       severity: "warn",
@@ -87,6 +116,10 @@ module.exports = {
   ],
   options: {
     tsConfig: { fileName: "tsconfig.json" },
+    // Without this, `import type` is erased before the graph is built and every
+    // rule below silently ignores it — and with `verbatimModuleSyntax` on, most
+    // cross-package and cross-layer edges in this repo ARE type-only.
+    tsPreCompilationDeps: true,
     exclude: {
       path: "(^node_modules)|(/dist/)|(/coverage/)",
     },

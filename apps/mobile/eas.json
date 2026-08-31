@@ -6,11 +6,13 @@
   },
   "build": {
     "development": {
+      "env": { "SUBEYE_BETA_VERSION": "4.0.0" },
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development"
     },
     "preview": {
+      "env": { "SUBEYE_BETA_VERSION": "4.0.0" },
       "distribution": "internal",
       "environment": "preview",
       "autoIncrement": true

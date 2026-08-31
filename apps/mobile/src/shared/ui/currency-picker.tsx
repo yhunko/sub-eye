@@ -1,50 +1,47 @@
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { m } from "@/shared/i18n";
-import { CURRENCY_CODES, currencyLabel } from "@/shared/lib/format";
-import { presentChoice } from "./present-choice";
+import { currencyLabel } from "@/shared/lib/format";
 import { colors } from "./theme";
+import { useLargeText } from "./use-large-text";
 
 /**
- * The five supported currencies, chosen from the OS's own sheet — the same
- * `presentChoice` the Settings currency row uses, so both surfaces read from one
- * list and neither ships a scroll wheel or a bundled picker library.
+ * The price field's currency, as a trailing accessory rather than a second
+ * labelled row — the way a native amount field carries its unit, so the two
+ * share one label and one row. Deliberately NOT wrapped in a `Field`.
  *
- * It replaces a free TextField, which let autocorrect turn "usd" into "used" and
- * accepted any three letters the money formatter cannot render.
+ * It only opens the picker; `onPress` is passed in because a screen owns where
+ * that goes, and `shared/` must not know a route. What it opens used to be an
+ * `ActionSheetIOS` over five hard-coded codes — see `widgets/currency-page`.
  *
- * Deliberately NOT wrapped in a `Field`: it sits inside the price input as a
- * trailing accessory, the way a native amount field carries its unit, so the two
- * share one label and one row.
+ * It replaces a free TextField, which let autocorrect turn "usd" into "used"
+ * and accepted any three letters the money formatter cannot render.
  */
 export function CurrencyPicker({
   value,
-  onChange,
+  onPress,
 }: {
   value: string;
-  onChange: (currencyCode: string) => void;
+  onPress: () => void;
 }) {
-  const label = m.form_currency();
+  // The price box turns into a column at the accessibility sizes, so the edge
+  // that separates the two controls has to turn with it.
+  const stacked = useLargeText();
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${currencyLabel(value)}`}
-      onPress={() =>
-        presentChoice(
-          label,
-          currencyLabel(value),
-          CURRENCY_CODES.map((code) => ({
-            label: currencyLabel(code),
-            onPress: () => onChange(code),
-          })),
-        )
-      }
-      style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
+      accessibilityLabel={`${m.form_currency()}, ${currencyLabel(value)}`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.trigger,
+        stacked && styles.triggerStacked,
+        pressed && styles.pressed,
+      ]}
     >
       <Text style={styles.value}>{currencyLabel(value)}</Text>
       <SymbolView
-        name={{ ios: "chevron.up.chevron.down", android: "unfold_more" }}
+        name={{ ios: "chevron.right", android: "chevron_right" }}
         size={13}
         tintColor={colors.muted}
         weight="semibold"
@@ -64,6 +61,12 @@ const styles = StyleSheet.create({
     // as text that happens to sit at the end of the amount.
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: colors.border,
+  },
+  triggerStacked: {
+    borderLeftWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingVertical: 12,
   },
   pressed: { backgroundColor: colors.surfaceAlt },
   value: { fontSize: 16, color: colors.text },

@@ -1,0 +1,14 @@
+{
+  "name": "@subeye/legal",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "test": "bun test ./test",
+    "type-check": "tsc --noEmit --pretty"
+  }
+}

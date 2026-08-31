@@ -3,7 +3,7 @@ import {
   type CategoryDto,
   type SubscriptionDto,
   SubscriptionPeriod,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { AnalyticsCalculator } from "../src/analyticsCalculator";
 
 function createSubscription({
@@ -21,7 +21,6 @@ function createSubscription({
 }): SubscriptionDto {
   return {
     id,
-    userId: "user_1",
     name,
     cost: monthly,
     currency: "usd",
@@ -48,6 +47,13 @@ function createSubscription({
     lastPaymentDate: null,
     willBeCancelledAt: null,
     scheduledPriceChange: null,
+    pricePhases: [],
+    effectivePhaseKind: "standard",
+    upcomingPhase: null,
+    pausedAt: null,
+    resumeAt: null,
+    allowedActions: [],
+    category: null,
     status: "active",
   };
 }

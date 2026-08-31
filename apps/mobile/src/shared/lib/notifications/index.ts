@@ -1,21 +1,21 @@
-import * as Notifications from "expo-notifications";
-import { useEffect, useRef } from "react";
-import { Platform } from "react-native";
-import { m } from "@/shared/i18n";
 import {
+  effectiveSettings,
   planReminders,
   REMINDER_BUDGET,
   type ReminderInput,
   type ReminderKind,
+  type ReminderSchedule,
+  type ReminderSettings,
   type ReminderTarget,
-} from "./plan";
-import {
-  effectiveSettings,
-  type NotificationSettings,
-  readNotificationSettings,
-} from "./settings";
+} from "@subeye/reminders";
+import * as Notifications from "expo-notifications";
+import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
+import { m } from "@/shared/i18n";
+import { reminderCopy } from "./copy";
+import { readNotificationSettings } from "./settings";
 import { createSettleBarrier } from "./settle-barrier";
-import { triggerTime } from "./trigger-time";
+import { repeatsForever, triggerTime } from "./trigger-time";
 
 /**
  * Reminders, scheduled **entirely on the device**. No push tokens, no APNs/FCM,
@@ -29,21 +29,24 @@ import { triggerTime } from "./trigger-time";
  * the list or with the settings.
  */
 
-export type { ReminderInput, ReminderTarget } from "./plan";
 export {
-  DEFAULT_NOTIFICATION_SETTINGS,
+  DEFAULT_REMINDER_SETTINGS,
   effectiveSettings,
   FREE_LEAD_DAYS,
   LEAD_DAY_CHOICES,
-  type NotificationSettings,
-  readNotificationSettings,
+  type ReminderInput,
+  type ReminderSettings,
+  type ReminderTarget,
   toggleLeadDay,
+} from "@subeye/reminders";
+export {
+  readNotificationSettings,
   writeNotificationSettings,
 } from "./settings";
 
 /** The stored settings with the Pro gate already applied, for callers that
  * only hold `isPro` and have no reason to touch storage themselves. */
-export const readEffectiveSettings = (isPro: boolean): NotificationSettings =>
+export const readEffectiveSettings = (isPro: boolean): ReminderSettings =>
   effectiveSettings(readNotificationSettings(), isPro);
 
 /**
@@ -79,6 +82,63 @@ async function ensureChannels(): Promise<void> {
     name: m.notifs_trialReminders(),
     importance: Notifications.AndroidImportance.DEFAULT,
   });
+}
+
+/**
+ * The OS trigger for a planned schedule: a one-shot instant, or a recurrence the
+ * OS re-fires forever without the app ever being opened again.
+ *
+ * Every component passes through UNCHANGED. `RepeatRule` is already expressed in
+ * expo's own ranges — `weekday` 1–7 from Sunday, `day` 1-based, `month` 0-based
+ * — so a conversion here would be an off-by-one, not a fix.
+ */
+function triggerFor(
+  schedule: ReminderSchedule,
+  channelId: string,
+): Notifications.NotificationTriggerInput {
+  if (!schedule.repeats) {
+    return {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: schedule.fireAt,
+      channelId,
+    };
+  }
+
+  const { rule } = schedule;
+  switch (rule.unit) {
+    case "daily":
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: rule.hour,
+        minute: rule.minute,
+        channelId,
+      };
+    case "weekly":
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: rule.weekday,
+        hour: rule.hour,
+        minute: rule.minute,
+        channelId,
+      };
+    case "monthly":
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.MONTHLY,
+        day: rule.day,
+        hour: rule.hour,
+        minute: rule.minute,
+        channelId,
+      };
+    case "yearly":
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.YEARLY,
+        month: rule.month,
+        day: rule.day,
+        hour: rule.hour,
+        minute: rule.minute,
+        channelId,
+      };
+  }
 }
 
 /**
@@ -130,14 +190,14 @@ export async function ensureNotificationPermission(): Promise<boolean> {
  */
 export function syncReminders(
   subscriptions: readonly ReminderInput[],
-  settings: NotificationSettings,
+  settings: ReminderSettings,
 ): Promise<void> {
   return syncBarrier.track(rebuild(subscriptions, settings));
 }
 
 async function rebuild(
   subscriptions: readonly ReminderInput[],
-  settings: NotificationSettings,
+  settings: ReminderSettings,
 ): Promise<void> {
   const generation = ++syncGeneration;
   const current = () => generation === syncGeneration;
@@ -161,6 +221,7 @@ async function rebuild(
     subscriptions,
     settings,
     new Date(),
+    reminderCopy,
     REMINDER_BUDGET + 1,
   );
   planTruncated = plan.length > REMINDER_BUDGET;
@@ -179,11 +240,7 @@ async function rebuild(
         body: reminder.body,
         data: { target: reminder.target },
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: reminder.fireAt,
-        channelId: CHANNELS[reminder.kind],
-      },
+      trigger: triggerFor(reminder.schedule, CHANNELS[reminder.kind]),
     });
   }
 }
@@ -195,6 +252,13 @@ export type NotificationHealth = {
   /** Android only: a channel the user muted. `granted` stays true and nothing shows. */
   muted: boolean;
   scheduled: number;
+  /**
+   * How many of `scheduled` the OS re-fires on its own, forever.
+   *
+   * Without it the count reads as a countdown — "12 scheduled, then silence" —
+   * which is what the schedule used to be and is the thing Plan C removed.
+   */
+  repeating: number;
   nextFireAt: Date | null;
   /** The plan hit the iOS ceiling, so the furthest-out reminders were dropped. */
   atBudget: boolean;
@@ -241,6 +305,8 @@ export async function readNotificationHealth(): Promise<NotificationHealth> {
     blocked: !permission.granted && !permission.canAskAgain,
     muted,
     scheduled: pending.length,
+    repeating: pending.filter((request) => repeatsForever(request.trigger))
+      .length,
     nextFireAt: times[0] === undefined ? null : new Date(times[0]),
     atBudget: planTruncated,
   };

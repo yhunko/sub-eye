@@ -1,6 +1,12 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 
-export type SubscriptionGroupBy = "none" | "category" | "period" | "currency";
+export const SUBSCRIPTION_GROUP_BYS = [
+  "none",
+  "category",
+  "period",
+  "currency",
+] as const;
+export type SubscriptionGroupBy = (typeof SUBSCRIPTION_GROUP_BYS)[number];
 
 /** The bucket every subscription that has no value for the dimension falls into. */
 export const UNGROUPED_KEY = "";

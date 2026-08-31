@@ -14,7 +14,7 @@ import {
   useSubscriptionFilters,
 } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 
 // Message-function references, invoked at render — never m.*() at module scope.
 const STATUSES: { value: SubscriptionStatusFilter; label: () => string }[] = [
@@ -68,11 +68,7 @@ function ChoiceRow({
         onPress={onPress}
         style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
       >
-        <Text
-          style={[styles.rowLabel, selected && styles.rowLabelSelected]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
+        <Text style={[styles.rowLabel, selected && styles.rowLabelSelected]}>
           {label}
         </Text>
         {selected ? (
@@ -239,6 +235,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
+    paddingVertical: 10,
     minHeight: 48,
   },
   rowPressed: { backgroundColor: colors.surfaceAlt },

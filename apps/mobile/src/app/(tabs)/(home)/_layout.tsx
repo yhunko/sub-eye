@@ -19,7 +19,7 @@ import { colors } from "@/shared/ui/theme";
 // states get the same chrome; each of those is an early return.
 export default function HomeTabLayout() {
   const router = useRouter();
-  const openForm = () => router.push("/subscriptions/form");
+  const openForm = () => router.push("/subscription-form");
 
   return (
     <Stack

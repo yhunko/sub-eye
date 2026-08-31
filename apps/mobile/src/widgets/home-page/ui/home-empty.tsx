@@ -12,7 +12,8 @@ import { colors } from "@/shared/ui/theme";
  * correct and told a new user nothing — and the only way to add a subscription
  * was a small "+" in the *other* tab's header. This is the route to it.
  *
- * ponytail: no tour, no carousel, no sample data. One sentence and the button.
+ * ponytail: no tour, no carousel, no sample data. A title and the button — the
+ * screen it describes is one tap away and explains itself better than prose.
  */
 export function HomeEmpty() {
   const router = useRouter();
@@ -27,14 +28,11 @@ export function HomeEmpty() {
           weight="regular"
         />
       </View>
-      <View style={styles.copy}>
-        <Text style={styles.title}>{m.home_emptyTitle()}</Text>
-        <Text style={styles.body}>{m.home_emptyBody()}</Text>
-      </View>
+      <Text style={styles.title}>{m.home_emptyTitle()}</Text>
       <View style={styles.action}>
         <Button
           label={m.subs_add()}
-          onPress={() => router.push("/subscriptions/form")}
+          onPress={() => router.push("/subscription-form")}
         />
       </View>
     </View>
@@ -59,16 +57,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  copy: { alignItems: "center", gap: 8 },
-  title: { fontSize: 21, fontWeight: "700", color: colors.text },
-  // Uncapped Dynamic Type: this is prose, and nothing below it depends on its
-  // height.
-  body: {
+  title: {
     maxWidth: 280,
-    fontSize: 14.5,
-    lineHeight: 21,
+    fontSize: 21,
+    fontWeight: "700",
     textAlign: "center",
-    color: colors.muted,
+    color: colors.text,
   },
   action: { alignSelf: "stretch", paddingHorizontal: 24 },
 });

@@ -40,11 +40,16 @@ it or on its sibling `calculateSpendInRange`.
    an occurrence falls at or after the effective cancellation date, the projection stops — all
    later occurrences are unreachable too. This is deliberate; changing it to `continue` would
    project charges past a cancellation.
-5. **`resolveOccurrenceAmount` is per-occurrence, not per-subscription.** An occurrence on or
-   after a scheduled price change's `effectiveAt` is charged the new price; earlier ones are
-   charged the old. This is why a single month can contain two different amounts for the same
-   subscription. Any new per-occurrence rule belongs here or in `collectPaymentsInRange`, never
-   in the aggregate callers — that is where `pause.ts` lives, and where the next one goes.
+5. **`resolveOccurrenceAmount` is per-occurrence, not per-subscription.** It reads the price off
+   the whole `pricePhases` timeline — the first half-open window containing the charge owns it,
+   and the row's own price is the fallback. This is why a single month can contain two different
+   amounts for the same subscription. Any new per-occurrence rule belongs here or in
+   `collectPaymentsInRange`, never in the aggregate callers — that is where `pause.ts` lives.
+   **It must NOT price off `scheduledPriceChange`**, which is only ever the NEXT phase and so
+   describes a single transition. An intro discount that starts at a future charge and reverts
+   at a later one puts TWO transitions in front of today; pricing off the first alone charged
+   the discounted amount forever, turning a three-month promo into a permanent one. Regression
+   in `test/phasedOccurrences.test.ts`.
 
 ## Public-by-design
 

@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef } from "react";
@@ -12,7 +12,7 @@ import {
 import { m } from "@/shared/i18n";
 import { formatMoney, formatShortDate } from "@/shared/lib/format";
 import { nativeHeaderChrome } from "@/shared/ui/header";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 import { SubscriptionRow } from "./subscription-row";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -105,10 +105,7 @@ export function DuePage({ date }: { date: string }) {
           items.length ? (
             <View style={styles.summary}>
               <Text style={styles.summaryLabel}>{m.due_total()}</Text>
-              <Text
-                style={styles.summaryAmount}
-                maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-              >
+              <Text style={styles.summaryAmount}>
                 {formatMoney(
                   total,
                   items[0]?.billing.preferred.currencyCode ?? "",

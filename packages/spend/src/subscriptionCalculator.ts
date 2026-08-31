@@ -1,13 +1,9 @@
-import type { RateTable } from "@subeye/currency";
 import type {
   SubscriptionBillingDetails,
   SubscriptionPeriod,
-} from "@subeye/shared";
-import {
-  CurrencyUtils,
-  DateTimezoneUtils,
-  RecurrenceUtils,
-} from "@subeye/shared";
+} from "@subeye/model";
+import { buildBillingDetails, type RateTable } from "@subeye/money";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 
 /** The minimum shape needed to price a subscription. A DB row satisfies it. */
 export type BillableSubscription = {
@@ -30,36 +26,13 @@ export class SubscriptionCalculator {
     preferredCurrency: string,
     rates: RateTable,
   ): SubscriptionBillingDetails {
-    return SubscriptionCalculator.computeBillingDetails(
-      Number(subscription.cost),
-      subscription.currency,
-      subscription.every,
-      subscription.period,
-      preferredCurrency,
-      rates,
-    );
-  }
-
-  static calculateBillingDetailsForPricing(
-    {
-      amount,
-      currency,
-      every,
-      period,
-    }: {
-      amount: number;
-      currency: string;
-      every: number;
-      period: SubscriptionPeriod;
-    },
-    preferredCurrency: string,
-    rates: RateTable,
-  ): SubscriptionBillingDetails {
-    return SubscriptionCalculator.computeBillingDetails(
-      amount,
-      currency,
-      every,
-      period,
+    return buildBillingDetails(
+      {
+        amount: Number(subscription.cost),
+        currency: subscription.currency,
+        every: subscription.every,
+        period: subscription.period,
+      },
       preferredCurrency,
       rates,
     );
@@ -98,57 +71,6 @@ export class SubscriptionCalculator {
       lastPaymentDate: lastPayment
         ? new Date(lastPayment.getTime()).toISOString()
         : null,
-    };
-  }
-
-  private static getExchangeRate(
-    from: string,
-    to: string,
-    rates: RateTable,
-  ): number {
-    if (from === to) return 1;
-    const rate = rates[from];
-    if (!rate) return 1;
-    return 1 / rate;
-  }
-
-  private static computeBillingDetails(
-    amount: number,
-    originalCurrency: string,
-    every: number,
-    period: SubscriptionPeriod,
-    preferredCurrencyCode: string,
-    rates: RateTable,
-  ): SubscriptionBillingDetails {
-    const originalMonthly = CurrencyUtils.toMonthly(amount, every, period);
-    const preferredAmount = CurrencyUtils.convert(
-      amount,
-      originalCurrency,
-      preferredCurrencyCode,
-      rates,
-    );
-    const preferredMonthly = CurrencyUtils.toMonthly(
-      preferredAmount,
-      every,
-      period,
-    );
-
-    return {
-      original: {
-        currencyCode: originalCurrency,
-        monthly: originalMonthly,
-      },
-      preferred: {
-        currencyCode: preferredCurrencyCode,
-        amount: preferredAmount,
-        monthly: preferredMonthly,
-        yearly: preferredMonthly * 12,
-        exchangeRate: SubscriptionCalculator.getExchangeRate(
-          originalCurrency,
-          preferredCurrencyCode,
-          rates,
-        ),
-      },
     };
   }
 }

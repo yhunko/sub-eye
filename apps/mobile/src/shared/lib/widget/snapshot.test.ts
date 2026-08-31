@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
-import type { UpcomingRenewalDto } from "@subeye/shared";
+import type { UpcomingRenewalDto } from "@subeye/model";
 
 // Paraglide's runtime touches expo-localization through the i18n barrel; stub
 // the message functions so this stays a pure unit test of the projection. Each

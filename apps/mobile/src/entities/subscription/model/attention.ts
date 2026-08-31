@@ -1,21 +1,18 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import { shouldIncludeOccurrence } from "@subeye/lifecycle";
+import type { CalendarEventKind, SubscriptionDto } from "@subeye/model";
 import { todayAsDay } from "@/shared/lib/format";
 
 /**
  * The events Home surfaces, in the order they matter when two land on the same
  * day: a price about to change costs money, a charge is money leaving, a resume
  * is a heads-up, an ending is an FYI.
+ *
+ * Aliased rather than restated: the calendar draws the same six kinds off
+ * `CalendarMonthDto`, and two hand-written copies of this union drift the moment
+ * a seventh is added — the rail would render it and the calendar would not, or
+ * the other way round, with nothing failing to say so.
  */
-export const attentionKinds = [
-  "trialEnds",
-  "introEnds",
-  "priceChange",
-  "payment",
-  "resumes",
-  "ends",
-] as const;
-
-export type AttentionKind = (typeof attentionKinds)[number];
+export type AttentionKind = CalendarEventKind;
 
 export type AttentionEvent = {
   /** `${subscriptionId}:${kind}` — one subscription can raise two events. */
@@ -114,17 +111,15 @@ export function deriveAttention(
     // form field for it ever lands.
     //
     // A paused subscription's `nextPaymentDate` is a charge the pause will
-    // swallow, and a cancelling one's can sit past the day access ends — the
-    // server drops both from its own projections (`shouldIncludeOccurrence`),
-    // and advertising a charge that will never be taken is the same lie here.
-    const cancelsFirst =
-      subscription.willBeCancelledAt !== null &&
-      Date.parse(subscription.nextPaymentDate) >=
-        Date.parse(subscription.willBeCancelledAt);
-
+    // swallow, and a cancelling one's can sit past the day access ends. Both are
+    // dropped from the server's own projections, so advertising either here
+    // would contradict the totals on the same screen.
     if (
       subscription.status !== "paused" &&
-      !cancelsFirst &&
+      shouldIncludeOccurrence(
+        subscription,
+        new Date(subscription.nextPaymentDate),
+      ) &&
       ahead(subscription.nextPaymentDate)
     ) {
       events.push({

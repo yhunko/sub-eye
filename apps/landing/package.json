@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
+    "@subeye/legal": "workspace:*",
     "@subeye/pricing": "workspace:*",
-    "@subeye/shared": "workspace:*",
+    "@subeye/model": "workspace:*",
     "astro": "^6.4.8",
     "date-fns": "^4.1.0"
   },

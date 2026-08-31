@@ -2,7 +2,8 @@ import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "./theme";
+import { colors } from "./theme";
+import { useLargeText } from "./use-large-text";
 
 /**
  * The inset-grouped list iOS Settings is built from: a rounded card of rows, an
@@ -68,6 +69,7 @@ export function Row({
   value,
   onPress,
   accent,
+  destructive,
   toggle,
   accessory,
 }: RowLeading & {
@@ -78,6 +80,12 @@ export function Row({
   onPress?: () => void;
   /** Tints the row as an action rather than a destination. */
   accent?: boolean;
+  /**
+   * The same idea as `accent`, in red: an action that destroys something. Wins
+   * over `accent` if both are passed, because the warning is the load-bearing
+   * half — but passing both is a caller error, not a supported combination.
+   */
+  destructive?: boolean;
   toggle?: {
     value: boolean;
     disabled: boolean;
@@ -90,6 +98,11 @@ export function Row({
    */
   accessory?: ReactNode;
 }) {
+  // At the accessibility sizes the label and its value have no chance of
+  // sharing a line, so the value drops into the label's column — which is what
+  // iOS Settings itself does rather than truncating either one.
+  const stacked = useLargeText();
+
   const content = (
     <>
       {/* The union guarantees one branch or the other, but destructuring a
@@ -99,33 +112,38 @@ export function Row({
           <SymbolView
             name={{ ios, android }}
             size={19}
-            tintColor={accent ? colors.accent : colors.muted}
+            tintColor={
+              destructive
+                ? colors.danger
+                : accent
+                  ? colors.accent
+                  : colors.muted
+            }
             weight="regular"
           />
         ) : null)}
       <View style={styles.middle}>
         <Text
-          style={[styles.label, accent && styles.labelAccent]}
-          // TWO lines, not one. A label that fits in English is not a label that
-          // fits — "Trial ending reminders" is half again as long in Ukrainian
-          // and was truncating into the switch. Wrapping is what UIKit does.
-          numberOfLines={2}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+          style={[
+            styles.label,
+            accent && styles.labelAccent,
+            destructive && styles.labelDestructive,
+          ]}
+          // Unbounded, not one line. A label that fits in English is not a label
+          // that fits — "Trial ending reminders" is half again as long in
+          // Ukrainian and was truncating into the switch, and at the
+          // accessibility text sizes even two lines runs out. Wrapping is what
+          // UIKit does, and the row is padding + minHeight so it can follow.
         >
           {label}
         </Text>
-        {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={2}>
-            {subtitle}
-          </Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        {value && stacked ? (
+          <Text style={[styles.value, styles.valueStacked]}>{value}</Text>
         ) : null}
       </View>
-      {value ? (
-        <Text
-          style={styles.value}
-          numberOfLines={1}
-          maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-        >
+      {value && !stacked ? (
+        <Text style={styles.value} numberOfLines={1}>
           {value}
         </Text>
       ) : null}
@@ -148,7 +166,7 @@ export function Row({
           and UIKit gives those no chevron — the same reason ActionButton has
           none. Restore, Open device settings and Send a test all read as
           navigation until this. */}
-      {onPress && !accent && !toggle && !accessory ? (
+      {onPress && !accent && !destructive && !toggle && !accessory ? (
         <SymbolView
           name={{ ios: "chevron.right", android: "chevron_right" }}
           size={13}
@@ -244,6 +262,10 @@ const styles = StyleSheet.create({
   middle: { flex: 1, minWidth: 0 },
   label: { fontSize: 16, color: colors.text },
   labelAccent: { color: colors.accent, fontWeight: "600" },
+  labelDestructive: { color: colors.danger, fontWeight: "600" },
   subtitle: { fontSize: 12.5, color: colors.muted, marginTop: 1 },
   value: { fontSize: 16, color: colors.muted, flexShrink: 1 },
+  // Under the label rather than beside it. `flexShrink` above is for the row it
+  // no longer sits in; here it would shrink the text against the column.
+  valueStacked: { marginTop: 2, flexShrink: 0 },
 });

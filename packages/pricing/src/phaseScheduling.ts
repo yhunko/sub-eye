@@ -1,14 +1,20 @@
-import type { ScheduledPriceChangeMode } from "@subeye/shared";
-import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/shared";
-import {
-  type RecurringSubscription,
-  SubscriptionCalculator,
-} from "@subeye/spend";
+import type {
+  ScheduledPriceChangeMode,
+  SubscriptionPeriod,
+} from "@subeye/model";
+import { DateTimezoneUtils, RecurrenceUtils } from "@subeye/time";
 
 /** How the user asked for the new price to take effect. */
 export type ScheduleEffectiveAtRequest = {
   mode: ScheduledPriceChangeMode;
   customDate?: string | null;
+};
+
+/** The minimum shape needed to walk a subscription's recurrence. */
+export type PhaseSubject = {
+  every: number;
+  period: SubscriptionPeriod;
+  paymentDate: string | Date;
 };
 
 /**
@@ -31,19 +37,27 @@ export const isSameUtcDay = (
 /**
  * The instant of the subscription's next renewal.
  *
- * `calculatePaymentDates` returns today's renewal if one falls today, so if
- * that instant is already past we step forward one full period — a price
- * change must never be scheduled in the past.
+ * `getNextOccurrence` returns today's renewal if one falls today, so if that
+ * instant is already past we step forward one full period — a price change must
+ * never be scheduled in the past.
  */
 const resolveNextOccurrenceEffectiveAt = (
-  subscription: RecurringSubscription,
+  subscription: PhaseSubject,
+  now: Date,
   timezone?: string,
 ): string => {
-  const { nextPaymentDate } = SubscriptionCalculator.calculatePaymentDates(
-    subscription,
-    timezone,
-  );
-  if (Date.parse(nextPaymentDate) > Date.now()) return nextPaymentDate;
+  // Through `new Date` first: `toCalendarDay` hands back a `TZDate`, whose own
+  // `toISOString()` emits the offset form (`…+00:00`), and both clients slice
+  // and compare these strings as plain `Z` instants.
+  const nextPaymentDate = new Date(
+    RecurrenceUtils.getNextOccurrence(
+      DateTimezoneUtils.toCalendarDay(subscription.paymentDate),
+      subscription.every,
+      subscription.period,
+      DateTimezoneUtils.currentCalendarDay(now, timezone),
+    ).getTime(),
+  ).toISOString();
+  if (Date.parse(nextPaymentDate) > now.getTime()) return nextPaymentDate;
 
   const nextOccurrence = RecurrenceUtils.addPeriod(
     DateTimezoneUtils.toCalendarDay(nextPaymentDate),
@@ -66,18 +80,20 @@ const resolveNextOccurrenceEffectiveAt = (
  * together rather than hours apart.
  */
 export const resolveScheduledEffectiveAt = (
-  subscription: RecurringSubscription,
+  subscription: PhaseSubject,
   request: ScheduleEffectiveAtRequest,
+  now: Date,
   timezone?: string,
 ): string | null => {
   if (request.mode === "nextOccurrence") {
-    return resolveNextOccurrenceEffectiveAt(subscription, timezone);
+    return resolveNextOccurrenceEffectiveAt(subscription, now, timezone);
   }
   if (!request.customDate) return null;
 
   const customEffectiveAt = toStartOfUtcDay(request.customDate);
   const nextOccurrenceEffectiveAt = resolveNextOccurrenceEffectiveAt(
     subscription,
+    now,
     timezone,
   );
   if (isSameUtcDay(customEffectiveAt, nextOccurrenceEffectiveAt)) {

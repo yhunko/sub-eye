@@ -13,11 +13,9 @@ import { mock } from "bun:test";
  * must not be able to break the suite that way again.
  *
  * `??=`, so a real `.env` still wins — a local run stays faithful to the build
- * it mirrors. Tests that assert on a URL set `EXPO_PUBLIC_API_URL` themselves
- * before importing the client; this is only a floor.
+ * it mirrors. A floor for a var that no longer exists is the same trap in
+ * reverse, so this list tracks `env.ts` exactly.
  */
-process.env.EXPO_PUBLIC_API_URL ??= "https://api.test";
-process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??= "pk_test_x";
 process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ??= "test_x";
 
 /**
@@ -47,8 +45,8 @@ mock.module("react-native", () => ({
  * Same problem, third time: `@sentry/react-native` reaches
  * `react-native/Libraries/TurboModule/TurboModuleRegistry`, past the stub above.
  * Crash reporting is deliberately woven into the low layers — the query client,
- * the token bridge, the error boundary — so the modules that import it are
- * exactly the ones a pure-logic test pulls in for a query key or a type.
+ * the error boundary — so the modules that import it are exactly the ones a
+ * pure-logic test pulls in for a query key or a type.
  *
  * A no-op stub is also the behaviour under test: nothing should report from a
  * test run.
@@ -56,7 +54,6 @@ mock.module("react-native", () => ({
 mock.module("@sentry/react-native", () => ({
   init: () => {},
   captureException: () => {},
-  setUser: () => {},
   wrap: (component: unknown) => component,
 }));
 
@@ -78,6 +75,9 @@ mock.module("react-native-mmkv", () => {
       getString: (key: string) => store.get(key) as string | undefined,
       set: (key: string, value: boolean | string) => store.set(key, value),
       remove: (key: string) => store.delete(key),
+      // Compaction has no meaning for a Map, but eraseDoc calls it and a
+      // missing method is a TypeError rather than a no-op.
+      trim: () => {},
     }),
   };
 });
@@ -91,4 +91,50 @@ mock.module("react-native-mmkv", () => {
  */
 mock.module("expo-router", () => ({
   useRouter: () => ({ push: () => {}, back: () => {} }),
+}));
+
+/**
+ * `expo-crypto` is a native module — `randomUUID` calls straight into it, and
+ * merely importing the package pulls in `expo/src/async-require/setup`, which
+ * reads `__DEV__` and dies before any of that.
+ *
+ * Delegates to Bun's Web Crypto rather than returning a counter: `newId` in the
+ * store ports is the only source of record ids, and a stub that repeated itself
+ * would make a uniqueness test pass against a store that overwrites rows.
+ */
+mock.module("expo-crypto", () => ({
+  randomUUID: () => crypto.randomUUID(),
+}));
+
+/**
+ * `expo-localization` is a native module. The store's cold path reads the
+ * device's region currency through it, so a test that only wanted `readDoc`
+ * dies on import without this.
+ *
+ * Reports a region whose currency SubEye DOES support, so the store's seed test
+ * asserts adoption rather than the fallback — the wiring is what breaks
+ * silently, and `supportedCurrencyCode` is covered on its own in
+ * shared/lib/format/money.test.ts.
+ */
+const deviceLocales = [
+  { languageCode: "en", languageTag: "en-DE", currencyCode: "EUR" },
+];
+mock.module("expo-localization", () => ({
+  getLocales: () => deviceLocales,
+  useLocales: () => deviceLocales,
+}));
+
+/**
+ * `expo-modules-core` reaches react-native through deep paths the stub above
+ * cannot intercept, and the store's iCloud adapter imports it at module load —
+ * so a test that only wanted `readDoc` dies on a Flow parse error without this.
+ *
+ * `null` is not a convenience: it is the honest answer. There is no native side
+ * in a test run, which is the same state as an Android device or a simulator
+ * with no iCloud account, and every caller in shared/lib/store/cloud already has
+ * to handle it. Returning a fake store instead would test a sync that cannot
+ * exist here.
+ */
+mock.module("expo-modules-core", () => ({
+  requireOptionalNativeModule: () => null,
 }));

@@ -1,11 +1,13 @@
 import type { Locale } from "./site";
 
 /**
- * The five symbols the app ships, with the same en-US grouping as `formatMoney`
- * in `apps/mobile/src/shared/lib/format/money.ts`. Not imported from there —
- * that file is app-internal and this is five characters — but
- * `test/pricing.test.ts` pins the code set against it, so a sixth currency in
- * the app fails this workspace's tests.
+ * The symbols this page actually PRINTS — the mockup's three and the Pro price's
+ * three — with the same en-US grouping as `formatMoney` in
+ * `apps/mobile/src/shared/lib/format/money.ts`. The app's own catalogue is 156
+ * currencies now; this is not a copy of it and must not become one. It is not
+ * imported either: that file is app-internal, and this is five characters.
+ * `test/pricing.test.ts` pins every code the page prints against the app's
+ * catalogue, so a currency the app drops fails this workspace's tests.
  */
 const SYMBOLS: Record<string, string> = {
   uah: "₴",

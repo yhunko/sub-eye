@@ -1,4 +1,5 @@
-import type { UpdateUserPreferences, UserPreferences } from "@subeye/shared";
+import type { UpdateUserPreferences, UserPreferences } from "@subeye/model";
+import { readPreferences, writePreferences } from "@subeye/store";
 import {
   queryOptions,
   useMutation,
@@ -6,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { dashboardKeys } from "@/entities/dashboard";
 import { subscriptionKeys } from "@/entities/subscription";
-import { apiClient, assertOk } from "@/shared/api";
+import { localPorts } from "@/shared/lib/store";
 
 export const preferencesKeys = {
   all: () => ["user", "preferences"] as const,
@@ -15,27 +16,18 @@ export const preferencesKeys = {
 export function preferencesQuery() {
   return queryOptions({
     queryKey: preferencesKeys.all(),
-    queryFn: async (): Promise<UserPreferences> => {
-      const response = await apiClient.api.user.preferences.$get();
-      assertOk(response);
-      return response.json();
-    },
-    // Preferences change roughly never. Keeping them fresh for an hour means the
-    // Settings tab opens without a spinner on every visit.
-    staleTime: 60 * 60 * 1000,
+    queryFn: (): Promise<UserPreferences> => readPreferences(localPorts),
   });
 }
 
-export async function updatePreferences(
+export function updatePreferences(
   input: UpdateUserPreferences,
 ): Promise<UserPreferences> {
-  const response = await apiClient.api.user.preferences.$patch({ json: input });
-  assertOk(response);
-  return response.json();
+  return writePreferences(localPorts, input);
 }
 
 /**
- * Changing the home currency re-denominates every amount the server returns, so
+ * Changing the home currency re-denominates every amount the app derives, so
  * the dashboard and the list are both invalidated. Changing the timezone shifts
  * occurrence boundaries, which moves the same numbers. Invalidating both keys for
  * any preference change is one line and always correct.

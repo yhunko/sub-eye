@@ -1,7 +1,6 @@
 ---
 import { copyFor } from "../i18n";
-import { money } from "../lib/format";
-import { type Locale, otherLocale, path, proPrice } from "../lib/site";
+import { appStoreUrl, type Locale, otherLocale, path } from "../lib/site";
 import Mark from "./Mark.astro";
 
 interface Props {
@@ -11,7 +10,6 @@ interface Props {
 const { locale } = Astro.props;
 const c = copyFor(locale);
 const other = otherLocale(locale);
-const pro = locale === "uk" ? money(proPrice.uah, "uah", 0) : money(proPrice.usd, "usd");
 ---
 
 <header class="bar">
@@ -34,7 +32,9 @@ const pro = locale === "uk" ? money(proPrice.uah, "uah", 0) : money(proPrice.usd
         rel="alternate"
         aria-label={c.otherLangName}>{c.otherLangShort}</a
       >
-      <a class="bar__cta" href="#price">{pro} {c.pricing.proSuffix}</a>
+      {/* A plain button, not Apple's badge and not its words: one badge per
+          layout, and the hero has it. `#price` is still a click away in the nav. */}
+      <a class="bar__cta" href={appStoreUrl}>{c.appStore.download}</a>
     </nav>
   </div>
 </header>

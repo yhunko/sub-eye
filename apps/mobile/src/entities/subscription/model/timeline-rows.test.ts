@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { PricePhaseDto } from "@subeye/shared";
+import type { PricePhaseDto } from "@subeye/model";
 import { toTimelineRows } from "./timeline-rows";
 
 const phase = (over: Partial<PricePhaseDto> = {}): PricePhaseDto => ({
@@ -87,5 +87,21 @@ describe("toTimelineRows", () => {
     const [row] = toTimelineRows([phase()], "en-GB");
 
     expect(row?.from).toBe("Mar 2026");
+  });
+
+  // The widget hangs the "scheduled" badge off this flag, not off the kind: a
+  // `scheduledChange` keeps its kind after it fires, so keying the badge on the
+  // kind labelled an already-applied change as still pending.
+  it("marks only the phase the projection calls upcoming", () => {
+    const rows = toTimelineRows(
+      [
+        phase({ id: "applied", kind: "scheduledChange", isActive: true }),
+        phase({ id: "pending", kind: "scheduledChange", isActive: false }),
+      ],
+      "en-GB",
+      "pending",
+    );
+
+    expect(rows.map((row) => row.isUpcoming)).toEqual([false, true]);
   });
 });

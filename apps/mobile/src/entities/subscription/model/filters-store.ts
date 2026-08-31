@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
+import { deviceJson } from "@/shared/lib/mmkv";
 import {
   DEFAULT_SUBSCRIPTION_FILTERS,
+  parseStoredFilters,
   type SubscriptionListFilters,
 } from "./filters";
 
@@ -14,12 +16,43 @@ import {
  *
  * ponytail: `useSyncExternalStore` over a module variable, not a state library.
  * React ships the primitive for exactly this, the store is one value with one
- * writer, and a dependency would be 12 KB to replace 15 lines. It is deliberately
- * NOT persisted — a filter is a thing you do for the next thirty seconds, and a
- * user reopening the app to a list still narrowed to "Cancelled" from last week
- * would read as missing data.
+ * writer, and a dependency would be 12 KB to replace 15 lines.
+ *
+ * It PERSISTS, per device, from the moment a filter is changed. The earlier
+ * reading — that a filter is a thing you do for the next thirty seconds, and
+ * that reopening to a list still narrowed to "Cancelled" would read as missing
+ * data — was wrong about how these are used: sort and grouping are a standing
+ * preference, not a gesture, and re-picking them on every cold start is the
+ * actual annoyance. The "missing data" risk is real but already answered
+ * elsewhere: every dimension that HIDES rows lights the header's menu button,
+ * and an emptied list says "nothing matches" rather than "nothing here".
+ *
+ * `search` is the exception and is never restored — see `parseStoredFilters`.
+ *
+ * MMKV reads synchronously, so the stored set is simply already there on the
+ * first render; there is no hydration flash and nothing to await.
  */
-let state: SubscriptionListFilters = DEFAULT_SUBSCRIPTION_FILTERS;
+const STORAGE_KEY = "subs.filters";
+
+let state: SubscriptionListFilters = parseStoredFilters(
+  deviceJson.get<unknown>(STORAGE_KEY, null),
+);
+
+/**
+ * The dimensions worth remembering. `search` is deliberately absent: the native
+ * search bar owns its text and cannot be pre-filled, so a restored term would
+ * narrow the list to something with no visible cause.
+ */
+const PERSISTED = ["status", "categoryId", "sort", "group"] as const;
+
+const persist = (next: SubscriptionListFilters): void => {
+  deviceJson.set(STORAGE_KEY, {
+    status: next.status,
+    categoryId: next.categoryId,
+    sort: next.sort,
+    group: next.group,
+  });
+};
 
 const listeners = new Set<() => void>();
 
@@ -34,6 +67,10 @@ export const subscriptionFilters = {
 
   set: (patch: Partial<SubscriptionListFilters>): void => {
     state = { ...state, ...patch };
+    // Only when a REMEMBERED dimension moved. `onChangeText` calls this on every
+    // keystroke, and search is not persisted — without the guard, typing would
+    // rewrite the same four values to disk once per character.
+    if (PERSISTED.some((key) => key in patch)) persist(state);
     emit();
   },
 
@@ -44,6 +81,7 @@ export const subscriptionFilters = {
    */
   reset: (): void => {
     state = { ...DEFAULT_SUBSCRIPTION_FILTERS, search: state.search };
+    persist(state);
     emit();
   },
 

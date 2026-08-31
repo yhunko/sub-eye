@@ -1,19 +1,18 @@
 import { describe, expect, it } from "bun:test";
-import { SubscriptionPeriod } from "@subeye/shared";
+import { SubscriptionPeriod } from "@subeye/model";
 import { AnalyticsCalculator } from "../src/analyticsCalculator";
 
 const billing = (monthly: number) => ({
   original: {
-    amount: monthly,
     currencyCode: "usd",
     monthly,
-    yearly: monthly * 12,
   },
   preferred: {
     amount: monthly,
     currencyCode: "usd",
     monthly,
     yearly: monthly * 12,
+    exchangeRate: 1,
   },
 });
 
@@ -77,22 +76,16 @@ describe("pause is applied per occurrence", () => {
     it(testCase.name, () => {
       const { start, end } = month(testCase.month);
       expect(
-        AnalyticsCalculator.calculateSpendInRange(
-          pausedSub as never,
-          start,
-          end,
-          "UTC",
-        ),
+        AnalyticsCalculator.calculateSpendInRange(pausedSub, start, end),
       ).toBe(testCase.expected);
     });
   }
 
   it("a full year of a 2-month pause is 10 charges, not 12", () => {
     const total = AnalyticsCalculator.calculateSpendInRange(
-      pausedSub as never,
+      pausedSub,
       new Date(Date.UTC(2026, 0, 1)),
       new Date(Date.UTC(2026, 11, 31, 23, 59, 59)),
-      "UTC",
     );
     // Occurrences on the 5th of Jan and Feb are skipped; Mar–Dec land.
     expect(total).toBe(100);
@@ -100,10 +93,9 @@ describe("pause is applied per occurrence", () => {
 
   it("an indefinite pause contributes nothing after paused_at", () => {
     const total = AnalyticsCalculator.calculateSpendInRange(
-      { ...pausedSub, resumeAt: null } as never,
+      { ...pausedSub, resumeAt: null },
       new Date(Date.UTC(2026, 0, 1)),
       new Date(Date.UTC(2026, 11, 31, 23, 59, 59)),
-      "UTC",
     );
     expect(total).toBe(0);
   });

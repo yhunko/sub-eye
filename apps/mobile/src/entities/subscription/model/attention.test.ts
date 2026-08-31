@@ -1,11 +1,16 @@
 import { describe, expect, it } from "bun:test";
-import type { PricePhaseDto } from "@subeye/shared";
+import type { PricePhaseDto } from "@subeye/model";
 import { deriveAttention } from "./attention";
 import { makeSubscription } from "./subscription.fixture";
 
-const NOW = new Date("2026-07-01T00:00:00.000Z");
+// The two sides of every case below are different kinds of value, and building
+// both from one `…Z` literal is what made this file timezone-dependent. `NOW` is
+// a DEVICE instant — `deriveAttention` dates the rail from the device's calendar
+// day, so on 2026-07-01T00:00Z the rail already reads 30 June west of UTC and
+// 2 July in Auckland. `inDays` is a STORED day, which is always a UTC midnight.
+const NOW = new Date(2026, 6, 1, 12, 0);
 const inDays = (days: number) =>
-  new Date(NOW.getTime() + days * 86_400_000).toISOString();
+  new Date(Date.UTC(2026, 6, 1 + days)).toISOString();
 
 const phase = (overrides: Partial<PricePhaseDto> = {}): PricePhaseDto => ({
   id: "phase_1",
@@ -229,12 +234,13 @@ describe("deriveAttention — today's events", () => {
       nextPaymentDate: "2026-07-01T00:00:00.000Z",
     });
 
+    // Read on the DEVICE's clock, which is the one the rail is dated from.
     for (const clock of [
-      "2026-07-01T00:00:00.000Z", // midnight UTC
-      "2026-07-01T03:00:00.000Z", // mid-morning in Kyiv
-      "2026-07-01T23:59:00.000Z", // the last minute of the UTC day
+      new Date(2026, 6, 1, 0, 0), // the first minute of the day
+      new Date(2026, 6, 1, 3, 0), // mid-morning
+      new Date(2026, 6, 1, 23, 59), // the last minute
     ]) {
-      const events = deriveAttention([dueToday], new Date(clock));
+      const events = deriveAttention([dueToday], clock);
       expect(events.map((event) => event.kind)).toEqual(["payment"]);
     }
   });
@@ -247,7 +253,7 @@ describe("deriveAttention — today's events", () => {
           nextPaymentDate: "2026-06-30T00:00:00.000Z",
         }),
       ],
-      new Date("2026-07-01T00:00:00.000Z"),
+      NOW,
     );
 
     expect(events).toEqual([]);

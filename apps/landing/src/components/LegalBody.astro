@@ -1,0 +1,48 @@
+---
+import type { LegalDoc, LegalSection } from "@subeye/legal";
+import type { Locale } from "../lib/site";
+import LegalRuns from "./LegalRuns.astro";
+
+interface Props {
+  doc: LegalDoc;
+  locale: Locale;
+}
+
+const { doc, locale } = Astro.props;
+
+// The lead paragraphs and each section render identically below, so they are
+// flattened into one list rather than duplicating the block switch.
+const groups: { section: LegalSection | null; blocks: LegalDoc["lead"] }[] = [
+  { section: null, blocks: doc.lead },
+  ...doc.sections.map((section) => ({ section, blocks: section.blocks })),
+];
+---
+{
+  groups.map((group) => (
+    <Fragment>
+      {group.section ? (
+        <h2 id={group.section.id}>{group.section.heading}</h2>
+      ) : null}
+      {group.blocks.map((block) =>
+        "p" in block ? (
+          <p><LegalRuns runs={block.p} locale={locale} /></p>
+        ) : "ul" in block ? (
+          <ul>
+            {block.ul.map((item) => (
+              <li><LegalRuns runs={item} locale={locale} /></li>
+            ))}
+          </ul>
+        ) : (
+          <dl>
+            {block.dl.map((entry) => (
+              <Fragment>
+                <dt>{entry.term}</dt>
+                <dd><LegalRuns runs={entry.desc} locale={locale} /></dd>
+              </Fragment>
+            ))}
+          </dl>
+        ),
+      )}
+    </Fragment>
+  ))
+}

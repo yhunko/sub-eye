@@ -1,4 +1,11 @@
-import type { CategoryDto, UpdateCategoryInput } from "@subeye/shared";
+import type { UpdateCategoryInput } from "@subeye/model";
+import {
+  type CategoryRecord,
+  createCategory,
+  deleteCategory,
+  listCategories,
+  updateCategory,
+} from "@subeye/store";
 import {
   queryOptions,
   useMutation,
@@ -6,26 +13,18 @@ import {
 } from "@tanstack/react-query";
 import { dashboardKeys } from "@/entities/dashboard";
 import { subscriptionKeys } from "@/entities/subscription";
-import { apiClient, assertOk } from "@/shared/api";
+import { localPorts } from "@/shared/lib/store";
 import { pickCategoryEmoji } from "../model/pick-emoji";
 
 export const categoryKeys = {
   all: () => ["categories"] as const,
 };
 
-/**
- * Every category the user owns. A handful of rows that change roughly never, so
- * this is cached long and read by the form picker without a spinner.
- */
+/** Every category. A handful of rows that change roughly never. */
 export function categoriesQuery() {
   return queryOptions({
     queryKey: categoryKeys.all(),
-    queryFn: async (): Promise<CategoryDto[]> => {
-      const response = await apiClient.api.categories.$get();
-      assertOk(response);
-      return response.json();
-    },
-    staleTime: 60 * 60 * 1000,
+    queryFn: (): Promise<CategoryRecord[]> => listCategories(localPorts),
   });
 }
 
@@ -39,21 +38,19 @@ export function useCreateCategory() {
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       name,
       emoji,
     }: {
       name: string;
       emoji?: string;
-    }): Promise<CategoryDto> => {
-      const response = await apiClient.api.categories.$post({
-        json: { name: name.trim(), emoji: emoji ?? pickCategoryEmoji(name) },
-      });
-      assertOk(response);
-      return response.json();
-    },
+    }): Promise<CategoryRecord> =>
+      createCategory(localPorts, {
+        name: name.trim(),
+        emoji: emoji ?? pickCategoryEmoji(name),
+      }),
     onSuccess: (created) => {
-      client.setQueryData<CategoryDto[]>(categoryKeys.all(), (current) =>
+      client.setQueryData<CategoryRecord[]>(categoryKeys.all(), (current) =>
         current ? [...current, created] : [created],
       );
       void client.invalidateQueries({ queryKey: dashboardKeys.all });
@@ -72,22 +69,15 @@ export function useUpdateCategory() {
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       id,
       changes,
     }: {
       id: string;
       changes: UpdateCategoryInput;
-    }): Promise<CategoryDto> => {
-      const response = await apiClient.api.categories[":id"].$patch({
-        param: { id },
-        json: changes,
-      });
-      assertOk(response);
-      return response.json();
-    },
+    }): Promise<CategoryRecord> => updateCategory(localPorts, id, changes),
     onSuccess: (updated) => {
-      client.setQueryData<CategoryDto[]>(categoryKeys.all(), (current) =>
+      client.setQueryData<CategoryRecord[]>(categoryKeys.all(), (current) =>
         current?.map((row) => (row.id === updated.id ? updated : row)),
       );
       void client.invalidateQueries({ queryKey: dashboardKeys.all });
@@ -97,24 +87,18 @@ export function useUpdateCategory() {
 }
 
 /**
- * Delete a category. `subscriptions.category_id` is `onDelete: "set null"`, so
- * this never removes a subscription — it uncategorises however many were in it,
- * which is why both other caches have to go.
+ * Delete a category. The store nulls `categoryId` on the subscriptions that
+ * referenced it rather than removing them, so this never deletes a
+ * subscription — it uncategorises however many were in it, which is why both
+ * other caches have to go.
  */
 export function useDeleteCategory() {
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string): Promise<void> => {
-      const response = await apiClient.api.categories[":id"].$delete({
-        param: { id },
-      });
-      // 204, so there is no body to read — assertOk is still what turns a
-      // non-2xx into an ApiError instead of a silent success.
-      assertOk(response);
-    },
+    mutationFn: (id: string): Promise<void> => deleteCategory(localPorts, id),
     onSuccess: (_result, id) => {
-      client.setQueryData<CategoryDto[]>(categoryKeys.all(), (current) =>
+      client.setQueryData<CategoryRecord[]>(categoryKeys.all(), (current) =>
         current?.filter((row) => row.id !== id),
       );
       void client.invalidateQueries({ queryKey: dashboardKeys.all });

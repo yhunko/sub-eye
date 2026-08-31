@@ -7,10 +7,9 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@subeye/currency": "workspace:*",
-    "@subeye/shared": "workspace:*",
-    "@subeye/spend": "workspace:*",
-    "date-fns": "^4.1.0"
+    "@subeye/money": "workspace:*",
+    "@subeye/model": "workspace:*",
+    "@subeye/time": "workspace:*"
   },
   "scripts": {
     "lint": "biome check .",

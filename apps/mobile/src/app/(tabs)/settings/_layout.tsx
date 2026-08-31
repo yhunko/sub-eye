@@ -1,21 +1,19 @@
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { m } from "@/shared/i18n";
-import { nativeHeaderChrome } from "@/shared/ui/header";
+import { categorySheetChrome, nativeHeaderChrome } from "@/shared/ui/header";
+import { categoryAddHeaderOptions } from "@/widgets/categories-page";
 
-// A fixed tall detent, not "fitToContents": the emoji grid lives in a
-// ScrollView, and a `flex: 1` scroller has no intrinsic height for the sheet to
-// measure against. Matches the subscription sheets.
-//
-// Unlike them it KEEPS its header: save and delete used to be buttons under a
-// 120-tile grid, which put both of them below the fold of a 0.9 sheet. The
-// sheet's own nav bar is the only slot that cannot scroll away. CategorySheet
-// fills it.
-const categorySheet = {
-  ...nativeHeaderChrome,
-  presentation: "formSheet" as const,
-  sheetGrabberVisible: true,
-  sheetAllowedDetents: [0.9],
-};
+// A deep link builds this stack from the URL ALONE, so without an anchor
+// `subeye:///settings/notifications` — or any of the four other sub-routes —
+// mounts with nothing under it: no back button and no way out but the tab bar.
+// It also bites on a plain Fast Refresh, which restores the current URL: reload
+// while on a sub-screen and the screen you were editing becomes the root.
+// Matches `(tabs)/subscriptions/_layout.tsx`.
+export const unstable_settings = { anchor: "index" };
+
+// The singleton, not `useRouter()`: this is built once, outside the component,
+// so it never carries a hook's identity into a screen descriptor.
+const openNewCategory = () => router.push("/settings/categories/new");
 
 export default function SettingsTabLayout() {
   return (
@@ -25,12 +23,19 @@ export default function SettingsTabLayout() {
         name="notifications"
         options={{ title: m.settings_notifications() }}
       />
+      {/* The `+` is declared here rather than on the page for the same reason
+          the subscriptions list's search field is: it depends on nothing the
+          screen holds, and options set from inside a screen are re-pushed
+          through `navigation.setOptions` on every render. */}
       <Stack.Screen
         name="categories/index"
-        options={{ title: m.settings_categories() }}
+        options={{
+          title: m.settings_categories(),
+          ...categoryAddHeaderOptions(openNewCategory),
+        }}
       />
-      <Stack.Screen name="categories/new" options={categorySheet} />
-      <Stack.Screen name="categories/[id]" options={categorySheet} />
+      <Stack.Screen name="categories/new" options={categorySheetChrome} />
+      <Stack.Screen name="categories/[id]" options={categorySheetChrome} />
     </Stack>
   );
 }

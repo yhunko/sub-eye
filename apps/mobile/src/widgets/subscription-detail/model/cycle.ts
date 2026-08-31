@@ -1,4 +1,4 @@
-import type { SubscriptionDto } from "@subeye/shared";
+import type { SubscriptionDto } from "@subeye/model";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

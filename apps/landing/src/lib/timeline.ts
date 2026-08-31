@@ -1,6 +1,5 @@
+import { type PricePhaseKind, SubscriptionPeriod } from "@subeye/model";
 import { buildPhaseProjection, type PricePhaseInput } from "@subeye/pricing";
-import { type PricePhaseKind, SubscriptionPeriod } from "@subeye/shared";
-import { differenceInCalendarDays, differenceInCalendarMonths } from "date-fns";
 
 /**
  * The signature element's numbers, computed at build time by the shipped phase
@@ -15,6 +14,21 @@ import { differenceInCalendarDays, differenceInCalendarMonths } from "date-fns";
 
 /** Fixed, not `new Date()`: a build must be reproducible for the Turbo cache. */
 const ORIGIN = new Date("2026-01-01T00:00:00.000Z");
+
+/**
+ * Both spans are measured in UTC, not with date-fns' `differenceInCalendar*`.
+ * A phase boundary is a calendar day stored as its UTC midnight, and those
+ * helpers re-read it in the BUILD MACHINE's zone: west of UTC the standard
+ * phase's 30 April midnight is still 29 April, so the page rendered the price
+ * as opening in month 5. Every boundary is a UTC midnight, so the day span is
+ * an exact division.
+ */
+const calendarDaysBetween = (from: Date, to: Date) =>
+  Math.round((to.getTime() - from.getTime()) / 86_400_000);
+
+const calendarMonthsBetween = (from: Date, to: Date) =>
+  (to.getUTCFullYear() - from.getUTCFullYear()) * 12 +
+  (to.getUTCMonth() - from.getUTCMonth());
 
 const PHASES: PricePhaseInput[] = [
   {
@@ -85,9 +99,9 @@ const build = (): TimelineStep[] => {
       kind: phase.kind,
       monthly: phase.billing.preferred.monthly,
       currency: phase.billing.preferred.currencyCode,
-      spanDays: endsAt ? differenceInCalendarDays(endsAt, startsAt) : null,
-      spanMonths: endsAt ? differenceInCalendarMonths(endsAt, startsAt) : null,
-      startMonth: differenceInCalendarMonths(startsAt, ORIGIN) + 1,
+      spanDays: endsAt ? calendarDaysBetween(startsAt, endsAt) : null,
+      spanMonths: endsAt ? calendarMonthsBetween(startsAt, endsAt) : null,
+      startMonth: calendarMonthsBetween(ORIGIN, startsAt) + 1,
       isActive: phase.isActive,
     };
   });

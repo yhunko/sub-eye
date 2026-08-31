@@ -1,9 +1,10 @@
-import type { SubscriptionStatus } from "@subeye/shared";
+import type { SubscriptionStatus } from "@subeye/model";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
 import { BrandLogo, brandLogoUrl } from "@/shared/ui/brand-logo";
-import { colors, LAYOUT_FONT_SCALE_MAX } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
+import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
 /** A standard (non-large) iOS navigation bar, under the status bar inset. */
 const NAV_BAR_HEIGHT = 44;
@@ -15,6 +16,26 @@ const NAV_BAR_HEIGHT = 44;
  * further up, behind the status bar where nothing can see it.
  */
 const OVERSCAN = 12;
+
+/**
+ * How far the banner reaches ABOVE the screen, so a rubber-band pull cannot drag
+ * page background into view behind it.
+ *
+ * The hero scrolls with the content, so on an overscroll it travels down and
+ * whatever sits above it is exposed — a hard black strip under the nav bar,
+ * which is the same seam `OVERSCAN` exists to prevent, just produced by a
+ * gesture instead of by rounding. Extending the artwork past any reachable pull
+ * is cheaper than an animated stretchy header: no scroll handler, no
+ * `Animated.ScrollView`, and nothing that runs per frame.
+ *
+ * It is added to the margin AND paid back as padding, so no content moves — only
+ * the artwork grows upward into space that is off-screen at rest.
+ */
+const OVERSCROLL_REACH = 420;
+
+/** A segment value's design size, and the point size it may never shrink past. */
+const SEGMENT_SIZE = 15;
+const SEGMENT_FLOOR = 11;
 
 // References, not calls — a module-level table must hold the message function or
 // the string freezes in whichever locale was active at import.
@@ -62,6 +83,14 @@ function Backdrop({ domain }: { domain: string | null }) {
           resizeMode="cover"
         />
       ) : null}
+      {/* TWO scrims, not one stretched over the taller box. The gradient's own
+          stops are percentages, so covering the overscroll reach with it would
+          slide 52% and 100% down with the extra height and leave the VISIBLE
+          band sitting in the dark end of the ramp — the brand wash would go
+          uniformly murky. Instead the reach gets a flat scrim at exactly the
+          gradient's 0% value, which makes the join invisible, and the gradient
+          keeps the geometry it was tuned for. */}
+      <View style={styles.scrimReach} />
       <View style={styles.scrim} />
     </View>
   );
@@ -78,24 +107,32 @@ function Segment({
   color?: string;
   divided?: boolean;
 }) {
+  const stacked = useLargeText();
+
   return (
-    <View style={[styles.segment, divided ? styles.segmentDivided : null]}>
+    <View
+      style={[
+        styles.segment,
+        stacked && styles.segmentStacked,
+        divided
+          ? stacked
+            ? styles.segmentRuled
+            : styles.segmentDivided
+          : null,
+      ]}
+    >
       <Text
         style={[styles.segmentValue, color ? { color } : null]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.75}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
+        // A third of a phone is not a line to shrink into. Down the column each
+        // segment has the full width and nothing left to fight over, so the
+        // value simply wraps.
+        numberOfLines={stacked ? undefined : 1}
+        adjustsFontSizeToFit={!stacked}
+        minimumFontScale={useShrinkFloor(SEGMENT_SIZE, SEGMENT_FLOOR)}
       >
         {value}
       </Text>
-      <Text
-        style={styles.segmentLabel}
-        numberOfLines={1}
-        maxFontSizeMultiplier={LAYOUT_FONT_SCALE_MAX}
-      >
-        {label}
-      </Text>
+      <Text style={styles.segmentLabel}>{label}</Text>
     </View>
   );
 }
@@ -130,9 +167,15 @@ export function DetailHero({
   //
   // iOS only: the Android header is opaque, so there is nothing to show through
   // and the negative margin would just hide the top of the banner behind it.
+  // Three segments across a capsule at the accessibility sizes is three columns
+  // of one syllable each. It becomes a stack, and the pill becomes a card.
+  const stacked = useLargeText();
+
   const insets = useSafeAreaInsets();
   const reach =
-    Platform.OS === "ios" ? insets.top + NAV_BAR_HEIGHT + OVERSCAN : 0;
+    Platform.OS === "ios"
+      ? insets.top + NAV_BAR_HEIGHT + OVERSCAN + OVERSCROLL_REACH
+      : 0;
 
   return (
     <View
@@ -143,7 +186,7 @@ export function DetailHero({
     >
       <Backdrop domain={brandDomain} />
 
-      <View style={styles.identity}>
+      <View style={[styles.identity, stacked && styles.identityStacked]}>
         <BrandLogo
           name={name}
           brandDomain={brandDomain}
@@ -151,18 +194,12 @@ export function DetailHero({
           dimmed={dead}
         />
         <View style={styles.identityText}>
-          <Text style={styles.name} numberOfLines={2}>
-            {name}
-          </Text>
-          {dateLine ? (
-            <Text style={styles.dateLine} numberOfLines={1}>
-              {dateLine}
-            </Text>
-          ) : null}
+          <Text style={styles.name}>{name}</Text>
+          {dateLine ? <Text style={styles.dateLine}>{dateLine}</Text> : null}
         </View>
       </View>
 
-      <View style={styles.bar}>
+      <View style={[styles.bar, stacked && styles.barStacked]}>
         <Segment label={m.detail_segBilling()} value={cadence} />
         {/* The as-charged amount takes the caption slot instead of a line of its
             own. "Amount" only ever restated the number above it, and the
@@ -213,14 +250,46 @@ const styles = StyleSheet.create({
     transform: [{ scale: 2.6 }],
     filter: [{ saturate: 2.6 }, { brightness: 0.85 }],
   },
+  // Only the part of the banner that is ever on screen at rest. `top` is the
+  // overscroll reach, so this begins exactly where the flat scrim above it ends
+  // and at the same 0.40 — one continuous wash across the join.
   scrim: {
-    ...StyleSheet.absoluteFill,
+    position: "absolute",
+    top: OVERSCROLL_REACH,
+    left: 0,
+    right: 0,
+    bottom: 0,
     experimental_backgroundImage:
       "linear-gradient(180deg, rgba(15,17,21,0.40) 0%, rgba(15,17,21,0.72) 52%, rgba(15,17,21,0.93) 100%)",
   },
+  // The reach itself: a flat scrim at the gradient's starting value. Only ever
+  // seen mid-pull, and only the last few points of it.
+  scrimReach: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: OVERSCROLL_REACH,
+    backgroundColor: "rgba(15,17,21,0.40)",
+  },
 
   identity: { flexDirection: "row", alignItems: "center", gap: 14 },
-  identityText: { flex: 1, minWidth: 0 },
+  // Beside a 54pt logo the name gets 298pt, and "Amazon" at 78pt does not fit in
+  // it — it broke MID-WORD. Under the logo it has the whole banner.
+  identityStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  // `flexBasis: "auto"` rather than `flex: 1`: down the column basis 0 would
+  // collapse the text block, because the banner's height is its content's.
+  identityText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "auto",
+    minWidth: 0,
+    alignSelf: "stretch",
+  },
   name: {
     fontSize: 22,
     fontWeight: "800",
@@ -244,18 +313,43 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.09)",
     paddingVertical: 10,
   },
+  // A stack of full-width rows, so the capsule's radius has to come down with
+  // it — 999 on a tall box is a lozenge with its corners eating the text.
+  barStacked: {
+    flexDirection: "column",
+    borderRadius: 20,
+    paddingHorizontal: 4,
+  },
+  // The triple rather than `flex: 1`, so `segmentStacked` can put the basis
+  // back: down a column, basis 0 collapses the segment to no height.
   segment: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
     minWidth: 0,
     alignItems: "center",
     paddingHorizontal: 8,
+  },
+  segmentStacked: {
+    flexGrow: 0,
+    flexBasis: "auto",
+    alignSelf: "stretch",
+    alignItems: "flex-start",
   },
   segmentDivided: {
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: "rgba(255,255,255,0.18)",
   },
+  // The same rule turned through 90°, now that the segments sit above and below
+  // each other rather than beside.
+  segmentRuled: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.18)",
+  },
   segmentValue: {
-    fontSize: 15,
+    fontSize: SEGMENT_SIZE,
     fontWeight: "700",
     color: colors.text,
     textTransform: "capitalize",

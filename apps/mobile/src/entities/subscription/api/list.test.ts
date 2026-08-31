@@ -1,94 +1,41 @@
-import { afterEach, describe, expect, it } from "bun:test";
-import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/shared";
+import { beforeEach, describe, expect, it } from "bun:test";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
+import type { SubscriptionRecord } from "@subeye/store";
 import { QueryClient } from "@tanstack/react-query";
+import { eraseDoc, localPorts } from "@/shared/lib/store";
+import { makeSubscription } from "../model/subscription.fixture";
+import {
+  getCachedSubscriptionRow,
+  subscriptionKeys,
+  subscriptionsQuery,
+} from "./list";
 
-// The entity builds on the real apiClient, whose env module validates the
-// EXPO_PUBLIC_* vars at import time — set them before the dynamic import below.
-process.env.EXPO_PUBLIC_API_URL = "https://api.test";
-process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??= "pk_test_x";
+beforeEach(() => eraseDoc());
 
-const realFetch = globalThis.fetch;
-afterEach(() => {
-  globalThis.fetch = realFetch;
-});
-
-// Stubs the transport rather than mocking the api module: bun's mock.module is
-// process-global and would leak into client.test.ts, which asserts on the real
-// client. This also exercises the real Hono RPC URL building.
-function stubJson(body: unknown): string[] {
-  const urls: string[] = [];
-  globalThis.fetch = ((input: unknown) => {
-    urls.push(input instanceof Request ? input.url : String(input));
-    return Promise.resolve(
-      new Response(JSON.stringify(body), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-  }) as typeof fetch;
-  return urls;
-}
-
-/** Serves one body per call, so a paginated queryFn walks a real sequence. */
-function stubPages(
-  bodies: unknown[],
-  { repeatLast = false }: { repeatLast?: boolean } = {},
-): string[] {
-  const urls: string[] = [];
-  globalThis.fetch = ((input: unknown) => {
-    const index = urls.length;
-    urls.push(input instanceof Request ? input.url : String(input));
-    const body = bodies[index] ?? (repeatLast ? bodies.at(-1) : undefined);
-    return Promise.resolve(
-      new Response(JSON.stringify(body ?? { items: [], nextCursor: null }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-  }) as typeof fetch;
-  return urls;
-}
-
-const { getCachedSubscriptionRow, subscriptionKeys, subscriptionsQuery } =
-  await import("./list");
-
-const row: SubscriptionDto = {
-  id: "sub_1",
+const record = (
+  patch: Partial<SubscriptionRecord> & { id: string },
+): SubscriptionRecord => ({
   name: "Netflix",
-  cost: 9.99,
+  cost: "9.99",
   currency: "usd",
   every: 1,
   period: SubscriptionPeriod.MONTH,
-  paymentDate: "2026-07-01T00:00:00.000Z",
+  status: "active",
   autoPaid: true,
   categoryId: null,
   notes: null,
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: "2026-01-01T00:00:00.000Z",
-  brandDomain: "netflix.com",
-  billing: {
-    original: { currencyCode: "usd", monthly: 9.99 },
-    preferred: {
-      currencyCode: "uah",
-      amount: 420,
-      monthly: 420,
-      yearly: 5040,
-      exchangeRate: 42,
-    },
-  },
-  nextPaymentDate: "2026-08-01T00:00:00.000Z",
-  lastPaymentDate: null,
+  brandDomain: null,
+  paymentDate: "2026-09-01T00:00:00.000Z",
   willBeCancelledAt: null,
-  scheduledPriceChange: null,
-  pricePhases: [],
-  effectivePhaseKind: "standard",
-  upcomingPhase: null,
-  status: "active",
   pausedAt: null,
   resumeAt: null,
-  allowedActions: [],
-  category: null,
-};
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  ...patch,
+});
+
+const runList = (): Promise<SubscriptionDto[]> =>
+  (subscriptionsQuery().queryFn as () => Promise<SubscriptionDto[]>)();
 
 describe("subscriptionKeys", () => {
   // THE defect this whole task prevents: the web client's key embeds
@@ -122,82 +69,58 @@ describe("subscriptionKeys", () => {
 });
 
 describe("subscriptionsQuery", () => {
-  // The screen renders an array; unwrapping the envelope here keeps every
-  // consumer from repeating `.items`.
-  it("unwraps the response envelope to a plain array", async () => {
-    const urls = stubJson({ items: [row], nextCursor: null });
-    const queryFn = subscriptionsQuery().queryFn as () => Promise<
-      SubscriptionDto[]
-    >;
+  it("maps stored records to the DTO every screen reads", async () => {
+    await localPorts.subscriptions.create(record({ id: "s1" }));
 
-    await expect(queryFn()).resolves.toEqual([row]);
-    expect(urls[0]).toContain("/api/subscriptions");
+    const rows = await runList();
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.id).toBe("s1");
+    expect(rows[0]?.name).toBe("Netflix");
+    expect(rows[0]?.billing.preferred.amount).toBeGreaterThan(0);
   });
 
-  // The defect this prevents: the server defaults an absent status to "active"
-  // (and its "active" is really active + cancelling), so a request without this
-  // parameter never returns a paused or cancelled subscription. Every screen
-  // treats this array as the whole list, so the Paused and Cancelled chips were
-  // permanently empty and the category counts were short.
-  it("asks for every status — the server's default hides paused and cancelled", async () => {
-    const urls = stubJson({ items: [row], nextCursor: null });
-    const queryFn = subscriptionsQuery().queryFn as () => Promise<
-      SubscriptionDto[]
-    >;
+  // The defect this prevents: the server defaulted an absent status to "active"
+  // (and its "active" meant active + cancelling), so the list arrived without
+  // the paused and cancelled rows. Every screen treats this array as the whole
+  // list, so the Paused and Cancelled chips were permanently empty and the
+  // category counts were short. There is no status filter to forget any more —
+  // this is the test that keeps one from being added.
+  it("returns every status, not just the active ones", async () => {
+    await localPorts.subscriptions.create(record({ id: "s1" }));
+    await localPorts.subscriptions.create(
+      record({
+        id: "s2",
+        status: "paused",
+        pausedAt: "2026-08-01T00:00:00.000Z",
+      }),
+    );
+    await localPorts.subscriptions.create(
+      record({ id: "s3", status: "cancelled" }),
+    );
 
-    await queryFn();
-    expect(urls[0]).toContain("status=all");
-  });
-
-  it("keeps status=all on every page, not just the first", async () => {
-    const urls = stubPages([
-      { items: [row], nextCursor: "50" },
-      { items: [], nextCursor: null },
+    expect((await runList()).map((row) => row.id).sort()).toEqual([
+      "s1",
+      "s2",
+      "s3",
     ]);
-    const queryFn = subscriptionsQuery().queryFn as () => Promise<
-      SubscriptionDto[]
-    >;
-
-    await queryFn();
-    expect(urls).toHaveLength(2);
-    expect(urls[1]).toContain("status=all");
-    expect(urls[1]).toContain("cursor=50");
   });
 
-  // The defect this prevents: the server pages at 50 by default and every screen
-  // treats this array as the COMPLETE list, so dropping nextCursor silently hides
-  // a user's 51st subscription from the list, the search and the filters.
-  it("follows nextCursor to exhaustion instead of returning the first page", async () => {
-    const second = { ...row, id: "sub_2", name: "Spotify" };
-    const urls = stubPages([
-      { items: [row], nextCursor: "50" },
-      { items: [second], nextCursor: null },
-    ]);
-    const queryFn = subscriptionsQuery().queryFn as () => Promise<
-      SubscriptionDto[]
-    >;
+  // The defect this prevents: the server paged at 50, and every screen treats
+  // this array as the COMPLETE list — so a dropped page silently hid a user's
+  // 51st subscription from the list, the search and the filters.
+  it("returns the whole list, with no page boundary to fall off", async () => {
+    for (let i = 0; i < 60; i++) {
+      await localPorts.subscriptions.create(record({ id: `s${i}` }));
+    }
 
-    await expect(queryFn()).resolves.toEqual([row, second]);
-    expect(urls).toHaveLength(2);
-    expect(urls[1]).toContain("cursor=50");
-  });
-
-  // A server that keeps handing back the same cursor must not put the phone in
-  // an unbounded request loop.
-  it("stops after MAX_PAGES when the cursor never advances", async () => {
-    const urls = stubPages([{ items: [row], nextCursor: "50" }], {
-      repeatLast: true,
-    });
-    const queryFn = subscriptionsQuery().queryFn as () => Promise<
-      SubscriptionDto[]
-    >;
-
-    await queryFn();
-    expect(urls).toHaveLength(20);
+    expect(await runList()).toHaveLength(60);
   });
 });
 
 describe("getCachedSubscriptionRow", () => {
+  const row = makeSubscription();
+
   // Cache seeding: the detail screen must be able to paint name/price/date the
   // instant the row is tapped, from data the list already holds.
   it("finds a row already held by the list query", () => {

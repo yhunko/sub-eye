@@ -21,7 +21,7 @@ therefore no longer optional — see the box there.
 | | |
 | --- | --- |
 | Apple Developer Program | active — team `Z6KADG969Z` is already in `app.json` |
-| Bundle id `cc.subeye.app` | registered — Sign in with Apple was configured against it |
+| Bundle id `cc.subeye.app` | registered — Sign in with Apple was configured against it, and is now unused (v5 has no accounts) |
 | EAS project | linked — `projectId e52f6dbb-…` |
 | Xcode | not needed. EAS builds in the cloud |
 
@@ -58,9 +58,18 @@ Do it once per team:
    Register.
 2. **App IDs → `cc.subeye.app`** —
    <https://developer.apple.com/account/resources/identifiers/list/bundleId>
-   Tick **App Groups**, press its **Configure**, tick `group.cc.subeye.app`,
-   Continue → Save. Leave Push Notifications and Sign in with Apple ticked —
-   untick nothing, or you break auth.
+   Tick **App Groups**, press its **Configure**, tick `group.cc.subeye.app`.
+   Tick **iCloud** as well — the store's sync switch needs
+   `com.apple.developer.ubiquity-kvstore-identifier`, and the capability is what
+   grants it. Continue → Save.
+
+   **Untick nothing, and do not try.** Sign in with Apple is dead weight since
+   v5 removed accounts, but it CANNOT be removed: Apple answers "The bundle
+   'NS5LM36RJ8' cannot be deleted. Delete all the Apps related to this bundle to
+   proceed" because the bundle has an App Store Connect app record. That is its
+   generic entity error, not a real delete — it is not asking you to delete
+   anything you would want to. It costs nothing to leave on, because nothing
+   writes `com.apple.developer.applesignin` into the entitlements any more.
 3. **App IDs → ➕** for the widget — App IDs → App → Continue. Description
    `SubEye Widget`, Bundle ID **Explicit** = **`cc.subeye.app.widget`**. Tick
    **App Groups** → Configure → tick `group.cc.subeye.app` → Continue →
@@ -147,8 +156,7 @@ This is the only Apple step that actually blocks a TestFlight upload.
 2. Platform **iOS**, Name **SubEye**, Primary language **English (U.S.)**
 3. **Bundle ID:** pick `cc.subeye.app` from the dropdown. If it is not in the
    list, the identifier is missing from the Developer portal — add it under
-   Certificates, IDs & Profiles → Identifiers with **Sign in with Apple**
-   enabled, then come back.
+   Certificates, IDs & Profiles → Identifiers, then come back.
 4. **SKU:** anything, never shown to anyone. `subeye-ios` is fine.
 5. Full Access, then **Create**.
 
@@ -172,10 +180,15 @@ Check what is there:
 bunx eas env:list --environment production
 ```
 
-As of 2026-07-29 all five `EXPO_PUBLIC_*` are set: `API_URL`,
+As of 2026-07-29 all five `EXPO_PUBLIC_*` were set: `API_URL`,
 `CLERK_PUBLISHABLE_KEY`, `BRANDFETCH_CLIENT_ID`, `REVENUECAT_IOS_KEY` and
 `SENTRY_DSN`. **`SENTRY_AUTH_TOKEN` is the only one still missing**, and it is the
 one that fails the build — see the box below.
+
+Since v5 the app reads only `BRANDFETCH_CLIENT_ID`, `REVENUECAT_IOS_KEY` and
+`SENTRY_DSN` — `src/shared/config/env.ts` is the source of truth. `API_URL` and
+`CLERK_PUBLISHABLE_KEY` are stale entries in the EAS environments; they are
+inert, but delete them so the list matches the binary.
 
 Note this command must run from `apps/mobile`; from the repo root eas-cli cannot
 find `app.json` and reports "EAS project not configured".
@@ -193,7 +206,7 @@ The failure is quiet and looks like three separate bugs:
 `Purchases.configure` throws, the module-scope try/catch fails open, so the
 paywall reports "could not load", `usePro` falls back to a cached `false`, and
 **a dashboard grant has nowhere to land** because the SDK never created a
-customer for your Clerk id. Nothing reached Sentry until that catch was wired to
+customer at all. Nothing reached Sentry until that catch was wired to
 `reportError`.
 
 Getting the `appl_` key needs **no IAP product and no Paid Applications
@@ -227,9 +240,9 @@ Same value for `preview`. Keep `test_…` in `apps/mobile/.env` only — that is
 debug build, which is exactly where it belongs.
 
 With the `appl_` key and no products configured yet, the paywall correctly shows
-`paywall_unavailable` and **dashboard grants work**, because the SDK configures,
-`Purchases.logIn(clerkUserId)` succeeds and the customer exists. (`dev.forcePro`
-will still not work: `__DEV__` is false in a store build, by design.)
+`paywall_unavailable` and **dashboard grants work**, because the SDK configures
+and creates its anonymous customer. (`dev.forcePro` will still not work:
+`__DEV__` is false in a store build, by design.)
 
 ### Sentry, and why this one can fail the build
 
@@ -373,18 +386,23 @@ Review, roughly a day. You do not need them yet.
 The full list is **M6** in [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md). The five
 that have never once been exercised, in priority order:
 
-1. **Sign-in against the deployed API.** Every previous run pointed at a LAN
-   wrangler dev server. This is the first time the app talks to
-   `app.subeye.cc` with a `pk_live_` Clerk key — if the Worker's
-   `CLERK_SECRET_KEY` is a test key, every request 401s and you will find out
-   here.
-2. **Sign in with Apple**, including "Hide My Email". Never run end to end.
+Items 1 and 2 used to be sign-in and Sign in with Apple. Both are gone with
+accounts; the app opens straight onto the dashboard.
+
+1. **A cold install with the network off.** This is the whole product claim now:
+   add a subscription, see the totals, kill the app, reopen it. Nothing may
+   require a request.
+2. **The bundled FX seed, then the daily refresh.** A cold install must convert
+   correctly offline, and pick up `cdn.jsdelivr.net` rates once online.
 3. **Notification permission** and a scheduled reminder actually arriving.
-4. **The Pro gates** — grant yourself `pro` in RevenueCat (Customers → your
-   Clerk user id → Entitlements → Grant → until 2099) and confirm reminders,
-   the pricing timeline, and all four category surfaces unlock.
+4. **The Pro gates** — grant yourself `pro` in RevenueCat (Customers → the
+   anonymous customer for that device → Entitlements → Grant → until 2099) and
+   confirm reminders, the pricing timeline, and all four category surfaces
+   unlock.
 5. **The `/uk/` legal links** from Settings, with the phone's per-app language
    set to Ukrainian.
+6. **Settings → Erase all data.** It is the only deletion path the App Store
+   review will find, and every screen must empty without a restart.
 
 ---
 
@@ -393,7 +411,6 @@ that have never once been exercised, in priority order:
 | Symptom | Cause |
 | --- | --- |
 | App opens to the crash screen immediately | A missing `EXPO_PUBLIC_*` in the EAS `production` environment. `env.ts` throws at module load. |
-| Every API call 401s | The Worker's Clerk secret and the app's `pk_live_` publishable key are from different instances. |
 | Build fails on credentials | Delete the EAS-managed credentials and let it regenerate — do not hand-manage profiles. |
 | `eas submit` cannot find the app | Step 1 was skipped, or the bundle id on the record does not match `cc.subeye.app` exactly. |
 | Build stuck in *Processing* over an hour | Usually an invalid icon or a missing entitlement. Check the email Apple sends; it is more specific than the dashboard. |

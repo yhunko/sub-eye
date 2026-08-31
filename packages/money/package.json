@@ -1,0 +1,17 @@
+{
+  "name": "@subeye/money",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@subeye/model": "workspace:*"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "test": "bun test ./test",
+    "type-check": "tsc --noEmit --pretty"
+  }
+}

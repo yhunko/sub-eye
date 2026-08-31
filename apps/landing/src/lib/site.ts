@@ -1,11 +1,11 @@
 /**
  * The URL contract with the shipped iOS binary.
  *
- * `apps/mobile/src/shared/config/legal-url.ts` builds `${SITE}/${locale}/${page}/`
- * and pins all four strings in its own test. Changing the host, the `/en` prefix
- * or the trailing slash here strands a binary that is already in the App Store,
- * so both sides are pinned: `test/routes.test.ts` asserts the same four strings
- * against the page files that actually exist.
+ * The app renders the documents itself, out of `@subeye/legal`, so it no longer
+ * requests these — but App Store Connect stores the privacy-policy URL as
+ * metadata and a reviewer follows it, so a 404 is still a rejection.
+ * `test/routes.test.ts` asserts the four strings against the page files that
+ * actually exist.
  */
 export const SITE = "https://www.subeye.cc";
 
@@ -45,9 +45,16 @@ export const otherLocale = (locale: Locale): Locale =>
  */
 export const proPrice = { usd: 11.99, uah: 199, eur: 9.99 };
 
-export const privacyEmail = "privacy@subeye.cc";
+/**
+ * The App Store product page.
+ *
+ * Storefront-neutral on purpose. The link issued at launch was
+ * `https://apps.apple.com/us/app/subeye-subscription-tracker/id6795566917`;
+ * dropping the `/us/` segment is what lets Apple send a reader to their own
+ * storefront instead of parking a Ukrainian visitor in the US store — the same
+ * promise the pricing section makes out loud. The numeric id is the only part
+ * Apple guarantees, so it is the only part written down here.
+ */
+export const APP_STORE_ID = "6795566917";
 
-/** Named in the legal pages as the controller. GDPR Art. 13 wants an identity. */
-export const operator = "Yehor Hunko";
-
-export const legalUpdated = "2026-07-28";
+export const appStoreUrl = `https://apps.apple.com/app/id${APP_STORE_ID}`;

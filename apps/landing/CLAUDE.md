@@ -20,10 +20,11 @@ https://www.subeye.cc/uk/terms-of-service/
 https://www.subeye.cc/uk/privacy-policy/
 ```
 
-`apps/mobile/src/shared/config/legal-url.ts` builds exactly these and pins them
-in its own test. **App Store Connect rejects a 404 privacy policy**, and
-Settings → Legal opens them in front of a reviewer. Three things produce them
-and all three must agree:
+**App Store Connect rejects a 404 privacy policy**, so these four have to
+resolve even though the app itself no longer opens them: since `@subeye/legal`,
+Settings → Legal and the paywall render the documents in a native sheet from the
+shipped bundle. The URLs are metadata now — a reviewer follows them, a binary
+does not. Three things produce them and all three must agree:
 
 | where | what |
 | --- | --- |
@@ -33,6 +34,28 @@ and all three must agree:
 
 `test/routes.test.ts` asserts all of it against the page files that exist. If it
 fails, do not "fix" the test — a scheme change costs a new App Store build.
+
+## The legal pages own no copy
+
+Both documents live in [`@subeye/legal`](../../packages/legal) as data, and the
+four `.astro` pages are ten lines each: fetch the doc, hand it to
+`components/LegalBody.astro`, which maps blocks onto the `h2`/`p`/`ul`/`dl`/
+`strong`/`code` tags `layouts/Legal.astro` already styles. `apps/mobile` renders
+the same object natively in its legal sheet, so **editing the words here is
+impossible by design** — change them in the package or the app and the site say
+different things to the same user.
+
+Two things follow. `Legal.astro`'s `updated` prop is optional and comes off the
+document, so the support page — which shares the layout but is not a revised
+document — no longer prints a date. And the layout formats that date with
+`timeZone: "UTC"`, because an ISO day parses to UTC midnight and a build machine
+west of UTC would otherwise print the day before, only on that machine.
+
+`privacyEmail` and `operator` moved into the package as `LEGAL_CONTACT_EMAIL`
+and `LEGAL_OPERATOR`; the footer and both support pages import them from there.
+`proPrice` stayed in `src/lib/site.ts` — a package cannot import an app — so the
+terms quote it as formatted literals and `test/pricing.test.ts` pins the two
+against each other.
 
 ## Zero client JavaScript, and it has to stay zero
 
@@ -58,6 +81,41 @@ execute. Everything interactive is a platform feature:
 If something seems to need an island, it does not. There is no framework
 installed to reach for.
 
+## The App Store badge is licensed artwork, not an image
+
+`public/badges/download-on-the-app-store.svg` is Apple's file, fetched from
+`developer.apple.com/assets/elements/badges/` and committed byte-for-byte. It
+is served from this origin because the site references no third-party host at
+runtime and `img-src 'self' data:` would block one anyway.
+
+Apple's marketing guidelines are a licence condition, not advice, and four of
+them shape the markup:
+
+- **One badge per layout.** The hero has it; the fixed bar and the closing card
+  are plain green buttons that carry neither the Apple logo nor the badge's
+  words, because a text button wearing "Download on the App Store" reads as a
+  badge Apple did not draw.
+- **Clear space** of at least a quarter of the badge height, on every side,
+  with nothing in it. `AppStoreBadge.astro` carries that as its own padding so
+  it survives a later change to the row's `gap`, then pulls the artwork back
+  into line with the headline with a negative inline-start margin — the page
+  gutter is the clear space on that side.
+- **Never modify it.** No recolour, no tilt, no animation, and so no hover
+  state either. 54px tall against a 40px floor.
+- **Never build your own localised badge.** Apple ships a Ukrainian one, but
+  only through App Store Marketing Tools, so both locales render the English
+  artwork until someone downloads the real file. The *alt text* is localised;
+  the words `App Store` inside it never are.
+
+The footer's trademark credit line is required once per site wherever legal
+notice is given, and has to credit the Apple logo because the badge carries
+one. `test/appStore.test.ts` pins the placement count, the file's provenance,
+and the marks that must stay in English in both dictionaries.
+
+`src/lib/site.ts` drops the `/us/` storefront from the launch link on purpose —
+`apps.apple.com/app/id…` lets Apple route a reader to their own store, which is
+the same promise the pricing section makes out loud.
+
 ## Numbers come from the product, not from markup
 
 The page's argument is that SubEye models a price over time, so the price
@@ -68,15 +126,18 @@ parameter, so they cost the visitor nothing. `src/lib/timeline.ts` **throws at
 build time** if the phase model stops returning three ordered phases with the
 trial live — a page that lies about the product must not ship.
 
-Likewise the lifecycle mockup maps `subscriptionStatuses` from `@subeye/shared`,
+Likewise the lifecycle mockup maps `subscriptionStatuses` from `@subeye/model`,
 and both copy dictionaries type their status labels as
 `Record<SubscriptionStatus, string>`. A new status fails `astro check` rather
 than rendering a gap.
 
-`test/pricing.test.ts` pins the five currency codes against
+`test/pricing.test.ts` reaches into
 `apps/mobile/src/shared/lib/format/money.ts` — deliberately, and only from a
-test. The page says "five currencies" out loud; a sixth in the app should fail
-here.
+test. The page names the SIZE of the catalogue out loud ("156 currencies"), so
+the test pins that number against `CURRENCY_CODES.length` in both locales, and
+separately asserts that every code the page prints is one the app can hold. It
+used to pin the whole five-code set; the catalogue is the ISO-4217 fiat list now
+and copying it here would be the drift the test exists to prevent.
 
 ## Typography: one face
 
@@ -107,11 +168,10 @@ worth having. `type-check` **is** `astro check`; it is not optional here.
 1. **`turbo.json` had no `.astro` in its input globs.** They are there now
    (`build`, `dev`, `type-check`, `test`). Adding a new file type without adding
    its glob means Turbo replays a stale cached build after you edit a page.
-2. **The production release workflow builds the server only**
-   (`turbo build --filter=@subeye/server`). A marketing-site typo must never be
-   able to block an API deploy. The repo-wide quality gate still runs first, on
-   purpose — a landing type error should fail CI, just not between the database
-   migration and the Worker deploy.
+2. **CI never deploys this site.** Both release workflows run the repo-wide
+   quality gate and semantic-release and stop; `apps/landing` ships only when
+   someone runs `bun run --cwd apps/landing deploy`. A landing type error still
+   fails CI — it just cannot block a release.
 
 ## Commands
 

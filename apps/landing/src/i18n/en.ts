@@ -1,4 +1,4 @@
-import type { PricePhaseKind, SubscriptionStatus } from "@subeye/shared";
+import type { PricePhaseKind, SubscriptionStatus } from "@subeye/model";
 
 /**
  * English is the shape of the whole dictionary. It lives here rather than in
@@ -25,13 +25,12 @@ export const en = {
   meta: {
     title: "SubEye — know what your subscriptions cost",
     description:
-      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No bank login, no inbox scanning. iPhone.",
+      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No account, no bank login, works with the network off. iPhone.",
   },
 
   hero: {
     title: "Know what your subscriptions cost. All of them.",
-    lead: "You type in what you pay. SubEye tells you what it costs now, what it becomes, and the day it leaves your account.",
-    status: "Coming to the App Store",
+    lead: "You type in what you pay. SubEye tells you what it costs now, what it becomes, and the day it leaves your account — with nothing to sign up for and no network to be on.",
     platform: "iPhone",
     ctaHow: "See how it works",
     ctaPrice: (free: string, pro: string) => `${free} to start, ${pro} once`,
@@ -61,30 +60,34 @@ export const en = {
   },
 
   bank: {
-    title: "SubEye never touches your bank.",
-    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay. That is the whole trade — a minute of typing, and nobody gets a key to your accounts.",
+    title: "SubEye never touches your bank. Or the network.",
+    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay, and then keeps it on the phone — no account to create, no server holding a copy. The other half of that trade is honest: your subscriptions are on that phone. An iPhone backup carries them to a new one, and if you want a second device to see the same list, iCloud Sync is a switch in Settings — off until you turn it on, and it goes to your own iCloud, never to us.",
     denials: [
       "No bank linking",
       "No email scanning",
       "No “we found 3 subscriptions”",
     ],
     /** `languages` is appended at the call site — it is one string, not two. */
-    pills: ["Nothing sold, nothing tracked", "Delete your account, for real"],
+    pills: [
+      "Nothing sold, nothing tracked",
+      "No sign-up, nothing to sign in to",
+      "Works with the network off",
+    ],
   },
 
   does: {
     title: "What it does",
     money: {
       title: "One number, with a denominator.",
-      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast, six months of trend, your most expensive subscription, and where the money actually goes.",
+      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast and whether it moved up or down, what the next twelve months come to, and where the money actually goes.",
     },
     lifecycle: {
       title: "Pause it, cancel it, change your mind.",
       body: "Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Swipe a row and you are only ever offered the actions that are legal for that subscription right now.",
     },
     currency: {
-      title: "Five currencies, one honest total.",
-      body: "UAH, USD, EUR, GBP and PLN, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
+      title: "Every currency, one honest total.",
+      body: "156 currencies, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
     },
   },
 
@@ -112,13 +115,15 @@ export const en = {
     freeName: "Free",
     freeSuffix: "always",
     freeBody:
-      "Unlimited subscriptions. The whole dashboard. Search, filters, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. Not a trial and not a teaser.",
+      "Unlimited subscriptions. The whole dashboard. Search, sorting, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. iCloud Sync between your own devices. Not a trial and not a teaser.",
     freeItems: [
+      "No account, and it works offline",
       "Unlimited subscriptions",
-      "Spend, forecast and six-month trend",
+      "Spend, next month, and the year ahead",
       "Pause, cancel, renew",
       "Renewal reminders, the day before",
-      "Five currencies at daily rates",
+      "Every currency at daily rates",
+      "iCloud Sync across your own devices",
       "English and Ukrainian",
     ],
     proName: "Pro",
@@ -129,8 +134,10 @@ export const en = {
     proItems: [
       "Choose when every reminder lands",
       "Trial-ending alerts",
-      "Price-change tracking",
-      "Categories and the spend breakdown",
+      "The payment calendar",
+      "Price history on every subscription",
+      "Categories, category filters and the breakdown",
+      "Home Screen widgets",
     ],
     joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
     storefrontTitle: "Priced for where you live.",
@@ -152,11 +159,11 @@ export const en = {
       },
       {
         q: "Is my data safe?",
-        a: "SubEye stores your email, your name, an account id, and the subscriptions you typed in. None of it is sold, none of it feeds advertising, and there is no tracking. Deleting your account in Settings removes the account and every subscription in it, for real. The full list of processors is in the privacy policy.",
+        a: "It stays on your phone. There is no account, no server and no database behind SubEye — nothing to breach, nothing to sell, and nobody to hand it to. The one exception is iCloud Sync, off until you switch it on in Settings: it copies your subscriptions into your own iCloud so a second device can read them. That is Apple's storage, not ours, and we still never see them. Settings → Erase all data removes every subscription, reminder and setting from the device — and from iCloud too, if sync is on. The handful of services the app talks to, and exactly what each one sees, is in the privacy policy.",
       },
       {
         q: "Do I need an account?",
-        a: "Yes. Your subscriptions live on the server so they survive a lost phone, a new phone and a reinstall. Sign in with email, Google, GitHub or Apple.",
+        a: "Not a SubEye one — there is nothing to sign up for and nothing to sign in to. Open the app and start typing. Your subscriptions live on the phone, and an iPhone backup carries them to a new one. If you want two devices to hold the same list, turn on iCloud Sync: it rides the Apple Account you are already signed in to, and it is off until you ask for it.",
       },
       {
         q: "What happens when a price changes?",
@@ -166,8 +173,24 @@ export const en = {
   },
 
   cta: {
-    title: "Coming to the App Store.",
-    body: "SubEye is built and heading for review. There is no list to join and nothing to sign up for — the app will simply be there.",
+    title: "SubEye is on the App Store.",
+    body: "Download it, type in the first subscription, and about twenty seconds later the number on the home screen is yours. Nothing to sign up for, nothing to sign in to.",
+    download: "Download SubEye",
+  },
+
+  appStore: {
+    /** Apple's own wording for the badge. The service mark is never translated. */
+    badgeAlt: "Download on the App Store",
+    /** The top bar's button. Not the badge's words — a text button that borrowed
+        them would read as a badge Apple did not draw. */
+    download: "Download",
+    /**
+     * Required wherever the site gives legal notice, once, because the page
+     * carries the badge. The international form: no ® or ℠ symbols, which
+     * Apple restricts to communications distributed only in the United States.
+     */
+    trademark:
+      "Apple, the Apple logo and iPhone are trademarks of Apple Inc., registered in the U.S. and other countries. App Store is a service mark of Apple Inc.",
   },
 
   footer: {
@@ -181,6 +204,5 @@ export const en = {
   legal: {
     updated: "Last updated",
     backHome: "Back to SubEye",
-    contents: "On this page",
   },
 };

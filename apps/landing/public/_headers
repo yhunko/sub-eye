@@ -9,3 +9,8 @@
 
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Apple's badge artwork, vendored and never edited in place — a reissued badge
+# arrives under a new filename, so this can be cached like the fonts.
+/badges/*
+  Cache-Control: public, max-age=31536000, immutable

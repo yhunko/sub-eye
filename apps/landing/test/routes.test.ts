@@ -7,13 +7,12 @@ import { canonical, legalPages, locales, SITE } from "../src/lib/site";
 const ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
 
 /**
- * The other half of `apps/mobile/src/shared/config/legal-url.test.ts`.
+ * The four URLs App Store Connect holds as metadata.
  *
- * That file pins the four URLs the shipped binary *requests*; this one pins the
- * four this site *serves*. Both sides assert the same literals independently, so
- * a change to the locale prefix, the trailing slash or the host fails in CI
- * instead of in App Store review — where a 404 privacy policy is a rejection
- * before a human ever opens the app.
+ * The app stopped requesting them when `@subeye/legal` moved the documents into
+ * the bundle, so this file is now the only thing pinning them — and they still
+ * matter, because a reviewer follows the privacy-policy URL and a 404 there is a
+ * rejection before a human ever opens the app.
  */
 const CONTRACT = [
   "https://www.subeye.cc/en/terms-of-service/",

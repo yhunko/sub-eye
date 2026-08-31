@@ -1,0 +1,22 @@
+{
+  "name": "@subeye/store",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@subeye/lifecycle": "workspace:*",
+    "@subeye/model": "workspace:*",
+    "@subeye/money": "workspace:*",
+    "@subeye/pricing": "workspace:*",
+    "@subeye/spend": "workspace:*",
+    "@subeye/time": "workspace:*"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "test": "bun test ./test",
+    "type-check": "tsc --noEmit --pretty"
+  }
+}

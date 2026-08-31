@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from "@subeye/shared";
+import type { SubscriptionStatus } from "@subeye/model";
 
 // The single design-token source. Dark-only — there is no light theme, and
 // app.json pins userInterfaceStyle: "dark" so the OS never fights us.
@@ -17,6 +17,10 @@ export const colors = {
   // user can be pleased about.
   accent: "#33a453",
   accentSoft: "rgba(51,164,83,0.14)",
+  // A ring rather than a fill, for the one thing that is merely WHERE YOU ARE:
+  // today's calendar tile. Full `accent` there competes with the selected tile
+  // beside it, and `accentSoft` is a fill — at 1px it disappears entirely.
+  accentBorder: "rgba(51,164,83,0.5)",
   // Focus/active affordances only. #33a453 on #0f1115 is 5.92:1 — fine for a
   // filled button, too dim for a 1px focused border, which is what this is for.
   accentBright: "#6fd98c",
@@ -25,6 +29,17 @@ export const colors = {
   danger: "#f87171",
   dangerSoft: "rgba(248,113,113,0.14)",
   dangerBorder: "rgba(248,113,113,0.32)",
+  // A calendar day that has already gone. It still holds charges, so it cannot
+  // be blank, but it asks nothing of the user — barely above `bg`, present
+  // rather than addressed. Deliberately NOT `statusTint.cancelled`, which the
+  // pair happens to match: that one is keyed to a subscription's status, and a
+  // day is not a status.
+  surfacePast: "#131519",
+  borderPast: "rgba(255,255,255,0.06)",
+  // `muted` is already the secondary text colour, so a past day needs to sit
+  // below it without becoming unreadable — this is muted at 55%, which is what
+  // separates "spent" from "coming" at a glance across a whole month.
+  mutedPast: "rgba(152,160,174,0.55)",
   // Amber = "not yet, but close", never "this is wrong". Two uses, one meaning:
   // the paused row tint and Pause swipe action (suspended, will come back), and
   // Home's rail for anything landing inside the next week. `danger` is the step
@@ -64,8 +79,3 @@ export const statusTint: Record<
   // screen. A dead subscription should recede towards the page background.
   cancelled: { bg: "#131519", border: "rgba(255,255,255,0.06)" },
 };
-
-// Cap Dynamic Type growth on layout-critical text (the fixed-size hero numbers
-// on Home, compact chips) so extreme OS font sizes cannot shatter the layout.
-// Body/prose text stays uncapped — it should scale fully for accessibility.
-export const LAYOUT_FONT_SCALE_MAX = 1.3;

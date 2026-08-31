@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useNavigation } from "expo-router";
 import {
   createContext,
   type ReactNode,
@@ -30,7 +30,15 @@ type FormContextValue = {
     key: K,
     value: SubscriptionFormValues[K],
   ) => void;
-  submit: () => void;
+  /**
+   * Validate only these fields. A step gates its Next on what it actually
+   * shows, so nothing fails validation on a screen the user has already left.
+   */
+  check: (fields: readonly (keyof SubscriptionFormValues)[]) => boolean;
+  /** `false` when nothing was written — the values did not validate. */
+  submit: () => boolean;
+  /** Dismisses the whole modal, from any step inside it. */
+  close: () => void;
 };
 
 const FormContext = createContext<FormContextValue | null>(null);
@@ -52,7 +60,11 @@ export function SubscriptionFormProvider({
   id?: string;
   children: ReactNode;
 }) {
-  const router = useRouter();
+  // NOT a router `back`: this provider wraps the modal's own Stack, so its
+  // navigation object is the ROOT one and `goBack` here pops the modal itself.
+  // A POP dispatched from inside the nested stack is clamped to that stack, so
+  // from step 3 it would only walk back to step 1.
+  const navigation = useNavigation();
   const client = useQueryClient();
 
   const { data: preferences } = useQuery(preferencesQuery());
@@ -70,14 +82,20 @@ export function SubscriptionFormProvider({
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Preferences and the subscription arrive asynchronously, so the form is
-  // seeded when they land — but ONCE. The detail query refetches on mount, and
-  // re-seeding on every change would wipe whatever the user had typed by the
-  // time the response came back.
-  const seeded = useRef(false);
+  // seeded when they land — but once PER SUBSCRIPTION. The detail query
+  // refetches on mount, and re-seeding on every change would wipe whatever the
+  // user had typed by the time the response came back.
+  //
+  // Keyed on `id` rather than a plain "have I run" flag, because `id` itself can
+  // arrive late: a cold deep link builds the navigation state around this
+  // layout, so the first render sees no params and the form would seed itself
+  // empty and then refuse to seed again when the real id turned up. `false` is
+  // the never-seeded marker — `undefined` is a legitimate id, meaning "create".
+  const seeded = useRef<string | undefined | false>(false);
   useEffect(() => {
-    if (seeded.current || !preferences) return;
+    if (!preferences || seeded.current === id) return;
     if (id && !subscription) return;
-    seeded.current = true;
+    seeded.current = id;
 
     setValues(
       makeInitialFormValues({
@@ -101,16 +119,32 @@ export function SubscriptionFormProvider({
     value: SubscriptionFormValues[K],
   ) => setValues((previous) => ({ ...previous, [key]: value }));
 
-  const submit = () => {
+  const check = (fields: readonly (keyof SubscriptionFormValues)[]) => {
+    const result = validateSubscriptionForm(values);
+    if (result.ok) {
+      setErrors({});
+      return true;
+    }
+
+    const own: FormErrors = {};
+    for (const field of fields) {
+      const code = result.errors[field];
+      if (code) own[field] = code;
+    }
+    setErrors(own);
+    return Object.keys(own).length === 0;
+  };
+
+  const submit = (): boolean => {
     // The nav-bar item stays hit-testable through the modal's dismissal
     // animation, and create is not idempotent — a second tap is a second
     // subscription. Same guard the category picker's create path uses.
-    if (create.isPending || update.isPending) return;
+    if (create.isPending || update.isPending) return false;
 
     const result = validateSubscriptionForm(values);
     if (!result.ok) {
       setErrors(result.errors);
-      return;
+      return false;
     }
     setErrors({});
 
@@ -126,11 +160,22 @@ export function SubscriptionFormProvider({
 
     // Edit is optimistic and create seeds the cache on success, so dismissing
     // straight away is correct: there is nothing left to wait for on screen.
-    router.back();
+    navigation.goBack();
+    return true;
   };
 
   return (
-    <FormContext.Provider value={{ id, values, errors, set, submit }}>
+    <FormContext.Provider
+      value={{
+        id,
+        values,
+        errors,
+        set,
+        check,
+        submit,
+        close: () => navigation.goBack(),
+      }}
+    >
       {children}
     </FormContext.Provider>
   );

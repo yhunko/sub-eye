@@ -1,7 +1,7 @@
 import type {
   SubscriptionAllowedAction,
   SubscriptionStatus,
-} from "@subeye/shared";
+} from "@subeye/model";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import { Alert } from "react-native";
@@ -74,21 +74,12 @@ export function useLifecycleActionBuilder() {
           destructive: false,
           // One route for both modes: an `id` param means edit.
           run: () =>
-            router.push({ pathname: "/subscriptions/form", params: { id } }),
+            router.push({ pathname: "/subscription-form", params: { id } }),
         }),
-        // addPhase, applyPhaseNow and cancelPhase are three server permissions
-        // over one screen. They collapse to a single entry (deduped below)
-        // rather than three menu items that all open the same sheet.
-        addPhase: () => ({
-          key: "pricing",
-          label: m.action_managePricing(),
-          destructive: false,
-          run: () =>
-            router.push({
-              pathname: "/subscriptions/[id]/pricing",
-              params: { id },
-            }),
-        }),
+        // `addPhase` deliberately mints NOTHING. Pricing is a dropdown of its
+        // own — see `usePricingMenu` — because it is four actions, not one, and
+        // folding them behind a single "Manage pricing" row cost a screen to
+        // choose between them. Everything here is a one-tap lifecycle action.
         pause: () => ({
           key: "pause",
           label: m.action_pause(),

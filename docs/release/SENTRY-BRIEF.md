@@ -113,12 +113,12 @@ Then:
   `captureException` can reject or throw, guard it.
 - **A global handler** for errors outside React's tree. `@sentry/react-native`
   installs one on init; verify it rather than adding a second.
-- **Identity:** `Sentry.setUser({ id: userId })` when Clerk resolves, `null` on
-  sign-out. `useProIdentity` in `src/entities/pro/model/purchases.ts` is the
-  existing hook doing exactly this shape for RevenueCat — follow it, or extend
-  it, but do not add a third auth-watching effect to the root layout.
-- **Never send** email, username, subscription names, amounts or notes. The id
-  alone is what joins to the server's PostHog `distinct_id`.
+- ~~**Identity:** `Sentry.setUser({ id: userId })` when Clerk resolves, `null` on
+  sign-out.~~ **Superseded by v5:** there is no account and no identifier to
+  attach. `shared/lib/sentry.ts` ships `sendDefaultPii: false` and sets no user,
+  so an event carries the device and the stack and nothing else. The PostHog
+  join this brief describes went away with the server.
+- **Never send** email, username, subscription names, amounts or notes.
 
 ### What does NOT need changing
 
@@ -148,11 +148,14 @@ processor `<dl>`:
 3. Add **Sentry — crash reporting (European Union)**: receives the stack trace,
    device model and OS version of a crash, keyed by the account identifier. No
    subscription data, no email, no session recording.
-4. Bump `legalUpdated` in `apps/landing/src/lib/site.ts`.
-5. Redeploy: `bun run --cwd apps/landing build && bun run --cwd apps/landing deploy`.
+4. Bump `updated` on that document in `packages/legal/src/privacy-policy.ts`.
+5. Redeploy: `bun run --cwd apps/landing build && bun run --cwd apps/landing deploy`,
+   and ship an app build — the copy is bundled now, so the site alone does not
+   update what a user reads in Settings.
 
-Both locales, and mirror the wording — `test/routes.test.ts` does not check copy,
-so nothing will catch a policy that exists in English only.
+The copy itself lives in `packages/legal`, once, for both surfaces. Edit both
+locales together: `content.test.ts` catches a lost section, not a stale
+translation.
 
 ### Gates
 

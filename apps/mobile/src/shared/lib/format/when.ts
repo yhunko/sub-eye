@@ -1,3 +1,4 @@
+import type { SubscriptionDto } from "@subeye/model";
 import { dateLocale, m } from "@/shared/i18n";
 import { todayAsDay } from "./day";
 
@@ -83,4 +84,32 @@ export function formatShortDate(isoDate: string): string {
 export function formatDaysUntil(days: number, isoDate: string): string {
   if (days < 14) return formatCountdown(days);
   return formatShortDate(isoDate);
+}
+
+// "monthly" reads better than "every 1 month", and the plural case is spelled
+// per locale rather than pluralised at runtime — Hermes has no Intl.PluralRules.
+const CADENCE_ONCE: Record<SubscriptionDto["period"], () => string> = {
+  day: m.cadence_day,
+  week: m.cadence_week,
+  month: m.cadence_month,
+  year: m.cadence_year,
+};
+const CADENCE_EVERY: Record<
+  SubscriptionDto["period"],
+  (inputs: { every: number }) => string
+> = {
+  day: m.cadence_everyDays,
+  week: m.cadence_everyWeeks,
+  month: m.cadence_everyMonths,
+  year: m.cadence_everyYears,
+};
+
+/** "monthly" / "every 3 months" — the qualifier that makes a price a rate. */
+export function formatCadence(
+  every: number,
+  period: SubscriptionDto["period"],
+): string {
+  return every === 1
+    ? CADENCE_ONCE[period]()
+    : CADENCE_EVERY[period]({ every });
 }
