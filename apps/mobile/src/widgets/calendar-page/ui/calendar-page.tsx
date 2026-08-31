@@ -15,6 +15,15 @@ import { MonthPager } from "./month-pager";
 /** A standard iOS navigation bar. There is no `useHeaderHeight` in this tree. */
 const NAV_BAR = 44;
 
+/**
+ * Air under the bar's own items.
+ *
+ * `NAV_BAR` clears the bar's frame, not what is drawn in it: iOS 26 renders a
+ * bar button as a glass capsule that fills most of that height, so the arrows
+ * came to rest directly beneath the options button with nothing between them.
+ */
+const HEADER_GAP = 14;
+
 function StepButton({
   direction,
   onPress,
@@ -82,7 +91,8 @@ export function CalendarPage() {
   // The fixed block sits outside every scroll view, so nothing hands it UIKit's
   // automatic inset. iOS only: `nativeHeaderChrome` makes the bar transparent
   // there and opaque on Android, where content is already laid out below it.
-  const headerTop = Platform.OS === "ios" ? insets.top + NAV_BAR : 0;
+  const headerTop =
+    (Platform.OS === "ios" ? insets.top + NAV_BAR : 0) + HEADER_GAP;
 
   const openDay = (date: string) => {
     setSelected(date);
