@@ -71,7 +71,7 @@ It counts every charge, not only the next one. A weekly subscription shows up on
 
 Choose where your week starts, how many logos fit on a day, and whether the daily totals show at all.
 
-The calendar is part of SubEye Pro.
+It is free, like the rest of the dashboard.
 ```
 
 ### Description (4000)
@@ -170,7 +170,7 @@ SubEye: трекер підписок
 
 Оберіть, з якого дня починається тиждень, скільки логотипів вміщується в день і чи показувати денні суми взагалі.
 
-Календар — частина SubEye Pro.
+Він безкоштовний, як і решта панелі.
 ```
 
 ### Description (4000)
@@ -245,7 +245,7 @@ this field. Replace the WHAT CHANGED block per release; leave the rest.
 
 ```
 WHAT CHANGED IN 5.2.0
-There is a fourth tab, Calendar: the month's charges on a grid, an agenda under it, and a sheet for any day you tap. It is part of SubEye Pro. The tab is present for everyone — without Pro it shows the bare grid over a card that opens the purchase screen, because a feature that is simply absent tells a user nothing about what they would be buying.
+There is a fourth tab, Calendar: the month's charges on a grid, an agenda under it, and a sheet for any day you tap. Swipe the grid sideways for other months. It is FREE and needs no purchase to review — it rearranges data the app already shows on Home and in the list rather than adding any.
 
 No new permissions, no new data collected and no new outbound requests: the App Privacy answers are unchanged from 5.0.0. The calendar is computed on the device from the subscriptions already entered; nothing about it leaves the phone, and it works with the network off like the rest of the app.
 
@@ -261,7 +261,7 @@ NETWORK
 The app is fully usable with the network off. The only outbound requests are: a daily exchange-rate file from a public CDN, a brand-logo lookup when a service name is typed into the add form, crash reports, and the App Store purchase check. None of them carries a user identifier — the purchase SDK is configured with an anonymous, device-local app user id.
 
 IN-APP PURCHASE
-"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, the payment calendar, pricing phases, categories with the spend breakdown, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
+"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, pricing phases, categories with the spend breakdown, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
 
 The app is iPhone-only, portrait-only and dark-only by design.
 ```
