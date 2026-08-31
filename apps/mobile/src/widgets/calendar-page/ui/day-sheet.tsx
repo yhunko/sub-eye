@@ -2,9 +2,9 @@ import { Stack, useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useCalendarMonth } from "@/entities/calendar";
 import { m } from "@/shared/i18n";
-import { formatMoney, formatShortDate } from "@/shared/lib/format";
+import { formatMoney } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
-import { fullDayLabel, nearbyCountdown, needsDayTotal } from "../model/month";
+import { fullDayLabel, needsDayTotal } from "../model/month";
 import { EventRow } from "./event-row";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -45,24 +45,19 @@ export function DaySheet({ date }: { date: string }) {
   return (
     <>
       {/* Set here rather than on the layout: it is the one piece of this
-          sheet's chrome that depends on which day was tapped. */}
-      <Stack.Screen
-        options={{
-          title: m.due_title({ date: valid ? formatShortDate(iso) : "" }),
-        }}
-      />
+          sheet's chrome that depends on which day was tapped — and it is the
+          ONLY place the day is named. A sheet that opens exactly one day does
+          not need to say which one twice, and it used to: a short date in the
+          bar over a long one beneath it.
+
+          The day itself, with no verb. "Renewing 30 Sep" was wrong the moment
+          a day held only a cancellation, and every row already says what it
+          is. */}
+      <Stack.Screen options={{ title: valid ? fullDayLabel(iso) : "" }} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
       >
-        {valid ? (
-          <Text style={styles.caption}>
-            {[fullDayLabel(iso), nearbyCountdown(iso)]
-              .filter(Boolean)
-              .join(" · ")}
-          </Text>
-        ) : null}
-
         {day && needsDayTotal(day) ? (
           <View style={styles.summary}>
             <Text style={styles.summaryLabel}>{m.due_total()}</Text>
@@ -97,8 +92,7 @@ export function DaySheet({ date }: { date: string }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
-  caption: { fontSize: 13, color: colors.muted, paddingBottom: 14 },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   summary: {
     flexDirection: "row",
     alignItems: "center",
