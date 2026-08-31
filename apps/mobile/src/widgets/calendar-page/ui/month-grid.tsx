@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatMoney, todayAsDay } from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
+import { useShrinkFloor } from "@/shared/ui/use-large-text";
 import type { CalendarCell } from "../model/month";
 import { weekdayLabels } from "../model/month";
 import type { CalendarSettings, WeekStart } from "../model/settings";
@@ -13,6 +14,16 @@ import type { CalendarSettings, WeekStart } from "../model/settings";
 // more: with the logo this size the arithmetic only ever has one answer.
 const LOGO = 20;
 const LOGO_SLOTS = 2;
+
+// A day's total, and the floor it may shrink to rather than wrap.
+//
+// A tile is ~51pt wide, which is about eight characters at 10pt: "₴100,860"
+// fills it exactly and the next digit breaks it — and ₴100k+ in a day is one
+// annual plan away in a soft currency, not an edge case. Shrinking is the app's
+// answer for a headline figure rather than a cap, and the floor is a POINT size
+// so the room to shrink into does not climb with Dynamic Type.
+const TOTAL_SIZE = 10;
+const TOTAL_FLOOR = 7.5;
 
 /**
  * The kinds that put a dot on a tile: the ones where what you pay changes.
@@ -42,6 +53,10 @@ function DayTile({
   onPress: (date: string) => void;
   now: number;
 }) {
+  // Before the padding-slot guard below: a hook cannot sit after an early
+  // return, and half the tiles in a six-row grid are padding.
+  const totalFloor = useShrinkFloor(TOTAL_SIZE, TOTAL_FLOOR);
+
   if (!cell.date || cell.day === null) return <View style={styles.tile} />;
 
   const at = Date.parse(cell.date);
@@ -99,7 +114,12 @@ function DayTile({
       </View>
 
       {settings.showDayTotals && day && day.total > 0 ? (
-        <Text style={[styles.total, past && styles.totalPast]}>
+        <Text
+          style={[styles.total, past && styles.totalPast]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={totalFloor}
+        >
           {formatMoney(day.total, day.events[0]?.currencyCode ?? "", {
             decimals: 0,
           })}
@@ -235,7 +255,7 @@ const styles = StyleSheet.create({
     lineHeight: LOGO,
     color: colors.muted,
   },
-  total: { fontSize: 10, fontWeight: "700", color: colors.text },
+  total: { fontSize: TOTAL_SIZE, fontWeight: "700", color: colors.text },
   totalPast: { color: colors.mutedPast },
   dot: {
     position: "absolute",
