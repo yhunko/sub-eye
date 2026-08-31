@@ -182,11 +182,17 @@ export function CalendarPage() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 12, paddingBottom: 6, gap: 10 },
+  // Inset to 16 like the total row below it, which is also where UIKit puts a
+  // navigation bar's own items — without it the forward arrow sat a few points
+  // right of the options button above it, and Today a few points left of
+  // "Month total". The week-start row keeps the block's 12, because it has to
+  // line up with the grid's columns rather than with the chrome.
   controls: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
+    paddingHorizontal: 4,
   },
   steps: { flexDirection: "row", gap: 8 },
   step: {
