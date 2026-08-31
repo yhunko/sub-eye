@@ -120,6 +120,7 @@ export const en = {
       "No account, and it works offline",
       "Unlimited subscriptions",
       "Spend, next month, and the year ahead",
+      "A payment calendar for every month",
       "Pause, cancel, renew",
       "Renewal reminders, the day before",
       "Every currency at daily rates",
@@ -134,7 +135,6 @@ export const en = {
     proItems: [
       "Choose when every reminder lands",
       "Trial-ending alerts",
-      "The payment calendar",
       "Price history on every subscription",
       "Categories, category filters and the breakdown",
       "Home Screen widgets",
