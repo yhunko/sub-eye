@@ -1,8 +1,9 @@
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -78,6 +79,17 @@ export function CalendarPage() {
   const month = useMemo(() => monthIso(offset), [offset]);
   const calendar = useCalendarMonth(month);
 
+  // Core RN's Animated, not reanimated's layout animations: an `entering` on a
+  // re-keyed child inside a Fabric ScrollView left the agenda stranded at
+  // partial opacity with the animation never finishing. One value, driven off
+  // the JS thread, that always ends at 1.
+  //
+  // Started from `goTo` rather than an effect on `month`: an effect would have
+  // to list a dependency it never reads, and this way the first render simply
+  // starts settled — there is nothing to animate in when there was no previous
+  // month.
+  const shift = useRef(new Animated.Value(1)).current;
+
   const openDay = (date: string) => {
     setSelected(date);
     router.push({
@@ -88,8 +100,21 @@ export function CalendarPage() {
     });
   };
 
+  // Which way the agenda comes in from — the arrows, Today and a swipe all feed
+  // the same answer.
+  const forward = useRef(true);
+
   const goTo = (next: number) => {
+    if (next === offset) return;
+    forward.current = next > offset;
     setOffset(next);
+
+    shift.setValue(0);
+    Animated.timing(shift, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
     // The selection names a day in the month being left, so keeping it would
     // light a tile in the new month that shares only its position in the grid.
     setSelected(null);
@@ -154,12 +179,29 @@ export function CalendarPage() {
         ) : calendar.isError ? (
           <Text style={styles.failed}>{m.common_loadFailed()}</Text>
         ) : (
-          <Agenda
-            days={calendar.data?.days ?? []}
-            onOpen={(id) =>
-              router.push({ pathname: "/subscriptions/[id]", params: { id } })
-            }
-          />
+          // It travels the way the grid just did: the list is the same month
+          // seen a second way, and sliding it the other way would read as two
+          // months moving in opposite directions at once.
+          <Animated.View
+            style={{
+              opacity: shift,
+              transform: [
+                {
+                  translateX: shift.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [forward.current ? 24 : -24, 0],
+                  }),
+                },
+              ],
+            }}
+          >
+            <Agenda
+              days={calendar.data?.days ?? []}
+              onOpen={(id) =>
+                router.push({ pathname: "/subscriptions/[id]", params: { id } })
+              }
+            />
+          </Animated.View>
         )}
       </ScrollView>
     </>
