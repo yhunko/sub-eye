@@ -70,6 +70,54 @@ function logoSources(
 }
 
 /**
+ * How long a domain's known-bad tiers are trusted before the ladder is walked
+ * again.
+ *
+ * The memo below records that a source 404'd, which is a fact about the CDN
+ * rather than about the brand — a company that adds a light symbol next week
+ * should get it. Six hours is short enough that a new logo appears the same
+ * day and long enough to cost at most one wasted request per brand per session.
+ *
+ * This is NOT a cache of the images. Those go through the platform's own HTTP
+ * cache, which honours the CDN's `Cache-Control` and revalidates against it, so
+ * an updated logo arrives when the server says the old one is stale. It is also
+ * why no URL here carries a cache-busting parameter: one would defeat the only
+ * real caching in the chain.
+ */
+const TIER_TTL_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * The first source worth trying for a domain, shared across every logo.
+ *
+ * Tier 1 404s outright for any brand with no light symbol stored, and the
+ * per-component state below starts every mount at tier 1 again. The calendar is
+ * what made that expensive: it draws the same brand in a day tile and again in
+ * the agenda, and the month pager remounts both on every swipe, so a handful of
+ * brands produced a steady stream of requests already known to fail.
+ *
+ * A HEAD START only — it never drives a render. An earlier version of this made
+ * the map the source of truth and notified every mounted logo on each advance;
+ * several brands then stopped resolving altogether, and rather than keep
+ * guessing at a re-render storm this went back to the component state that was
+ * already known to work and simply skips what that state would have retried.
+ *
+ * Deliberately NOT persisted. A tier only ever advances, so one transient
+ * failure written to disk would pin a brand to a worse source for good.
+ */
+const knownBadTiers = new Map<string, { tier: number; at: number }>();
+
+function tierFor(domain: string): number {
+  const entry = knownBadTiers.get(domain);
+  if (!entry || Date.now() - entry.at > TIER_TTL_MS) return 0;
+  return entry.tier;
+}
+
+function rememberBadTier(domain: string, tier: number): void {
+  if (tierFor(domain) > tier) return;
+  knownBadTiers.set(domain, { tier: tier + 1, at: Date.now() });
+}
+
+/**
  * The opaque, plate-shaped source, for the detail banner that blurs it into a
  * colour wash. Deliberately NOT the symbol tiers the avatar prefers: a bare mark
  * is mostly transparent, and blurring one yields almost no colour at all.
@@ -107,7 +155,12 @@ export function BrandLogo({
   };
 
   const sources = brandDomain ? logoSources(brandDomain, size) : [];
-  const attempt = brandDomain ? (exhausted[brandDomain] ?? 0) : 0;
+  // The larger of what this instance has tried and what any instance has
+  // already ruled out. Local state still drives the re-render; the shared map
+  // only removes sources that are known to fail.
+  const attempt = brandDomain
+    ? Math.max(exhausted[brandDomain] ?? 0, tierFor(brandDomain))
+    : 0;
   const source = sources[attempt];
 
   if (!brandDomain || !source) {
@@ -138,12 +191,13 @@ export function BrandLogo({
           ...(source.plate ? { borderRadius: inner / 2 } : null),
         }}
         resizeMode="contain"
-        onError={() =>
+        onError={() => {
+          rememberBadTier(brandDomain, attempt);
           setExhausted((current) => ({
             ...current,
             [brandDomain]: attempt + 1,
-          }))
-        }
+          }));
+        }}
       />
     </View>
   );
