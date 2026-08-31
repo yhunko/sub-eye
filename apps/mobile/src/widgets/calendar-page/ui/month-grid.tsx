@@ -7,7 +7,12 @@ import type { CalendarCell } from "../model/month";
 import { weekdayLabels } from "../model/month";
 import type { CalendarSettings, WeekStart } from "../model/settings";
 
-const LOGO = 14;
+// A tile is about 51pt wide on a 402pt screen and 47pt on a 375pt one, so two
+// of these plus their gap is what fits — and two at 20pt are recognisable where
+// three at 14pt were coloured specks. There is no setting for the count any
+// more: with the logo this size the arithmetic only ever has one answer.
+const LOGO = 20;
+const LOGO_SLOTS = 2;
 
 /**
  * The kinds that put a dot on a tile: the ones where what you pay changes.
@@ -44,11 +49,11 @@ function DayTile({
   const past = at < now;
   const events = day?.events ?? [];
 
-  // The overflow chip takes a LOGO'S slot rather than a second line: one logo
-  // and "+4" says less than two logos and "+3", and a wrapped second row makes a
-  // busy day twice the height of a quiet one in a grid of fixed rows.
-  const overflowing = events.length > settings.maxIcons;
-  const room = overflowing ? settings.maxIcons - 1 : settings.maxIcons;
+  // The overflow chip takes a LOGO'S slot rather than a second line: a wrapped
+  // second row would make a busy day taller than a quiet one, in a grid whose
+  // rows have to stay the same height.
+  const overflowing = events.length > LOGO_SLOTS;
+  const room = overflowing ? LOGO_SLOTS - 1 : LOGO_SLOTS;
 
   return (
     <Pressable
@@ -225,7 +230,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   overflow: {
-    fontSize: 9.5,
+    fontSize: 12,
     fontWeight: "700",
     lineHeight: LOGO,
     color: colors.muted,

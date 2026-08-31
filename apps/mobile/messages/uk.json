@@ -341,8 +341,6 @@
   "calendar_weekStart": "Початок тижня",
   "calendar_weekMonday": "Понеділок",
   "calendar_weekSunday": "Неділя",
-  "calendar_logos": "Логотипів на день",
-  "calendar_logosHint": "Решта згортається в лічильник.",
   "calendar_showTotals": "Суми за день",
   "calendar_showTotalsHint": "Показувати просто на клітинці, скільки виходить за день.",
   "paywall_featureRemindersBody": "Дізнавайтеся про кінець безплатного періоду до списання й обирайте, коли саме приходять нагадування.",

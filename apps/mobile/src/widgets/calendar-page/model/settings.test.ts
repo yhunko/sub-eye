@@ -14,17 +14,6 @@ describe("parseStoredCalendarSettings", () => {
     }
   });
 
-  it("clamps maxIcons into a count a tile can actually draw", () => {
-    // 0 renders a tile with no logos and nothing but "+N"; 40 overflows the
-    // tile's own row. Neither failure names its cause on screen.
-    expect(parseStoredCalendarSettings({ maxIcons: 0 }).maxIcons).toBe(2);
-    expect(parseStoredCalendarSettings({ maxIcons: 40 }).maxIcons).toBe(5);
-    expect(parseStoredCalendarSettings({ maxIcons: 3.6 }).maxIcons).toBe(4);
-    expect(parseStoredCalendarSettings({ maxIcons: "many" }).maxIcons).toBe(
-      DEFAULT_CALENDAR_SETTINGS.maxIcons,
-    );
-  });
-
   it("keeps a stored weekStart only when it is one this app renders", () => {
     expect(parseStoredCalendarSettings({ weekStart: "sunday" }).weekStart).toBe(
       "sunday",
@@ -34,6 +23,14 @@ describe("parseStoredCalendarSettings", () => {
     expect(
       parseStoredCalendarSettings({ weekStart: "saturday" }).weekStart,
     ).toBe("monday");
+  });
+
+  it("ignores a key this build no longer has", () => {
+    // `maxIcons` was a setting until the logos grew and only two fit. An install
+    // that still has it on disk reads back as a current one, not as a default.
+    expect(
+      parseStoredCalendarSettings({ weekStart: "sunday", maxIcons: 4 }),
+    ).toEqual({ weekStart: "sunday", showDayTotals: true });
   });
 
   it("keeps showDayTotals off once it has been turned off", () => {

@@ -5,8 +5,6 @@ import { Divider, Row, RowCheck, Section } from "@/shared/ui/list-row";
 import { colors } from "@/shared/ui/theme";
 import {
   calendarSettings,
-  MAX_ICONS,
-  MIN_ICONS,
   useCalendarSettings,
   WEEK_STARTS,
 } from "../model/settings";
@@ -16,18 +14,13 @@ const WEEK_LABEL = {
   sunday: m.calendar_weekSunday,
 };
 
-const ICON_COUNTS = Array.from(
-  { length: MAX_ICONS - MIN_ICONS + 1 },
-  (_, index) => MIN_ICONS + index,
-);
-
 /**
  * How the calendar draws itself, on a sheet over it.
  *
  * A sheet rather than the UIMenu the subscriptions list uses for its filters,
  * which is this app's usual answer. The distinction is what the controls ARE: a
  * filter is a gesture you make for the next thirty seconds and a menu suits it,
- * while these three are standing preferences that persist — and a preference
+ * while these two are standing preferences that persist — and a preference
  * belongs on a settings surface, where its footnote can say what it does. A menu
  * would also have to be built twice, since expo-router only swaps native bar
  * items in on iOS.
@@ -53,21 +46,6 @@ export function CalendarOptionsSheet() {
               label={WEEK_LABEL[value]()}
               onPress={() => calendarSettings.set({ weekStart: value })}
               accessory={<RowCheck checked={settings.weekStart === value} />}
-            />
-          </Fragment>
-        ))}
-      </Section>
-
-      <Section title={m.calendar_logos()} footnote={m.calendar_logosHint()}>
-        {ICON_COUNTS.map((count, index) => (
-          <Fragment key={count}>
-            {index > 0 ? <Divider /> : null}
-            <Row
-              ios="square.grid.2x2"
-              android="grid_view"
-              label={String(count)}
-              onPress={() => calendarSettings.set({ maxIcons: count })}
-              accessory={<RowCheck checked={settings.maxIcons === count} />}
             />
           </Fragment>
         ))}
