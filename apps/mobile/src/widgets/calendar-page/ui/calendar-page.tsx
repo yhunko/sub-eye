@@ -10,14 +10,14 @@ import {
   View,
 } from "react-native";
 import { useCalendarMonth } from "@/entities/calendar";
-import { ProLock, usePro } from "@/entities/pro";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
-import { monthGrid, monthIso, monthLabel } from "../model/month";
+import { monthIso, monthLabel } from "../model/month";
 import { useCalendarSettings } from "../model/settings";
 import { Agenda } from "./agenda";
-import { MonthGrid } from "./month-grid";
+import { WeekdayHeader } from "./month-grid";
+import { MonthPager } from "./month-pager";
 
 function StepButton({
   direction,
@@ -50,34 +50,33 @@ function StepButton({
 /**
  * The month, as a grid over an agenda.
  *
- * ONE scroll view, not a pinned grid over an inner scroller as the mock draws
- * it: a nested scroller needs a fixed height for the agenda, and a fixed height
- * on a box full of text is the thing this app's UI rules forbid outright — it is
- * what forces a Dynamic Type cap. Scrolling the grid away while reading the
- * agenda also gives the native tab bar something to minimise against.
+ * FREE, all of it. The calendar shows no fact the app does not already give
+ * away — Home's rail, the list and the due digest all name what is coming — so
+ * charging for the arrangement would be charging for a rearrangement of the
+ * user's own data. It is also a TAB, and a tab is navigation rather than a
+ * feature: every other gate in this app sits on a row inside a screen someone
+ * opened for another reason, where it costs them nothing to walk past. What
+ * Pro still buys shows up here anyway, because a trial, an intro price and a
+ * scheduled change can only exist on a Pro install — a paid calendar is denser
+ * than a free one without a single gate in this file.
  *
- * The month name is the screen TITLE rather than a line of content. Home already
- * puts the current month in its own header for the same reason: every figure
- * below is scoped to it, and repeating it inside the page costs a fold.
+ * ONE vertical scroll view, not a pinned grid over an inner scroller: a nested
+ * scroller needs a fixed height for the agenda, and a fixed height on a box
+ * full of text is what forces a Dynamic Type cap. The grid inside it pages
+ * horizontally, which nests fine — the tab bar swipes on neither platform.
+ *
+ * The month name is the screen TITLE rather than a line of content. Home
+ * already puts the current month in its own header for the same reason: every
+ * figure below is scoped to it, and repeating it inside the page costs a fold.
  */
 export function CalendarPage() {
   const router = useRouter();
-  const isPro = usePro();
   const settings = useCalendarSettings();
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
 
   const month = useMemo(() => monthIso(offset), [offset]);
-  const calendar = useCalendarMonth(month, isPro);
-
-  const cells = useMemo(
-    () => monthGrid(month, settings.weekStart),
-    [month, settings.weekStart],
-  );
-  const days = useMemo(
-    () => new Map((calendar.data?.days ?? []).map((day) => [day.date, day])),
-    [calendar.data],
-  );
+  const calendar = useCalendarMonth(month);
 
   const openDay = (date: string) => {
     setSelected(date);
@@ -89,9 +88,9 @@ export function CalendarPage() {
     });
   };
 
-  const step = (by: number) => {
-    setOffset((current) => current + by);
-    // The selection names a day in the month we are leaving, so keeping it would
+  const goTo = (next: number) => {
+    setOffset(next);
+    // The selection names a day in the month being left, so keeping it would
     // light a tile in the new month that shares only its position in the grid.
     setSelected(null);
   };
@@ -103,90 +102,72 @@ export function CalendarPage() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
       >
-        {isPro ? (
-          <View style={styles.controls}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={m.when_today()}
-              onPress={() => {
-                setOffset(0);
-                setSelected(null);
-              }}
-              style={({ pressed }) => [
-                styles.chip,
-                offset === 0 && styles.chipOn,
-                pressed && styles.stepPressed,
-              ]}
+        <View style={styles.controls}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={m.when_today()}
+            onPress={() => goTo(0)}
+            style={({ pressed }) => [
+              styles.chip,
+              offset === 0 && styles.chipOn,
+              pressed && styles.stepPressed,
+            ]}
+          >
+            <Text
+              style={[styles.chipLabel, offset === 0 && styles.chipLabelOn]}
             >
-              <Text
-                style={[styles.chipLabel, offset === 0 && styles.chipLabelOn]}
-              >
-                {m.when_today()}
-              </Text>
-            </Pressable>
-            <View style={styles.steps}>
-              <StepButton direction="back" onPress={() => step(-1)} />
-              <StepButton direction="forward" onPress={() => step(1)} />
-            </View>
-          </View>
-        ) : (
-          <ProLock
-            title={m.paywall_lockCalendar()}
-            body={m.paywall_lockCalendarBody()}
-          />
-        )}
-
-        {isPro && calendar.data ? (
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{m.calendar_monthTotal()}</Text>
-            <Text style={styles.totalAmount}>
-              {formatMoney(
-                calendar.data.monthTotal,
-                calendar.data.currencyCode,
-              )}
+              {m.when_today()}
             </Text>
+          </Pressable>
+          {/* Kept beside the swipe, not replaced by it: a gesture is invisible
+              until someone tries it, and VoiceOver needs a control to land on. */}
+          <View style={styles.steps}>
+            <StepButton direction="back" onPress={() => goTo(offset - 1)} />
+            <StepButton direction="forward" onPress={() => goTo(offset + 1)} />
           </View>
-        ) : null}
+        </View>
 
-        {/* Locked, the grid still draws: the day numbers and today's ring are
-            the shape of what Pro buys, and an absent grid sells nothing. It is
-            fed an empty map rather than a `locked` prop — there is no data to
-            hide, because `useCalendarMonth` never ran. */}
-        <MonthGrid
-          cells={cells}
-          days={days}
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>{m.calendar_monthTotal()}</Text>
+          <Text style={styles.totalAmount}>
+            {calendar.data
+              ? formatMoney(
+                  calendar.data.monthTotal,
+                  calendar.data.currencyCode,
+                )
+              : ""}
+          </Text>
+        </View>
+
+        <WeekdayHeader weekStart={settings.weekStart} />
+        <MonthPager
+          offset={offset}
+          onOffsetChange={goTo}
           settings={settings}
           selected={selected}
-          onSelect={isPro ? openDay : () => router.push("/paywall")}
+          onSelect={openDay}
         />
 
-        {isPro ? (
-          <>
-            <View style={styles.divider} />
-            {calendar.isPending ? (
-              <ActivityIndicator color={colors.accent} />
-            ) : calendar.isError ? (
-              <Text style={styles.failed}>{m.common_loadFailed()}</Text>
-            ) : (
-              <Agenda
-                days={calendar.data?.days ?? []}
-                onOpen={(id) =>
-                  router.push({
-                    pathname: "/subscriptions/[id]",
-                    params: { id },
-                  })
-                }
-              />
-            )}
-          </>
-        ) : null}
+        <View style={styles.divider} />
+        {calendar.isPending ? (
+          <ActivityIndicator color={colors.accent} />
+        ) : calendar.isError ? (
+          <Text style={styles.failed}>{m.common_loadFailed()}</Text>
+        ) : (
+          <Agenda
+            days={calendar.data?.days ?? []}
+            onOpen={(id) =>
+              router.push({ pathname: "/subscriptions/[id]", params: { id } })
+            }
+          />
+        )}
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 12, paddingBottom: 24, gap: 12 },
+  content: { padding: 12, paddingBottom: 24, gap: 10 },
   controls: {
     flexDirection: "row",
     alignItems: "center",

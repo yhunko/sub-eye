@@ -26,8 +26,16 @@ export function monthIso(offset: number, now: Date = new Date()): string {
   ).toISOString();
 }
 
+/** Six weeks. Every month fits, and every month is the same height. */
+export const GRID_ROWS = 6;
+
 /**
- * The cells of one month, padded to whole weeks.
+ * The cells of one month, always padded to SIX weeks.
+ *
+ * Not to the rows the month happens to need: months run four to six, and a
+ * pager whose pages are different heights makes everything under it jump while
+ * the finger is still moving. Reserving the tallest is what iOS Calendar does,
+ * and it costs a row of empty tiles in February to buy a still layout.
  *
  * All UTC: the grid is compared against `CalendarMonthDto.days`, which are
  * calendar days. Building the cells with local `Date` accessors instead puts the
@@ -43,17 +51,14 @@ export function monthGrid(month: string, weekStart: WeekStart): CalendarCell[] {
   const firstWeekday = new Date(Date.UTC(year, index, 1)).getUTCDay();
   const offset = weekStart === "monday" ? (firstWeekday + 6) % 7 : firstWeekday;
 
-  return Array.from(
-    { length: Math.ceil((offset + dayCount) / 7) * 7 },
-    (_, slot) => {
-      const day = slot - offset + 1;
-      if (day < 1 || day > dayCount) {
-        return { key: `pad-${slot}`, day: null, date: null };
-      }
-      const date = new Date(Date.UTC(year, index, day)).toISOString();
-      return { key: date, day, date };
-    },
-  );
+  return Array.from({ length: GRID_ROWS * 7 }, (_, slot) => {
+    const day = slot - offset + 1;
+    if (day < 1 || day > dayCount) {
+      return { key: `pad-${slot}`, day: null, date: null };
+    }
+    const date = new Date(Date.UTC(year, index, day)).toISOString();
+    return { key: date, day, date };
+  });
 }
 
 // A known Sunday, so the seven labels come out in `getUTCDay()` order before

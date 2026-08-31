@@ -345,11 +345,7 @@
   "calendar_logosHint": "Anything past this collapses into a count.",
   "calendar_showTotals": "Daily totals",
   "calendar_showTotalsHint": "Show what each day comes to, on the day itself.",
-  "paywall_lockCalendar": "See the month ahead",
-  "paywall_lockCalendarBody": "The payment calendar is part of SubEye Pro.",
-  "paywall_featureCalendar": "Payment calendar",
   "paywall_featureRemindersBody": "Catch a free trial before it turns into a charge, and choose exactly when every reminder lands.",
-  "paywall_featureCalendarBody": "Every charge on a month grid, and what each day comes to.",
   "paywall_featurePricingBody": "Trials, intro discounts and scheduled price changes, on one timeline.",
   "paywall_featureCategoriesBody": "Group subscriptions, filter by them, and see where the money goes.",
   "paywall_lockWidgetsBody": "See your next payment and this month's total without opening the app."

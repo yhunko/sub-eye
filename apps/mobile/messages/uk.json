@@ -345,11 +345,7 @@
   "calendar_logosHint": "Решта згортається в лічильник.",
   "calendar_showTotals": "Суми за день",
   "calendar_showTotalsHint": "Показувати просто на клітинці, скільки виходить за день.",
-  "paywall_lockCalendar": "Погляньте на місяць уперед",
-  "paywall_lockCalendarBody": "Календар платежів — частина SubEye Pro.",
-  "paywall_featureCalendar": "Календар платежів",
   "paywall_featureRemindersBody": "Дізнавайтеся про кінець безплатного періоду до списання й обирайте, коли саме приходять нагадування.",
-  "paywall_featureCalendarBody": "Кожне списання на сітці місяця й сума за кожен день.",
   "paywall_featurePricingBody": "Пробні періоди, знижки та заплановані зміни ціни на одній шкалі.",
   "paywall_featureCategoriesBody": "Групуйте підписки, фільтруйте за ними й дивіться, куди йдуть гроші.",
   "paywall_lockWidgetsBody": "Наступний платіж і сума за місяць — без відкривання застосунку."

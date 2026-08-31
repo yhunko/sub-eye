@@ -62,33 +62,6 @@ export function PricingPreview() {
   );
 }
 
-// Fixed positions rather than anything derived: this is a picture of a
-// calendar, not a calendar. Built once, at module scope — it holds no message
-// function, so nothing here can freeze in the wrong locale.
-const MONTH_CELLS = Array.from({ length: 28 }, (_, cell) => ({
-  key: `cell-${cell}`,
-  charged: [2, 6, 11, 17, 20, 25].includes(cell),
-  today: cell === 9,
-}));
-
-/** A month, with the days money moves picked out. */
-export function CalendarPreview() {
-  return (
-    <View style={styles.month}>
-      {MONTH_CELLS.map((cell) => (
-        <View
-          key={cell.key}
-          style={[
-            styles.day,
-            cell.charged && styles.dayCharged,
-            cell.today && styles.dayToday,
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
 /** Where the money goes, ranked. */
 export function CategoriesPreview() {
   return (
@@ -178,26 +151,6 @@ const styles = StyleSheet.create({
   },
   phaseBarLive: {
     backgroundColor: colors.accentSoft,
-    borderColor: colors.accentBorder,
-  },
-
-  month: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 6,
-    maxWidth: 214,
-  },
-  day: {
-    width: 22,
-    height: 16,
-    borderRadius: 5,
-    backgroundColor: colors.surfaceAlt,
-  },
-  dayCharged: { backgroundColor: colors.accent },
-  dayToday: {
-    backgroundColor: colors.bg,
-    borderWidth: 1.5,
     borderColor: colors.accentBorder,
   },
 

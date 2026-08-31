@@ -16,16 +16,28 @@ describe("monthGrid", () => {
     expect(days(sunday).slice(0, 3)).toEqual([null, null, 1]);
   });
 
-  it("pads to whole weeks and holds every day of the month exactly once", () => {
+  it("is always six rows, whatever the month needs", () => {
+    // A pager whose pages are different heights makes the agenda under it jump
+    // mid-swipe. February on a Monday start needs four rows; it still gets six.
     for (const month of [
-      "2026-02-01T00:00:00.000Z", // 28 days starting Sunday — the tight case
+      "2026-02-01T00:00:00.000Z", // 28 days starting Sunday
       "2026-09-01T00:00:00.000Z",
-      "2027-05-01T00:00:00.000Z", // 31 days starting Saturday — spills to 6 rows
+      "2027-05-01T00:00:00.000Z", // 31 days starting Saturday — genuinely 6 rows
     ]) {
-      const cells = monthGrid(month, "monday");
-      const numbered = cells.filter((cell) => cell.day !== null);
+      expect(monthGrid(month, "monday")).toHaveLength(42);
+      expect(monthGrid(month, "sunday")).toHaveLength(42);
+    }
+  });
 
-      expect(cells.length % 7).toBe(0);
+  it("holds every day of the month exactly once, and nothing else", () => {
+    for (const month of [
+      "2026-02-01T00:00:00.000Z",
+      "2026-09-01T00:00:00.000Z",
+      "2027-05-01T00:00:00.000Z",
+    ]) {
+      const numbered = monthGrid(month, "monday").filter(
+        (cell) => cell.day !== null,
+      );
       expect(new Set(numbered.map((cell) => cell.day)).size).toBe(
         numbered.length,
       );

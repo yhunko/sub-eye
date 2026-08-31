@@ -5,7 +5,7 @@ import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
 import type { CalendarCell } from "../model/month";
 import { weekdayLabels } from "../model/month";
-import type { CalendarSettings } from "../model/settings";
+import type { CalendarSettings, WeekStart } from "../model/settings";
 
 const LOGO = 14;
 
@@ -108,16 +108,29 @@ function DayTile({
   );
 }
 
+/** The seven column headings. Fixed above the pager — they never change. */
+export function WeekdayHeader({ weekStart }: { weekStart: WeekStart }) {
+  return (
+    <View style={styles.week}>
+      {weekdayLabels(weekStart).map((label) => (
+        <Text key={label} style={styles.weekday}>
+          {label}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 /**
- * The month, seven columns wide.
+ * One month's tiles, six rows of seven.
  *
  * Tiles are a fixed `height`, which every other box in this app is forbidden —
  * but a calendar grid is the one place where the alternative is worse: rows of
  * different heights stop being a grid, and the day number is the only text here
- * that has to fit. Logos and the total are decoration that a tight tile can drop
+ * that has to fit. Logos and the total are decoration a tight tile can drop
  * (`maxIcons`, the totals switch) rather than text that must not be capped.
  */
-export function MonthGrid({
+export function MonthCells({
   cells,
   days,
   settings,
@@ -135,28 +148,19 @@ export function MonthGrid({
   const today = todayAsDay(now);
 
   return (
-    <View style={styles.grid}>
-      <View style={styles.week}>
-        {weekdayLabels(settings.weekStart).map((label) => (
-          <Text key={label} style={styles.weekday}>
-            {label}
-          </Text>
-        ))}
-      </View>
-      <View style={styles.cells}>
-        {cells.map((cell) => (
-          <View key={cell.key} style={styles.slot}>
-            <DayTile
-              cell={cell}
-              day={cell.date ? days.get(cell.date) : undefined}
-              settings={settings}
-              selected={selected !== null && cell.date === selected}
-              onPress={onSelect}
-              now={today}
-            />
-          </View>
-        ))}
-      </View>
+    <View style={styles.cells}>
+      {cells.map((cell) => (
+        <View key={cell.key} style={styles.slot}>
+          <DayTile
+            cell={cell}
+            day={cell.date ? days.get(cell.date) : undefined}
+            settings={settings}
+            selected={selected !== null && cell.date === selected}
+            onPress={onSelect}
+            now={today}
+          />
+        </View>
+      ))}
     </View>
   );
 }
@@ -164,7 +168,6 @@ export function MonthGrid({
 const GAP = 3;
 
 const styles = StyleSheet.create({
-  grid: { gap: 5 },
   week: { flexDirection: "row" },
   weekday: {
     flexBasis: 0,

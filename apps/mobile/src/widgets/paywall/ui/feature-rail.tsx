@@ -12,7 +12,6 @@ import {
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
 import {
-  CalendarPreview,
   CategoriesPreview,
   PricingPreview,
   RemindersPreview,
@@ -33,13 +32,6 @@ const FEATURES: {
     label: m.paywall_featureReminders,
     body: m.paywall_featureRemindersBody,
     Preview: RemindersPreview,
-  },
-  {
-    ios: "calendar",
-    android: "calendar_month",
-    label: m.paywall_featureCalendar,
-    body: m.paywall_featureCalendarBody,
-    Preview: CalendarPreview,
   },
   {
     ios: "tag",
