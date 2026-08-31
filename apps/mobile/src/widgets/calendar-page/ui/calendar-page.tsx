@@ -1,15 +1,19 @@
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useCalendarMonth } from "@/entities/calendar";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
@@ -79,16 +83,36 @@ export function CalendarPage() {
   const month = useMemo(() => monthIso(offset), [offset]);
   const calendar = useCalendarMonth(month);
 
-  // Core RN's Animated, not reanimated's layout animations: an `entering` on a
-  // re-keyed child inside a Fabric ScrollView left the agenda stranded at
-  // partial opacity with the animation never finishing. One value, driven off
-  // the JS thread, that always ends at 1.
+  // The agenda moves WITH the grid, off the same scroll position, rather than
+  // playing its own animation once the swipe has settled. That sequencing was
+  // the complaint: the grid finished, then a moment later the list twitched.
   //
-  // Started from `goTo` rather than an effect on `month`: an effect would have
-  // to list a dependency it never reads, and this way the first render simply
-  // starts settled — there is nothing to animate in when there was no previous
-  // month.
-  const shift = useRef(new Animated.Value(1)).current;
+  // There is no timing curve here at all — the value is the pager's distance
+  // from a settled page, so the motion is the gesture. Nothing can be
+  // interrupted, nothing can be left mid-flight, and the arrows drive it too
+  // because `scrollToIndex` scrolls.
+  //
+  // Two earlier attempts are worth not repeating. Reanimated's layout
+  // `entering` on a re-keyed child inside a Fabric ScrollView left the agenda
+  // stranded at partial opacity. `Animated.Value` with `useNativeDriver` was
+  // worse: changing month makes `isPending` true for an uncached month, which
+  // unmounted the branch holding the animated view, detached the native node
+  // mid-curve and re-attached it at whatever it last committed — an agenda
+  // stuck fully invisible, which is what swiping into October produced.
+  const { width } = useWindowDimensions();
+  const pageShift = useSharedValue(0);
+
+  const agendaStyle = useAnimatedStyle(() => {
+    // Dimmest exactly at the half-way point, where the contents change.
+    const distance = Math.min(1, Math.abs(pageShift.value) * 2);
+    return {
+      opacity: 1 - distance * 0.85,
+      // A FRACTION of the grid's travel. Matching it exactly would slide the
+      // agenda off screen with nothing following it in; a parallax reads as
+      // one surface at two depths.
+      transform: [{ translateX: -pageShift.value * width * 0.35 }],
+    };
+  });
 
   const openDay = (date: string) => {
     setSelected(date);
@@ -100,21 +124,10 @@ export function CalendarPage() {
     });
   };
 
-  // Which way the agenda comes in from — the arrows, Today and a swipe all feed
-  // the same answer.
-  const forward = useRef(true);
-
   const goTo = (next: number) => {
     if (next === offset) return;
-    forward.current = next > offset;
     setOffset(next);
 
-    shift.setValue(0);
-    Animated.timing(shift, {
-      toValue: 1,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
     // The selection names a day in the month being left, so keeping it would
     // light a tile in the new month that shares only its position in the grid.
     setSelected(null);
@@ -171,38 +184,31 @@ export function CalendarPage() {
           settings={settings}
           selected={selected}
           onSelect={openDay}
+          pageShift={pageShift}
         />
 
         <View style={styles.divider} />
-        {calendar.isPending ? (
-          <ActivityIndicator color={colors.accent} />
-        ) : calendar.isError ? (
-          <Text style={styles.failed}>{m.common_loadFailed()}</Text>
-        ) : (
-          // It travels the way the grid just did: the list is the same month
-          // seen a second way, and sliding it the other way would read as two
-          // months moving in opposite directions at once.
-          <Animated.View
-            style={{
-              opacity: shift,
-              transform: [
-                {
-                  translateX: shift.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [forward.current ? 24 : -24, 0],
-                  }),
-                },
-              ],
-            }}
-          >
+        {/* The animated view wraps ALL THREE states rather than only the loaded
+            one. Inside the branch it unmounted the moment an uncached month
+            made `isPending` true, which is precisely when this animation runs.
+
+            It travels the way the grid just did: the list is the same month
+            seen a second way, and sliding it the other way would read as two
+            months moving in opposite directions at once. */}
+        <Animated.View style={agendaStyle}>
+          {calendar.isPending ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : calendar.isError ? (
+            <Text style={styles.failed}>{m.common_loadFailed()}</Text>
+          ) : (
             <Agenda
               days={calendar.data?.days ?? []}
               onOpen={(id) =>
                 router.push({ pathname: "/subscriptions/[id]", params: { id } })
               }
             />
-          </Animated.View>
-        )}
+          )}
+        </Animated.View>
       </ScrollView>
     </>
   );

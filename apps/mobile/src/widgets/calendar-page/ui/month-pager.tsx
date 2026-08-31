@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import { FlatList, useWindowDimensions, View } from "react-native";
+import { type FlatList, useWindowDimensions, View } from "react-native";
+import type { SharedValue } from "react-native-reanimated";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { useCalendarMonth } from "@/entities/calendar";
 import { monthGrid, monthIso } from "../model/month";
 import type { CalendarSettings } from "../model/settings";
@@ -77,17 +79,38 @@ export function MonthPager({
   settings,
   selected,
   onSelect,
+  pageShift,
 }: {
   offset: number;
   onOffsetChange: (offset: number) => void;
   settings: CalendarSettings;
   selected: string | null;
   onSelect: (date: string) => void;
+  /**
+   * How far this pager sits from a settled page, signed, in pages: 0 when
+   * settled, ±0.5 at the half-way point. The agenda reads it to move WITH the
+   * grid instead of after it — which is the whole complaint about the version
+   * that animated once the swipe had already stopped.
+   */
+  pageShift: SharedValue<number>;
 }) {
   const { width } = useWindowDimensions();
   const pageWidth = width - PAGE_PADDING * 2;
   const list = useRef<FlatList<number>>(null);
   const settledRef = useRef(offset);
+
+  // On the UI thread, so the agenda tracks the finger frame for frame. It also
+  // means there is no timing curve at all: nothing to interrupt, nothing to
+  // leave half-finished, and the arrows drive it too because `scrollToIndex`
+  // emits the same events.
+  //
+  // Signed and relative to the NEAREST page, so it crosses zero exactly at the
+  // half-way point — which is where the agenda is dimmest and where its
+  // contents are swapped.
+  const onScroll = useAnimatedScrollHandler((event) => {
+    const page = event.contentOffset.x / (pageWidth || 1);
+    pageShift.value = page - Math.round(page);
+  });
 
   useEffect(() => {
     if (settledRef.current === offset) return;
@@ -96,7 +119,7 @@ export function MonthPager({
   }, [offset]);
 
   return (
-    <FlatList
+    <Animated.FlatList
       ref={list}
       horizontal
       pagingEnabled
@@ -116,6 +139,7 @@ export function MonthPager({
         offset: pageWidth * index,
         index,
       })}
+      onScroll={onScroll}
       onMomentumScrollEnd={(event) => {
         const next =
           Math.round(event.nativeEvent.contentOffset.x / (pageWidth || 1)) -
@@ -124,7 +148,7 @@ export function MonthPager({
         settledRef.current = next;
         onOffsetChange(next);
       }}
-      renderItem={({ item }) => (
+      renderItem={({ item }: { item: number }) => (
         <MonthPage
           offset={item}
           width={pageWidth}
