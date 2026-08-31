@@ -58,15 +58,6 @@ export function DaySheet({ date }: { date: string }) {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
       >
-        {day && needsDayTotal(day) ? (
-          <View style={styles.summary}>
-            <Text style={styles.summaryLabel}>{m.due_total()}</Text>
-            <Text style={styles.summaryAmount}>
-              {formatMoney(day.total, day.events[0]?.currencyCode ?? "")}
-            </Text>
-          </View>
-        ) : null}
-
         {day?.events.length ? (
           day.events.map((event) => (
             <EventRow
@@ -86,6 +77,20 @@ export function DaySheet({ date }: { date: string }) {
         ) : (
           <Text style={styles.empty}>{m.due_empty()}</Text>
         )}
+
+        {/* AFTER the rows, and in their rhythm — a sum belongs under the column
+            it sums, the way a receipt prints one. It used to be a bordered card
+            above them, which is the dashboard's stat vocabulary: chrome the
+            rows below it do not have, an uppercase label competing with the
+            title, and a figure announced before anything had been added up. */}
+        {day && needsDayTotal(day) ? (
+          <View style={styles.total}>
+            <Text style={styles.totalLabel}>{m.calendar_total()}</Text>
+            <Text style={styles.totalAmount}>
+              {formatMoney(day.total, day.events[0]?.currencyCode ?? "")}
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </>
   );
@@ -93,26 +98,23 @@ export function DaySheet({ date }: { date: string }) {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
-  summary: {
+  total: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "baseline",
     justifyContent: "space-between",
     gap: 12,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 4,
+    marginTop: 8,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  summaryLabel: {
-    fontSize: 12.5,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    color: colors.muted,
+  totalLabel: { flexShrink: 1, fontSize: 15, color: colors.muted },
+  totalAmount: {
+    flexShrink: 0,
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.text,
   },
-  summaryAmount: { fontSize: 22, fontWeight: "800", color: colors.text },
   empty: {
     paddingVertical: 26,
     textAlign: "center",

@@ -346,5 +346,6 @@
   "paywall_featureRemindersBody": "Catch a free trial before it turns into a charge, and choose exactly when every reminder lands.",
   "paywall_featurePricingBody": "Trials, intro discounts and scheduled price changes, on one timeline.",
   "paywall_featureCategoriesBody": "Group subscriptions, filter by them, and see where the money goes.",
-  "paywall_lockWidgetsBody": "See your next payment and this month's total without opening the app."
+  "paywall_lockWidgetsBody": "See your next payment and this month's total without opening the app.",
+  "calendar_total": "Total"
 }
