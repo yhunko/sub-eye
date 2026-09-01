@@ -48,14 +48,36 @@ describe("App Store badge", () => {
     expect(svg).toContain('viewBox="0 0 119.66407 40"');
   });
 
-  // "Use one App Store badge per layout." Every page on this site renders the
-  // same footer and the same top bar, so a second placement anywhere is a
-  // second badge on some page.
-  it("is placed exactly once across the whole site", () => {
-    const users = sources().filter(({ text }) =>
-      text.includes("<AppStoreBadge"),
+  // Apple's wording is "Use one App Store badge per layout or video" and the
+  // site deliberately carries three: the hero, the fixed bar and the closing
+  // card. Counted, not just located — the whole point of the decision is that
+  // this is the complete set of places a reader is sent to the App Store.
+  it("is placed exactly where the site decided to place it", () => {
+    const placements = sources()
+      .map(
+        ({ path, text }) =>
+          [path, text.split("<AppStoreBadge").length - 1] as [string, number],
+      )
+      .filter(([, count]) => count > 0);
+
+    expect(Object.fromEntries(placements)).toEqual({
+      "src/components/TopBar.astro": 1,
+      "src/layouts/Home.astro": 2,
+    });
+  });
+
+  // What those placements are for: every route to the App Store is Apple's
+  // artwork, never a button borrowing its job. An `href={appStoreUrl}` outside
+  // the component is that button. Base.astro is the one allowed reference —
+  // JSON-LD `installUrl` is metadata, and nobody clicks it.
+  it("is the only clickable route to the App Store", () => {
+    const linkers = sources().filter(({ text }) =>
+      text.includes("appStoreUrl"),
     );
-    expect(users.map(({ path }) => path)).toEqual(["src/layouts/Home.astro"]);
+    expect(linkers.map(({ path }) => path).sort()).toEqual([
+      "src/components/AppStoreBadge.astro",
+      "src/layouts/Base.astro",
+    ]);
   });
 
   // The badge is only compliant while it is Apple's file rendered whole. A

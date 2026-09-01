@@ -180,12 +180,10 @@ export const uk: Copy = {
   cta: {
     title: "SubEye уже в App Store.",
     body: "Завантажте, введіть першу підписку — і секунд за двадцять число на головному екрані буде вашим. Реєструватися нема де, входити нема куди.",
-    download: "Завантажити SubEye",
   },
 
   appStore: {
     badgeAlt: "Завантажити в App Store",
-    download: "Завантажити",
     /** Apple allows the notice to be translated; the marks inside it may not be. */
     trademark:
       "Apple, логотип Apple та iPhone — торговельні марки Apple Inc., зареєстровані у США та інших країнах. App Store — знак обслуговування Apple Inc.",

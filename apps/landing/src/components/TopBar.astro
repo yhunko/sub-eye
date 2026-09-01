@@ -1,6 +1,7 @@
 ---
 import { copyFor } from "../i18n";
-import { appStoreUrl, type Locale, otherLocale, path } from "../lib/site";
+import { type Locale, otherLocale, path } from "../lib/site";
+import AppStoreBadge from "./AppStoreBadge.astro";
 import Mark from "./Mark.astro";
 
 interface Props {
@@ -32,9 +33,7 @@ const other = otherLocale(locale);
         rel="alternate"
         aria-label={c.otherLangName}>{c.otherLangShort}</a
       >
-      {/* A plain button, not Apple's badge and not its words: one badge per
-          layout, and the hero has it. `#price` is still a click away in the nav. */}
-      <a class="bar__cta" href={appStoreUrl}>{c.appStore.download}</a>
+      <AppStoreBadge locale={locale} size="bar" />
     </nav>
   </div>
 </header>
@@ -71,8 +70,8 @@ const other = otherLocale(locale);
     font-weight: 600;
   }
 
-  /* Class, not `.bar__nav > a` — a descendant selector outranks `.bar__cta`
-     and paints the filled button's label muted grey on green. */
+  /* Class, not `.bar__nav > a` — a descendant selector outranks `.bar__lang`
+     and repaints the language pill on hover along with the links. */
   .bar__link {
     color: var(--text-muted);
     transition: color 160ms var(--ease);
@@ -104,20 +103,6 @@ const other = otherLocale(locale);
   .bar__lang:hover {
     color: var(--text);
     border-color: var(--border-strong);
-  }
-
-  .bar__cta {
-    background: var(--accent);
-    color: var(--on-accent);
-    font-weight: 700;
-    padding: 0.63rem 1.13rem;
-    border-radius: var(--radius-button);
-    transition: background-color 160ms var(--ease);
-  }
-
-  .bar__cta:hover {
-    background: var(--accent-hover);
-    color: var(--on-accent);
   }
 
   /* Four anchors do not fit next to a price at 375px, and the sections they

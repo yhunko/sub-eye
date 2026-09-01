@@ -4,9 +4,14 @@ import { appStoreUrl, type Locale } from "../lib/site";
 
 interface Props {
   locale: Locale;
+  /** 40px is Apple's onscreen floor. Only the fixed bar has to go that low. */
+  size?: "hero" | "bar";
+  /** Centre the artwork in its box instead of pulling its clear space back
+      into line with the text beside it. */
+  centred?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, size = "hero", centred = false } = Astro.props;
 const c = copyFor(locale);
 ---
 
@@ -20,6 +25,13 @@ const c = copyFor(locale);
   the guidelines say not to touch it, so nothing here recolours, rounds, tilts
   or animates the image, and there is no hover state for the same reason.
 
+  Apple's wording is "Use one App Store badge per layout or video", and this
+  page carries three of them: the hero, the fixed bar and the closing card.
+  That is a deliberate call and not an oversight — every route to the App Store
+  on this site is Apple's badge or it is nothing, rather than a plain green
+  button borrowing the badge's job. `test/appStore.test.ts` pins those three
+  placements, so a fourth has to be argued for on purpose.
+
   English on both locales, deliberately. Apple publishes a Ukrainian badge —
   "Завантажити в App Store", with the service mark left in English — but that
   artwork is only distributed through App Store Marketing Tools, and the
@@ -28,11 +40,15 @@ const c = copyFor(locale);
   `public/badges/download-on-the-app-store-uk.svg`, and choose the file by
   locale here. Until then the English badge is the compliant answer, not a
   shortcut.
-
-  `test/appStore.test.ts` keeps this the only badge on the site — Apple allows
-  one per layout.
 */}
-<a class="appstore" href={appStoreUrl}>
+<a
+  class:list={[
+    "appstore",
+    `appstore--${size}`,
+    { "appstore--centred": centred },
+  ]}
+  href={appStoreUrl}
+>
   <img
     src="/badges/download-on-the-app-store.svg"
     alt={c.appStore.badgeAlt}
@@ -44,26 +60,42 @@ const c = copyFor(locale);
 
 <style>
   /*
-   * 54px against Apple's 40px onscreen floor: it is the hero's primary action
-   * and it has to sit level with the ghost button beside it.
-   *
-   * The padding is the other half of the rule — clear space of at least a
-   * quarter of the badge height on every side, with no type or graphics inside
-   * it. Carrying it on the badge itself is what makes it survive a later
-   * change to the row's `gap`. The negative inline-start margin then pulls the
-   * artwork back into line with the headline above, where the page gutter is
-   * already more clear space than the rule asks for.
+   * Clear space of at least a quarter of the badge height on every side, with
+   * no type or graphics inside it, is the rule every size here has to keep.
+   * Carrying it on the badge itself is what makes it survive a later change to
+   * a parent's `gap`. The negative inline-start margin then pulls the artwork
+   * back into line with whatever the badge sits under — the hero's headline,
+   * the bar's own gutter — where the page already gives more clear space than
+   * the rule asks for. In the closing card the badge is centred instead, and
+   * that pull would put it off-centre by a quarter of its height.
    */
   .appstore {
-    --badge-h: 3.375rem;
-    display: block;
+    display: inline-block;
     padding: calc(var(--badge-h) / 4);
     margin-inline-start: calc(var(--badge-h) / -4);
+  }
+
+  .appstore--centred {
+    margin-inline-start: 0;
+  }
+
+  /* 54px against Apple's 40px floor: it is the hero's primary action and it
+     has to sit level with the ghost button beside it. */
+  .appstore--hero {
+    --badge-h: 3.375rem;
+  }
+
+  /* The floor exactly. 40px of artwork plus its 10px of clear space is 60 of
+     the bar's 72 — anything larger stops being subordinate to the page and
+     starts crowding the rule under it. */
+  .appstore--bar {
+    --badge-h: 2.5rem;
   }
 
   /* `height` + `aspect-ratio` rather than the intrinsic ratio, so the box is
      the right shape before the SVG has loaded and the row never shifts. */
   .appstore img {
+    display: block;
     height: var(--badge-h);
     width: auto;
     aspect-ratio: 119.66407 / 40;

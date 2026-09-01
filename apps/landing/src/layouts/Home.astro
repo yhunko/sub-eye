@@ -13,7 +13,7 @@ import { copyFor } from "../i18n";
 import { money } from "../lib/format";
 import { spendPanel } from "../lib/panels";
 import type { Locale } from "../lib/site";
-import { appStoreUrl, proPrice } from "../lib/site";
+import { proPrice } from "../lib/site";
 import Base from "./Base.astro";
 
 interface Props {
@@ -218,7 +218,7 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
         <h2 class="end__title">{c.cta.title}</h2>
         <p class="lead end__body">{c.cta.body}</p>
         <p class="end__action">
-          <a class="btn" href={appStoreUrl}>{c.cta.download}</a>
+          <AppStoreBadge locale={locale} centred />
         </p>
         <p class="end__badge">
           <span class="end__dot" aria-hidden="true"></span>

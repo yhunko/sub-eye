@@ -176,15 +176,11 @@ export const en = {
   cta: {
     title: "SubEye is on the App Store.",
     body: "Download it, type in the first subscription, and about twenty seconds later the number on the home screen is yours. Nothing to sign up for, nothing to sign in to.",
-    download: "Download SubEye",
   },
 
   appStore: {
     /** Apple's own wording for the badge. The service mark is never translated. */
     badgeAlt: "Download on the App Store",
-    /** The top bar's button. Not the badge's words — a text button that borrowed
-        them would read as a badge Apple did not draw. */
-    download: "Download",
     /**
      * Required wherever the site gives legal notice, once, because the page
      * carries the badge. The international form: no ® or ℠ symbols, which
