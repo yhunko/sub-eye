@@ -71,7 +71,7 @@ It counts every charge, not only the next one. A weekly subscription shows up on
 
 Choose where your week starts, and whether the daily totals show at all.
 
-It is free, like the rest of the dashboard.
+It is free, like the rest of the dashboard — every day, every charge, no cut-off. Pro adds a year view, twelve months of spending at a glance, puts each month against the last, and marks the days several charges land together.
 ```
 
 ### Description (4000)
@@ -170,7 +170,7 @@ SubEye: трекер підписок
 
 Оберіть, з якого дня починається тиждень і чи показувати денні суми взагалі.
 
-Він безкоштовний, як і решта панелі.
+Він безкоштовний, як і решта панелі, — усі дні й усі списання, без обмежень. Pro додає річний огляд, порівнює кожен місяць із попереднім і позначає дні, коли списань одразу кілька.
 ```
 
 ### Description (4000)
@@ -261,7 +261,7 @@ NETWORK
 The app is fully usable with the network off. The only outbound requests are: a daily exchange-rate file from a public CDN, a brand-logo lookup when a service name is typed into the add form, crash reports, and the App Store purchase check. None of them carries a user identifier — the purchase SDK is configured with an anonymous, device-local app user id.
 
 IN-APP PURCHASE
-"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, pricing phases, categories with the spend breakdown, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
+"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, pricing phases, categories with the spend breakdown, the calendar's year view and its month-on-month figures, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
 
 The app is iPhone-only, portrait-only and dark-only by design.
 ```

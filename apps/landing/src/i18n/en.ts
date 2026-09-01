@@ -137,6 +137,7 @@ export const en = {
       "Trial-ending alerts",
       "Price history on every subscription",
       "Categories, category filters and the breakdown",
+      "A year of spending, and each month against the last",
       "Home Screen widgets",
     ],
     joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
