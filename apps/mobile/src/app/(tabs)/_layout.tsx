@@ -278,12 +278,8 @@ function Tabs() {
             {m.tabs_subscriptions()}
           </NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        {/* Present for a free install too, and not only because a trigger here
-            must be STATIC — see the constraint above. The screen behind it is
-            Pro, and it says so with a ProLock over a live grid: a tab that
-            simply is not there teaches nobody that the feature exists, which is
-            the same mistake as a hidden section. Every other gate in this app is
-            visible and pressable. */}
+        {/* Free, like the three around it: see `CalendarPage` for why a tab is
+            the wrong place to put a gate. */}
         <NativeTabs.Trigger name="calendar">
           <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
           <NativeTabs.Trigger.Label>

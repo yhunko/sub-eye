@@ -1,10 +1,17 @@
 import type { CalendarDayDto } from "@subeye/model";
 import { StyleSheet, Text, View } from "react-native";
+import { usePro } from "@/entities/pro";
 import { m } from "@/shared/i18n";
 import { formatMoney, todayAsDay } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText } from "@/shared/ui/use-large-text";
-import { agendaDayLabel, nearbyCountdown, needsDayTotal } from "../model/month";
+import {
+  agendaDayLabel,
+  chargeCount,
+  isHeavyDay,
+  nearbyCountdown,
+  needsDayTotal,
+} from "../model/month";
 import { EventRow } from "./event-row";
 
 /**
@@ -22,10 +29,12 @@ import { EventRow } from "./event-row";
 function DayGroup({
   day,
   now,
+  heavy,
   onOpen,
 }: {
   day: CalendarDayDto;
   now: Date;
+  heavy: boolean;
   onOpen: (subscriptionId: string) => void;
 }) {
   const stacked = useLargeText();
@@ -44,9 +53,17 @@ function DayGroup({
               {when}
             </Text>
           ) : null}
+          {/* Amber, the app's "not yet, but close" — never `danger`. A pile-up
+              is not an error and the user has done nothing wrong; it is the one
+              thing on this screen worth noticing before it happens. */}
+          {heavy ? (
+            <Text style={styles.heavy} numberOfLines={1}>
+              {m.calendar_heavyDay({ count: String(chargeCount(day)) })}
+            </Text>
+          ) : null}
         </View>
         {needsDayTotal(day) ? (
-          <Text style={styles.total}>
+          <Text style={[styles.total, heavy && styles.totalHeavy]}>
             {formatMoney(day.total, day.events[0]?.currencyCode ?? "")}
           </Text>
         ) : null}
@@ -70,16 +87,23 @@ function DayGroup({
  * single line — a month of settled charges is dead scroll, and by the 28th it
  * would be the only thing on screen — but a month with nothing left ahead shows
  * them all rather than collapsing to one summary line and a void.
+ *
+ * Every remaining day is listed, for everyone. The heavy-day flag is the only
+ * thing Pro adds here and it is strictly additional: a free agenda is missing
+ * nothing, it simply does not point at the pile-up.
  */
 export function Agenda({
   days,
+  monthTotal,
   onOpen,
   now = new Date(),
 }: {
   days: CalendarDayDto[];
+  monthTotal: number;
   onOpen: (subscriptionId: string) => void;
   now?: Date;
 }) {
+  const isPro = usePro();
   const today = todayAsDay(now);
   const upcoming = days.filter((day) => Date.parse(day.date) >= today);
   const earlier = upcoming.length
@@ -109,7 +133,13 @@ export function Agenda({
         </View>
       ) : null}
       {shown.map((day) => (
-        <DayGroup key={day.date} day={day} now={now} onOpen={onOpen} />
+        <DayGroup
+          key={day.date}
+          day={day}
+          now={now}
+          heavy={isPro && isHeavyDay(day, monthTotal)}
+          onOpen={onOpen}
+        />
       ))}
     </View>
   );
@@ -155,12 +185,14 @@ const styles = StyleSheet.create({
   day: { flexShrink: 1, fontSize: 15, fontWeight: "700", color: colors.muted },
   when: { fontSize: 13, color: colors.muted },
   whenToday: { color: colors.accent, fontWeight: "600" },
+  heavy: { flexShrink: 1, fontSize: 13, color: colors.warning },
   total: {
     fontSize: 13.5,
     fontWeight: "600",
     color: colors.muted,
     fontVariant: ["tabular-nums"],
   },
+  totalHeavy: { color: colors.warning },
 
   empty: {
     paddingVertical: 30,

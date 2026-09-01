@@ -1,19 +1,39 @@
 import { SymbolView } from "expo-symbols";
-import { Pressable } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
 
 /**
- * The calendar's options button. Declared on the LAYOUT, not the screen: it
- * depends on nothing the page holds, and options set from inside a screen are
- * re-pushed through `navigation.setOptions` on every render.
+ * The calendar's two bar buttons: the year view, and how the month draws itself.
  *
- * expo-router only swaps native bar items in on iOS, so the Pressable stays as
+ * Declared on the LAYOUT, not the screen: they depend on nothing the page holds,
+ * and options set from inside a screen are re-pushed through
+ * `navigation.setOptions` on every render.
+ *
+ * Both on the RIGHT rather than one either side. The left slot belongs to the
+ * back button on every other screen in this stack, and a control that appears
+ * only where there is nothing to go back to is a control in a different place
+ * each time.
+ *
+ * expo-router only swaps native bar items in on iOS, so the Pressables stay as
  * the Android path.
  */
-export function calendarOptionsHeaderOptions(onPress: () => void) {
+export function calendarHeaderOptions({
+  onYear,
+  onOptions,
+}: {
+  onYear: () => void;
+  onOptions: () => void;
+}) {
   return {
     unstable_headerRightItems: () => [
+      {
+        type: "button" as const,
+        label: m.calendar_year(),
+        icon: { type: "sfSymbol" as const, name: "square.grid.3x3" as const },
+        tintColor: colors.accent,
+        onPress: onYear,
+      },
       {
         type: "button" as const,
         label: m.calendar_options(),
@@ -22,22 +42,36 @@ export function calendarOptionsHeaderOptions(onPress: () => void) {
           name: "slider.horizontal.3" as const,
         },
         tintColor: colors.accent,
-        onPress,
+        onPress: onOptions,
       },
     ],
     headerRight: () => (
-      <Pressable
-        onPress={onPress}
-        hitSlop={12}
-        accessibilityRole="button"
-        accessibilityLabel={m.calendar_options()}
-      >
-        <SymbolView
-          name={{ ios: "slider.horizontal.3", android: "tune" }}
-          size={22}
-          tintColor={colors.accent}
-        />
-      </Pressable>
+      <View style={styles.items}>
+        <Pressable
+          onPress={onYear}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={m.calendar_year()}
+        >
+          <SymbolView
+            name={{ ios: "square.grid.3x3", android: "grid_view" }}
+            size={22}
+            tintColor={colors.accent}
+          />
+        </Pressable>
+        <Pressable
+          onPress={onOptions}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={m.calendar_options()}
+        >
+          <SymbolView
+            name={{ ios: "slider.horizontal.3", android: "tune" }}
+            size={22}
+            tintColor={colors.accent}
+          />
+        </Pressable>
+      </View>
     ),
   };
 }
@@ -84,3 +118,7 @@ export function sheetCloseHeaderOptions(onPress: () => void) {
     ),
   };
 }
+
+const styles = StyleSheet.create({
+  items: { flexDirection: "row", alignItems: "center", gap: 18 },
+});

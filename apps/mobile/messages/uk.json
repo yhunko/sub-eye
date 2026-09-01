@@ -86,6 +86,7 @@
   "paywall_featureReminders": "Пробні періоди й власний графік",
   "paywall_featurePricing": "Цінові періоди",
   "paywall_featureCategories": "Категорії",
+  "paywall_featureCalendar": "Огляд календаря",
   "paywall_buy": "Розблокувати за {price}",
   "paywall_oneTime": "Разова покупка, а не підписка. Нічого не поновлюється.",
   "paywall_restore": "Відновити покупки",
@@ -338,6 +339,13 @@
   "calendar_kindResumes": "Відновлення",
   "calendar_kindEnds": "Завершується",
   "calendar_options": "Параметри календаря",
+  "calendar_prevMonth": "Попередній місяць",
+  "calendar_nextMonth": "Наступний місяць",
+  "calendar_vsMonth": "проти {month}",
+  "calendar_heavyDay": "{count} списань разом",
+  "calendar_year": "Рік",
+  "calendar_yearTotal": "Разом за рік",
+  "calendar_yearHint": "Кожен день року, відтінком за сумою списань. Торкніться місяця, щоб відкрити його.",
   "calendar_weekStart": "Початок тижня",
   "calendar_weekMonday": "Понеділок",
   "calendar_weekSunday": "Неділя",
@@ -347,5 +355,6 @@
   "paywall_featurePricingBody": "Пробні періоди, знижки та заплановані зміни ціни на одній шкалі.",
   "paywall_featureCategoriesBody": "Групуйте підписки, фільтруйте за ними й дивіться, куди йдуть гроші.",
   "paywall_lockWidgetsBody": "Наступний платіж і сума за місяць — без відкривання застосунку.",
-  "calendar_total": "Разом"
+  "calendar_total": "Разом",
+  "paywall_featureCalendarBody": "Цілий рік витрат перед очима, попередження про дні, коли списань одразу кілька, і порівняння кожного місяця з попереднім."
 }

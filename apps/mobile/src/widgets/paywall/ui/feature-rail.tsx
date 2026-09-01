@@ -12,6 +12,7 @@ import {
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
 import {
+  CalendarPreview,
   CategoriesPreview,
   PricingPreview,
   RemindersPreview,
@@ -46,6 +47,18 @@ const FEATURES: {
     label: m.paywall_featureCategories,
     body: m.paywall_featureCategoriesBody,
     Preview: CategoriesPreview,
+  },
+  // The calendar tab is FREE and this page sells nothing back out of it — the
+  // year view, the pile-up flag and the month-over-month line are all additions.
+  // It is here because the year button on that tab is the one control a free
+  // install cannot use, and a tap that lands on a rail with no calendar in it
+  // was the shape that made the old lock feel like a bait.
+  {
+    ios: "calendar",
+    android: "calendar_month",
+    label: m.paywall_featureCalendar,
+    body: m.paywall_featureCalendarBody,
+    Preview: CalendarPreview,
   },
   // The widget's own lock card is the surface that deep-links here, so the
   // screen it lands on has to name it. Same string that card renders.

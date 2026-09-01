@@ -2,13 +2,15 @@
 
 `apps/mobile` (`@subeye/mobile`) is the **v4 SubEye client**: an Expo (React Native, expo-router) app that runs entirely on the device — no API, no database, no accounts. It replaces the retired React/Vite web client. Read this before touching mobile code.
 
-**Eleven shipped screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
+**Twelve shipped screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
 
 The three beyond the original seven, and why: **`settings/notifications`**, because reminder config outgrew a single switch the moment it had a time, several lead times and a health readout — and a status section is the only way a user can tell a silent OS refusal from an app bug. **`subscriptions/due/[date]`**, because a digest notification that names three services has to be able to show exactly those three — and the list cannot do it, because its filters now PERSIST across launches, so whatever the user last narrowed to would silently hide some of them. **`legal/[doc]`**, because Settings and the paywall used to hand the terms and the privacy policy to Safari — an app with no network on its read path sending a user to a website to read what it does with their data, and a reviewer following that link out of the build they are reviewing. One route serves both documents from `@subeye/legal`, so it is one screen rather than two.
 
 The eleventh is the **currency picker**, and it is one screen doing two jobs — Settings → Currency *and* the price field's currency, wired by each stack's own route the way `categories-page` is. It exists because the catalogue went from five hard-coded codes to the whole ISO-4217 fiat set (156), and an `ActionSheetIOS` stops being a list somewhere around a dozen rows: no search, no grouping, no flags. Adding currencies without it would have been the regression.
 
-The twelfth route, **`settings/developer`**, is not one of them and never counts against that number: it renders nothing in a release build. See the dev-route rule under Routing before adding to it.
+The twelfth is **`calendar/year`**, and it is the only screen in the app that is Pro OUTRIGHT rather than a Pro row inside a free one. That is the whole argument for it: the calendar tab used to truncate its own agenda behind a lock, and the lock withheld nothing — the grid above it already printed each day's logos and total, and the day sheet opened every one of them for a free install. A gate a user routes around in one tap does not convert, it teaches them the locks are theatre. So the month screen gives everything away and Pro is additive instead: the year heatmap here, plus the month-over-month delta and the heavy-day flag on the month itself. It is also the one thing the month pager genuinely cannot do — twelve months at a time, off ONE walk over the year (`buildCalendarYear`), where twelve `buildCalendarMonth` calls would re-read and re-parse the subscription list twelve times.
+
+The thirteenth route, **`settings/developer`**, is not one of them and never counts against that number: it renders nothing in a release build. See the dev-route rule under Routing before adding to it.
 
 ## Layers & structure
 

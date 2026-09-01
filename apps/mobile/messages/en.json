@@ -86,6 +86,7 @@
   "paywall_featureReminders": "Trial and custom reminders",
   "paywall_featurePricing": "Pricing phases",
   "paywall_featureCategories": "Categories",
+  "paywall_featureCalendar": "Calendar insight",
   "paywall_buy": "Unlock for {price}",
   "paywall_oneTime": "A single purchase, not a subscription. Nothing renews.",
   "paywall_restore": "Restore purchases",
@@ -338,6 +339,13 @@
   "calendar_kindResumes": "Resumes",
   "calendar_kindEnds": "Ends",
   "calendar_options": "Calendar options",
+  "calendar_prevMonth": "Previous month",
+  "calendar_nextMonth": "Next month",
+  "calendar_vsMonth": "vs {month}",
+  "calendar_heavyDay": "{count} charges together",
+  "calendar_year": "Year",
+  "calendar_yearTotal": "Year total",
+  "calendar_yearHint": "Every day of the year, shaded by what it charges. Tap a month to open it.",
   "calendar_weekStart": "Start of week",
   "calendar_weekMonday": "Monday",
   "calendar_weekSunday": "Sunday",
@@ -347,5 +355,6 @@
   "paywall_featurePricingBody": "Trials, intro discounts and scheduled price changes, on one timeline.",
   "paywall_featureCategoriesBody": "Group subscriptions, filter by them, and see where the money goes.",
   "paywall_lockWidgetsBody": "See your next payment and this month's total without opening the app.",
-  "calendar_total": "Total"
+  "calendar_total": "Total",
+  "paywall_featureCalendarBody": "See a whole year of spending at a glance, catch the days several charges land together, and watch each month against the last."
 }

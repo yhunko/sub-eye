@@ -1,8 +1,9 @@
 import { router, Stack } from "expo-router";
+import { usePro } from "@/entities/pro";
 import { m } from "@/shared/i18n";
 import { categorySheetChrome, nativeHeaderChrome } from "@/shared/ui/header";
 import {
-  calendarOptionsHeaderOptions,
+  calendarHeaderOptions,
   sheetCloseHeaderOptions,
 } from "@/widgets/calendar-page";
 
@@ -26,14 +27,27 @@ const sheetChrome = {
 };
 
 export default function CalendarTabLayout() {
+  // The one bar item that depends on the entitlement. Read HERE rather than in
+  // the year screen so a free tap never mounts a screen it cannot use — and the
+  // paywall it lands on carries a page about this calendar, so the tap answers
+  // itself rather than dead-ending.
+  const isPro = usePro();
+
   return (
     <Stack screenOptions={nativeHeaderChrome}>
       {/* No title here: the page sets it to the month it is showing, which is
           the one piece of chrome that DOES depend on screen state. */}
       <Stack.Screen
         name="index"
-        options={calendarOptionsHeaderOptions(openOptions)}
+        options={calendarHeaderOptions({
+          onYear: () => router.push(isPro ? "/calendar/year" : "/paywall"),
+          onOptions: openOptions,
+        })}
       />
+      {/* Pushed, not a sheet: it is a destination the user reads and then picks
+          a month out of, and a sheet cannot hand the screen underneath it a
+          param without stacking a second one on itself. */}
+      <Stack.Screen name="year" />
       <Stack.Screen name="day/[date]" options={sheetChrome} />
       <Stack.Screen
         name="options"

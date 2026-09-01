@@ -1,4 +1,5 @@
 import type { CalendarDayDto, CalendarEventKind } from "@subeye/model";
+import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatMoney, todayAsDay } from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
@@ -38,9 +39,49 @@ const DOTTED: Partial<Record<CalendarEventKind, true>> = {
   priceChange: true,
 };
 
-function DayTile({
+/**
+ * A day with nothing on it. Not a `Pressable`, not a disabled one.
+ *
+ * Two thirds of a month are usually empty, and every one of them used to open a
+ * sheet that said "nothing due" — a tap that costs a navigation to tell the user
+ * what the blank tile they tapped had already told them. It also put 42 press
+ * responders per page into a horizontal pager, three pages deep.
+ */
+function EmptyTile({
+  day,
+  past,
+  isToday,
+  adjacent,
+}: {
+  day: number;
+  past: boolean;
+  isToday: boolean;
+  adjacent: boolean;
+}) {
+  return (
+    <View style={[styles.tile, isToday && styles.tileToday]}>
+      <Text
+        style={[
+          styles.number,
+          past && styles.numberPast,
+          adjacent && styles.numberAdjacent,
+          // Today keeps its ring and its accent even with nothing on it — it is
+          // WHERE YOU ARE, which is true of an empty day too, and true of the
+          // 30th shown at the head of October's grid.
+          isToday && styles.numberToday,
+          isToday && styles.numberStrong,
+        ]}
+      >
+        {day}
+      </Text>
+    </View>
+  );
+}
+
+const DayTile = memo(function DayTile({
   cell,
   day,
+  heavy,
   settings,
   selected,
   onPress,
@@ -48,21 +89,32 @@ function DayTile({
 }: {
   cell: CalendarCell;
   day: CalendarDayDto | undefined;
+  heavy: boolean;
   settings: CalendarSettings;
   selected: boolean;
   onPress: (date: string) => void;
   now: number;
 }) {
-  // Before the padding-slot guard below: a hook cannot sit after an early
-  // return, and half the tiles in a six-row grid are padding.
+  // Before the empty-tile guard below: a hook cannot sit after an early return,
+  // and most of the tiles in a six-row grid have nothing on them.
   const totalFloor = useShrinkFloor(TOTAL_SIZE, TOTAL_FLOOR);
 
-  if (!cell.date || cell.day === null) return <View style={styles.tile} />;
-
   const at = Date.parse(cell.date);
-  const isToday = at === now;
   const past = at < now;
-  const events = day?.events ?? [];
+  const isToday = at === now;
+
+  if (!day?.events.length) {
+    return (
+      <EmptyTile
+        day={cell.day}
+        past={past}
+        isToday={isToday}
+        adjacent={cell.adjacent}
+      />
+    );
+  }
+
+  const events = day.events;
 
   // The overflow chip takes a LOGO'S slot rather than a second line: a wrapped
   // second row would make a busy day taller than a quiet one, in a grid whose
@@ -73,15 +125,23 @@ function DayTile({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${cell.day}${
-        day
-          ? `, ${formatMoney(day.total, day.events[0]?.currencyCode ?? "")}`
-          : ""
-      }`}
-      onPress={() => onPress(cell.date as string)}
+      accessibilityLabel={`${cell.day}, ${formatMoney(
+        day.total,
+        events[0]?.currencyCode ?? "",
+      )}`}
+      onPress={() => onPress(cell.date)}
       style={({ pressed }) => [
         styles.tile,
-        events.length > 0 && (past ? styles.tileSpent : styles.tileFilled),
+        // A neighbouring month's day carries its charges but not its month's
+        // furniture: no plate, no total, no flag. It is context for the weeks
+        // above it, and a full-strength tile in the bottom row would read as
+        // part of the month being looked at.
+        cell.adjacent
+          ? styles.tileAdjacent
+          : past
+            ? styles.tileSpent
+            : styles.tileFilled,
+        heavy && styles.tileHeavy,
         isToday && !selected && styles.tileToday,
         selected && styles.tileSelected,
         pressed && styles.pressed,
@@ -91,6 +151,7 @@ function DayTile({
         style={[
           styles.number,
           past && styles.numberPast,
+          cell.adjacent && styles.numberAdjacent,
           isToday && styles.numberToday,
           (isToday || selected) && styles.numberStrong,
         ]}
@@ -98,43 +159,49 @@ function DayTile({
         {cell.day}
       </Text>
 
-      <View style={styles.logos}>
+      <View style={[styles.logos, cell.adjacent && styles.logosAdjacent]}>
         {events.slice(0, room).map((event) => (
           <BrandLogo
             key={event.key}
             name={event.name}
             brandDomain={event.brandDomain}
             size={LOGO}
-            dimmed={past}
+            dimmed={past || cell.adjacent}
           />
         ))}
         {overflowing ? (
-          <Text style={styles.overflow}>{`+${events.length - room}`}</Text>
+          <Text
+            style={[styles.overflow, cell.adjacent && styles.numberAdjacent]}
+          >{`+${events.length - room}`}</Text>
         ) : null}
       </View>
 
-      {settings.showDayTotals && day && day.total > 0 ? (
+      {settings.showDayTotals && !cell.adjacent && day.total > 0 ? (
         <Text
           style={[styles.total, past && styles.totalPast]}
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={totalFloor}
         >
-          {formatMoney(day.total, day.events[0]?.currencyCode ?? "", {
+          {formatMoney(day.total, events[0]?.currencyCode ?? "", {
             decimals: 0,
           })}
         </Text>
       ) : null}
 
-      {events.some((event) => DOTTED[event.kind]) ? (
+      {!cell.adjacent && events.some((event) => DOTTED[event.kind]) ? (
         <View style={styles.dot} />
       ) : null}
     </Pressable>
   );
-}
+});
 
-/** The seven column headings. Fixed above the pager — they never change. */
-export function WeekdayHeader({ weekStart }: { weekStart: WeekStart }) {
+/** The seven column headings. They never change within a locale. */
+export const WeekdayHeader = memo(function WeekdayHeader({
+  weekStart,
+}: {
+  weekStart: WeekStart;
+}) {
   return (
     <View style={styles.week}>
       {weekdayLabels(weekStart).map((label) => (
@@ -144,7 +211,7 @@ export function WeekdayHeader({ weekStart }: { weekStart: WeekStart }) {
       ))}
     </View>
   );
-}
+});
 
 /**
  * One month's tiles, six rows of seven.
@@ -154,10 +221,15 @@ export function WeekdayHeader({ weekStart }: { weekStart: WeekStart }) {
  * different heights stop being a grid, and the day number is the only text here
  * that has to fit. Logos and the total are decoration a tight tile can drop
  * (`maxIcons`, the totals switch) rather than text that must not be capped.
+ *
+ * `heavyDates` is null rather than empty for the common case — a free install,
+ * or a month with no pile-up — so the memoised tiles below keep their identity
+ * instead of taking a fresh `Set` on every render.
  */
 export function MonthCells({
   cells,
   days,
+  heavyDates,
   settings,
   selected,
   onSelect,
@@ -165,6 +237,7 @@ export function MonthCells({
 }: {
   cells: CalendarCell[];
   days: Map<string, CalendarDayDto>;
+  heavyDates: Set<string> | null;
   settings: CalendarSettings;
   selected: string | null;
   onSelect: (date: string) => void;
@@ -178,9 +251,10 @@ export function MonthCells({
         <View key={cell.key} style={styles.slot}>
           <DayTile
             cell={cell}
-            day={cell.date ? days.get(cell.date) : undefined}
+            day={days.get(cell.date)}
+            heavy={heavyDates?.has(cell.date) ?? false}
             settings={settings}
-            selected={selected !== null && cell.date === selected}
+            selected={cell.date === selected}
             onPress={onSelect}
             now={today}
           />
@@ -222,9 +296,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
   },
+  // No plate at all, not even the faint one a settled day keeps. The whole job
+  // of a neighbouring day is to end the grid without ending the month, and a
+  // filled tile in the last row makes March look like part of February.
+  tileAdjacent: { backgroundColor: "transparent", borderColor: "transparent" },
   tileSpent: {
     backgroundColor: colors.surfacePast,
     borderColor: colors.borderPast,
+  },
+  // Below today and selection in the cascade: where the user IS beats what the
+  // day contains, and a heavy day is still visible from its amber total below.
+  tileHeavy: {
+    backgroundColor: colors.warningSoft,
+    borderColor: colors.warning,
   },
   tileToday: { borderColor: colors.accentBorder },
   tileSelected: {
@@ -239,6 +323,10 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   numberPast: { color: colors.mutedPast },
+  // Below `mutedPast`, which is already the dimmest text on the screen: a
+  // neighbouring day has to be legible enough to count weeks by and quiet
+  // enough that nobody reads it as this month.
+  numberAdjacent: { color: "rgba(152,160,174,0.38)" },
   numberToday: { color: colors.accent },
   numberStrong: { fontWeight: "700" },
   logos: {
@@ -249,6 +337,10 @@ const styles = StyleSheet.create({
     gap: 2,
     width: "100%",
   },
+  // Its own charges are worth showing — a blank 1st of October at the foot of
+  // September would read as "nothing due" rather than "another month" — but at
+  // half strength, under the dimmed logos.
+  logosAdjacent: { opacity: 0.55 },
   overflow: {
     fontSize: 12,
     fontWeight: "700",

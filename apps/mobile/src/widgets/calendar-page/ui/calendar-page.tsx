@@ -1,16 +1,13 @@
-import { Stack, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCalendarMonth } from "@/entities/calendar";
 import { m } from "@/shared/i18n";
-import { formatMoney } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
-import { monthIso, monthLabel } from "../model/month";
+import { monthIso, monthLabel, monthOffsetOf } from "../model/month";
 import { useCalendarSettings } from "../model/settings";
-import { WeekdayHeader } from "./month-grid";
-import { MonthPager } from "./month-pager";
+import { MonthPager, type MonthPagerHandle } from "./month-pager";
 
 /** A standard iOS navigation bar. There is no `useHeaderHeight` in this tree. */
 const NAV_BAR = 44;
@@ -24,6 +21,8 @@ const NAV_BAR = 44;
  */
 const HEADER_GAP = 14;
 
+const ISO_MONTH = /^\d{4}-\d{2}$/;
+
 function StepButton({
   direction,
   onPress,
@@ -34,7 +33,9 @@ function StepButton({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={direction === "back" ? "‹" : "›"}
+      accessibilityLabel={
+        direction === "back" ? m.calendar_prevMonth() : m.calendar_nextMonth()
+      }
       onPress={onPress}
       style={({ pressed }) => [styles.step, pressed && styles.stepPressed]}
     >
@@ -55,38 +56,77 @@ function StepButton({
 /**
  * The month, as a grid over an agenda.
  *
- * FREE, all of it. The calendar shows no fact the app does not already give
- * away — Home's rail, the list and the due digest all name what is coming — so
- * charging for the arrangement would be charging for a rearrangement of the
- * user's own data. It is also a TAB, and a tab is navigation rather than a
- * feature: every other gate in this app sits on a row inside a screen someone
- * opened for another reason, where it costs them nothing to walk past. What
- * Pro still buys shows up here anyway, because a trial, an intro price and a
- * scheduled change can only exist on a Pro install — a paid calendar is denser
- * than a free one without a single gate in this file.
+ * FREE, all of it, and with nothing withheld anywhere on it. The calendar shows
+ * no fact the app does not already give away — Home's rail, the list and the due
+ * digest all name what is coming — so charging for the arrangement would be
+ * charging for a rearrangement of the user's own data. It is also a TAB, and a
+ * tab is navigation rather than a feature.
  *
- * ONLY the week-start row and the controls are fixed. The month's total, its
- * grid and its agenda all live inside the pager, together, because they are one
- * month and they have to travel as one: with the agenda below the pager it
- * showed the month being swiped AWAY from for the whole gesture and then
- * swapped its contents the instant the grid settled. There is no animation
- * anywhere in this screen now — the motion is the pager, and everything that
- * belongs to a month is inside it.
+ * There WAS a truncated agenda under a lock here, and it withheld nothing: the
+ * grid above it already printed each day's logos and total, and the day sheet
+ * opened every one of them in full for a free install. A gate a user routes
+ * around in one tap does not convert, it just teaches them the locks are
+ * theatre. What Pro buys on this screen is additional now, never subtracted —
+ * the month-over-month delta, the heavy-day flag and the year view — plus the
+ * density that comes free with it, because a trial, an intro price and a
+ * scheduled change can only exist on a Pro install.
  *
- * The month name is the screen TITLE rather than a line of content. Home
- * already puts the current month in its own header for the same reason: every
- * figure below is scoped to it, and repeating it inside the page costs a fold.
+ * ONLY the controls are fixed. The total, the week-start row, the grid and the
+ * agenda all live inside the pager, together, because they are one month and
+ * they have to travel as one — and because anything pinned over a scrolling page
+ * eventually clips it.
+ *
+ * The month name is the screen TITLE rather than a line of content. Home already
+ * puts the current month in its own header for the same reason: every figure
+ * below is scoped to it, and repeating it inside the page costs a fold.
  */
 export function CalendarPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const settings = useCalendarSettings();
+  const pager = useRef<MonthPagerHandle | null>(null);
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
 
-  const month = monthIso(offset);
-  // A cache hit — the pager's own page asked for this month first.
-  const calendar = useCalendarMonth(month);
+  // A MIRROR of the pager's scroll position, never a driver of it. Everything
+  // here that moves the calendar calls `pager.current.goTo`, so a control can
+  // never be defeated by this already holding the value it wants to set.
+  const onOffsetChange = useCallback((next: number) => {
+    setOffset(next);
+    // The selection names a day in the month being left, so keeping it would
+    // light a tile in the new month that shares only its position in the grid.
+    setSelected(null);
+  }, []);
+
+  // Written by the year view, which speaks months rather than offsets. A param
+  // is input from outside the process even when this app wrote it.
+  const { month: requested } = useLocalSearchParams<{ month?: string }>();
+  useEffect(() => {
+    if (!requested || !ISO_MONTH.test(requested)) return;
+    pager.current?.goTo(monthOffsetOf(`${requested}-01T00:00:00.000Z`));
+    // Cleared so that returning to this tab later does not re-jump to a month
+    // the user has since paged away from.
+    router.setParams({ month: undefined });
+  }, [requested, router]);
+
+  const openDay = useCallback(
+    (date: string) => {
+      setSelected(date);
+      router.push({
+        pathname: "/calendar/day/[date]",
+        // The same `YYYY-MM-DD` the due-digest route takes. A full ISO instant
+        // carries colons, which have no business in a path segment.
+        params: { date: date.slice(0, 10) },
+      });
+    },
+    [router],
+  );
+
+  const openSubscription = useCallback(
+    (id: string) =>
+      router.push({ pathname: "/subscriptions/[id]", params: { id } }),
+    [router],
+  );
 
   // The fixed block sits outside every scroll view, so nothing hands it UIKit's
   // automatic inset. iOS only: `nativeHeaderChrome` makes the bar transparent
@@ -94,86 +134,46 @@ export function CalendarPage() {
   const headerTop =
     (Platform.OS === "ios" ? insets.top + NAV_BAR : 0) + HEADER_GAP;
 
-  const openDay = (date: string) => {
-    setSelected(date);
-    router.push({
-      pathname: "/calendar/day/[date]",
-      // The same `YYYY-MM-DD` the due-digest route takes. A full ISO instant
-      // carries colons, which have no business in a path segment.
-      params: { date: date.slice(0, 10) },
-    });
-  };
-
-  const goTo = (next: number) => {
-    if (next === offset) return;
-    setOffset(next);
-    // The selection names a day in the month being left, so keeping it would
-    // light a tile in the new month that shares only its position in the grid.
-    setSelected(null);
-  };
-
   return (
     <View style={styles.screen}>
-      <Stack.Screen options={{ title: monthLabel(month) }} />
+      <Stack.Screen options={{ title: monthLabel(monthIso(offset)) }} />
 
       <View style={[styles.header, { paddingTop: headerTop }]}>
-        <View style={styles.controls}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={m.when_today()}
-            onPress={() => goTo(0)}
-            style={({ pressed }) => [
-              styles.chip,
-              offset === 0 && styles.chipOn,
-              pressed && styles.stepPressed,
-            ]}
-          >
-            <Text
-              style={[styles.chipLabel, offset === 0 && styles.chipLabelOn]}
-            >
-              {m.when_today()}
-            </Text>
-          </Pressable>
-          {/* Kept beside the swipe, not replaced by it: a gesture is invisible
-              until someone tries it, and VoiceOver needs a control to land on. */}
-          <View style={styles.steps}>
-            <StepButton direction="back" onPress={() => goTo(offset - 1)} />
-            <StepButton direction="forward" onPress={() => goTo(offset + 1)} />
-          </View>
-        </View>
-
-        {/* Fixed with the title rather than paged, and it is the one figure
-            here that lags a swipe by a beat. The alternative was worse: inside
-            the pager it has to sit BELOW the week-start row, which reads as a
-            total for the grid rather than for the month. It keeps company with
-            the navigation title, which is native and cannot animate either. */}
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>{m.calendar_monthTotal()}</Text>
-          <Text style={styles.totalAmount}>
-            {calendar.data
-              ? formatMoney(
-                  calendar.data.monthTotal,
-                  calendar.data.currencyCode,
-                )
-              : ""}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={m.when_today()}
+          onPress={() => pager.current?.goTo(0)}
+          style={({ pressed }) => [
+            styles.chip,
+            offset === 0 && styles.chipOn,
+            pressed && styles.stepPressed,
+          ]}
+        >
+          <Text style={[styles.chipLabel, offset === 0 && styles.chipLabelOn]}>
+            {m.when_today()}
           </Text>
+        </Pressable>
+        {/* Kept beside the swipe, not replaced by it: a gesture is invisible
+            until someone tries it, and VoiceOver needs a control to land on. */}
+        <View style={styles.steps}>
+          <StepButton
+            direction="back"
+            onPress={() => pager.current?.goTo(offset - 1)}
+          />
+          <StepButton
+            direction="forward"
+            onPress={() => pager.current?.goTo(offset + 1)}
+          />
         </View>
-
-        {/* Fixed rather than paged: the seven labels are the same in every
-            month, so sliding them would move letters only to replace them with
-            identical ones. */}
-        <WeekdayHeader weekStart={settings.weekStart} />
       </View>
 
       <MonthPager
-        offset={offset}
-        onOffsetChange={goTo}
+        controls={pager}
+        onOffsetChange={onOffsetChange}
         settings={settings}
         selected={selected}
         onSelect={openDay}
-        onOpenSubscription={(id) =>
-          router.push({ pathname: "/subscriptions/[id]", params: { id } })
-        }
+        onOpenSubscription={openSubscription}
       />
     </View>
   );
@@ -181,18 +181,17 @@ export function CalendarPage() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: 12, paddingBottom: 6, gap: 10 },
-  // Inset to 16 like the total row below it, which is also where UIKit puts a
-  // navigation bar's own items — without it the forward arrow sat a few points
-  // right of the options button above it, and Today a few points left of
-  // "Month total". The week-start row keeps the block's 12, because it has to
-  // line up with the grid's columns rather than with the chrome.
-  controls: {
+  // Inset to 16 like the page's own rows below it, which is also where UIKit
+  // puts a navigation bar's items — without it the forward arrow sat a few
+  // points right of the options button above it, and Today a few points left of
+  // "Month total".
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   steps: { flexDirection: "row", gap: 8 },
   step: {
@@ -217,18 +216,4 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.accent, backgroundColor: colors.surfaceAlt },
   chipLabel: { fontSize: 13, fontWeight: "600", color: colors.muted },
   chipLabelOn: { color: colors.accent },
-  totalRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    gap: 12,
-    paddingHorizontal: 4,
-  },
-  totalLabel: {
-    fontSize: 12.5,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    color: colors.muted,
-  },
-  totalAmount: { fontSize: 20, fontWeight: "700", color: colors.text },
 });

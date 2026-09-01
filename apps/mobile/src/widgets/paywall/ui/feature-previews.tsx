@@ -107,7 +107,82 @@ export function WidgetsPreview() {
   );
 }
 
+// A month's worth of cells, shaded the way the year view shades them. The
+// pattern is FIXED rather than random: a preview that redraws itself differently
+// on every render is a preview the reader cannot compare against what they saw a
+// moment ago. Indices are days with charges; the amber one is a pile-up.
+const HEAT: Record<number, number> = {
+  3: 0.22,
+  8: 0.42,
+  11: 0.22,
+  16: 0.68,
+  17: 0.22,
+  22: 0.42,
+  25: 0.22,
+  30: 1,
+};
+const HEAVY = 30;
+const MONTH_SLOTS = Array.from({ length: 35 }, (_, slot) => slot);
+
+/** A month shaded by what each day charges, and how it sits against the last. */
+export function CalendarPreview() {
+  return (
+    <View style={styles.month}>
+      <View style={styles.monthHead}>
+        <View style={styles.monthLabel} />
+        <View style={styles.monthDelta} />
+      </View>
+      <View style={styles.monthCells}>
+        {MONTH_SLOTS.map((slot) => (
+          <View
+            key={slot}
+            style={[
+              styles.monthCell,
+              slot === HEAVY
+                ? styles.monthCellHeavy
+                : HEAT[slot] !== undefined && {
+                    backgroundColor: colors.accent,
+                    opacity: HEAT[slot],
+                  },
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  month: { width: 196, gap: 10 },
+  monthHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  monthLabel: {
+    width: 62,
+    height: 9,
+    borderRadius: 999,
+    backgroundColor: colors.borderStrong,
+  },
+  monthDelta: {
+    width: 38,
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: colors.border,
+  },
+  monthCells: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
+  monthCell: {
+    width: 24,
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  monthCellHeavy: {
+    backgroundColor: colors.warningSoft,
+    borderWidth: 1,
+    borderColor: colors.warning,
+  },
   notification: {
     flexDirection: "row",
     alignItems: "center",
