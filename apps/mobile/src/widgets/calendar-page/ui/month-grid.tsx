@@ -16,6 +16,18 @@ import type { CalendarSettings, WeekStart } from "../model/settings";
 const LOGO = 20;
 const LOGO_SLOTS = 2;
 
+// With day totals switched off the tile has ~18pt of height going spare under
+// the logos, and it is the only thing in here that can use it.
+//
+// WIDTH is what caps the pair, not the height it just gained: two logos plus
+// their 2pt gap have to fit the 47pt tile of a 375pt screen, which lands at 22
+// and no higher — go past it and the row wraps, which makes a busy tile two
+// logo-rows tall inside a grid whose rows are a fixed height, and the second
+// row is simply clipped. A day with a SINGLE charge has the whole width to
+// itself and is limited by height instead, so it gets to be properly large.
+const LOGO_ROOMY = 22;
+const LOGO_ROOMY_SOLO = 30;
+
 // A day's total, and the floor it may shrink to rather than wrap.
 //
 // A tile is ~51pt wide, which is about eight characters at 10pt: "₴100,860"
@@ -122,6 +134,16 @@ const DayTile = memo(function DayTile({
   const overflowing = events.length > LOGO_SLOTS;
   const room = overflowing ? LOGO_SLOTS - 1 : LOGO_SLOTS;
 
+  // Keyed to the SETTING rather than to whether this particular tile draws a
+  // total, so the whole grid changes together. Tied to the tile, the bottom
+  // row's adjacent days — which never carry a total — would sit there larger
+  // than the month above them.
+  const logo = settings.showDayTotals
+    ? LOGO
+    : events.length === 1
+      ? LOGO_ROOMY_SOLO
+      : LOGO_ROOMY;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -165,13 +187,19 @@ const DayTile = memo(function DayTile({
             key={event.key}
             name={event.name}
             brandDomain={event.brandDomain}
-            size={LOGO}
+            size={logo}
             dimmed={past || cell.adjacent}
           />
         ))}
         {overflowing ? (
           <Text
-            style={[styles.overflow, cell.adjacent && styles.numberAdjacent]}
+            // The chip stands in a logo's place, so it has to be a logo tall —
+            // which now depends on the setting.
+            style={[
+              styles.overflow,
+              { lineHeight: logo },
+              cell.adjacent && styles.numberAdjacent,
+            ]}
           >{`+${events.length - room}`}</Text>
         ) : null}
       </View>
@@ -341,12 +369,7 @@ const styles = StyleSheet.create({
   // September would read as "nothing due" rather than "another month" — but at
   // half strength, under the dimmed logos.
   logosAdjacent: { opacity: 0.55 },
-  overflow: {
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: LOGO,
-    color: colors.muted,
-  },
+  overflow: { fontSize: 12, fontWeight: "700", color: colors.muted },
   total: { fontSize: TOTAL_SIZE, fontWeight: "700", color: colors.text },
   totalPast: { color: colors.mutedPast },
   dot: {

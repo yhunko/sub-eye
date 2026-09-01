@@ -170,7 +170,7 @@ export function DeveloperPage() {
 
         <Section
           title="Prompts"
-          footnote="Home says at most one unprompted thing per session, and each of these fires once ever. Reset clears both flags AND switches reminders off, which is the state the reminders prompt needs — then go to Home and wait ~2s."
+          footnote="At most one unprompted thing per LAUNCH, across every surface. Reset clears both flags and switches reminders off — then relaunch (the session guard is module state), save a subscription for the reminders sheet, or sit on Home ~2s for the Pro pitch."
         >
           <Row
             ios="sparkles"
@@ -192,7 +192,7 @@ export function DeveloperPage() {
               writeNotificationSettings({ renewals: false, trials: false });
               Alert.alert(
                 "Prompts re-armed",
-                "Both flags cleared and reminders switched off. Go to Home and wait ~2s: the reminders offer comes first, the Pro pitch on the session after.",
+                "Both flags cleared and reminders switched off. Relaunch first — one interruption per launch is module state and this one is spent. Then: save a subscription for the reminders sheet, or sit on Home for the Pro pitch.",
               );
             }}
           />

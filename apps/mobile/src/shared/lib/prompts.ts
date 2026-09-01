@@ -1,4 +1,5 @@
 import { deviceFlags } from "./mmkv";
+import { readNotificationSettings } from "./notifications/settings";
 
 /**
  * What, if anything, the app says to the user unprompted — and the rule that
@@ -15,17 +16,10 @@ import { deviceFlags } from "./mmkv";
  * to this list and arguing for its position, which is the point.
  */
 
-export type PromptKind = "reminders" | "pro" | "review";
+export type PromptKind = "pro" | "review";
 
 const REMINDERS_ASKED = "prompts.remindersAsked";
 const PRO_PITCHED = "prompts.proPitched";
-
-/**
- * One tracked subscription is enough to be worth reminding about — the value of
- * a reminder does not scale with how many you have, and an install that never
- * turns them on is an app that can never speak again.
- */
-const MIN_TRACKED_FOR_REMINDERS = 1;
 
 /**
  * Three is where the pitch stops being a cold call. It is the same threshold
@@ -37,22 +31,17 @@ const MIN_TRACKED_FOR_PRO = 3;
 export function nextPrompt(input: {
   tracked: number;
   isPro: boolean;
-  remindersOn: boolean;
-  remindersAsked: boolean;
   proPitched: boolean;
   /** `reviewDue()` — every stored gate in `review.ts` is already open. */
   reviewDue: boolean;
+  /** Something already interrupted this session. `promptSession.taken()`. */
+  interrupted: boolean;
 }): PromptKind | null {
-  // FIRST, because it is the only one of the three that gives the user
-  // something. It is also the cheapest to decline and the most expensive to
-  // miss: reminders are the whole reason a tracker stays installed.
-  if (
-    !input.remindersAsked &&
-    !input.remindersOn &&
-    input.tracked >= MIN_TRACKED_FOR_REMINDERS
-  ) {
-    return "reminders";
-  }
+  // The reminders offer does not appear here at all: it fires from the SAVE
+  // path, seconds after a subscription is written, because that is the one
+  // moment the user is actually thinking about being reminded. It still counts
+  // against this session — hence the guard.
+  if (input.interrupted) return null;
 
   // Once, ever. Every other route to the paywall is reactive — the user has to
   // bump into a lock — so someone who adds two subscriptions and leaves may
@@ -65,11 +54,40 @@ export function nextPrompt(input: {
     return "pro";
   }
 
-  // LAST, and unreachable in the same session as either of the others by
-  // construction. Its own gates already require a week of use, by which time
-  // the two above have long since fired or been declined.
+  // LAST. Its own gates already require a week of use, by which time the two
+  // above have long since fired or been declined.
   return input.reviewDue ? "review" : null;
 }
+
+/**
+ * Whether the reminders offer is due, asked by the subscription form as it
+ * saves. Reads the settings rather than taking them, because the form has no
+ * reason to know what a `ReminderSettings` is.
+ */
+export function remindersOfferDue(): boolean {
+  if (promptFlags.remindersAsked()) return false;
+  const settings = readNotificationSettings();
+  return !settings.renewals && !settings.trials;
+}
+
+/**
+ * At most ONE unprompted interruption per launch, across every surface that can
+ * raise one. Module state, deliberately not persisted: it is a fact about this
+ * run of the app, and a stored flag would silence the next launch too.
+ *
+ * Without it, saving a third subscription on a fresh install fires the reminders
+ * sheet and then, once it closes, Home fires the Pro pitch — two interruptions
+ * inside five seconds, which is exactly the mugging the priority order exists
+ * to prevent.
+ */
+let interrupted = false;
+
+export const promptSession = {
+  taken: () => interrupted,
+  take: () => {
+    interrupted = true;
+  },
+};
 
 export const promptFlags = {
   remindersAsked: () => deviceFlags.get(REMINDERS_ASKED),

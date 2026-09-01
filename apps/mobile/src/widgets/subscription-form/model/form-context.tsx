@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import {
   createContext,
   type ReactNode,
@@ -14,6 +14,11 @@ import {
   useUpdateSubscription,
 } from "@/entities/subscription";
 import { preferencesQuery } from "@/entities/user";
+import {
+  promptFlags,
+  promptSession,
+  remindersOfferDue,
+} from "@/shared/lib/prompts";
 import {
   type FormErrors,
   makeInitialFormValues,
@@ -161,6 +166,23 @@ export function SubscriptionFormProvider({
     // Edit is optimistic and create seeds the cache on success, so dismissing
     // straight away is correct: there is nothing left to wait for on screen.
     navigation.goBack();
+
+    // The ONE moment the user is demonstrably thinking about being reminded of
+    // a payment: they have just written one down. Creating only — an edit is
+    // housekeeping on something they already track, and says nothing about
+    // whether they want to hear from the app.
+    //
+    // After the dismissal, not with it. The sheet is a sibling of this modal at
+    // the root, so presenting it into the frame the modal is still animating out
+    // of drops the presentation entirely and the sheet never appears.
+    if (!id && !promptSession.taken() && remindersOfferDue()) {
+      promptSession.take();
+      // Marked on SHOW, not on accept: a sheet the user swiped away is an
+      // answer, and re-offering it every save is the nagging this avoids.
+      promptFlags.markRemindersAsked();
+      setTimeout(() => router.push("/reminders"), 450);
+    }
+
     return true;
   };
 

@@ -128,6 +128,10 @@ function RootLayout() {
                 field: nothing above the scroller has a zero flex basis, so
                 there is nothing that can measure the detent to nothing. */}
             <Stack.Screen name="pro-pitch" options={compactSheet} />
+            {/* Root-level because the subscription form is a root modal and
+                this is presented as that modal dismisses — from inside it, the
+                sheet would go down with the screen that opened it. */}
+            <Stack.Screen name="reminders" options={compactSheet} />
             {/* Root-level for the same reason as the paywall: four surfaces open
                 it — Home's `+`, the list's `+`, Home's first-run empty state and
                 the detail screen's Edit — and two of them live in a different

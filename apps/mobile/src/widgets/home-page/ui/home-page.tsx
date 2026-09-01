@@ -92,7 +92,7 @@ export function HomePage() {
       {/* Inside this branch and no higher: reaching it at all is the proof that
           the app is working for this user, which is the only state in which
           interrupting them is fair. */}
-      <HomePrompts subscriptions={subscriptions.data ?? []} />
+      <HomePrompts tracked={(subscriptions.data ?? []).length} />
 
       <MonthHero
         currency={data.preferredCurrencyCode}

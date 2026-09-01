@@ -4,10 +4,9 @@ import { nextPrompt } from "./prompts";
 const quiet = {
   tracked: 5,
   isPro: false,
-  remindersOn: true,
-  remindersAsked: true,
   proPitched: true,
   reviewDue: false,
+  interrupted: false,
 };
 
 describe("nextPrompt", () => {
@@ -15,35 +14,24 @@ describe("nextPrompt", () => {
     expect(nextPrompt(quiet)).toBeNull();
   });
 
-  it("never returns two things at once", () => {
-    // The whole reason this is one function: all three are eligible here, and
-    // a paywall followed by "enjoying SubEye?" is the sequence it exists to
-    // make impossible.
-    expect(
-      nextPrompt({
-        tracked: 5,
-        isPro: false,
-        remindersOn: false,
-        remindersAsked: false,
-        proPitched: false,
-        reviewDue: true,
-      }),
-    ).toBe("reminders");
-  });
-
-  it("offers reminders before asking for money", () => {
+  it("says nothing at all once something has already interrupted", () => {
+    // The whole reason this takes `interrupted`: the reminders sheet fires from
+    // the SAVE path, and without this the Pro pitch would follow it onto Home
+    // seconds later. Both are individually reasonable and together a mugging.
     expect(
       nextPrompt({
         ...quiet,
-        remindersOn: false,
-        remindersAsked: false,
         proPitched: false,
+        reviewDue: true,
+        interrupted: true,
       }),
-    ).toBe("reminders");
+    ).toBeNull();
   });
 
-  it("does not re-offer reminders the user already declined", () => {
-    expect(nextPrompt({ ...quiet, remindersOn: false })).toBeNull();
+  it("never returns two things at once", () => {
+    expect(nextPrompt({ ...quiet, proPitched: false, reviewDue: true })).toBe(
+      "pro",
+    );
   });
 
   it("waits for a third subscription before pitching Pro", () => {
@@ -59,7 +47,7 @@ describe("nextPrompt", () => {
     expect(nextPrompt({ ...quiet, proPitched: false, isPro: true })).toBeNull();
   });
 
-  it("falls through to the rating sheet once the others are spent", () => {
+  it("falls through to the rating sheet once the pitch is spent", () => {
     expect(nextPrompt({ ...quiet, reviewDue: true })).toBe("review");
   });
 });
