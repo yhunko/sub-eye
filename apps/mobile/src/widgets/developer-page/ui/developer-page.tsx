@@ -46,6 +46,10 @@ export function DeveloperPage() {
       trials: true,
       renewalLeadDays: [1, 3, 7],
       trialLeadDays: [1, 3],
+      // Pinned, not merged: the patch inherits whatever hour was last stored,
+      // and a capture set is only reproducible if every run lands on 09:00.
+      hour: 9,
+      minute: 0,
     });
     Alert.alert(
       "Reminders armed",
