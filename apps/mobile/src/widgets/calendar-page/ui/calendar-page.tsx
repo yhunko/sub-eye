@@ -7,6 +7,7 @@ import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
 import { monthIso, monthLabel, monthOffsetOf } from "../model/month";
 import { useCalendarSettings } from "../model/settings";
+import { monthTitleOptions } from "./header-items";
 import { MonthPager, type MonthPagerHandle } from "./month-pager";
 
 /** A standard iOS navigation bar. There is no `useHeaderHeight` in this tree. */
@@ -76,9 +77,10 @@ function StepButton({
  * they have to travel as one — and because anything pinned over a scrolling page
  * eventually clips it.
  *
- * The month name is the screen TITLE rather than a line of content. Home already
- * puts the current month in its own header for the same reason: every figure
- * below is scoped to it, and repeating it inside the page costs a fold.
+ * The month name lives in the navigation BAR rather than in a line of content.
+ * Home already puts the current month in its own header for the same reason:
+ * every figure below is scoped to it, and repeating it inside the page costs a
+ * fold. It goes in the bar's left slot, not its title — see `monthTitleOptions`.
  */
 export function CalendarPage() {
   const router = useRouter();
@@ -136,7 +138,7 @@ export function CalendarPage() {
 
   return (
     <View style={styles.screen}>
-      <Stack.Screen options={{ title: monthLabel(monthIso(offset)) }} />
+      <Stack.Screen options={monthTitleOptions(monthLabel(monthIso(offset)))} />
 
       <View style={[styles.header, { paddingTop: headerTop }]}>
         <Pressable

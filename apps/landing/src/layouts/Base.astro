@@ -1,6 +1,7 @@
 ---
 import { copyFor } from "../i18n";
 import {
+  APP_STORE_ID,
   appStoreUrl,
   canonical,
   locales,
@@ -69,6 +70,12 @@ const schema = {
     <meta name="description" content={description} />
     <meta name="theme-color" content="#0f1115" />
     <meta name="color-scheme" content="dark" />
+
+    {/* Safari draws this one itself, on iPhone and iPad only — no other browser
+        renders it and nothing on the page can style it. The app is iOS-only, so
+        the reader who can actually install it gets Apple's native offer above
+        everything else; every other reader gets the fixed bar's badge. */}
+    <meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />
 
     <link rel="canonical" href={canonical(locale, page)} />
     {

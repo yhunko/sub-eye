@@ -4,7 +4,6 @@ import CurrencyPanel from "../components/CurrencyPanel.astro";
 import Footer from "../components/Footer.astro";
 import LifecyclePanel from "../components/LifecyclePanel.astro";
 import Mark from "../components/Mark.astro";
-import Nav from "../components/Nav.astro";
 import PriceTimeline from "../components/PriceTimeline.astro";
 import SpendCard from "../components/SpendCard.astro";
 import TopBar from "../components/TopBar.astro";
@@ -42,14 +41,28 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
   description={c.meta.description}
   structuredData
 >
+  {/*
+    StartupBar's directory widget. The only third-party origin this site loads
+    at runtime and the only JavaScript it ships, so `script-src`, `frame-src`
+    and `img-src` in public/_headers each name startupbar.co — the loader
+    injects an iframe and an image-pixel heartbeat, and the CSP blocks all three
+    silently if one is missing. The marketing pages only: the four legal URLs
+    are App Store Connect metadata a reviewer opens.
+
+    It owns the very top of the viewport, pads the body out from under itself
+    and pushes any `position: fixed; top: 0` element down by its own height —
+    which is how the bar below survives it without a media query here.
+  */}
+  <script
+    is:inline
+    async
+    src="https://startupbar.co/widget/loader.js"
+    data-startup-id="5bebca65-f371-43e4-81c9-3475815f2c94"></script>
+
   <TopBar locale={locale} />
 
   <main id="main">
     <section class="shell hero" id="top">
-      <div class="hero__nav">
-        <Nav locale={locale} />
-      </div>
-
       <h1 class="hero__title">{c.hero.title}</h1>
       <p class="lead hero__lead">{c.hero.lead}</p>
 
@@ -232,16 +245,10 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
 </Base>
 
 <style>
-  /* Where the fixed bar cannot reveal itself, the page keeps one brand row and
-     it is the bar's — see TopBar.astro. */
-  @supports not (animation-timeline: scroll()) {
-    .hero__nav {
-      display: none;
-    }
-  }
-
+  /* The fixed bar is 4.5rem and never hides, so the hero starts below it —
+     nothing here scrolls under the bar until the reader scrolls it there. */
   .hero {
-    padding-top: 0.5rem;
+    padding-top: 5rem;
   }
 
   /* 24ch, not the mock's 15ch: at the shell's full 1140px that left the

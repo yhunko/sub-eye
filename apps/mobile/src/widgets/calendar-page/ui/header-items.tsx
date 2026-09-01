@@ -1,7 +1,42 @@
 import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
 import { colors } from "@/shared/ui/theme";
+
+/**
+ * The month, as the leading item of the navigation bar.
+ *
+ * NOT the screen `title`. UIKit centres a title, so one whose width changes with
+ * the month — "May 2026" against "September 2026" — sits somewhere different
+ * every time the pager lands, and the eye tracks the movement instead of the
+ * word. `headerTitleAlign` is not a way out: native-stack documents it as iOS
+ * no-op, always centred. The bar's LEFT slot is the one place where the label's
+ * own width changes nothing.
+ *
+ * `hidesSharedBackground` because iOS 26 draws bar items as glass capsules and
+ * this one is a title, not a button. `headerLeft` is the Android path, where
+ * expo-router does not swap native bar items in — same split as the buttons
+ * below.
+ *
+ * Taken from the SCREEN rather than the layout, unlike everything else here: it
+ * is the one piece of chrome that depends on which month is showing.
+ */
+export function monthTitleOptions(label: string) {
+  const title = (
+    <Text style={styles.monthTitle} numberOfLines={1}>
+      {label}
+    </Text>
+  );
+  return {
+    // Emptied, not left unset: `getHeaderTitle` falls back to the route name,
+    // and a bar reading "index" is worse than the jump this replaces.
+    headerTitle: "",
+    unstable_headerLeftItems: () => [
+      { type: "custom" as const, element: title, hidesSharedBackground: true },
+    ],
+    headerLeft: () => title,
+  };
+}
 
 /**
  * The calendar's two bar buttons: the year view, and how the month draws itself.
@@ -121,4 +156,7 @@ export function sheetCloseHeaderOptions(onPress: () => void) {
 
 const styles = StyleSheet.create({
   items: { flexDirection: "row", alignItems: "center", gap: 18 },
+  // A UIKit navigation-bar title, restated: the bar draws nothing of its own
+  // into a custom item.
+  monthTitle: { fontSize: 17, fontWeight: "600", color: colors.text },
 });

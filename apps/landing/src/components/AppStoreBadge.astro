@@ -18,8 +18,8 @@ const c = copyFor(locale);
 {/*
   Apple's own artwork, vendored byte-for-byte from
   https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg
-  and served from this origin — the site references no third-party host at
-  runtime, and `img-src 'self' data:` in public/_headers would block it anyway.
+  and served from this origin — `img-src` in public/_headers allows only `self`,
+  `data:` and startupbar.co, so Apple's own CDN would be blocked here anyway.
 
   It is the preferred black badge; the grey keyline is part of the artwork and
   the guidelines say not to touch it, so nothing here recolours, rounds, tilts

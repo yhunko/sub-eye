@@ -39,6 +39,9 @@ const other = otherLocale(locale);
 </header>
 
 <style>
+  /* Visible from the first paint, so the App Store badge is on screen before
+     the reader scrolls. That makes this the page's only brand row — Home.astro
+     drops the hero's duplicate and pads the hero out from under it. */
   .bar {
     position: fixed;
     inset: 0 0 auto;
@@ -119,37 +122,6 @@ const other = otherLocale(locale);
 
     .bar__rule {
       display: block;
-    }
-  }
-
-  /*
-   * The bar belongs to the scrolled page, not to the hero — the hero carries
-   * its own logo and language switch. Scroll-driven CSS, so revealing it costs
-   * zero bytes of JavaScript and moves no layout. Where the timeline is not
-   * supported the bar simply starts visible, and Home.astro drops the hero's
-   * duplicate row to match.
-   */
-  @supports (animation-timeline: scroll()) {
-    .bar {
-      visibility: hidden;
-      opacity: 0;
-      animation: bar-in linear both;
-      animation-timeline: scroll(root block);
-      animation-range: 20rem 27.5rem;
-    }
-
-    @keyframes bar-in {
-      from {
-        visibility: hidden;
-        opacity: 0;
-        transform: translateY(-100%);
-      }
-
-      to {
-        visibility: visible;
-        opacity: 1;
-        transform: translateY(0);
-      }
     }
   }
 </style>
