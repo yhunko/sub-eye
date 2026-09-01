@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, ScrollView, StyleSheet } from "react-native";
 import { devForcePro } from "@/entities/pro";
 import { writeNotificationSettings } from "@/shared/lib/notifications";
+import { promptFlags } from "@/shared/lib/prompts";
 import { eraseDoc, writeDoc } from "@/shared/lib/store";
 import { Divider, PageFootnote, Row, Section } from "@/shared/ui/list-row";
 import { buildDemoDoc } from "../model/demo-data";
@@ -164,6 +165,36 @@ export function DeveloperPage() {
             android="verified"
             label="Already Pro"
             onPress={() => openPaywall(undefined, true)}
+          />
+        </Section>
+
+        <Section
+          title="Prompts"
+          footnote="Home says at most one unprompted thing per session, and each of these fires once ever. Reset clears both flags AND switches reminders off, which is the state the reminders prompt needs — then go to Home and wait ~2s."
+        >
+          <Row
+            ios="sparkles"
+            android="auto_awesome"
+            label="Open Pro pitch"
+            onPress={() => router.push("/pro-pitch")}
+          />
+          <Divider />
+          <Row
+            ios="arrow.counterclockwise"
+            android="restart_alt"
+            label="Reset prompt flags"
+            onPress={() => {
+              promptFlags.reset();
+              // Reminders off as well, because the reminders prompt is gated on
+              // them being off and there is no other way to get there from a
+              // simulator — the Settings switch is a UISwitch, which cannot be
+              // driven by a synthesised tap.
+              writeNotificationSettings({ renewals: false, trials: false });
+              Alert.alert(
+                "Prompts re-armed",
+                "Both flags cleared and reminders switched off. Go to Home and wait ~2s: the reminders offer comes first, the Pro pitch on the session after.",
+              );
+            }}
           />
         </Section>
 

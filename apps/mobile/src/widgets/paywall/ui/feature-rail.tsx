@@ -34,6 +34,20 @@ const FEATURES: {
     body: m.paywall_featureRemindersBody,
     Preview: RemindersPreview,
   },
+  // SECOND, not fourth. The calendar tab is FREE and this page sells nothing
+  // back out of it — the year view, the pile-up flag and the month-over-month
+  // line are all additions — but the year view is the only WHOLE SCREEN behind
+  // the entitlement, which makes it the largest single thing Pro buys. It also
+  // has to be near the front because the year button on that tab is the one
+  // control a free install cannot use, and a tap that lands deep in a rail with
+  // no calendar in sight was the shape that made the old lock feel like a bait.
+  {
+    ios: "calendar",
+    android: "calendar_month",
+    label: m.paywall_featureCalendar,
+    body: m.paywall_featureCalendarBody,
+    Preview: CalendarPreview,
+  },
   {
     ios: "tag",
     android: "sell",
@@ -48,18 +62,6 @@ const FEATURES: {
     body: m.paywall_featureCategoriesBody,
     Preview: CategoriesPreview,
   },
-  // The calendar tab is FREE and this page sells nothing back out of it — the
-  // year view, the pile-up flag and the month-over-month line are all additions.
-  // It is here because the year button on that tab is the one control a free
-  // install cannot use, and a tap that lands on a rail with no calendar in it
-  // was the shape that made the old lock feel like a bait.
-  {
-    ios: "calendar",
-    android: "calendar_month",
-    label: m.paywall_featureCalendar,
-    body: m.paywall_featureCalendarBody,
-    Preview: CalendarPreview,
-  },
   // The widget's own lock card is the surface that deep-links here, so the
   // screen it lands on has to name it. Same string that card renders.
   {
@@ -73,6 +75,12 @@ const FEATURES: {
 
 /**
  * What Pro buys, one page at a time.
+ *
+ * ORDER IS AN ARGUMENT, not a list. Reminders lead because they are the only
+ * gate enforced below the UI and the only thing Pro buys that works while the
+ * app is closed; the calendar follows because the year view is the one whole
+ * screen behind the entitlement. Everything after those two is additive to a
+ * screen a free install already has.
  *
  * A rail rather than a list because the list could not win either way: with a
  * sentence under every name it ran past the fold and pushed the price, Restore

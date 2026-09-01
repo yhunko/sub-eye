@@ -119,6 +119,15 @@ function RootLayout() {
                 is itself a root screen, so a sheet pushed from under its
                 Restore button lands ON it rather than behind it. */}
             <Stack.Screen name="legal/[doc]" options={legalSheet} />
+            {/* Root-level beside the paywall, because it REPLACES itself with
+                one: nested under the tab tree it would be presenting a modal
+                from a navigator that is about to be covered.
+
+                `fitToContents` is the exception the sheet chrome documents, and
+                it is safe here for the same reason it is safe on the pause
+                field: nothing above the scroller has a zero flex basis, so
+                there is nothing that can measure the detent to nothing. */}
+            <Stack.Screen name="pro-pitch" options={compactSheet} />
             {/* Root-level for the same reason as the paywall: four surfaces open
                 it — Home's `+`, the list's `+`, Home's first-run empty state and
                 the detail screen's Edit — and two of them live in a different

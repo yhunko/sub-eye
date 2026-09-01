@@ -1,11 +1,9 @@
 import type { ReactNode } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
@@ -26,19 +24,44 @@ const NAV_BAR_HEIGHT = 44;
  * It exists for the keyboard: a native stack moves nothing out of its way, so
  * the one control that has to stay reachable — the button that finishes the
  * step — is the one it lands on top of.
+ *
+ * THIS IS NOT `KeyboardAvoidingView`, AND PUTTING ONE BACK REOPENS THE BUG IT
+ * REPLACED. KAV derives its padding from `frame.y + frame.height - keyboardY`,
+ * where the frame comes from `onLayout` and is therefore measured against the
+ * PARENT, while `keyboardY` is a screen coordinate. Inside a presented modal —
+ * which is what the whole form is — the content view starts below the screen's
+ * top edge, so the two disagree by exactly that offset and the footer is left
+ * that far under the keyboard. On a real device it put roughly half the Next
+ * button behind the keys: reachable only by dismissing the keyboard first,
+ * which is a step the user has to discover.
+ *
+ * Reading the keyboard's height directly has nothing to measure and nothing to
+ * get wrong, and it runs on the UI thread, so the lift is in step with the
+ * system animation rather than a frame behind it.
  */
-export function StepScreen({ children }: { children: ReactNode }) {
+function KeyboardAwareStepScreen({ children }: { children: ReactNode }) {
+  const keyboard = useAnimatedKeyboard();
+  const lift = useAnimatedStyle(() => ({
+    paddingBottom: keyboard.height.value,
+  }));
+
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      // Android resizes the window itself (`adjustResize`); asking for it twice
-      // pads the view by the keyboard a second time.
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      {children}
-    </KeyboardAvoidingView>
+    <Animated.View style={[styles.screen, lift]}>{children}</Animated.View>
   );
 }
+
+/**
+ * Android resizes the window itself (`adjustResize`), so the footer is already
+ * above the keyboard and paying for it again would double the gap.
+ */
+function PlainStepScreen({ children }: { children: ReactNode }) {
+  return <View style={styles.screen}>{children}</View>;
+}
+
+// Chosen at MODULE scope: `Platform.OS` cannot change while the app runs, and
+// branching inside the component would make `useAnimatedKeyboard` conditional.
+export const StepScreen =
+  Platform.OS === "ios" ? KeyboardAwareStepScreen : PlainStepScreen;
 
 /**
  * Where you are in the three steps.

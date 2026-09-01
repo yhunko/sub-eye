@@ -70,22 +70,30 @@ export function shouldAskForReview(
 }
 
 /**
- * Ask, if every gate is open. Safe to call on every Home focus.
+ * Start the clock on a fresh install. Cheap, idempotent, safe on every focus.
  *
- * The caller decides only WHEN it is polite to ask — see `ReviewPrompt` — and
- * passes how much the user has in the app; everything else is decided here.
+ * Split from the ask because `HomePrompts` may decide something else is more
+ * worth saying this session — but the clock has to start regardless, or an
+ * install that spends its first week being told other things would restart its
+ * settling period every time.
  */
-export async function maybeAskForReview(tracked: number): Promise<void> {
+export function touchReviewClock(): void {
   const state = deviceJson.get<ReviewState>(STATE_KEY, NEVER);
-  const now = Date.now();
-
   if (state.firstSeenAt === 0) {
-    deviceJson.set(STATE_KEY, { ...state, firstSeenAt: now });
-    return;
+    deviceJson.set(STATE_KEY, { ...state, firstSeenAt: Date.now() });
   }
+}
 
-  if (!shouldAskForReview(state, { now, tracked })) return;
+/** Whether every stored gate is open. The caller still decides if it is polite. */
+export function reviewDue(tracked: number): boolean {
+  return shouldAskForReview(deviceJson.get<ReviewState>(STATE_KEY, NEVER), {
+    now: Date.now(),
+    tracked,
+  });
+}
 
+/** Show the OS sheet, and spend the cooldown whether or not iOS draws it. */
+export async function askForReview(): Promise<void> {
   try {
     // False on TestFlight and on Android below 5.0 — so a build that cannot
     // show the sheet must not burn the cooldown pretending it did. It also
@@ -95,7 +103,8 @@ export async function maybeAskForReview(tracked: number): Promise<void> {
 
     // Recorded BEFORE the call: a rejected request — or one iOS swallows
     // because its own quota is spent — must not re-arm on the next focus.
-    deviceJson.set(STATE_KEY, { ...state, askedAt: now });
+    const state = deviceJson.get<ReviewState>(STATE_KEY, NEVER);
+    deviceJson.set(STATE_KEY, { ...state, askedAt: Date.now() });
     await StoreReview.requestReview();
   } catch {
     // A rating sheet that fails to appear is not a bug worth reporting, and

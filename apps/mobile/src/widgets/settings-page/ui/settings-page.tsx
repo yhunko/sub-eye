@@ -23,6 +23,7 @@ import {
   cancelReminders,
   readNotificationSettings,
 } from "@/shared/lib/notifications";
+import { promptFlags } from "@/shared/lib/prompts";
 import { resetQueryCache } from "@/shared/lib/query";
 import { reviewUrl } from "@/shared/lib/review";
 import {
@@ -250,6 +251,9 @@ export function SettingsPage() {
     } finally {
       eraseDoc();
       clearLogos();
+      // Back to a first run in this respect too: an install that kept
+      // `remindersAsked` would never be offered reminders again.
+      promptFlags.reset();
       await resetQueryCache();
     }
   };
