@@ -18,6 +18,7 @@ import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
 import { currencyLabel } from "@/shared/lib/format";
+import { clearLogos } from "@/shared/lib/logos";
 import {
   cancelReminders,
   readNotificationSettings,
@@ -220,11 +221,12 @@ export function SettingsPage() {
       },
     ]);
 
-  // FOUR copies of the data outlive the store document, and none of them is
+  // FIVE copies of the data outlive the store document, and none of them is
   // React state: the pending reminders name subscriptions on the lock screen,
   // the widget snapshot sits in the shared App Group on the Home Screen, the
-  // Query cache would repaint the erased numbers from memory, and — since sync
-  // — iCloud holds a record per key that the very next reconcile would pull
+  // Query cache would repaint the erased numbers from memory, the logo cache is
+  // keyed by the domains of the brands that were tracked, and — since sync —
+  // iCloud holds a record per key that the very next reconcile would pull
   // straight back onto this device.
   //
   // ORDER IS LOAD-BEARING. iCloud is cleared BEFORE the document, because
@@ -241,6 +243,7 @@ export function SettingsPage() {
       clearWidget();
     } finally {
       eraseDoc();
+      clearLogos();
       await resetQueryCache();
     }
   };

@@ -2,7 +2,7 @@ import type { SubscriptionStatus } from "@subeye/model";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
-import { BrandLogo, brandLogoUrl } from "@/shared/ui/brand-logo";
+import { BrandLogo, useBrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
@@ -67,18 +67,23 @@ const STATUS_COLOR: Record<SubscriptionStatus, string> = {
  * brands, and unpredictably so.
  */
 function Backdrop({ domain }: { domain: string | null }) {
+  // The PLATE kind, not the avatar's: that one prefers a bare symbol, and a
+  // mostly transparent mark blurs to almost no colour at all.
+  const logo = useBrandLogo(domain, "plate");
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {domain ? (
+      {logo.status === "ready" ? (
         <Image
           accessibilityIgnoresInvertColors
-          source={{ uri: brandLogoUrl(domain, 256) }}
+          source={{ uri: logo.uri }}
           style={styles.backdropImage}
-          // Tuned against the 256px favicon this asks for, NOT a bigger number
-          // being safer. `blurRadius` blurs the SOURCE at its natural size, so
-          // anything past ~30 averages a 256px icon into one flat colour — and
-          // since most favicons are a mark on white, that colour is grey. Every
-          // brand came out the same pale grey at 55.
+          // Tuned against the source size `shared/lib/logos.ts` fetches for
+          // this kind, NOT a bigger number being safer. `blurRadius` blurs the
+          // SOURCE at its natural size, so anything past ~30 averages a small
+          // icon into one flat colour — and since most plates are a mark on
+          // white, that colour is grey. Every brand came out the same pale grey
+          // at 55.
           blurRadius={22}
           resizeMode="cover"
         />

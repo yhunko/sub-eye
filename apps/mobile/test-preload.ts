@@ -68,17 +68,27 @@ mock.module("@sentry/react-native", () => ({
  * undefined would make every such test pass against defaults.
  */
 mock.module("react-native-mmkv", () => {
-  const store = new Map<string, boolean | string>();
+  // One Map PER INSTANCE ID, as on a device: the store document, the FX table
+  // and the logo cache are separate files, and a stub that pooled them would
+  // let `clearAll` on one wipe the others.
+  const stores = new Map<string, Map<string, boolean | string>>();
   return {
-    createMMKV: () => ({
-      getBoolean: (key: string) => store.get(key) as boolean | undefined,
-      getString: (key: string) => store.get(key) as string | undefined,
-      set: (key: string, value: boolean | string) => store.set(key, value),
-      remove: (key: string) => store.delete(key),
-      // Compaction has no meaning for a Map, but eraseDoc calls it and a
-      // missing method is a TypeError rather than a no-op.
-      trim: () => {},
-    }),
+    createMMKV: (config?: { id?: string }) => {
+      const id = config?.id ?? "mmkv.default";
+      const store = stores.get(id) ?? new Map<string, boolean | string>();
+      stores.set(id, store);
+      return {
+        getBoolean: (key: string) => store.get(key) as boolean | undefined,
+        getString: (key: string) => store.get(key) as string | undefined,
+        set: (key: string, value: boolean | string) => store.set(key, value),
+        remove: (key: string) => store.delete(key),
+        getAllKeys: () => [...store.keys()],
+        clearAll: () => store.clear(),
+        // Compaction has no meaning for a Map, but eraseDoc calls it and a
+        // missing method is a TypeError rather than a no-op.
+        trim: () => {},
+      };
+    },
   };
 });
 
