@@ -24,6 +24,7 @@ import {
   readNotificationSettings,
 } from "@/shared/lib/notifications";
 import { resetQueryCache } from "@/shared/lib/query";
+import { reviewUrl } from "@/shared/lib/review";
 import {
   clearCloud,
   cloudSyncAvailable,
@@ -210,6 +211,11 @@ export function SettingsPage() {
   };
 
   const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Null off iOS, where there is no store listing to send anyone to — the row
+  // is absent there rather than opening a Play page for an app that is not on
+  // Play. See `reviewUrl` for why this is a link and not the OS rating sheet.
+  const rate = reviewUrl();
 
   // Only actionable when the stored zone has drifted from the device's — when
   // they already agree there is nothing to choose, so the row loses its chevron.
@@ -407,6 +413,26 @@ export function SettingsPage() {
             android="build"
             label="Developer"
             onPress={() => router.push("/settings/developer")}
+          />
+        </Section>
+      ) : null}
+
+      {/* Above Legal, in its own cell, and the only row on this screen that
+          asks the user for something instead of offering them something. It is
+          here rather than buried under the policies because the app has no ads,
+          no tracking and no growth budget: ratings are the whole distribution
+          strategy, and a row nobody can find rates nothing. The footnote says
+          that outright rather than pleading. */}
+      {rate ? (
+        <Section footnote={m.settings_rateHint()}>
+          <Row
+            ios="star"
+            android="star"
+            label={m.settings_rate()}
+            accent
+            onPress={() => {
+              void Linking.openURL(rate).catch(() => {});
+            }}
           />
         </Section>
       ) : null}

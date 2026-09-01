@@ -25,6 +25,17 @@ import { normalizeBrandDomain } from "../model/form-schema";
  * A chosen brand can be tapped again to UNPICK it. The checkmark is a toggle,
  * not a one-way door: without it "No logo" was the only way back, and a user who
  * picked the wrong brand had no reason to look for it there.
+ *
+ * THE TWENTY BRANDS ARE A SHORTLIST AND THE SCREEN HAS TO SAY SO. This is step
+ * one of the form, so it is the first thing anyone sees, and a card of twenty
+ * logos with a collapsed magnifier in the nav bar above it reads as the whole
+ * catalogue — people picked "No logo" for services that search finds instantly.
+ * Three things carry that now, and all three have to survive an edit: the lead
+ * line ABOVE the card (it used to sit under twenty rows, which is below the
+ * fold and therefore nowhere), the "Popular" heading that names the card as a
+ * subset, and an explicit empty state, because a search that answers with an
+ * unchanged-looking screen is a search that looks broken — which teaches
+ * exactly the lesson the other two undo.
  */
 export function BrandList({
   search,
@@ -47,11 +58,15 @@ export function BrandList({
   const results = useQuery(brandSearchQuery(needle));
   const hits = results.data ?? [];
 
-  // Below the query's own threshold there is nothing to search for, so the
-  // list shows the shortlist instead. Deliberately NOT a fallback for an empty
-  // or in-flight result: popular brands appearing under a typed query reads as
-  // "here are your matches" for things that never matched.
-  const rows = needle.length >= 2 ? hits : POPULAR_BRANDS;
+  // Search mode is decided by what is TYPED, not by the debounced needle. Both
+  // answer "is the user searching", but the needle answers it 300ms late — and
+  // in that window the popular shortlist was still on screen under a typed
+  // query, which reads as "here are your matches" for things that never
+  // matched. The spinner covers the gap instead.
+  const typed = search.trim();
+  const searching = typed.length >= 2;
+  const rows = searching ? hits : POPULAR_BRANDS;
+  const pending = results.isFetching || (searching && needle !== typed);
 
   // Offered whenever what they typed is a plausible host and no result already
   // is it — search misses plenty of small services, and the field this screen
@@ -79,6 +94,22 @@ export function BrandList({
 
   return (
     <>
+      {/* Hidden once they are searching: by then the screen has answered the
+          question this sentence exists to pre-empt. */}
+      {searching ? null : (
+        <View style={styles.lead}>
+          <SymbolView
+            name={{ ios: "magnifyingglass", android: "search" }}
+            size={15}
+            tintColor={colors.muted}
+          />
+          <Text style={styles.leadText}>{m.form_brandHint()}</Text>
+        </View>
+      )}
+
+      {/* Its own card, above the heading: it is a choice about this
+          subscription rather than a member of either list, and inside the card
+          it was the row a "Popular" heading would have been lying about. */}
       <View style={styles.group}>
         <Row
           first
@@ -86,23 +117,49 @@ export function BrandList({
           onPress={() => choose("")}
           label={m.form_brandNone()}
         />
-        {rows.map((row) => (
-          <Row
-            key={row.domain}
-            first={false}
-            selected={picked === row.domain}
-            onPress={() => choose(row.domain, row.name)}
-            label={row.name}
-            caption={row.domain}
-            logo={
-              <BrandLogo name={row.name} brandDomain={row.domain} size={28} />
-            }
-          />
-        ))}
       </View>
 
-      {results.isFetching ? (
+      {rows.length ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {searching ? m.form_brandResults() : m.form_brandPopular()}
+          </Text>
+          <View style={styles.group}>
+            {rows.map((row, index) => (
+              <Row
+                key={row.domain}
+                first={index === 0}
+                selected={picked === row.domain}
+                onPress={() => choose(row.domain, row.name)}
+                label={row.name}
+                caption={row.domain}
+                logo={
+                  <BrandLogo
+                    name={row.name}
+                    brandDomain={row.domain}
+                    size={28}
+                  />
+                }
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {pending ? (
         <ActivityIndicator color={colors.muted} style={styles.spinner} />
+      ) : null}
+
+      {/* The whole point of the empty state: without it a miss looks identical
+          to a screen that never ran the search, and the domain row below only
+          appears for something that already parses as a host — so "My gym"
+          returned nothing at all and no way forward. */}
+      {searching && !pending && rows.length === 0 ? (
+        <Text style={styles.hint}>
+          {results.isError
+            ? m.form_brandSearchFailed()
+            : m.form_brandNoResults({ query: typed })}
+        </Text>
       ) : null}
 
       {canUseTyped ? (
@@ -125,8 +182,6 @@ export function BrandList({
           </Text>
         </Pressable>
       ) : null}
-
-      <Text style={styles.hint}>{m.form_brandHint()}</Text>
     </>
   );
 }
@@ -180,6 +235,16 @@ function Row({
 }
 
 const styles = StyleSheet.create({
+  lead: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 4 },
+  leadText: { flex: 1, fontSize: 12.5, lineHeight: 17, color: colors.muted },
+  section: { gap: 6 },
+  sectionTitle: {
+    fontSize: 12.5,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    paddingHorizontal: 16,
+  },
   group: {
     backgroundColor: colors.surface,
     borderWidth: 1,

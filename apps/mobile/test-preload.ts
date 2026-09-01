@@ -148,3 +148,20 @@ mock.module("expo-localization", () => ({
 mock.module("expo-modules-core", () => ({
   requireOptionalNativeModule: () => null,
 }));
+
+/**
+ * `expo-store-review` imports `expo-constants` and `expo-modules-core`, both of
+ * which reach react-native through deep paths the stub above cannot intercept
+ * — so `shared/lib/review`'s pure gate cannot be tested without this.
+ *
+ * `isAvailableAsync` reports false, which is also the honest answer: a test run
+ * is not a device that can show `SKStoreReviewController`, and it is the same
+ * answer TestFlight gives. `maybeAskForReview` must therefore never reach
+ * `requestReview` here.
+ */
+mock.module("expo-store-review", () => ({
+  isAvailableAsync: async () => false,
+  requestReview: async () => {},
+  storeUrl: () => null,
+  hasAction: async () => false,
+}));

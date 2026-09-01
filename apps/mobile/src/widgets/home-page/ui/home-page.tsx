@@ -15,6 +15,7 @@ import { colors } from "@/shared/ui/theme";
 import { CategoryBars } from "./category-bars";
 import { HomeEmpty } from "./home-empty";
 import { MonthHero } from "./month-hero";
+import { ReviewPrompt } from "./review-prompt";
 import { UpcomingRail } from "./upcoming-rail";
 
 // One question per card, in the order a user asks them: what is left this month,
@@ -66,6 +67,11 @@ export function HomePage() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
     >
+      {/* Inside this branch and no higher: reaching it at all is the proof that
+          the app is working for this user, which is the only state in which
+          asking them to say so is fair. */}
+      <ReviewPrompt tracked={(subscriptions.data ?? []).length} />
+
       <MonthHero
         currency={data.preferredCurrencyCode}
         remainingThisMonth={data.remainingThisMonth}
