@@ -4,6 +4,7 @@ import type {
   CalendarEventDto,
   CalendarEventKind,
   CalendarMonthDto,
+  CalendarYearDto,
   DashboardAnalyticsDto,
   MonthlySpendSummaryDto,
   MonthlySpendTrendPoint,
@@ -335,12 +336,95 @@ export const buildCalendarMonth = async (
       ),
     }));
 
+  // `sumSpendInRange` rather than a second pass over occurrences: it is the same
+  // number `buildMonthlySummary` prints, and a delta that disagreed with Home's
+  // own month-over-month figure would be worse than no delta at all.
+  const previousMonth = DateTimezoneUtils.shiftCalendarMonths(monthStart, -1);
+
   return {
     month: new Date(monthStart.getTime()).toISOString(),
     currencyCode: preferredCurrencyCode,
     monthTotal: Number(
       days.reduce((sum, day) => sum + day.total, 0).toFixed(2),
     ),
+    previousMonthTotal: Number(
+      AnalyticsCalculator.sumSpendInRange(
+        subscriptions,
+        DateTimezoneUtils.startOfCalendarMonth(previousMonth),
+        DateTimezoneUtils.endOfCalendarMonth(previousMonth),
+      ).toFixed(2),
+    ),
     days,
+  };
+};
+
+/**
+ * Twelve months of daily spend, for the year heatmap.
+ *
+ * ONE walk over the whole year, not twelve calls to `buildCalendarMonth`: that
+ * would re-read and re-parse the subscription list twelve times, and the list
+ * read is the expensive half of a projection — the recurrence walk is arithmetic.
+ *
+ * Payments ONLY, like `CalendarDayDto.total`. A phase boundary and a resume are
+ * dated notices with no money behind them, and a heatmap shaded by them would
+ * colour a day the user was never charged for.
+ *
+ * Every month is present whether or not it holds anything, because the grid it
+ * feeds is twelve boxes and a missing month would be a hole rather than an
+ * empty one.
+ */
+export const buildCalendarYear = async (
+  ports: Ports,
+  year?: string,
+): Promise<CalendarYearDto> => {
+  const { subscriptions, preferredCurrencyCode, today } =
+    await analyticsContext(ports);
+
+  const anchor = year ? DateTimezoneUtils.toCalendarDay(year) : today;
+  const yearStart = DateTimezoneUtils.startOfCalendarYear(anchor);
+  const calendarYear = yearStart.getUTCFullYear();
+
+  const byDay = new Map<string, number>();
+  for (const payment of AnalyticsCalculator.collectPaymentsInRange(
+    subscriptions,
+    yearStart,
+    DateTimezoneUtils.endOfCalendarYear(anchor),
+  )) {
+    const day = new Date(payment.date.getTime()).toISOString().slice(0, 10);
+    byDay.set(day, (byDay.get(day) ?? 0) + payment.amount);
+  }
+
+  let heaviestDayTotal = 0;
+
+  const months = Array.from({ length: 12 }, (_, index) => {
+    const monthStart = new Date(Date.UTC(calendarYear, index, 1));
+    const dayCount = new Date(
+      Date.UTC(calendarYear, index + 1, 0),
+    ).getUTCDate();
+
+    const dayTotals = Array.from({ length: dayCount }, (_, slot) => {
+      const key = new Date(Date.UTC(calendarYear, index, slot + 1))
+        .toISOString()
+        .slice(0, 10);
+      const total = Number((byDay.get(key) ?? 0).toFixed(2));
+      if (total > heaviestDayTotal) heaviestDayTotal = total;
+      return total;
+    });
+
+    return {
+      month: monthStart.toISOString(),
+      total: Number(dayTotals.reduce((sum, day) => sum + day, 0).toFixed(2)),
+      dayTotals,
+    };
+  });
+
+  return {
+    year: yearStart.toISOString(),
+    currencyCode: preferredCurrencyCode,
+    total: Number(
+      months.reduce((sum, month) => sum + month.total, 0).toFixed(2),
+    ),
+    heaviestDayTotal,
+    months,
   };
 };
