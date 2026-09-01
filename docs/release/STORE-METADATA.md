@@ -61,17 +61,25 @@ No account, no bank login, no ads. Type in what you pay and see what leaves your
 Per version, per locale, and editable until the build is submitted.
 
 ```
-See the month, not just the next payment.
+A calendar for what you pay.
 
-SubEye has a calendar. Every charge in the month on one grid, with what each day comes to printed on the day itself — and an agenda underneath, so you can read the names without tapping anything.
+SubEye has a fourth tab. Every charge in the month on one grid, with each day's total printed on the day itself, and an agenda underneath so you can read the names without tapping anything. Swipe sideways for other months, tap any day for its breakdown. It's free, with nothing held back.
 
-Tap a day for its breakdown: what renews, what a trial is about to turn into, what you stop paying for.
+• Counts every charge, not just the next one — a weekly subscription shows up on all four or five of its days
+• The month's total is the same figure Home already gives you
+• Tap a day to see what renews, what a trial is about to turn into, and what you stop paying for
+• Choose where your week starts, and whether daily totals show at all
+• Days from the months either side fill out the grid, so the weeks read straight through
 
-It counts every charge, not only the next one. A weekly subscription shows up on all four or five of its days, and the month's total is the same figure the Home screen already gives you.
+New in Pro
+• A year view — twelve months of spending at a glance, tap one to open it
+• Every month set against the one before it
+• A mark on the days several charges land together
 
-Choose where your week starts, and whether the daily totals show at all.
-
-It is free, like the rest of the dashboard — every day, every charge, no cut-off. Pro adds a year view, twelve months of spending at a glance, puts each month against the last, and marks the days several charges land together.
+Also in this release
+• Bigger, clearer logos on the day tiles
+• Large amounts fit now instead of being cut off
+• Smoother paging between months, and a faster calendar throughout
 ```
 
 ### Description (4000)
@@ -160,17 +168,25 @@ SubEye: трекер підписок
 ### What's New in This Version (4000) — 5.2.0
 
 ```
-Дивіться на місяць, а не лише на наступний платіж.
+Календар ваших платежів.
 
-У SubEye з'явився календар. Усі списання місяця на одній сітці, із сумою за кожен день просто на клітинці, а під сіткою — список, у якому видно назви без жодного дотику.
+У SubEye з'явилася четверта вкладка. Усі списання місяця на одній сітці, із сумою за кожен день просто на клітинці, а під нею — список, у якому видно назви без жодного дотику. Гортайте вбік, щоб перейти до інших місяців, і торкніться будь-якого дня, щоб побачити деталі. Він безкоштовний, і нічого не приховано.
 
-Торкніться дня, щоб побачити деталі: що поновлюється, що з пробного ось-ось стане платним, за що ви більше не платите.
+• Рахує кожне списання, а не лише найближче — щотижнева підписка з'являється в усі свої чотири-п'ять днів
+• Сума за місяць збігається з тією, що вже показує головний екран
+• Торкніться дня, щоб побачити, що поновлюється, що з пробного ось-ось стане платним і за що ви більше не платите
+• Оберіть, з якого дня починається тиждень і чи показувати денні суми взагалі
+• Дні сусідніх місяців заповнюють сітку, тож тижні читаються без розривів
 
-Календар рахує кожне списання, а не лише найближче. Щотижнева підписка з'являється в усі свої чотири-п'ять днів, а сума за місяць збігається з тією, що вже показує головний екран.
+Нове в Pro
+• Річний огляд — дванадцять місяців витрат перед очима, торкніться місяця, щоб відкрити його
+• Кожен місяць у порівнянні з попереднім
+• Позначка на днях, коли списань одразу кілька
 
-Оберіть, з якого дня починається тиждень і чи показувати денні суми взагалі.
-
-Він безкоштовний, як і решта панелі, — усі дні й усі списання, без обмежень. Pro додає річний огляд, порівнює кожен місяць із попереднім і позначає дні, коли списань одразу кілька.
+Також у цьому оновленні
+• Більші й чіткіші логотипи на клітинках днів
+• Великі суми тепер вміщаються повністю
+• Плавніше гортання між місяцями і швидший календар загалом
 ```
 
 ### Description (4000)
