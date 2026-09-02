@@ -7,6 +7,7 @@ const quiet = {
   proPitched: true,
   reviewDue: false,
   interrupted: false,
+  remindersPending: false,
 };
 
 describe("nextPrompt", () => {
@@ -49,5 +50,21 @@ describe("nextPrompt", () => {
 
   it("falls through to the rating sheet once the pitch is spent", () => {
     expect(nextPrompt({ ...quiet, reviewDue: true })).toBe("review");
+  });
+
+  it("stays quiet while the reminders offer is still owed", () => {
+    // The bug this exists to stop: Home is the launch tab, so its timer starts
+    // before the user has done anything. Left to fire, the pitch took the
+    // session's one interruption a second and a half in, and the reminders
+    // offer — which fires from the save path — found it spent every single
+    // time. `taken=true due=true`, save after save, and the offer never showed.
+    expect(
+      nextPrompt({
+        ...quiet,
+        proPitched: false,
+        reviewDue: true,
+        remindersPending: true,
+      }),
+    ).toBeNull();
   });
 });

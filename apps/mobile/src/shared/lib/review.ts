@@ -92,23 +92,32 @@ export function reviewDue(tracked: number): boolean {
   });
 }
 
-/** Show the OS sheet, and spend the cooldown whether or not iOS draws it. */
-export async function askForReview(): Promise<void> {
+/**
+ * Show the OS sheet. Resolves to whether we got as far as asking for it.
+ *
+ * The caller needs that answer: this is one of the things allowed to spend the
+ * session's single interruption, and on a build that cannot draw the sheet at
+ * all — TestFlight, Android below 5.0 — spending it would silence the prompt
+ * that CAN be drawn while nothing whatsoever appeared on screen.
+ */
+export async function askForReview(): Promise<boolean> {
   try {
     // False on TestFlight and on Android below 5.0 — so a build that cannot
     // show the sheet must not burn the cooldown pretending it did. It also
     // means this path CANNOT be verified from a TestFlight build; only from a
     // debug build with the constants above lowered, or from the App Store.
-    if (!(await StoreReview.isAvailableAsync())) return;
+    if (!(await StoreReview.isAvailableAsync())) return false;
 
     // Recorded BEFORE the call: a rejected request — or one iOS swallows
     // because its own quota is spent — must not re-arm on the next focus.
     const state = deviceJson.get<ReviewState>(STATE_KEY, NEVER);
     deviceJson.set(STATE_KEY, { ...state, askedAt: Date.now() });
     await StoreReview.requestReview();
+    return true;
   } catch {
     // A rating sheet that fails to appear is not a bug worth reporting, and
     // there is nothing the user could do about it.
+    return false;
   }
 }
 

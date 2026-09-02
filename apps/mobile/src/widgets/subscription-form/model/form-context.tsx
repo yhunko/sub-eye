@@ -163,26 +163,28 @@ export function SubscriptionFormProvider({
       create.mutate(result.value);
     }
 
+    // The ONE moment the user is demonstrably thinking about being reminded of
+    // a payment: they have just written one down. Creating only — an edit is
+    // housekeeping on something they already track and says nothing about
+    // whether they want to hear from the app.
+    //
+    // OVER the form, and the form stays up behind it. Waiting for the modal to
+    // close first put the offer on whatever screen happened to be underneath,
+    // where it reads as an interruption arriving out of nowhere rather than as
+    // the last step of the thing just finished. `DatesStepPage` closes the form
+    // when this sheet goes away — by Done or by swipe, it does not matter which.
+    if (!id && !promptSession.taken() && remindersOfferDue()) {
+      promptSession.take();
+      // Marked on SHOW, not on accept: a sheet the user dismissed is an answer,
+      // and re-offering it on every save is the nagging this avoids.
+      promptFlags.markRemindersAsked();
+      router.push("/reminders");
+      return true;
+    }
+
     // Edit is optimistic and create seeds the cache on success, so dismissing
     // straight away is correct: there is nothing left to wait for on screen.
     navigation.goBack();
-
-    // The ONE moment the user is demonstrably thinking about being reminded of
-    // a payment: they have just written one down. Creating only — an edit is
-    // housekeeping on something they already track, and says nothing about
-    // whether they want to hear from the app.
-    //
-    // After the dismissal, not with it. The sheet is a sibling of this modal at
-    // the root, so presenting it into the frame the modal is still animating out
-    // of drops the presentation entirely and the sheet never appears.
-    if (!id && !promptSession.taken() && remindersOfferDue()) {
-      promptSession.take();
-      // Marked on SHOW, not on accept: a sheet the user swiped away is an
-      // answer, and re-offering it every save is the nagging this avoids.
-      promptFlags.markRemindersAsked();
-      setTimeout(() => router.push("/reminders"), 450);
-    }
-
     return true;
   };
 

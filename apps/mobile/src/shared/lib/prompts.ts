@@ -11,6 +11,9 @@ import { readNotificationSettings } from "./notifications/settings";
  * of them being a paywall followed immediately by "enjoying SubEye?", which is
  * a sequence no user reads as anything but a shakedown.
  *
+ * The reminders offer is not decided here — it fires from the SAVE path — but
+ * this function has to know it is pending, or it spends the session ahead of it.
+ *
  * So the decision is made in one pure function, in a fixed priority, and the
  * caller fires exactly what it returns. Adding a fourth prompt means adding it
  * to this list and arguing for its position, which is the point.
@@ -36,12 +39,23 @@ export function nextPrompt(input: {
   reviewDue: boolean;
   /** Something already interrupted this session. `promptSession.taken()`. */
   interrupted: boolean;
+  /** `remindersOfferDue()` — the save path still owes the user that offer. */
+  remindersPending: boolean;
 }): PromptKind | null {
-  // The reminders offer does not appear here at all: it fires from the SAVE
-  // path, seconds after a subscription is written, because that is the one
-  // moment the user is actually thinking about being reminded. It still counts
-  // against this session — hence the guard.
   if (input.interrupted) return null;
+
+  // NOTHING FROM HOME WHILE THE REMINDERS OFFER IS STILL OWED, and this is not
+  // a nicety — without it the offer can never fire at all. Home is the launch
+  // tab, so its timer starts before the user has done anything; the pitch takes
+  // the session's one interruption a second and a half in, and the offer, which
+  // fires from the save path, then finds the session spent every time. Measured
+  // on a fresh install with the flags cleared: `taken=true due=true`, save after
+  // save, until the pitch had used itself up on some later launch.
+  //
+  // The order is right on its own terms too. The offer is the only prompt that
+  // GIVES the user something, and it is attached to an action they take
+  // themselves; an ambient ask for money can wait a launch.
+  if (input.remindersPending) return null;
 
   // Once, ever. Every other route to the paywall is reactive — the user has to
   // bump into a lock — so someone who adds two subscriptions and leaves may
@@ -86,6 +100,22 @@ export const promptSession = {
   taken: () => interrupted,
   take: () => {
     interrupted = true;
+  },
+  /**
+   * DEV RIG ONLY, and deliberately NOT wired into `promptFlags.reset()`.
+   *
+   * That reset has a second caller — Settings → Erase all data — and re-arming
+   * the session there would reintroduce the exact sequence this boolean exists
+   * to prevent: pitch shown, user erases, user adds a subscription, reminders
+   * sheet. Two unprompted interruptions in one launch.
+   *
+   * The developer row calls this so that "Reset both prompts" is true as
+   * written. Without it the row cleared the two stored flags and left the
+   * session spent, so the next save did nothing and the only way through was a
+   * relaunch — a caveat buried in an alert nobody reads twice.
+   */
+  reset: () => {
+    interrupted = false;
   },
 };
 

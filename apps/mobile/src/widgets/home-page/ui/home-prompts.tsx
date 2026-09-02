@@ -1,7 +1,12 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { usePro } from "@/entities/pro";
-import { nextPrompt, promptFlags, promptSession } from "@/shared/lib/prompts";
+import {
+  nextPrompt,
+  promptFlags,
+  promptSession,
+  remindersOfferDue,
+} from "@/shared/lib/prompts";
 import { askForReview, reviewDue, touchReviewClock } from "@/shared/lib/review";
 
 /**
@@ -40,18 +45,26 @@ export function HomePrompts({ tracked }: { tracked: number }) {
         proPitched: promptFlags.proPitched(),
         reviewDue: reviewDue(tracked),
         interrupted: promptSession.taken(),
+        remindersPending: remindersOfferDue(),
       });
       if (!kind) return;
 
       const timer = setTimeout(() => {
-        promptSession.take();
         if (kind === "pro") {
           // Marked on SHOW, not on tap — a dismissed pitch is answered.
           promptFlags.markProPitched();
+          promptSession.take();
           router.push("/pro-pitch");
-        } else {
-          void askForReview();
+          return;
         }
+
+        // Taken only if the sheet was actually requested. `askForReview` gives
+        // up without drawing anything on a build that cannot show it, and
+        // spending the session there would silence the reminders offer for a
+        // launch in which the user saw nothing at all.
+        void askForReview().then((asked) => {
+          if (asked) promptSession.take();
+        });
       }, 1800);
 
       return () => clearTimeout(timer);
