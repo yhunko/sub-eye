@@ -68,17 +68,27 @@ mock.module("@sentry/react-native", () => ({
  * undefined would make every such test pass against defaults.
  */
 mock.module("react-native-mmkv", () => {
-  const store = new Map<string, boolean | string>();
+  // One Map PER INSTANCE ID, as on a device: the store document, the FX table
+  // and the logo cache are separate files, and a stub that pooled them would
+  // let `clearAll` on one wipe the others.
+  const stores = new Map<string, Map<string, boolean | string>>();
   return {
-    createMMKV: () => ({
-      getBoolean: (key: string) => store.get(key) as boolean | undefined,
-      getString: (key: string) => store.get(key) as string | undefined,
-      set: (key: string, value: boolean | string) => store.set(key, value),
-      remove: (key: string) => store.delete(key),
-      // Compaction has no meaning for a Map, but eraseDoc calls it and a
-      // missing method is a TypeError rather than a no-op.
-      trim: () => {},
-    }),
+    createMMKV: (config?: { id?: string }) => {
+      const id = config?.id ?? "mmkv.default";
+      const store = stores.get(id) ?? new Map<string, boolean | string>();
+      stores.set(id, store);
+      return {
+        getBoolean: (key: string) => store.get(key) as boolean | undefined,
+        getString: (key: string) => store.get(key) as string | undefined,
+        set: (key: string, value: boolean | string) => store.set(key, value),
+        remove: (key: string) => store.delete(key),
+        getAllKeys: () => [...store.keys()],
+        clearAll: () => store.clear(),
+        // Compaction has no meaning for a Map, but eraseDoc calls it and a
+        // missing method is a TypeError rather than a no-op.
+        trim: () => {},
+      };
+    },
   };
 });
 
@@ -137,4 +147,21 @@ mock.module("expo-localization", () => ({
  */
 mock.module("expo-modules-core", () => ({
   requireOptionalNativeModule: () => null,
+}));
+
+/**
+ * `expo-store-review` imports `expo-constants` and `expo-modules-core`, both of
+ * which reach react-native through deep paths the stub above cannot intercept
+ * — so `shared/lib/review`'s pure gate cannot be tested without this.
+ *
+ * `isAvailableAsync` reports false, which is also the honest answer: a test run
+ * is not a device that can show `SKStoreReviewController`, and it is the same
+ * answer TestFlight gives. `maybeAskForReview` must therefore never reach
+ * `requestReview` here.
+ */
+mock.module("expo-store-review", () => ({
+  isAvailableAsync: async () => false,
+  requestReview: async () => {},
+  storeUrl: () => null,
+  hasAction: async () => false,
 }));

@@ -1,14 +1,13 @@
-import { useState } from "react";
-import { Image, PixelRatio, StyleSheet, Text, View } from "react-native";
-import { env } from "@/shared/config/env";
+import { useEffect, useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
+import {
+  type LogoEntry,
+  type LogoKind,
+  loadLogo,
+  logoIsStale,
+  readLogo,
+} from "@/shared/lib/logos";
 import { colors } from "./theme";
-
-// Google's favicon endpoint serves only these discrete sizes. Asking for
-// anything else (this used to pass size*2) is rounded DOWN and then upscaled by
-// the view, which is what made the logos look soft: a 44pt row is 132 physical
-// px on a 3x screen, but we were requesting 88 and being handed 64. Ask for the
-// smallest bucket that still covers the box's real pixel size.
-const FAVICON_SIZES = [16, 32, 64, 128, 256];
 
 // Share of the circle the mark occupies. A symbol arrives on no plate of its
 // own, so it is drawn inside the INSCRIBED SQUARE (1/√2) and can never touch the
@@ -19,65 +18,67 @@ const FAVICON_SIZES = [16, 32, 64, 128, 256];
 const SYMBOL_INSET = Math.SQRT1_2;
 const PLATE_INSET = 0.92;
 
+type LogoState =
+  | { status: "pending" }
+  | { status: "none" }
+  | { status: "ready"; uri: string; plate: boolean };
+
 /**
- * Every source we will try for one domain, best first. Each entry says whether
- * what comes back is a bare mark or a mark on a plate, because the two are drawn
- * differently.
+ * The cached logo for a domain, refreshed in the background when it ages out.
  *
- * `fallback/404` on the Brandfetch ones is deliberate: the default is
- * Brandfetch's own wordmark, which would put another company's logo on the
- * user's row. A 404 fails the `Image` and moves us down this list instead.
+ * "In the background" is the whole point: what is cached renders on the first
+ * frame and stays on screen for the entire refresh, so a week-old logo is
+ * replaced silently or not at all. `pending` is only ever the very first sight
+ * of a brand — there is no loading state for one we have seen before.
  *
- * The order is empirical, and the reason there are three Brandfetch entries is
- * that no single one covers every brand:
- *  - `symbol/theme/light` is the pale-ink variant, the only one that is legible
- *    on this app's near-black plate — but it 404s for brands that never stored
- *    one (netflix).
- *  - `symbol` unpinned serves whatever variant a brand does have. Correct for
- *    colourful marks, and the reason monochrome ones must try `light` first:
- *    unpinned, OpenAI comes back near-black on near-black.
- *  - `icon` is the social-profile square. Lowest fidelity of the three and
- *    plate-shaped, but it is the only tier that covers icloud.com.
+ * A FETCH'S RESULT IS HELD IN STATE, not re-read from the cache. Re-reading was
+ * the first shape of this and it did not repaint: the walk wrote the entry, the
+ * re-render asked for it, and the read came back empty — the row stayed blank
+ * until something else re-rendered it. Rendering the object the walk resolved
+ * with removes the question. The cache is still read directly on the first
+ * render, which is what makes a relaunch instant, and that read is sound: it
+ * happens before anything has written.
  */
-type LogoSource = { uri: string; plate: boolean };
+export function useBrandLogo(
+  domain: string | null,
+  kind: LogoKind = "symbol",
+): LogoState {
+  // Keyed by domain because ONE avatar outlives many brands: the add/edit form
+  // keeps a single instance mounted across every brand the user picks, and an
+  // unkeyed result would show the previous choice's logo for a frame.
+  const [loaded, setLoaded] = useState<{
+    domain: string;
+    entry: LogoEntry | null;
+  } | null>(null);
 
-function logoSources(
-  domain: string,
-  size: number,
-): [LogoSource, ...LogoSource[]] {
-  const px = PixelRatio.getPixelSizeForLayoutSize(size);
-  const encoded = encodeURIComponent(domain);
-  const client = env.BRANDFETCH_CLIENT_ID;
+  useEffect(() => {
+    if (!domain) return;
 
-  if (!client) {
-    const bucket = FAVICON_SIZES.find((value) => value >= px) ?? 256;
-    return [
-      {
-        uri: `https://www.google.com/s2/favicons?domain=${encoded}&sz=${bucket}`,
-        plate: true,
-      },
-    ];
-  }
+    const cached = readLogo(kind, domain);
+    if (cached && !logoIsStale(cached)) return;
 
-  const bf = (path: string) =>
-    `https://cdn.brandfetch.io/${encoded}/${path}/fallback/404/h/${px}/w/${px}?c=${client}`;
+    let live = true;
+    void loadLogo(kind, domain).then((entry) => {
+      // `?? cached` is what keeps a refresh silent when it fails: a walk that
+      // learned nothing must not drop the logo already on screen.
+      if (live) setLoaded({ domain, entry: entry ?? cached });
+    });
+    return () => {
+      live = false;
+    };
+  }, [domain, kind]);
 
-  return [
-    { uri: bf("symbol/theme/light"), plate: false },
-    { uri: bf("symbol"), plate: false },
-    { uri: bf("icon"), plate: true },
-  ];
+  if (!domain) return { status: "none" };
+
+  const settled = loaded?.domain === domain;
+  const entry = settled ? loaded.entry : readLogo(kind, domain);
+  if (entry?.uri)
+    return { status: "ready", uri: entry.uri, plate: entry.plate };
+  // A stored miss is a final answer, and so is a walk that came back with
+  // nothing: both mean the letter tile rather than an empty plate.
+  if (entry || settled) return { status: "none" };
+  return { status: "pending" };
 }
-
-/**
- * The opaque, plate-shaped source, for the detail banner that blurs it into a
- * colour wash. Deliberately NOT the symbol tiers the avatar prefers: a bare mark
- * is mostly transparent, and blurring one yields almost no colour at all.
- */
-export const brandLogoUrl = (domain: string, size: number) => {
-  const sources = logoSources(domain, size);
-  return (sources.findLast((source) => source.plate) ?? sources[0]).uri;
-};
 
 export function BrandLogo({
   name,
@@ -91,11 +92,7 @@ export function BrandLogo({
   /** Drains the colour out of a logo whose subscription is over. */
   dimmed?: boolean;
 }) {
-  // Keyed by domain, not a bare index. The add/edit form keeps a single avatar
-  // mounted across every brand the user picks, so a counter that only counted up
-  // stayed exhausted for the life of the modal and every later choice rendered
-  // as the letter tile — the picker looked like it had not applied anything.
-  const [exhausted, setExhausted] = useState<Record<string, number>>({});
+  const logo = useBrandLogo(brandDomain);
   // A full circle, not a squircle: a plate-shaped logo is a mark on an opaque
   // white square, and a rounded square leaves that plate reading as a white card
   // behind the mark. Clipped round it reads as the avatar it is meant to be.
@@ -106,44 +103,36 @@ export function BrandLogo({
     ...(dimmed ? { opacity: 0.4 } : null),
   };
 
-  const sources = brandDomain ? logoSources(brandDomain, size) : [];
-  const attempt = brandDomain ? (exhausted[brandDomain] ?? 0) : 0;
-  const source = sources[attempt];
-
-  if (!brandDomain || !source) {
-    return (
+  if (logo.status !== "ready") {
+    // The letter only stands in once we know there is no logo. While one is
+    // still on its way the plate is left empty, because a letter that turns
+    // into a mark a moment later reads as a glitch.
+    return logo.status === "none" ? (
       <View style={[styles.fallback, box]}>
         <Text style={[styles.initial, { fontSize: size * 0.42 }]}>
           {name.trim().charAt(0).toUpperCase() || "?"}
         </Text>
       </View>
+    ) : (
+      <View style={[styles.plate, box]} />
     );
   }
 
-  const inner = Math.round(size * (source.plate ? PLATE_INSET : SYMBOL_INSET));
+  const inner = Math.round(size * (logo.plate ? PLATE_INSET : SYMBOL_INSET));
 
   return (
     <View style={[styles.plate, box]}>
       <Image
         accessibilityIgnoresInvertColors
-        // Keyed so a failed tier actually remounts onto the next URL rather than
-        // reusing the decoded-image cache entry that just failed.
-        key={source.uri}
-        source={{ uri: source.uri }}
+        source={{ uri: logo.uri }}
         style={{
           width: inner,
           height: inner,
           // A bare mark gets no rounding — there is no plate to clip, and
           // rounding it would bite the mark a second time.
-          ...(source.plate ? { borderRadius: inner / 2 } : null),
+          ...(logo.plate ? { borderRadius: inner / 2 } : null),
         }}
         resizeMode="contain"
-        onError={() =>
-          setExhausted((current) => ({
-            ...current,
-            [brandDomain]: attempt + 1,
-          }))
-        }
       />
     </View>
   );

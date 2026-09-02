@@ -16,7 +16,7 @@
   "private": true,
   "scripts": {
     "build": "astro build",
-    "deploy": "wrangler deploy",
+    "deploy": "astro build && wrangler deploy",
     "dev": "astro dev",
     "fonts": "bun ./scripts/fetch-fonts.ts",
     "lint": "biome check .",

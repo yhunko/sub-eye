@@ -57,11 +57,26 @@ and `LEGAL_OPERATOR`; the footer and both support pages import them from there.
 terms quote it as formatted literals and `test/pricing.test.ts` pins the two
 against each other.
 
-## Zero client JavaScript, and it has to stay zero
+## One third-party script, and everything else is a platform feature
 
-The budget is under 5 KB on any route and the current figure is **0**. The only
-`<script>` in the output is the JSON-LD data block, which browsers never
-execute. Everything interactive is a platform feature:
+The site's own JavaScript budget is still **0** — nothing here is bundled,
+hoisted or hydrated, and the only other `<script>` in the output is the JSON-LD
+data block, which browsers never execute.
+
+The exception is **StartupBar**, the directory widget mounted at the top of
+`Home.astro`. It is a vendor tag carried `is:inline` so Astro leaves it exactly
+as pasted — `document.currentScript` is how the loader reads its startup id, and
+a bundled copy would read nothing. It is the only third-party origin this site
+loads at runtime, so `public/_headers` names `startupbar.co` in `script-src`,
+`frame-src` **and** `img-src`: a loader, an iframe, and an image-pixel
+heartbeat. Miss one directive and the bar silently never appears, with no
+console error to explain it — `test/widget.test.ts` pins all three against the
+tag.
+
+It is on the two marketing pages only. The four legal URLs are App Store Connect
+metadata a reviewer opens, and a promo bar does not belong on them.
+
+Everything else interactive is still a platform feature:
 
 - The FAQ is `<details>`/`<summary>`. It animates on `::details-content` as a
   grid row `0fr → 1fr`, with `content-visibility` transitioned
@@ -72,10 +87,14 @@ execute. Everything interactive is a platform feature:
 - The price timeline is a radio group. `<label>` wraps the input, `:has()`
   moves the rail fill, and the phase the model reports as live is the one
   rendered `checked`.
-- The fixed top bar reveals itself with `animation-timeline: scroll(root
-  block)` inside `@supports`. Where that is unsupported the bar just starts
-  visible, and `Home.astro` drops the hero's duplicate brand row to match —
-  the page always shows exactly one.
+- The fixed top bar is visible from the first paint. It used to reveal itself
+  on `animation-timeline: scroll(root block)`, which meant the App Store badge
+  was not on screen until the reader scrolled past the hero; the bar is the
+  page's only brand row now, so `Home.astro` carries no hero nav and pads the
+  hero out from under it instead.
+- Apple's Smart App Banner is a single `<meta name="apple-itunes-app">` in
+  `Base.astro`. Only Safari on iPhone and iPad draws it, nothing on the page can
+  style it, and a wrong id produces no banner and no error.
 - The language switch is an `<a>`.
 
 If something seems to need an island, it does not. There is no framework
@@ -147,9 +166,11 @@ and amounts stay in the same face as everything around them. Do not reintroduce
 a second family for numbers.
 
 Fonts are vendored into `public/fonts/` by `bun run --cwd apps/landing fonts`
-and committed. **Nothing may reference a third-party origin at runtime** — no
-CDN, no Google Fonts, no analytics. That is a Lighthouse requirement and it is
-also the page's own argument.
+and committed. **No asset may come from a third-party origin** — no CDN, no
+Google Fonts, no analytics. StartupBar is the one runtime exception and it was
+argued for above; the CSP still forbids every other host, so a font, image or
+stylesheet on someone else's origin is blocked rather than merely discouraged.
+That is a Lighthouse requirement and it is also the page's own argument.
 
 The hryvnia lives in the `latin-ext` subset, which every locale loads, so both
 pages render it. `src/lib/format.ts` still trails the symbol for UAH and PLN

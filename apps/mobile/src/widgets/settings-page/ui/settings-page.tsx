@@ -18,11 +18,14 @@ import { preferencesQuery, useUpdatePreferences } from "@/entities/user";
 import type { AppLocale } from "@/shared/i18n";
 import { getLocale, m } from "@/shared/i18n";
 import { currencyLabel } from "@/shared/lib/format";
+import { clearLogos } from "@/shared/lib/logos";
 import {
   cancelReminders,
   readNotificationSettings,
 } from "@/shared/lib/notifications";
+import { promptFlags } from "@/shared/lib/prompts";
 import { resetQueryCache } from "@/shared/lib/query";
+import { reviewUrl } from "@/shared/lib/review";
 import {
   clearCloud,
   cloudSyncAvailable,
@@ -210,6 +213,11 @@ export function SettingsPage() {
 
   const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  // Null off iOS, where there is no store listing to send anyone to — the row
+  // is absent there rather than opening a Play page for an app that is not on
+  // Play. See `reviewUrl` for why this is a link and not the OS rating sheet.
+  const rate = reviewUrl();
+
   // Only actionable when the stored zone has drifted from the device's — when
   // they already agree there is nothing to choose, so the row loses its chevron.
   const syncTimezone = () =>
@@ -220,11 +228,12 @@ export function SettingsPage() {
       },
     ]);
 
-  // FOUR copies of the data outlive the store document, and none of them is
+  // FIVE copies of the data outlive the store document, and none of them is
   // React state: the pending reminders name subscriptions on the lock screen,
   // the widget snapshot sits in the shared App Group on the Home Screen, the
-  // Query cache would repaint the erased numbers from memory, and — since sync
-  // — iCloud holds a record per key that the very next reconcile would pull
+  // Query cache would repaint the erased numbers from memory, the logo cache is
+  // keyed by the domains of the brands that were tracked, and — since sync —
+  // iCloud holds a record per key that the very next reconcile would pull
   // straight back onto this device.
   //
   // ORDER IS LOAD-BEARING. iCloud is cleared BEFORE the document, because
@@ -241,6 +250,10 @@ export function SettingsPage() {
       clearWidget();
     } finally {
       eraseDoc();
+      clearLogos();
+      // Back to a first run in this respect too: an install that kept
+      // `remindersAsked` would never be offered reminders again.
+      promptFlags.reset();
       await resetQueryCache();
     }
   };
@@ -404,6 +417,26 @@ export function SettingsPage() {
             android="build"
             label="Developer"
             onPress={() => router.push("/settings/developer")}
+          />
+        </Section>
+      ) : null}
+
+      {/* Above Legal, in its own cell, and the only row on this screen that
+          asks the user for something instead of offering them something. It is
+          here rather than buried under the policies because the app has no ads,
+          no tracking and no growth budget: ratings are the whole distribution
+          strategy, and a row nobody can find rates nothing. The footnote says
+          that outright rather than pleading. */}
+      {rate ? (
+        <Section footnote={m.settings_rateHint()}>
+          <Row
+            ios="star"
+            android="star"
+            label={m.settings_rate()}
+            accent
+            onPress={() => {
+              void Linking.openURL(rate).catch(() => {});
+            }}
           />
         </Section>
       ) : null}

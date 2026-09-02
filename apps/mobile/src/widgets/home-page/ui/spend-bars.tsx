@@ -1,9 +1,22 @@
-import type { CategorySpendingDto } from "@subeye/model";
 import { StyleSheet, Text, View } from "react-native";
-import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
-import { categoryColors, colors } from "@/shared/ui/theme";
+import { colors } from "@/shared/ui/theme";
 import { useLargeText } from "@/shared/ui/use-large-text";
+
+/**
+ * One slice of the month's spend, already named and coloured by the caller.
+ *
+ * Deliberately not `CategorySpendingDto`: the same card answers "where does it
+ * go" at whatever resolution the install has. A free user has no categories, so
+ * the grouping that means something to them is the subscriptions themselves —
+ * and this component has no business knowing which of the two it is drawing.
+ */
+export type SpendRow = {
+  key: string;
+  name: string;
+  amount: number;
+  color: string;
+};
 
 function Figures({ share, amount }: { share: number; amount: string }) {
   return (
@@ -14,47 +27,44 @@ function Figures({ share, amount }: { share: number; amount: string }) {
   );
 }
 
-// Bars, not a donut: seven categories where one is 80% is unreadable as a pie,
-// and a bar row carries name, share and amount on the line the eye is already on.
-export function CategoryBars({
+// Bars, not a donut: seven slices where one is 80% is unreadable as a pie, and
+// a bar row carries name, share and amount on the line the eye is already on.
+export function SpendBars({
   currency,
-  categories,
+  rows,
 }: {
   currency: string;
-  categories: CategorySpendingDto[];
+  rows: SpendRow[];
 }) {
   // The two figures drop below the name at the accessibility text sizes — three
   // things across a phone is already tight at 15pt and impossible at 53.
   const stacked = useLargeText();
 
-  const total = categories.reduce((sum, item) => sum + item.amount, 0);
+  const total = rows.reduce((sum, item) => sum + item.amount, 0);
   if (total <= 0) return null;
 
   return (
     <View style={styles.card}>
-      {categories.map((item, index) => {
+      {rows.map((item) => {
         const share = (item.amount / total) * 100;
         const amount = formatMoney(item.amount, currency);
-        const color = categoryColors[index % categoryColors.length];
         return (
           <View
-            key={item.categoryId ?? "uncategorized"}
+            key={item.key}
             style={styles.row}
             // Four fragments on screen are one fact in speech. Ungrouped,
             // VoiceOver hands the name, the share and the amount over as three
             // separate swipes and the bar as nothing at all.
             accessible
             accessibilityLabel={[
-              item.name || m.home_uncategorized(),
+              item.name,
               `${share.toFixed(1)}%`,
               formatMoney(item.amount, currency),
             ].join(", ")}
           >
             <View style={styles.line}>
-              <View style={[styles.dot, { backgroundColor: color }]} />
-              <Text style={styles.name}>
-                {item.name || m.home_uncategorized()}
-              </Text>
+              <View style={[styles.dot, { backgroundColor: item.color }]} />
+              <Text style={styles.name}>{item.name}</Text>
               {stacked ? null : <Figures share={share} amount={amount} />}
             </View>
             {stacked ? (
@@ -62,13 +72,16 @@ export function CategoryBars({
                 <Figures share={share} amount={amount} />
               </View>
             ) : null}
-            {/* A 0.4% category still gets a visible stub — an invisible bar
-                reads as a rendering bug, not as "this one is tiny". */}
+            {/* A 0.4% slice still gets a visible stub — an invisible bar reads
+                as a rendering bug, not as "this one is tiny". */}
             <View style={styles.track}>
               <View
                 style={[
                   styles.fill,
-                  { width: `${Math.max(share, 2)}%`, backgroundColor: color },
+                  {
+                    width: `${Math.max(share, 2)}%`,
+                    backgroundColor: item.color,
+                  },
                 ]}
               />
             </View>

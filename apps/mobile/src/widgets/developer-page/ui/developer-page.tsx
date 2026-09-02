@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, ScrollView, StyleSheet } from "react-native";
 import { devForcePro } from "@/entities/pro";
 import { writeNotificationSettings } from "@/shared/lib/notifications";
+import { promptFlags, promptSession } from "@/shared/lib/prompts";
 import { eraseDoc, writeDoc } from "@/shared/lib/store";
 import { Divider, PageFootnote, Row, Section } from "@/shared/ui/list-row";
 import { buildDemoDoc } from "../model/demo-data";
@@ -46,6 +47,10 @@ export function DeveloperPage() {
       trials: true,
       renewalLeadDays: [1, 3, 7],
       trialLeadDays: [1, 3],
+      // Pinned, not merged: the patch inherits whatever hour was last stored,
+      // and a capture set is only reproducible if every run lands on 09:00.
+      hour: 9,
+      minute: 0,
     });
     Alert.alert(
       "Reminders armed",
@@ -160,6 +165,46 @@ export function DeveloperPage() {
             android="verified"
             label="Already Pro"
             onPress={() => openPaywall(undefined, true)}
+          />
+        </Section>
+
+        <Section
+          title="Prompts"
+          footnote="The two rows above present each sheet directly, without spending its flag. Reset clears BOTH flags (Pro pitch + reminders offer), re-arms the one-per-launch guard and switches reminders off — everything the offer needs, with no relaunch. Then save a new subscription for the reminders offer, or sit on Home ~2s for the Pro pitch."
+        >
+          <Row
+            ios="sparkles"
+            android="auto_awesome"
+            label="Open Pro pitch"
+            onPress={() => router.push("/pro-pitch")}
+          />
+          <Divider />
+          <Row
+            ios="bell.badge"
+            android="notifications_active"
+            label="Open reminders offer"
+            onPress={() => router.push("/reminders")}
+          />
+          <Divider />
+          <Row
+            ios="arrow.counterclockwise"
+            android="restart_alt"
+            label="Reset both prompts"
+            onPress={() => {
+              promptFlags.reset();
+              // The stored flags are only half of it — the one-per-launch guard
+              // is module state, and without this the row needed a relaunch.
+              promptSession.reset();
+              // Reminders off as well, because the reminders prompt is gated on
+              // them being off and there is no other way to get there from a
+              // simulator — the Settings switch is a UISwitch, which cannot be
+              // driven by a synthesised tap.
+              writeNotificationSettings({ renewals: false, trials: false });
+              Alert.alert(
+                "Prompts re-armed",
+                "Both flags cleared, the one-per-launch guard re-armed, and reminders switched off. No relaunch needed: save a subscription for the reminders offer, or sit on Home ~2s for the Pro pitch.",
+              );
+            }}
           />
         </Section>
 

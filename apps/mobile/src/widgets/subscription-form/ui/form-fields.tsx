@@ -1,6 +1,7 @@
 import { SubscriptionPeriod } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { categoriesQuery } from "@/entities/category";
 import { usePro } from "@/entities/pro";
@@ -128,11 +129,33 @@ function CategoryRow() {
   );
 }
 
-/** What the subscription is called, what it costs, and how often. */
-export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
+/**
+ * What the subscription is called, what it costs, and how often.
+ *
+ * `autoFocus` is opt-in and only the CREATE flow passes it. In edit mode the
+ * user came to change one specific thing, and summoning a keyboard over a form
+ * they are still reading — scrolling it, at that — helps nobody.
+ */
+export function PriceFields({
+  onChangeBrand,
+  autoFocus = false,
+}: {
+  onChangeBrand: () => void;
+  autoFocus?: boolean;
+}) {
   const router = useRouter();
   const { values, errors, set } = useSubscriptionForm();
   const stacked = useLargeText();
+
+  // Whichever field still needs typing. Step one prefills the name whenever a
+  // brand was picked, which is the common path — focusing the name there would
+  // put the caret in a field that is already correct and raise the keyboard
+  // over the price, the one field that is always empty. Frozen on mount:
+  // `autoFocus` is read once by `TextInput`, and recomputing it as the user
+  // types would only make the value lie about what happened.
+  const [focus] = useState<"name" | "cost">(() =>
+    values.name.trim() === "" ? "name" : "cost",
+  );
 
   return (
     <>
@@ -143,6 +166,7 @@ export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
         value={values.name}
         onChangeText={(next) => set("name", next)}
         error={messageFor(errors.name)}
+        autoFocus={autoFocus && focus === "name"}
       />
 
       {/* One control, the way a native amount field carries its unit: the
@@ -163,6 +187,7 @@ export function PriceFields({ onChangeBrand }: { onChangeBrand: () => void }) {
             keyboardType="decimal-pad"
             placeholderTextColor={colors.muted}
             keyboardAppearance="dark"
+            autoFocus={autoFocus && focus === "cost"}
           />
           <CurrencyPicker
             value={values.currency}

@@ -1,5 +1,11 @@
+# The CSP names startupbar.co three times for the one widget Home.astro
+# mounts: the loader script, the bar's iframe, and the image pixel it
+# reports visibility with. Miss one and the bar silently never appears.
+# It stays a single site-wide policy because Cloudflare applies every
+# matching block — a second Content-Security-Policy header for the
+# marketing pages would be intersected with this one, not replace it.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src https://startupbar.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://startupbar.co; font-src 'self'; connect-src 'self'; frame-src https://startupbar.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

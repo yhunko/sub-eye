@@ -1,23 +1,28 @@
-import { Stack, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { useCalendarMonth } from "@/entities/calendar";
-import { ProLock, usePro } from "@/entities/pro";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
-import { formatMoney } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
-import { monthGrid, monthIso, monthLabel } from "../model/month";
+import { monthIso, monthLabel, monthOffsetOf } from "../model/month";
 import { useCalendarSettings } from "../model/settings";
-import { Agenda } from "./agenda";
-import { MonthGrid } from "./month-grid";
+import { monthTitleOptions } from "./header-items";
+import { MonthPager, type MonthPagerHandle } from "./month-pager";
+
+/** A standard iOS navigation bar. There is no `useHeaderHeight` in this tree. */
+const NAV_BAR = 44;
+
+/**
+ * Air under the bar's own items.
+ *
+ * `NAV_BAR` clears the bar's frame, not what is drawn in it: iOS 26 renders a
+ * bar button as a glass capsule that fills most of that height, so the arrows
+ * came to rest directly beneath the options button with nothing between them.
+ */
+const HEADER_GAP = 14;
+
+const ISO_MONTH = /^\d{4}-\d{2}$/;
 
 function StepButton({
   direction,
@@ -29,7 +34,9 @@ function StepButton({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={direction === "back" ? "‹" : "›"}
+      accessibilityLabel={
+        direction === "back" ? m.calendar_prevMonth() : m.calendar_nextMonth()
+      }
       onPress={onPress}
       style={({ pressed }) => [styles.step, pressed && styles.stepPressed]}
     >
@@ -50,148 +57,143 @@ function StepButton({
 /**
  * The month, as a grid over an agenda.
  *
- * ONE scroll view, not a pinned grid over an inner scroller as the mock draws
- * it: a nested scroller needs a fixed height for the agenda, and a fixed height
- * on a box full of text is the thing this app's UI rules forbid outright — it is
- * what forces a Dynamic Type cap. Scrolling the grid away while reading the
- * agenda also gives the native tab bar something to minimise against.
+ * FREE, all of it, and with nothing withheld anywhere on it. The calendar shows
+ * no fact the app does not already give away — Home's rail, the list and the due
+ * digest all name what is coming — so charging for the arrangement would be
+ * charging for a rearrangement of the user's own data. It is also a TAB, and a
+ * tab is navigation rather than a feature.
  *
- * The month name is the screen TITLE rather than a line of content. Home already
- * puts the current month in its own header for the same reason: every figure
- * below is scoped to it, and repeating it inside the page costs a fold.
+ * There WAS a truncated agenda under a lock here, and it withheld nothing: the
+ * grid above it already printed each day's logos and total, and the day sheet
+ * opened every one of them in full for a free install. A gate a user routes
+ * around in one tap does not convert, it just teaches them the locks are
+ * theatre. What Pro buys on this screen is additional now, never subtracted —
+ * the month-over-month delta, the heavy-day flag and the year view — plus the
+ * density that comes free with it, because a trial, an intro price and a
+ * scheduled change can only exist on a Pro install.
+ *
+ * ONLY the controls are fixed. The total, the week-start row, the grid and the
+ * agenda all live inside the pager, together, because they are one month and
+ * they have to travel as one — and because anything pinned over a scrolling page
+ * eventually clips it.
+ *
+ * The month name lives in the navigation BAR rather than in a line of content.
+ * Home already puts the current month in its own header for the same reason:
+ * every figure below is scoped to it, and repeating it inside the page costs a
+ * fold. It goes in the bar's left slot, not its title — see `monthTitleOptions`.
  */
 export function CalendarPage() {
   const router = useRouter();
-  const isPro = usePro();
+  const insets = useSafeAreaInsets();
   const settings = useCalendarSettings();
+  const pager = useRef<MonthPagerHandle | null>(null);
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
 
-  const month = useMemo(() => monthIso(offset), [offset]);
-  const calendar = useCalendarMonth(month, isPro);
-
-  const cells = useMemo(
-    () => monthGrid(month, settings.weekStart),
-    [month, settings.weekStart],
-  );
-  const days = useMemo(
-    () => new Map((calendar.data?.days ?? []).map((day) => [day.date, day])),
-    [calendar.data],
-  );
-
-  const openDay = (date: string) => {
-    setSelected(date);
-    router.push({
-      pathname: "/calendar/day/[date]",
-      // The same `YYYY-MM-DD` the due-digest route takes. A full ISO instant
-      // carries colons, which have no business in a path segment.
-      params: { date: date.slice(0, 10) },
-    });
-  };
-
-  const step = (by: number) => {
-    setOffset((current) => current + by);
-    // The selection names a day in the month we are leaving, so keeping it would
+  // A MIRROR of the pager's scroll position, never a driver of it. Everything
+  // here that moves the calendar calls `pager.current.goTo`, so a control can
+  // never be defeated by this already holding the value it wants to set.
+  const onOffsetChange = useCallback((next: number) => {
+    setOffset(next);
+    // The selection names a day in the month being left, so keeping it would
     // light a tile in the new month that shares only its position in the grid.
     setSelected(null);
-  };
+  }, []);
+
+  // Written by the year view, which speaks months rather than offsets. A param
+  // is input from outside the process even when this app wrote it.
+  const { month: requested } = useLocalSearchParams<{ month?: string }>();
+  useEffect(() => {
+    if (!requested || !ISO_MONTH.test(requested)) return;
+    pager.current?.goTo(monthOffsetOf(`${requested}-01T00:00:00.000Z`));
+    // Cleared so that returning to this tab later does not re-jump to a month
+    // the user has since paged away from.
+    router.setParams({ month: undefined });
+  }, [requested, router]);
+
+  const openDay = useCallback(
+    (date: string) => {
+      setSelected(date);
+      router.push({
+        pathname: "/calendar/day/[date]",
+        // The same `YYYY-MM-DD` the due-digest route takes. A full ISO instant
+        // carries colons, which have no business in a path segment.
+        params: { date: date.slice(0, 10) },
+      });
+    },
+    [router],
+  );
+
+  const openSubscription = useCallback(
+    (id: string) =>
+      router.push({ pathname: "/subscriptions/[id]", params: { id } }),
+    [router],
+  );
+
+  // The fixed block sits outside every scroll view, so nothing hands it UIKit's
+  // automatic inset. iOS only: `nativeHeaderChrome` makes the bar transparent
+  // there and opaque on Android, where content is already laid out below it.
+  const headerTop =
+    (Platform.OS === "ios" ? insets.top + NAV_BAR : 0) + HEADER_GAP;
 
   return (
-    <>
-      <Stack.Screen options={{ title: monthLabel(month) }} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-      >
-        {isPro ? (
-          <View style={styles.controls}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={m.when_today()}
-              onPress={() => {
-                setOffset(0);
-                setSelected(null);
-              }}
-              style={({ pressed }) => [
-                styles.chip,
-                offset === 0 && styles.chipOn,
-                pressed && styles.stepPressed,
-              ]}
-            >
-              <Text
-                style={[styles.chipLabel, offset === 0 && styles.chipLabelOn]}
-              >
-                {m.when_today()}
-              </Text>
-            </Pressable>
-            <View style={styles.steps}>
-              <StepButton direction="back" onPress={() => step(-1)} />
-              <StepButton direction="forward" onPress={() => step(1)} />
-            </View>
-          </View>
-        ) : (
-          <ProLock
-            title={m.paywall_lockCalendar()}
-            body={m.paywall_lockCalendarBody()}
+    <View style={styles.screen}>
+      <Stack.Screen options={monthTitleOptions(monthLabel(monthIso(offset)))} />
+
+      <View style={[styles.header, { paddingTop: headerTop }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={m.when_today()}
+          onPress={() => pager.current?.goTo(0)}
+          style={({ pressed }) => [
+            styles.chip,
+            offset === 0 && styles.chipOn,
+            pressed && styles.stepPressed,
+          ]}
+        >
+          <Text style={[styles.chipLabel, offset === 0 && styles.chipLabelOn]}>
+            {m.when_today()}
+          </Text>
+        </Pressable>
+        {/* Kept beside the swipe, not replaced by it: a gesture is invisible
+            until someone tries it, and VoiceOver needs a control to land on. */}
+        <View style={styles.steps}>
+          <StepButton
+            direction="back"
+            onPress={() => pager.current?.goTo(offset - 1)}
           />
-        )}
+          <StepButton
+            direction="forward"
+            onPress={() => pager.current?.goTo(offset + 1)}
+          />
+        </View>
+      </View>
 
-        {isPro && calendar.data ? (
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{m.calendar_monthTotal()}</Text>
-            <Text style={styles.totalAmount}>
-              {formatMoney(
-                calendar.data.monthTotal,
-                calendar.data.currencyCode,
-              )}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* Locked, the grid still draws: the day numbers and today's ring are
-            the shape of what Pro buys, and an absent grid sells nothing. It is
-            fed an empty map rather than a `locked` prop — there is no data to
-            hide, because `useCalendarMonth` never ran. */}
-        <MonthGrid
-          cells={cells}
-          days={days}
-          settings={settings}
-          selected={selected}
-          onSelect={isPro ? openDay : () => router.push("/paywall")}
-        />
-
-        {isPro ? (
-          <>
-            <View style={styles.divider} />
-            {calendar.isPending ? (
-              <ActivityIndicator color={colors.accent} />
-            ) : calendar.isError ? (
-              <Text style={styles.failed}>{m.common_loadFailed()}</Text>
-            ) : (
-              <Agenda
-                days={calendar.data?.days ?? []}
-                onOpen={(id) =>
-                  router.push({
-                    pathname: "/subscriptions/[id]",
-                    params: { id },
-                  })
-                }
-              />
-            )}
-          </>
-        ) : null}
-      </ScrollView>
-    </>
+      <MonthPager
+        controls={pager}
+        onOffsetChange={onOffsetChange}
+        settings={settings}
+        selected={selected}
+        onSelect={openDay}
+        onOpenSubscription={openSubscription}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 12, paddingBottom: 24, gap: 12 },
-  controls: {
+  screen: { flex: 1, backgroundColor: colors.bg },
+  // Inset to 16 like the page's own rows below it, which is also where UIKit
+  // puts a navigation bar's items — without it the forward arrow sat a few
+  // points right of the options button above it, and Today a few points left of
+  // "Month total".
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   steps: { flexDirection: "row", gap: 8 },
   step: {
@@ -216,20 +218,4 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.accent, backgroundColor: colors.surfaceAlt },
   chipLabel: { fontSize: 13, fontWeight: "600", color: colors.muted },
   chipLabelOn: { color: colors.accent },
-  totalRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    gap: 12,
-    paddingHorizontal: 4,
-  },
-  totalLabel: {
-    fontSize: 12.5,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    color: colors.muted,
-  },
-  totalAmount: { fontSize: 20, fontWeight: "700", color: colors.text },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
-  failed: { fontSize: 14, color: colors.muted, textAlign: "center" },
 });

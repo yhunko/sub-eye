@@ -120,6 +120,7 @@ export const en = {
       "No account, and it works offline",
       "Unlimited subscriptions",
       "Spend, next month, and the year ahead",
+      "A payment calendar for every month",
       "Pause, cancel, renew",
       "Renewal reminders, the day before",
       "Every currency at daily rates",
@@ -134,9 +135,9 @@ export const en = {
     proItems: [
       "Choose when every reminder lands",
       "Trial-ending alerts",
-      "The payment calendar",
       "Price history on every subscription",
       "Categories, category filters and the breakdown",
+      "A year of spending, and each month against the last",
       "Home Screen widgets",
     ],
     joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
@@ -175,15 +176,11 @@ export const en = {
   cta: {
     title: "SubEye is on the App Store.",
     body: "Download it, type in the first subscription, and about twenty seconds later the number on the home screen is yours. Nothing to sign up for, nothing to sign in to.",
-    download: "Download SubEye",
   },
 
   appStore: {
     /** Apple's own wording for the badge. The service mark is never translated. */
     badgeAlt: "Download on the App Store",
-    /** The top bar's button. Not the badge's words — a text button that borrowed
-        them would read as a badge Apple did not draw. */
-    download: "Download",
     /**
      * Required wherever the site gives legal notice, once, because the page
      * carries the badge. The international form: no ® or ℠ symbols, which

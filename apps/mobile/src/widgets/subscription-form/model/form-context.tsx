@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import {
   createContext,
   type ReactNode,
@@ -14,6 +14,11 @@ import {
   useUpdateSubscription,
 } from "@/entities/subscription";
 import { preferencesQuery } from "@/entities/user";
+import {
+  promptFlags,
+  promptSession,
+  remindersOfferDue,
+} from "@/shared/lib/prompts";
 import {
   type FormErrors,
   makeInitialFormValues,
@@ -156,6 +161,25 @@ export function SubscriptionFormProvider({
       update.mutate({ id, changes });
     } else {
       create.mutate(result.value);
+    }
+
+    // The ONE moment the user is demonstrably thinking about being reminded of
+    // a payment: they have just written one down. Creating only — an edit is
+    // housekeeping on something they already track and says nothing about
+    // whether they want to hear from the app.
+    //
+    // OVER the form, and the form stays up behind it. Waiting for the modal to
+    // close first put the offer on whatever screen happened to be underneath,
+    // where it reads as an interruption arriving out of nowhere rather than as
+    // the last step of the thing just finished. `DatesStepPage` closes the form
+    // when this sheet goes away — by Done or by swipe, it does not matter which.
+    if (!id && !promptSession.taken() && remindersOfferDue()) {
+      promptSession.take();
+      // Marked on SHOW, not on accept: a sheet the user dismissed is an answer,
+      // and re-offering it on every save is the nagging this avoids.
+      promptFlags.markRemindersAsked();
+      router.push("/reminders");
+      return true;
     }
 
     // Edit is optimistic and create seeds the cache on success, so dismissing

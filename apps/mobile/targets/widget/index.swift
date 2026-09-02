@@ -210,25 +210,27 @@ private struct Locked: View {
   let snapshot: Snapshot
 
   var body: some View {
-    // Centred as one block rather than pinned to the corners. Pushed apart by a
-    // Spacer this read as an empty card at the medium size, where the gap between
-    // the glyph and the copy was most of the widget.
-    VStack(alignment: .leading, spacing: 8) {
-      Image(systemName: "lock.fill")
-        .font(.system(size: 15, weight: .semibold))
-        .foregroundStyle(Theme.accent)
-      Text(snapshot.lockTitle)
-        .font(.system(size: 14, weight: .bold))
+    // The month total leads, exactly as it does unlocked — this card is not a
+    // placeholder any more, it is the free version of the widget. The lock line
+    // is a footer rather than the headline: a widget whose whole content is its
+    // own paywall gets removed, and a removed widget sells nothing.
+    VStack(alignment: .leading, spacing: 3) {
+      Caption(text: snapshot.monthLabel)
+      Text(snapshot.monthTotal)
+        .font(.system(size: 27, weight: .heavy))
         .foregroundStyle(Theme.text)
-        .lineLimit(3)
-        .minimumScaleFactor(0.8)
-      Text(snapshot.lockCta)
-        .font(.system(size: 11, weight: .bold))
-        .foregroundStyle(Theme.bg)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Theme.accent, in: Capsule())
-        .padding(.top, 2)
+        .lineLimit(1)
+        .minimumScaleFactor(0.5)
+      Spacer(minLength: 6)
+      HStack(spacing: 5) {
+        Image(systemName: "lock.fill")
+          .font(.system(size: 10, weight: .semibold))
+        Text(snapshot.lockCta)
+          .font(.system(size: 11, weight: .bold))
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+      }
+      .foregroundStyle(Theme.accent)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .widgetURL(deepLink("/paywall"))
