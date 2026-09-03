@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { clearLogos, loadLogo, logoIsStale, readLogo } from "./logos";
+import { clearLogos, loadLogo, logoDraw, logoIsStale, readLogo } from "./logos";
 
 /**
  * Stands in for RN's native `FileReader`, which Bun has no equivalent of. The
@@ -51,22 +51,57 @@ const respondWith = (reply: (url: string) => Response | Promise<Response>) => {
   }) as unknown as typeof fetch;
 };
 
+/** What `Image.getSize` reports next. See the stub in test-preload.ts. */
+const measuresAs = (width: number, height: number) => {
+  (globalThis as { __logoSize?: [number, number] }).__logoSize = [
+    width,
+    height,
+  ];
+};
+
 beforeEach(() => {
   clearLogos();
+  (globalThis as { __logoSize?: [number, number] }).__logoSize = undefined;
 });
 
 describe("loadLogo", () => {
-  test("keeps the first tier that serves an image, and how it is shaped", async () => {
-    respondWith((url) => (url.includes("theme/light") ? missing() : image()));
+  test("asks the square icon tier first, and stops there", async () => {
+    respondWith(() => image());
+    measuresAs(400, 400);
 
     await loadLogo("symbol", "netflix.com");
 
+    // `icon` leads the ladder, so a brand that has one costs ONE request and
+    // gets the full-colour square rather than a monochrome symbol inset to √½.
+    expect(requested).toHaveLength(1);
+    expect(requested[0]).toInclude("/icon/");
     const entry = readLogo("symbol", "netflix.com");
     expect(entry?.uri).toStartWith("data:image/webp;base64,");
-    // The tier that answered was `symbol`, which is a bare mark — the avatar
-    // insets a mark and a plate differently, so this must survive the cache.
-    expect(entry?.plate).toBe(false);
+    expect(entry?.plate).toBe(true);
+  });
+
+  test("falls back to the symbol tiers for a brand icon does not cover", async () => {
+    respondWith((url) => (url.includes("/icon/") ? missing() : image()));
+
+    await loadLogo("symbol", "netflix.com");
+
     expect(requested).toHaveLength(2);
+    expect(requested[1]).toInclude("symbol/theme/light");
+    // A bare mark, and the avatar insets one differently from a plate, so which
+    // tier answered has to survive the cache.
+    expect(readLogo("symbol", "netflix.com")?.plate).toBe(false);
+  });
+
+  test("records the shape of the image, not the shape of the request", async () => {
+    respondWith(() => image());
+    // Brandfetch's `w`/`h` are a bounding box: icloud.com's `icon` comes back
+    // 512x333 from the same square request that gives Netflix 400x400. Storing
+    // the request's shape is what drew that cloud at 60% of the circle.
+    measuresAs(512, 333);
+
+    await loadLogo("symbol", "icloud.com");
+
+    expect(readLogo("symbol", "icloud.com")?.aspect).toBeCloseTo(1.538, 3);
   });
 
   test("does not walk the ladder again for a brand it already has", async () => {
@@ -140,7 +175,53 @@ describe("loadLogo", () => {
     expect(requested).toHaveLength(1);
     expect(requested[0]).toInclude("/icon/");
     expect(readLogo("plate", "openai.com")?.plate).toBe(true);
-    // The avatar's ladder prefers a bare symbol, so the two must not collide.
+    // Both kinds now lead with `icon`, but the banner blurs its copy and so
+    // fetches a far larger source. Sharing one entry would either starve the
+    // blur or make every row carry a 768 px image.
+    expect(requested[0]).toInclude("/768/");
     expect(readLogo("symbol", "openai.com")).toBeNull();
+  });
+});
+
+describe("logoDraw", () => {
+  test("gives a square plate the whole circle bar its breathing room", () => {
+    // The point of leading with `icon`: an app icon is meant to BE the avatar.
+    // The 0.86 is room for marks that touch their own edge, and it only works
+    // because the `edge` wash puts the plate's own colour behind it.
+    expect(logoDraw({ plate: true, aspect: 1 })).toEqual({
+      fill: 0.86,
+      wash: "edge",
+    });
+    // A 400x400 source a resize returned as 400x399 is still a square plate.
+    expect(logoDraw({ plate: true, aspect: 400 / 399 }).wash).toBe("edge");
+  });
+
+  test("insets a wide plate further, and blurs its backing instead", () => {
+    // icloud.com: the `icon` tier answers, but with a transparent 512x333
+    // cloud. Treating that as the square it is not drew the cloud at 60% of the
+    // circle; backing it with a full-bleed copy shows the transparent corners
+    // as dark wedges, which is why this one is washed rather than edged.
+    const draw = logoDraw({ plate: true, aspect: 512 / 333 });
+    expect(draw.wash).toBe("wide");
+    expect(draw.fill).toBeCloseTo(0.721, 3);
+    expect(draw.fill).toBeLessThan(logoDraw({ plate: true, aspect: 1 }).fill);
+  });
+
+  test("insets a bare mark to the inscribed square, and backs it with nothing", () => {
+    // Nothing behind a bare mark, so its whole box has to fit inside the
+    // circle: at square that is exactly √½, and the box's diagonal is the
+    // diameter.
+    const square = logoDraw({ plate: false, aspect: 1 });
+    expect(square.wash).toBe("none");
+    expect(square.fill).toBeCloseTo(Math.SQRT1_2, 6);
+    const wide = logoDraw({ plate: false, aspect: 512 / 333 }).fill;
+    expect(Math.hypot(wide, wide / (512 / 333))).toBeCloseTo(1, 6);
+    // Netflix's symbol is 282x512 — taller than wide. The inset is the same
+    // either way round, which is what stopped the circle slicing the flat top
+    // and bottom off its N.
+    expect(logoDraw({ plate: false, aspect: 282 / 512 }).fill).toBeCloseTo(
+      logoDraw({ plate: false, aspect: 512 / 282 }).fill,
+      6,
+    );
   });
 });

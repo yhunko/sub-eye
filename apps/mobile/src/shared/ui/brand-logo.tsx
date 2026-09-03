@@ -3,25 +3,32 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import {
   type LogoEntry,
   type LogoKind,
+  type LogoWash,
   loadLogo,
+  logoDraw,
   logoIsStale,
   readLogo,
 } from "@/shared/lib/logos";
 import { colors } from "./theme";
 
-// Share of the circle the mark occupies. A symbol arrives on no plate of its
-// own, so it is drawn inside the INSCRIBED SQUARE (1/√2) and can never touch the
-// clip whatever its aspect — that is what stopped the circle slicing the flat
-// top and bottom off Netflix's N. A plate already has the mark baked onto a
-// square, so shrinking it that far would leave a small card adrift in the
-// circle: it stays nearly full-bleed and accepts losing the corners.
-const SYMBOL_INSET = Math.SQRT1_2;
-const PLATE_INSET = 0.92;
+/**
+ * How far past the circle a `wide` backing is zoomed.
+ *
+ * Far enough that the circle only ever sees the middle ~40% of the image, which
+ * for a transparent mark is the solid inside of the mark itself — iCloud's
+ * cloud becomes a blue field. Zooming rather than blurring is deliberate:
+ * `blurRadius` is a radius over the DECODED bitmap and RN decodes to the view
+ * it is drawing into, so one radius is a different blur at every avatar size.
+ * At 40 the 38 pt row came out clean blue and the 108 pt hero came out a dark
+ * circle with a crisp cloud, from the same cached image. A scale has no such
+ * dependence.
+ */
+const WIDE_SCALE = 2.4;
 
 type LogoState =
   | { status: "pending" }
   | { status: "none" }
-  | { status: "ready"; uri: string; plate: boolean };
+  | { status: "ready"; uri: string; fill: number; wash: LogoWash };
 
 /**
  * The cached logo for a domain, refreshed in the background when it ages out.
@@ -73,7 +80,7 @@ export function useBrandLogo(
   const settled = loaded?.domain === domain;
   const entry = settled ? loaded.entry : readLogo(kind, domain);
   if (entry?.uri)
-    return { status: "ready", uri: entry.uri, plate: entry.plate };
+    return { status: "ready", uri: entry.uri, ...logoDraw(entry) };
   // A stored miss is a final answer, and so is a walk that came back with
   // nothing: both mean the letter tile rather than an empty plate.
   if (entry || settled) return { status: "none" };
@@ -118,20 +125,35 @@ export function BrandLogo({
     );
   }
 
-  const inner = Math.round(size * (logo.plate ? PLATE_INSET : SYMBOL_INSET));
+  const inner = Math.round(size * logo.fill);
+  // An `edge` wash is the plate at exactly the avatar's size, so the ring it
+  // leaves showing is the plate's own outer band and matches the inset copy.
+  const spread = logo.wash === "wide" ? WIDE_SCALE : 1;
+  const backing = Math.round(size * spread);
 
   return (
-    <View style={[styles.plate, box]}>
+    // `overflow: hidden` is what makes the circle a clip rather than a rounded
+    // background: a `wide` wash is drawn past the avatar on purpose, and the
+    // inset plate's corners fall outside the circle by design.
+    <View style={[styles.plate, styles.clip, box]}>
+      {logo.wash === "none" ? null : (
+        <Image
+          accessibilityIgnoresInvertColors
+          source={{ uri: logo.uri }}
+          style={{
+            position: "absolute",
+            width: backing,
+            height: backing,
+            left: Math.round((size - backing) / 2),
+            top: Math.round((size - backing) / 2),
+          }}
+          resizeMode="cover"
+        />
+      )}
       <Image
         accessibilityIgnoresInvertColors
         source={{ uri: logo.uri }}
-        style={{
-          width: inner,
-          height: inner,
-          // A bare mark gets no rounding — there is no plate to clip, and
-          // rounding it would bite the mark a second time.
-          ...(logo.plate ? { borderRadius: inner / 2 } : null),
-        }}
+        style={{ width: inner, height: inner }}
         resizeMode="contain"
       />
     </View>
@@ -139,6 +161,7 @@ export function BrandLogo({
 }
 
 const styles = StyleSheet.create({
+  clip: { overflow: "hidden" },
   plate: {
     alignItems: "center",
     justifyContent: "center",

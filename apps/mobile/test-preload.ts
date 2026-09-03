@@ -39,6 +39,21 @@ mock.module("react-native", () => ({
   ActionSheetIOS: { showActionSheetWithOptions: () => {} },
   Alert: { alert: () => {} },
   Platform: { OS: "ios", select: (spec: Record<string, unknown>) => spec.ios },
+  Image: {
+    /**
+     * `shared/lib/logos` measures every logo it stores, because Brandfetch's
+     * `w`/`h` are a bounding box and the tier that answered does not say
+     * whether the image inside it is square.
+     *
+     * Steerable rather than fixed: a test that wants to prove a wide image is
+     * recorded as one sets `__logoSize`, and leaving it unset reports a square,
+     * which is what the real callback resolves to when it cannot measure.
+     */
+    getSize: (_uri: string, ok: (width: number, height: number) => void) => {
+      const size = (globalThis as { __logoSize?: [number, number] }).__logoSize;
+      ok(size?.[0] ?? 1, size?.[1] ?? 1);
+    },
+  },
 }));
 
 /**

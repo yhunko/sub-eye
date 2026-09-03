@@ -1,3 +1,4 @@
+import { Image } from "react-native";
 import { createMMKV } from "react-native-mmkv";
 import { env } from "@/shared/config/env";
 
@@ -35,21 +36,86 @@ export type LogoKind = "symbol" | "plate";
  */
 export type LogoEntry = {
   uri: string | null;
-  /** Whether the mark arrived on its own opaque square. Drives the inset. */
+  /** Whether the mark arrived from the `icon` tier — Brandfetch's square plate. */
   plate: boolean;
+  /** The stored image's width / height. 1 when it could not be measured. */
+  aspect: number;
   /** When this was fetched. */
   at: number;
 };
+
+/**
+ * The margin a plate gets inside the circle.
+ *
+ * An app icon draws its mark right up to its own edge — Notion's cube and
+ * Microsoft's four squares both touch it — so a plate drawn edge to edge has
+ * those corners sliced off by the circle and reads as cramped. Backing it off
+ * to 0.86 is the room; the plate's own corners now fall outside the circle
+ * instead, which is invisible only because `BrandLogo` draws the same plate
+ * behind it. The two are one decision.
+ *
+ * 0.78 was tried and is too far: enough of the backing layer shows through that
+ * its colour stops matching the mark's own edge.
+ */
+const PLATE_BREATH = 0.86;
+
+/**
+ * What `BrandLogo` draws behind the mark to give the circle a colour.
+ *
+ * `edge` is the same plate at full bleed. The ring it leaves visible is the
+ * plate's OWN outer band, so it matches the inset copy exactly and there is no
+ * seam — Notion comes out a clean white circle rather than a white square on a
+ * grey one.
+ *
+ * `wide` is for a plate that is not square, which in practice means a
+ * transparent mark like icloud.com's 512×333 cloud. Full bleed there would
+ * show the transparent corners as dark wedges, so the copy is scaled well past
+ * the circle and blurred into a flat field of the mark's own colour — the
+ * trick the detail hero's backdrop uses on the same image.
+ *
+ * `none` is a bare symbol, the fallback tier for a brand with no icon at all.
+ * Those are usually one flat colour, and washing a white mark would tint the
+ * circle white and swallow it.
+ */
+export type LogoWash = "none" | "edge" | "wide";
+
+/**
+ * How to draw this logo inside the avatar's circle: how much of the diameter
+ * the mark occupies, and what goes behind it.
+ *
+ * `fill` for a bare mark is the largest box of that aspect that fits INSIDE the
+ * circle — for a long edge `long` times the short one, `long / √(1 + long²)` of
+ * the diameter. That is √½ at square, which is the constant this used to
+ * hardcode for every image, and hardcoding it is what drew iCloud's cloud at
+ * 60% of the circle where measured it asks for 0.84.
+ */
+export function logoDraw(entry: { plate: boolean; aspect: number }): {
+  fill: number;
+  wash: LogoWash;
+} {
+  const long = Math.max(entry.aspect, 1 / entry.aspect);
+  const inscribed = long / Math.hypot(1, long);
+  if (!entry.plate) return { fill: inscribed, wash: "none" };
+  // Within 6% of square is a plate that a resize rounded off, not a wide mark.
+  return long < 1.06
+    ? { fill: PLATE_BREATH, wash: "edge" }
+    : { fill: PLATE_BREATH * inscribed, wash: "wide" };
+}
 
 /**
  * ONE source size per kind, not one per view size.
  *
  * Every call site used to ask for its own pixel size — 84, 108, 114, 120 and
  * 162 on a 3x screen — so one brand meant five URLs, five cache entries and
- * five downloads. A single generous size is one entry every avatar draws from,
- * and 256 covers the largest (54 pt) even on a 4x screen, for 3–6 KB.
+ * five downloads. A single generous size is one entry every avatar draws from.
+ *
+ * 384, not 256, because a plate now fills the circle instead of sitting at 70%
+ * of it: the detail hero's 108 pt avatar went from asking for 76 real pixels a
+ * side to 108, which is 324 on a 3x screen. It is also close to free — most
+ * brands store a 400 px square, so 384 is the last size that still downscales
+ * rather than upscaling, and the file stays 4–8 KB.
  */
-const SYMBOL_PX = 256;
+const SYMBOL_PX = 384;
 
 /**
  * The banner blurs this into a colour wash, and `blurRadius` blurs the SOURCE
@@ -107,16 +173,20 @@ const MAX_ENTRIES = 500;
  * Brandfetch's own wordmark, which would put another company's logo on the
  * user's row. A 404 moves us down this list instead.
  *
- * The order is empirical, and the reason the symbol ladder has three entries is
- * that no single one covers every brand:
- *  - `symbol/theme/light` is the pale-ink variant, the only one that is legible
- *    on this app's near-black plate — but it 404s for brands that never stored
- *    one (netflix).
- *  - `symbol` unpinned serves whatever variant a brand does have. Correct for
- *    colourful marks, and the reason monochrome ones must try `light` first:
- *    unpinned, OpenAI comes back near-black on near-black.
- *  - `icon` is the social-profile square. Lowest fidelity of the three and
- *    plate-shaped, but it is the only tier that covers icloud.com.
+ * `icon` LEADS, and that inverted the order this had for months.
+ *
+ * The old order preferred a bare `symbol` so the mark would sit on the app's
+ * own plate. Measured across 32 brands (2026-09-03) that is simply the worse
+ * picture: `icon` answered for every one of them, is a 400×400 opaque square
+ * for all but icloud.com, and fills the circle the way an app icon does —
+ * whereas a bare symbol has to be inset to √½ so the circle cannot clip it, and
+ * lands as a small monochrome mark on dark grey. Amazon, Microsoft, Xbox, Adobe
+ * and Google One were all drawing at 70% of a circle in their brand-less
+ * colours when the same brands have a full-colour square one tier down.
+ *
+ * The symbol tiers stay as fallbacks for a brand `icon` does not cover, and
+ * `theme/light` still leads them: unpinned, OpenAI's symbol comes back
+ * near-black on near-black.
  */
 function sourcesFor(
   kind: LogoKind,
@@ -142,9 +212,9 @@ function sourcesFor(
   if (kind === "plate") return [{ uri: bf("icon"), plate: true }];
 
   return [
+    { uri: bf("icon"), plate: true },
     { uri: bf("symbol/theme/light"), plate: false },
     { uri: bf("symbol"), plate: false },
-    { uri: bf("icon"), plate: true },
   ];
 }
 
@@ -165,6 +235,10 @@ const isEntry = (value: unknown): value is LogoEntry => {
   return (
     typeof entry?.at === "number" &&
     typeof entry.plate === "boolean" &&
+    // Also the version gate: an entry written before the avatar measured its
+    // images has no aspect, and reading it back as a square would full-bleed
+    // iCloud's cloud. Rejecting it here refetches instead.
+    typeof entry.aspect === "number" &&
     (entry.uri === null || typeof entry.uri === "string")
   );
 };
@@ -238,6 +312,30 @@ const toDataUri = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+/**
+ * The stored image's aspect ratio, measured rather than assumed.
+ *
+ * Brandfetch's `w`/`h` are a BOUNDING BOX, not a size: every tier fits inside
+ * it and keeps its own proportions. So `icon` is a 400×400 opaque plate for
+ * almost every brand and a 512×333 transparent cloud for icloud.com, and the
+ * tier that answered cannot tell those apart — only the pixels can.
+ *
+ * `Image.getSize` reads the decoded header through the same loader that will
+ * draw it, so it costs one hop per FETCH, not per render, and the answer is
+ * cached with the bytes.
+ *
+ * Resolves 1 rather than rejecting: an image we cannot measure is treated as
+ * the square it usually is, which is what this did before it measured anything.
+ */
+const measure = (uri: string): Promise<number> =>
+  new Promise((resolve) => {
+    Image.getSize(
+      uri,
+      (width, height) => resolve(width > 0 && height > 0 ? width / height : 1),
+      () => resolve(1),
+    );
+  });
+
 const inFlight = new Map<string, Promise<LogoEntry | null>>();
 const attemptedAt = new Map<string, number>();
 
@@ -254,7 +352,12 @@ async function walk(
     try {
       const uri = await download(source.uri);
       if (uri) {
-        return writeLogo(key, { uri, plate: source.plate, at: Date.now() });
+        return writeLogo(key, {
+          uri,
+          plate: source.plate,
+          aspect: await measure(uri),
+          at: Date.now(),
+        });
       }
     } catch {
       answered = false;
@@ -262,7 +365,7 @@ async function walk(
   }
 
   return answered
-    ? writeLogo(key, { uri: null, plate: false, at: Date.now() })
+    ? writeLogo(key, { uri: null, plate: false, aspect: 1, at: Date.now() })
     : null;
 }
 
