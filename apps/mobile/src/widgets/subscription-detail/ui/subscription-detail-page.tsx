@@ -41,21 +41,18 @@ import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 import { chargeBeforeCancellation } from "../model/cancellation";
 import { cycleProgress } from "../model/cycle";
-import { useLifecycleActions } from "../model/use-lifecycle-actions";
+import {
+  type LifecycleActionItem,
+  useLifecycleActions,
+} from "../model/use-lifecycle-actions";
 import { DetailHero } from "./detail-hero";
 import { EndedEmpty } from "./ended-empty";
 import { TimelineRow } from "./timeline-row";
 
 // Platform symbols per lifecycle action. Keys come from the action builder;
-// anything unmapped simply shows as a text-only menu row. One table rather than
-// two because the primary button needs the same glyphs the menu does — and the
-// primary is no longer always `edit`.
-const EDIT_ICON: { ios: SFSymbol; android: AndroidSymbol } = {
-  ios: "pencil",
-  android: "edit",
-};
+// anything unmapped simply shows as a text-only menu row.
 const ACTION_ICON: Record<string, { ios: SFSymbol; android: AndroidSymbol }> = {
-  edit: EDIT_ICON,
+  edit: { ios: "pencil", android: "edit" },
   pricing: { ios: "tag", android: "sell" },
   pause: { ios: "pause.circle", android: "pause_circle" },
   resume: { ios: "play.circle", android: "play_circle" },
@@ -121,7 +118,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
 
   // Called unconditionally, before any early return — the mutations behind it
   // are hooks. It tolerates the empty list while the detail is still loading.
-  const { primary, overflow, pageAction } = useLifecycleActions({
+  const { lead, overflow, pageAction } = useLifecycleActions({
     id,
     name: subscription?.name ?? "",
     status: subscription?.status ?? "active",
@@ -287,6 +284,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // dismissed, so the two never fight over the screen.
   const showMore = () =>
     presentChoice(subscription.name, m.detail_moreActions(), [
+      ...(lead ? [{ label: lead.label, onPress: lead.run }] : []),
       ...(pricing.length
         ? [
             {
@@ -302,23 +300,22 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       })),
     ]);
 
+  const menuAction = (item: LifecycleActionItem) => {
+    const icon = ACTION_ICON[item.key];
+    return {
+      type: "action" as const,
+      label: item.label,
+      destructive: item.destructive,
+      icon: icon && { type: "sfSymbol" as const, name: icon.ios },
+      onPress: item.run,
+    };
+  };
+
+  // ONE trailing item. The banner's identity is centred under this bar, and a
+  // second capsule beside the ellipsis pushed it off centre for an action the
+  // menu can carry as its first row.
   const barItems = () => [
-    ...(primary
-      ? [
-          {
-            type: "button" as const,
-            label: primary.label,
-            icon: {
-              type: "sfSymbol" as const,
-              name: (ACTION_ICON[primary.key] ?? EDIT_ICON).ios,
-            },
-            variant: "prominent" as const,
-            tintColor: colors.accent,
-            onPress: primary.run,
-          },
-        ]
-      : []),
-    ...(overflow.length || pricingEntry.length
+    ...(lead || overflow.length || pricingEntry.length
       ? [
           {
             type: "menu" as const,
@@ -334,17 +331,9 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               // links. The submenu carries the same flag for the same reason.
               multiselectable: true,
               items: [
+                ...(lead ? [menuAction(lead)] : []),
                 ...pricingEntry,
-                ...overflow.map((item) => {
-                  const icon = ACTION_ICON[item.key];
-                  return {
-                    type: "action" as const,
-                    label: item.label,
-                    destructive: item.destructive,
-                    icon: icon && { type: "sfSymbol" as const, name: icon.ios },
-                    onPress: item.run,
-                  };
-                }),
+                ...overflow.map(menuAction),
               ],
             },
           },
@@ -355,39 +344,22 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // Android has no bar button items; it keeps the custom view (expo-router only
   // swaps in the native items on iOS) and the OS action sheet behind it.
   const androidActions =
-    primary || overflow.length || pricing.length
+    lead || overflow.length || pricing.length
       ? () => (
           <View style={styles.headerActions}>
-            {primary ? (
-              <Pressable
-                onPress={primary.run}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={primary.label}
-              >
-                <SymbolView
-                  name={ACTION_ICON[primary.key] ?? EDIT_ICON}
-                  size={22}
-                  tintColor={colors.accent}
-                  weight="semibold"
-                />
-              </Pressable>
-            ) : null}
-            {overflow.length || pricing.length ? (
-              <Pressable
-                onPress={showMore}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={m.detail_moreActions()}
-              >
-                <SymbolView
-                  name={{ ios: "ellipsis", android: "more_vert" }}
-                  size={22}
-                  tintColor={colors.text}
-                  weight="semibold"
-                />
-              </Pressable>
-            ) : null}
+            <Pressable
+              onPress={showMore}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.detail_moreActions()}
+            >
+              <SymbolView
+                name={{ ios: "ellipsis", android: "more_vert" }}
+                size={22}
+                tintColor={colors.text}
+                weight="semibold"
+              />
+            </Pressable>
           </View>
         )
       : undefined;
@@ -397,7 +369,10 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       <Stack.Screen
         options={{
           ...nativeHeaderChrome,
-          title: subscription.name,
+          // Empty, not absent: the banner below carries the name at 26pt under
+          // a centred logo, and a bar title printed it a second time a
+          // finger's width above it.
+          headerTitle: "",
           unstable_headerRightItems: barItems,
           headerRight: androidActions,
         }}

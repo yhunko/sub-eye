@@ -226,6 +226,13 @@ function RootLayout() {
                 // anyway: Home, the list, the due digest and a deep link all
                 // reach this one screen, so there is no single place to name.
                 headerBackButtonDisplayMode: "generic",
+                // The page's own <Stack.Screen> sits AFTER its loading and
+                // error returns, so those two branches take whatever is set
+                // here — and an unset title falls back to the route name, which
+                // rendered a literal "subscriptions/[id]/index" across the bar.
+                // Empty is what the loaded screen wants too: the banner names
+                // the subscription under a centred logo.
+                headerTitle: "",
               }}
             />
             <Stack.Screen

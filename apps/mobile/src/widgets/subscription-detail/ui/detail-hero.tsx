@@ -33,6 +33,19 @@ const OVERSCAN = 12;
  */
 const OVERSCROLL_REACH = 420;
 
+/**
+ * The banner's whole subject, so it takes the room a subject takes.
+ *
+ * Fixed at every Dynamic Type setting: a logo is a picture, not text, and the
+ * calendar's tiles and the month strip keep theirs the same size for the same
+ * reason. The name under it is what grows.
+ */
+const LOGO = 84;
+
+/** The name's design size, and the point size it may never shrink past. */
+const NAME_SIZE = 26;
+const NAME_FLOOR = 18;
+
 /** A segment value's design size, and the point size it may never shrink past. */
 const SEGMENT_SIZE = 15;
 const SEGMENT_FLOOR = 11;
@@ -176,6 +189,8 @@ export function DetailHero({
   // of one syllable each. It becomes a stack, and the pill becomes a card.
   const stacked = useLargeText();
 
+  const nameFloor = useShrinkFloor(NAME_SIZE, NAME_FLOOR);
+
   const insets = useSafeAreaInsets();
   const reach =
     Platform.OS === "ios"
@@ -191,17 +206,33 @@ export function DetailHero({
     >
       <Backdrop domain={brandDomain} />
 
-      <View style={[styles.identity, stacked && styles.identityStacked]}>
+      {/* Centred under the nav bar, which now holds nothing but a back chevron
+          and the ellipsis — so the logo sits between the two controls and the
+          banner answers "which subscription is this" and nothing else. Beside
+          the name it had 298pt to work with and "Amazon" at 78pt broke
+          MID-WORD; under it, both have the whole width. */}
+      <View style={styles.identity}>
         <BrandLogo
           name={name}
           brandDomain={brandDomain}
-          size={54}
+          size={LOGO}
           dimmed={dead}
         />
-        <View style={styles.identityText}>
-          <Text style={styles.name}>{name}</Text>
-          {dateLine ? <Text style={styles.dateLine}>{dateLine}</Text> : null}
-        </View>
+        {/* Two lines and then it SHRINKS, rather than wrapping freely. "Adobe
+            Creative Cloud" at the accessibility sizes broke mid-word — "Creativ
+            / e Cloud" — because a single word was wider than the phone, which
+            no amount of width fixes. The floor is a point size, so the name
+            still grows with Dynamic Type; it just stops growing past what the
+            screen can set. */}
+        <Text
+          style={styles.name}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={nameFloor}
+        >
+          {name}
+        </Text>
+        {dateLine ? <Text style={styles.dateLine}>{dateLine}</Text> : null}
       </View>
 
       <View style={[styles.bar, stacked && styles.barStacked]}>
@@ -258,6 +289,11 @@ const styles = StyleSheet.create({
   // Only the part of the banner that is ever on screen at rest. `top` is the
   // overscroll reach, so this begins exactly where the flat scrim above it ends
   // and at the same 0.40 — one continuous wash across the join.
+  //
+  // It lands on rgba(…,1), the page's own background, rather than short of it:
+  // at 0.93 the banner ended on a colour a shade off `colors.bg` and its rounded
+  // bottom read as a card edge under the capsule. Fully opaque, the wash simply
+  // becomes the page and the corners stop being visible at all.
   scrim: {
     position: "absolute",
     top: OVERSCROLL_REACH,
@@ -265,7 +301,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     experimental_backgroundImage:
-      "linear-gradient(180deg, rgba(15,17,21,0.40) 0%, rgba(15,17,21,0.72) 52%, rgba(15,17,21,0.93) 100%)",
+      "linear-gradient(180deg, rgba(15,17,21,0.40) 0%, rgba(15,17,21,0.72) 52%, rgba(15,17,21,1) 100%)",
   },
   // The reach itself: a flat scrim at the gradient's starting value. Only ever
   // seen mid-pull, and only the last few points of it.
@@ -278,33 +314,20 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15,17,21,0.40)",
   },
 
-  identity: { flexDirection: "row", alignItems: "center", gap: 14 },
-  // Beside a 54pt logo the name gets 298pt, and "Amazon" at 78pt does not fit in
-  // it — it broke MID-WORD. Under the logo it has the whole banner.
-  identityStacked: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  // `flexBasis: "auto"` rather than `flex: 1`: down the column basis 0 would
-  // collapse the text block, because the banner's height is its content's.
-  identityText: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "auto",
-    minWidth: 0,
-    alignSelf: "stretch",
-  },
+  identity: { alignItems: "center", alignSelf: "stretch" },
   name: {
-    fontSize: 22,
+    marginTop: 14,
+    fontSize: NAME_SIZE,
     fontWeight: "800",
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
+    textAlign: "center",
     color: colors.text,
   },
   dateLine: {
     marginTop: 4,
     fontSize: 13,
     fontWeight: "600",
+    textAlign: "center",
     color: "rgba(242,244,248,0.72)",
   },
 

@@ -508,6 +508,15 @@ show through and the negative margin would only hide the top of the banner.
 `@react-navigation/elements` is not in this tree — there is no `useHeaderHeight`
 to ask.
 
+**The detail nav bar holds ONE trailing item and no title.** Edit had a
+prominent bar button of its own; it now leads the ellipsis menu instead, because
+the banner's identity is centred under that bar and a second glass capsule
+pushed it off centre — for an action a menu can carry as its first row. The
+title is `headerTitle: ""` on BOTH the page's own `<Stack.Screen>` and the root
+layout's registration: the page's options sit after its loading and error
+returns, so those two branches take the root's, and an unset title there falls
+back to the route name (a literal "subscriptions/[id]/index" across the bar).
+
 **The card owns the EVENT; the banner only says which subscription this is.**
 Both used to print the same date, and the split has since gone the other way:
 the banner keeps a line only for a subscription that is OVER
@@ -518,6 +527,16 @@ banner's own line was deleted along with `detail_heroRenews` / `heroEnds` /
 `heroResumes`. The capsule still answers "what does this cost", which is a
 different question from "what is about to happen": a trial converting before the
 next payment makes those two different numbers.
+
+The identity is a CENTRED column — an 84pt logo between the two nav-bar
+controls, the name under it — and the name shrinks rather than wrapping freely.
+Beside the logo it had 298pt and "Amazon" at 78pt broke MID-WORD; centred it has
+the full width and "Adobe Creative Cloud" broke anyway, because one word was
+wider than the phone, which no amount of width fixes. `numberOfLines={2}` plus
+`useShrinkFloor(26, 18)` is the pattern the countdown beneath it already uses:
+the floor is a point size, so the name still grows with Dynamic Type and only
+stops growing past what the screen can set. The logo does not scale at all — it
+is a picture, like the calendar's tiles.
 
 **An amount printed beside a date must be the amount taken ON that date.**
 `billing.preferred` is the price effective TODAY, and the list never settles a
