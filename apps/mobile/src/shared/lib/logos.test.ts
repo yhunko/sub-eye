@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { clearLogos, loadLogo, logoDraw, logoIsStale, readLogo } from "./logos";
+import { clearLogos, loadLogo, logoFill, logoIsStale, readLogo } from "./logos";
 
 /**
  * Stands in for RN's native `FileReader`, which Bun has no equivalent of. The
@@ -183,44 +183,34 @@ describe("loadLogo", () => {
   });
 });
 
-describe("logoDraw", () => {
-  test("gives a square plate the whole circle bar its breathing room", () => {
+describe("logoFill", () => {
+  test("fills the circle with a square plate, corners and all", () => {
     // The point of leading with `icon`: an app icon is meant to BE the avatar.
-    // The 0.86 is room for marks that touch their own edge, and it only works
-    // because the `edge` wash puts the plate's own colour behind it.
-    expect(logoDraw({ plate: true, aspect: 1 })).toEqual({
-      fill: 0.86,
-      wash: "edge",
-    });
+    // It cannot be inset — the plate is an opaque JPEG, so any margin paints
+    // its own background as a ring, which on Spotify's green disc was white.
+    expect(logoFill({ plate: true, aspect: 1 })).toBe(1);
     // A 400x400 source a resize returned as 400x399 is still a square plate.
-    expect(logoDraw({ plate: true, aspect: 400 / 399 }).wash).toBe("edge");
+    expect(logoFill({ plate: true, aspect: 400 / 399 })).toBe(1);
   });
 
-  test("insets a wide plate further, and blurs its backing instead", () => {
-    // icloud.com: the `icon` tier answers, but with a transparent 512x333
-    // cloud. Treating that as the square it is not drew the cloud at 60% of the
-    // circle; backing it with a full-bleed copy shows the transparent corners
-    // as dark wedges, which is why this one is washed rather than edged.
-    const draw = logoDraw({ plate: true, aspect: 512 / 333 });
-    expect(draw.wash).toBe("wide");
-    expect(draw.fill).toBeCloseTo(0.721, 3);
-    expect(draw.fill).toBeLessThan(logoDraw({ plate: true, aspect: 1 }).fill);
+  test("insets a plate that is not square, by how wide it actually is", () => {
+    // icloud.com: the `icon` tier answers, but with a transparent 512x333 cloud
+    // rather than a square. Filling with that crops the cloud away to a flat
+    // blue disc; treating it as the square it is not drew it at 60% of the
+    // circle. Measured, it asks for 0.84.
+    const fill = logoFill({ plate: true, aspect: 512 / 333 });
+    expect(fill).toBeCloseTo(0.838, 3);
+    // The box's DIAGONAL is the diameter, so the mark reaches the edge, no more.
+    expect(Math.hypot(fill, fill / (512 / 333))).toBeCloseTo(1, 6);
   });
 
-  test("insets a bare mark to the inscribed square, and backs it with nothing", () => {
-    // Nothing behind a bare mark, so its whole box has to fit inside the
-    // circle: at square that is exactly √½, and the box's diagonal is the
-    // diameter.
-    const square = logoDraw({ plate: false, aspect: 1 });
-    expect(square.wash).toBe("none");
-    expect(square.fill).toBeCloseTo(Math.SQRT1_2, 6);
-    const wide = logoDraw({ plate: false, aspect: 512 / 333 }).fill;
-    expect(Math.hypot(wide, wide / (512 / 333))).toBeCloseTo(1, 6);
+  test("insets a bare mark to the inscribed square, whichever way it is long", () => {
+    expect(logoFill({ plate: false, aspect: 1 })).toBeCloseTo(Math.SQRT1_2, 6);
     // Netflix's symbol is 282x512 — taller than wide. The inset is the same
     // either way round, which is what stopped the circle slicing the flat top
     // and bottom off its N.
-    expect(logoDraw({ plate: false, aspect: 282 / 512 }).fill).toBeCloseTo(
-      logoDraw({ plate: false, aspect: 512 / 282 }).fill,
+    expect(logoFill({ plate: false, aspect: 282 / 512 })).toBeCloseTo(
+      logoFill({ plate: false, aspect: 512 / 282 }),
       6,
     );
   });

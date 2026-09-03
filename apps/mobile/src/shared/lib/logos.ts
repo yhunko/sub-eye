@@ -45,61 +45,31 @@ export type LogoEntry = {
 };
 
 /**
- * The margin a plate gets inside the circle.
+ * How much of the avatar's circle this logo's mark occupies, as a fraction of
+ * the diameter.
  *
- * An app icon draws its mark right up to its own edge — Notion's cube and
- * Microsoft's four squares both touch it — so a plate drawn edge to edge has
- * those corners sliced off by the circle and reads as cramped. Backing it off
- * to 0.86 is the room; the plate's own corners now fall outside the circle
- * instead, which is invisible only because `BrandLogo` draws the same plate
- * behind it. The two are one decision.
+ * A square plate FILLS it. That plate is Brandfetch's `icon`, an opaque JPEG of
+ * the brand's own app icon, and the circle only ever cuts its corners: measured
+ * over 18 brands, 14 have nothing but background out there, and the four that
+ * do — Spotify, Duolingo, iCloud, Notion — are marks that fill their own frame
+ * on purpose. So the clip costs almost nothing, and filling is what makes a row
+ * read as the brand rather than as a sticker on a dark disc.
  *
- * 0.78 was tried and is too far: enough of the backing layer shows through that
- * its colour stops matching the mark's own edge.
+ * Insetting it is not an option, however cramped Notion's cube looks: the plate
+ * is opaque, so any margin paints the plate's OWN background as a ring. Spotify
+ * is a green disc on a white square, and at 0.86 that ring was white.
+ *
+ * A mark that is not a square plate has no field of its own, so its whole box
+ * has to fit INSIDE the circle: for a long edge `long` times the short one, the
+ * largest that fits is `long / √(1 + long²)` of the diameter. That is √½ at
+ * square, which is the constant this used to hardcode for every image, and
+ * hardcoding it is what drew iCloud's 512×333 cloud at 60% of the circle where
+ * measured it asks for 0.84.
  */
-const PLATE_BREATH = 0.86;
-
-/**
- * What `BrandLogo` draws behind the mark to give the circle a colour.
- *
- * `edge` is the same plate at full bleed. The ring it leaves visible is the
- * plate's OWN outer band, so it matches the inset copy exactly and there is no
- * seam — Notion comes out a clean white circle rather than a white square on a
- * grey one.
- *
- * `wide` is for a plate that is not square, which in practice means a
- * transparent mark like icloud.com's 512×333 cloud. Full bleed there would
- * show the transparent corners as dark wedges, so the copy is scaled well past
- * the circle and blurred into a flat field of the mark's own colour — the
- * trick the detail hero's backdrop uses on the same image.
- *
- * `none` is a bare symbol, the fallback tier for a brand with no icon at all.
- * Those are usually one flat colour, and washing a white mark would tint the
- * circle white and swallow it.
- */
-export type LogoWash = "none" | "edge" | "wide";
-
-/**
- * How to draw this logo inside the avatar's circle: how much of the diameter
- * the mark occupies, and what goes behind it.
- *
- * `fill` for a bare mark is the largest box of that aspect that fits INSIDE the
- * circle — for a long edge `long` times the short one, `long / √(1 + long²)` of
- * the diameter. That is √½ at square, which is the constant this used to
- * hardcode for every image, and hardcoding it is what drew iCloud's cloud at
- * 60% of the circle where measured it asks for 0.84.
- */
-export function logoDraw(entry: { plate: boolean; aspect: number }): {
-  fill: number;
-  wash: LogoWash;
-} {
+export function logoFill(entry: { plate: boolean; aspect: number }): number {
   const long = Math.max(entry.aspect, 1 / entry.aspect);
-  const inscribed = long / Math.hypot(1, long);
-  if (!entry.plate) return { fill: inscribed, wash: "none" };
   // Within 6% of square is a plate that a resize rounded off, not a wide mark.
-  return long < 1.06
-    ? { fill: PLATE_BREATH, wash: "edge" }
-    : { fill: PLATE_BREATH * inscribed, wash: "wide" };
+  return entry.plate && long < 1.06 ? 1 : long / Math.hypot(1, long);
 }
 
 /**

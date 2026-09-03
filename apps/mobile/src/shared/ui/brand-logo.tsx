@@ -3,32 +3,17 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import {
   type LogoEntry,
   type LogoKind,
-  type LogoWash,
   loadLogo,
-  logoDraw,
+  logoFill,
   logoIsStale,
   readLogo,
 } from "@/shared/lib/logos";
 import { colors } from "./theme";
 
-/**
- * How far past the circle a `wide` backing is zoomed.
- *
- * Far enough that the circle only ever sees the middle ~40% of the image, which
- * for a transparent mark is the solid inside of the mark itself — iCloud's
- * cloud becomes a blue field. Zooming rather than blurring is deliberate:
- * `blurRadius` is a radius over the DECODED bitmap and RN decodes to the view
- * it is drawing into, so one radius is a different blur at every avatar size.
- * At 40 the 38 pt row came out clean blue and the 108 pt hero came out a dark
- * circle with a crisp cloud, from the same cached image. A scale has no such
- * dependence.
- */
-const WIDE_SCALE = 2.4;
-
 type LogoState =
   | { status: "pending" }
   | { status: "none" }
-  | { status: "ready"; uri: string; fill: number; wash: LogoWash };
+  | { status: "ready"; uri: string; fill: number };
 
 /**
  * The cached logo for a domain, refreshed in the background when it ages out.
@@ -80,7 +65,7 @@ export function useBrandLogo(
   const settled = loaded?.domain === domain;
   const entry = settled ? loaded.entry : readLogo(kind, domain);
   if (entry?.uri)
-    return { status: "ready", uri: entry.uri, ...logoDraw(entry) };
+    return { status: "ready", uri: entry.uri, fill: logoFill(entry) };
   // A stored miss is a final answer, and so is a walk that came back with
   // nothing: both mean the letter tile rather than an empty plate.
   if (entry || settled) return { status: "none" };
@@ -126,34 +111,20 @@ export function BrandLogo({
   }
 
   const inner = Math.round(size * logo.fill);
-  // An `edge` wash is the plate at exactly the avatar's size, so the ring it
-  // leaves showing is the plate's own outer band and matches the inset copy.
-  const spread = logo.wash === "wide" ? WIDE_SCALE : 1;
-  const backing = Math.round(size * spread);
 
   return (
-    // `overflow: hidden` is what makes the circle a clip rather than a rounded
-    // background: a `wide` wash is drawn past the avatar on purpose, and the
-    // inset plate's corners fall outside the circle by design.
-    <View style={[styles.plate, styles.clip, box]}>
-      {logo.wash === "none" ? null : (
-        <Image
-          accessibilityIgnoresInvertColors
-          source={{ uri: logo.uri }}
-          style={{
-            position: "absolute",
-            width: backing,
-            height: backing,
-            left: Math.round((size - backing) / 2),
-            top: Math.round((size - backing) / 2),
-          }}
-          resizeMode="cover"
-        />
-      )}
+    <View style={[styles.plate, box]}>
       <Image
         accessibilityIgnoresInvertColors
         source={{ uri: logo.uri }}
-        style={{ width: inner, height: inner }}
+        style={{
+          width: inner,
+          height: inner,
+          // A filling plate is clipped back to the circle it is filling. An
+          // inset mark already fits inside that circle, and rounding it there
+          // would bite the mark a second time.
+          ...(logo.fill === 1 ? { borderRadius: inner / 2 } : null),
+        }}
         resizeMode="contain"
       />
     </View>
@@ -161,7 +132,6 @@ export function BrandLogo({
 }
 
 const styles = StyleSheet.create({
-  clip: { overflow: "hidden" },
   plate: {
     alignItems: "center",
     justifyContent: "center",
