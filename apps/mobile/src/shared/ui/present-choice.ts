@@ -15,7 +15,8 @@ type Choice = {
  */
 export function presentChoice(
   title: string,
-  message: string,
+  /** The second line. Omitted when the title already asks the whole question. */
+  message: string | undefined,
   choices: Choice[],
 ): void {
   if (Platform.OS === "ios") {

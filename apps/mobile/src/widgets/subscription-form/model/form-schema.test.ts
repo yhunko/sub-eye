@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { SubscriptionPeriod } from "@subeye/model";
 import {
+  isFormDirty,
   makeInitialFormValues,
   normalizeBrandDomain,
   type SubscriptionFormValues,
@@ -236,5 +237,50 @@ describe("normalizeBrandDomain", () => {
     expect(normalizeBrandDomain("   ")).toBeNull();
     expect(normalizeBrandDomain(".com")).toBeNull();
     expect(normalizeBrandDomain("netflix.")).toBeNull();
+  });
+});
+
+describe("isFormDirty", () => {
+  const seed = () =>
+    makeInitialFormValues({
+      preferredCurrency: "usd",
+      subscription: {
+        name: "Netflix",
+        cost: 9.99,
+        currency: "usd",
+        every: 1,
+        period: SubscriptionPeriod.MONTH,
+        paymentDate: "2026-03-01T00:00:00.000Z",
+        categoryId: null,
+        brandDomain: "netflix.com",
+      },
+    });
+
+  it("sees nothing to discard in an untouched draft", () => {
+    expect(isFormDirty(seed(), seed())).toBe(false);
+  });
+
+  it("sees a typed change", () => {
+    expect(isFormDirty({ ...seed(), cost: "12" }, seed())).toBe(true);
+    expect(isFormDirty({ ...seed(), categoryId: "abc" }, seed())).toBe(true);
+  });
+
+  it("compares dates as the DAY they will be stored as", () => {
+    // A picker hands back the seeded time of day. Comparing instants made every
+    // form dirty the moment its date field was opened and closed unchanged, so
+    // the discard prompt appeared over a form nobody had edited.
+    const base = seed();
+    const sameDay = new Date(base.paymentDate);
+    sameDay.setHours(23, 59, 59);
+    expect(isFormDirty({ ...base, paymentDate: sameDay }, base)).toBe(false);
+
+    const nextDay = new Date(base.paymentDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    expect(isFormDirty({ ...base, paymentDate: nextDay }, base)).toBe(true);
+  });
+
+  it("treats a cleared offer date as a change", () => {
+    const base = { ...seed(), offerEndsAt: new Date(2026, 5, 1) };
+    expect(isFormDirty({ ...base, offerEndsAt: null }, base)).toBe(true);
   });
 });

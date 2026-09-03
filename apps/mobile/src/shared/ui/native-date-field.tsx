@@ -1,88 +1,82 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import {
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { m } from "@/shared/i18n";
+import { dateLocale } from "@/shared/i18n";
 import {
   daysUntil,
   formatCountdown,
   formatShortDate,
   toIsoDay,
 } from "@/shared/lib/format";
-import { ValueField } from "./field";
+import { Field } from "./field";
 import { colors } from "./theme";
-import { useLargeText } from "./use-large-text";
 
-/**
- * The OS date picker, behind a row that says what the date MEANS.
- *
- * The date alone is a string of digits nobody checks; "Today" or "in 31 days"
- * beside it is what the user actually reads, and it is only offered forwards —
- * the first-payment field is an anchor and is usually in the past, where a
- * countdown has nothing true to say.
- *
- * iOS opens the wheels in a MODAL over the screen rather than disclosing them
- * under the row. Inline, they land wherever the row happens to sit: tapping a
- * field near the bottom of a form opened a picker below the fold, so the tap
- * appeared to do nothing at all. A modal cannot be off-screen, and it works the
- * same from a form, a sheet, or a scroll position halfway down either.
- *
- * Android has no inline form and no need for one — it opens the system dialog
- * and dismisses itself.
- *
- * It lives in shared/ui because four surfaces need it — the form's two dates,
- * manage-pricing, pause and renew — and a widget importing another widget's
- * internals is an upward import.
- */
-export function NativeDateField({
-  label,
-  value,
-  onChange,
-  error,
-  minimumDate,
-  maximumDate,
-}: {
+type DateProps = {
+  /** For VoiceOver and the Android dialog — the control itself shows no label. */
   label: string;
   value: Date;
   onChange: (date: Date) => void;
-  error?: string;
   minimumDate?: Date;
   /**
    * Renew uses this to make "not in the future" unreachable rather than
    * rejectable — the OS greys the days out, so there is no error to write.
    */
   maximumDate?: Date;
-}) {
+};
+
+/**
+ * The OS date control, as a trailing accessory rather than a row of its own.
+ *
+ * iOS is `UIDatePickerStyleCompact`: the date chip Calendar and Reminders use,
+ * which opens Apple's calendar in a popover UIKit positions itself. That
+ * replaced a hand-built modal over a wheel — the modal existed because an
+ * INLINE wheel lands wherever its row happens to sit, so a field near the
+ * bottom of a form opened a picker below the fold and the tap looked dead. A
+ * popover cannot be off-screen, and the calendar grid is what people actually
+ * read a date off.
+ *
+ * NO WIDTH OR HEIGHT HERE, deliberately. The Fabric view measures a dummy
+ * `UIDatePicker` with `sizeThatFits` and pushes the result into shadow-node
+ * state (`ios/fabric/RNDateTimePickerComponentView.mm`), so the chip is exactly
+ * as wide as the locale's own date format needs — a fixed width clips Ukrainian.
+ * That measurement only re-runs when `date`, `locale`, `mode` or `displayIOS`
+ * change, which is why `key` carries the font scale: Dynamic Type grows the
+ * chip's text with nothing else to tell Yoga about it, so the remount is what
+ * keeps it from being cropped at the accessibility sizes.
+ *
+ * Android has no compact style — the chip is ours and it opens the system
+ * dialog.
+ */
+export function DatePicker({
+  label,
+  value,
+  onChange,
+  minimumDate,
+  maximumDate,
+}: DateProps) {
   const [open, setOpen] = useState(false);
-  const insets = useSafeAreaInsets();
-  // Beside Done the title gets 190pt, and "Перший" at 61pt does not fit in it —
-  // it broke mid-word. Above Done it has the panel.
-  const stacked = useLargeText();
-
-  const day = toIsoDay(value);
-  const days = daysUntil(day);
-
-  const field = (
-    <ValueField
-      label={label}
-      value={formatShortDate(day)}
-      hint={days >= 0 ? formatCountdown(days) : undefined}
-      error={error}
-      onPress={() => setOpen(true)}
-    />
-  );
+  const { fontScale } = useWindowDimensions();
 
   if (Platform.OS !== "ios") {
     return (
       <>
-        {field}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${label}, ${formatShortDate(toIsoDay(value))}`}
+          onPress={() => setOpen(true)}
+          style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+        >
+          <Text style={styles.chipLabel}>
+            {formatShortDate(toIsoDay(value))}
+          </Text>
+        </Pressable>
         {open ? (
           <DateTimePicker
             value={value}
@@ -104,78 +98,71 @@ export function NativeDateField({
   }
 
   return (
-    <>
-      {field}
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        // The hardware back button on Android, and the only reason this is not
-        // dead code there: the branch above returns before ever rendering it.
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable
-          style={styles.backdrop}
-          accessibilityRole="button"
-          accessibilityLabel={m.common_done()}
-          onPress={() => setOpen(false)}
-        />
-        <View style={[styles.panel, { paddingBottom: insets.bottom + 12 }]}>
-          <View style={[styles.head, stacked && styles.headStacked]}>
-            <Text style={styles.title}>{label}</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setOpen(false)}
-              hitSlop={12}
-            >
-              <Text style={styles.done}>{m.common_done()}</Text>
-            </Pressable>
-          </View>
-          <DateTimePicker
-            value={value}
-            mode="date"
-            display="spinner"
-            minimumDate={minimumDate}
-            maximumDate={maximumDate}
-            themeVariant="dark"
-            style={styles.picker}
-            onValueChange={(_event, date) => onChange(date)}
-          />
-        </View>
-      </Modal>
-    </>
+    <DateTimePicker
+      key={fontScale}
+      value={value}
+      mode="date"
+      display="compact"
+      // The APP's locale, not the device's, which is what UIDatePicker defaults
+      // to: an English UI on a Ukrainian phone printed "4 вер. 2026 р." in the
+      // one control that renders its own text. `dateLocale` is the same tag
+      // every Intl format here is built from, so the chip and the summary line
+      // under it finally agree.
+      locale={dateLocale()}
+      accentColor={colors.accent}
+      themeVariant="dark"
+      minimumDate={minimumDate}
+      maximumDate={maximumDate}
+      accessibilityLabel={label}
+      onValueChange={(_event, date) => onChange(date)}
+    />
+  );
+}
+
+/**
+ * `DatePicker` under a label of its own, for the sheets — pause, renew and
+ * manage-pricing — which lay their controls out label-above rather than in the
+ * form's grouped rows.
+ *
+ * The countdown beside it is what the user actually reads; the digits alone are
+ * a string nobody checks. Forwards only — the first-payment field is an anchor
+ * and is usually in the past, where a countdown has nothing true to say.
+ */
+export function NativeDateField({
+  label,
+  error,
+  ...picker
+}: DateProps & { error?: string }) {
+  const days = daysUntil(toIsoDay(picker.value));
+
+  return (
+    <Field label={label} error={error}>
+      <View style={styles.standalone}>
+        <DatePicker label={label} {...picker} />
+        {days >= 0 ? (
+          <Text style={styles.countdown}>{formatCountdown(days)}</Text>
+        ) : null}
+      </View>
+    </Field>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
-  panel: {
-    backgroundColor: colors.bg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 14,
-  },
-  head: {
+  // Wraps rather than shrinks: the chip is natively sized and the countdown is
+  // a whole phrase, so at the accessibility sizes the two take a line each.
+  standalone: {
     flexDirection: "row",
-    // The label wraps at the accessibility sizes; centred, Done would drift to
-    // the vertical middle of a title three lines tall. It belongs level with
-    // the first line of the words.
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 10,
   },
-  headStacked: { flexDirection: "column", alignItems: "stretch", gap: 8 },
-  // `flexShrink`, NOT `flex: 1`. The shorthand is basis 0, which down the
-  // stacked column collapses the title to no height at all — it disappeared,
-  // leaving a panel of Done and a wheel. Shrink is all the row ever wanted:
-  // `space-between` already puts Done at the far edge.
-  title: { flexShrink: 1, fontSize: 17, fontWeight: "700", color: colors.text },
-  done: { fontSize: 16, fontWeight: "700", color: colors.accent },
-  // UIDatePicker's wheels report no intrinsic height to Yoga; without one the
-  // control lays out to zero and never appears. 216 is the control's own: at
-  // anything shorter it keeps centring its selection on the height it wanted.
-  picker: { height: 216 },
+  countdown: { fontSize: 13, color: colors.muted },
+  chip: {
+    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  chipPressed: { backgroundColor: colors.border },
+  chipLabel: { fontSize: 16, color: colors.text },
 });

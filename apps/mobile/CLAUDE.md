@@ -338,6 +338,71 @@ silent:
 
 RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`).
 
+**Forms are grouped rows, sheets are labelled boxes.** `shared/ui/field.tsx`
+carries both shapes and the doc comment at its top says which is which:
+`FormSection`/`FormRow`/`TextRow`/`ValueRow` put the label LEFT and the control
+right inside `list-row`'s inset-grouped card — that is the subscription form,
+where a dozen short answers each in a full-width box made a four-digit price as
+wide as the screen. `Field` keeps the label ABOVE a full-width control, which is
+the shape for pause, renew and manage-pricing: one or two questions with a
+sentence of context, and a sentence needs the width.
+
+**`@expo/ui/swift-ui` is available and already compiled in.** `expo-router`
+depends on it, so `ExpoUI` is in `ios/Podfile.lock` and using it costs no
+rebuild — that is what the cadence control (a real `UIMenu` with
+`Picker(.inline)` inside it for the checkmarks) and the custom-cadence wheels
+(`Picker(.wheel)` — real `UIPickerView`s) are built from. Reach for it before hand-rolling a control
+out of `ScrollView` and `snapToInterval`, which is what those two replaced.
+
+**A `Host` HAS NO SIZE OF ITS OWN, so never size one to its own content.** It
+either measures that content and reports the size back through shadow-node state
+— a ROUND TRIP — or it takes a frame from Yoga, and only the second is safe.
+Measured, a longer value drew clipped until the trip landed and then popped into
+place (measuring the height alone did not help — a stale frame clips both ways);
+given a frame guessed from a font size, a guess one point short clips forever.
+The cadence label lost three revisions to that.
+
+**The frame must come from the ROW, not from the value.** That is the part those
+revisions missed — not hosting the text, but sizing the host to it.
+`widgets/subscription-form/ui/cadence-picker.ios.tsx` takes `FormRow`'s own
+control slot for width (free space every control in the card already gets, and
+wider than any cadence in any locale, so a longer value grows leftwards into
+slack) and a `fontScale` FLOOR for height, because `rowControl` is sized BY its
+children and asking to stretch inside it is circular. A floor cannot clip. The
+wheels take a frame the same way.
+
+**Given a real frame, the control draws its own text — and the split does not
+work.** Anchoring the menu to a transparent `Rectangle` laid OVER an RN label
+broke on iOS 26 for a reason no styling reaches: the system MORPHS a menu out of
+its anchor and contracts it back on dismiss, so the glass played across text
+that never took part in it. The value changed, then a ghost wobbled over it.
+`buttonStyle` does not touch that; it is the presentation, not the chrome.
+
+**A hosted select builds its own label — `Picker(.menu)` will not reach the
+value column.** The `.menu` style is the shorter spelling and it morphs
+correctly, but it holds its value ~13pt in from its trailing edge and `@expo/ui`
+exposes no `menuIndicator` or `contentMargins` to take it back, so it was the
+one control in the card that could not sit where every other value sits. A
+`Menu` with a hand-built `HStack` label owns that edge instead. **THE NEXT
+SELECT COPIES THIS, INCLUDING THE TYPE**: `buttonStyle("plain")` so no chrome
+insets the label, `frame` with the row's slot and `alignment` flipped to
+`leading` under `useLargeText`, `font({ size: 16 * fontScale })` because a
+SwiftUI `textStyle` only offers Apple's sizes and `body` is 17 — a point off
+every label in the card — and the same 12pt semibold `chevron.up.chevron.down`
+in `colors.muted` that the currency chip wears. Values are `colors.text`, never
+the accent: a row that CHANGES a value where it stands reads as primary, and
+`colors.muted` is for a detail you are only being shown.
+
+**Its components call `requireNativeView` at MODULE SCOPE**, so importing one on
+Android throws before a `Platform.OS` branch could run. That is why
+`widgets/subscription-form/ui/cadence-picker.ios.tsx` exists beside
+`cadence-picker.tsx` — Metro drops a `.ios.tsx` from the Android bundle, which a
+runtime branch cannot. It is the **only** platform-suffixed pair in the app, and
+the cost is that TypeScript resolves the import to the unsuffixed file: the iOS
+one is checked only against itself, so the two signatures drift silently. Prefer
+a runtime `Platform.OS` branch (`native-date-field.tsx`, `step-chrome.tsx`,
+`subscription-form-page.tsx`) unless the import itself is what breaks.
+
 **Never cap text.** `maxFontSizeMultiplier` is what fails Apple's Larger Text
 criterion, and the Accessibility Nutrition Label claims it — Dynamic Type runs to
 the largest accessibility size on every screen. The container is what gives, not

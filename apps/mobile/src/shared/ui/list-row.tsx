@@ -2,6 +2,7 @@ import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import { colors } from "./theme";
 import { useLargeText } from "./use-large-text";
 
@@ -23,10 +24,20 @@ import { useLargeText } from "./use-large-text";
 // rather than under the icon.
 const DIVIDER_INSET = 47;
 
+/** The same rule, for a card of rows that lead with their label. */
+export const ROW_INSET = 16;
+
 /** UIKit's minimum touch target, and the height of a plain Settings cell. */
 const ROW_HEIGHT = 44;
 
-export const Divider = () => <View style={styles.divider} />;
+/**
+ * `inset` is where the rule STARTS, so it clears whatever the row leads with:
+ * 47 clears an icon, and a form row — which leads with its label — passes the
+ * row's own 16.
+ */
+export const Divider = ({ inset = DIVIDER_INSET }: { inset?: number }) => (
+  <View style={[styles.divider, { marginLeft: inset }]} />
+);
 
 export function Section({
   title,
@@ -40,8 +51,31 @@ export function Section({
   return (
     <View>
       {title ? <Text style={styles.sectionTitle}>{title}</Text> : null}
-      <View style={styles.card}>{children}</View>
-      {footnote ? <Text style={styles.footnote}>{footnote}</Text> : null}
+      {/* THE TRANSITION HAS TO BE ON THIS VIEW, not on an ancestor. Reanimated
+          animates the frame of a view that carries a layout animation ITSELF
+          and passes every other view's new frame through untouched, so a
+          transition on a wrapper eases a frame nobody can see while the card —
+          the thing with the background, the border and the clip — jumps.
+
+          `overflow: hidden` then does the other half: it turns the eased height
+          into a reveal, and gives an EXITING child something to be clipped by.
+          Without it the card shrinks the instant Yoga says so and the fade-out
+          plays outside the card, where nothing is drawn. */}
+      <Animated.View
+        style={styles.card}
+        layout={LinearTransition.duration(220)}
+      >
+        {children}
+      </Animated.View>
+      {/* Same reason: it sits BELOW the card, so a card that grows moves it. */}
+      {footnote ? (
+        <Animated.Text
+          style={styles.footnote}
+          layout={LinearTransition.duration(220)}
+        >
+          {footnote}
+        </Animated.Text>
+      ) : null}
     </View>
   );
 }
@@ -54,11 +88,12 @@ export function PageFootnote({ children }: { children: ReactNode }) {
 /**
  * The leading slot: a platform symbol, or an arbitrary element that takes its
  * place. Either/or, never both — `leading` exists for the account row's avatar,
- * which is the one thing in a settings list that is not an icon.
+ * which is the one thing in a settings list that is not an icon. Neither is
+ * also valid: a row in a picker list is a word and a checkmark.
  */
 type RowLeading =
   | { ios: SFSymbol; android: AndroidSymbol; leading?: never }
-  | { ios?: never; android?: never; leading: ReactNode };
+  | { ios?: never; android?: never; leading?: ReactNode };
 
 export function Row({
   ios,
@@ -72,6 +107,7 @@ export function Row({
   destructive,
   toggle,
   accessory,
+  selected,
 }: RowLeading & {
   label: string;
   /** The second line of a `.subtitle` cell — detail, never the control's state. */
@@ -97,6 +133,12 @@ export function Row({
    * promise a screen it will not push.
    */
   accessory?: ReactNode;
+  /**
+   * This row is the chosen one in a list of choices. Visually that is a
+   * `RowCheck` in `accessory`; this is the half a screen reader can hear, and
+   * without it a picker announces eight identical buttons.
+   */
+  selected?: boolean;
 }) {
   // At the accessibility sizes the label and its value have no chance of
   // sharing a line, so the value drops into the label's column — which is what
@@ -192,6 +234,7 @@ export function Row({
       accessibilityLabel={
         [label, subtitle, value].filter(Boolean).join(", ") || label
       }
+      accessibilityState={selected === undefined ? undefined : { selected }}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
@@ -251,7 +294,6 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
-    marginLeft: DIVIDER_INSET,
   },
   rowPressed: { backgroundColor: colors.surfaceAlt },
   // Not decoration: RN's iOS Switch hardcodes `alignSelf: "flex-start"` under

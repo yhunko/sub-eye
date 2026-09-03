@@ -1,3 +1,4 @@
+import type { NativeStackHeaderItem } from "expo-router";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
@@ -27,7 +28,7 @@ export function SubscriptionFormPage() {
 function EditForm({ id }: { id: string }) {
   const router = useRouter();
   const isPro = usePro();
-  const { submit, close } = useSubscriptionForm();
+  const { submit, close, dirty } = useSubscriptionForm();
   // In the nav bar, not a row at the bottom of the form: pricing is the reason
   // most people open Edit on a subscription they already have, and below the
   // fold is the one place it must not be.
@@ -40,6 +41,51 @@ function EditForm({ id }: { id: string }) {
       pricing.map((item) => ({ label: item.label, onPress: item.run })),
     );
 
+  // A close button that throws away typing has to ask first — and asking has to
+  // come OUT OF that button, which is what a menu on a native bar item does:
+  // iOS morphs the button into the confirmation, so the question is visibly
+  // attached to the control that raised it. A modal alert in the middle of the
+  // screen is the same words with none of that.
+  //
+  // Only when there is something to lose. An untouched form dismissing through
+  // a confirmation is a tax on the common case.
+  const closeItem: NativeStackHeaderItem = dirty
+    ? {
+        type: "menu",
+        label: m.common_cancel(),
+        icon: { type: "sfSymbol", name: "xmark" },
+        menu: {
+          title: m.form_discardTitle(),
+          // Same reason as the pricing menu: a selection menu makes UIKit tick
+          // whichever item was last opened and leave the tick there.
+          multiselectable: true,
+          items: [
+            {
+              type: "action",
+              label: m.form_discardConfirm(),
+              destructive: true,
+              onPress: close,
+            },
+          ],
+        },
+      }
+    : {
+        type: "button",
+        label: m.common_cancel(),
+        icon: { type: "sfSymbol", name: "xmark" },
+        onPress: close,
+      };
+
+  const confirmClose = () => {
+    if (!dirty) {
+      close();
+      return;
+    }
+    presentChoice(m.form_discardTitle(), undefined, [
+      { label: m.form_discardConfirm(), destructive: true, onPress: close },
+    ]);
+  };
+
   return (
     <>
       <Stack.Screen
@@ -50,21 +96,27 @@ function EditForm({ id }: { id: string }) {
           // very screen — and `setOptions` MERGES, so omitting the key leaves it
           // sitting in the nav bar of a form that has nothing to search.
           headerSearchBarOptions: undefined,
-          headerLeft: () => (
-            <Pressable
-              onPress={close}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.common_cancel()}
-            >
-              <SymbolView
-                name={{ ios: "xmark", android: "close" }}
-                size={17}
-                tintColor={colors.text}
-                weight="semibold"
-              />
-            </Pressable>
-          ),
+          unstable_headerLeftItems: () => [closeItem],
+          // expo-router only swaps the native items in on iOS; Android gets the
+          // same question through the platform's own dialog.
+          headerLeft:
+            Platform.OS === "ios"
+              ? undefined
+              : () => (
+                  <Pressable
+                    onPress={confirmClose}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel={m.common_cancel()}
+                  >
+                    <SymbolView
+                      name={{ ios: "xmark", android: "close" }}
+                      size={17}
+                      tintColor={colors.text}
+                      weight="semibold"
+                    />
+                  </Pressable>
+                ),
           // A real UIMenu on iOS. Locked, the same slot becomes a plain button
           // to the paywall — an action that exists for some users and not
           // others reads as a bug.
