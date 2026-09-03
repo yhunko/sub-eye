@@ -6,8 +6,21 @@ import { BrandLogo, useBrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
-/** A standard (non-large) iOS navigation bar, under the status bar inset. */
-const NAV_BAR_HEIGHT = 44;
+/**
+ * What `contentInsetAdjustmentBehavior="automatic"` actually insets the scroll
+ * view by, under the status bar — MEASURED, not the 44pt a standard bar is
+ * documented at. iOS 26 lays a glass bar out taller than that and sits its
+ * controls near the top of the band.
+ *
+ * There is no `useHeaderHeight` to ask — `@react-navigation/elements` is not in
+ * this tree — so this is a constant. It is only ever used to place the logo
+ * against the bar's own controls, so a point or two out moves the logo a point
+ * or two and nothing else.
+ */
+const NAV_BAR_INSET = 57;
+
+/** Where the bar's two capsules begin, down from the safe-area inset. */
+const NAV_ITEM_TOP = 3;
 
 /**
  * Pushed past the top of the screen so no rounding or device quirk can leave a
@@ -40,7 +53,7 @@ const OVERSCROLL_REACH = 420;
  * calendar's tiles and the month strip keep theirs the same size for the same
  * reason. The name under it is what grows.
  */
-const LOGO = 84;
+const LOGO = 108;
 
 /** The name's design size, and the point size it may never shrink past. */
 const NAME_SIZE = 26;
@@ -194,15 +207,26 @@ export function DetailHero({
   const insets = useSafeAreaInsets();
   const reach =
     Platform.OS === "ios"
-      ? insets.top + NAV_BAR_HEIGHT + OVERSCAN + OVERSCROLL_REACH
+      ? insets.top + NAV_BAR_INSET + OVERSCAN + OVERSCROLL_REACH
       : 0;
+
+  // The logo's TOP edge lands on the NAV BAR's own, immediately under the status
+  // bar, so the mark reads as chrome with a control either side of it rather
+  // than as the first thing below the bar.
+  //
+  // `reach` is the climb paid back as padding, which lands content exactly where
+  // it would have been without it; taking the bar's height back off that lifts
+  // the logo INTO the bar. It renders behind the two buttons — a transparent
+  // header draws over the scroll view — and it is centred, so the only thing
+  // that could collide with them is a logo wider than the gap between them.
+  // Android's header is opaque and cannot be reached under, so it keeps a plain
+  // inset.
+  const padTop =
+    Platform.OS === "ios" ? reach - NAV_BAR_INSET + NAV_ITEM_TOP : 20;
 
   return (
     <View
-      style={[
-        styles.hero,
-        { marginTop: -(16 + reach), paddingTop: 20 + reach },
-      ]}
+      style={[styles.hero, { marginTop: -(16 + reach), paddingTop: padTop }]}
     >
       <Backdrop domain={brandDomain} />
 

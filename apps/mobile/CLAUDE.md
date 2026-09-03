@@ -528,8 +528,15 @@ banner's own line was deleted along with `detail_heroRenews` / `heroEnds` /
 different question from "what is about to happen": a trial converting before the
 next payment makes those two different numbers.
 
-The identity is a CENTRED column — an 84pt logo between the two nav-bar
-controls, the name under it — and the name shrinks rather than wrapping freely.
+The identity is a CENTRED column — a 108pt logo whose TOP edge sits on the nav
+bar's own controls, so the mark is chrome with a capsule either side of it
+rather than the first thing below the bar — and the name shrinks rather than
+wrapping freely. Placing it needs the scroll view's REAL top inset
+(`NAV_BAR_INSET`), which on iOS 26 is not the 44pt a standard bar is documented
+at: the glass bar lays out taller and sits its controls near the top of that
+band. It is measured, because `@react-navigation/elements` is not in this tree
+and there is no `useHeaderHeight` to ask; it only places the logo, so a point or
+two out moves the logo a point or two and nothing else.
 Beside the logo it had 298pt and "Amazon" at 78pt broke MID-WORD; centred it has
 the full width and "Adobe Creative Cloud" broke anyway, because one word was
 wider than the phone, which no amount of width fixes. `numberOfLines={2}` plus
