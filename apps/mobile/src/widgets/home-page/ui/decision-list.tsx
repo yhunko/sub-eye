@@ -93,6 +93,9 @@ const DecisionRow = memo(function DecisionRow({
       onPress={() => onOpen(event.subscriptionId)}
       style={({ pressed }) => [
         styles.row,
+        // Centred, the logo floats halfway down a row whose text has wrapped to
+        // three lines. It belongs beside the name it labels.
+        stacked && styles.rowStacked,
         ruled && styles.ruled,
         pressed && styles.pressed,
       ]}
@@ -243,6 +246,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
   },
+  rowStacked: { alignItems: "flex-start" },
   ruled: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
