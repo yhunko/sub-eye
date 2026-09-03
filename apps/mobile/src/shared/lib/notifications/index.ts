@@ -50,6 +50,42 @@ export const readEffectiveSettings = (isPro: boolean): ReminderSettings =>
   effectiveSettings(readNotificationSettings(), isPro);
 
 /**
+ * When the soonest reminder for ONE subscription will fire, or null for none.
+ *
+ * Through the same planner the device schedule is built from, over a list of
+ * one — a second implementation of "which lead days are still ahead" would be
+ * free to disagree with what the OS was actually told, on the screen a user
+ * opens to check exactly that. It is cheap enough to call per render: a single
+ * subscription yields at most one reminder per configured lead day.
+ *
+ * This reports what the app has SCHEDULED, which is not the same as what the OS
+ * will deliver — a permission revoked in Settings silences everything and this
+ * cannot see it. The notifications screen owns that readout; it is the only
+ * place that can tell a refusal from a bug.
+ */
+export function nextReminderAt(
+  subscription: ReminderInput,
+  settings: ReminderSettings,
+  now: Date,
+): Date | null {
+  let soonest: number | null = null;
+
+  for (const reminder of planReminders(
+    [subscription],
+    settings,
+    now,
+    reminderCopy,
+  )) {
+    const at = reminder.schedule.repeats
+      ? reminder.schedule.firstAt
+      : reminder.schedule.fireAt;
+    if (soonest === null || at.getTime() < soonest) soonest = at.getTime();
+  }
+
+  return soonest === null ? null : new Date(soonest);
+}
+
+/**
  * Android 8+ shows NOTHING without a channel — not an error, just silence.
  *
  * One per kind rather than one for the app: a channel is the unit Android lets

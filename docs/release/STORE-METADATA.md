@@ -268,7 +268,7 @@ No new permissions, no new data collected and no new outbound requests: the App 
 There is no account in this app. No sign-up, no sign-in, no server, no backend of any kind — the app opens straight to the dashboard.
 
 SEEING THE APP WITH DATA
-It starts empty by design. Tap "+" on the Home tab and add one subscription (any name, amount, currency and start date). That single entry populates the dashboard totals, the forecast, the upcoming rail, the list, the detail timeline and the reminder schedule. It takes about twenty seconds.
+It starts empty by design. Tap "+" on the Home tab and add one subscription (any name, amount, currency and start date). That single entry populates the dashboard totals, the forecast, the month strip, the list, the detail timeline and the reminder schedule. It takes about twenty seconds.
 
 WHERE DATA LIVES
 Everything is stored on the device. Nothing about a user's subscriptions is uploaded to us — there is no server to upload it to. iCloud Sync (Settings → Data) is off by default and writes to NSUbiquitousKeyValueStore, i.e. the user's own iCloud, which we cannot read.

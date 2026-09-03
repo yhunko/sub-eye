@@ -8,8 +8,8 @@ import {
 } from "@/widgets/calendar-page";
 
 // A deep link builds this stack from the URL alone, so without an anchor a
-// `subeye:///calendar/day/2026-09-12` mounts with nothing under it: no back
-// button and no way out but the tab bar. Matches the other two tab layouts.
+// `subeye:///calendar/year` mounts with nothing under it: no back button and no
+// way out but the tab bar. Matches the other two tab layouts.
 export const unstable_settings = { anchor: "index" };
 
 // The singleton, not `useRouter()`: built once, outside the component, so it
@@ -48,7 +48,6 @@ export default function CalendarTabLayout() {
           a month out of, and a sheet cannot hand the screen underneath it a
           param without stacking a second one on itself. */}
       <Stack.Screen name="year" />
-      <Stack.Screen name="day/[date]" options={sheetChrome} />
       <Stack.Screen
         name="options"
         options={{ ...sheetChrome, title: m.calendar_options() }}

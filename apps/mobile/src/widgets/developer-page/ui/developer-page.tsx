@@ -92,7 +92,7 @@ export function DeveloperPage() {
       >
         <Section
           title="Demo data"
-          footnote="Replaces the whole store with the App Store capture set — sixteen subscriptions dated from today, so the same seed keeps working next month. Erase puts it back to first run."
+          footnote="Replaces the whole store with the App Store capture set — seventeen subscriptions dated from today, so the same seed keeps working next month. Erase puts it back to first run."
         >
           <Row
             ios="dollarsign.circle"

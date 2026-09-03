@@ -1,4 +1,5 @@
-import type { SubscriptionDto } from "@subeye/model";
+import { shouldIncludeOccurrence } from "@subeye/lifecycle";
+import { type SubscriptionDto, SubscriptionPeriod } from "@subeye/model";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useMemo, useRef } from "react";
@@ -6,10 +7,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
-import type { LifecycleActionTarget } from "@/entities/subscription";
+import {
+  type LifecycleActionTarget,
+  nextChargeBilling,
+} from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import {
   daysUntil,
+  formatCadence,
   formatDaysUntil,
   formatMoney,
   formatShortDate,
@@ -183,23 +188,47 @@ export const SubscriptionRow = memo(function SubscriptionRow({
   // the one that was WRONG: the server still computes a nextPaymentDate for it,
   // so a dead subscription was advertising a payment it will never take.
   const cancelled = item.status === "cancelled";
+  // A WINDING-DOWN subscription is asked "when do I lose it", never "when do I
+  // pay next" — the same cut the detail card makes, and for the same reason: an
+  // end-of-period cancel sets `willBeCancelledAt` TO the next payment date, so
+  // the row was printing "Cancelled · Sep 26" beside an amount over a charge
+  // that never happens, on the screen where the user goes to confirm they
+  // stopped it. `edit` can also push the cancellation past one or more payments,
+  // which is why the charge question is answered by
+  // `shouldIncludeOccurrence` rather than by the status.
+  const ending = item.status === "cancelling" ? item.willBeCancelledAt : null;
   const date =
-    cancelled && item.willBeCancelledAt
-      ? item.willBeCancelledAt
-      : item.status === "paused" && item.resumeAt
-        ? item.resumeAt
-        : item.nextPaymentDate;
+    (cancelled || ending ? item.willBeCancelledAt : null) ??
+    (item.status === "paused" ? item.resumeAt : null) ??
+    item.nextPaymentDate;
 
-  // NORMALISED TO A MONTH, and only ever in the home currency.
+  // Whether the amount is a charge still coming or a price no longer taken.
+  const charging =
+    !cancelled && shouldIncludeOccurrence(item, new Date(item.nextPaymentDate));
+
+  // AS CHARGED, in the home currency — the figure that will appear on a bank
+  // statement.
   //
-  // The list is a comparison, and `preferred.amount` is the amount as charged —
-  // so a yearly subscription sat next to monthly ones as one big number that
-  // meant something different from its neighbours. `preferred.monthly` is what
-  // the cost sort already ranked by, so the column and the ordering now agree.
-  // The as-charged figure and its original currency belong on the detail screen,
-  // where there is room to explain them.
-  const preferred = item.billing.preferred;
-  const primary = formatMoney(preferred.monthly, preferred.currencyCode);
+  // This column used to print `preferred.monthly` with a "/mo" suffix, which put
+  // a number on every yearly row that is never charged to anyone: SubEye said
+  // "₴368.04/mo" and the card said ₴4,416.48 once a year. The comparison that
+  // suffix was protecting is real, so it moves down to the timing line, where the
+  // cadence beside it says what it is a rate OF — and where it is dropped
+  // entirely on a plain monthly plan, which is the same number twice.
+  //
+  // `nextChargeBilling`, not `item.billing`, because this column names the date
+  // beside it: a trial converting before that date makes the price effective now
+  // and the price about to be taken two different numbers, and the row was
+  // printing the one nobody will be charged.
+  const preferred = cancelled
+    ? item.billing.preferred
+    : nextChargeBilling(item);
+  const primary = formatMoney(preferred.amount, preferred.currencyCode);
+  const cadence = formatCadence(item.every, item.period);
+  const normalised =
+    item.every === 1 && item.period === SubscriptionPeriod.MONTH
+      ? null
+      : formatMoney(preferred.monthly, preferred.currencyCode);
 
   const tint = statusTint[item.status];
   const statusLabel = STATUS_LABEL[item.status]?.();
@@ -238,7 +267,10 @@ export const SubscriptionRow = memo(function SubscriptionRow({
           item.name,
           statusLabel,
           // Spelled out — a screen reader saying "slash m o" is not a price.
-          m.subs_amountPerMonth({ amount: primary }),
+          cancelled
+            ? primary
+            : m.subs_amountEvery({ amount: primary, cadence }),
+          normalised ? m.subs_amountPerMonth({ amount: normalised }) : null,
         ]
           .filter(Boolean)
           .join(", ")}
@@ -278,36 +310,42 @@ export const SubscriptionRow = memo(function SubscriptionRow({
               means something different per status (a resume for a paused row,
               a charge for an active one) while reading identically. Status
               first, so a narrow row truncates the half that matters least. */}
+          {/* A dead subscription gets no cadence: there is no next charge for a
+              rate to describe, and the line would be advertising a price nobody
+              pays. */}
           <Text style={styles.sub} numberOfLines={stacked ? undefined : 1}>
             {cancelled
               ? m.subs_ended({ date: formatShortDate(date) })
-              : statusLabel
-                ? `${statusLabel} · ${formatDaysUntil(daysUntil(date), date)}`
-                : formatDaysUntil(daysUntil(date), date)}
+              : [
+                  statusLabel,
+                  formatDaysUntil(daysUntil(date), date),
+                  cadence,
+                  normalised ? m.subs_perMonth({ amount: normalised }) : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
           </Text>
-          {/* One line, one currency. The cadence suffix is what stops a
-              normalised figure from reading as the amount actually charged. */}
+          {/* No suffix any more. The figure is the charge itself, and the line
+              above it already carries the cadence it arrives on. */}
           {stacked ? (
             <Text
               style={[
                 styles.amount,
                 styles.amountStacked,
-                cancelled && styles.amountSpent,
+                !charging && styles.amountSpent,
               ]}
             >
               {primary}
-              <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
             </Text>
           ) : null}
         </View>
 
         {stacked ? null : (
           <Text
-            style={[styles.amount, cancelled && styles.amountSpent]}
+            style={[styles.amount, !charging && styles.amountSpent]}
             numberOfLines={1}
           >
             {primary}
-            <Text style={styles.cadence}>{m.subs_perMonthSuffix()}</Text>
           </Text>
         )}
       </Pressable>

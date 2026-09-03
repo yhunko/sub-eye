@@ -1,6 +1,6 @@
 import type { CalendarDayDto, CalendarEventKind } from "@subeye/model";
 import { memo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { formatMoney, todayAsDay } from "@/shared/lib/format";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
@@ -52,12 +52,12 @@ const DOTTED: Partial<Record<CalendarEventKind, true>> = {
 };
 
 /**
- * A day with nothing on it. Not a `Pressable`, not a disabled one.
+ * A day with nothing on it: the number, and no plate behind it.
  *
- * Two thirds of a month are usually empty, and every one of them used to open a
- * sheet that said "nothing due" — a tap that costs a navigation to tell the user
- * what the blank tile they tapped had already told them. It also put 42 press
- * responders per page into a horizontal pager, three pages deep.
+ * Two thirds of a month are usually empty, and drawing them through the tile
+ * below would give every one of them a memoised component, a charge branch and
+ * a heavy-day test to answer "no" with — 42 of them per page, three pages deep
+ * in a horizontal pager.
  */
 function EmptyTile({
   day,
@@ -95,16 +95,12 @@ const DayTile = memo(function DayTile({
   day,
   heavy,
   settings,
-  selected,
-  onPress,
   now,
 }: {
   cell: CalendarCell;
   day: CalendarDayDto | undefined;
   heavy: boolean;
   settings: CalendarSettings;
-  selected: boolean;
-  onPress: (date: string) => void;
   now: number;
 }) {
   // Before the empty-tile guard below: a hook cannot sit after an early return,
@@ -145,14 +141,18 @@ const DayTile = memo(function DayTile({
       : LOGO_ROOMY;
 
   return (
-    <Pressable
-      accessibilityRole="button"
+    // Not a Pressable any more. The tap opened a sheet listing exactly the rows
+    // the AGENDA below this grid already prints for the same day, which made it
+    // a navigation that cost a dismissal to show what was two thumb-lengths
+    // down the page. The sheet still exists — it is Home's month strip that has
+    // no agenda under it, so that is where a tap earns its place.
+    <View
+      accessible
       accessibilityLabel={`${cell.day}, ${formatMoney(
         day.total,
         events[0]?.currencyCode ?? "",
       )}`}
-      onPress={() => onPress(cell.date)}
-      style={({ pressed }) => [
+      style={[
         styles.tile,
         // A neighbouring month's day carries its charges but not its month's
         // furniture: no plate, no total, no flag. It is context for the weeks
@@ -164,9 +164,7 @@ const DayTile = memo(function DayTile({
             ? styles.tileSpent
             : styles.tileFilled,
         heavy && styles.tileHeavy,
-        isToday && !selected && styles.tileToday,
-        selected && styles.tileSelected,
-        pressed && styles.pressed,
+        isToday && styles.tileToday,
       ]}
     >
       <Text
@@ -175,7 +173,7 @@ const DayTile = memo(function DayTile({
           past && styles.numberPast,
           cell.adjacent && styles.numberAdjacent,
           isToday && styles.numberToday,
-          (isToday || selected) && styles.numberStrong,
+          isToday && styles.numberStrong,
         ]}
       >
         {cell.day}
@@ -220,7 +218,7 @@ const DayTile = memo(function DayTile({
       {!cell.adjacent && events.some((event) => DOTTED[event.kind]) ? (
         <View style={styles.dot} />
       ) : null}
-    </Pressable>
+    </View>
   );
 });
 
@@ -259,16 +257,12 @@ export function MonthCells({
   days,
   heavyDates,
   settings,
-  selected,
-  onSelect,
   now = new Date(),
 }: {
   cells: CalendarCell[];
   days: Map<string, CalendarDayDto>;
   heavyDates: Set<string> | null;
   settings: CalendarSettings;
-  selected: string | null;
-  onSelect: (date: string) => void;
   now?: Date;
 }) {
   const today = todayAsDay(now);
@@ -282,8 +276,6 @@ export function MonthCells({
             day={days.get(cell.date)}
             heavy={heavyDates?.has(cell.date) ?? false}
             settings={settings}
-            selected={cell.date === selected}
-            onPress={onSelect}
             now={today}
           />
         </View>
@@ -339,11 +331,6 @@ const styles = StyleSheet.create({
     borderColor: colors.warning,
   },
   tileToday: { borderColor: colors.accentBorder },
-  tileSelected: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.accent,
-  },
-  pressed: { opacity: 0.7 },
   number: {
     fontSize: 12.5,
     lineHeight: 13,

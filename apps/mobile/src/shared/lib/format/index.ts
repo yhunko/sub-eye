@@ -11,6 +11,7 @@ export {
   supportedCurrencyCode,
 } from "./money";
 export {
+  COUNTDOWN_DAYS,
   daysUntil,
   formatCadence,
   formatCountdown,

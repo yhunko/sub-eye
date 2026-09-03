@@ -14,11 +14,12 @@ import type { StoreDoc } from "@/shared/lib/store";
  * reading "renews 4 Mar" under a September screenshot is the kind of thing a
  * reviewer notices before a user does.
  *
- * The offsets are chosen so the five soonest events are five DIFFERENT kinds:
- * a charge, a trial ending, a yearly charge, a price rise and a resume, with a
- * cancellation sixth so the rail's cut-off card has something to show. Left to
- * chance the rail is five identical renewal cards, which is what the first
- * capture pass shipped.
+ * The offsets are chosen so the soonest events are DIFFERENT kinds: a charge, a
+ * PAIR of trials ending on one day, a yearly charge, a price rise and a resume,
+ * with a cancellation after them. Left to chance the set is five identical
+ * renewals, which is what the first capture pass shipped — and the pair is what
+ * puts Home's "Needs a decision" card past its three-row cap, which is the only
+ * way to see on a device that the cap cuts between days and never inside one.
  */
 const MS_DAY = 86_400_000;
 
@@ -100,6 +101,18 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "strava.com",
     cost: "0.00",
     category: "cat-health",
+    due: 7,
+  },
+  // Converts on the SAME day as Strava's, and that is the point: "Needs a
+  // decision" refuses to truncate inside a day, so a pair here is what proves
+  // the card shows both rather than the three-row cap silently eating one. Two
+  // trials taken out in the same week is also just what happens.
+  {
+    id: "s-perplexity",
+    name: "Perplexity Pro",
+    domain: "perplexity.ai",
+    cost: "0.00",
+    category: "cat-ai",
     due: 7,
   },
   {
@@ -298,6 +311,30 @@ export function buildDemoDoc(
       appliedAt: null,
       createdAt: at(now, -28),
       updatedAt: at(now, -28),
+    },
+    {
+      id: "p-perplexity-trial",
+      subscriptionId: "s-perplexity",
+      kind: "trial",
+      cost: "0.00",
+      currency: "usd",
+      startsAt: day(now, -5),
+      endsAt: day(now, 2),
+      appliedAt: at(now, -5),
+      createdAt: at(now, -5),
+      updatedAt: at(now, -5),
+    },
+    {
+      id: "p-perplexity-standard",
+      subscriptionId: "s-perplexity",
+      kind: "standard",
+      cost: "20.00",
+      currency: "usd",
+      startsAt: day(now, 2),
+      endsAt: null,
+      appliedAt: null,
+      createdAt: at(now, -5),
+      updatedAt: at(now, -5),
     },
     // Half-price introductory year, reverting in 10 days.
     {

@@ -8,7 +8,7 @@ The three beyond the original seven, and why: **`settings/notifications`**, beca
 
 The eleventh is the **currency picker**, and it is one screen doing two jobs — Settings → Currency *and* the price field's currency, wired by each stack's own route the way `categories-page` is. It exists because the catalogue went from five hard-coded codes to the whole ISO-4217 fiat set (156), and an `ActionSheetIOS` stops being a list somewhere around a dozen rows: no search, no grouping, no flags. Adding currencies without it would have been the regression.
 
-The twelfth is **`calendar/year`**, and it is the only screen in the app that is Pro OUTRIGHT rather than a Pro row inside a free one. That is the whole argument for it: the calendar tab used to truncate its own agenda behind a lock, and the lock withheld nothing — the grid above it already printed each day's logos and total, and the day sheet opened every one of them for a free install. A gate a user routes around in one tap does not convert, it teaches them the locks are theatre. So the month screen gives everything away and Pro is additive instead: the year heatmap here, plus the month-over-month delta and the heavy-day flag on the month itself. It is also the one thing the month pager genuinely cannot do — twelve months at a time, off ONE walk over the year (`buildCalendarYear`), where twelve `buildCalendarMonth` calls would re-read and re-parse the subscription list twelve times.
+The twelfth is **`calendar/year`**, and it is the only screen in the app that is Pro OUTRIGHT rather than a Pro row inside a free one. That is the whole argument for it: the calendar tab used to truncate its own agenda behind a lock, and the lock withheld nothing — the grid above it already printed each day's logos and total, and the agenda listed every one of them for a free install. A gate a user routes around in one tap does not convert, it teaches them the locks are theatre. So the month screen gives everything away and Pro is additive instead: the year heatmap here, plus the month-over-month delta and the heavy-day flag on the month itself. It is also the one thing the month pager genuinely cannot do — twelve months at a time, off ONE walk over the year (`buildCalendarYear`), where twelve `buildCalendarMonth` calls would re-read and re-parse the subscription list twelve times.
 
 The thirteenth route, **`settings/developer`**, is not one of them and never counts against that number: it renders nothing in a release build. See the dev-route rule under Routing before adding to it.
 
@@ -59,7 +59,7 @@ apps/mobile/src/
 - **Every layout a deep link can land inside needs an `unstable_settings` anchor.** A deep link builds the stack from the URL alone, so a route mounted with nothing under it has no back button and no way out — `subeye:///subscriptions/x` (a widget row, a tapped reminder) was a dead end until the app was force-quit. The root layout anchors `(tabs)`, which is what puts the tab tree under a deep-linked subscription; `(tabs)/subscriptions/_layout.tsx` anchors `index`, which puts the list under a deep-linked due digest. Adding a new deep-linked route means checking the anchor of every layout above it.
 - **Sheets are native `formSheet` routes**, the only sheet mechanism in the app: Manage-pricing, Pause, the category editor, the legal sheet, and the list-options sheet that is now **Android's fallback only**. All of them spread `nativeSheetChrome` from `@/shared/ui/header` — `presentation: "formSheet"`, `sheetGrabberVisible: true` and a FIXED 0.9 detent, because a `flex: 1` scroller has no intrinsic height and `fitToContents` can measure it to nothing. Only a sheet that cannot overflow (the pause date field) overrides the detent. There is **no NiceModal / modal-manager equivalent** — the navigator owns presentation.
 - **A sheet is the fallback, not the first answer.** Where UIKit has a control, use the control: the subscriptions list puts sort / group / status / category behind a real **UIMenu** via `unstable_headerLeftItems` / `unstable_headerRightItems` (expo-router's wrapper over `headerLeftBarButtonItems`), and the detail screen does the same for its lifecycle actions. Items take **`label`, not `title`** — expo-router renames the RNScreens field — and submenus are **single-selection by default** (`multiselectable` is false unless set), so UIKit draws the checkmark itself from each action's `state: "on" | "off"`. Set **`multiselectable: true` on the outer `menu`** whenever its children are all submenus: the default sends `UIMenuOptionsSingleSelection` to a menu that owns no selectable actions, which is what the missing checkmarks were traced to. UIKit gives a submenu **no subtitle, no value slot and no per-item tint**, so a submenu announces itself two ways and only when it is off its default: the **filled variant of its own SF Symbol**, and the chosen value appended to the label (`"Status · Paused"`). A submenu at rest stays a plain glyph and a bare noun — spelling out every default made the top level four sentences long, and the defaults are the longest strings in their own lists. A submenu has **no `disabled`** field, so an empty submenu has to be omitted from the array rather than greyed out. expo-router only swaps native items in **on iOS**, so a screen that uses them keeps its `headerLeft`/`headerRight` Pressables as the Android path — and anything added to the menu must be added to Android's sheet too, or the feature silently does not exist there.
-- **Add/Edit is the exception: a `presentation: "modal"` route that owns its own `Stack`** (`app/subscription-form/`). It lives at the **root**, beside `paywall`, and not under `(tabs)/subscriptions` — four surfaces open it (Home's `+`, the list's `+`, Home's empty state, the detail screen's Edit) and two of them are in a different tab from the list. Nested under the list's stack it was a cross-tab push: expo-router switched tabs and presented the modal in one commit, so the tab visibly changed underneath and the slide-up animation was swallowed by the switch. **Any route reachable from more than one tab belongs at the root for the same reason** — which is also where a subscription's own screen and its three sheets live (`app/subscriptions/[id]/`), reached from Home's rail, the list, the due digest, a widget row and a reminder. It was a formSheet pinned at a 0.9 detent — a modal's footprint without a modal's navigation — which forced the category picker into an ActionSheet with no search and no create. A sheet cannot push a sub-screen without stacking a second sheet on itself. Anything that outgrows an action sheet becomes a pushed screen in that nested stack; the form's draft lives in a React **context** on its layout (`widgets/subscription-form/model/form-context.tsx`), NOT a module store — a half-typed subscription must die with the modal.
+- **Add/Edit is the exception: a `presentation: "modal"` route that owns its own `Stack`** (`app/subscription-form/`). It lives at the **root**, beside `paywall`, and not under `(tabs)/subscriptions` — four surfaces open it (Home's `+`, the list's `+`, Home's empty state, the detail screen's Edit) and two of them are in a different tab from the list. Nested under the list's stack it was a cross-tab push: expo-router switched tabs and presented the modal in one commit, so the tab visibly changed underneath and the slide-up animation was swallowed by the switch. **Any route reachable from more than one tab belongs at the root for the same reason** — which is also where a subscription's own screen and its three sheets live (`app/subscriptions/[id]/`), reached from the list, the calendar, the due digest, a widget row and a reminder. It was a formSheet pinned at a 0.9 detent — a modal's footprint without a modal's navigation — which forced the category picker into an ActionSheet with no search and no create. A sheet cannot push a sub-screen without stacking a second sheet on itself. Anything that outgrows an action sheet becomes a pushed screen in that nested stack; the form's draft lives in a React **context** on its layout (`widgets/subscription-form/model/form-context.tsx`), NOT a module store — a half-typed subscription must die with the modal.
 - **The categories list is ONE screen doing two jobs**, and adding a second one is the mistake it was built to undo. `widgets/categories-page` is Settings → Categories *and* the subscription form's category step: without a `pick` prop a row opens the editor and swipes to delete; with one a row selects and pops, and a leading "None" row appears. Both create through the same `CategorySheet`, whose optional `onCreated` is what lets the form apply the new category and drop back to the form instead of to the list. The two live in different stacks, so **the app layer wires them** (`app/subscription-form/category/index.tsx`) — a widget importing a sibling widget is the one edge FSD has no room for, and the form's draft context is something only a route inside that layout can read. The return is **`router.dismiss(2)`, never `dismissAll()`**: the picker is pushed from the edit form AND from step two of the create flow, so the stack beneath it is not always one deep.
 - **Screen chrome that depends on nothing the screen holds belongs on the LAYOUT** — titles, the categories `+` (`categoryAddHeaderOptions`), and every search field. Options declared inside a screen component go through `navigation.setOptions` in an effect that re-runs on every render, rebuilding the whole navigation item; for a search field that is one `UISearchController` rebuild per keystroke. That is why the category picker's query lives in a module store (`categorySearch`) read with `useSyncExternalStore` rather than in the page's `useState`, and why it clears on unmount — the native field comes back empty, so a surviving term would filter the list with nothing on screen to explain it.
 - **Search fields spread `nativeSearchBarChrome`** from `@/shared/ui/header` into `headerSearchBarOptions` — four screens carry one (the list, the category picker, the brand picker, the currency picker) and all four need the same settings. `placement: "stacked"` + `hideWhenScrolling: false` is a real `UISearchBar` pinned under the nav bar, glass header and all. Not `placement: "automatic"`: UIKit picks a field that retracts on the first scroll, so on a list long enough to want searching the control is gone exactly when it is wanted. If it ever appears not to render, suspect a stale Fast Refresh before concluding the platform cannot do it: a full relaunch was the difference here, and a hand-rolled `TextInput` lookalike was very nearly shipped over it.
@@ -89,8 +89,8 @@ apps/mobile/src/
 - **Header chrome comes from `@/shared/ui/header`** (`nativeHeaderChrome`), spread into every headered screen. iOS gets `headerTransparent: true` + `scrollEdgeEffects: { top: "soft" }`; **Android gets an OPAQUE bar** — glass is iOS-only there, and a transparent header leaves scroll content stacked *under* the bar because `scrollEdgeEffects` and `contentInsetAdjustmentBehavior` are both iOS no-ops.
 - **Never** set `headerStyle.backgroundColor` or `headerBlurEffect` on iOS: a solid background kills the glass, and `headerBlurEffect` paints a permanent gray band over the near-black app while overlapping `scrollEdgeEffects`.
 - **Every scroll view under a header** sets `contentInsetAdjustmentBehavior="automatic"` and keeps `contentContainerStyle.paddingBottom` small (~24) — the automatic inset already clears the floating tab bar. Do not swap it for a manual `useSafeAreaInsets` padding.
-- **`scrollEdgeEffects` only blurs content passing under HEADER ITEMS.** Home shipped `headerShown: false` and therefore had nothing behind its status bar — cards slid up into bare pixels. It has a header again, and the two things in it are the argument for it: the **current month**, which every figure on the screen is scoped to and which the hero never names, and the **same `+` bar button the subscriptions list carries**. A header repeating the tab's own word is still not worth the fold.
-- **A nested horizontal ScrollView sets `automaticallyAdjustContentInsets={false}`** (Home's upcoming rail). Without it the inner scroller inherits the outer one's automatic inset and starts pushed in by the status-bar height.
+- **`scrollEdgeEffects` only blurs content passing under HEADER ITEMS.** Home shipped `headerShown: false` and therefore had nothing behind its status bar — cards slid up into bare pixels. It has a header again, and the two things in it are the argument for it: the **current month**, which every figure on the screen is scoped to and which the hero never names, and the **same `+` bar button the subscriptions list carries**, on the trailing side. A header repeating the tab's own word is still not worth the fold. The month is `headerLargeTitle`, which is what makes it the page's own heading rather than a caption — UIKit draws it large and flush left and collapses it on the first scroll, so nothing here animates a hero title by hand. It needs the page's scroll view to keep `contentInsetAdjustmentBehavior="automatic"`; the loading, error and first-run branches have no scroll view and simply keep the title expanded, which is correct — there is nothing to scroll.
+- **A nested horizontal ScrollView sets `automaticallyAdjustContentInsets={false}`** (Home's month strip). Without it the inner scroller inherits the outer one's automatic inset and starts pushed in by the status-bar height.
 
 ## Data
 
@@ -330,9 +330,11 @@ silent:
   Same choice the reminder planner makes for its firing instants: "has this day
   arrived" is a wall-clock question. The server answers the same question in the
   account's zone for the lifecycle `status` it ships, and the two can differ by a
-  day — but never contradictorily, because `deriveAttention` branches on the
-  server's `status` before it consults its own clock. `useSeedPreferredTimezone`
-  is what stops that gap opening for a new account.
+  day — but never contradictorily, because every surface that dates an event
+  branches on the record's own `status` before it consults a clock:
+  `buildCalendarMonth` drops a cancelled subscription outright, and
+  `subscriptionsDueOn` and the reminder planner both test
+  `isCurrentlyActiveSubscription` first.
 
 ## UI
 
@@ -430,7 +432,19 @@ the text:
 Verify with `xcrun simctl ui <udid> content_size accessibility-extra-extra-extra-large`
 rather than by tapping through Settings.
 
-**Colour means one thing at a time.** `accent` green is brand and interaction, never "money is good" — the sole exception is Home's next-month chip, where it marks a *direction* of change. `danger`/`warning`/`muted` on Home's upcoming rail encode **when** (≤1 day / ≤7 rolling days / later), never what kind of event it is; the kind is carried by an SF Symbol. The one event that opts out is `ends`, which is always green because a cancellation takes money off the bill. Read the comments on the tokens before reusing one.
+**Home's "Needs a decision" cap cuts BETWEEN days and never inside one.**
+`widgets/home-page/model/decisions.ts` fills to three rows and then stops taking
+NEW days; a day it has started is always shown whole, so five trials converting
+tomorrow are five rows. A plain `.slice(0, 3)` is the obvious simplification and
+it is the one thing this card must not do — three of five shown is a user who
+cancels three and is charged for the two the card chose not to mention. When
+anything is left over the card says so and routes to the calendar, which draws
+all six kinds; a silent truncation on the screen whose promise is "nothing
+surprises you" is worse than no card. The band carries the four kinds where
+opening the app still changes the outcome — `payment` belongs to the strip
+above it, and `ends` is a decision the user already made.
+
+**Colour means one thing at a time.** `accent` green is brand and interaction, never "money is good" — the sole exception is Home's next-month delta, where it marks a *direction* of change. `danger`/`warning`/`muted` on the calendar's agenda rows encode **when** (≤1 day / ≤7 rolling days / later), never what kind of event it is; the kind is carried by an SF Symbol. The one event that opts out is `ends`, which is always green because a cancellation takes money off the bill. Read the comments on the tokens before reusing one.
 
 **`cancelling` is a kind of ACTIVE, not a kind of cancelled.** It still bills
 and still gives access until `willBeCancelledAt`, so the list's "active" filter
@@ -494,10 +508,28 @@ show through and the negative margin would only hide the top of the banner.
 `@react-navigation/elements` is not in this tree — there is no `useHeaderHeight`
 to ask.
 
-**The banner owns the DATE, the card below owns the COUNTDOWN.** Both used to
-print the same date. The banner's line is already worded for the status
-(`detail_heroRenews` / `heroEnds` / `heroResumes` / `heroEnded`), so the card
-keeps only what the banner cannot say: how long, and how far through the cycle.
+**The card owns the EVENT; the banner only says which subscription this is.**
+Both used to print the same date, and the split has since gone the other way:
+the banner keeps a line only for a subscription that is OVER
+(`detail_heroEnded`), because that is the one state with no card underneath to
+own the answer. While a next date exists the card states the whole event — what
+will be taken, how long, the date, and whether a reminder will fire — and the
+banner's own line was deleted along with `detail_heroRenews` / `heroEnds` /
+`heroResumes`. The capsule still answers "what does this cost", which is a
+different question from "what is about to happen": a trial converting before the
+next payment makes those two different numbers.
+
+**An amount printed beside a date must be the amount taken ON that date.**
+`billing.preferred` is the price effective TODAY, and the list never settles a
+due phase — `applyDuePhases` runs from `getSubscription` alone — so a row holds
+the un-settled record and the phase it is about to move to side by side. Printing
+the first while naming the second's date said "₴0.00, in 7 days" over a trial
+converting in two, and "Cancelled · Sep 26" beside a live amount over a charge
+`shouldIncludeOccurrence` had already excluded. `nextChargeBilling`
+(`entities/subscription/model/next-charge.ts`, tested) answers the first; the
+list row asks a winding-down subscription for `willBeCancelledAt` and greys its
+amount when nothing more will be taken, which is the same cut the detail card
+makes.
 
 **Nothing on the detail screen may restate the banner.** Two things were cut for
 this and should not come back: a centred "charged as $7.20" line — the

@@ -11,20 +11,43 @@ import {
 } from "react-native";
 import { useDashboard } from "@/entities/dashboard";
 import { usePro } from "@/entities/pro";
-import { deriveAttention, subscriptionsQuery } from "@/entities/subscription";
+import { subscriptionsQuery } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { categoryColors, colors } from "@/shared/ui/theme";
+import { buildDecisions } from "../model/decisions";
+import { buildRail } from "../model/rail";
+import { DecisionList } from "./decision-list";
 import { HomeEmpty } from "./home-empty";
+import { HomeGlow } from "./home-glow";
 import { HomePrompts } from "./home-prompts";
 import { MonthHero } from "./month-hero";
-import { SpendBars, type SpendRow } from "./spend-bars";
-import { UpcomingRail } from "./upcoming-rail";
+import { MonthRail } from "./month-rail";
+import { SpendBreakdown, type SpendRow } from "./spend-breakdown";
 
-// One question per card, in the order a user asks them: what is left this month,
-// what needs me, where does it go. The rail is capped at five events, not a
-// window onto everything — the Subscriptions tab stays the full list.
+// One question per band, in the order a user asks them: WHEN does it leave, WHAT
+// still needs deciding, HOW MUCH is left, WHERE does it go. The strip at the top
+// is the only thing here that differs between two opens on consecutive days,
+// which is why it takes the fold.
 //
-// The third card is answered for EVERYONE. It used to be a `ProLock` for a free
+// The second band is the reason the app is worth opening rather than checking
+// once a month: a strip of charges answers a question the user already knows the
+// answer to, and "Needs a decision" is the only place the app says something they
+// could not have predicted. It is absent whenever there is nothing to decide,
+// which is most days — that silence is what keeps it worth reading on the days it
+// speaks. Everything below it is a summary of terms already agreed, which is why
+// the month card gave up the headline size it used to take: that figure decays to
+// zero by the 30th and nothing can be done about it either way.
+//
+// There used to be a fourth band between the hero and the breakdown — a
+// horizontal card rail of the next five dated events, "Coming up". It went
+// because the strip answers the same question better: it shows every charge for
+// the rest of the month in the space that card spent on five, and a user who
+// wants the ones past it has a Calendar tab that is not gated. What the rail
+// carried and nothing else does is the WORDING of a non-charge event ("Trial
+// ends in 3 days"); those are reminders' job, and the calendar names them on
+// the day.
+//
+// The last card is answered for EVERYONE. It used to be a `ProLock` for a free
 // install, which made the app's most-repeated paywall impression an
 // advertisement for a chart that is empty by construction: categories are
 // themselves Pro, so behind that lock sat a single 100% "uncategorised" bar.
@@ -32,18 +55,33 @@ import { UpcomingRail } from "./upcoming-rail";
 // breaks the promise to whoever pays. Free groups by subscription, which is the
 // resolution that install actually has; Pro groups by category. Same question,
 // same card, answered as well as the data allows.
-const TOP_SUBSCRIPTIONS = 5;
-
+//
+// Nothing on this screen is gated. The strip and the bar under the hero are the
+// dashboard's own `cashFlowForecast` drawn twice over, and every figure in them
+// was already free; the calendar tab gives the same days away tile by tile. The
+// month-over-month delta that IS Pro lives on the calendar and looks BACKWARDS
+// — this one looks forward, off a forecast a free install has always been shown.
 export function HomePage() {
   const { data, isError } = useDashboard();
   const isPro = usePro();
-  // The same list the Subscriptions tab reads. Every attention event is derived
-  // from fields it carries, so a second projection for them would be a second
-  // source of the same truth.
+  // The same list the Subscriptions tab reads — it is what the breakdown groups
+  // for a free install, and what tells this screen whether everything is merely
+  // paused.
   const subscriptions = useQuery(subscriptionsQuery());
 
-  const events = useMemo(
-    () => deriveAttention(subscriptions.data ?? []),
+  // Memoised on the forecast alone, which is what keeps the strip's cells
+  // identical objects between repaints — every one of them is `memo`ised, and a
+  // fresh array per render would defeat all of it.
+  const railDays = useMemo(
+    () => buildRail(data?.cashFlowForecast ?? []),
+    [data?.cashFlowForecast],
+  );
+
+  // Off the list, not off the forecast: a cash-flow point carries payments only,
+  // and every event this band exists for is a dated notice with no money moving
+  // on its own day.
+  const decisions = useMemo(
+    () => buildDecisions(subscriptions.data ?? []),
     [subscriptions.data],
   );
 
@@ -82,78 +120,77 @@ export function HomePage() {
         amount: item.amount,
         color: categoryColors[index % categoryColors.length] ?? colors.accent,
       }))
-    : topSubscriptionRows(subscriptions.data ?? []);
+    : subscriptionRows(subscriptions.data ?? []);
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content}
-    >
-      {/* Inside this branch and no higher: reaching it at all is the proof that
+    <View style={styles.page}>
+      <HomeGlow />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+      >
+        {/* Inside this branch and no higher: reaching it at all is the proof that
           the app is working for this user, which is the only state in which
           interrupting them is fair. */}
-      <HomePrompts tracked={(subscriptions.data ?? []).length} />
+        <HomePrompts tracked={(subscriptions.data ?? []).length} />
 
-      <MonthHero
-        currency={data.preferredCurrencyCode}
-        remainingThisMonth={data.remainingThisMonth}
-        monthTotal={data.totalUpcomingMonth}
-        nextMonthForecast={data.nextMonthForecast}
-        yearForecast={data.yearlyForecast}
-      />
+        {/* Empty on the last day of the month, and only then. A strip with one
+          cell in it is still the answer — "nothing else this month" — but no
+          cells at all is a hairline under nothing. */}
+        {railDays.length ? (
+          <MonthRail days={railDays} currency={data.preferredCurrencyCode} />
+        ) : null}
 
-      {/* Most days this is empty, and that is the answer. Rendering an empty
-          "nothing needs you" block is what trains a user to stop reading it. */}
-      {events.length ? <UpcomingRail events={events} /> : null}
+        <DecisionList events={decisions.shown} hidden={decisions.hidden} />
 
-      {rows.length ? (
-        <SpendBars currency={data.preferredCurrencyCode} rows={rows} />
-      ) : null}
-    </ScrollView>
+        <MonthHero
+          currency={data.preferredCurrencyCode}
+          remainingThisMonth={data.remainingThisMonth}
+          monthTotal={data.totalUpcomingMonth}
+          nextMonthForecast={data.nextMonthForecast}
+          yearForecast={data.yearlyForecast}
+        />
+
+        {rows.length ? (
+          <SpendBreakdown
+            currency={data.preferredCurrencyCode}
+            rows={rows}
+            count={isPro ? m.home_countCategories : m.home_countSubscriptions}
+            more={isPro ? m.home_moreCategories : m.home_moreSubscriptions}
+          />
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 
 /**
- * The biggest subscriptions, with everything else folded into one row.
+ * Every active subscription, biggest first.
  *
- * The tail is summed rather than dropped: the bars are read as shares, and
- * shares of a top-five subtotal quietly overstate every one of them. `monthly`
- * is the normalised figure the list's own sort and section totals already use,
- * so a yearly subscription is comparable to a monthly one here.
+ * The tail is no longer summed into an "everything else" row: the card folds it
+ * behind a tap of its own, so the shares are computed over the real total either
+ * way and the rows the fold hides can actually be looked at. `monthly` is the
+ * normalised figure the list's own sort and section totals already use, so a
+ * yearly subscription is comparable to a monthly one here.
  */
-function topSubscriptionRows(
+function subscriptionRows(
   subscriptions: readonly SubscriptionDto[],
 ): SpendRow[] {
-  const active = subscriptions
+  return subscriptions
     .filter((item) => isCurrentlyActiveSubscription(item.status))
-    .sort((a, b) => b.billing.preferred.monthly - a.billing.preferred.monthly);
-
-  const rows: SpendRow[] = active
-    .slice(0, TOP_SUBSCRIPTIONS)
+    .sort((a, b) => b.billing.preferred.monthly - a.billing.preferred.monthly)
     .map((item, index) => ({
       key: item.id,
       name: item.name,
       amount: item.billing.preferred.monthly,
       color: categoryColors[index % categoryColors.length] ?? colors.accent,
     }));
-
-  const rest = active
-    .slice(TOP_SUBSCRIPTIONS)
-    .reduce((sum, item) => sum + item.billing.preferred.monthly, 0);
-
-  if (rest > 0) {
-    rows.push({
-      key: "rest",
-      name: m.home_otherSubscriptions(),
-      amount: rest,
-      color: colors.muted,
-    });
-  }
-
-  return rows;
 }
 
 const styles = StyleSheet.create({
+  // The glow's containing box. `flex: 1` so it fills the screen the navigator
+  // hands over, which is what the wash is positioned against.
+  page: { flex: 1 },
   content: { padding: 16, paddingBottom: 24, gap: 14 },
   centered: {
     flex: 1,

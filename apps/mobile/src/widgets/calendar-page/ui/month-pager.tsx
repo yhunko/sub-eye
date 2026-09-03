@@ -165,15 +165,11 @@ const MonthPage = memo(function MonthPage({
   offset,
   width,
   settings,
-  selected,
-  onSelect,
   onOpenSubscription,
 }: {
   offset: number;
   width: number;
   settings: CalendarSettings;
-  selected: string | null;
-  onSelect: (date: string) => void;
   onOpenSubscription: (subscriptionId: string) => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -250,8 +246,6 @@ const MonthPage = memo(function MonthPage({
         days={days}
         heavyDates={heavyDates}
         settings={settings}
-        selected={selected}
-        onSelect={onSelect}
       />
 
       <View style={styles.divider} />
@@ -292,15 +286,11 @@ export function MonthPager({
   controls,
   onOffsetChange,
   settings,
-  selected,
-  onSelect,
   onOpenSubscription,
 }: {
   controls: RefObject<MonthPagerHandle | null>;
   onOffsetChange: (offset: number) => void;
   settings: CalendarSettings;
-  selected: string | null;
-  onSelect: (date: string) => void;
   onOpenSubscription: (subscriptionId: string) => void;
 }) {
   // Full-bleed pages: each one carries its own horizontal padding, so the swipe
@@ -378,8 +368,6 @@ export function MonthPager({
           offset={item}
           width={width}
           settings={settings}
-          selected={selected}
-          onSelect={onSelect}
           onOpenSubscription={onOpenSubscription}
         />
       )}

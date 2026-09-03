@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
@@ -12,11 +12,13 @@ import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
 import {
+  categorySheetChrome,
   nativeHeaderChrome,
   nativeSearchBarChrome,
   nativeSheetChrome,
 } from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
+import { sheetCloseHeaderOptions } from "@/widgets/calendar-page";
 import { currencySearch } from "@/widgets/currency-page";
 
 // expo-router looks for this exact named export on a layout and uses it as the
@@ -70,6 +72,15 @@ const legalSheet = {
   headerShown: true,
 };
 
+// The day sheet keeps its header for the same reason the legal one does — the
+// only place it can carry a real close button. `categorySheetChrome` is the
+// chrome that turns a header back on; `nativeSheetChrome` alone switches them
+// off, and spreading the header chrome only styles one.
+const daySheet = {
+  ...categorySheetChrome,
+  ...sheetCloseHeaderOptions(() => router.back()),
+};
+
 // The pause sheet is a single date field and cannot overflow, so it gets to be
 // exactly as tall as it needs.
 const compactSheet = {
@@ -119,6 +130,13 @@ function RootLayout() {
                 is itself a root screen, so a sheet pushed from under its
                 Restore button lands ON it rather than behind it. */}
             <Stack.Screen name="legal/[doc]" options={legalSheet} />
+            {/* One day's charges. Root-level because TWO tabs open it — the
+                calendar's grid and Home's month strip — and from Home a route
+                inside the calendar's stack would be a cross-tab present: the
+                tab bar would switch to Calendar underneath the sheet. It keeps
+                a header purely to carry a close button, the way the calendar's
+                own options sheet does. */}
+            <Stack.Screen name="day/[date]" options={daySheet} />
             {/* Root-level beside the paywall, because it REPLACES itself with
                 one: nested under the tab tree it would be presenting a modal
                 from a navigator that is about to be covered.
@@ -178,9 +196,9 @@ function RootLayout() {
               }}
             />
             {/* A subscription's own screen, and the three sheets it opens, are
-                root routes for the same reason the form is one: Home's upcoming
-                rail, the list, the due digest, a widget row and a tapped
-                reminder all open it, and from Home it was a CROSS-TAB push —
+                root routes for the same reason the form is one: the list, the
+                calendar, the due digest, a widget row and a tapped reminder all
+                open it, and from the calendar it was a CROSS-TAB push —
                 expo-router switched to the subscriptions tab and pushed the
                 detail in one commit, so the tab changed underneath and the push
                 animation was swallowed by the switch. From the root it slides

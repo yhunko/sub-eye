@@ -183,7 +183,7 @@ const analyticsContext = async (
 };
 
 /**
- * The same order Home's rail ranks its events in: a price about to change costs
+ * How two events landing on one day are ranked: a price about to change costs
  * money, a charge is money leaving, a resume is a heads-up, an ending is an FYI.
  */
 const CALENDAR_RANK: Record<CalendarEventKind, number> = {
@@ -253,9 +253,9 @@ export const buildCalendarMonth = async (
     );
   };
 
-  // The three dated events that are NOT charges. Mirrors `deriveAttention`'s
-  // rules, bounded to the month instead of to "still ahead" — a calendar showing
-  // September has to show September's phase change whether or not it has passed.
+  // The three dated events that are NOT charges. Bounded to the month rather
+  // than to "still ahead" — a calendar showing September has to show
+  // September's phase change whether or not it has passed.
   for (const subscription of subscriptions) {
     if (subscription.status === "cancelled") continue;
 

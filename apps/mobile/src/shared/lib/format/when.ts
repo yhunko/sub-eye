@@ -77,12 +77,22 @@ export function formatShortDate(isoDate: string): string {
 }
 
 /**
+ * How far out a date still reads better as a countdown than as a date.
+ *
+ * Exported because a caller that splits the two branches apart — to lowercase
+ * the countdown mid-sentence without lowercasing "21 Sep" — has to make the cut
+ * at exactly the same place this does, or the same date reads two ways on two
+ * screens.
+ */
+export const COUNTDOWN_DAYS = 14;
+
+/**
  * "Today" / "Tomorrow" / "in N days" up to a fortnight out, then a short date.
  * `isoDate` is only read for the date branch, so callers can pass the server's
  * timezone-correct `daysUntil` alongside the raw date.
  */
 export function formatDaysUntil(days: number, isoDate: string): string {
-  if (days < 14) return formatCountdown(days);
+  if (days < COUNTDOWN_DAYS) return formatCountdown(days);
   return formatShortDate(isoDate);
 }
 

@@ -105,9 +105,9 @@ export interface DashboardAnalyticsDto {
 /**
  * One dated thing that happens to a subscription.
  *
- * The same vocabulary and the same order the mobile client's `deriveAttention`
- * uses for Home's rail. One list of kinds, so the rail and the calendar cannot
- * come to different conclusions about what a given day contains.
+ * One list of kinds, shared by every projection that dates one — so the
+ * calendar, the reminder planner and any future surface cannot come to different
+ * conclusions about what a given day contains.
  */
 export type CalendarEventKind =
   | "trialEnds"

@@ -1,16 +1,17 @@
 import type { CalendarEventKind } from "@subeye/model";
 
 /**
- * The glyph for each dated event, shared by Home's rail, the calendar's agenda
- * and its day sheet.
+ * The glyph for each dated event, shared by the calendar's agenda and its day
+ * sheet.
  *
- * In `shared/ui` rather than beside the first widget that needed it: three
- * widgets draw these now, and a widget reaching into another widget's `ui/` is
- * the cross-import `check:boundaries` fails the build on — the same reason
- * `list-row` lives here.
+ * Still in `shared/ui` rather than inside `calendar-page` even though only that
+ * widget draws these now: the union it is keyed on is `@subeye/model`'s, and the
+ * next surface that dates an event wants the same glyphs — a widget reaching
+ * into another widget's `ui/` is the cross-import `check:boundaries` fails the
+ * build on, which is the same reason `list-row` lives here.
  *
  * The GLYPH says what kind of event it is. Where a surface also tints it, the
- * colour says something else — on the rail, when it lands. Keep those apart.
+ * colour says something else. Keep those apart.
  *
  * `as const satisfies` rather than an annotation: `SymbolView`'s `name` is a
  * union of every symbol name there is, so a `string` here widens out of it and

@@ -64,10 +64,14 @@ function StepButton({
  * tab is navigation rather than a feature.
  *
  * There WAS a truncated agenda under a lock here, and it withheld nothing: the
- * grid above it already printed each day's logos and total, and the day sheet
- * opened every one of them in full for a free install. A gate a user routes
- * around in one tap does not convert, it just teaches them the locks are
- * theatre. What Pro buys on this screen is additional now, never subtracted —
+ * grid above it already printed each day's logos and total, and the agenda
+ * itself listed every one of them in full for a free install. A gate a user
+ * routes around in one tap does not convert, it just teaches them the locks are
+ * theatre.
+ *
+ * The GRID IS NOT INTERACTIVE, and that is the same argument again: a tile used
+ * to open a sheet holding exactly the rows the agenda under it already prints
+ * for that day. Home's month strip kept the tap, because Home has no agenda. What Pro buys on this screen is additional now, never subtracted —
  * the month-over-month delta, the heavy-day flag and the year view — plus the
  * density that comes free with it, because a trial, an intro price and a
  * scheduled change can only exist on a Pro install.
@@ -88,17 +92,11 @@ export function CalendarPage() {
   const settings = useCalendarSettings();
   const pager = useRef<MonthPagerHandle | null>(null);
   const [offset, setOffset] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
 
   // A MIRROR of the pager's scroll position, never a driver of it. Everything
   // here that moves the calendar calls `pager.current.goTo`, so a control can
   // never be defeated by this already holding the value it wants to set.
-  const onOffsetChange = useCallback((next: number) => {
-    setOffset(next);
-    // The selection names a day in the month being left, so keeping it would
-    // light a tile in the new month that shares only its position in the grid.
-    setSelected(null);
-  }, []);
+  const onOffsetChange = useCallback((next: number) => setOffset(next), []);
 
   // Written by the year view, which speaks months rather than offsets. A param
   // is input from outside the process even when this app wrote it.
@@ -110,19 +108,6 @@ export function CalendarPage() {
     // the user has since paged away from.
     router.setParams({ month: undefined });
   }, [requested, router]);
-
-  const openDay = useCallback(
-    (date: string) => {
-      setSelected(date);
-      router.push({
-        pathname: "/calendar/day/[date]",
-        // The same `YYYY-MM-DD` the due-digest route takes. A full ISO instant
-        // carries colons, which have no business in a path segment.
-        params: { date: date.slice(0, 10) },
-      });
-    },
-    [router],
-  );
 
   const openSubscription = useCallback(
     (id: string) =>
@@ -173,8 +158,6 @@ export function CalendarPage() {
         controls={pager}
         onOffsetChange={onOffsetChange}
         settings={settings}
-        selected={selected}
-        onSelect={openDay}
         onOpenSubscription={openSubscription}
       />
     </View>
