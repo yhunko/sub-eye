@@ -30,6 +30,17 @@ const MONTH_FLOOR = 17;
  * standard title and never clipped. A `maxFontSizeMultiplier` here would be the
  * cap this app does not do.
  */
+/**
+ * Ukrainian writes its month names in lower case — `Intl` correctly returns
+ * "вересень" — but this one is a heading, and a heading is capitalised in both
+ * languages. Without it the app opened on a title that read like a typo.
+ *
+ * Locale-aware, because upper-casing the first letter is not the same operation
+ * in every language, and this string comes straight from `Intl`.
+ */
+const capitalise = (text: string) =>
+  text.charAt(0).toLocaleUpperCase(dateLocale()) + text.slice(1);
+
 function MonthTitle() {
   return (
     <Text
@@ -39,8 +50,10 @@ function MonthTitle() {
       minimumFontScale={useShrinkFloor(MONTH_SIZE, MONTH_FLOOR)}
       accessibilityRole="header"
     >
-      {new Intl.DateTimeFormat(dateLocale(), { month: "long" }).format(
-        new Date(),
+      {capitalise(
+        new Intl.DateTimeFormat(dateLocale(), { month: "long" }).format(
+          new Date(),
+        ),
       )}
     </Text>
   );
