@@ -31,6 +31,57 @@ const mmkv = createMMKV({ id: "subeye.logos" });
 export type LogoKind = "symbol" | "plate";
 
 /**
+ * Which of a brand's marks to draw, when the automatic pick is not the one the
+ * user wants.
+ *
+ * Brandfetch stores three shapes per brand and no single one is right for every
+ * brand: `icon` is the app icon and the default because it is the only tier
+ * that answered for all 40 brands probed; `symbol` is the bare mark, better for
+ * a brand whose icon is a wordmark; `logo` is the wordmark itself, which some
+ * brands are more recognisable as. Everything else in the path space — `mark`,
+ * `avatar`, `idx/2` — silently returns the default asset rather than 404ing, so
+ * it only LOOKS like there are more.
+ */
+export const LOGO_VARIANTS = ["icon", "symbol", "logo"] as const;
+export type LogoVariant = (typeof LOGO_VARIANTS)[number];
+
+const isVariant = (value: string | undefined): value is LogoVariant =>
+  LOGO_VARIANTS.includes(value as LogoVariant);
+
+/**
+ * The chosen variant per DOMAIN, on its own MMKV instance.
+ *
+ * Per domain and not per subscription: two Notion subscriptions are the same
+ * brand and must not disagree about what Notion looks like. That is also why
+ * this needs no schema change — it is a fact about a brand, not about a record,
+ * so it never travels through `@subeye/model` or iCloud sync.
+ *
+ * Its own instance rather than a prefix in the logo cache: that cache evicts by
+ * wiping itself when it fills, and a choice the user made by hand must not
+ * disappear because they browsed 500 brands.
+ */
+const variants = createMMKV({ id: "subeye.logo-variants" });
+
+/** Every variant the user has chosen, by domain. Read once, at boot. */
+export function readStoredVariants(): Record<string, LogoVariant> {
+  const stored: Record<string, LogoVariant> = {};
+  for (const key of variants.getAllKeys()) {
+    const value = variants.getString(key);
+    if (isVariant(value)) stored[key] = value;
+  }
+  return stored;
+}
+
+/** Persist one choice. The live value is React state — see `useLogoVariants`. */
+export function storeVariant(
+  domain: string,
+  variant: LogoVariant | null,
+): void {
+  if (variant) variants.set(domain, variant);
+  else variants.remove(domain);
+}
+
+/**
  * A cached answer. `uri` is `null` for "this brand has no logo anywhere", which
  * is a real answer worth keeping — it is what stops three 404s per mount.
  */
@@ -137,30 +188,48 @@ const FETCH_TIMEOUT_MS = 8000;
 const MAX_ENTRIES = 500;
 
 /**
+ * The CDN paths for one variant, best first.
+ *
+ * `theme/light` leads the two transparent tiers because unpinned they come back
+ * in whatever theme the brand stored — OpenAI's symbol is near-black, which is
+ * near-invisible on this app's plate. `icon` has no such problem: it is an
+ * opaque JPEG that carries its own background, and its `theme` variants are
+ * byte-identical to it.
+ */
+const VARIANT_PATHS: Record<LogoVariant, readonly string[]> = {
+  icon: ["icon"],
+  symbol: ["symbol/theme/light", "symbol"],
+  logo: ["logo/theme/light", "logo"],
+};
+
+/** Whether a path serves an opaque square that should fill the circle. */
+const isPlate = (path: string) => path.startsWith("icon");
+
+/**
  * Every source we will try for one domain, best first.
  *
  * `fallback/404` on the Brandfetch ones is deliberate: the default is
  * Brandfetch's own wordmark, which would put another company's logo on the
  * user's row. A 404 moves us down this list instead.
  *
- * `icon` LEADS, and that inverted the order this had for months.
- *
- * The old order preferred a bare `symbol` so the mark would sit on the app's
- * own plate. Measured across 32 brands (2026-09-03) that is simply the worse
- * picture: `icon` answered for every one of them, is a 400×400 opaque square
- * for all but icloud.com, and fills the circle the way an app icon does —
- * whereas a bare symbol has to be inset to √½ so the circle cannot clip it, and
- * lands as a small monochrome mark on dark grey. Amazon, Microsoft, Xbox, Adobe
- * and Google One were all drawing at 70% of a circle in their brand-less
+ * `icon` LEADS the automatic order, and that inverted the order this had for
+ * months. The old order preferred a bare `symbol` so the mark would sit on the
+ * app's own plate. Measured across 40 brands (2026-09-03) that is simply the
+ * worse picture: `icon` answered for every one of them, is a 400×400 opaque
+ * square for all but icloud.com, and fills the circle the way an app icon does
+ * — whereas a bare symbol has to be inset to √½ so the circle cannot clip it,
+ * and lands as a small monochrome mark on dark grey. Amazon, Microsoft, Xbox,
+ * Adobe and Google One were all drawing at 70% of a circle in their brand-less
  * colours when the same brands have a full-colour square one tier down.
  *
- * The symbol tiers stay as fallbacks for a brand `icon` does not cover, and
- * `theme/light` still leads them: unpinned, OpenAI's symbol comes back
- * near-black on near-black.
+ * A CHOSEN variant leads instead, and the automatic order follows it: a brand
+ * whose chosen variant later 404s falls back to a logo rather than to a letter.
  */
 function sourcesFor(
   kind: LogoKind,
   domain: string,
+  only: LogoVariant | null,
+  preview = false,
 ): [{ uri: string; plate: boolean }, ...{ uri: string; plate: boolean }[]] {
   const encoded = encodeURIComponent(domain);
   const client = env.BRANDFETCH_CLIENT_ID;
@@ -176,19 +245,39 @@ function sourcesFor(
   }
 
   const px = kind === "plate" ? PLATE_PX : SYMBOL_PX;
-  const bf = (path: string) =>
-    `https://cdn.brandfetch.io/${encoded}/${path}/fallback/404/h/${px}/w/${px}?c=${client}`;
+  const source = (path: string) => ({
+    uri: `https://cdn.brandfetch.io/${encoded}/${path}/fallback/404/h/${px}/w/${px}?c=${client}`,
+    plate: isPlate(path),
+  });
 
-  if (kind === "plate") return [{ uri: bf("icon"), plate: true }];
+  // The banner blurs its copy into a colour wash and a transparent mark blurs
+  // to almost nothing, so it always asks for the opaque square — whatever the
+  // user chose for the avatar.
+  if (kind === "plate") return [source("icon")];
 
-  return [
-    { uri: bf("icon"), plate: true },
-    { uri: bf("symbol/theme/light"), plate: false },
-    { uri: bf("symbol"), plate: false },
+  const paths = [
+    ...(only ? VARIANT_PATHS[only] : []),
+    // A preview asks for ONE variant and must report honestly that a brand has
+    // no such mark, so it does not offer a tile that would fall through to a
+    // different one.
+    ...(preview ? [] : ["icon", "symbol/theme/light", "symbol"]),
   ];
+  const [first, ...rest] = [...new Set(paths)].map(source);
+  // `paths` always starts with a literal, so this is total.
+  if (!first) throw new Error("no logo sources");
+  return [first, ...rest];
 }
 
-const keyFor = (kind: LogoKind, domain: string) => `${kind}:${domain}`;
+/**
+ * The variant is part of the key, so switching one does not evict the other:
+ * flipping back and forth costs no network, and the two entries age out on
+ * their own.
+ */
+const entryKey = (
+  kind: LogoKind,
+  variant: LogoVariant | null,
+  domain: string,
+) => `${kind}:${variant ?? "auto"}:${domain}`;
 
 /**
  * Parsed entries, in front of MMKV.
@@ -217,8 +306,15 @@ const isEntry = (value: unknown): value is LogoEntry => {
  * What is cached for this brand, or `null` for "never fetched". Synchronous —
  * the whole point of the cache is that a render can ask.
  */
-export function readLogo(kind: LogoKind, domain: string): LogoEntry | null {
-  const key = keyFor(kind, domain);
+export function readLogo(
+  kind: LogoKind,
+  domain: string,
+  variant: LogoVariant | null,
+): LogoEntry | null {
+  return readEntry(entryKey(kind, variant, domain));
+}
+
+function readEntry(key: string): LogoEntry | null {
   const hit = parsed.get(key);
   if (hit) return hit;
 
@@ -313,12 +409,14 @@ async function walk(
   kind: LogoKind,
   domain: string,
   key: string,
+  only: LogoVariant | null,
+  preview = false,
 ): Promise<LogoEntry | null> {
   // A 404 from every tier is an answer worth caching; a throw is not, and must
   // not be recorded as one.
   let answered = true;
 
-  for (const source of sourcesFor(kind, domain)) {
+  for (const source of sourcesFor(kind, domain, only, preview)) {
     try {
       const uri = await download(source.uri);
       if (uri) {
@@ -356,8 +454,9 @@ async function walk(
 export function loadLogo(
   kind: LogoKind,
   domain: string,
+  variant: LogoVariant | null,
 ): Promise<LogoEntry | null> {
-  const key = keyFor(kind, domain);
+  const key = entryKey(kind, variant, domain);
   const running = inFlight.get(key);
   if (running) return running;
 
@@ -366,9 +465,30 @@ export function loadLogo(
     return Promise.resolve(null);
   attemptedAt.set(key, now);
 
-  const run = walk(kind, domain, key).finally(() => inFlight.delete(key));
+  const run = walk(kind, domain, key, variant).finally(() =>
+    inFlight.delete(key),
+  );
   inFlight.set(key, run);
   return run;
+}
+
+/**
+ * What one variant of this brand actually looks like, or `null` when the brand
+ * has no mark of that shape.
+ *
+ * Written into the cache under the variant's OWN key, so choosing a tile the
+ * picker already drew costs no second download.
+ */
+export async function previewVariant(
+  domain: string,
+  variant: LogoVariant,
+): Promise<LogoEntry | null> {
+  const key = entryKey("symbol", variant, domain);
+  const cached = readEntry(key);
+  if (cached && !logoIsStale(cached)) return cached.uri ? cached : null;
+
+  const entry = await walk("symbol", domain, key, variant, true);
+  return entry?.uri ? entry : null;
 }
 
 /**
@@ -377,6 +497,8 @@ export function loadLogo(
  * after the document is gone.
  */
 export function clearLogos(): void {
+  variants.clearAll();
+  variants.trim();
   mmkv.clearAll();
   // `clearAll` tombstones; MMKV appends to an mmap file and never shrinks it on
   // its own, and Documents travels into device backups. Same reasoning as

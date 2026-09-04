@@ -35,6 +35,7 @@ import {
 } from "@/shared/lib/store";
 import { clearWidget } from "@/shared/lib/widget";
 import { Divider, Row, Section } from "@/shared/ui/list-row";
+import { useClearLogoVariants } from "@/shared/ui/logo-variants";
 import { notifyWriteFailed } from "@/shared/ui/notify";
 import { presentChoice } from "@/shared/ui/present-choice";
 import { colors } from "@/shared/ui/theme";
@@ -190,6 +191,7 @@ export function SettingsPage() {
   const update = useUpdatePreferences();
   const data = preferences.data;
   const [restoring, setRestoring] = useState(false);
+  const clearLogoVariants = useClearLogoVariants();
 
   // Restoring is the only Pro action that can report "nothing found" as a
   // success, so it always says something — silence would read as a dead button.
@@ -251,6 +253,10 @@ export function SettingsPage() {
     } finally {
       eraseDoc();
       clearLogos();
+      // The durable copy goes with the cache above; this drops the live one,
+      // which is React state and would otherwise re-apply the user's picks to
+      // brands they no longer have.
+      clearLogoVariants();
       // Back to a first run in this respect too: an install that kept
       // `remindersAsked` would never be offered reminders again.
       promptFlags.reset();

@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  type StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from "react-native";
 import {
   type LogoEntry,
   type LogoKind,
+  type LogoVariant,
   loadLogo,
   logoFill,
   logoIsStale,
   readLogo,
 } from "@/shared/lib/logos";
+import { useLogoVariant } from "./logo-variants";
 import { colors } from "./theme";
 
 type LogoState =
@@ -40,30 +49,39 @@ export function useBrandLogo(
   // unkeyed result would show the previous choice's logo for a frame.
   const [loaded, setLoaded] = useState<{
     domain: string;
+    variant: LogoVariant | null;
     entry: LogoEntry | null;
   } | null>(null);
+
+  // Context, so a change in the picker re-renders every avatar in the app
+  // without a remount — and only the brands whose value actually moved.
+  const variant = useLogoVariant(domain);
 
   useEffect(() => {
     if (!domain) return;
 
-    const cached = readLogo(kind, domain);
+    const cached = readLogo(kind, domain, variant);
     if (cached && !logoIsStale(cached)) return;
 
     let live = true;
-    void loadLogo(kind, domain).then((entry) => {
+    void loadLogo(kind, domain, variant).then((entry) => {
       // `?? cached` is what keeps a refresh silent when it fails: a walk that
       // learned nothing must not drop the logo already on screen.
-      if (live) setLoaded({ domain, entry: entry ?? cached });
+      if (live) setLoaded({ domain, variant, entry: entry ?? cached });
     });
     return () => {
       live = false;
     };
-  }, [domain, kind]);
+    // `variant` is a dependency, not a bystander: a new variant means a new
+    // cache key, which is a different logo to fetch for the same domain.
+  }, [domain, kind, variant]);
 
   if (!domain) return { status: "none" };
 
-  const settled = loaded?.domain === domain;
-  const entry = settled ? loaded.entry : readLogo(kind, domain);
+  // Both, because a variant switched mid-flight resolves a walk for the mark
+  // the user just moved away from.
+  const settled = loaded?.domain === domain && loaded.variant === variant;
+  const entry = settled ? loaded.entry : readLogo(kind, domain, variant);
   if (entry?.uri)
     return { status: "ready", uri: entry.uri, fill: logoFill(entry) };
   // A stored miss is a final answer, and so is a walk that came back with
@@ -110,20 +128,39 @@ export function BrandLogo({
     );
   }
 
-  const inner = Math.round(size * logo.fill);
+  return <LogoMark uri={logo.uri} fill={logo.fill} size={size} style={box} />;
+}
+
+/**
+ * One logo in one circle. Split out so the variant picker can draw a mark it
+ * has fetched but not chosen — `BrandLogo` resolves the CHOSEN variant, which
+ * is exactly what a tile of the alternatives must not do.
+ */
+export function LogoMark({
+  uri,
+  fill,
+  size,
+  style,
+}: {
+  uri: string;
+  fill: number;
+  size: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const inner = Math.round(size * fill);
 
   return (
-    <View style={[styles.plate, box]}>
+    <View style={[styles.plate, style]}>
       <Image
         accessibilityIgnoresInvertColors
-        source={{ uri: logo.uri }}
+        source={{ uri }}
         style={{
           width: inner,
           height: inner,
           // A filling plate is clipped back to the circle it is filling. An
           // inset mark already fits inside that circle, and rounding it there
           // would bite the mark a second time.
-          ...(logo.fill === 1 ? { borderRadius: inner / 2 } : null),
+          ...(fill === 1 ? { borderRadius: inner / 2 } : null),
         }}
         resizeMode="contain"
       />

@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { clearLogos, loadLogo, logoFill, logoIsStale, readLogo } from "./logos";
+import {
+  clearLogos,
+  loadLogo,
+  logoFill,
+  logoIsStale,
+  previewVariant,
+  readLogo,
+  readStoredVariants,
+  storeVariant,
+} from "./logos";
 
 /**
  * Stands in for RN's native `FileReader`, which Bun has no equivalent of. The
@@ -69,13 +78,13 @@ describe("loadLogo", () => {
     respondWith(() => image());
     measuresAs(400, 400);
 
-    await loadLogo("symbol", "netflix.com");
+    await loadLogo("symbol", "netflix.com", null);
 
     // `icon` leads the ladder, so a brand that has one costs ONE request and
     // gets the full-colour square rather than a monochrome symbol inset to √½.
     expect(requested).toHaveLength(1);
     expect(requested[0]).toInclude("/icon/");
-    const entry = readLogo("symbol", "netflix.com");
+    const entry = readLogo("symbol", "netflix.com", null);
     expect(entry?.uri).toStartWith("data:image/webp;base64,");
     expect(entry?.plate).toBe(true);
   });
@@ -83,13 +92,13 @@ describe("loadLogo", () => {
   test("falls back to the symbol tiers for a brand icon does not cover", async () => {
     respondWith((url) => (url.includes("/icon/") ? missing() : image()));
 
-    await loadLogo("symbol", "netflix.com");
+    await loadLogo("symbol", "netflix.com", null);
 
     expect(requested).toHaveLength(2);
     expect(requested[1]).toInclude("symbol/theme/light");
     // A bare mark, and the avatar insets one differently from a plate, so which
     // tier answered has to survive the cache.
-    expect(readLogo("symbol", "netflix.com")?.plate).toBe(false);
+    expect(readLogo("symbol", "netflix.com", null)?.plate).toBe(false);
   });
 
   test("records the shape of the image, not the shape of the request", async () => {
@@ -99,18 +108,21 @@ describe("loadLogo", () => {
     // the request's shape is what drew that cloud at 60% of the circle.
     measuresAs(512, 333);
 
-    await loadLogo("symbol", "icloud.com");
+    await loadLogo("symbol", "icloud.com", null);
 
-    expect(readLogo("symbol", "icloud.com")?.aspect).toBeCloseTo(1.538, 3);
+    expect(readLogo("symbol", "icloud.com", null)?.aspect).toBeCloseTo(
+      1.538,
+      3,
+    );
   });
 
   test("does not walk the ladder again for a brand it already has", async () => {
     respondWith(() => image());
-    await loadLogo("symbol", "spotify.com");
+    await loadLogo("symbol", "spotify.com", null);
     const first = requested.length;
 
     // A second sighting a day later: cached, fresh, and worth no request.
-    const entry = readLogo("symbol", "spotify.com");
+    const entry = readLogo("symbol", "spotify.com", null);
     expect(entry).not.toBeNull();
     expect(entry && logoIsStale(entry, Date.now() + 24 * 60 * 60 * 1000)).toBe(
       false,
@@ -120,8 +132,8 @@ describe("loadLogo", () => {
 
   test("refreshes a logo a week after it was stored, not before", async () => {
     respondWith(() => image());
-    await loadLogo("symbol", "github.com");
-    const entry = readLogo("symbol", "github.com");
+    await loadLogo("symbol", "github.com", null);
+    const entry = readLogo("symbol", "github.com", null);
     if (!entry) throw new Error("expected a cached logo");
 
     const day = 24 * 60 * 60 * 1000;
@@ -132,9 +144,9 @@ describe("loadLogo", () => {
   test("caches a brand with no logo, and retries it hours later", async () => {
     respondWith(() => missing());
 
-    await loadLogo("symbol", "nowhere.example");
+    await loadLogo("symbol", "nowhere.example", null);
 
-    const entry = readLogo("symbol", "nowhere.example");
+    const entry = readLogo("symbol", "nowhere.example", null);
     // Cached as an ANSWER: without it every mount spends three 404s.
     expect(entry?.uri).toBeNull();
     expect(requested).toHaveLength(3);
@@ -149,11 +161,11 @@ describe("loadLogo", () => {
   test("never stores a 200 that is not an image", async () => {
     respondWith(() => wordmarkPage());
 
-    await loadLogo("symbol", "gated.example");
+    await loadLogo("symbol", "gated.example", null);
 
     // Brandfetch serves 380 KB of HTML to a User-Agent it does not like. Stored
     // as a logo it would draw nothing and hold the entry for a week.
-    expect(readLogo("symbol", "gated.example")?.uri).toBeNull();
+    expect(readLogo("symbol", "gated.example", null)?.uri).toBeNull();
   });
 
   test("writes nothing when the walk fails on the network", async () => {
@@ -161,25 +173,25 @@ describe("loadLogo", () => {
       throw new Error("offline");
     });
 
-    expect(await loadLogo("symbol", "offline.example")).toBeNull();
+    expect(await loadLogo("symbol", "offline.example", null)).toBeNull();
     // A flight must not pin the brand to the letter tile for six hours after
     // landing, so a throw is never recorded as "this brand has no logo".
-    expect(readLogo("symbol", "offline.example")).toBeNull();
+    expect(readLogo("symbol", "offline.example", null)).toBeNull();
   });
 
   test("asks for the opaque square, on its own entry, for the banner", async () => {
     respondWith(() => image());
 
-    await loadLogo("plate", "openai.com");
+    await loadLogo("plate", "openai.com", null);
 
     expect(requested).toHaveLength(1);
     expect(requested[0]).toInclude("/icon/");
-    expect(readLogo("plate", "openai.com")?.plate).toBe(true);
+    expect(readLogo("plate", "openai.com", null)?.plate).toBe(true);
     // Both kinds now lead with `icon`, but the banner blurs its copy and so
     // fetches a far larger source. Sharing one entry would either starve the
     // blur or make every row carry a 768 px image.
     expect(requested[0]).toInclude("/768/");
-    expect(readLogo("symbol", "openai.com")).toBeNull();
+    expect(readLogo("symbol", "openai.com", null)).toBeNull();
   });
 });
 
@@ -213,5 +225,68 @@ describe("logoFill", () => {
       logoFill({ plate: false, aspect: 512 / 282 }),
       6,
     );
+  });
+});
+
+describe("logo variants", () => {
+  test("puts the chosen variant ahead of the automatic ladder", async () => {
+    respondWith(() => image());
+
+    await loadLogo("symbol", "notion.so", "symbol");
+
+    // The user asked for the bare mark, so that is what is fetched — and the
+    // theme-pinned one first, because unpinned symbols come back in whatever
+    // theme the brand stored.
+    expect(requested).toHaveLength(1);
+    expect(requested[0]).toInclude("symbol/theme/light");
+    expect(readLogo("symbol", "notion.so", "symbol")?.plate).toBe(false);
+  });
+
+  test("falls back past a chosen variant the brand no longer has", async () => {
+    respondWith((url) => (url.includes("/symbol") ? missing() : image()));
+
+    await loadLogo("symbol", "kyivstar.ua", "symbol");
+
+    // A brand that drops its symbol must land on a logo, not on a letter tile.
+    expect(readLogo("symbol", "kyivstar.ua", "symbol")?.uri).toStartWith(
+      "data:image/",
+    );
+    expect(requested.at(-1)).toInclude("/icon/");
+  });
+
+  test("keeps a switched-away variant cached rather than evicting it", async () => {
+    respondWith(() => image());
+    await loadLogo("symbol", "figma.com", null);
+    const auto = requested.length;
+
+    await loadLogo("symbol", "figma.com", "logo");
+
+    // Both entries stand, so flipping between two marks costs no network.
+    expect(requested.length).toBeGreaterThan(auto);
+    expect(readLogo("symbol", "figma.com", null)?.uri).toStartWith("data:");
+    expect(readLogo("symbol", "figma.com", "logo")?.uri).toStartWith("data:");
+  });
+
+  test("previews one variant only, and admits when a brand has none", async () => {
+    respondWith((url) => (url.includes("/symbol") ? missing() : image()));
+
+    // Crucially NOT the icon: a tile that silently drew a different mark would
+    // offer the user a choice that does nothing.
+    expect(await previewVariant("icloud.com", "symbol")).toBeNull();
+    expect(requested.every((url) => url.includes("/symbol"))).toBe(true);
+    expect((await previewVariant("icloud.com", "icon"))?.uri).toStartWith(
+      "data:image/",
+    );
+  });
+
+  test("forgets chosen variants when the user erases their data", () => {
+    storeVariant("notion.so", "logo");
+    expect(readStoredVariants()["notion.so"]).toBe("logo");
+
+    clearLogos();
+
+    // The domains a user hand-picked a mark for name the brands they pay for,
+    // same as the cache keys next door.
+    expect(readStoredVariants()).toEqual({});
   });
 });

@@ -400,5 +400,6 @@
   "paywall_featureCategoriesBody": "Group subscriptions, filter by them, and see where the money goes.",
   "paywall_lockWidgetsBody": "See your next payments — which service, when, and how much — without opening the app.",
   "calendar_total": "Total",
-  "paywall_featureCalendarBody": "See a whole year of spending at a glance, catch the days several charges land together, and watch each month against the last."
+  "paywall_featureCalendarBody": "See a whole year of spending at a glance, catch the days several charges land together, and watch each month against the last.",
+  "form_brandStyle": "Style"
 }

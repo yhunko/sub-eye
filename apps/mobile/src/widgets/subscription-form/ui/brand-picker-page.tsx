@@ -7,6 +7,7 @@ import { nativeInlineSearchBarChrome } from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
 import { useSubscriptionForm } from "../model/form-context";
 import { BrandList } from "./brand-list";
+import { BrandVariants } from "./brand-variants";
 import { StepFooter, StepHeading, StepScreen } from "./step-chrome";
 
 /**
@@ -74,6 +75,9 @@ export function BrandPickerPage({ step = false }: { step?: boolean }) {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}
         >
+          {/* Above the list, not below: it is about the brand already picked,
+              and the list under it is how you pick a different one. */}
+          {picked ? <BrandVariants domain={picked} /> : null}
           <BrandList
             search={search}
             onPicked={step ? undefined : () => router.back()}
