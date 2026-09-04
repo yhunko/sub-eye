@@ -299,10 +299,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   cell: { alignItems: "center", gap: 7 },
+  // Cased and spaced to match the calendar's own weekday header — the strip and
+  // the grid name the same seven days and used to disagree about how.
   weekday: {
     fontSize: 11,
     fontWeight: "600",
-    letterSpacing: 0.8,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
     color: colors.muted,
   },
   // Square by definition, and sized in `MonthRail` off `fontScale` rather than

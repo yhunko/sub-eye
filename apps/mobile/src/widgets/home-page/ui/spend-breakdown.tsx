@@ -75,7 +75,7 @@ export function SpendBreakdown({
 
   return (
     <View>
-      <View style={styles.head}>
+      <View style={[styles.head, stacked && styles.headStacked]}>
         <Text style={styles.title}>{m.home_whereItGoes()}</Text>
         <Text style={styles.count}>{count({ count: rows.length })}</Text>
       </View>
@@ -196,6 +196,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 10,
     paddingHorizontal: 2,
+  },
+  // The count drops UNDER the title at the accessibility text sizes. Across a
+  // row the title is the one that gives — it is the `flexShrink` — and at 53pt
+  // "Where it goes" was shrinking to a column one letter wide with the count
+  // still whole beside it. Same fix, and the same shape, as the subscriptions
+  // list's section headings.
+  headStacked: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 2,
   },
   // `lineHeight` on both is NOT styling — see `month-hero`'s `label`. Unset,
   // iOS under-measures a 12.5pt frame at the accessibility text sizes and clips

@@ -1,6 +1,11 @@
 import type { CalendarDayDto } from "@subeye/model";
 import { dateLocale } from "@/shared/i18n";
-import { daysUntil, formatCountdown, todayAsDay } from "@/shared/lib/format";
+import {
+  daysUntil,
+  formatCountdown,
+  todayAsDay,
+  weekdayNames,
+} from "@/shared/lib/format";
 import type { WeekStart } from "./settings";
 
 /**
@@ -132,13 +137,9 @@ export function siblingMonth(month: string, offset: number): string {
   ).toISOString();
 }
 
-// A known Sunday, so the seven labels come out in `getUTCDay()` order before
-// the week start rotates them.
-const SUNDAY = Date.UTC(2026, 0, 4);
-
-// Same reasoning as `formatters`: the seven labels are identical in every month
-// and every page, and they were being rebuilt — seven `Date`s and a format call
-// each — on every render of every mounted month.
+// The ROTATION is what is cached here; the seven names themselves come from
+// `weekdayNames`, which the home rail reads too — one source, so the strip and
+// this grid cannot drift apart on what to call a Tuesday.
 const weekdays = new Map<string, string[]>();
 
 /** "Mon Tue Wed …", named by the device's regional tag and rotated to taste. */
@@ -147,10 +148,7 @@ export function weekdayLabels(weekStart: WeekStart): string[] {
   const cached = weekdays.get(key);
   if (cached) return cached;
 
-  const format = formatter("weekday", { weekday: "short" });
-  const labels = Array.from({ length: 7 }, (_, index) =>
-    format.format(new Date(SUNDAY + index * 86_400_000)),
-  );
+  const labels = weekdayNames();
   const rotated =
     weekStart === "monday" ? [...labels.slice(1), labels[0] as string] : labels;
 

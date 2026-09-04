@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { CashFlowPoint } from "@subeye/model";
+import { weekdayNames } from "@/shared/lib/format";
 import { buildRail } from "./rail";
 
 // A DEVICE instant, built locally: `buildRail` dates the strip from the device's
@@ -89,6 +90,19 @@ describe("buildRail", () => {
 
     // 3 September 2026 is a Thursday. Read with local accessors instead of UTC
     // ones, every heading in the strip slips a day west of UTC.
-    expect(rail[0]?.weekday).toBe("TH");
+    expect(rail[0]?.weekday).toBe("Thu");
+  });
+
+  it("names a day exactly as the calendar's own header does", () => {
+    const rail = buildRail(september({}), NOW);
+    // The strip and the grid are one tab apart and name the same seven days.
+    // They each had their own formatter and disagreed — the rail cut the short
+    // name to two letters, so one Thursday read "TH" here and "THU" there.
+    const sundayFirst = weekdayNames();
+
+    for (const day of rail) {
+      const weekday = new Date(day.date).getUTCDay();
+      expect(day.weekday).toBe(sundayFirst[weekday] as string);
+    }
   });
 });

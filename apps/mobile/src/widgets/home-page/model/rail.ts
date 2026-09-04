@@ -1,6 +1,6 @@
 import type { CashFlowPoint } from "@subeye/model";
 import { dateLocale } from "@/shared/i18n";
-import { todayAsDay } from "@/shared/lib/format";
+import { todayAsDay, weekdayNames } from "@/shared/lib/format";
 
 /**
  * Logo slots on a day. The overflow chip takes one of them rather than a second
@@ -12,14 +12,14 @@ export const RAIL_LOGOS = 2;
 export type RailDay = {
   date: string;
   day: number;
-  /** "SU", "MO" — the column heading, in the device's regional tag. */
+  /** "Mon", "Tue" — the column heading. Cased by the cell's own stylesheet. */
   weekday: string;
   /**
    * "Thursday 3 September" — the same day for VoiceOver.
    *
-   * The heading above is two letters, which a screen reader spells out: "tee
-   * aitch" where the eye reads Thursday. Composed here rather than in the cell
-   * so the whole strip pays for one formatter instead of one per day.
+   * The heading above is an abbreviation, which a screen reader spells out
+   * where the eye reads Thursday. Composed here rather than in the cell so the
+   * whole strip pays for one formatter instead of one per day.
    */
   spoken: string;
   /** What this day charges. Zero for a quiet day, which most of them are. */
@@ -33,15 +33,6 @@ export type RailDay = {
   /** Starts a new week, so it takes a hairline in front of it. */
   weekBreak: boolean;
 };
-
-// A known Sunday, so the seven labels come out in `getUTCDay()` order.
-const SUNDAY = Date.UTC(2026, 0, 4);
-
-// Built once per locale, exactly as the calendar's weekday header is: the seven
-// strings serve every cell of every render, and constructing the formatter is
-// the expensive half of formatting. Keyed by locale because `dateLocale()` is
-// not constant — Android 13+ swaps the app language with the JS context alive.
-const initials = new Map<string, string[]>();
 
 // Same reasoning, and this one earns it twice over: a month is up to 31 cells,
 // and a fresh `Intl.DateTimeFormat` per cell is the single most expensive thing
@@ -61,35 +52,6 @@ function spokenDateFormat(): Intl.DateTimeFormat {
   });
   spokenDates.set(locale, made);
   return made;
-}
-
-/**
- * "SU MO TU …", named by the device's regional tag.
- *
- * Two characters off the locale's own SHORT name rather than `weekday: "narrow"`,
- * which is a single letter in English and gives Tuesday and Thursday the same
- * heading. On a strip where the number below is the only other clue, that is a
- * column the eye cannot place.
- */
-function weekdayInitials(): string[] {
-  const locale = dateLocale();
-  const cached = initials.get(locale);
-  if (cached) return cached;
-
-  // Every date this app stores is a UTC midnight, so the formatter reads one.
-  const format = new Intl.DateTimeFormat(locale, {
-    timeZone: "UTC",
-    weekday: "short",
-  });
-  const labels = Array.from({ length: 7 }, (_, index) =>
-    format
-      .format(new Date(SUNDAY + index * 86_400_000))
-      .slice(0, 2)
-      .toUpperCase(),
-  );
-
-  initials.set(locale, labels);
-  return labels;
 }
 
 /**
@@ -113,7 +75,7 @@ export function buildRail(
   now: Date = new Date(),
 ): RailDay[] {
   const today = todayAsDay(now);
-  const labels = weekdayInitials();
+  const labels = weekdayNames();
   const spoken = spokenDateFormat();
   const rail: RailDay[] = [];
   let markedNext = false;
