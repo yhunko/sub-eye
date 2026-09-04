@@ -19,10 +19,10 @@ const DENOMINATOR_FLOOR = 11;
 /** The narrowest the bar may draw, so a first-of-the-month stub is still visible. */
 const MIN_FILL = "3%";
 
-// Three horizons, tightest first: what is still to leave this month, what next
-// month costs, what a year of this costs. The ladder is the structure — each rung
-// is one label and one number, and the nearest rung gets the headline because it
-// is the only one a user can still act on.
+// What is still to leave this month, what next month costs, and the one line
+// item costing the most. Each is one label and one number, and the nearest gets
+// the headline because it is the only one a user can still act on — with the
+// biggest beside it, because it is the only one they can act on AT ALL.
 //
 // Kopecks survive on the headline only. It is the one figure precise enough to
 // reconcile against a bank app; a forecast printed to the kopeck is false
@@ -43,19 +43,21 @@ export function MonthHero({
   remainingThisMonth,
   monthTotal,
   nextMonthForecast,
-  yearForecast,
+  biggest,
 }: {
   currency: string;
   remainingThisMonth: number;
   monthTotal: number;
   nextMonthForecast: number;
   /**
-   * The charges that actually land in the next twelve months — NOT a monthly
-   * figure multiplied by twelve. A plan that lapses in March contributes the
-   * months it survives, which is why the label calls it an ESTIMATE: this is a
-   * projection, not a rate.
+   * The single subscription costing the most, or `null` when every active one
+   * is free. It replaced a yearly projection that the subscriptions list
+   * already prints under its own total — the same number twice, on two screens
+   * one tap apart. This one is nowhere else on Home: the breakdown beneath
+   * groups by CATEGORY, which is the answer to a different question, and a
+   * category is not a thing you can cancel.
    */
-  yearForecast: number;
+  biggest: { name: string; yearlyAmount: number } | null;
 }) {
   const [whole, fraction] = splitAmount(remainingThisMonth, currency);
 
@@ -211,22 +213,31 @@ export function MonthHero({
 
         {/* Only across a row. Stacked, a 1pt-tall rule between two blocks reads
             as a rendering artefact. */}
-        {stacked ? null : <View style={styles.divider} />}
+        {stacked || !biggest ? null : <View style={styles.divider} />}
 
-        <View style={styles.horizon}>
-          <Text style={styles.horizonLabel}>{m.home_yearlyEstimate()}</Text>
-          <Text style={styles.horizonValue}>
-            {formatMoney(yearForecast, currency, { decimals: 0 })}
-          </Text>
-          {/* The same projection in the unit the rest of the screen is in —
-              a twelfth of the figure above it, not `monthlyBurnRate`, which is
-              today's run rate and a different number the moment anything lapses. */}
-          <Text style={styles.horizonNote}>
-            {m.home_perMonthApprox({
-              amount: formatMoney(yearForecast / 12, currency, { decimals: 0 }),
-            })}
-          </Text>
-        </View>
+        {biggest ? (
+          <View style={styles.horizon}>
+            <Text style={styles.horizonLabel}>{m.home_biggest()}</Text>
+            {/* Per month, because the figure beside it is per month — and it
+                says so, because this is the only number on the card whose unit
+                is not implied by its own label. A yearly subscription's biggest
+                month is not its monthly cost, and without the suffix the two
+                are indistinguishable at a glance. Same nested-Text shape the
+                subscriptions list's section totals use. */}
+            <Text style={styles.horizonValue}>
+              {formatMoney(biggest.yearlyAmount / 12, currency, {
+                decimals: 0,
+              })}
+              <Text style={styles.horizonUnit}>{m.subs_perMonthSuffix()}</Text>
+            </Text>
+            {/* One line and no shrinking: it names a subscription rather than
+                stating a figure, so an ellipsis costs nothing a user cannot get
+                by tapping through to the list. */}
+            <Text style={styles.horizonNote} numberOfLines={1}>
+              {biggest.name}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -325,6 +336,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text,
   },
+  horizonUnit: { fontSize: 12, fontWeight: "600", color: colors.muted },
   horizonNote: { marginTop: 5, fontSize: 11.5, color: colors.muted },
   divider: {
     width: StyleSheet.hairlineWidth,

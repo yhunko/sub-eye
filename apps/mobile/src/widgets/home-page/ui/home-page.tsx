@@ -148,7 +148,7 @@ export function HomePage() {
           remainingThisMonth={data.remainingThisMonth}
           monthTotal={data.totalUpcomingMonth}
           nextMonthForecast={data.nextMonthForecast}
-          yearForecast={data.yearlyForecast}
+          biggest={data.mostExpensiveSubscription}
         />
 
         {rows.length ? (
