@@ -272,12 +272,19 @@ function sourcesFor(
  * The variant is part of the key, so switching one does not evict the other:
  * flipping back and forth costs no network, and the two entries age out on
  * their own.
+ *
+ * EXCEPT FOR THE PLATE, which has no variants to keep apart — `sourcesFor` asks
+ * for `icon` whatever the user chose. Keying it by that choice invented a
+ * second key for byte-identical bytes, and it cost far more than the wasted
+ * download: the detail banner reads its entry DURING RENDER, so picking a mark
+ * in the form turned a hit into a miss and the banner behind the sheet went
+ * BLACK until a 768 px refetch landed.
  */
 const entryKey = (
   kind: LogoKind,
   variant: LogoVariant | null,
   domain: string,
-) => `${kind}:${variant ?? "auto"}:${domain}`;
+) => `${kind}:${kind === "plate" ? "auto" : (variant ?? "auto")}:${domain}`;
 
 /**
  * Parsed entries, in front of MMKV.

@@ -15,6 +15,7 @@ import {
   toIsoDay,
   tomorrow,
 } from "@/shared/lib/format";
+import { BrandBackdrop } from "@/shared/ui/brand-backdrop";
 import { BrandLogo } from "@/shared/ui/brand-logo";
 import { ChoiceRow } from "@/shared/ui/choice-row";
 import { CurrencyPicker } from "@/shared/ui/currency-picker";
@@ -27,8 +28,8 @@ import {
 } from "@/shared/ui/field";
 import { DatePicker } from "@/shared/ui/native-date-field";
 import { colors } from "@/shared/ui/theme";
-import { useLargeText } from "@/shared/ui/use-large-text";
 import { useSubscriptionForm } from "../model/form-context";
+import { BrandEditButton } from "./brand-edit-button";
 import { CadenceField } from "./cadence-field";
 import { messageFor } from "./validation-message";
 
@@ -58,14 +59,38 @@ const countdownFor = (date: Date) => {
 /**
  * What was picked in step one, carried forward so the rest of the form can show
  * it without going back for it.
+ *
+ * Wearing the SAME brand wash as the detail banner, because it is answering the
+ * same question — which subscription is this — and a form that opens on a grey
+ * card has thrown that answer away between one screen and the next. Both sides
+ * draw it through `BrandBackdrop`, so the blur is tuned in one place.
+ *
+ * The wash only appears once a brand has been picked. Empty, there is nothing
+ * to be coloured by, and a flat scrim over the plain surface would just make
+ * this the one dark card on the form.
  */
 function BrandRow({ onChange }: { onChange: () => void }) {
   const { values } = useSubscriptionForm();
   const domain = values.brandDomain.trim();
-  const stacked = useLargeText();
 
   return (
-    <View style={[styles.brand, stacked && styles.brandStacked]}>
+    <View style={styles.brand}>
+      {domain ? (
+        <View style={styles.brandWash}>
+          <BrandBackdrop domain={domain}>
+            {/* Flat, not the banner's ramp: a gradient's stops are
+                percentages, and across 60pt of card they would put the logo in
+                the light end and the glass button in the dark one. */}
+            <View style={styles.brandScrim} />
+            {/* The white tint every glass surface in this app carries, and the
+                value the banner's own segment bar uses. Its own layer rather
+                than the card's background, which sits BEHIND the absolutely
+                positioned wash and would never be seen. */}
+            <View style={styles.brandGlass} />
+          </BrandBackdrop>
+        </View>
+      ) : null}
+
       <View style={styles.brandIdentity}>
         {domain ? (
           <BrandLogo name={values.name} brandDomain={domain} size={36} />
@@ -79,13 +104,7 @@ function BrandRow({ onChange }: { onChange: () => void }) {
           {domain ? <Text style={styles.brandDomain}>{domain}</Text> : null}
         </View>
       </View>
-      <Text
-        style={styles.brandAction}
-        onPress={onChange}
-        accessibilityRole="button"
-      >
-        {m.form_brandChange()}
-      </Text>
+      <BrandEditButton onPress={onChange} />
     </View>
   );
 }
@@ -342,17 +361,39 @@ function Outcome() {
 }
 
 const styles = StyleSheet.create({
+  // `overflow: "hidden"` is what clips the wash to the corners — without it the
+  // blurred plate is a square behind a rounded card.
   brand: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     marginBottom: 20,
+    overflow: "hidden",
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  // 0.46 against the banner's 0.40, and the gap is the type: the banner sets a
+  // 26pt/800 name on that value, this card sets 16pt/600 and a 12.5pt caption
+  // under it. Any more and the brand is gone — at 0.55 every logo came out the
+  // same sage grey, which is the failure the blur tuning exists to avoid.
+  // Out past the 1pt border on every side, and this is not cosmetic. The
+  // blurred plate is `scale(2.6)`, so it spills under the border and is clipped
+  // only by the card's own bounds — while the scrims, positioned against the
+  // PADDING box, stop 1pt short. A translucent border over raw saturated
+  // favicon is a bright green rim around the whole card. Everything the wash is
+  // made of has to reach the same edge.
+  brandWash: { position: "absolute", top: -1, left: -1, right: -1, bottom: -1 },
+  brandScrim: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(15,17,21,0.62)",
+  },
+  brandGlass: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
   brandEmpty: {
     width: 36,
@@ -362,12 +403,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  // "Change" is a control, and at the accessibility sizes it is 53pt of one —
-  // beside the name there is nothing left of the name to read.
-  brandStacked: { flexDirection: "column", alignItems: "stretch", gap: 10 },
-  // `flexBasis: "auto"` rather than `flex: 1`: down the column basis 0 collapses
-  // the group to nothing, because an auto-height parent has no free space to
-  // grow back into.
+  // `flexBasis: "auto"` rather than `flex: 1`: the row's height comes from its
+  // content, and basis 0 in an auto-height parent has no free space to grow back
+  // into. The name simply wraps at the accessibility sizes now — the icon button
+  // beside it is a fixed 44pt, which is what let the stacked variant go.
   brandIdentity: {
     flexGrow: 1,
     flexShrink: 1,
@@ -379,8 +418,10 @@ const styles = StyleSheet.create({
   },
   brandText: { flex: 1, minWidth: 0 },
   brandName: { fontSize: 16, fontWeight: "600", color: colors.text },
-  brandDomain: { fontSize: 12.5, color: colors.muted },
-  brandAction: { fontSize: 15, fontWeight: "600", color: colors.accent },
+  // Only ever drawn over the wash, so it takes the banner's caption colour
+  // rather than `muted` — grey on a saturated brand is the one pair that goes
+  // unreadable.
+  brandDomain: { fontSize: 12.5, color: "rgba(242,244,248,0.72)" },
   offers: { gap: 8 },
   outcome: {
     backgroundColor: colors.surfaceAlt,

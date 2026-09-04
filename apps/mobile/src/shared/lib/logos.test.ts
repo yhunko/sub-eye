@@ -267,6 +267,19 @@ describe("logo variants", () => {
     expect(readLogo("symbol", "figma.com", "logo")?.uri).toStartWith("data:");
   });
 
+  test("keys the banner's plate by brand alone, whatever mark is chosen", async () => {
+    respondWith(() => image());
+    await loadLogo("plate", "spotify.com", null);
+
+    // ONE entry, not one per variant. The banner reads this during render, so a
+    // key that misses on a variant change is a black flash on screen — and the
+    // plate always asks for `icon` anyway, so the second key held the same
+    // bytes.
+    expect(readLogo("plate", "spotify.com", "symbol")).toBe(
+      readLogo("plate", "spotify.com", null),
+    );
+  });
+
   test("previews one variant only, and admits when a brand has none", async () => {
     respondWith((url) => (url.includes("/symbol") ? missing() : image()));
 

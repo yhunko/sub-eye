@@ -1,8 +1,9 @@
 import type { SubscriptionStatus } from "@subeye/model";
-import { Image, Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
-import { BrandLogo, useBrandLogo } from "@/shared/ui/brand-logo";
+import { BrandBackdrop } from "@/shared/ui/brand-backdrop";
+import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
@@ -80,52 +81,6 @@ const STATUS_COLOR: Record<SubscriptionStatus, string> = {
   cancelling: colors.warning,
   cancelled: colors.muted,
 };
-
-/**
- * The banner's colour is the brand's own favicon, scaled past the header and
- * blurred until it is a wash rather than a picture. No colour extraction, no
- * native module and no async step that would pop the header a frame late: RN's
- * `blurRadius` is a core Image prop, so the tint arrives with the image.
- *
- * The scrim is not decoration. Most favicons are a mark on an opaque WHITE
- * plate, which blurs to a near-white field — without a fixed dark gradient over
- * it the white-on-brand text below would be unreadable for a large share of
- * brands, and unpredictably so.
- */
-function Backdrop({ domain }: { domain: string | null }) {
-  // The PLATE kind, not the avatar's: that one prefers a bare symbol, and a
-  // mostly transparent mark blurs to almost no colour at all.
-  const logo = useBrandLogo(domain, "plate");
-
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {logo.status === "ready" ? (
-        <Image
-          accessibilityIgnoresInvertColors
-          source={{ uri: logo.uri }}
-          style={styles.backdropImage}
-          // Tuned against the source size `shared/lib/logos.ts` fetches for
-          // this kind, NOT a bigger number being safer. `blurRadius` blurs the
-          // SOURCE at its natural size, so anything past ~30 averages a small
-          // icon into one flat colour — and since most plates are a mark on
-          // white, that colour is grey. Every brand came out the same pale grey
-          // at 55.
-          blurRadius={22}
-          resizeMode="cover"
-        />
-      ) : null}
-      {/* TWO scrims, not one stretched over the taller box. The gradient's own
-          stops are percentages, so covering the overscroll reach with it would
-          slide 52% and 100% down with the extra height and leave the VISIBLE
-          band sitting in the dark end of the ramp — the brand wash would go
-          uniformly murky. Instead the reach gets a flat scrim at exactly the
-          gradient's 0% value, which makes the join invisible, and the gradient
-          keeps the geometry it was tuned for. */}
-      <View style={styles.scrimReach} />
-      <View style={styles.scrim} />
-    </View>
-  );
-}
 
 function Segment({
   label,
@@ -228,7 +183,17 @@ export function DetailHero({
     <View
       style={[styles.hero, { marginTop: -(16 + reach), paddingTop: padTop }]}
     >
-      <Backdrop domain={brandDomain} />
+      <BrandBackdrop domain={brandDomain}>
+        {/* TWO scrims, not one stretched over the taller box. The gradient's own
+            stops are percentages, so covering the overscroll reach with it would
+            slide 52% and 100% down with the extra height and leave the VISIBLE
+            band sitting in the dark end of the ramp — the brand wash would go
+            uniformly murky. Instead the reach gets a flat scrim at exactly the
+            gradient's 0% value, which makes the join invisible, and the gradient
+            keeps the geometry it was tuned for. */}
+        <View style={styles.scrimReach} />
+        <View style={styles.scrim} />
+      </BrandBackdrop>
 
       {/* Centred under the nav bar, which now holds nothing but a back chevron
           and the ellipsis — so the logo sits between the two controls and the
@@ -297,18 +262,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: 18,
     paddingBottom: 18,
-  },
-  // Scaled up and saturated before it is blurred, both for the same reason: a
-  // favicon is a small mark on a white plate, and blurring it at natural size
-  // averages the plate in until every brand comes out the same pale grey. The
-  // zoom throws the plate outside the frame so the blur samples the mark, and
-  // `saturate` puts back what averaging took out. `brightness` is what keeps a
-  // yellow or white brand from lighting the banner up under the scrim.
-  backdropImage: {
-    ...StyleSheet.absoluteFill,
-    width: "100%",
-    transform: [{ scale: 2.6 }],
-    filter: [{ saturate: 2.6 }, { brightness: 0.85 }],
   },
   // Only the part of the banner that is ever on screen at rest. `top` is the
   // overscroll reach, so this begins exactly where the flat scrim above it ends
