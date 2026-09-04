@@ -52,7 +52,14 @@ Renewals, trials and spending
 
 ### Promotional Text (170)
 
-Editable any time without a new build — use it for launch notes later.
+The one field editable without a new build, so it carries the news and gets
+rewritten between releases rather than at one. 155 characters.
+
+```
+New: Home opens with what still needs a decision — a trial about to start charging, a price rise coming, a pause ending. No account, no bank login, no ads.
+```
+
+Previous, for when there is no news worth the slot:
 
 ```
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
@@ -160,6 +167,14 @@ SubEye: трекер підписок
 ```
 
 ### Promotional Text (170)
+
+166 characters.
+
+```
+Нове: головна починається з того, що потребує рішення — пробний період, який ось-ось стане платним, зміна ціни, кінець паузи. Без акаунта, доступу до банку й реклами.
+```
+
+Previous, for when there is no news worth the slot:
 
 ```
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
