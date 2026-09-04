@@ -10,6 +10,7 @@
     "ios": "bun run i18n:generate && expo run:ios",
     "android": "bun run i18n:generate && expo run:android",
     "prebuild": "expo prebuild --clean",
+    "build:ios:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 bunx eas-cli build --platform ios --profile production --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).ipa",
     "lint": "biome check .",
     "type-check": "bun run i18n:generate && tsc --noEmit --pretty",
     "test": "bun test ./src"

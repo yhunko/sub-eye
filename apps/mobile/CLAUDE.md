@@ -639,3 +639,21 @@ bunx eas build --profile development --platform ios     # dev client
 bunx eas build --profile production --platform all
 bunx eas submit --profile production --platform ios
 ```
+
+**A store build without the cloud queue:** `bun run --cwd apps/mobile
+build:ios:local` compiles the `production` profile on this Mac and drops a
+signed `.ipa` in the gitignored `builds/`, ready to drag into Transporter.
+Same profile, same remote credentials, same remote build number as a cloud
+build — only the compiler moves. Three things differ and all three bite:
+
+- **`LANG` must be UTF-8**, which is why the script sets it. CocoaPods and
+  fastlane both refuse an ASCII-8BIT locale, and this Mac's login shell exports
+  no `LANG` at all.
+- **Secret EAS env vars are not downloadable**, by design — local builds get
+  the `EXPO_PUBLIC_*` values from the `production` environment but never
+  `SENTRY_AUTH_TOKEN`. Export it in the shell or the build ships with no source
+  maps and every TestFlight stack trace is minified garbage.
+- **`.env` is not in the archive.** eas-cli tarballs the git tree, so the
+  gitignored `.env` — with its `test_…` RevenueCat key — cannot reach the
+  bundle. That is load-bearing: a Test Store key in a store build crashes on
+  launch (`docs/release/TESTFLIGHT-STEPS.md`). Never `--include-untracked` here.
