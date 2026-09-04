@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { colors } from "@/shared/ui/theme";
-import { HomeGlow } from "./home-glow";
+import { brandWash } from "./home-glow";
 
 /**
  * What Home shows before there is anything to total.
@@ -21,7 +21,6 @@ export function HomeEmpty() {
 
   return (
     <View style={styles.wrap}>
-      <HomeGlow />
       <View style={styles.mark}>
         <SymbolView
           name={{ ios: "rectangle.stack", android: "stacks" }}
@@ -43,6 +42,7 @@ export function HomeEmpty() {
 
 const styles = StyleSheet.create({
   wrap: {
+    ...brandWash,
     flex: 1,
     alignItems: "center",
     justifyContent: "center",

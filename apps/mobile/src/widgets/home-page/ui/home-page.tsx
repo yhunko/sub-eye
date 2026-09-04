@@ -18,7 +18,7 @@ import { buildDecisions } from "../model/decisions";
 import { buildRail } from "../model/rail";
 import { DecisionList } from "./decision-list";
 import { HomeEmpty } from "./home-empty";
-import { HomeGlow } from "./home-glow";
+import { brandWash } from "./home-glow";
 import { HomePrompts } from "./home-prompts";
 import { MonthHero } from "./month-hero";
 import { MonthRail } from "./month-rail";
@@ -124,7 +124,6 @@ export function HomePage() {
 
   return (
     <View style={styles.page}>
-      <HomeGlow />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
@@ -188,9 +187,10 @@ function subscriptionRows(
 }
 
 const styles = StyleSheet.create({
-  // The glow's containing box. `flex: 1` so it fills the screen the navigator
-  // hands over, which is what the wash is positioned against.
-  page: { flex: 1 },
+  // `flex: 1` so it fills the screen the navigator hands over, which is what the
+  // wash is drawn against. Nothing may be rendered BEFORE the ScrollView inside
+  // it — see `brandWash`, which is a background for that reason.
+  page: { ...brandWash, flex: 1 },
   content: { padding: 16, paddingBottom: 24, gap: 14 },
   centered: {
     flex: 1,

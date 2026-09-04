@@ -28,6 +28,8 @@ export interface UpcomingRenewalDto {
 }
 
 export interface MostExpensiveSubscriptionDto {
+  /** Home's month card links to the subscription, so it has to name which one. */
+  id: string;
   name: string;
   yearlyAmount: number;
   brandDomain: string | null;

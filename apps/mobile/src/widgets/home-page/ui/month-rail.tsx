@@ -259,12 +259,7 @@ export function MonthRail({
 }
 
 const styles = StyleSheet.create({
-  rail: {
-    marginHorizontal: -PAGE_PADDING,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
+  rail: { marginHorizontal: -PAGE_PADDING, paddingBottom: 14 },
   content: {
     paddingHorizontal: PAGE_PADDING,
     alignItems: "flex-start",

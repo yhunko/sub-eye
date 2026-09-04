@@ -1,6 +1,10 @@
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
 import { colors } from "@/shared/ui/theme";
@@ -30,6 +34,101 @@ export type SpendRow = {
  * summed into an "everything else" the user cannot open.
  */
 const VISIBLE = 4;
+
+// Open, the card simply grows and the page scrolls through it. An inner
+// scroller was tried and reverted: a UIScrollView claims the vertical drag
+// whether or not its content overflows, so over a short list it swallowed every
+// swipe across the card and left the rows the fold had just revealed stranded
+// under the tab bar.
+
+/** Long enough to read as the card opening, short enough not to be waited on. */
+const OPEN_MS = 220;
+
+/**
+ * The tail of the list, opening and closing on its OWN measured height.
+ *
+ * Not `entering`/`exiting` on the rows, and not a `LinearTransition` on the card
+ * around them: neither animates the box those rows live in. Measured on device —
+ * stretched to eight seconds to be sure — the card's height snapped to its new
+ * size on the first frame while the removed rows went on fading in place
+ * outside it, which is the jumble the fold looked like.
+ *
+ * So the rows are never unmounted. They sit in a clipped box whose height is
+ * animated straight from 0 to what they measure, which is the one thing here
+ * that does drive layout, and the card follows because its child is really that
+ * tall. `onLayout` fires on the inner view, which keeps its full height at every
+ * Dynamic Type setting, so nothing is hardcoded.
+ */
+function Collapsible({
+  open,
+  children,
+}: {
+  open: boolean;
+  children: ReactNode;
+}) {
+  const [height, setHeight] = useState(0);
+
+  const box = useAnimatedStyle(() => ({
+    height: withTiming(open ? height : 0, { duration: OPEN_MS }),
+    opacity: withTiming(open ? 1 : 0, { duration: OPEN_MS }),
+  }));
+
+  return (
+    <Animated.View
+      style={[styles.collapsible, box]}
+      // Closed, the rows are still mounted — so they have to be taken out of
+      // the accessibility tree by hand, or VoiceOver reads a list the screen is
+      // not showing.
+      pointerEvents={open ? "auto" : "none"}
+      accessibilityElementsHidden={!open}
+      importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+    >
+      <View
+        style={styles.collapsibleInner}
+        onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
+      >
+        {children}
+      </View>
+    </Animated.View>
+  );
+}
+
+function Row({
+  item,
+  share,
+  amount,
+  ruled,
+  stacked,
+}: {
+  item: SpendRow;
+  share: number;
+  amount: string;
+  ruled: boolean;
+  stacked: boolean;
+}) {
+  return (
+    <View
+      style={[styles.row, ruled && styles.ruled]}
+      // Three fragments on screen are one fact in speech. Ungrouped, VoiceOver
+      // hands the name, the share and the amount over as three separate swipes.
+      accessible
+      accessibilityLabel={[item.name, `${share.toFixed(1)}%`, amount].join(
+        ", ",
+      )}
+    >
+      <View style={styles.line}>
+        <View style={[styles.dot, { backgroundColor: item.color }]} />
+        <Text style={styles.name}>{item.name}</Text>
+        {stacked ? null : <Figures share={share} amount={amount} />}
+      </View>
+      {stacked ? (
+        <View style={styles.figuresLine}>
+          <Figures share={share} amount={amount} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
 
 function Figures({ share, amount }: { share: number; amount: string }) {
   return (
@@ -68,7 +167,7 @@ export function SpendBreakdown({
   const total = rows.reduce((sum, item) => sum + item.amount, 0);
   if (total <= 0) return null;
 
-  const shown = expanded ? rows : rows.slice(0, VISIBLE);
+  const head = rows.slice(0, VISIBLE);
   const tail = rows.slice(VISIBLE);
   const tailTotal = tail.reduce((sum, item) => sum + item.amount, 0);
   const foldable = tail.length > 0;
@@ -117,39 +216,32 @@ export function SpendBreakdown({
           ) : null}
         </View>
 
-        {shown.map((item, index) => {
-          const share = (item.amount / total) * 100;
-          const amount = formatMoney(item.amount, currency);
-          return (
-            <View
-              key={item.key}
-              style={[
-                styles.row,
-                (foldable || index < shown.length - 1) && styles.ruled,
-              ]}
-              // Three fragments on screen are one fact in speech. Ungrouped,
-              // VoiceOver hands the name, the share and the amount over as
-              // three separate swipes.
-              accessible
-              accessibilityLabel={[
-                item.name,
-                `${share.toFixed(1)}%`,
-                amount,
-              ].join(", ")}
-            >
-              <View style={styles.line}>
-                <View style={[styles.dot, { backgroundColor: item.color }]} />
-                <Text style={styles.name}>{item.name}</Text>
-                {stacked ? null : <Figures share={share} amount={amount} />}
-              </View>
-              {stacked ? (
-                <View style={styles.figuresLine}>
-                  <Figures share={share} amount={amount} />
-                </View>
-              ) : null}
-            </View>
-          );
-        })}
+        {head.map((item, index) => (
+          <Row
+            key={item.key}
+            item={item}
+            share={(item.amount / total) * 100}
+            amount={formatMoney(item.amount, currency)}
+            ruled={foldable || index < head.length - 1}
+            stacked={stacked}
+          />
+        ))}
+
+        {foldable ? (
+          <Collapsible open={expanded}>
+            {tail.map((item) => (
+              <Row
+                key={item.key}
+                item={item}
+                share={(item.amount / total) * 100}
+                amount={formatMoney(item.amount, currency)}
+                // Always ruled: the toggle row always follows the tail.
+                ruled
+                stacked={stacked}
+              />
+            ))}
+          </Collapsible>
+        ) : null}
 
         {foldable ? (
           <Pressable
@@ -233,6 +325,12 @@ const styles = StyleSheet.create({
   // `flexGrow` rather than a percentage width, so the 3pt gaps come out of the
   // segments instead of pushing the last one past the card's edge.
   segment: { flexBasis: 0, borderRadius: 999 },
+  // The clip is what turns an animated height into a fold: the rows keep their
+  // full size and the box uncovers them.
+  collapsible: { overflow: "hidden" },
+  // Measured, so it must never be the thing being animated — it reports the
+  // tail's natural height while the box around it moves.
+  collapsibleInner: { position: "absolute", left: 0, right: 0, top: 0 },
   row: { paddingVertical: 11, paddingHorizontal: 2 },
   ruled: {
     borderBottomWidth: StyleSheet.hairlineWidth,

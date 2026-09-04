@@ -1,7 +1,15 @@
+import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
+import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
@@ -18,6 +26,21 @@ const DENOMINATOR_FLOOR = 11;
 
 /** The narrowest the bar may draw, so a first-of-the-month stub is still visible. */
 const MIN_FILL = "3%";
+
+/** The biggest subscription's own figure, and the point size it floors at. */
+const HORIZON_SIZE = 19;
+const HORIZON_FLOOR = 14;
+
+/**
+ * The avatar beside it, at the default text size — the height of the two lines
+ * it stands against, amount over name.
+ *
+ * SCALED with Dynamic Type, unlike the rail's logos, which are deliberately
+ * fixed. There a logo is one tile in a strip of tiles; here it is sized to a
+ * block of text, so a constant would drift to a third of that block's height at
+ * the accessibility sizes and read as a stray dot.
+ */
+const BIGGEST_LOGO = 38;
 
 // What is still to leave this month, what next month costs, and the one line
 // item costing the most. Each is one label and one number, and the nearest gets
@@ -57,7 +80,12 @@ export function MonthHero({
    * groups by CATEGORY, which is the answer to a different question, and a
    * category is not a thing you can cancel.
    */
-  biggest: { name: string; yearlyAmount: number } | null;
+  biggest: {
+    id: string;
+    name: string;
+    yearlyAmount: number;
+    brandDomain: string | null;
+  } | null;
 }) {
   const [whole, fraction] = splitAmount(remainingThisMonth, currency);
 
@@ -73,6 +101,16 @@ export function MonthHero({
   const stacked = useLargeText();
   const amountFloor = useShrinkFloor(AMOUNT_SIZE, AMOUNT_FLOOR);
   const denominatorFloor = useShrinkFloor(DENOMINATOR_SIZE, DENOMINATOR_FLOOR);
+  const horizonFloor = useShrinkFloor(HORIZON_SIZE, HORIZON_FLOOR);
+  const { fontScale } = useWindowDimensions();
+  const router = useRouter();
+
+  // Resolved once: the card prints it and the tap target speaks it, and the two
+  // drifting apart is how a screen reader ends up naming a figure that is not
+  // the one on screen.
+  const biggestAmount = biggest
+    ? formatMoney(biggest.yearlyAmount / 12, currency, { decimals: 0 })
+    : null;
   const denominator =
     monthTotal > 0
       ? m.home_remainingOf({
@@ -216,27 +254,69 @@ export function MonthHero({
         {stacked || !biggest ? null : <View style={styles.divider} />}
 
         {biggest ? (
-          <View style={styles.horizon}>
+          // The one thing a user can act on from this card, so it is the one
+          // thing on it that opens something. The next-month figure beside it is
+          // a forecast with no page behind it, which is why only this half is a
+          // control rather than the whole band.
+          <Pressable
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={[
+              m.home_biggest(),
+              biggest.name,
+              m.subs_perMonth({ amount: biggestAmount ?? "" }),
+            ].join(", ")}
+            onPress={() =>
+              router.push({
+                pathname: "/subscriptions/[id]",
+                params: { id: biggest.id },
+              })
+            }
+            style={({ pressed }) => [styles.horizon, pressed && styles.pressed]}
+          >
             <Text style={styles.horizonLabel}>{m.home_biggest()}</Text>
-            {/* Per month, because the figure beside it is per month — and it
-                says so, because this is the only number on the card whose unit
-                is not implied by its own label. A yearly subscription's biggest
-                month is not its monthly cost, and without the suffix the two
-                are indistinguishable at a glance. Same nested-Text shape the
-                subscriptions list's section totals use. */}
-            <Text style={styles.horizonValue}>
-              {formatMoney(biggest.yearlyAmount / 12, currency, {
-                decimals: 0,
-              })}
-              <Text style={styles.horizonUnit}>{m.subs_perMonthSuffix()}</Text>
-            </Text>
-            {/* One line and no shrinking: it names a subscription rather than
-                stating a figure, so an ellipsis costs nothing a user cannot get
-                by tapping through to the list. */}
-            <Text style={styles.horizonNote} numberOfLines={1}>
-              {biggest.name}
-            </Text>
-          </View>
+            {/* The mark, then the two lines it belongs to — centred against the
+                pair rather than against either one, which is what stops it
+                reading as a bullet for the amount alone. It is the only place on
+                Home that says WHICH subscription without making the user match a
+                name to a logo they have just scrolled past. */}
+            <View style={styles.biggest}>
+              <BrandLogo
+                name={biggest.name}
+                brandDomain={biggest.brandDomain}
+                size={Math.round(BIGGEST_LOGO * Math.max(1, fontScale))}
+              />
+              <View style={styles.biggestText}>
+                {/* Per month, because the figure beside it is per month — and it
+                    says so, because this is the only number on the card whose
+                    unit is not implied by its own label. A yearly subscription's
+                    biggest month is not its monthly cost, and without the suffix
+                    the two are indistinguishable at a glance. Same nested-Text
+                    shape the subscriptions list's section totals use.
+
+                    One line, shrinking rather than wrapping: the avatar took the
+                    width a long amount used to wrap into, and "₴150," / "000" is
+                    a number a spend tracker has no business printing. */}
+                <Text
+                  style={[styles.horizonValue, styles.flush]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={horizonFloor}
+                >
+                  {biggestAmount}
+                  <Text style={styles.horizonUnit}>
+                    {m.subs_perMonthSuffix()}
+                  </Text>
+                </Text>
+                {/* One line and no shrinking: it names a subscription rather
+                    than stating a figure, so an ellipsis costs nothing a user
+                    cannot get by tapping through to the list. */}
+                <Text style={styles.horizonNote} numberOfLines={1}>
+                  {biggest.name}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
         ) : null}
       </View>
     </View>
@@ -324,6 +404,7 @@ const styles = StyleSheet.create({
   // 41pt; then neither column holds a word.
   bandStacked: { flexDirection: "column", gap: 16 },
   horizon: { flex: 1, minWidth: 0 },
+  pressed: { opacity: 0.6 },
   horizonLabel: {
     fontSize: 11.5,
     color: colors.muted,
@@ -337,6 +418,17 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   horizonUnit: { fontSize: 12, fontWeight: "600", color: colors.muted },
+  // The avatar's own row owns the gap under the label, so the amount beside it
+  // sits flush — `horizonValue`'s marginTop would push the text half a line
+  // below the mark it is meant to be centred on.
+  biggest: {
+    marginTop: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  biggestText: { flex: 1, minWidth: 0 },
+  flush: { marginTop: 0 },
   horizonNote: { marginTop: 5, fontSize: 11.5, color: colors.muted },
   divider: {
     width: StyleSheet.hairlineWidth,
