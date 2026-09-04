@@ -80,7 +80,7 @@ const CATEGORIES: [id: string, emoji: string, en: string, uk: string][] = [
   ["cat-work", "💼", "Work", "Робота"],
   ["cat-entertainment", "🎬", "Entertainment", "Розваги"],
   ["cat-ai", "🤖", "AI", "ШІ"],
-  ["cat-health", "💪", "Health", "Здоров'я"],
+  ["cat-health", "💪", "Health", "Здоровʼя"],
   ["cat-home", "🏠", "Home", "Дім"],
   ["cat-music", "🎧", "Music", "Музика"],
 ];

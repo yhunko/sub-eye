@@ -168,6 +168,26 @@ export function monthNameLabel(month: string): string {
   return formatter("monthName", { month: "long" }).format(new Date(month));
 }
 
+/**
+ * "September", but spelled the way a month is spelled INSIDE a sentence.
+ *
+ * Ukrainian has two spellings and they are not interchangeable: "серпень"
+ * standing alone, "серпня" after the preposition this label sits behind, and
+ * `monthNameLabel` above returns the first for both. CLDR carries the pair —
+ * the stand-alone column and the formatting one — but `Intl` only reaches the
+ * formatting column when a DAY is in the pattern, so this asks for one and
+ * throws it away. `formatToParts` would be the honest way to drop it; Hermes on
+ * Apple platforms answers that with the whole string as a single literal part.
+ *
+ * English is unaffected either way, which is exactly why this went out wrong.
+ */
+export function monthNameInPhrase(month: string): string {
+  return formatter("monthInPhrase", { day: "numeric", month: "long" })
+    .format(new Date(month))
+    .replace(/\d+/g, "")
+    .replace(/^[\s.,\u00a0]+|[\s.,\u00a0]+$/g, "");
+}
+
 /** "Sat 12 Sep" — an agenda card's own heading. */
 export function agendaDayLabel(date: string): string {
   return formatter("agendaDay", {

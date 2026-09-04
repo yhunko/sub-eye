@@ -30,7 +30,7 @@ import {
   monthDelta,
   monthGrid,
   monthIso,
-  monthNameLabel,
+  monthNameInPhrase,
   siblingMonth,
 } from "../model/month";
 import type { CalendarSettings } from "../model/settings";
@@ -136,7 +136,7 @@ function MonthTotal({
             </View>
             <Text style={styles.vs}>
               {m.calendar_vsMonth({
-                month: monthNameLabel(previousMonth.toISOString()),
+                month: monthNameInPhrase(previousMonth.toISOString()),
               })}
             </Text>
           </View>
