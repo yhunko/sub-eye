@@ -9,9 +9,22 @@ import { colors } from "./theme";
 // `contentInsetAdjustmentBehavior` are BOTH iOS no-ops (an opaque header makes
 // the navigator lay content out below it instead).
 //
-// Never set headerStyle.backgroundColor or headerBlurEffect on iOS: a solid
+// Never set headerStyle.backgroundColor or headerBlurEffect on iOS 26: a solid
 // background kills the glass, and headerBlurEffect paints a permanent gray
 // chrome band over the near-black app while also overlapping scrollEdgeEffects.
+//
+// BEFORE 26 that rule inverts, because `scrollEdgeEffects` is an iOS 26 API and
+// older versions ignore it silently. `headerTransparent` there is a HOLE: the
+// bar has nothing behind it and nothing fading what passes under it, so rows
+// scroll through the title and the status bar at full opacity — legible text
+// over legible text. The deployment target is 16.4, so that is most of the
+// install base of every phone that never got 26 (the 13 mini among them). A
+// blurred bar is what those versions have instead of glass; content still slides
+// under it, which is what the layout is built around, and it is what UIKit's own
+// nav bar does there.
+const IOS_GLASS =
+  Platform.OS === "ios" && Number.parseInt(String(Platform.Version), 10) >= 26;
+
 export const nativeHeaderChrome = {
   headerTintColor: colors.text,
   headerTitleStyle: { color: colors.text },
@@ -20,12 +33,20 @@ export const nativeHeaderChrome = {
   // React Navigation's light default and the translucent glass chrome reflects
   // white (near-invisible light-on-light header title).
   contentStyle: { backgroundColor: colors.bg },
-  ...(Platform.OS === "ios"
-    ? ({ headerTransparent: true, scrollEdgeEffects: { top: "soft" } } as const)
-    : ({
+  ...(Platform.OS !== "ios"
+    ? ({
         headerStyle: { backgroundColor: colors.bg },
         headerShadowVisible: false,
-      } as const)),
+      } as const)
+    : IOS_GLASS
+      ? ({
+          headerTransparent: true,
+          scrollEdgeEffects: { top: "soft" },
+        } as const)
+      : ({
+          headerTransparent: true,
+          headerBlurEffect: "systemChromeMaterialDark",
+        } as const)),
 };
 
 // The app's search-field chrome, spread into a screen's `headerSearchBarOptions`
