@@ -311,7 +311,7 @@ Android app widget is RemoteViews/Glance and shares none of this code.
 - Strategy is `--strategy globalVariable baseLocale` — **space-separated, two arguments**. A comma-joined `globalVariable,baseLocale` compiles to one malformed strategy and makes `getLocale()` throw at runtime.
 - **NEVER call `m.someKey()` at module scope.** Module-level tables hold the message-function *reference* (`label: m.foo`) and invoke it at render time; otherwise the string freezes in whichever locale was active at import.
 - Locale is resolved **once at bootstrap** (`shared/i18n/index.ts` → `expo-localization` `getLocales()` → first of en/uk → else **en**) and re-synced by `useAppLocale()` in the root layout, which re-keys the `Stack`. Language switching is **OS-native only** (per-app language in iOS Settings / Android 13+) — no in-app locale state, no MMKV override.
-- Native OS copy (app display name, permission prompts) lives in `apps/mobile/locales/{locale}.json` via `expo.locales`. Editing it needs a **rebuilt dev client**, not a Metro reload.
+- **There is no `expo.locales` map, and re-adding one needs platform scoping.** Every *top-level* key of a locale JSON is written to both `{locale}.lproj/InfoPlist.strings` and Android's `values-b+{locale}/strings.xml` — so an iOS-only key such as `CFBundleDisplayName` becomes an Android translation with no entry in the default `values/strings.xml`, and `lintVitalRelease` fails the release build on `ExtraTranslation`. Nest per platform (`{"ios": {…}, "android": {…}}`) instead. The map held only `CFBundleDisplayName: "SubEye"`, which duplicates `expo.name` and silently **overrode** the suffixed name `app.config.js` builds for `SUBEYE_BUNDLE_SUFFIX`, so it was deleted. `CFBundleLocalizations`, `locales_config.xml` and `resourceConfigurations` come from the `expo-localization` plugin's `supportedLocales` and never came from here. Native OS copy still needs a **rebuilt dev client**, not a Metro reload.
 - New keys are `prefix_camelCase` and must be added to **both** catalogs.
 - **Every `Intl` date format takes `dateLocale()`** from `shared/i18n` — never a hardcoded tag and never the account's `preferences.locale`, which this client cannot write and which printed English months under a Ukrainian UI. It returns the *device's* full tag (day-first vs month-first is regional, not linguistic) but only while that tag still speaks the app's language. A test stub for `@/shared/i18n` must include it: the format barrel reaches `when`, which asks for it at import time, and a missing export is an import-time crash in an unrelated test file.
 
@@ -614,6 +614,35 @@ centres the capsule, the 64pt subscription rows keep both.
 `EXPO_PUBLIC_*` vars are inlined by Metro **at bundle time** — changing `.env` needs a Metro **restart**, not a reload. They are validated at module load in `shared/config/env.ts`, which throws loudly on a missing var, and `test-preload.ts` carries a floor for each **required** one. `EXPO_PUBLIC_REVENUECAT_IOS_KEY` is the only required var; Sentry and Brandfetch are optional by design and the comments on them say why. A floor for a var that no longer exists is the same trap in reverse — keep the two lists equal.
 
 Build numbers (`ios.buildNumber` / `android.versionCode`) are **EAS-owned — never hand-edit**. The marketing version is per-profile in `app.config.js`: production uses the hand-set `expo.version` in `app.json`; every other profile uses the fixed `BETA_VERSION` and lets the EAS build number move.
+
+## Dependency pins that outrank the SDK manifest
+
+`expo.install.exclude` in `package.json` is not a snooze button — it is the list
+of deps that are deliberately off Expo SDK 57's manifest, and without it
+`expo doctor` exits non-zero on every build. Take something off the list and the
+check starts governing it again.
+
+- **`react-native-gesture-handler` 3.x** — the SDK expects `~2.32.0`, so the
+  check reports a *downgrade*. Taking it walks back a major under the
+  `ReanimatedSwipeable` rows in `widgets/subscriptions-page` and
+  `widgets/categories-page`.
+- **`@sentry/react-native` 8.x** — the manifest's `~7.11.0` is a snapshot from
+  the SDK's release day and trails every Sentry major. `getSentryExpoConfig`,
+  the `expo` config plugin and the `Sentry.init` keys above all survive the
+  jump.
+- **`react`, `react-native-safe-area-context`,
+  `@react-native-community/datetimepicker`** — ahead of the manifest by a patch
+  or a minor. `react` is the one to watch: it floats only because
+  `react-native@0.86.3` asks for `^19.2.3`, so read that peer range before
+  moving it, never the doctor's exact pin.
+
+Not on the list, because the check does not flag it: **`react-native-nitro-modules`
+is capped at 0.36.x** by its caret, deliberately. `react-native-mmkv@4.3.2` ships
+nitrogen-generated C++ and gradle built against that generation, and a newer
+nitro fails at *link* time — nothing warns you until a native build.
+
+Everything else follows `expo install --check` over npm `latest`; the SDK's
+expected version is usually a few patches behind the registry.
 
 ## Testing
 

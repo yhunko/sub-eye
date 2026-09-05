@@ -19,6 +19,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
 
+    // TypeScript 6 stopped including `@types/*` automatically — an unnamed
+    // package is simply absent now, `@types/node` included. Every package's
+    // tests import `bun:test`, so name it once here. `apps/landing` repeats it
+    // in its own tsconfig only because that one extends Astro's, not this.
+    "types": ["bun"],
+
     // Output control
     "skipLibCheck": true,
 

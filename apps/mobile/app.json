@@ -73,10 +73,6 @@
         "backgroundColor": "#0f1115"
       }
     },
-    "locales": {
-      "en": "./locales/en.json",
-      "uk": "./locales/uk.json"
-    },
     "plugins": [
       "expo-router",
       [
