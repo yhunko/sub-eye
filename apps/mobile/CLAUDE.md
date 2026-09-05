@@ -657,3 +657,31 @@ build — only the compiler moves. Three things differ and all three bite:
   gitignored `.env` — with its `test_…` RevenueCat key — cannot reach the
   bundle. That is load-bearing: a Test Store key in a store build crashes on
   launch (`docs/release/TESTFLIGHT-STEPS.md`). Never `--include-untracked` here.
+
+**Android is two artifacts, not one.** Play accepts only an `.aab` and an
+`.aab` cannot be sideloaded, so the tester lane and the upload lane are
+different builds: `build:android:apk:local` (profile `production-apk`) makes
+the `.apk` you hand to a tester, `build:android:local` makes the `.aab` you
+upload. Both carry the `production` environment, so a tester exercises the real
+keys. What that costs, and it is not the iOS guarantee:
+
+- **They are not the same binary.** `production-apk` extends `production`, so
+  each build takes its own remote `versionCode` — the APK a tester approved is
+  build N and Play gets N+1. And Play App Signing re-signs the bundle, so the
+  installed app's signature differs from the sideloaded one too. Nothing here
+  pins a signature today; that stops being free the moment anything does.
+- **`ANDROID_HOME` is unset in this Mac's login shell**, which is why the
+  script points it at the standard SDK path rather than trusting the
+  environment. Gradle's failure for a missing SDK names a path, not a cause.
+- **There is no Android keystore on EAS yet** — no Android build has ever run.
+  The first one prompts to generate it, so run it in a terminal that can answer.
+  That keystore becomes the Play **upload key** permanently: back it up with
+  `eas credentials` before it is the only copy.
+
+**Pro does not work on Android.** `entities/pro/model/purchases.ts` configures
+RevenueCat with `env.REVENUECAT_IOS_KEY` unconditionally — there is no
+`Platform.OS` branch and no `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` in any EAS
+environment. RevenueCat rejects an `appl_` key on Play, the module-scope
+`try/catch` fails open, and the paywall reports "could not load" while every
+gate falls back to the cache. A tester APK is otherwise honest; that one screen
+is not.

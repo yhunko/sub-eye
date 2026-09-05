@@ -6,11 +6,13 @@
   "scripts": {
     "eas-build-post-install": "bun run i18n:generate",
     "i18n:generate": "bunx --bun @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/shared/i18n/paraglide --strategy globalVariable baseLocale --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme",
-    "start": "bun run i18n:generate && expo start",
-    "ios": "bun run i18n:generate && expo run:ios",
-    "android": "bun run i18n:generate && expo run:android",
+    "start": "bun run i18n:generate && SUBEYE_BUNDLE_SUFFIX=.dev expo start",
+    "ios": "bun run i18n:generate && SUBEYE_BUNDLE_SUFFIX=.dev expo run:ios",
+    "android": "bun run i18n:generate && SUBEYE_BUNDLE_SUFFIX=.dev expo run:android",
     "prebuild": "expo prebuild --clean",
-    "build:ios:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 bunx eas-cli build --platform ios --profile production --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).ipa",
+    "build:ios:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 EXPO_NO_CAPABILITY_SYNC=1 bunx eas-cli build --platform ios --profile production --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).ipa",
+    "build:android:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk} bunx eas-cli build --platform android --profile production --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).aab",
+    "build:android:apk:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk} bunx eas-cli build --platform android --profile production-apk --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).apk",
     "lint": "biome check .",
     "type-check": "bun run i18n:generate && tsc --noEmit --pretty",
     "test": "bun test ./src"
