@@ -1,11 +1,9 @@
 import type { SubscriptionDto } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useCallback, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   SectionList,
   StyleSheet,
   Text,
@@ -31,6 +29,7 @@ import {
   useSubscriptionFilters,
 } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { colors } from "@/shared/ui/theme";
 import { ListTotals } from "./list-totals";
 import { SectionHeading } from "./section-heading";
@@ -343,31 +342,25 @@ export function SubscriptionsPage() {
             },
           ],
           headerLeft: () => (
-            <Pressable
+            <HeaderButton
+              ios="plus"
+              android="add"
+              label={m.subs_add()}
               onPress={openForm}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.subs_add()}
-            >
-              <Text style={styles.add}>+</Text>
-            </Pressable>
+              tintColor={colors.accent}
+            />
           ),
           // Android has no bar-button menus; the sheet route is the fallback and
           // carries the same four dimensions as rows.
           headerRight: () => (
-            <Pressable
+            <HeaderButton
+              ios="ellipsis.circle"
+              android="more_vert"
+              label={m.subs_listOptions()}
               onPress={() => router.push("/subscriptions/filters")}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.subs_listOptions()}
-              accessibilityState={{ selected: narrowed }}
-            >
-              <SymbolView
-                name={{ ios: "ellipsis.circle", android: "more_vert" }}
-                size={22}
-                tintColor={narrowed ? colors.accent : colors.text}
-              />
-            </Pressable>
+              tintColor={narrowed ? colors.accent : colors.text}
+              selected={narrowed}
+            />
           ),
         }}
       />
@@ -454,10 +447,4 @@ const styles = StyleSheet.create({
   },
   // Android only — iOS draws a real `plus` bar button item. A glyph, not an icon
   // dependency: "+" is the one affordance that needs no legend.
-  add: {
-    fontSize: 28,
-    lineHeight: 30,
-    fontWeight: "300",
-    color: colors.accent,
-  },
 });

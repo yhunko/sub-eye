@@ -1,5 +1,5 @@
 import { getLocales } from "expo-localization";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
 import {
@@ -47,7 +47,16 @@ export function CurrencyPage({
   // pre-filtered by a term with nothing on screen to explain it.
   useEffect(() => () => currencySearch.set(""), []);
 
-  const suggested = useMemo(() => {
+  // COMPUTED ONCE, and that is the whole point of the `useState`. The form's
+  // picker writes the draft synchronously, so recomputing this from the live
+  // `selected` re-sorted the card in the same commit that popped the screen: the
+  // tapped code jumped to the top and the old one fell to the middle, where it
+  // gained a leading divider and pushed its own row to index 1. Android's Fabric
+  // refuses that mount outright — "addViewAt: failed to insert view … at index
+  // 1", SUBEYE-4 — which is why picking a currency the draft did not already
+  // hold crashed the app and picking the same one did not. Settings escaped it
+  // only because its write is a mutation that lands after the pop.
+  const [suggested] = useState(() => {
     // The current choice leads, so the checkmark is on screen before anything is
     // scrolled; the device's own currency follows, because it is the only entry
     // here that is not a guess about who is holding the phone.
@@ -59,7 +68,7 @@ export function CurrencyPage({
     return [...new Set(codes)].filter(
       (code): code is string => !!code && currencyName(code) !== undefined,
     );
-  }, [selected]);
+  });
 
   const sections = useMemo(
     () =>

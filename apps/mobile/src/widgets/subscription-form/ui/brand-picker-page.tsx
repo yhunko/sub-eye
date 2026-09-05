@@ -1,10 +1,9 @@
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 import { m } from "@/shared/i18n";
 import { nativeInlineSearchBarChrome } from "@/shared/ui/header";
-import { colors } from "@/shared/ui/theme";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { useSubscriptionForm } from "../model/form-context";
 import { BrandList } from "./brand-list";
 import { BrandVariants } from "./brand-variants";
@@ -43,19 +42,14 @@ export function BrandPickerPage({ step = false }: { step?: boolean }) {
           ...(step
             ? {
                 headerLeft: () => (
-                  <Pressable
+                  <HeaderButton
+                    ios="xmark"
+                    android="close"
+                    label={m.common_cancel()}
                     onPress={close}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel={m.common_cancel()}
-                  >
-                    <SymbolView
-                      name={{ ios: "xmark", android: "close" }}
-                      size={17}
-                      tintColor={colors.text}
-                      weight="semibold"
-                    />
-                  </Pressable>
+                    size={17}
+                    weight="semibold"
+                  />
                 ),
               }
             : {}),

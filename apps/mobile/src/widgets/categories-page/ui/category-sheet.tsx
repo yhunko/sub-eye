@@ -2,16 +2,8 @@ import type { UpdateCategoryInput } from "@subeye/model";
 import type { CategoryRecord } from "@subeye/store";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useEffect, useRef, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   categoriesQuery,
   pickCategoryEmoji,
@@ -20,7 +12,9 @@ import {
 } from "@/entities/category";
 import { m } from "@/shared/i18n";
 import { Field } from "@/shared/ui/field";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { notifyWriteFailed } from "@/shared/ui/notify";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 import { useDeleteCategoryConfirm } from "../model/use-delete-category-confirm";
 import { EmojiGrid } from "./emoji-grid";
@@ -167,35 +161,50 @@ export function CategorySheet({
           unstable_headerRightItems: () => [saveItem],
           headerLeft: category
             ? () => (
-                <Pressable
+                <HeaderButton
+                  ios="trash"
+                  android="delete"
+                  label={m.action_delete()}
                   onPress={confirmDelete}
-                  hitSlop={12}
-                  accessibilityRole="button"
-                  accessibilityLabel={m.action_delete()}
-                >
-                  <SymbolView
-                    name={{ ios: "trash", android: "delete" }}
-                    size={22}
-                    tintColor={colors.danger}
-                  />
-                </Pressable>
+                  tintColor={colors.danger}
+                />
               )
             : undefined,
           headerRight: () => (
-            <Pressable
+            <HeaderButton
+              ios="checkmark"
+              android="check"
+              label={m.form_save()}
               onPress={submit}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.form_save()}
-            >
-              <SymbolView
-                name={{ ios: "checkmark", android: "check" }}
-                size={22}
-                tintColor={colors.accent}
-              />
-            </Pressable>
+              tintColor={colors.accent}
+            />
           ),
         }}
+      />
+      {/* Android's formSheet renders no native header, so Save and Delete —
+          which live in that bar and nowhere else — had no home at all there. */}
+      <SheetHeader
+        title={category ? m.category_editTitle() : m.category_newTitle()}
+        leading={
+          category ? (
+            <HeaderButton
+              ios="trash"
+              android="delete"
+              label={m.action_delete()}
+              onPress={confirmDelete}
+              tintColor={colors.danger}
+            />
+          ) : null
+        }
+        trailing={
+          <HeaderButton
+            ios="checkmark"
+            android="check"
+            label={m.form_save()}
+            onPress={submit}
+            tintColor={colors.accent}
+          />
+        }
       />
       <ScrollView
         style={styles.sheet}

@@ -4,6 +4,8 @@ import { ScrollView, StyleSheet } from "react-native";
 import { getLocale, m } from "@/shared/i18n";
 import { formatDate } from "@/shared/lib/format";
 import { nativeHeaderChrome } from "@/shared/ui/header";
+import { HeaderButton } from "@/shared/ui/header-button";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 import { LegalBody } from "./legal-body";
 
@@ -21,6 +23,17 @@ export function LegalSheet({ kind }: { kind: LegalDocKind }) {
       {/* The chrome is respread here, as every headered screen in this app
           does: these options replace the route's rather than merge with them. */}
       <Stack.Screen options={{ ...nativeHeaderChrome, title: doc.title }} />
+      <SheetHeader
+        title={doc.title}
+        trailing={
+          <HeaderButton
+            ios="xmark"
+            android="close"
+            label={m.common_done()}
+            onPress={() => router.back()}
+          />
+        }
+      />
       <ScrollView
         style={styles.screen}
         contentContainerStyle={styles.content}

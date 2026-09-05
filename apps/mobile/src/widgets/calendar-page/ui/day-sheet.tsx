@@ -3,6 +3,8 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useCalendarMonth } from "@/entities/calendar";
 import { m } from "@/shared/i18n";
 import { formatMoney } from "@/shared/lib/format";
+import { HeaderButton } from "@/shared/ui/header-button";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 import { fullDayLabel, needsDayTotal } from "../model/month";
 import { EventRow } from "./event-row";
@@ -54,6 +56,17 @@ export function DaySheet({ date }: { date: string }) {
           a day held only a cancellation, and every row already says what it
           is. */}
       <Stack.Screen options={{ title: valid ? fullDayLabel(iso) : "" }} />
+      <SheetHeader
+        title={valid ? fullDayLabel(iso) : ""}
+        trailing={
+          <HeaderButton
+            ios="xmark"
+            android="close"
+            label={m.common_done()}
+            onPress={() => router.back()}
+          />
+        }
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}

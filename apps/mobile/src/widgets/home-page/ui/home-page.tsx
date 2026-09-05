@@ -18,7 +18,7 @@ import { buildDecisions } from "../model/decisions";
 import { buildRail } from "../model/rail";
 import { DecisionList } from "./decision-list";
 import { HomeEmpty } from "./home-empty";
-import { brandWash } from "./home-glow";
+import { brandWash, useAndroidHeaderInset } from "./home-glow";
 import { HomePrompts } from "./home-prompts";
 import { MonthHero } from "./month-hero";
 import { MonthRail } from "./month-rail";
@@ -64,6 +64,10 @@ import { SpendBreakdown, type SpendRow } from "./spend-breakdown";
 export function HomePage() {
   const { data, isError } = useDashboard();
   const isPro = usePro();
+  // Above the early returns, because a hook has to be. Only the scrolling branch
+  // uses it — the loading and error states centre in the whole screen, which is
+  // where they should be with the bar transparent over them.
+  const headerInset = useAndroidHeaderInset();
   // The same list the Subscriptions tab reads — it is what the breakdown groups
   // for a free install, and what tells this screen whether everything is merely
   // paused.
@@ -126,7 +130,7 @@ export function HomePage() {
     <View style={styles.page}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, headerInset]}
       >
         {/* Inside this branch and no higher: reaching it at all is the proof that
           the app is working for this user, which is the only state in which

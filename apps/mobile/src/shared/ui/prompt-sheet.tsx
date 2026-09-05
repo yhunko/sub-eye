@@ -1,7 +1,8 @@
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
 import { SymbolView } from "expo-symbols";
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SheetHeader } from "./sheet-header";
 import { colors } from "./theme";
 
 /**
@@ -39,29 +40,42 @@ export function PromptSheet({
   actions: ReactNode;
 }) {
   return (
-    <View style={styles.sheet}>
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <SymbolView name={icon} size={30} tintColor={colors.accent} />
+    // The wrapper takes no height of its own: these are `compactSheet` routes
+    // whose detent is measured from this subtree, so anything with a flex basis
+    // here measures the whole sheet to nothing.
+    <View>
+      <SheetHeader />
+      <View style={styles.sheet}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <SymbolView name={icon} size={30} tintColor={colors.accent} />
 
-        <View style={styles.copy}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{body}</Text>
-        </View>
+          <View style={styles.copy}>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.subtitle}>{body}</Text>
+          </View>
 
-        {children}
-      </ScrollView>
+          {children}
+        </ScrollView>
 
-      <View style={styles.actions}>{actions}</View>
+        <View style={styles.actions}>{actions}</View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { paddingHorizontal: 26, paddingTop: 26, paddingBottom: 14, gap: 20 },
+  // No `paddingTop` on Android: `SheetHeader` above already pays the gap, and
+  // 26 on top of it left the glyph adrift halfway down the sheet.
+  sheet: {
+    paddingHorizontal: 26,
+    paddingTop: Platform.OS === "android" ? 0 : 26,
+    paddingBottom: 14,
+    gap: 20,
+  },
   body: { flexShrink: 1 },
   bodyContent: { gap: 20 },
   copy: { gap: 10 },

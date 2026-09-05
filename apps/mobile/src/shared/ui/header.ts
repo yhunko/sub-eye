@@ -116,3 +116,22 @@ export const nativeInlineSearchBarChrome = {
   placement: "integrated" as const,
   allowToolbarIntegration: false,
 };
+
+// Material's own toolbar height (`?attr/actionBarSize` on a phone). A screen
+// that opts INTO a transparent Android header has to pay this inset itself:
+// `contentInsetAdjustmentBehavior` is an iOS no-op, so nothing else will.
+export const ANDROID_TOOLBAR_HEIGHT = 56;
+
+// Home only. Android's bar is opaque everywhere else for the reason above — but
+// Home draws a brand wash across the top of the screen, and an opaque bar cuts
+// it with a hard horizontal seam because the navigator starts the content below
+// the bar and the gradient's centre lands just under it. Transparent, the wash
+// runs behind the bar exactly as it does on iOS and only its falloff is on the
+// page. Any screen spreading this MUST pay ANDROID_TOOLBAR_HEIGHT.
+export const androidTransparentHeader =
+  Platform.OS === "android"
+    ? ({
+        headerTransparent: true,
+        headerStyle: { backgroundColor: "transparent" },
+      } as const)
+    : null;

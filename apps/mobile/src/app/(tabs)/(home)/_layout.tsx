@@ -1,8 +1,11 @@
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { dateLocale, m } from "@/shared/i18n";
-import { nativeHeaderChrome } from "@/shared/ui/header";
+import {
+  androidTransparentHeader,
+  nativeHeaderChrome,
+} from "@/shared/ui/header";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { colors } from "@/shared/ui/theme";
 import { useShrinkFloor } from "@/shared/ui/use-large-text";
 
@@ -82,6 +85,7 @@ export default function HomeTabLayout() {
     <Stack
       screenOptions={{
         ...nativeHeaderChrome,
+        ...androidTransparentHeader,
         // ponytail: resolved once per mount, so a month rollover with the app
         // in the foreground shows the old name until it remounts. Move it into
         // HomePage's own <Stack.Screen> if that ever matters.
@@ -108,18 +112,13 @@ export default function HomeTabLayout() {
           },
         ],
         headerRight: () => (
-          <Pressable
+          <HeaderButton
+            ios="plus"
+            android="add"
+            label={m.subs_add()}
             onPress={openForm}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={m.subs_add()}
-          >
-            <SymbolView
-              name={{ ios: "plus", android: "add" }}
-              size={22}
-              tintColor={colors.accent}
-            />
-          </Pressable>
+            tintColor={colors.accent}
+          />
         ),
       }}
     />

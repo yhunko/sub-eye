@@ -1,7 +1,10 @@
+import { useRouter } from "expo-router";
 import { Fragment } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { m } from "@/shared/i18n";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { Divider, Row, RowCheck, Section } from "@/shared/ui/list-row";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 import {
   calendarSettings,
@@ -29,42 +32,56 @@ const WEEK_LABEL = {
  * underneath as each one moves, which is the point of a sheet over a screen.
  */
 export function CalendarOptionsSheet() {
+  const router = useRouter();
   const settings = useCalendarSettings();
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content}
-    >
-      <Section title={m.calendar_weekStart()}>
-        {WEEK_STARTS.map((value, index) => (
-          <Fragment key={value}>
-            {index > 0 ? <Divider /> : null}
-            <Row
-              ios="calendar"
-              android="calendar_month"
-              label={WEEK_LABEL[value]()}
-              onPress={() => calendarSettings.set({ weekStart: value })}
-              accessory={<RowCheck checked={settings.weekStart === value} />}
-            />
-          </Fragment>
-        ))}
-      </Section>
+    <>
+      <SheetHeader
+        title={m.calendar_options()}
+        trailing={
+          <HeaderButton
+            ios="xmark"
+            android="close"
+            label={m.common_done()}
+            onPress={() => router.back()}
+          />
+        }
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+      >
+        <Section title={m.calendar_weekStart()}>
+          {WEEK_STARTS.map((value, index) => (
+            <Fragment key={value}>
+              {index > 0 ? <Divider /> : null}
+              <Row
+                ios="calendar"
+                android="calendar_month"
+                label={WEEK_LABEL[value]()}
+                onPress={() => calendarSettings.set({ weekStart: value })}
+                accessory={<RowCheck checked={settings.weekStart === value} />}
+              />
+            </Fragment>
+          ))}
+        </Section>
 
-      <Section footnote={m.calendar_showTotalsHint()}>
-        <Row
-          ios="sum"
-          android="functions"
-          label={m.calendar_showTotals()}
-          toggle={{
-            value: settings.showDayTotals,
-            disabled: false,
-            onValueChange: (next) =>
-              calendarSettings.set({ showDayTotals: next }),
-          }}
-        />
-      </Section>
-    </ScrollView>
+        <Section footnote={m.calendar_showTotalsHint()}>
+          <Row
+            ios="sum"
+            android="functions"
+            label={m.calendar_showTotals()}
+            toggle={{
+              value: settings.showDayTotals,
+              disabled: false,
+              onValueChange: (next) =>
+                calendarSettings.set({ showDayTotals: next }),
+            }}
+          />
+        </Section>
+      </ScrollView>
+    </>
   );
 }
 

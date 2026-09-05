@@ -11,6 +11,7 @@ import { LogoVariantProvider } from "@/shared/ui/logo-variants";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
+import { ChoiceHost } from "@/shared/ui/choice-host";
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
 import {
   categorySheetChrome,
@@ -250,6 +251,11 @@ function RootLayout() {
                 options={compactSheet}
               />
             </Stack>
+            {/* A SIBLING of the navigator, not a screen in it: every chooser is
+                opened from an event handler somewhere below, including two that
+                are not components at all. Android renders a Modal in its own
+                window, so this sits over whatever is on screen. */}
+            <ChoiceHost />
           </LogoVariantProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

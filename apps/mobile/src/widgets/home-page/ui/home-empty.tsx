@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { colors } from "@/shared/ui/theme";
-import { brandWash } from "./home-glow";
+import { brandWash, useAndroidHeaderInset } from "./home-glow";
 
 /**
  * What Home shows before there is anything to total.
@@ -20,7 +20,7 @@ export function HomeEmpty() {
   const router = useRouter();
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, useAndroidHeaderInset()]}>
       <View style={styles.mark}>
         <SymbolView
           name={{ ios: "rectangle.stack", android: "stacks" }}

@@ -15,6 +15,7 @@ import {
   formatMoney,
   formatShortDate,
 } from "@/shared/lib/format";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 import { PendingView, ScheduleView, TemporaryPriceView } from "./pricing-views";
 
@@ -79,43 +80,46 @@ export function ManagePricingSheet({
   });
 
   return (
-    <ScrollView
-      style={styles.sheet}
-      contentContainerStyle={styles.content}
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-    >
-      {intent === "schedule" ? (
-        <ScheduleView
-          subscription={subscription}
-          subtitle={subtitle}
-          onClose={close}
-          onSubmit={start}
-        />
-      ) : intent === "temporary" ? (
-        <TemporaryPriceView
-          subscription={subscription}
-          subtitle={subtitle}
-          onClose={close}
-          onSubmit={start}
-        />
-      ) : queued ? (
-        <PendingView
-          subscription={subscription}
-          phase={queued}
-          subtitle={subtitle}
-          onClose={close}
-          onApply={() => {
-            applyNow.mutate({ id, phaseId: queued.id });
-            router.back();
-          }}
-          onCancel={() => {
-            cancelPhase.mutate({ id, phaseId: queued.id });
-            router.back();
-          }}
-        />
-      ) : null}
-    </ScrollView>
+    <>
+      <SheetHeader />
+      <ScrollView
+        style={styles.sheet}
+        contentContainerStyle={styles.content}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
+        {intent === "schedule" ? (
+          <ScheduleView
+            subscription={subscription}
+            subtitle={subtitle}
+            onClose={close}
+            onSubmit={start}
+          />
+        ) : intent === "temporary" ? (
+          <TemporaryPriceView
+            subscription={subscription}
+            subtitle={subtitle}
+            onClose={close}
+            onSubmit={start}
+          />
+        ) : queued ? (
+          <PendingView
+            subscription={subscription}
+            phase={queued}
+            subtitle={subtitle}
+            onClose={close}
+            onApply={() => {
+              applyNow.mutate({ id, phaseId: queued.id });
+              router.back();
+            }}
+            onCancel={() => {
+              cancelPhase.mutate({ id, phaseId: queued.id });
+              router.back();
+            }}
+          />
+        ) : null}
+      </ScrollView>
+    </>
   );
 }
 

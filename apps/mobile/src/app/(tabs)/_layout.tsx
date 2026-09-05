@@ -267,7 +267,16 @@ function Tabs() {
       <DuePhaseSync />
       <RatesSync />
       <CloudSync />
-      <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
+      {/* `indicatorColor` and `rippleColor` are Android-only, and unset they are
+          Material 3's own `secondaryContainer` — a pale BLUE pill behind the
+          selected icon, which is the one thing on screen that does not belong to
+          this app's palette. iOS ignores both. */}
+      <NativeTabs
+        minimizeBehavior="onScrollDown"
+        tintColor={colors.accent}
+        indicatorColor={colors.accentSoft}
+        rippleColor={colors.accentSoft}
+      >
         <NativeTabs.Trigger name="(home)">
           <NativeTabs.Trigger.Icon sf="house" md="home" />
           <NativeTabs.Trigger.Label>{m.tabs_home()}</NativeTabs.Trigger.Label>

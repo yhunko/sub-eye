@@ -5,6 +5,7 @@ import { useRenewSubscription } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { toIsoDay } from "@/shared/lib/format";
 import { NativeDateField } from "@/shared/ui/native-date-field";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 
 /**
@@ -31,25 +32,28 @@ export function RenewSheet({ id }: { id: string }) {
   };
 
   return (
-    <View style={styles.sheet}>
-      <Text style={styles.title}>{m.renew_title()}</Text>
-      <Text style={styles.body}>{m.renew_body()}</Text>
+    <>
+      <SheetHeader />
+      <View style={styles.sheet}>
+        <Text style={styles.title}>{m.renew_title()}</Text>
+        <Text style={styles.body}>{m.renew_body()}</Text>
 
-      <NativeDateField
-        label={m.renew_startedOn()}
-        value={startedAt}
-        maximumDate={new Date()}
-        onChange={setStartedAt}
-      />
+        <NativeDateField
+          label={m.renew_startedOn()}
+          value={startedAt}
+          maximumDate={new Date()}
+          onChange={setStartedAt}
+        />
 
-      <Pressable
-        style={styles.primary}
-        onPress={submit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.primaryLabel}>{m.action_restart()}</Text>
-      </Pressable>
-    </View>
+        <Pressable
+          style={styles.primary}
+          onPress={submit}
+          accessibilityRole="button"
+        >
+          <Text style={styles.primaryLabel}>{m.action_restart()}</Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 

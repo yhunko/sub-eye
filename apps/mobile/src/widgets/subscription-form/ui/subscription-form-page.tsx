@@ -1,12 +1,11 @@
 import type { NativeStackHeaderItem } from "expo-router";
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
-import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
+import { Platform, ScrollView, StyleSheet } from "react-native";
 import { usePro } from "@/entities/pro";
 import { usePricingMenu } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { presentChoice } from "@/shared/ui/present-choice";
-import { colors } from "@/shared/ui/theme";
 import { useSubscriptionForm } from "../model/form-context";
 import { BrandPickerPage } from "./brand-picker-page";
 import { DatesFields, PriceFields } from "./form-fields";
@@ -103,19 +102,14 @@ function EditForm({ id }: { id: string }) {
             Platform.OS === "ios"
               ? undefined
               : () => (
-                  <Pressable
+                  <HeaderButton
+                    ios="xmark"
+                    android="close"
+                    label={m.common_cancel()}
                     onPress={confirmClose}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel={m.common_cancel()}
-                  >
-                    <SymbolView
-                      name={{ ios: "xmark", android: "close" }}
-                      size={17}
-                      tintColor={colors.text}
-                      weight="semibold"
-                    />
-                  </Pressable>
+                    size={17}
+                    weight="semibold"
+                  />
                 ),
           // A real UIMenu on iOS. Locked, the same slot becomes a plain button
           // to the paywall — an action that exists for some users and not
@@ -160,21 +154,16 @@ function EditForm({ id }: { id: string }) {
             Platform.OS === "ios" || !pricing.length
               ? undefined
               : () => (
-                  <Pressable
+                  <HeaderButton
+                    ios="tag"
+                    android="sell"
+                    label={m.action_managePricing()}
                     onPress={() =>
                       isPro ? openPricing() : router.push("/paywall")
                     }
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel={m.action_managePricing()}
-                  >
-                    <SymbolView
-                      name={{ ios: "tag", android: "sell" }}
-                      size={20}
-                      tintColor={colors.text}
-                      weight="semibold"
-                    />
-                  </Pressable>
+                    size={20}
+                    weight="semibold"
+                  />
                 ),
         }}
       />
