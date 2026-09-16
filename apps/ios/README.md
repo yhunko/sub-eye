@@ -45,23 +45,21 @@ rtk proxy xcodegen generate --spec apps/ios/project.yml
 
 ## Production IPA for Transporter
 
-From the repository root, choose a new build number for the upload:
+From the repository root:
 
 ```sh
-rtk proxy bun run build:ios 3
+rtk proxy bun run build:ios
 ```
 
-This archives `SubEye` / `Production` with fresh DerivedData and exports an
-App Store Connect IPA into ignored `builds/ios/`. It preserves the archive,
-dSYMs and logs and does not upload anything. App and widget versions are checked
-before export. See [IPA build and signing](Docs/BUILD-IPA.md) for prerequisites,
-output paths, export retry and Transporter steps.
+This automatically reserves the next build number, archives `SubEye` /
+`Production` with fresh DerivedData, and exports **`builds/ios/SubEye.ipa`** for
+Transporter. It preserves versioned archives, IPAs, dSYMs and logs and uploads
+nothing. The counter survives deleting `builds/` and is shared by worktrees of
+this checkout; it is not a remote EAS/App Store counter.
 
-On this Mac, Xcode Organizer can use cloud-managed distribution signing while
-the CLI currently reports `No Accounts`. For that setup, use
-`rtk proxy bun run build:ios 3 --archive-only`, open the resulting archive in
-Organizer, then choose **Distribute App → Custom → App Store Connect → Export**.
-The verified 6.0.0 (2) IPA was exported successfully using this route.
+The Mac's local Apple Distribution certificate and App Store profiles are
+configured for command-line export. See [IPA build and signing](Docs/BUILD-IPA.md)
+for setup on another Mac, build-number overrides, export retries and checks.
 
 ## Structure
 
