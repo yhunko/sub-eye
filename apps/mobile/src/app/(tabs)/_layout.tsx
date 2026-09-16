@@ -135,8 +135,6 @@ function ReminderTapRouter() {
 // Symbol name, `md` = an Android Material Symbols name. There is no cross-
 // platform icon component here by design.
 //
-// minimizeBehavior="onScrollDown": the iOS 26 pill tab bar collapses as a list
-// scrolls down and re-expands on scroll up.
 export default function TabsLayout() {
   return <Tabs />;
 }
@@ -272,10 +270,23 @@ function Tabs() {
           selected icon, which is the one thing on screen that does not belong to
           this app's palette. iOS ignores both. */}
       <NativeTabs
-        minimizeBehavior="onScrollDown"
+        // Keep the shell deterministic across iOS releases. The scroll-driven
+        // state leaves UIKit's expanded floating bar over list content after a
+        // navigation transition on iOS 27.
+        minimizeBehavior="never"
         tintColor={colors.accent}
+        iconColor={{ default: colors.text, selected: colors.accent }}
+        labelStyle={{
+          default: { color: colors.text },
+          selected: { color: colors.accent },
+        }}
+        backgroundColor={colors.bg}
         indicatorColor={colors.accentSoft}
         rippleColor={colors.accentSoft}
+        unstable_nativeProps={{
+          colorScheme: "dark",
+          nativeContainerStyle: { backgroundColor: colors.bg },
+        }}
       >
         <NativeTabs.Trigger name="(home)">
           <NativeTabs.Trigger.Icon sf="house" md="home" />

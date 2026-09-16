@@ -33,7 +33,8 @@ actor WidgetPublisher {
         }
         let kept = Set(items.compactMap(\.logoFile))
         for file in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) where !kept.contains(file.lastPathComponent) { try? FileManager.default.removeItem(at: file) }
-        let snapshot = WidgetSnapshot(locked: !pro, lockTitle: L("native_widgetPro"), lockCta: L("paywall_unlock"), monthLabel: L("widget_thisMonth"), monthTotal: Display.money(model.dashboard.monthTotal, currency), upcomingLabel: L("widget_upcoming"), emptyLabel: L("widget_nothingDue"), delta: pro && model.dashboard.previousMonth > 0 ? Display.money(abs(difference), currency) : nil, deltaLabel: L("widget_vsLastMonth"), deltaUp: difference > 0, alsoDue: pro && next.count > 3 ? L("widget_alsoDue", ["count": String(next.count - 3)]) : nil, locale: Bundle.main.preferredLocalizations.first, items: items)
+        let alsoDue = next.first.map { first in next.dropFirst().filter { $0.nextDate == first.nextDate }.count } ?? 0
+        let snapshot = WidgetSnapshot(locked: !pro, lockTitle: L("native_widgetPro"), lockCta: L("paywall_unlock"), monthLabel: L("widget_thisMonth"), monthTotal: Display.money(model.dashboard.monthTotal, currency), upcomingLabel: L("widget_upcoming"), emptyLabel: L("widget_nothingDue"), delta: pro && model.dashboard.previousMonth > 0 ? Display.money(abs(difference), currency) : nil, deltaLabel: L("widget_vsLastMonth"), deltaUp: difference > 0, alsoDue: pro && alsoDue > 0 ? L("widget_alsoDue", ["count": String(alsoDue)]) : nil, locale: Bundle.main.preferredLocalizations.first, items: items)
         let raw = try JSONCodec.string(snapshot)
         let defaults = UserDefaults(suiteName: group)
         guard defaults?.string(forKey: key) != raw else { return }

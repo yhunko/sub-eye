@@ -73,7 +73,10 @@ export const nativeHeaderChrome = {
 // peaked at 0.47 luminance against a resting 0.11, for 12 frames. An opaque fill
 // has nothing to sample and cannot flash. An older note claimed a custom
 // barTintColor renders the magnifier glyph black; it does not on
-// react-native-screens 4.25 — verified on iOS 26.
+// react-native-screens 4.26 — verified on iOS 26. The native tab host also
+// pins its UIKit trait collection to dark: Info.plist's app-wide appearance is
+// not reliably inherited by search controllers nested under UITabBarController
+// on iOS 27, which otherwise produces black placeholder text and glyphs here.
 export const nativeSearchBarChrome = {
   placement: "stacked" as const,
   hideWhenScrolling: false,

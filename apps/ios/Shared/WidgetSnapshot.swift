@@ -34,9 +34,10 @@ struct WidgetItem: Codable, Identifiable, Sendable {
         guard let logoFile, logoFile.range(of: "^[a-f0-9]{64}\\.png$", options: .regularExpression) != nil else { return nil }
         return try? AppConfiguration.directory.appendingPathComponent("widget-logos").appendingPathComponent(logoFile)
     }
-    func dueText(locale: String?) -> String {
+    func dueText(locale: String?, now: Date = Date()) -> String {
         let formatter = RelativeDateTimeFormatter(); formatter.dateTimeStyle = .named
         formatter.locale = locale.map(Locale.init(identifier:)) ?? .current
-        return formatter.localizedString(from: DateComponents(day: Day.distance(Day.today(), Day.parse(date) ?? Day.today())))
+        let today = Day.today(now, zone: .current)
+        return formatter.localizedString(from: DateComponents(day: Day.distance(today, Day.parse(date) ?? today)))
     }
 }

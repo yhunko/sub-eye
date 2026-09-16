@@ -4,6 +4,15 @@ import SubEyeCore
 
 @MainActor
 final class WidgetTests: XCTestCase {
+    func testDueTextUsesTimelineDayAndSnapshotLocale() throws {
+        let now = try XCTUnwrap(Calendar.current.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 12)))
+        let item = WidgetItem(id: "cloud", name: "Cloud", amount: "$2.99", date: "2026-09-17")
+        XCTAssertEqual(item.dueText(locale: "en", now: now), "tomorrow")
+        XCTAssertEqual(item.dueText(locale: "uk", now: now), "завтра")
+        let nextDay = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 1, to: now))
+        XCTAssertEqual(item.dueText(locale: "en", now: nextDay), "today")
+    }
+
     func testActivityStateAcceptsExistingPayloadAndRestrictsLogoPaths() throws {
         let item = RenewalActivity.Item(id: "old", name: "Cloud storage", price: "$9.99")
         let original = RenewalActivity.ContentState(items: [item], count: 1, total: "$9.99", expiresAt: Date())
@@ -42,8 +51,18 @@ final class WidgetTests: XCTestCase {
         XCTAssertTrue(free.locked); XCTAssertTrue(free.items.isEmpty); XCTAssertNil(free.delta); XCTAssertNil(free.alsoDue)
         try await publisher.publish(model, pro: true, logos: logos)
         let pro = try XCTUnwrap(WidgetSnapshot.read(group: group, key: "snapshot"))
-        XCTAssertFalse(pro.locked); XCTAssertEqual(pro.items.count, 3); XCTAssertNotNil(pro.alsoDue)
+        XCTAssertFalse(pro.locked); XCTAssertEqual(pro.items.count, 3); XCTAssertNil(pro.alsoDue)
         XCTAssertEqual(pro.items.map(\.id), Array(subscriptions.prefix(3).map(\.id)))
         XCTAssertTrue(pro.items.allSatisfy { !$0.amount.isEmpty && !$0.date.isEmpty })
+
+        for original in subscriptions.dropFirst() {
+            var subscription = original
+            subscription.paymentDate = subscriptions[0].paymentDate
+            try await repository.save(subscription, expected: original, now: now)
+        }
+        let sameDayModel = try await repository.presentation(rates: .init(rates: ["usd": 1]), now: now)
+        try await publisher.publish(sameDayModel, pro: true, logos: logos)
+        let sameDay = try XCTUnwrap(WidgetSnapshot.read(group: group, key: "snapshot"))
+        XCTAssertEqual(sameDay.alsoDue, L("widget_alsoDue", ["count": "3"]))
     }
 }

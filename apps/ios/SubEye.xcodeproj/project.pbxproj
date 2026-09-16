@@ -128,9 +128,9 @@
 /* Begin PBXFileReference section */
 		03A1F35381A463B021F12311 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		077D5FCAF83F9A3A1BCDE112 /* LogoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoTests.swift; sourceTree = "<group>"; };
-		0DEDE115F7A7C58C9C27CBDD /* SubEye.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SubEye.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0DEDE115F7A7C58C9C27CBDD /* SubEye.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SubEye.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		17350D85EC12B7A5D778CB8A /* legal-en.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "legal-en.json"; sourceTree = "<group>"; };
-		1E294C2AA9D37339470D26D2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1E294C2AA9D37339470D26D2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1F32AC462BD18F9EFE7F5F83 /* MMKVMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MMKVMigrationTests.swift; sourceTree = "<group>"; };
 		26031C0EB4888718F124C0CA /* SubEyePerformanceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SubEyePerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2747C3C6EADD35C0087A88B4 /* SceneState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneState.swift; sourceTree = "<group>"; };
@@ -143,7 +143,7 @@
 		4C32BF1910F0AC38FF5D57CD /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		4F488ECAECF0F14620B009C2 /* SubEyeUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SubEyeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		56A764B17F52A77469DDF85A /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
-		57D7E80DFD502636A8C6BA99 /* SubEyeCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SubEyeCore; path = SubEyeCore; sourceTree = SOURCE_ROOT; };
+		57D7E80DFD502636A8C6BA99 /* SubEyeCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SubEyeCore; sourceTree = SOURCE_ROOT; };
 		597F24329AB3208966D469F2 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		5B2DBB20D332E8B12489C774 /* WidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTests.swift; sourceTree = "<group>"; };
 		5BAEAE9080AC9FEDD101898E /* LogoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoService.swift; sourceTree = "<group>"; };
@@ -176,7 +176,7 @@
 		BC498684C894844AE9ADE6B8 /* SubscriptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionsView.swift; sourceTree = "<group>"; };
 		C18E2F05BADF7B5BD65EE8A5 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		C865F1F5D017BFD1A24976B7 /* SubEyeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubEyeUITests.swift; sourceTree = "<group>"; };
-		CA407EFC3BD72C75B7D2026E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		CA407EFC3BD72C75B7D2026E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CBF6BA153FB69567D550062D /* LegacyMMKVReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMMKVReader.swift; sourceTree = "<group>"; };
 		CFDC5229D5E24EE26E935E87 /* PromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCoordinator.swift; sourceTree = "<group>"; };
 		D0137BFD6DD8604A5D29D369 /* MemoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryTests.swift; sourceTree = "<group>"; };
@@ -560,7 +560,6 @@
 						TestTargetID = 39503D69DAD7D46BE6CCC1B2;
 					};
 					39503D69DAD7D46BE6CCC1B2 = {
-						DevelopmentTeam = Z6KADG969Z;
 						ProvisioningStyle = Automatic;
 					};
 					57E388A12C00633835D7D11A = {
@@ -835,6 +834,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = icon;
 				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = Z6KADG969Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -999,6 +999,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = icon;
 				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = Z6KADG969Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (

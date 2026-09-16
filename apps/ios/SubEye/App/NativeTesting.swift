@@ -3,6 +3,7 @@ import SubEyeCore
 
 enum NativeTesting {
     static var largestText: Bool { enabled && ProcessInfo.processInfo.arguments.contains("--largest-text") }
+    static var publishWidgetFixture: Bool { enabled && ProcessInfo.processInfo.arguments.contains("--publish-widget-fixture") }
     static var enabled: Bool {
         #if NATIVE_DEVELOPMENT
         ProcessInfo.processInfo.arguments.contains("--ui-testing")

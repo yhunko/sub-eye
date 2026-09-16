@@ -16,13 +16,10 @@ import { deviceJson } from "./mmkv";
  * The gates here are what stop the app spending those three on someone who has
  * no reason to say anything yet.
  *
- * `expo-store-review` IS PINNED TO AN EXACT 57.0.1 — do not widen it to `~`.
- * 57.0.2 calls `SceneGeometry.foregroundScene()`, which does not exist in
- * `expo-modules-core` 57.0.6 (the version `expo@57.0.7` resolves), so the pod
- * fails to compile: `cannot find 'SceneGeometry' in scope`, in Swift, at native
- * build time. Nothing in `type-check`, `test` or `lint` can see it — the first
- * signal is a dead `xcodebuild`. 57.0.1 reads `UIApplication.shared
- * .connectedScenes` directly and needs nothing from expo-modules-core.
+ * Keep `expo-store-review` on Expo's SDK-compatible range and verify upgrades
+ * with a native Release build. Past patch combinations compiled in TypeScript
+ * but failed in Swift when `expo-store-review` expected a newer
+ * `expo-modules-core` API.
  */
 
 const STATE_KEY = "review.state";

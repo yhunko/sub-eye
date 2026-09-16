@@ -104,3 +104,11 @@ navigation/tab bars, where iOS deliberately blurs scrolling content. It does not
 visible content or clipping/hit-region checks; offscreen contrast samples are
 excluded as well. Manual VoiceOver and system
 accessibility-setting verification remain part of physical-device acceptance.
+
+Widget visual checks can opt in to publishing the isolated UI-test store with
+`--ui-testing --test-store <UUID> --fixture-count 12 --fixture-pro --publish-widget-fixture`.
+This updates the development widget only; reminder and Live Activity publication
+remain disabled. Omit the publishing flag for ordinary UI tests. WidgetKit
+previews in `SubEyeWidget/WidgetBundle.swift` cover both sizes, English/Ukrainian,
+locked, empty and missing snapshots. Check Home Screen Default, Dark, Clear and
+Tinted appearances separately: iOS supplies the glass when the user selects it.
