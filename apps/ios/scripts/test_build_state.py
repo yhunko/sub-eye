@@ -1,9 +1,11 @@
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 from pathlib import Path
 import plistlib
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 from build_state import ipa_info, publish, reserve
@@ -59,9 +61,25 @@ class BuildStateTests(unittest.TestCase):
 
     def test_older_parallel_export_cannot_replace_newer_ipa(self):
         destination = self.output / "SubEye.ipa"
-        self.assertTrue(publish(self.state, self.ipa(5), destination, "6.0.0", 5))
-        self.assertFalse(publish(self.state, self.ipa(4), destination, "6.0.0", 4))
+        newer, latest = publish(self.state, self.ipa(5), destination, "6.0.0", 5)
+        self.assertTrue(latest)
+        older, latest = publish(self.state, self.ipa(4), destination, "6.0.0", 4)
+        self.assertFalse(latest)
+        self.assertEqual(ipa_info(newer), ("6.0.0", 5))
+        self.assertEqual(ipa_info(older), ("6.0.0", 4))
         self.assertEqual(ipa_info(destination), ("6.0.0", 5))
+
+    def test_reexport_in_the_same_minute_preserves_each_named_ipa(self):
+        destination = self.output / "SubEye.ipa"
+        source = self.ipa(4)
+        with patch("build_state.datetime") as clock:
+            clock.now.return_value = datetime(2026, 9, 16, 15, 30)
+            first, _ = publish(self.state, source, destination, "6.0.0", 4)
+            second, _ = publish(self.state, source, destination, "6.0.0", 4)
+        self.assertEqual(first.name, "subeye-6.0.0-build4-20260916-1530.ipa")
+        self.assertEqual(second.name, "subeye-6.0.0-build4-20260916-1530-2.ipa")
+        self.assertEqual(first.read_bytes(), source.read_bytes())
+        self.assertEqual(second.read_bytes(), source.read_bytes())
 
     def test_invalid_export_preserves_previous_good_ipa(self):
         destination = self.output / "SubEye.ipa"

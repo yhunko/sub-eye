@@ -52,9 +52,11 @@ rtk proxy bun run build:ios
 ```
 
 This automatically reserves the next build number, archives `SubEye` /
-`Production` with fresh DerivedData, and exports **`builds/ios/SubEye.ipa`** for
-Transporter. It preserves versioned archives, IPAs, dSYMs and logs and uploads
-nothing. The counter survives deleting `builds/` and is shared by worktrees of
+`Production` with fresh DerivedData, and exports a named IPA such as
+**`builds/ios/subeye-6.0.0-build4-20260916-1530.ipa`** for Transporter.
+`SubEye.ipa` also keeps a copy of the latest build. It preserves archives,
+IPAs, dSYMs and logs and uploads nothing. The counter survives deleting `builds/`
+and is shared by worktrees of
 this checkout; it is not a remote EAS/App Store counter.
 
 The Mac's local Apple Distribution certificate and App Store profiles are

@@ -7,7 +7,8 @@ rtk proxy bun run build:ios
 ```
 
 The command reserves the next build number, builds a fresh **Production**
-archive, and exports an App Store IPA at **`builds/ios/SubEye.ipa`**. Add that file
+archive, and exports a named App Store IPA such as
+**`builds/ios/subeye-6.0.0-build4-20260916-1530.ipa`**. Add the printed file
 to Transporter. No iPhone, Expo build, Organizer interaction or upload is part
 of the normal build command. The marketing version is **6.0.0**.
 
@@ -39,7 +40,8 @@ normal checkout, that is `.git/subeye-ios/build-number`.
 
 ```text
 builds/ios/
-  SubEye.ipa                  # Most recent successful build, ready for Transporter
+  subeye-6.0.0-build4-20260916-1530.ipa  # Version, build number, local export date/time
+  SubEye.ipa                  # Convenience copy of the latest successful build
   SourcePackages/             # Shared cache of pinned native dependencies
   6.0.0-4-<timestamp>-<id>/
     SubEye.xcarchive/          # App, widget, metadata and matching dSYMs
@@ -57,6 +59,11 @@ DerivedData deletion is needed. Native packages use the checked-in
 `Package.resolved`. The command checks Production identity, public service-key
 configuration, and matching app/widget versions. It checks the exported IPA's
 identity and versions before atomically replacing the convenience copy.
+
+Named IPAs sit directly in `builds/ios/`, following the Expo output convention
+with the build number added. Every export is retained, including retries. If
+the same build is exported twice in one minute, a `-2`, `-3`, etc. suffix avoids
+overwriting the previous file.
 
 Failed builds leave the previous successful `SubEye.ipa` intact. An older build
 finishing after a newer one cannot replace it. Always use the success message
@@ -122,7 +129,7 @@ Open the resulting archive in Organizer and use the export sequence above. See
 ## Upload
 
 1. Open Transporter and sign in to the existing App Store Connect team.
-2. Add `builds/ios/SubEye.ipa`, choose **Verify**, then **Deliver**.
+2. Add the named IPA printed by the command, choose **Verify**, then **Deliver**.
 3. Wait for processing, then select the build for TestFlight or the 6.0.0 release.
 
 Transporter accepts IPA files and generates the upload package; see
@@ -134,7 +141,7 @@ Packaging success is separate from the service-validation items in
 
 The counter and publication regression tests cover simultaneous reservations,
 failed builds, cleanup, explicit overrides, damaged state, imported archives,
-invalid IPAs, and exports finishing out of order:
+invalid IPAs, exports finishing out of order, and re-export filename collisions:
 
 ```sh
 rtk proxy python3 -B -m unittest discover -s apps/ios/scripts -p 'test_*.py' -v
@@ -151,5 +158,9 @@ list. The convenience IPA matches the versioned export byte for byte; the
 archive retains both matching dSYM bundles. Export-only was also verified on
 build 3. Nothing was uploaded or validated by App Store Connect.
 
-All seven build-tool regression tests, shell syntax, repository type-check,
+The naming update also published the verified build 4 as
+`builds/ios/subeye-6.0.0-build4-20260916-1515.ipa` without rebuilding or changing
+its build number.
+
+All eight build-tool regression tests, shell syntax, repository type-check,
 tests and dependency-boundary checks passed.

@@ -1,5 +1,6 @@
 import argparse
 import contextlib
+from datetime import datetime
 import fcntl
 import os
 from pathlib import Path
@@ -69,6 +70,8 @@ def ipa_info(path):
 
 
 def publish(state_dir, source, destination, version, number):
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        raise ValueError(f"Invalid marketing version: {version!r}")
     expected = (version, build_number(number))
     if ipa_info(source) != expected:
         raise ValueError("Exported IPA does not match the archive version/build.")
@@ -76,18 +79,32 @@ def publish(state_dir, source, destination, version, number):
         counter = state_dir / "build-number"
         last = build_number(counter.read_text().strip()) if counter.exists() else 0
         save_number(counter, max(last, expected[1]))
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        stem = f"subeye-{version}-build{expected[1]}-{datetime.now():%Y%m%d-%H%M}"
+        artifact = destination.parent / f"{stem}.ipa"
+        suffix = 2
+        while artifact.exists():
+            artifact = destination.parent / f"{stem}-{suffix}.ipa"
+            suffix += 1
+        atomic_copy(source, artifact, replace=False)
         # Parallel builds may finish out of order; retain the newest successful IPA.
         if destination.exists() and ipa_info(destination)[1] > expected[1]:
-            return False
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as file:
-            temp_path = Path(file.name)
-        try:
-            shutil.copyfile(source, temp_path)
+            return artifact, False
+        atomic_copy(source, destination, replace=True)
+        return artifact, True
+
+
+def atomic_copy(source, destination, replace):
+    with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as file:
+        temp_path = Path(file.name)
+    try:
+        shutil.copyfile(source, temp_path)
+        if replace:
             os.replace(temp_path, destination)
-        finally:
-            temp_path.unlink(missing_ok=True)
-        return True
+        else:
+            os.link(temp_path, destination)
+    finally:
+        temp_path.unlink(missing_ok=True)
 
 
 def main():
@@ -107,10 +124,13 @@ def main():
     try:
         if args.command == "reserve":
             print(reserve(args.state_dir, args.output_dir, args.initial, args.requested))
-        elif publish(args.state_dir, args.source, args.destination, args.version, args.number):
-            print(f"Transporter IPA: {args.destination}")
         else:
-            print(f"A newer build is already at {args.destination}; this export remains at {args.source}.")
+            artifact, latest = publish(args.state_dir, args.source, args.destination, args.version, args.number)
+            print(f"Transporter IPA: {artifact}")
+            if latest:
+                print(f"Latest build copy: {args.destination}")
+            else:
+                print(f"A newer build remains at {args.destination}.")
     except (ValueError, OSError, KeyError, plistlib.InvalidFileException, zipfile.BadZipFile) as error:
         parser.exit(1, f"Error: {error}\n")
 

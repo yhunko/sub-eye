@@ -8,8 +8,9 @@ Usage:
   bun run build:ios --export-only /absolute/path/SubEye.xcarchive
 
 Archives SubEye/Production for a generic iOS device, then exports an App Store
-IPA to builds/ios/SubEye.ipa. Build numbers increment automatically; an optional
-explicit number advances the local counter (use it when moving to a new Mac).
+IPA to builds/ios/subeye-VERSION-buildN-YYYYMMDD-HHMM.ipa, with a SubEye.ipa copy
+of the latest build. Build numbers increment automatically; an optional explicit
+number advances the local counter (use it when moving to a new Mac).
 Each archive uses fresh DerivedData. Existing archives and IPAs are preserved.
 The export-only option retries distribution signing without rebuilding.
 Use --archive-only to finish signing interactively in Xcode Organizer.
@@ -108,5 +109,5 @@ fi
 python3 "$state_tool" --state-dir "$state_dir" publish \
     --source "$export_dir/SubEye.ipa" --destination "$output_dir/SubEye.ipa" \
     --version "$archive_version" --number "$archive_build"
-printf '\nIPA: %s/SubEye.ipa\nArchive and dSYMs: %s\n' "$export_dir" "$archive_path"
+printf '\nArchive and dSYMs: %s\n' "$archive_path"
 printf 'Add the IPA to Transporter, Verify, then Deliver when ready.\n'
