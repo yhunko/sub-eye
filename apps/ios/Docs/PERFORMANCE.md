@@ -43,6 +43,33 @@ Live Activity refinements are not represented by these earlier launch metrics.
 - Local artifacts (ignored): `apps/ios/Artifacts/{profile,memory,accessibility}`.
 - Result bundles/logs: `~/Library/Developer/XcodeBuildMCP/workspaces/sub-eye-caaf571d7c40/`.
 
+## Simulator measurement after the visual rewrite
+
+The optimized 1,000-subscription / 6,000-phase fixture was measured again after
+the picker, routing, logo and backdrop changes. Both performance tests passed;
+no XCTest performance baseline is configured, so this means capture succeeded.
+Five measured iterations, iPhone 17 Pro / iOS 26.5, no fixture logos or network.
+
+| Metric | Result |
+| --- | --- |
+| Process launch to first frame | mean 1.324 s; 1.318–1.340 s |
+| Process launch until responsive | mean 1.475 s; 1.468–1.493 s |
+| Scroll signpost duration | mean 2.580 s |
+| CPU per five fast up/down swipe block | mean 4.824 CPU seconds |
+| Absolute memory during scrolling | mean 73.245 MB; peak mean 74.969 MB |
+| Memory deltas across five scroll blocks | −573.4, −81.9, −32.8, +131.1, −262.1 KB |
+
+Compared with the earlier generic UI below, the richer layout used about 13 MB
+more memory and 0.48 more CPU seconds per automated scroll block. Memory did
+not grow across the five measured blocks. Launch increased by about 0.095 s;
+the runs were not controlled for host load or thermal state. These observations
+do not establish a physical-device hitch rate or a leak-free long session.
+
+Result: `result-bundles/test_sim_2026-09-16T08-18-13-651Z_pid89268_64d8de4a.xcresult`.
+Log: `logs/test_sim_2026-09-16T08-18-13-650Z_pid89268_50e64862.log`.
+Shipping app source is in `33cfa079`; only test cleanup and documentation were
+being finalized alongside this measurement.
+
 ## Simulator baseline before the visual rewrite
 
 Five iterations, populated local cache, optimized Release. Launch testing
