@@ -24,7 +24,6 @@ struct SceneState {
     var notice: Notice?
     var reload = 0
     var serviceIssue: String?
-    var remindersOfferPending = false
     var calendarMonth: Date?
 }
 

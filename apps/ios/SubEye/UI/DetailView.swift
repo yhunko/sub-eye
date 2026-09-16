@@ -275,28 +275,60 @@ struct LifecycleView: View {
     @State private var immediate = false
     @State private var timed = false
     @State private var date = Day.today()
+    private var cancellationDate: Date? {
+        let zone = TimeZone(identifier: state.presentation.preferences.preferredTimezone) ?? .current
+        return Recurrence.next(row.subscription, onOrAfter: Day.today(Date(), zone: zone))
+    }
+
     var body: some View {
         NavigationStack {
-            Form {
-                HStack(spacing: 12) {
-                    BrandIcon(name: row.subscription.name, domain: row.subscription.brandDomain, logos: services.logos)
-                    Text(row.subscription.name).font(.headline)
-                }
-                if action == .cancel {
-                    Text(L("native_cancellationBody"))
-                    if let link = ProviderCancellation.url(row.subscription.brandDomain) { Link(L("native_provider"), destination: link) }
-                    else if let domain = row.subscription.brandDomain, let link = URL(string: "https://" + domain) { Link(L("native_providerSite"), destination: link) }
-                    Picker(L("native_date"), selection: $immediate) { Text(L("native_periodEnd")).tag(false); Text(L("native_immediately")).tag(true) }
-                }
-                if action == .pause {
-                    Toggle(L("native_resumeDate"), isOn: $timed)
-                    if timed { DatePicker(L("detail_resumes"), selection: $date, in: Day.shift(Day.today(), days: 1)..., displayedComponents: .date).environment(\.timeZone, .gmt) }
-                }
-                if action == .restart { DatePicker(L("native_date"), selection: $date, in: ...Day.today(), displayedComponents: .date).environment(\.timeZone, .gmt) }
-            }.scrollContentBackground(.hidden).appScreen().navigationTitle(L("native_action_" + action.rawValue))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    SubscriptionIdentity(subscription: row.subscription, logos: services.logos)
+                    if action == .cancel {
+                        AppSection(title: L("native_cancelProviderStep"), footnote: L("native_cancellationHelp")) {
+                            if let link = ProviderCancellation.url(row.subscription.brandDomain) ?? row.subscription.brandDomain.flatMap({ URL(string: "https://" + $0) }) {
+                                Link(destination: link) {
+                                    HStack(spacing: 12) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(L(ProviderCancellation.url(row.subscription.brandDomain) == nil ? "native_providerSite" : "native_provider"))
+                                                .appFont(16, weight: .semibold)
+                                            if let host = link.host { Text(host).appFont(13).foregroundStyle(AppTheme.muted) }
+                                        }.fixedSize(horizontal: false, vertical: true)
+                                        Spacer(minLength: 0)
+                                        Image(systemName: "arrow.up.right.square").accessibilityHidden(true)
+                                    }.padding(16).frame(minHeight: 52).contentShape(Rectangle())
+                                }.foregroundStyle(AppTheme.accentBright).accessibilityIdentifier("providerWebsite")
+                            } else {
+                                Text(L("native_cancelNoWebsite")).appFont(16).padding(16)
+                            }
+                        }
+                        AppSection(title: L("native_cancelTrackingStep")) {
+                            SheetChoice(title: L("native_periodEnd"), subtitle: cancellationDate.map { Display.date($0) }, selected: !immediate) { immediate = false }
+                                .accessibilityIdentifier("cancelAtRenewal")
+                            AppDivider(inset: 16)
+                            SheetChoice(title: L("native_immediately"), subtitle: Display.date(Day.today()), selected: immediate) { immediate = true }
+                                .accessibilityIdentifier("cancelImmediately")
+                        }
+                        if let ending = immediate ? Day.today() : cancellationDate {
+                            Text(L("native_cancelSummary", ["date": Display.date(ending)]))
+                                .appFont(14).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("cancellationSummary")
+                        }
+                    } else {
+                        AppSection {
+                            if action == .pause {
+                                Toggle(L("native_resumeDate"), isOn: $timed).padding(16)
+                                if timed { DatePicker(L("detail_resumes"), selection: $date, in: Day.shift(Day.today(), days: 1)..., displayedComponents: .date).environment(\.timeZone, .gmt).padding(16) }
+                            }
+                            if action == .restart { DatePicker(L("native_date"), selection: $date, in: ...Day.today(), displayedComponents: .date).environment(\.timeZone, .gmt).padding(16) }
+                        }
+                    }
+                }.padding(20)
+            }.appScreen().navigationTitle(L(action == .cancel ? "native_cancellationTitle" : "native_action_" + action.rawValue))
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
-                    ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("native_confirm"), iconOnly: true) {
+                    ToolbarItem(placement: .confirmationAction) { ActionButton(title: L(action == .cancel ? "form_save" : "native_confirm")) {
                     let day = action == .restart || (action == .pause && timed) ? Day.floor(date) : nil
                     try await services.repository.transition(id: row.id, action: action, day: day, immediate: immediate, now: Date())
                     state.reload += 1; dismiss()

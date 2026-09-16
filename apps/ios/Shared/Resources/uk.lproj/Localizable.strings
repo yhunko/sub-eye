@@ -304,9 +304,9 @@
 "prompt_proBody" = "SubEye працює. Pro додає більше — одна оплата, нічого не поновлюється.";
 "prompt_proConfirm" = "Що входить у Pro";
 "prompt_proTitle" = "Уже три підписки.";
-"prompt_remindersBody" = "SubEye може нагадувати перед оплатою — для всіх ваших підписок, а не лише для цієї. Час нагадувань і вимкнення — у Налаштуваннях.";
+"prompt_remindersBody" = "Отримуйте нагадування перед оплатою підписок. Час нагадувань можна змінити в Налаштуваннях.";
 "prompt_remindersConfirm" = "Увімкнути нагадування";
-"prompt_remindersTitle" = "Попереджати перед списанням?";
+"prompt_remindersTitle" = "Нагадувати про оплату?";
 "renew_body" = "Від цього дня рахуються всі майбутні платежі, тож дата в минулому — це нормально.";
 "renew_startedOn" = "Відновлено";
 "renew_title" = "Коли ви почали платити знову?";
@@ -519,3 +519,25 @@
 "native_advanced" = "Додаткові параметри";
 "notifs_nextFire" = "Наступне нагадування";
 "native_subscriptionTitle" = "Підписка";
+
+"native_cancelProviderStep" = "1. Скасуйте у постачальника";
+
+"native_cancelTrackingStep" = "2. Припиніть облік платежів";
+
+"native_cancellationHelp" = "SubEye не може скасувати послугу за вас. Після скасування у постачальника збережіть дату нижче.";
+
+"native_cancelNoWebsite" = "Спочатку скасуйте послугу в застосунку або на сайті постачальника.";
+
+"native_cancelSummary" = "Платежі від {date} не враховуватимуться в SubEye. Це не скасовує послугу у постачальника.";
+
+"native_priceChangeType" = "Тип зміни";
+
+"native_scheduledHint" = "Нова постійна ціна.";
+
+"native_temporaryHint" = "Ціна на визначену кількість платежів, потім повертається звичайна.";
+
+"native_freePriceHint" = "Введіть 0 для безкоштовної пропозиції.";
+
+"native_offerSummary" = "Враховувати {price} від {start}; звичайна ціна {standard} повернеться {end}";
+
+"native_cancellationTitle" = "Скасування";

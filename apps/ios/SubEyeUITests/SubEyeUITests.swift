@@ -253,6 +253,145 @@ final class SubEyeUITests: XCTestCase {
             return element.frame.intersects(status) || bars.contains { element.frame.intersects($0.frame) }
         }
     }
+    func testClearLifecycleAndPricingSheets() { clearSheets(language: "en") }
+    func testClearUkrainianSheetsAtLargestText() { clearSheets(language: "uk", largest: true) }
+
+    private func clearSheets(language: String, largest: Bool = false) {
+        let app = application(language: language, count: 12)
+        app.launchArguments.append("--fixture-pro")
+        app.launchArguments.append("--fixture-brands")
+        if largest { app.launchArguments.append("--largest-text") }
+        app.launch()
+        let uk = language == "uk"
+        let subscriptions = app.tabBars.buttons[uk ? "Підписки" : "Subscriptions"]
+        XCTAssertTrue(subscriptions.waitForExistence(timeout: 10)); subscriptions.tap()
+        app.buttons["subscription-fixture-1"].tap()
+        app.buttons["subscriptionActions"].tap()
+        app.buttons[uk ? "Скасувати підписку" : "Cancel subscription"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["providerWebsite"].firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: language + "-Provider-link")
+        let renewal = app.buttons["cancelAtRenewal"]
+        XCTAssertTrue(renewal.waitForExistence(timeout: 5)); XCTAssertTrue(renewal.isSelected)
+        let immediate = app.buttons["cancelImmediately"]
+        for _ in 0..<5 where !immediate.isHittable { app.swipeUp() }
+        immediate.tap(); XCTAssertTrue(immediate.isSelected); XCTAssertFalse(renewal.isSelected)
+        capture(app, name: language + "-Cancellation-clear-choices")
+        app.buttons[uk ? "Скасувати" : "Cancel"].firstMatch.tap()
+        app.buttons["subscriptionActions"].tap()
+        app.buttons[uk ? "Керувати ціною" : "Manage pricing"].tap()
+        let save = app.buttons["savePricing"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5)); XCTAssertFalse(save.isEnabled)
+        capture(app, name: language + "-Pricing-clear-choices")
+        let price = app.textFields["newPhasePrice"]
+        for _ in 0..<5 where !price.isHittable { app.swipeUp() }
+        price.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertLessThan(price.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        price.typeText("8.50")
+        XCTAssertTrue(save.isEnabled)
+        app.buttons["dismissPricingKeyboard"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        let custom = app.buttons["priceCustomDate"]
+        for _ in 0..<6 where !custom.isHittable { app.swipeUp() }
+        custom.tap(); XCTAssertTrue(custom.isSelected)
+        XCTAssertTrue(app.datePickers.firstMatch.exists)
+        for _ in 0..<8 where !app.buttons["temporaryPriceMode"].isHittable { app.swipeDown() }
+        app.buttons["temporaryPriceMode"].tap()
+        for _ in 0..<6 where !price.isHittable { app.swipeUp() }
+        price.tap()
+        XCTAssertTrue(app.buttons["nextPricingField"].waitForExistence(timeout: 5))
+        app.buttons["nextPricingField"].tap()
+        let standard = app.textFields["standardPhasePrice"]
+        XCTAssertTrue(standard.isHittable)
+        XCTAssertLessThan(standard.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        XCTAssertGreaterThan(standard.frame.minY, app.navigationBars.firstMatch.frame.maxY)
+        capture(app, name: language + "-Keyboard-focused-standard-price")
+        app.buttons["dismissPricingKeyboard"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        let next = app.buttons["offerNextPayment"]
+        for _ in 0..<8 where !next.isHittable { app.swipeUp() }
+        XCTAssertTrue(next.isSelected)
+        capture(app, name: language + "-Offer-next-payment-default")
+        save.tap()
+        XCTAssertTrue(app.buttons["subscriptionActions"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["₴6.00"].firstMatch.waitForExistence(timeout: 5), "A deferred offer must preserve the current price")
+    }
+
+    func testEditorKeyboardRevealsPriceAtLargestText() {
+        let app = application(language: "uk")
+        app.launchArguments.append("--largest-text"); app.launch()
+        XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["addSubscription"].firstMatch.tap()
+        app.buttons["nextSubscriptionStep"].tap()
+        let name = app.textFields["subscriptionName"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        XCTAssertTrue(app.buttons["nextEditorField"].waitForExistence(timeout: 5))
+        app.buttons["nextEditorField"].tap()
+        let price = app.textFields["subscriptionPrice"]
+        XCTAssertTrue(price.isHittable)
+        XCTAssertLessThan(price.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        XCTAssertGreaterThan(price.frame.minY, app.navigationBars.firstMatch.frame.maxY)
+        price.typeText("12")
+        capture(app, name: "uk-Editor-keyboard-auto-scroll")
+        app.buttons["dismissEditorKeyboard"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
+    func testReminderOfferAfterCreationAndNoRepeatAfterDeclining() {
+        reminderOfferFlow(swipeToDismiss: false, language: "uk")
+    }
+
+    func testReminderOfferSwipeFinishesSavedForm() {
+        reminderOfferFlow(swipeToDismiss: true)
+    }
+
+    func testReminderOfferLargestTextBottomActions() {
+        reminderOfferFlow(swipeToDismiss: false, language: "uk", largestText: true)
+    }
+
+    private func reminderOfferFlow(swipeToDismiss: Bool, language: String = "en", largestText: Bool = false) {
+        let app = application(language: language)
+        if largestText { app.launchArguments.append("--largest-text") }
+        app.launchArguments.append("--test-reminder-prompt"); app.launch()
+        func createSubscription(_ name: String) {
+            XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
+            app.buttons["addSubscription"].firstMatch.tap()
+            app.buttons["nextSubscriptionStep"].tap()
+            let nameField = app.textFields["subscriptionName"]
+            XCTAssertTrue(nameField.waitForExistence(timeout: 5)); nameField.tap(); nameField.typeText(name)
+            app.buttons["nextEditorField"].tap()
+            app.textFields["subscriptionPrice"].typeText("4.99")
+            app.buttons["dismissEditorKeyboard"].tap()
+            app.buttons["nextSubscriptionStep"].tap()
+            let save = app.buttons["saveSubscription"]
+            XCTAssertTrue(save.isHittable)
+            XCTAssertGreaterThan(save.frame.midY, app.frame.height * 0.7, "Save belongs in the same bottom action area as Next")
+            capture(app, name: "Editor-bottom-save")
+            save.tap()
+        }
+        createSubscription("Reminder offer first")
+        let title = app.staticTexts["reminderOfferTitle"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["enableReminderOffer"].isHittable)
+        XCTAssertTrue(app.buttons["skipReminderOffer"].isHittable)
+        capture(app, name: "Reminder-offer-over-saved-form")
+        if swipeToDismiss {
+            let top = title.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+            top.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
+        } else {
+            app.buttons["skipReminderOffer"].tap()
+        }
+        XCTAssertTrue(title.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["saveSubscription"].waitForNonExistence(timeout: 5), "Dismissing the offer must finish the saved form")
+        createSubscription("Reminder offer second")
+        XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
+        let repeated = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true"), object: title)
+        repeated.isInverted = true
+        wait(for: [repeated], timeout: 2)
+    }
+
     private func application(language: String = "en", count: Int = 0) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--test-store", UUID().uuidString, "--fixture-count", String(count), "-AppleLanguages", "(" + language + ")", "-AppleLocale", language == "uk" ? "uk_UA" : "en_US"]

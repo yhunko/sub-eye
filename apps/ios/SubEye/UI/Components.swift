@@ -184,3 +184,69 @@ struct EmptySubscriptions: View {
         }.multilineTextAlignment(.center).padding(32).frame(maxWidth: .infinity)
     }
 }
+
+struct SubscriptionIdentity: View {
+    let subscription: Subscription
+    let logos: LogoService
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    var body: some View {
+        HStack(spacing: 12) {
+            BrandIcon(name: subscription.name, domain: subscription.brandDomain, logos: logos, size: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(subscription.name).appFont(17, weight: .semibold)
+                Text(Display.money(NSDecimalNumber(decimal: Money.parse(subscription.cost) ?? 0).doubleValue, subscription.currency) + " · " + Display.cadence(subscription))
+                    .appFont(13).foregroundStyle(AppTheme.muted)
+            }.fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                if reduceTransparency { AppTheme.surface }
+                else { BrandWash(domain: subscription.brandDomain, logos: logos) }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(AppTheme.border, lineWidth: 1) }
+            .accessibilityElement(children: .combine)
+    }
+}
+
+struct SheetChoice: View {
+    let title: String
+    var subtitle: String? = nil
+    let selected: Bool
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).appFont(16).foregroundStyle(AppTheme.text)
+                    if let subtitle { Text(subtitle).appFont(13).foregroundStyle(AppTheme.muted) }
+                }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22)).foregroundStyle(selected ? AppTheme.accentBright : AppTheme.muted).accessibilityHidden(true)
+            }.padding(16).frame(minHeight: 52).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+struct KeyboardAwareScrollView<Field: Hashable, Content: View>: View {
+    let focusedField: Field?
+    @ViewBuilder var content: Content
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView { content }
+                .scrollDismissesKeyboard(.interactively)
+                .onChange(of: focusedField) { _ in revealField(using: proxy) }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                    // The keyboard's final safe-area inset is available only after presentation.
+                    revealField(using: proxy)
+                }
+        }
+    }
+    private func revealField(using proxy: ScrollViewProxy) {
+        guard let focusedField else { return }
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            proxy.scrollTo(focusedField, anchor: .center)
+        }
+    }
+}

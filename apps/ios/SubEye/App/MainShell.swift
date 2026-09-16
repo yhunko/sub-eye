@@ -1,12 +1,14 @@
 import SwiftUI
 import SubEyeCore
 import StoreKit
+import UserNotifications
 
 struct MainShell: View {
     @Binding var state: SceneState
     let services: AppServices
     @ObservedObject var inbox: NotificationInbox
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.requestReview) private var requestReview
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var tab = AppTab.home
@@ -24,7 +26,7 @@ struct MainShell: View {
             .environment(\.symbolVariants, .none)
             .background(FirstFrame { firstFrame = true }.frame(width: 0, height: 0))
             .overlay(alignment: .top) { if !state.ready { ProgressView().padding(6).accessibilityLabel(L("native_loading")) } }
-            .sheet(item: $sheet) { destinationSheet($0) }
+            .sheet(item: $sheet) { destinationSheet($0).environment(\.dynamicTypeSize, typeSize) }
             .alert(item: $state.notice) { notice in
                 if !state.ready { return Alert(title: Text(notice.title), message: Text(notice.message), primaryButton: .default(Text(L("common_retry"))) { retry += 1 }, secondaryButton: .cancel(Text(L("common_cancel")))) }
                 return Alert(title: Text(notice.title), message: Text(notice.message), dismissButton: .default(Text(L("common_done"))))
@@ -61,15 +63,14 @@ struct MainShell: View {
                 do { if try await services.cloud.receive(notification) { state.reload += 1 } }
                 catch { state.serviceIssue = L("settings_syncUnavailableHint") }
             }
-            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount):\(state.settings.pro):\(state.remindersOfferPending):\(scenePhase)") {
+            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount):\(state.settings.pro):\(scenePhase)") {
                 guard booted, sheet == nil, scenePhase == .active else { return }
                 do {
-                    if state.remindersOfferPending {
-                        try await Task.sleep(for: .milliseconds(400))
-                        state.remindersOfferPending = false; sheet = .prompt(.reminders)
-                    } else if tab == .home {
+                    if tab == .home {
                         try await Task.sleep(for: .milliseconds(1500))
-                        if let prompt = try await services.prompts.home(tracked: state.presentation.totalCount, settings: state.settings, now: Date()) {
+                        let permission = await services.notifications.permission()
+                        if let prompt = try await services.prompts.home(tracked: state.presentation.totalCount, settings: state.settings, now: Date(),
+                            permissionAllowsNotifications: permission == .authorized || permission == .provisional || permission == .ephemeral) {
                             if prompt == .review { requestReview() } else { sheet = .prompt(prompt) }
                         }
                     }
@@ -154,34 +155,87 @@ struct MainShell: View {
     }
 }
 
-private struct PromptView: View {
+struct PromptView: View {
     let prompt: UserPrompt
     @Binding var state: SceneState
     let services: AppServices
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @State private var paywall = false
+    @State private var permission = UNAuthorizationStatus.notDetermined
+    @State private var awaitingSettings = false
     var body: some View {
-        NavigationStack {
-            Form {
-                Text(L(prompt == .reminders ? "prompt_remindersBody" : "prompt_proBody"))
-            }.scrollContentBackground(.hidden).appScreen().navigationTitle(L(prompt == .reminders ? "prompt_remindersTitle" : "prompt_proTitle"))
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
-                    ToolbarItem(placement: .confirmationAction) {
-                        if prompt == .reminders {
-                            ActionButton(title: L("prompt_remindersConfirm"), iconOnly: true) {
-                                if try await services.notifications.authorize() {
-                                    state.settings.reminders.renewals = true
-                                    try await services.repository.setSetting("notifications.settings", value: state.settings.reminders)
-                                    state.reload += 1
-                                }
-                                dismiss()
+        Group {
+            if prompt == .reminders { reminderOffer }
+            else {
+                NavigationStack {
+                    Form { Text(L("prompt_proBody")) }.scrollContentBackground(.hidden)
+                        .appScreen().navigationTitle(L("prompt_proTitle"))
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button { paywall = true } label: { Label(L("prompt_proConfirm"), systemImage: "checkmark") }.labelStyle(.iconOnly)
                             }
-                        } else { Button { paywall = true } label: { Label(L("prompt_proConfirm"), systemImage: "checkmark") }.labelStyle(.iconOnly) }
-                    }
+                        }
                 }
-        }.presentationDetents([.medium, .large]).appSheet()
+            }
+        }.presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large]).appSheet()
             .sheet(isPresented: $paywall, onDismiss: { dismiss() }) { PaywallView(state: $state, services: services) }
+            .task(id: scenePhase) {
+                guard prompt == .reminders, scenePhase == .active else { return }
+                permission = await services.notifications.permission()
+                if awaitingSettings && (permission == .authorized || permission == .provisional || permission == .ephemeral) {
+                    do { try await enableReminders() }
+                    catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
+                }
+            }
+    }
+    private var reminderOffer: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 28, weight: .medium)).foregroundStyle(AppTheme.accentBright)
+                    .frame(width: 64, height: 64)
+                    .background(AppTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 20))
+                    .accessibilityHidden(true)
+                Text(L("prompt_remindersTitle")).font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("reminderOfferTitle")
+                Text(L("prompt_remindersBody")).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                if permission == .denied {
+                    Text(L("native_permissionDenied")).font(.callout).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                }
+            }.multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                .padding(.horizontal, 24).padding(.top, 32).padding(.bottom, 20)
+        }.appScreen()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 8) {
+                ActionButton(title: L(permission == .denied ? "settings_openDeviceSettings" : "prompt_remindersConfirm")) {
+                    permission = await services.notifications.permission()
+                    if permission == .denied {
+                        awaitingSettings = true
+                        openURL(URL(string: UIApplication.openSettingsURLString)!)
+                    } else if try await services.notifications.authorize() {
+                        try await enableReminders()
+                    } else {
+                        permission = await services.notifications.permission()
+                    }
+                }.buttonStyle(AppPrimaryButtonStyle()).accessibilityIdentifier("enableReminderOffer")
+                Button(L("prompt_notNow")) { dismiss() }
+                    .font(.body.weight(.medium)).foregroundStyle(AppTheme.muted)
+                    .frame(maxWidth: .infinity, minHeight: 48).contentShape(Rectangle())
+                    .accessibilityIdentifier("skipReminderOffer")
+            }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 12).background(AppTheme.background)
+        }
+    }
+    private func enableReminders() async throws {
+        var settings = state.settings.reminders
+        settings.renewals = true
+        try await services.repository.setSetting("notifications.settings", value: settings)
+        state.settings.reminders = settings
+        state.reload += 1
+        dismiss()
     }
 }
 

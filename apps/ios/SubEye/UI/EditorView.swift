@@ -16,6 +16,8 @@ struct SubscriptionEditor: View {
     @State private var offer = "none"
     @State private var offerPrice = "0"
     @State private var offerEnd = Day.shift(Day.today(), days: 7)
+    @State private var remindersOffer = false
+    @State private var saved = false
     @State private var paywall = false
     @State private var variant = "auto"
     @State private var initialVariant = "auto"
@@ -46,7 +48,11 @@ struct SubscriptionEditor: View {
                     }
                 }
         }
-        .interactiveDismissDisabled(dirty).appSheet(dismissible: !dirty)
+        .interactiveDismissDisabled(dirty && !saved).appSheet(dismissible: !dirty || saved)
+        .sheet(isPresented: $remindersOffer, onDismiss: { dismiss() }) {
+            PromptView(prompt: .reminders, state: $state, services: services)
+                .environment(\.dynamicTypeSize, typeSize)
+        }
         .sheet(isPresented: $paywall) { PaywallView(state: $state, services: services) }
         .task(id: draft.brandDomain) {
             let saved = if let domain = draft.brandDomain { await services.logos.variant(for: domain) ?? "auto" } else { "auto" }
@@ -58,28 +64,29 @@ struct SubscriptionEditor: View {
         Group {
             if step == 1 { brandStep.searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("form_brandSearch")) }
             else {
-                ScrollView {
+                KeyboardAwareScrollView(focusedField: focusedField) {
                     VStack(spacing: 24) {
                         if step > 0 { stepHeading(step) }
                         if step != 3 { brandIdentity; priceFields }
                         if step == 0 || step == 3 { dateFields }
                     }.padding(20).padding(.bottom, 20)
-                }.scrollDismissesKeyboard(.interactively)
+                }
             }
         }
         .appScreen()
-        .safeAreaInset(edge: .bottom, spacing: 0) { if step == 1 || step == 2 { footer(step) } }
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer(step) }
         .navigationTitle(L(original == nil ? "form_titleNew" : "form_titleEdit"))
         .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if focusedField == .name {
+                    Button(L("common_next")) { focusedField = .price }.accessibilityIdentifier("nextEditorField")
+                }
+                Button(L("common_done")) { focusedField = nil }.accessibilityIdentifier("dismissEditorKeyboard")
+            }
             ToolbarItem(placement: step > 1 ? .topBarTrailing : .cancellationAction) {
                 closeEditor
             }
-            if step == 0 || step == 3 {
-                ToolbarItem(placement: .confirmationAction) {
-                    ActionButton(title: L("form_save"), iconOnly: true, action: save)
-                        .disabled(!valid).accessibilityIdentifier("saveSubscription")
-                }
-            }
+
         }
         .task(id: search) {
             guard step == 1 else { return }
@@ -155,12 +162,12 @@ struct SubscriptionEditor: View {
         VStack(spacing: 24) {
             AppSection {
                 FormField(title: L("form_name")) {
-                    TextField(L("form_name"), text: $draft.name).focused($focusedField, equals: .name).textContentType(.organizationName).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityIdentifier("subscriptionName")
+                    TextField(L("form_name"), text: $draft.name).focused($focusedField, equals: .name).id(Field.name).submitLabel(.next).onSubmit { focusedField = .price }.textContentType(.organizationName).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityIdentifier("subscriptionName")
                 }
                 AppDivider(inset: 16)
                 FormField(title: L("form_price")) {
                     HStack(spacing: 8) {
-                        TextField("0", text: $draft.cost).focused($focusedField, equals: .price).keyboardType(.decimalPad).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityLabel(L("form_price")).accessibilityIdentifier("subscriptionPrice")
+                        TextField("0", text: $draft.cost).focused($focusedField, equals: .price).id(Field.price).keyboardType(.decimalPad).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityLabel(L("form_price")).accessibilityIdentifier("subscriptionPrice")
                         Rectangle().fill(AppTheme.border).frame(width: 1, height: 24).accessibilityHidden(true)
                         NavigationLink { CurrencyPicker(selection: $draft.currency) } label: {
                             HStack(spacing: 5) {
@@ -198,7 +205,7 @@ struct SubscriptionEditor: View {
                     }
                     if offer != "none" {
                         AppSection {
-                        if offer == "intro" { FormField(title: L("form_offerCost")) { TextField("0", text: $offerPrice).focused($focusedField, equals: .offerPrice).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }; AppDivider(inset: 16) }
+                        if offer == "intro" { FormField(title: L("form_offerCost")) { TextField("0", text: $offerPrice).focused($focusedField, equals: .offerPrice).id(Field.offerPrice).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }; AppDivider(inset: 16) }
                         DatePicker(L("form_offerEndsAt"), selection: $offerEnd, in: Day.shift(date, days: 1)..., displayedComponents: .date).environment(\.timeZone, .gmt).padding(16)
                         }
                     }
@@ -208,7 +215,7 @@ struct SubscriptionEditor: View {
                 AppSection {
                     Toggle(L("native_autoPaid"), isOn: $draft.autoPaid).padding(16)
                     AppDivider(inset: 16)
-                    TextField(L("native_notes"), text: Binding(get: { draft.notes ?? "" }, set: { draft.notes = $0.isEmpty ? nil : $0 }), axis: .vertical).focused($focusedField, equals: .notes).lineLimit(3...8).padding(16)
+                    TextField(L("native_notes"), text: Binding(get: { draft.notes ?? "" }, set: { draft.notes = $0.isEmpty ? nil : $0 }), axis: .vertical).focused($focusedField, equals: .notes).id(Field.notes).lineLimit(3...8).padding(16)
                 }.padding(.top, 12)
             }.appFont(14).foregroundStyle(AppTheme.muted)
             if original == nil, let amount = Money.parse(draft.cost) {
@@ -242,23 +249,37 @@ struct SubscriptionEditor: View {
     private func footer(_ step: Int) -> some View {
         VStack(spacing: 0) {
             AppDivider()
-            Button(L(step == 1 && draft.brandDomain == nil ? "common_skip" : "common_next")) { focusedField = nil; steps.append(step == 1 ? .price : .dates) }
-                .disabled(step == 2 && !valid).accessibilityIdentifier("nextSubscriptionStep")
-                .buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
+            Group {
+                if step == 0 || step == 3 {
+                    ActionButton(title: L("form_save"), action: save)
+                        .disabled(!valid || saved).accessibilityIdentifier("saveSubscription")
+                } else {
+                    Button(L(step == 1 && draft.brandDomain == nil ? "common_skip" : "common_next")) {
+                        focusedField = nil; steps.append(step == 1 ? .price : .dates)
+                    }.disabled(step == 2 && !valid).accessibilityIdentifier("nextSubscriptionStep")
+                }
+            }.buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
         }.background(AppTheme.background)
     }
     private func save() async throws {
+        guard !saved else { return }
         focusedField = nil
         var value = draft; value.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         value.cost = try Display.amount(draft.cost); value.paymentDate = Day.iso(Day.floor(date))
         let offerInput: OfferInput? = offer == "none" ? nil : OfferInput(promoCost: offer == "trial" ? "0" : try Display.amount(offerPrice), standardCost: value.cost, currency: value.currency, endDate: Day.floor(offerEnd))
         try await services.repository.save(value, expected: original, offer: offerInput, now: Date())
+        saved = true
         if let domain = value.brandDomain {
             do { try await services.logos.setVariant(variant, for: domain) }
             catch { state.notice = Notice(title: L("native_error"), message: L("native_logoSaveFailed")) }
         }
-        if original == nil { state.remindersOfferPending = (try? await services.prompts.afterCreation(settings: state.settings)) ?? false }
-        state.reload += 1; dismiss()
+        if original == nil {
+            let permission = await services.notifications.permission()
+            remindersOffer = (try? await services.prompts.afterCreation(settings: state.settings,
+                permissionAllowsNotifications: permission == .authorized || permission == .provisional || permission == .ephemeral)) ?? false
+        }
+        state.reload += 1
+        if !remindersOffer { dismiss() }
     }
 }
 

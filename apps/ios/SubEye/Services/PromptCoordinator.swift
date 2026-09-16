@@ -7,14 +7,15 @@ final class PromptCoordinator {
     private var interrupted = false
     init(repository: SubscriptionRepository) { self.repository = repository }
 
-    func afterCreation(settings: DeviceSettings) async throws -> Bool {
-        guard !NativeTesting.enabled, !interrupted, try await remindersPending(settings) else { return false }
+    func afterCreation(settings: DeviceSettings, permissionAllowsNotifications: Bool) async throws -> Bool {
+        guard (!NativeTesting.enabled || NativeTesting.reminderPromptEnabled), !interrupted,
+              try await remindersPending(settings, permissionAllowsNotifications: permissionAllowsNotifications) else { return false }
         interrupted = true
         try await repository.setSetting("prompts.remindersAsked", value: true)
         return true
     }
 
-    func home(tracked: Int, settings: DeviceSettings, now: Date) async throws -> UserPrompt? {
+    func home(tracked: Int, settings: DeviceSettings, now: Date, permissionAllowsNotifications: Bool = true) async throws -> UserPrompt? {
         guard !NativeTesting.enabled, tracked > 0 else { return nil }
         var review = try await repository.setting("review.state", as: ReviewState.self) ?? ReviewState()
         if review.firstSeenAt == 0 {
@@ -23,7 +24,7 @@ final class PromptCoordinator {
         }
         let proPitched = try await repository.setting("prompts.proPitched", as: Bool.self) ?? false
         let decision = try await PromptPolicy.home(tracked: tracked, pro: settings.pro, proPitched: proPitched,
-            reviewDue: review.isDue(now: now, tracked: tracked), interrupted: interrupted, remindersPending: remindersPending(settings))
+            reviewDue: review.isDue(now: now, tracked: tracked), interrupted: interrupted, remindersPending: remindersPending(settings, permissionAllowsNotifications: permissionAllowsNotifications))
         try Task.checkCancellation()
         guard let decision else { return nil }
         if decision == .review {
@@ -35,8 +36,8 @@ final class PromptCoordinator {
         return decision
     }
 
-    private func remindersPending(_ settings: DeviceSettings) async throws -> Bool {
+    private func remindersPending(_ settings: DeviceSettings, permissionAllowsNotifications: Bool = true) async throws -> Bool {
         let asked = try await repository.setting("prompts.remindersAsked", as: Bool.self) ?? false
-        return !asked && !settings.reminders.renewals && !settings.reminders.trials
+        return !asked && (!permissionAllowsNotifications || (!settings.reminders.renewals && !settings.reminders.trials))
     }
 }

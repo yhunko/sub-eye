@@ -184,3 +184,55 @@ the 1,000-record development fixture.
 The physical iPhone's optimized Production build is signed, installed and has
 launched standalone. Physical launch values are above; physical scrolling,
 memory traces, offline launch and external-service acceptance remain required.
+
+## Cancellation, pricing, keyboard and Save prompt review — September 16
+
+Optimized development Release, isolated UUID stores, iPhone 17 / iOS 27 and
+an iPhone 17 Pro / iOS 26.5 simulator. Existing production records were untouched.
+Physical XCTest runs used XcodeBuildMCP; Device Hub UI automation timed out.
+
+- Cancellation provider link and date choices, scheduled/temporary pricing,
+  default next-payment behavior and preservation of the current price passed.
+- English and Ukrainian at the largest Dynamic Type size passed. Focused pricing
+  and editor inputs stayed between the navigation bar and real device keyboard
+  without manual scrolling after focus moved. Keyboard Next and Done passed.
+- Notification offer now presents directly from successful Save over the editor,
+  matching Expo. No dismissal/re-presentation delay remains. Both Not now and
+  swipe dismissal close the saved editor; another creation does not repeat it.
+  Both dismissal paths passed on physical device and simulator.
+- Permission eligibility and persisted one-time behavior have a repository-backed
+  regression test. Actual OS permission acceptance and the Settings roundtrip
+  were not exercised by these automated UI tests.
+
+Keyboard/management evidence:
+`result-bundles/test_device_2026-09-16T13-03-41-398Z_pid58145_31010fbc.xcresult`
+(3 passed) and
+`result-bundles/test_sim_2026-09-16T13-04-33-593Z_pid58306_30d69799.xcresult`
+(3 passed). Subsequent keyboard toolbar simplification retained the same focus
+behavior in the English pricing and notification creation tests.
+
+Final stacked-offer evidence:
+`result-bundles/test_device_2026-09-16T13-15-37-450Z_pid60106_62be276b.xcresult`
+and `result-bundles/test_sim_2026-09-16T13-15-26-779Z_pid60049_50d97854.xcresult`
+(2 passed each). Screenshots: `Artifacts/visual/sheet-review/`.
+
+A transient SwiftUI “Invalid frame dimension (negative or non-finite)” warning
+still occurs at keyboard presentation; these runs found no associated field
+occlusion or failed interaction. Its source remains unresolved. These functional
+checks do not establish frame-rate or hitch-rate performance for the changed UI.
+
+### Follow-up: consistent bottom actions and reminder layout
+
+Save now shares the editor's pinned bottom action area with Next/Skip, including
+edit mode. The reminder sheet removes the redundant navigation header, uses
+shorter English/Ukrainian copy and pins full-width primary and secondary actions.
+Three simulator tests passed: Ukrainian normal text, Ukrainian largest text,
+and English swipe dismissal. They assert Save is in the bottom action area and
+both reminder actions are hittable. Screenshots were visually inspected.
+Result: `result-bundles/test_sim_2026-09-16T13-21-22-430Z_pid61452_f136d42b.xcresult`.
+The existing keyboard frame warning persists. Repository type-check, tests and
+boundary checks passed. The Ukrainian flow also passed on the physical iPhone
+following unlock: bottom Save, both reminder actions, dismissal and no repeated
+offer after a second creation. Screenshots were exported and inspected.
+Result: `result-bundles/test_device_2026-09-16T13-33-26-577Z_pid63017_c66c2225.xcresult`.
+The preceding attempt timed out before test-runner launch while the phone was locked.

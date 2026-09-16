@@ -304,9 +304,9 @@
 "prompt_proBody" = "SubEye is doing its job. Pro adds more of it — one payment, nothing renews.";
 "prompt_proConfirm" = "See what’s in Pro";
 "prompt_proTitle" = "Three subscriptions in.";
-"prompt_remindersBody" = "SubEye can warn you before a payment goes out — for everything you track, not just this one. You can change the timing or turn it off in Settings.";
+"prompt_remindersBody" = "Get a reminder before your subscriptions renew. Change the timing anytime in Settings.";
 "prompt_remindersConfirm" = "Turn on reminders";
-"prompt_remindersTitle" = "Want a heads-up before you’re charged?";
+"prompt_remindersTitle" = "Stay ahead of renewals";
 "renew_body" = "Every future payment is counted from this day, so a date in the past is fine.";
 "renew_startedOn" = "Started again";
 "renew_title" = "When did it start again?";
@@ -519,3 +519,25 @@
 "native_advanced" = "More options";
 "notifs_nextFire" = "Next reminder";
 "native_subscriptionTitle" = "Subscription";
+
+"native_cancelProviderStep" = "1. Cancel with the provider";
+
+"native_cancelTrackingStep" = "2. Stop tracking payments";
+
+"native_cancellationHelp" = "SubEye cannot cancel the service for you. After cancelling with the provider, save the date below.";
+
+"native_cancelNoWebsite" = "Cancel in the provider’s app or website first.";
+
+"native_cancelSummary" = "Payments on or after {date} will be excluded in SubEye. This does not cancel the service with the provider.";
+
+"native_priceChangeType" = "Type of change";
+
+"native_scheduledHint" = "A new ongoing price.";
+
+"native_temporaryHint" = "A price for a set number of payments, then the standard price returns.";
+
+"native_freePriceHint" = "Enter 0 for a free offer.";
+
+"native_offerSummary" = "Track {price} from {start}; the standard price of {standard} returns on {end}";
+
+"native_cancellationTitle" = "Cancellation";

@@ -2,6 +2,7 @@ import Foundation
 import SubEyeCore
 
 enum NativeTesting {
+    static var reminderPromptEnabled: Bool { enabled && ProcessInfo.processInfo.arguments.contains("--test-reminder-prompt") }
     static var largestText: Bool { enabled && ProcessInfo.processInfo.arguments.contains("--largest-text") }
     static var publishWidgetFixture: Bool { enabled && ProcessInfo.processInfo.arguments.contains("--publish-widget-fixture") }
     static var enabled: Bool {
@@ -26,6 +27,9 @@ enum NativeTesting {
             let id = "fixture-" + String(index)
             let anchor = Day.shift(today, days: index % 28)
             subscriptions.append(Subscription(id: id, name: names[index % names.count] + " " + String(index), cost: String(5 + index % 50), currency: index % 2 == 0 ? "usd" : "uah", paymentDate: Day.iso(anchor), now: now))
+            if ProcessInfo.processInfo.arguments.contains("--fixture-brands") {
+                subscriptions[subscriptions.count - 1].brandDomain = index % 2 == 0 ? "netflix.com" : "spotify.com"
+            }
             for history in 1...6 {
                 let start = Day.month(today, offset: -history)
                 phases.append(PricePhase(id: id + "-phase-" + String(history), subscriptionId: id, kind: .standard, cost: String(history + 5), currency: subscriptions.last!.currency, startsAt: Day.iso(start), endsAt: Day.iso(Day.month(start, offset: 1)), appliedAt: Day.iso(now), now: now))
