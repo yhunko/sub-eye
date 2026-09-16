@@ -4,16 +4,18 @@ Native SwiftUI client alongside `apps/mobile`. The Expo client remains intact
 for Android and as the migration source. This target has no React Native,
 Expo, Hermes, JavaScript bundle or web UI.
 
-**Release acceptance is pending physical-device launch and validation.** The
-optimized Production build is signed and installed; the phone is currently
-locked, so standalone launch has not yet been verified.
-Simulator results are recorded separately in [Performance](Docs/PERFORMANCE.md).
+The optimized **6.0.0 Production build is installed and launches standalone on
+the physical iPhone**. Device and simulator UI results are recorded in
+[visual parity](Docs/VISUAL-PARITY.md); external-service acceptance remains
+tracked separately in the release handoff.
+Measured results are recorded in [Performance](Docs/PERFORMANCE.md).
 See [parity](Docs/FEATURE-PARITY.md) and the
 [migration/release handoff](Docs/MIGRATION-RELEASE.md).
 
 ## Build
 
-Requires Xcode 27, Swift 6 and XcodeBuildMCP. The application supports iOS 16.4+;
+Requires Xcode 27 and Swift 6; the development commands below use XcodeBuildMCP.
+The application supports iOS 16.4+;
 the widget supports iOS 18+. Scheduled renewal Live Activities are gated to
 iOS 27. `SubEye.xcodeproj` and source are checked in; XcodeGen is optional when
 editing project configuration.
@@ -40,6 +42,20 @@ If changing `project.yml`, regenerate and commit the resulting project:
 ```sh
 rtk proxy xcodegen generate --spec apps/ios/project.yml
 ```
+
+## Production IPA for Transporter
+
+From the repository root, choose a new build number for the upload:
+
+```sh
+rtk proxy bun run build:ios 2
+```
+
+This archives `SubEye` / `Production` with fresh DerivedData and exports an
+App Store Connect IPA into ignored `builds/ios/`. It preserves the archive,
+dSYMs and logs and does not upload anything. App and widget versions are checked
+before export. See [IPA build and signing](Docs/BUILD-IPA.md) for prerequisites,
+output paths, export retry and Transporter steps.
 
 ## Structure
 

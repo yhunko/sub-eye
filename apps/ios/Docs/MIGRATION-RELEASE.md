@@ -107,6 +107,8 @@ was not modified as part of this rewrite.
 4. Archive `SubEye` / `Production` with the existing production app/extension
    identities and team. Keep App Groups, iCloud KV, URL scheme, widget kind,
    public RevenueCat SDK key and entitlement `pro` aligned with the existing app.
+   Use the [IPA build command](BUILD-IPA.md) to export into `builds/ios/` for
+   Transporter; supply the chosen build number explicitly.
 5. Install as an upgrade, never uninstall/reinstall. Launch without Xcode attached
    and without network. Compare migrated records and confirm the receipt. Relaunch
    and confirm native edits survive without duplicate import.

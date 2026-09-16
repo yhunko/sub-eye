@@ -33,6 +33,7 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
+    "build:ios": "bash apps/ios/scripts/build-ipa.sh",
     "check:boundaries": "depcruise --config dependency-cruiser.cjs apps packages",
     "check:circular": "bun run check:circular:packages && bun run check:circular:mobile && bun run check:circular:landing",
     "check:circular:landing": "madge --circular --extensions ts apps/landing/src",
