@@ -69,9 +69,9 @@ struct AppSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let title { AppCaption(title: title).padding(.horizontal, 16) }
-            VStack(spacing: 0) { content }.appCard()
+            VStack(spacing: 0) { content }.frame(maxWidth: .infinity, alignment: .leading).appCard()
             if let footnote { Text(footnote).appFont(12.5, relativeTo: .footnote).foregroundStyle(AppTheme.muted).padding(.horizontal, 16).fixedSize(horizontal: false, vertical: true) }
-        }
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

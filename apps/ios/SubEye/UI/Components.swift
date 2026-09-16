@@ -1,6 +1,16 @@
 import SwiftUI
 import SubEyeCore
 
+struct DestructiveMenuLabel: View {
+    let title: String
+    var body: some View {
+        Label { Text(title) } icon: {
+            // Native menus discard SwiftUI symbol colors; preserve the destructive tint in the image.
+            Image(uiImage: UIImage(systemName: "trash")!.withTintColor(UIColor(AppTheme.danger), renderingMode: .alwaysOriginal)).renderingMode(.original)
+        }.foregroundStyle(AppTheme.danger)
+    }
+}
+
 struct ActionButton: View {
     let title: String
     var role: ButtonRole?

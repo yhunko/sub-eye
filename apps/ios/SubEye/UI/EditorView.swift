@@ -2,6 +2,9 @@ import SwiftUI
 import SubEyeCore
 
 struct SubscriptionEditor: View {
+    private enum Page: Hashable { case price, dates, brand }
+    private enum Field: Hashable { case name, price, offerPrice, notes }
+    @FocusState private var focusedField: Field?
     let original: Subscription?
     @Binding var state: SceneState
     let services: AppServices
@@ -9,14 +12,12 @@ struct SubscriptionEditor: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var draft: Subscription
     @State private var date: Date
-    @State private var step: Int
+    @State private var steps: [Page] = []
     @State private var offer = "none"
     @State private var offerPrice = "0"
     @State private var offerEnd = Day.shift(Day.today(), days: 7)
-    @State private var brand = false
     @State private var paywall = false
     @State private var variant = "auto"
-    @State private var discard = false
     @State private var search = ""
     @State private var brands = BrandService.popular
     @State private var searchFailed = false
@@ -26,65 +27,74 @@ struct SubscriptionEditor: View {
         self.original = original; _state = state; self.services = services
         let initial = original ?? Subscription(id: UUID().uuidString, name: "", cost: "", currency: state.wrappedValue.presentation.preferences.preferredCurrency, paymentDate: Day.iso(Day.today()), now: Date())
         self.initial = initial; _draft = State(initialValue: initial); _date = State(initialValue: Day.parse(initial.paymentDate) ?? Day.today())
-        _step = State(initialValue: original == nil ? 1 : 0)
     }
     private var dirty: Bool { draft != initial || Day.iso(date) != initial.paymentDate || offer != "none" }
     private var valid: Bool { !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && Money.parse(draft.cost) != nil }
     var body: some View {
-        NavigationStack {
-            Group {
-                if step == 1 { brandStep.searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("form_brandSearch")) }
-                else {
-                    ScrollView {
-                        VStack(spacing: 24) {
-                            if step > 0 { stepHeading }
-                            if step != 3 { brandIdentity; priceFields }
-                            if step == 0 || step == 3 { dateFields }
-                        }.padding(20).padding(.bottom, 20)
-                    }.scrollDismissesKeyboard(.interactively)
-                }
-            }
-            .appScreen()
-            .safeAreaInset(edge: .bottom, spacing: 0) { footer }
-            .navigationTitle(L(original == nil ? "form_titleNew" : "form_titleEdit"))
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        if step > 1 { step -= 1 }
-                        else if dirty { discard = true }
-                        else { dismiss() }
-                    } label: { Label(L(step > 1 ? "common_back" : "common_cancel"), systemImage: step > 1 ? "chevron.left" : "xmark") }
-                        .labelStyle(.iconOnly).tint(AppTheme.text)
-                }
-                if step > 1 {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button { if dirty { discard = true } else { dismiss() } } label: { Label(L("common_cancel"), systemImage: "xmark") }.labelStyle(.iconOnly).tint(AppTheme.text)
+        NavigationStack(path: $steps) {
+            editorPage(original == nil ? 1 : 0)
+                .navigationDestination(for: Page.self) { page in
+                    switch page {
+                    case .price: editorPage(2)
+                    case .dates: editorPage(3)
+                    case .brand:
+                        BrandPicker(services: services, domain: draft.brandDomain, variant: $variant) { selected in
+                            draft.brandDomain = selected?.domain
+                            if draft.name.isEmpty, let selected { draft.name = selected.name }
+                        }
                     }
                 }
-            }
-            .interactiveDismissDisabled(dirty)
-            .confirmationDialog(L("native_discard"), isPresented: $discard, titleVisibility: .visible) {
-                Button(L("form_discardConfirm"), role: .destructive) { dismiss() }; Button(L("common_cancel"), role: .cancel) {}
-            }
-            .sheet(isPresented: $brand) {
-                BrandPicker(services: services) { selected in
-                    draft.brandDomain = selected?.domain
-                    if draft.name.isEmpty, let selected { draft.name = selected.name }
-                }
-            }
-            .sheet(isPresented: $paywall) { PaywallView(state: $state, services: services) }
-            .task(id: draft.brandDomain) { variant = if let domain = draft.brandDomain { await services.logos.variant(for: domain) ?? "auto" } else { "auto" } }
-            .task(id: search) {
-                guard step == 1 else { return }
-                do {
-                    if search.isEmpty { brands = BrandService.popular; searchFailed = false; return }
-                    try await Task.sleep(for: .milliseconds(300))
-                    brands = try await services.brands.search(search); searchFailed = false
-                } catch is CancellationError { } catch { brands = BrandService.popular.filter { $0.name.localizedStandardContains(search) }; searchFailed = true }
+        }
+        .interactiveDismissDisabled(dirty)
+        .sheet(isPresented: $paywall) { PaywallView(state: $state, services: services) }
+        .task(id: draft.brandDomain) { variant = if let domain = draft.brandDomain { await services.logos.variant(for: domain) ?? "auto" } else { "auto" } }
+    }
+    private func editorPage(_ step: Int) -> some View {
+        Group {
+            if step == 1 { brandStep.searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("form_brandSearch")) }
+            else {
+                ScrollView {
+                    VStack(spacing: 24) {
+                        if step > 0 { stepHeading(step) }
+                        if step != 3 { brandIdentity; priceFields }
+                        if step == 0 || step == 3 { dateFields }
+                    }.padding(20).padding(.bottom, 20)
+                }.scrollDismissesKeyboard(.interactively)
             }
         }
+        .appScreen()
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer(step) }
+        .navigationTitle(L(original == nil ? "form_titleNew" : "form_titleEdit"))
+        .toolbar {
+            ToolbarItem(placement: step > 1 ? .topBarTrailing : .cancellationAction) {
+                closeEditor
+            }
+        }
+        .task(id: search) {
+            guard step == 1 else { return }
+            do {
+                if search.isEmpty { brands = BrandService.popular; searchFailed = false; return }
+                try await Task.sleep(for: .milliseconds(300))
+                brands = try await services.brands.search(search); searchFailed = false
+            } catch is CancellationError { } catch { brands = BrandService.popular.filter { $0.name.localizedStandardContains(search) }; searchFailed = true }
+        }
     }
-    private var stepHeading: some View {
+    @ViewBuilder private var closeEditor: some View {
+        if dirty {
+            Menu {
+                Section(L("form_discardTitle")) {
+                    Button(role: .destructive) { dismiss() } label: {
+                        DestructiveMenuLabel(title: L("form_discardConfirm"))
+                    }
+                }
+            } label: { Label(L("common_cancel"), systemImage: "xmark") }
+                .labelStyle(.iconOnly).tint(AppTheme.text).accessibilityIdentifier("closeSubscriptionEditor")
+        } else {
+            Button { dismiss() } label: { Label(L("common_cancel"), systemImage: "xmark") }
+                .labelStyle(.iconOnly).tint(AppTheme.text).accessibilityIdentifier("closeSubscriptionEditor")
+        }
+    }
+    private func stepHeading(_ step: Int) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) { ForEach(1...3, id: \.self) { index in Capsule().fill(index <= step ? AppTheme.accent : AppTheme.surfaceAlt).frame(height: 4) } }.accessibilityHidden(true)
             Text(L("form_stepOf", ["step": String(step), "total": "3"]) + " · " + L(step == 1 ? "form_brand" : step == 2 ? "form_stepPrice" : "form_stepDates"))
@@ -94,8 +104,9 @@ struct SubscriptionEditor: View {
     private var brandStep: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
-                stepHeading.padding(.horizontal, 4).padding(.bottom, 6)
+                stepHeading(1).padding(.horizontal, 4).padding(.bottom, 6)
                 if draft.brandDomain != nil { brandIdentity }
+                if draft.brandDomain != nil { brandStyle }
                 Button {
                     draft.brandDomain = nil
                 } label: { SettingsRow(icon: "square.dashed", title: L("form_brandNone"), chevron: false).appCard(radius: 18) }.buttonStyle(.plain)
@@ -108,14 +119,7 @@ struct SubscriptionEditor: View {
                         draft.brandDomain = item.domain
                         draft.name = item.name
                     } label: {
-                        HStack(spacing: 12) {
-                            BrandIcon(name: item.name, domain: item.domain, logos: services.logos)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.name).appFont(16, weight: .semibold)
-                                Text(item.domain).appFont(12.5).foregroundStyle(AppTheme.muted)
-                            }.frame(maxWidth: .infinity, alignment: .leading)
-                            if draft.brandDomain == item.domain { Image(systemName: "checkmark").foregroundStyle(AppTheme.accentBright) }
-                        }.padding(12).frame(minHeight: 64).appCard(radius: 18, border: draft.brandDomain == item.domain ? AppTheme.accent : AppTheme.border)
+                        BrandOption(brand: item, selected: draft.brandDomain == item.domain, logos: services.logos)
                     }.buttonStyle(.plain)
                 }
                 if searchFailed { Text(L("form_brandSearchFailed")).appFont(12.5).foregroundStyle(AppTheme.muted) }
@@ -123,36 +127,38 @@ struct SubscriptionEditor: View {
         }.scrollDismissesKeyboard(.interactively)
     }
     private var brandIdentity: some View {
+        Button { focusedField = nil; steps.append(.brand) } label: {
         HStack(spacing: 12) {
             BrandIcon(name: draft.name, domain: draft.brandDomain, logos: services.logos, size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(draft.name.isEmpty ? L("form_brandNone") : draft.name).appFont(16, weight: .semibold)
                 if let domain = draft.brandDomain { Text(domain).appFont(12.5).foregroundStyle(AppTheme.muted) }
             }.frame(maxWidth: .infinity, alignment: .leading)
-            Menu {
-                Button(L("form_brand")) { brand = true }
-                if draft.brandDomain != nil {
-                    Picker(L("form_brandStyle"), selection: $variant) {
-                        Text(L("native_logoAuto")).tag("auto"); Text(L("native_logoIcon")).tag("icon"); Text(L("native_logoSymbol")).tag("symbol"); Text(L("native_logoWordmark")).tag("logo")
-                    }
-                }
-            } label: { Image(systemName: "pencil").frame(width: 44, height: 44).foregroundStyle(AppTheme.text) }
-                .accessibilityLabel(L("form_brand"))
         }.padding(.horizontal, 14).padding(.vertical, 12)
             .background { BrandWash(domain: draft.brandDomain, logos: services.logos) }
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Color.white.opacity(0.16), lineWidth: 1) }
+        }.buttonStyle(.plain).accessibilityLabel(L("form_brand") + ", " + draft.name).accessibilityIdentifier("subscriptionBrand")
+    }
+    private var brandStyle: some View {
+        AppSection {
+            FormField(title: L("form_brandStyle")) {
+                Picker(L("form_brandStyle"), selection: $variant) {
+                    Text(L("native_logoAuto")).tag("auto"); Text(L("native_logoIcon")).tag("icon"); Text(L("native_logoSymbol")).tag("symbol"); Text(L("native_logoWordmark")).tag("logo")
+                }.labelsHidden().tint(AppTheme.text)
+            }
+        }
     }
     private var priceFields: some View {
         VStack(spacing: 24) {
             AppSection {
                 FormField(title: L("form_name")) {
-                    TextField(L("form_name"), text: $draft.name).textContentType(.organizationName).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityIdentifier("subscriptionName")
+                    TextField(L("form_name"), text: $draft.name).focused($focusedField, equals: .name).textContentType(.organizationName).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityIdentifier("subscriptionName")
                 }
                 AppDivider(inset: 16)
                 FormField(title: L("form_price")) {
                     HStack(spacing: 8) {
-                        TextField("0", text: $draft.cost).keyboardType(.decimalPad).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityLabel(L("form_price")).accessibilityIdentifier("subscriptionPrice")
+                        TextField("0", text: $draft.cost).focused($focusedField, equals: .price).keyboardType(.decimalPad).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityLabel(L("form_price")).accessibilityIdentifier("subscriptionPrice")
                         NavigationLink { CurrencyPicker(selection: $draft.currency) } label: { Text(draft.currency.uppercased()).foregroundStyle(AppTheme.muted).frame(minWidth: 44, minHeight: 44) }.accessibilityIdentifier("currencyPicker")
                     }
                 }
@@ -176,14 +182,16 @@ struct SubscriptionEditor: View {
                 DatePicker(L("form_firstPayment"), selection: $date, displayedComponents: .date).environment(\.timeZone, .gmt).appFont(16).padding(.horizontal, 16).frame(minHeight: 56)
             }
             if original == nil {
-                AppSection(title: L("form_startingOffer")) {
-                    Picker(L("form_startingOffer"), selection: $offer) {
-                        Text(L("form_offerNone")).tag("none"); Text(L("form_offerTrial")).tag("trial"); Text(L("form_offerIntro")).tag("intro")
-                    }.appFont(16).padding(16)
+                VStack(alignment: .leading, spacing: 10) {
+                    AppCaption(title: L("form_startingOffer"))
+                    ForEach(["none", "trial", "intro"], id: \.self) { mode in
+                        offerChoice(mode)
+                    }
                     if offer != "none" {
-                        AppDivider(inset: 16)
-                        if offer == "intro" { FormField(title: L("form_offerCost")) { TextField("0", text: $offerPrice).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }; AppDivider(inset: 16) }
+                        AppSection {
+                        if offer == "intro" { FormField(title: L("form_offerCost")) { TextField("0", text: $offerPrice).focused($focusedField, equals: .offerPrice).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }; AppDivider(inset: 16) }
                         DatePicker(L("form_offerEndsAt"), selection: $offerEnd, in: Day.shift(date, days: 1)..., displayedComponents: .date).environment(\.timeZone, .gmt).padding(16)
+                        }
                     }
                 }
             }
@@ -191,7 +199,7 @@ struct SubscriptionEditor: View {
                 AppSection {
                     Toggle(L("native_autoPaid"), isOn: $draft.autoPaid).padding(16)
                     AppDivider(inset: 16)
-                    TextField(L("native_notes"), text: Binding(get: { draft.notes ?? "" }, set: { draft.notes = $0.isEmpty ? nil : $0 }), axis: .vertical).lineLimit(3...8).padding(16)
+                    TextField(L("native_notes"), text: Binding(get: { draft.notes ?? "" }, set: { draft.notes = $0.isEmpty ? nil : $0 }), axis: .vertical).focused($focusedField, equals: .notes).lineLimit(3...8).padding(16)
                 }.padding(.top, 12)
             }.appFont(14).foregroundStyle(AppTheme.muted)
             if original == nil, let amount = Money.parse(draft.cost) {
@@ -206,18 +214,35 @@ struct SubscriptionEditor: View {
             }
         }
     }
-    private var footer: some View {
+    private func offerChoice(_ mode: String) -> some View {
+        let key = "form_offer" + mode.capitalized
+        return Button {
+            if mode != "none" && !state.settings.pro { paywall = true }
+            else { offer = mode; offerEnd = max(offerEnd, Day.shift(date, days: 1)) }
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L(key)).appFont(16, weight: .semibold)
+                    Text(L(key + "Hint")).appFont(13).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: mode != "none" && !state.settings.pro ? "lock" : offer == mode ? "checkmark.circle.fill" : "circle")
+                    .appFont(22).foregroundStyle(offer == mode ? AppTheme.accentBright : AppTheme.muted)
+            }.padding(16).appCard(radius: 18, border: offer == mode ? AppTheme.accent : AppTheme.border)
+        }.buttonStyle(.plain).accessibilityIdentifier("offer-" + mode).accessibilityAddTraits(offer == mode ? .isSelected : [])
+    }
+    private func footer(_ step: Int) -> some View {
         VStack(spacing: 0) {
             AppDivider()
             Group {
                 if step == 1 || step == 2 {
-                    Button(L(step == 1 && draft.brandDomain == nil ? "common_skip" : "common_next")) { step += 1 }
+                    Button(L(step == 1 && draft.brandDomain == nil ? "common_skip" : "common_next")) { focusedField = nil; steps.append(step == 1 ? .price : .dates) }
                         .disabled(step == 2 && !valid).accessibilityIdentifier("nextSubscriptionStep")
                 } else { ActionButton(title: L("form_save"), action: save).disabled(!valid).accessibilityIdentifier("saveSubscription") }
             }.buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
         }.background(AppTheme.background)
     }
     private func save() async throws {
+        focusedField = nil
         var value = draft; value.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         value.cost = try Display.amount(draft.cost); value.paymentDate = Day.iso(Day.floor(date))
         let offerInput: OfferInput? = offer == "none" ? nil : OfferInput(promoCost: offer == "trial" ? "0" : try Display.amount(offerPrice), standardCost: value.cost, currency: value.currency, endDate: Day.floor(offerEnd))
@@ -353,29 +378,39 @@ struct CurrencyPicker: View {
 
 struct BrandPicker: View {
     let services: AppServices
+    let domain: String?
+    @Binding var variant: String
     let select: (Brand?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
     @State private var brands = BrandService.popular
     @State private var failed = false
     var body: some View {
-        NavigationStack {
-            List {
-                Button(L("form_brandNone")) { select(nil); dismiss() }
-                if let domain = BrandService.normalizeDomain(search) {
-                    Button(L("form_brandUse", ["domain": domain])) { select(Brand(name: domain, domain: domain)); dismiss() }
-                }
-                Section(L(search.isEmpty ? "form_brandPopular" : "form_brandResults")) {
-                    ForEach(brands) { brand in
-                        Button { select(brand); dismiss() } label: {
-                            HStack { BrandIcon(name: brand.name, domain: brand.domain, logos: services.logos); VStack(alignment: .leading) { Text(brand.name).foregroundStyle(.primary); Text(brand.domain).font(.caption).foregroundStyle(.secondary) } }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 10) {
+                if domain != nil {
+                    AppSection {
+                        FormField(title: L("form_brandStyle")) {
+                        Picker(L("form_brandStyle"), selection: $variant) {
+                            Text(L("native_logoAuto")).tag("auto"); Text(L("native_logoIcon")).tag("icon"); Text(L("native_logoSymbol")).tag("symbol"); Text(L("native_logoWordmark")).tag("logo")
+                        }.labelsHidden().tint(AppTheme.text)
                         }
                     }
-                    if failed { Text(L("form_brandSearchFailed")).foregroundStyle(.secondary) }
                 }
-            }.scrollContentBackground(.hidden).appScreen().searchable(text: $search, prompt: L("form_brandSearch"))
+                Button { select(nil); dismiss() } label: {
+                    SettingsRow(icon: "square.dashed", title: L("form_brandNone"), chevron: false).appCard(radius: 18)
+                }.buttonStyle(.plain)
+                if let domain = BrandService.normalizeDomain(search) {
+                    Button(L("form_brandUse", ["domain": domain])) { select(Brand(name: domain, domain: domain)); dismiss() }.frame(minHeight: 44)
+                }
+                AppCaption(title: L(search.isEmpty ? "form_brandPopular" : "form_brandResults")).padding(.horizontal, 4).padding(.top, 12)
+                ForEach(brands) { brand in
+                    Button { select(brand); dismiss() } label: { BrandOption(brand: brand, selected: domain == brand.domain, logos: services.logos) }.buttonStyle(.plain)
+                }
+                if failed { Text(L("form_brandSearchFailed")).appFont(12.5).foregroundStyle(AppTheme.muted) }
+            }.padding(16)
+        }.scrollDismissesKeyboard(.interactively).appScreen().searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("form_brandSearch"))
                 .navigationTitle(L("form_brand"))
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L("common_cancel")) { dismiss() } } }
                 .task(id: search) {
                     do {
                         if search.isEmpty { brands = BrandService.popular; failed = false; return }
@@ -383,6 +418,21 @@ struct BrandPicker: View {
                         brands = try await services.brands.search(search); failed = false
                     } catch is CancellationError { } catch { brands = BrandService.popular.filter { $0.name.localizedStandardContains(search) }; failed = true }
                 }
-        }
+    }
+}
+
+private struct BrandOption: View {
+    let brand: Brand
+    let selected: Bool
+    let logos: LogoService
+    var body: some View {
+        HStack(spacing: 12) {
+            BrandIcon(name: brand.name, domain: brand.domain, logos: logos)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(brand.name).appFont(16, weight: .semibold)
+                Text(brand.domain).appFont(12.5).foregroundStyle(AppTheme.muted)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            if selected { Image(systemName: "checkmark").foregroundStyle(AppTheme.accentBright) }
+        }.padding(12).frame(minHeight: 64).appCard(radius: 18, border: selected ? AppTheme.accent : AppTheme.border)
     }
 }

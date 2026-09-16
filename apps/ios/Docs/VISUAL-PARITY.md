@@ -83,3 +83,63 @@ post-feedback blur was inspected in the simulator and on the phone in
 removal of an earlier temporary record. The installed build launched standalone
 through XcodeBuildMCP (PID 6627). None of these UI checks certify external service
 release readiness.
+
+## Screenshot review: menus, calendar and creation
+
+The next seven-screen review identified interaction differences that static
+screen comparisons had missed. The native implementation now follows the Expo
+sources for these details:
+
+- Detail actions use a trash symbol, a separated destructive action and Expo's
+  shorter cancellation label. Deletion uses a system alert with explicit Delete
+  and Cancel actions, replacing the oversized Form sheet.
+  The trash image preserves its red tint through UIKit's menu rendering.
+- Subscription filters use nested native menus for sort, grouping, status and
+  category. Non-default selections appear in their parent labels, and each
+  submenu retains the system checkmarks.
+- Calendar months use a native page-style TabView. Each page owns its total,
+  grid and vertically scrolling agenda; the arrows and Today control the same
+  selected month. The year and options buttons use Expo's grid/slider symbols.
+  Weekday labels follow the app locale, and adjacent days receive event logos.
+- Tapping the brand identity opens brand selection directly. The redundant
+  pencil/overflow menu is gone; logo style remains available with brand selection.
+- Settings displays the current timezone directly. Only a timezone differing
+  from the device offers Expo's compact "use device timezone" confirmation.
+  The duplicate preferences sheet was removed.
+- New-subscription steps are actual NavigationStack destinations, retaining
+  draft state through native forward/back and interactive back transitions.
+  Focus clears before a push, preventing the restored price keyboard from
+  covering the Next action on return. A dirty editor's close button becomes
+  a native discard menu anchored to that button, matching Expo; untouched
+  forms close immediately. Discard has a red trash symbol as well.
+  Starting offers use full-width labeled choice rows with explanatory text,
+  matching Expo's layout and Pro access. Shared section cards fill their width.
+
+The focused simulator tests capture both English and Ukrainian and exercise
+menu expansion, cancelled deletion, month swipes, Today, backward navigation,
+brand selection and retained offer selection. The physical test for this pass
+opens the deletion alert and cancels it, edits an existing name and discards
+that draft, verifies the original name, then discards a new-subscription draft.
+It does not save or delete a subscription.
+
+Validation on 16 September 2026:
+
+- iOS 26.5: the focused CRUD and English/Ukrainian interaction run passed 3/3
+  after correcting brand/back navigation. The earlier full run passed the
+  other 15 checks; its two new interaction failures led to that correction.
+- Final iOS 18 application code: 16/17 passed in the full run. The Ukrainian
+  test tapped the toolbar during the detail push, before the menu could open.
+  Explicit transition waits fixed the test; its complete focused rerun passed.
+  Results: `test_sim_2026-09-16T10-03-04-537Z_pid58505_b94f7d37.xcresult` and
+  `test_sim_2026-09-16T10-10-14-884Z_pid63506_0320c664.xcresult`.
+- Physical iPhone 17, iOS 27, Ukrainian: the final interaction test passed
+  (1/1, 66.7 seconds). Inspected captures confirm the red trash image, native
+  deletion alert, collapsed/expanded filters, month swipes, offer rows, brand
+  selector and discard menus anchored to both the edit and creation buttons.
+  Result: `test_device_2026-09-16T10-04-40-203Z_pid59839_ea55b1fb.xcresult`.
+  Twelve captures and their manifest are in `Artifacts/visual/seven-device-final`.
+- The installed production build launched standalone through XcodeBuildMCP
+  (PID 7006). Repository type-check, test, boundary and diff checks passed.
+
+These results cover this UI iteration; the documented external-service release
+gates remain separate.

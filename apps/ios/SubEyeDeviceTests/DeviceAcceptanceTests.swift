@@ -15,7 +15,8 @@ final class DeviceAcceptanceTests: XCTestCase {
         let record = app.staticTexts[name].firstMatch
         if record.waitForExistence(timeout: 10) {
             record.tap(); app.buttons["subscriptionActions"].tap()
-            app.buttons["deleteSubscription"].tap(); app.buttons["confirmAction"].tap()
+            app.buttons.matching(NSPredicate(format: "identifier == 'deleteSubscription' OR label IN %@", ["Delete", "Видалити"])).firstMatch.tap()
+            app.alerts.buttons.matching(NSPredicate(format: "identifier == 'confirmAction' OR label IN %@", ["Delete", "Видалити"])).firstMatch.tap()
             XCTAssertTrue(app.buttons["subscriptionActions"].waitForNonExistence(timeout: 10))
             XCTAssertTrue(search.waitForExistence(timeout: 10))
             XCTAssertFalse(app.staticTexts[name].exists)
@@ -23,9 +24,9 @@ final class DeviceAcceptanceTests: XCTestCase {
         app.terminate()
     }
 
-    private static func application() -> XCUIApplication {
+    private static func application(language: String = "en") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments = ["-AppleLanguages", "(" + language + ")", "-AppleLocale", language == "uk" ? "uk_UA" : "en_US"]
         return app
     }
 
@@ -54,6 +55,61 @@ final class DeviceAcceptanceTests: XCTestCase {
         let hierarchy = XCTAttachment(string: springboard.debugDescription)
         hierarchy.name = "Device-live-activity-hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
         app.activate()
+    }
+
+    func testRevisedInteractionsWithoutChangingSubscriptions() {
+        let app = Self.application(language: "uk"); app.launch()
+        XCTAssertTrue(app.tabBars.buttons["rectangle.stack"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["rectangle.stack"].tap()
+        app.buttons["subscriptionFilters"].tap()
+        XCTAssertTrue(app.buttons["filterStatus"].waitForExistence(timeout: 5))
+        capture(app, name: "Device-filters-collapsed")
+        app.buttons["filterStatus"].tap(); capture(app, name: "Device-filters-expanded")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.03, dy: 0.6)).tap()
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'subscription-' ")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5)); row.tap()
+        app.buttons["subscriptionActions"].tap(); capture(app, name: "Device-detail-menu")
+        app.buttons.matching(NSPredicate(format: "identifier == 'deleteSubscription' OR label IN %@", ["Delete", "Видалити"])).firstMatch.tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5)); capture(app, name: "Device-delete-confirmation")
+        app.alerts.buttons.matching(NSPredicate(format: "identifier == 'cancelDeletion' OR label IN %@", ["Cancel", "Скасувати"])).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["subscriptionDetailName"].exists)
+        let originalName = app.staticTexts["subscriptionDetailName"].label
+        app.buttons["subscriptionActions"].tap(); app.buttons["editSubscription"].tap()
+        let editedName = app.textFields["subscriptionName"]
+        XCTAssertTrue(editedName.waitForExistence(timeout: 5)); editedName.tap(); editedName.typeText(" unsaved")
+        app.buttons["closeSubscriptionEditor"].tap()
+        XCTAssertFalse(app.alerts.firstMatch.exists); capture(app, name: "Device-edit-discard-menu")
+        app.buttons.matching(NSPredicate(format: "label IN %@", ["Discard changes", "Скасувати зміни"])).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["subscriptionDetailName"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["subscriptionDetailName"].label, originalName)
+        app.tabBars.buttons["calendar"].tap()
+        let title = app.navigationBars.firstMatch.identifier
+        let pager = app.descendants(matching: .any)["calendarPager"].firstMatch
+        XCTAssertTrue(pager.waitForExistence(timeout: 5)); pager.swipeLeft()
+        XCTAssertTrue(app.navigationBars.matching(NSPredicate(format: "identifier != %@", title)).firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: "Device-calendar-next")
+        pager.swipeRight(); XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5))
+        capture(app, name: "Device-calendar-current")
+        app.tabBars.buttons["gearshape"].tap(); capture(app, name: "Device-settings-revised")
+        app.tabBars.buttons["house"].tap()
+        app.buttons["addSubscription"].firstMatch.tap(); app.buttons["nextSubscriptionStep"].tap()
+        let name = app.textFields["subscriptionName"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Unsaved visual check")
+        let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("1")
+        app.buttons["nextSubscriptionStep"].tap()
+        XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5)); capture(app, name: "Device-add-dates-revised")
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); XCTAssertEqual(name.value as? String, "Unsaved visual check")
+        capture(app, name: "Device-add-price-revised")
+        app.buttons["subscriptionBrand"].tap()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5)); capture(app, name: "Device-brand-picker-revised")
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["nextSubscriptionStep"].tap()
+        XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5))
+        app.buttons["closeSubscriptionEditor"].tap()
+        XCTAssertFalse(app.alerts.firstMatch.exists); capture(app, name: "Device-discard-menu")
+        app.buttons.matching(NSPredicate(format: "label IN %@", ["Discard changes", "Скасувати зміни"])).firstMatch.tap()
+        XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 5))
     }
 
     private func capture(_ app: XCUIApplication, name: String) {
@@ -87,7 +143,8 @@ final class DeviceAcceptanceTests: XCTestCase {
         XCTAssertTrue(price.waitForNonExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["subscriptionDetailName"].waitForExistence(timeout: 10))
         app.buttons["subscriptionActions"].tap()
-        app.buttons["Delete"].tap(); app.buttons["Confirm"].tap()
+        app.buttons.matching(NSPredicate(format: "identifier == 'deleteSubscription' OR label IN %@", ["Delete", "Видалити"])).firstMatch.tap()
+        app.alerts.buttons.matching(NSPredicate(format: "identifier == 'confirmAction' OR label IN %@", ["Delete", "Видалити"])).firstMatch.tap()
         XCTAssertTrue(search.waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts[name].exists)
         app.tabBars.buttons["Calendar"].tap()

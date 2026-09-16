@@ -9,6 +9,7 @@ struct SubscriptionDetail: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var delete = false
+    @State private var deletion: UUID?
     @State private var heroBottom: CGFloat = 300
     private var row: SubscriptionRow? { state.presentation.rows.first { $0.id == id } }
     private var currency: String { state.presentation.preferences.preferredCurrency }
@@ -57,10 +58,14 @@ struct SubscriptionDetail: View {
                                     Button { sheet = .editor(row.subscription) } label: { Label(L("native_action_edit"), systemImage: "pencil") }.accessibilityIdentifier("editSubscription")
                                 }
                                 ForEach(row.allowedActions.filter { $0 != .edit && $0 != .delete }, id: \.self) { action in
-                                    Button { perform(action, row: row) } label: { Label(L("native_action_" + action.rawValue), systemImage: icon(action)) }
+                                    Button { perform(action, row: row) } label: { Label(L(action == .cancel ? "action_cancel" : "native_action_" + action.rawValue), systemImage: icon(action)) }
                                 }
-                                Button(L("native_delete"), role: .destructive) { delete = true }.accessibilityIdentifier("deleteSubscription")
-                            } label: { Label(L("detail_moreActions"), systemImage: "ellipsis") }.tint(AppTheme.text).accessibilityIdentifier("subscriptionActions")
+                                Section {
+                                    Button(role: .destructive) { delete = true } label: {
+                                        DestructiveMenuLabel(title: L("native_delete"))
+                                    }.accessibilityIdentifier("deleteSubscription")
+                                }
+                            } label: { Label(L("detail_moreActions"), systemImage: "ellipsis") }.tint(AppTheme.text).disabled(deletion != nil).accessibilityIdentifier("subscriptionActions")
                         }
                     }
                 }
@@ -70,10 +75,14 @@ struct SubscriptionDetail: View {
             do { try await services.repository.settleDetail(id: id, now: Date()); state.reload += 1 }
             catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
         }
-        .sheet(isPresented: $delete) {
-            ConfirmAction(title: L("native_deleteSubscription"), message: L("native_deleteBody"), destructive: true) {
-                try await services.repository.deleteSubscription(id: id); state.reload += 1; dismiss()
-            }
+        .alert(L("native_deleteSubscription"), isPresented: $delete) {
+            Button(L("native_delete"), role: .destructive) { deletion = UUID() }.accessibilityIdentifier("confirmAction")
+            Button(L("common_cancel"), role: .cancel) {}.accessibilityIdentifier("cancelDeletion")
+        } message: { Text(L("native_deleteBody")) }
+        .task(id: deletion) {
+            guard deletion != nil else { return }
+            do { try await services.repository.deleteSubscription(id: id); state.reload += 1; dismiss() }
+            catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)); deletion = nil }
         }
     }
     private func hero(_ row: SubscriptionRow) -> some View {

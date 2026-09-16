@@ -5,34 +5,85 @@ struct RenewalCalendarView: View {
     @Binding var state: SceneState
     let services: AppServices
     @Binding var sheet: SheetRoute?
-    @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var month = Day.monthStart(Day.today())
-    @State private var selected = Day.today()
-    @State private var events: [CalendarEvent] = []
-    @State private var previousTotal = 0.0
-    @State private var error: String?
+    @State private var pageAnchor = Day.monthStart(Day.today())
     @State private var options = false
     @State private var calendarOptions = CalendarOptions()
+    private var months: [Date] { (-24...24).map { Day.month(pageAnchor, offset: $0) } }
+    private var monthTitle: String { month.formatted(Date.FormatStyle(timeZone: .gmt).year().month(.wide)).localizedCapitalized }
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Button { go(to: Day.monthStart(Day.today())) } label: {
+                    Text(L("when_today")).appFont(13, weight: .semibold).foregroundStyle(AppTheme.accentBright)
+                        .padding(.horizontal, 12).frame(minHeight: 44).appCard(radius: 999, fill: AppTheme.surfaceAlt, border: AppTheme.accent)
+                }
+                Spacer()
+                Button { go(to: Day.month(month, offset: -1)) } label: { Image(systemName: "chevron.left").appFont(15, weight: .semibold).frame(width: 44, height: 44).appCard(radius: 999) }.accessibilityLabel(L("calendar_prevMonth"))
+                Button { go(to: Day.month(month, offset: 1)) } label: { Image(systemName: "chevron.right").appFont(15, weight: .semibold).frame(width: 44, height: 44).appCard(radius: 999) }.accessibilityLabel(L("calendar_nextMonth"))
+            }.buttonStyle(.plain).padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 8)
+            TabView(selection: $month) {
+                ForEach(months, id: \.self) { page in
+                    CalendarMonthPage(month: page, state: $state, services: services).tag(page)
+                }
+            }.tabViewStyle(.page(indexDisplayMode: .never)).id(pageAnchor).accessibilityIdentifier("calendarPager")
+        }.appScreen().navigationTitle(monthTitle)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if state.settings.pro {
+                        NavigationLink(value: Route.year(Day.utc.component(.year, from: month))) { Label(L("calendar_year"), systemImage: "square.grid.3x3") }.accessibilityIdentifier("calendarYear")
+                    } else {
+                        Button { sheet = .paywall } label: { Label(L("calendar_year"), systemImage: "square.grid.3x3") }.accessibilityIdentifier("calendarYear")
+                    }
+                    Button { calendarOptions = state.settings.calendar; options = true } label: { Label(L("calendar_options"), systemImage: "slider.horizontal.3") }
+                }
+            }
+            .onChange(of: state.calendarMonth) { value in
+                if let value { go(to: Day.monthStart(value)); state.calendarMonth = nil }
+            }
+            .sheet(isPresented: $options) {
+                NavigationStack {
+                    Form {
+                        Picker(L("calendar_weekStart"), selection: $calendarOptions.weekStart) {
+                            Text(L("calendar_weekMonday")).tag("monday"); Text(L("calendar_weekSunday")).tag("sunday")
+                        }
+                        Toggle(L("calendar_showTotals"), isOn: $calendarOptions.showDayTotals)
+                    }.navigationTitle(L("calendar_options"))
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("common_done")) {
+                            try await services.repository.setSetting("calendar.settings", value: calendarOptions); state.settings.calendar = calendarOptions; options = false
+                        } } }
+                }.presentationDetents([.medium])
+            }
+    }
+    private func go(to target: Date) {
+        if !months.contains(target) { pageAnchor = target; month = target }
+        else { withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { month = target } }
+    }
+}
+
+private struct CalendarMonthPage: View {
+    let month: Date
+    @Binding var state: SceneState
+    let services: AppServices
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.locale) private var locale
+    @State private var selected = Day.today()
+    @State private var events: [CalendarEvent] = []
+    @State private var surroundingEvents: [CalendarEvent] = []
+    @State private var previousTotal = 0.0
+    @State private var error: String?
     private var currency: String { state.presentation.preferences.preferredCurrency }
-    private var monthTitle: String { month.formatted(Date.FormatStyle(timeZone: .gmt).year().month(.wide)) }
     private var firstOffset: Int { (Day.utc.component(.weekday, from: month) - (state.settings.calendar.weekStart == "monday" ? 2 : 1) + 7) % 7 }
     private var days: Int { Day.utc.range(of: .day, in: .month, for: month)!.count }
     private var weekdayLabels: [String] {
-        let symbols = Day.utc.shortStandaloneWeekdaySymbols
+        var calendar = Day.utc; calendar.locale = locale
+        let symbols = calendar.shortStandaloneWeekdaySymbols
         return state.settings.calendar.weekStart == "monday" ? Array(symbols.dropFirst()) + [symbols[0]] : symbols
     }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Button { selected = Day.today(); month = Day.monthStart(selected) } label: {
-                        Text(L("when_today")).appFont(13, weight: .semibold).foregroundStyle(AppTheme.accentBright)
-                            .padding(.horizontal, 12).frame(minHeight: 44).appCard(radius: 999, fill: AppTheme.surfaceAlt, border: AppTheme.accent)
-                    }.buttonStyle(.plain)
-                    Spacer()
-                    Button { move(-1) } label: { Image(systemName: "chevron.left").appFont(15, weight: .semibold).frame(width: 44, height: 44).appCard(radius: 999) }.accessibilityLabel(L("calendar_prevMonth"))
-                    Button { move(1) } label: { Image(systemName: "chevron.right").appFont(15, weight: .semibold).frame(width: 44, height: 44).appCard(radius: 999) }.accessibilityLabel(L("calendar_nextMonth"))
-                }.buttonStyle(.plain).padding(.horizontal, 4).padding(.bottom, 4)
                 monthTotal.padding(.horizontal, 4)
                 if typeSize.isAccessibilitySize {
                     DatePicker(L("native_date"), selection: $selected, in: month...Day.shift(Day.month(month, offset: 1), days: -1), displayedComponents: .date).environment(\.timeZone, .gmt)
@@ -72,42 +123,19 @@ struct RenewalCalendarView: View {
                     }
                 }
                 if let error { Text(error).foregroundStyle(AppTheme.muted) }
-            }.padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 24)
-        }.appScreen().navigationTitle(monthTitle.localizedCapitalized)
-        .onChange(of: state.calendarMonth) { value in
-            if let value { month = value; selected = value; state.calendarMonth = nil }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) { Button { calendarOptions = state.settings.calendar; options = true } label: { Label(L("calendar_options"), systemImage: "ellipsis.circle") }.tint(AppTheme.text) }
-            ToolbarItem(placement: .topBarTrailing) {
-                if state.settings.pro { NavigationLink(value: Route.year(Day.utc.component(.year, from: month))) { Text(L("calendar_year")) } }
-                else { Button(L("calendar_year")) { sheet = .paywall } }
-            }
-        }
+            }.padding(.horizontal, 12).padding(.top, 4).padding(.bottom, 24)
+        }.onAppear { selected = max(month, min(Day.today(), Day.shift(Day.month(month, offset: 1), days: -1))) }
         .task(id: "\(Day.key(month)):\(state.presentation.revision):\(currency)") {
             do {
                 let rates = try await services.exchange.cached()
-                let result = try await services.repository.calendar(from: Day.month(month, offset: -1), through: Day.shift(Day.month(month, offset: 1), days: -1), rates: rates, now: Date())
+                let result = try await services.repository.calendar(from: Day.month(month, offset: -1), through: Day.shift(Day.month(month, offset: 2), days: -1), rates: rates, now: Date())
                 try Task.checkCancellation()
                 previousTotal = result.filter { $0.date < month && $0.kind == .payment }.reduce(0) { $0 + $1.amount }
-                events = result.filter { $0.date >= month }; error = nil
+                surroundingEvents = result
+                events = result.filter { $0.date >= month && $0.date < Day.month(month, offset: 1) }; error = nil
             } catch is CancellationError { } catch { self.error = Display.error(error) }
         }
-        .sheet(isPresented: $options) {
-            NavigationStack {
-                Form {
-                    Picker(L("calendar_weekStart"), selection: $calendarOptions.weekStart) {
-                        Text(L("calendar_weekMonday")).tag("monday"); Text(L("calendar_weekSunday")).tag("sunday")
-                    }
-                    Toggle(L("calendar_showTotals"), isOn: $calendarOptions.showDayTotals)
-                }.navigationTitle(L("calendar_options"))
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("common_done")) {
-                        try await services.repository.setSetting("calendar.settings", value: calendarOptions); state.settings.calendar = calendarOptions; options = false
-                    } } }
-            }.presentationDetents([.medium])
-        }
     }
-    private func move(_ offset: Int) { month = Day.month(month, offset: offset); selected = month }
     private var eventDays: [Date] { Set(events.map(\.date)).sorted() }
     private var agendaDays: [Date] {
         let upcoming = eventDays.filter { $0 >= Day.today() }
@@ -156,7 +184,7 @@ struct RenewalCalendarView: View {
         }
     }
     private func dayButton(_ day: Date, adjacent: Bool) -> some View {
-        let dayEvents = events.filter { $0.date == day }
+        let dayEvents = surroundingEvents.filter { $0.date == day }
         let amount = dayEvents.filter { $0.kind == .payment }.reduce(0) { $0 + $1.amount }
         let today = day == Day.today()
         let past = day < Day.today()

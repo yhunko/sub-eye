@@ -19,7 +19,8 @@ struct SettingsView: View {
     @State private var importing = false
     @State private var importURL: URL?
     @State private var erase = false
-    @State private var preferences = false
+    @State private var syncTimezone = false
+    @State private var timezoneChange: UUID?
     @State private var cloudChange = 0
     private var currencyLabel: String {
         let code = state.presentation.preferences.preferredCurrency.uppercased()
@@ -47,7 +48,11 @@ struct SettingsView: View {
                         }
                     } label: { SettingsRow(icon: "creditcard", title: L("settings_currency"), value: currencyLabel) }.buttonStyle(.plain).accessibilityIdentifier("settingsCurrency")
                     AppDivider(inset: 47)
-                    Button { preferences = true } label: { SettingsRow(icon: "clock", title: L("settings_timezone"), value: state.presentation.preferences.preferredTimezone) }.buttonStyle(.plain)
+                    if state.presentation.preferences.preferredTimezone == TimeZone.current.identifier {
+                        SettingsRow(icon: "clock", title: L("settings_timezone"), value: state.presentation.preferences.preferredTimezone, chevron: false).accessibilityIdentifier("settingsTimezone")
+                    } else {
+                        Button { syncTimezone = true } label: { SettingsRow(icon: "clock", title: L("settings_timezone"), value: state.presentation.preferences.preferredTimezone) }.buttonStyle(.plain).disabled(timezoneChange != nil).accessibilityIdentifier("settingsTimezone")
+                    }
                     AppDivider(inset: 47)
                     NavigationLink(value: Route.categories) { SettingsRow(icon: "tag", title: L("settings_categories"), value: state.settings.pro ? nil : L("paywall_badge")) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
@@ -93,7 +98,18 @@ struct SettingsView: View {
                 }.appFont(12.5).foregroundStyle(AppTheme.muted).multilineTextAlignment(.center)
             }.padding(16).padding(.bottom, 8)
         }.appScreen().navigationTitle(L("settings_title"))
-            .sheet(isPresented: $preferences) { PreferencesView(state: $state, services: services) }
+            .confirmationDialog(L("settings_timezone"), isPresented: $syncTimezone, titleVisibility: .visible) {
+                Button(L("settings_timezoneUseDevice")) { timezoneChange = UUID() }
+                Button(L("common_cancel"), role: .cancel) {}
+            } message: { Text(TimeZone.current.identifier) }
+            .task(id: timezoneChange) {
+                guard timezoneChange != nil else { return }
+                do {
+                    var preferences = state.presentation.preferences; preferences.preferredTimezone = TimeZone.current.identifier
+                    try await services.repository.savePreferences(preferences); state.reload += 1
+                } catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
+                timezoneChange = nil
+            }
             .sheet(isPresented: $erase) { ConfirmAction(title: L("settings_eraseConfirmTitle"), message: L(state.settings.cloud ? "settings_eraseConfirmCloud" : "settings_eraseConfirmBody"), destructive: true) {
                 let synchronized = try await services.erase(); state.reload += 1
                 if !synchronized { state.notice = Notice(title: L("settings_sync"), message: L("native_erasedOffline")) }
@@ -125,38 +141,5 @@ actor ArchiveReader {
         guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Int.max) <= 20_000_000 else { throw DomainError.invalidDocument("Archive too large") }
         let data = try Data(contentsOf: url)
         try await repository.importArchive(data)
-    }
-}
-
-struct PreferencesView: View {
-    @Binding var state: SceneState
-    let services: AppServices
-    @Environment(\.dismiss) private var dismiss
-    @State private var value: Preferences
-    init(state: Binding<SceneState>, services: AppServices) { _state = state; self.services = services; _value = State(initialValue: state.wrappedValue.presentation.preferences) }
-    var body: some View {
-        NavigationStack {
-            Form {
-                NavigationLink { CurrencyPicker(selection: $value.preferredCurrency) } label: { LabeledContent(L("settings_currency"), value: value.preferredCurrency.uppercased()) }
-                NavigationLink { TimezonePicker(selection: $value.preferredTimezone) } label: { LabeledContent(L("settings_timezone"), value: value.preferredTimezone) }
-                Button(L("settings_timezoneUseDevice")) { value.preferredTimezone = TimeZone.current.identifier }
-                Link(L("settings_openDeviceSettings"), destination: URL(string: UIApplication.openSettingsURLString)!)
-            }.navigationTitle(L("settings_preferences"))
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button(L("common_cancel")) { dismiss() } }
-                    ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("form_save")) { try await services.repository.savePreferences(value); state.reload += 1; dismiss() } }
-                }
-        }
-    }
-}
-
-struct TimezonePicker: View {
-    @Binding var selection: String
-    @Environment(\.dismiss) private var dismiss
-    @State private var query = ""
-    var body: some View {
-        List(TimeZone.knownTimeZoneIdentifiers.filter { query.isEmpty || $0.localizedStandardContains(query) }, id: \.self) { zone in
-            Button { selection = zone; dismiss() } label: { HStack { Text(zone).foregroundStyle(.primary); Spacer(); if zone == selection { Image(systemName: "checkmark") } } }
-        }.navigationTitle(L("settings_timezone")).searchable(text: $query, prompt: L("native_timezoneSearch"))
     }
 }

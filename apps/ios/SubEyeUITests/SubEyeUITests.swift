@@ -3,6 +3,69 @@ import XCTest
 @MainActor
 final class SubEyeUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
+    func testRevisedMenusCalendarAndEditor() { revisedInteractions(language: "en") }
+    func testRevisedUkrainianLayouts() { revisedInteractions(language: "uk") }
+    private func revisedInteractions(language: String) {
+        let app = application(language: language, count: 12)
+        app.launchArguments.append("--fixture-pro"); app.launch()
+        let uk = language == "uk"
+        let subscriptions = app.tabBars.buttons[uk ? "Підписки" : "Subscriptions"]
+        XCTAssertTrue(subscriptions.waitForExistence(timeout: 10)); subscriptions.tap()
+        app.buttons["subscriptionFilters"].tap()
+        XCTAssertTrue(app.buttons["filterSort"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons[uk ? "Призупинено" : "Paused"].exists)
+        capture(app, name: language + "-Filters-collapsed")
+        app.buttons["filterStatus"].tap()
+        capture(app, name: language + "-Filters-expanded")
+        app.buttons[uk ? "Активна" : "Active"].tap()
+        XCTAssertTrue(app.buttons["filterSort"].waitForNonExistence(timeout: 5))
+        app.buttons["subscription-fixture-0"].tap()
+        XCTAssertTrue(app.buttons["subscriptionActions"].waitForExistence(timeout: 5))
+        app.buttons["subscriptionActions"].tap(); capture(app, name: language + "-Detail-menu")
+        XCTAssertTrue(app.buttons["deleteSubscription"].waitForExistence(timeout: 5))
+        app.buttons["deleteSubscription"].tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5)); capture(app, name: language + "-Delete-confirmation")
+        app.buttons["cancelDeletion"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["subscriptionDetailName"].exists)
+        app.tabBars.buttons[uk ? "Календар" : "Calendar"].tap()
+        let title = app.navigationBars.firstMatch.identifier
+        let pager = app.descendants(matching: .any)["calendarPager"].firstMatch
+        XCTAssertTrue(pager.waitForExistence(timeout: 5)); pager.swipeLeft()
+        XCTAssertTrue(app.navigationBars.matching(NSPredicate(format: "identifier != %@", title)).firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: language + "-Calendar-next")
+        pager.swipeRight()
+        XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5))
+        app.buttons[uk ? "Наступний місяць" : "Next month"].tap()
+        app.buttons[uk ? "Сьогодні" : "Today"].tap()
+        XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5))
+        capture(app, name: language + "-Calendar-current")
+        app.tabBars.buttons[uk ? "Налаштування" : "Settings"].tap()
+        capture(app, name: language + "-Settings")
+        XCTAssertFalse(app.buttons["settingsTimezone"].exists)
+        app.tabBars.buttons[uk ? "Головна" : "Home"].tap()
+        app.buttons["addSubscription"].firstMatch.tap(); app.buttons["nextSubscriptionStep"].tap()
+        let name = app.textFields["subscriptionName"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Draft survives back")
+        let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("1")
+        app.buttons["nextSubscriptionStep"].tap()
+        XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5))
+        capture(app, name: language + "-Add-dates")
+        app.buttons["offer-trial"].tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); XCTAssertEqual(name.value as? String, "Draft survives back")
+        capture(app, name: language + "-Add-price")
+        app.buttons["subscriptionBrand"].tap()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: language + "-Brand-picker")
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["nextSubscriptionStep"].tap()
+        XCTAssertTrue(app.buttons["offer-trial"].isSelected)
+        app.buttons["closeSubscriptionEditor"].tap()
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        capture(app, name: language + "-Discard-menu")
+        app.buttons[uk ? "Скасувати зміни" : "Discard changes"].tap()
+        XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 5))
+    }
     func testCurrencyCategoryNavigationAndYear() {
         let app = application(count: 12); app.launchArguments.append("--fixture-pro"); app.launch()
         XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
@@ -128,7 +191,7 @@ final class SubEyeUITests: XCTestCase {
         XCTAssertTrue(live.waitForExistence(timeout: 5)); XCTAssertEqual(live.value as? String, "0")
         app.tabBars.buttons["Subscriptions"].tap()
         app.buttons["subscriptionActions"].tap()
-        app.buttons["Delete"].tap(); app.buttons["Confirm"].tap()
+        app.buttons["deleteSubscription"].tap(); app.buttons["confirmAction"].firstMatch.tap()
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5))
     }
     func testUkrainianCalendarSettingsAndLongNames() {
