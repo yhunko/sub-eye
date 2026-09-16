@@ -4,13 +4,14 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 Usage:
-  bun run build:ios BUILD_NUMBER
+  bun run build:ios BUILD_NUMBER [--archive-only]
   bun run build:ios --export-only /absolute/path/SubEye.xcarchive
 
 Archives SubEye/Production for a generic iOS device, then exports an App Store
 IPA to builds/ios/. Choose a new build number for each App Store Connect upload.
 Each archive uses fresh DerivedData. Existing archives and IPAs are preserved.
 The export-only option retries distribution signing without rebuilding.
+Use --archive-only to finish cloud-managed signing in Xcode Organizer.
 Nothing is uploaded by this command.
 EOF
 }
@@ -34,7 +35,7 @@ if [[ "${1:-}" == "--export-only" ]]; then
     archive_path="$(cd "$2" && pwd)"
     run_dir="$(dirname "$archive_path")"
 else
-    [[ $# == 1 && "$1" =~ ^[1-9][0-9]*$ ]] || { usage >&2; exit 1; }
+    [[ ( $# == 1 || ( $# == 2 && "${2:-}" == "--archive-only" ) ) && "$1" =~ ^[1-9][0-9]*$ ]] || { usage >&2; exit 1; }
     build_number="$1"
     [[ -f "$native_dir/Config/Local.xcconfig" ]] || fail "Create apps/ios/Config/Local.xcconfig from Local.xcconfig.example first."
     version="$(awk '/^[[:space:]]*MARKETING_VERSION:/ { print $2; exit }' "$native_dir/project.yml")"
@@ -76,6 +77,12 @@ brandfetch_id="$(read_plist "$app_plist" BrandfetchClientID)"
 [[ "$revenuecat_key" == appl_* && "$revenuecat_key" != *REPLACE* ]] || fail "Archive needs the production RevenueCat public iOS SDK key."
 [[ -n "$brandfetch_id" && "$brandfetch_id" != *'$('* ]] || fail "Archive needs the public Brandfetch client ID."
 
+if [[ "${2:-}" == "--archive-only" ]]; then
+    printf '\nArchive: %s\n' "$archive_path"
+    printf 'Open it in Xcode Organizer: Distribute App > Custom > App Store Connect > Export.\n'
+    exit 0
+fi
+
 export_dir="$(mktemp -d "$run_dir/export-XXXXXX")"
 printf 'Exporting App Store IPA into %s\n' "$export_dir"
 if ! run_logged "$export_dir/export.log" xcodebuild -exportArchive \
@@ -83,6 +90,7 @@ if ! run_logged "$export_dir/export.log" xcodebuild -exportArchive \
     -exportOptionsPlist "$export_options" -allowProvisioningUpdates; then
     printf '\nArchive preserved: %s\n' "$archive_path" >&2
     printf 'Check Xcode > Settings > Accounts for team Z6KADG969Z and distribution-signing access.\n' >&2
+    printf 'If Xcode sees the account but the CLI does not, export this archive in Organizer using cloud-managed signing.\n' >&2
     printf 'Retry: bun run build:ios --export-only "%s"\n' "$archive_path" >&2
     exit 1
 fi

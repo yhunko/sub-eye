@@ -23,14 +23,27 @@ development signing and is not an App Store upload package.
 
 ## Build
 
-Run from the repository root:
+For the current Mac's cloud-managed signing setup, the verified path is:
 
 ```sh
-rtk proxy bun run build:ios 2
+rtk proxy bun run build:ios 3 --archive-only
 ```
 
-`2` is an example build number. Choose a number higher than the latest build you
-uploaded for version 6.0.0, then use `3`, `4`, etc. for subsequent uploads. The
+Open the printed `.xcarchive` in Xcode Organizer, then choose **Distribute App →
+Custom → App Store Connect → Export → Automatically manage signing**. Keep symbol
+inclusion enabled, turn off **Manage version and build number** to preserve the
+explicit number, and export into that build's output folder. This route produced
+the signed 6.0.0 (2) IPA; `3` is the next build number.
+
+When command-line distribution signing is available, archive and export together
+from the repository root:
+
+```sh
+rtk proxy bun run build:ios 3
+```
+
+Choose a number higher than the latest build you uploaded for version 6.0.0,
+then use `4`, `5`, etc. for subsequent uploads. The
 command does not query App Store Connect or reserve a build number. It overrides
 `CURRENT_PROJECT_VERSION` for both app and widget without editing the project.
 The marketing version comes from the native project and is currently **6.0.0**.
@@ -91,8 +104,20 @@ Packaging success is separate from the outstanding service-validation items in
 On 16 September 2026, Xcode 27.0 (27A266a) completed a fresh Production archive.
 Both the app and widget report **6.0.0 (2)**, and both matching dSYM bundles are
 present. The App Store export reached signing, then reported `No Accounts` and
-missing App Store provisioning profiles for both bundle IDs. That attempt did
-not produce an IPA; sign in to Xcode and use `--export-only` to finish it.
+missing App Store provisioning profiles for both bundle IDs. The account was
+visible in Xcode, and Organizer successfully exported using **Cloud Managed
+Apple Distribution** for both targets. A subsequent CLI retry still reported
+`No Accounts` and no local distribution identity; use the Organizer route above
+for this Mac until command-line signing is configured.
+
+Verified artifact:
+`builds/ios/6.0.0-2-20260916T113903Z-nt34sV/export-organizer/SubEye.ipa`.
+Its app and widget both report 6.0.0 (2); code-signature verification passed.
+Both embedded profiles are App Store profiles, with `get-task-allow` false and
+no provisioned-device list. The archive retains both matching dSYM bundles.
+The IPA has not been uploaded or validated by App Store Connect.
+The `3 --archive-only` command also completed successfully, preserving a separate
+6.0.0 (3) archive without attempting export.
 
 Shell syntax, export-options plist validation, repository type-check, tests and
 dependency-boundary checks passed.
