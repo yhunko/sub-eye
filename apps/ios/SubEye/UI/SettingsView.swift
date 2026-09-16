@@ -41,12 +41,7 @@ struct SettingsView: View {
                     }.buttonStyle(.plain)
                 }
                 AppSection(title: L("settings_preferences"), footnote: L("settings_deviceHint")) {
-                    NavigationLink {
-                        CurrencyPicker(selection: $state.presentation.preferences.preferredCurrency) { code in
-                            var preferences = state.presentation.preferences; preferences.preferredCurrency = code
-                            try await services.repository.savePreferences(preferences); state.reload += 1
-                        }
-                    } label: { SettingsRow(icon: "creditcard", title: L("settings_currency"), value: currencyLabel) }.buttonStyle(.plain).accessibilityIdentifier("settingsCurrency")
+                    NavigationLink(value: Route.currency) { SettingsRow(icon: "creditcard", title: L("settings_currency"), value: currencyLabel) }.buttonStyle(.plain).accessibilityIdentifier("settingsCurrency")
                     AppDivider(inset: 47)
                     if state.presentation.preferences.preferredTimezone == TimeZone.current.identifier {
                         SettingsRow(icon: "clock", title: L("settings_timezone"), value: state.presentation.preferences.preferredTimezone, chevron: false).accessibilityIdentifier("settingsTimezone")

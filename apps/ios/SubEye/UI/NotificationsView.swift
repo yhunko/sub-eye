@@ -25,6 +25,7 @@ struct NotificationsView: View {
                     Toggle(L("notifs_renewalSwitch"), isOn: $state.settings.reminders.renewals).notificationRow()
                     if state.settings.reminders.renewals { AppDivider(inset: 16); leads(trial: false) }
                 }
+                liveActivities
                 AppSection(title: L("notifs_trials"), footnote: L("notifs_trialsHint")) {
                     if state.settings.pro {
                         Toggle(L("notifs_trialSwitch"), isOn: $state.settings.reminders.trials).notificationRow()
@@ -50,17 +51,7 @@ struct NotificationsView: View {
                         }.buttonStyle(.plain)
                     }
                     AppDivider(inset: 47)
-                    ActionButton(title: L("native_testReminder"), icon: "paperplane", styledRow: true) { try await services.notifications.test(); permission = await services.notifications.permission() }.buttonStyle(.plain)
-                }
-                AppSection(footnote: L("native_liveHint")) {
-                    Toggle(L("native_liveTitle"), isOn: $state.settings.liveActivities).notificationRow().accessibilityIdentifier("liveActivitiesToggle")
-                    if #available(iOS 27, *) {
-                        if !services.live.authorized {
-                            Text(L("native_liveDenied")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(16)
-                            Link(destination: URL(string: UIApplication.openSettingsURLString)!) { SettingsRow(icon: "gearshape", title: L("settings_openDeviceSettings")) }.buttonStyle(.plain)
-                        }
-                    } else { Text(L("native_liveFallback")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(.horizontal, 16).padding(.bottom, 12) }
-                    if let liveIssue { Text(liveIssue).appFont(12.5).foregroundStyle(AppTheme.muted).padding(16) }
+                    ActionButton(title: L("native_testReminder"), icon: "paperplane", styledRow: true) { try await services.notifications.test(); permission = await services.notifications.permission() }.buttonStyle(.plain).accessibilityIdentifier("testReminder")
                 }
             }.padding(16).padding(.bottom, 8)
         }.appScreen().navigationTitle(L("settings_notifications"))
@@ -83,6 +74,18 @@ struct NotificationsView: View {
                     try await services.live.synchronize(model: state.presentation, rates: services.exchange.cached(), logos: services.logos); liveIssue = nil
                 } catch is CancellationError { } catch { liveIssue = L("native_liveDenied") }
             }
+    }
+    private var liveActivities: some View {
+        AppSection(footnote: L("native_liveHint")) {
+            Toggle(L("native_liveTitle"), isOn: $state.settings.liveActivities).notificationRow().accessibilityIdentifier("liveActivitiesToggle")
+            if #available(iOS 27, *) {
+                if !services.live.authorized {
+                    Text(L("native_liveDenied")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(16)
+                    Link(destination: URL(string: UIApplication.openSettingsURLString)!) { SettingsRow(icon: "gearshape", title: L("settings_openDeviceSettings")) }.buttonStyle(.plain)
+                }
+            } else { Text(L("native_liveFallback")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(.horizontal, 16).padding(.bottom, 12) }
+            if let liveIssue { Text(liveIssue).appFont(12.5).foregroundStyle(AppTheme.muted).padding(16) }
+        }
     }
     private func refreshHealth() async {
         permission = await services.notifications.permission()

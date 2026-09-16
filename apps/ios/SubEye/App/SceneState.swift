@@ -42,6 +42,7 @@ enum Route: Hashable {
     case cancellationDay(String)
     case selection([String])
     case categories
+    case currency
     case notifications
     case year(Int)
     case legal(String)

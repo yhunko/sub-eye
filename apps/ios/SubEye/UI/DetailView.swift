@@ -211,7 +211,9 @@ private struct HeroBottomKey: PreferenceKey {
 struct BrandWash: View {
     let domain: String?
     let logos: LogoService
+    var variant: String? = nil
     @State private var image: UIImage?
+    @State private var revision = 0
     var body: some View {
         GeometryReader { geometry in
             if let image {
@@ -220,9 +222,12 @@ struct BrandWash: View {
             }
             LinearGradient(stops: [.init(color: AppTheme.background.opacity(0.4), location: 0), .init(color: AppTheme.background.opacity(0.72), location: 0.52), .init(color: AppTheme.background, location: 1)], startPoint: .top, endPoint: .bottom)
         }.background(AppTheme.surface).clipped().accessibilityHidden(true)
-            .task(id: domain) {
+            .onReceive(NotificationCenter.default.publisher(for: LogoService.variantChanged)) { note in
+                if note.object as? String == domain { revision += 1 }
+            }
+            .task(id: "\(domain ?? ""):\(variant ?? "saved"):\(revision)") {
                 guard let domain else { image = nil; return }
-                let variant = await logos.variant(for: domain)
+                let variant = if let variant { variant } else { await logos.variant(for: domain) }
                 if let cached = await logos.cached(domain: domain, variant: variant), let bytes = cached.bytes {
                     image = UIImage(data: bytes)
                 }
@@ -250,10 +255,14 @@ struct ConfirmAction: View {
         NavigationStack {
             Form {
                 Text(message)
-                ActionButton(title: L("native_confirm"), role: destructive ? .destructive : nil) { try await action(); dismiss() }.accessibilityIdentifier("confirmAction")
-            }.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L("common_cancel")) { dismiss() } } }
-        }.presentationDetents([.medium, .large])
+            }.scrollContentBackground(.hidden).appScreen().navigationTitle(title)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                    ToolbarItem(placement: .confirmationAction) {
+                        ActionButton(title: L("native_confirm"), role: destructive ? .destructive : nil, iconOnly: true) { try await action(); dismiss() }.accessibilityIdentifier("confirmAction")
+                    }
+                }
+        }.presentationDetents([.medium, .large]).appSheet()
     }
 }
 
@@ -284,14 +293,16 @@ struct LifecycleView: View {
                     if timed { DatePicker(L("detail_resumes"), selection: $date, in: Day.shift(Day.today(), days: 1)..., displayedComponents: .date).environment(\.timeZone, .gmt) }
                 }
                 if action == .restart { DatePicker(L("native_date"), selection: $date, in: ...Day.today(), displayedComponents: .date).environment(\.timeZone, .gmt) }
-                ActionButton(title: L("native_confirm")) {
+            }.scrollContentBackground(.hidden).appScreen().navigationTitle(L("native_action_" + action.rawValue))
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                    ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("native_confirm"), iconOnly: true) {
                     let day = action == .restart || (action == .pause && timed) ? Day.floor(date) : nil
                     try await services.repository.transition(id: row.id, action: action, day: day, immediate: immediate, now: Date())
                     state.reload += 1; dismiss()
-                }.accessibilityIdentifier("confirmLifecycle")
-            }.navigationTitle(L("native_action_" + action.rawValue)).navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L("common_cancel")) { dismiss() } } }
-        }
+                    }.accessibilityIdentifier("confirmLifecycle") }
+                }
+        }.appSheet()
     }
 }
 

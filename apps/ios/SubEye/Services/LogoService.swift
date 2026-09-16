@@ -12,6 +12,7 @@ struct LogoPayload: Codable, Sendable {
 }
 
 actor LogoService {
+    static let variantChanged = Notification.Name("SubEye.logoVariantChanged")
     private let directory: URL
     private let repository: SubscriptionRepository
     private var memory: [String: LogoPayload] = [:]
@@ -27,10 +28,15 @@ actor LogoService {
 
     func setVariant(_ variant: String, for domain: String) async throws {
         try await repository.setSetting("logo.variant." + domain, value: variant)
+        await MainActor.run { NotificationCenter.default.post(name: Self.variantChanged, object: domain) }
     }
 
     func cached(domain: String, variant: String?) async -> LogoPayload? {
         let key = "symbol:\(variant ?? "auto"):\(domain)"
+        return await cached(key: key)
+    }
+
+    private func cached(key: String) async -> LogoPayload? {
         if let cached = memory[key] { return cached }
         if let bytes = try? Data(contentsOf: path(key)), let cached = try? JSONCodec.decode(LogoPayload.self, bytes) {
             remember(cached, key: key); return cached
@@ -49,14 +55,22 @@ actor LogoService {
 
     func load(domain: String, variant: String? = nil) async -> LogoPayload? {
         let key = "symbol:\(variant ?? "auto"):\(domain)"
-        let cached = await cached(domain: domain, variant: variant)
+        return await load(domain: domain, variant: variant, key: key, preview: false)
+    }
+
+    func preview(domain: String, variant: String) async -> LogoPayload? {
+        await load(domain: domain, variant: variant, key: "preview:\(variant):\(domain)", preview: true)
+    }
+
+    private func load(domain: String, variant: String?, key: String, preview: Bool) async -> LogoPayload? {
+        let cached = await cached(key: key)
         guard !NativeTesting.enabled else { return cached }
         let lifetime: TimeInterval = cached?.bytes == nil ? 21_600 : 604_800
         if let cached, Date().timeIntervalSince(cached.fetchedAt) < lifetime { return cached }
         if let task = pending[key] { return await task.value }
         if let attempted = attempts[key], Date().timeIntervalSince(attempted) < 60 { return cached }
         attempts[key] = Date()
-        let task = Task { await self.fetch(domain: domain, variant: variant, key: key) }
+        let task = Task { await self.fetch(domain: domain, variant: variant, key: key, preview: preview) }
         pending[key] = task
         let value = await task.value
         pending[key] = nil
@@ -92,18 +106,19 @@ actor LogoService {
         if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
     }
 
-    private func fetch(domain: String, variant: String?, key: String) async -> LogoPayload? {
+    private func fetch(domain: String, variant: String?, key: String, preview: Bool) async -> LogoPayload? {
         guard let normalized = BrandService.normalizeDomain(domain), normalized == domain else { return nil }
         let client = Bundle.main.object(forInfoDictionaryKey: "BrandfetchClientID") as? String ?? ""
         var sources: [(String, Bool)] = []
         if !client.isEmpty, !client.hasPrefix("$(") {
             let selected = variant == "symbol" ? ["symbol/theme/light", "symbol"] : variant == "logo" ? ["logo/theme/light", "logo"] : ["icon"]
             var seen = Set<String>()
-            for tier in selected + ["icon", "symbol/theme/light", "symbol"] where seen.insert(tier).inserted {
+            // A preview must never silently substitute another style's image.
+            for tier in selected + (preview ? [] : ["icon", "symbol/theme/light", "symbol"]) where seen.insert(tier).inserted {
                 sources.append(("https://cdn.brandfetch.io/\(domain)/\(tier)/fallback/404/h/384/w/384?c=\(client)", tier == "icon"))
             }
         }
-        sources.append(("https://www.google.com/s2/favicons?domain=\(domain)&sz=256", true))
+        if !preview { sources.append(("https://www.google.com/s2/favicons?domain=\(domain)&sz=256", true)) }
         var answered = true
         for (source, plate) in sources {
             if Task.isCancelled { return nil }
@@ -115,7 +130,9 @@ actor LogoService {
                       response.mimeType?.hasPrefix("image/") == true,
                       let result = Self.validated(bytes, plate: plate, fetchedAt: Date()) else { continue }
                 guard !Task.isCancelled else { return nil }
-                try store(result, key: key); return result
+                try store(result, key: key)
+                if preview { try store(result, key: "symbol:\(variant ?? "auto"):\(domain)") }
+                return result
             } catch { answered = false }
         }
         if answered {

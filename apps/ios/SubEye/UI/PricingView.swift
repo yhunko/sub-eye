@@ -57,8 +57,6 @@ struct PricingView: View {
                             else if let next = scheduledDate { SettingsRow(title: L("detail_nextPayment"), value: Display.date(next), chevron: false) }
                         }
                     }
-                    ActionButton(title: L("form_save"), action: save).buttonStyle(AppPrimaryButtonStyle())
-                        .disabled(Money.parse(cost) == nil || (temporary && Money.parse(standard) == nil))
                     if row.effectiveKind == .trial || row.effectiveKind == .intro, let revert = row.upcoming {
                         ActionButton(title: L("native_endOffer")) {
                             try await services.repository.managePhase(subscriptionId: row.id, phaseId: revert.id, apply: true, now: Date()); state.reload += 1; dismiss()
@@ -66,8 +64,14 @@ struct PricingView: View {
                     }
                 }.appFont(16).padding(20)
             }.appScreen().navigationTitle(L("pricing_title"))
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button { dismiss() } label: { Label(L("common_cancel"), systemImage: "xmark") }.tint(AppTheme.text) } }
-        }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                    ToolbarItem(placement: .confirmationAction) {
+                        ActionButton(title: L("form_save"), iconOnly: true, action: save)
+                            .disabled(Money.parse(cost) == nil || (temporary && Money.parse(standard) == nil))
+                    }
+                }
+        }.appSheet()
     }
     private func save() async throws {
         let price = try Display.amount(cost)

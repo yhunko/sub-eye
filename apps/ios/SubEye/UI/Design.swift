@@ -60,6 +60,34 @@ extension View {
             .foregroundStyle(AppTheme.text)
             .navigationBarTitleDisplayMode(.inline)
     }
+    func appSheet(dismissible: Bool = true) -> some View {
+        presentationDragIndicator(dismissible ? .visible : .hidden).presentationCornerRadius(32)
+    }
+}
+
+struct SheetCloseButton: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        Button { dismiss() } label: { Label(L("common_cancel"), systemImage: "xmark") }
+            .labelStyle(.iconOnly).tint(AppTheme.text)
+    }
+}
+
+struct GlassIconButton: View {
+    let title: String
+    let icon: String
+    let action: () -> Void
+    var body: some View {
+        if #available(iOS 26, *) {
+            button.buttonStyle(.glass).buttonBorderShape(.circle).frame(width: 44, height: 44)
+        } else {
+            button.buttonStyle(.plain).frame(width: 44, height: 44).background(.ultraThinMaterial, in: Circle())
+        }
+    }
+    private var button: some View {
+        Button(action: action) { Image(systemName: icon).font(.system(size: 18, weight: .semibold)) }
+            .tint(AppTheme.text).accessibilityLabel(title)
+    }
 }
 
 struct AppSection<Content: View>: View {

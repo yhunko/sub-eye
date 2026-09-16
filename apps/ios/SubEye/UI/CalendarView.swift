@@ -12,13 +12,16 @@ struct RenewalCalendarView: View {
     @State private var calendarOptions = CalendarOptions()
     private var months: [Date] { (-24...24).map { Day.month(pageAnchor, offset: $0) } }
     private var monthTitle: String { month.formatted(Date.FormatStyle(timeZone: .gmt).year().month(.wide)).localizedCapitalized }
+    private var isCurrentMonth: Bool { month == Day.monthStart(Day.today()) }
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Button { go(to: Day.monthStart(Day.today())) } label: {
-                    Text(L("when_today")).appFont(13, weight: .semibold).foregroundStyle(AppTheme.accentBright)
-                        .padding(.horizontal, 12).frame(minHeight: 44).appCard(radius: 999, fill: AppTheme.surfaceAlt, border: AppTheme.accent)
-                }
+                    Text(L("when_today")).appFont(13, weight: .semibold).foregroundStyle(isCurrentMonth ? AppTheme.accentBright : AppTheme.text)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .appCard(radius: 999, fill: AppTheme.surfaceAlt, border: isCurrentMonth ? AppTheme.accent : AppTheme.border)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }.accessibilityIdentifier("calendarToday").accessibilityAddTraits(isCurrentMonth ? .isSelected : [])
                 Spacer()
                 Button { go(to: Day.month(month, offset: -1)) } label: { Image(systemName: "chevron.left").appFont(15, weight: .semibold).frame(width: 44, height: 44).appCard(radius: 999) }.accessibilityLabel(L("calendar_prevMonth"))
                 Button { go(to: Day.month(month, offset: 1)) } label: { Image(systemName: "chevron.right").appFont(15, weight: .semibold).frame(width: 44, height: 44).appCard(radius: 999) }.accessibilityLabel(L("calendar_nextMonth"))
@@ -36,7 +39,7 @@ struct RenewalCalendarView: View {
                     } else {
                         Button { sheet = .paywall } label: { Label(L("calendar_year"), systemImage: "square.grid.3x3") }.accessibilityIdentifier("calendarYear")
                     }
-                    Button { calendarOptions = state.settings.calendar; options = true } label: { Label(L("calendar_options"), systemImage: "slider.horizontal.3") }
+                    Button { calendarOptions = state.settings.calendar; options = true } label: { Label(L("calendar_options"), systemImage: "slider.horizontal.3") }.accessibilityIdentifier("calendarOptions")
                 }
             }
             .onChange(of: state.calendarMonth) { value in
@@ -49,11 +52,13 @@ struct RenewalCalendarView: View {
                             Text(L("calendar_weekMonday")).tag("monday"); Text(L("calendar_weekSunday")).tag("sunday")
                         }
                         Toggle(L("calendar_showTotals"), isOn: $calendarOptions.showDayTotals)
-                    }.navigationTitle(L("calendar_options"))
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("common_done")) {
+                    }.scrollContentBackground(.hidden).appScreen().navigationTitle(L("calendar_options"))
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                            ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("common_done"), iconOnly: true) {
                             try await services.repository.setSetting("calendar.settings", value: calendarOptions); state.settings.calendar = calendarOptions; options = false
                         } } }
-                }.presentationDetents([.medium])
+                }.presentationDetents([.medium]).appSheet()
             }
     }
     private func go(to target: Date) {

@@ -35,9 +35,9 @@ struct PaywallView: View {
                 .safeAreaInset(edge: .bottom) {
                     if !typeSize.isAccessibilitySize { purchase.padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 14).background(AppTheme.background) }
                 }
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button { dismiss() } label: { Label(L("common_cancel"), systemImage: "xmark") }.tint(AppTheme.text) } }
+                .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCloseButton() } }
                 .task { package = try? await services.purchases.offering(); loaded = true }
-        }
+        }.appSheet()
     }
     private func feature(_ index: Int) -> some View {
         VStack(spacing: 13) {

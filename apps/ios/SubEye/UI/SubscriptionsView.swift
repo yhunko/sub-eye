@@ -39,11 +39,6 @@ struct SubscriptionsView: View {
                         ForEach(group.1) { row in
                             NavigationLink(value: Route.subscription(row.id)) { SubscriptionCell(row: row, currency: currency, logos: services.logos) }
                                 .buttonStyle(.plain).accessibilityIdentifier("subscription-" + row.id)
-                                .contextMenu {
-                                    ForEach(row.allowedActions.filter { $0 != .delete && $0 != .edit && $0 != .pricing }, id: \.self) { action in
-                                        Button(L("native_action_" + action.rawValue)) { sheet = action == .cancel ? .cancellation(row.id) : .lifecycle(row, action) }
-                                    }
-                                }
                         }
                     }
                 }
@@ -146,12 +141,14 @@ struct ListOptionsView: View {
                 }
                 Button(L("subs_filterReset")) { value = ListOptions() }
             }
-            .navigationTitle(L("subs_listOptions"))
-            .toolbar { ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("common_done")) {
+            .scrollContentBackground(.hidden).appScreen().navigationTitle(L("subs_listOptions"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("common_done"), iconOnly: true) {
                 try await services.repository.setSetting("subs.filters", value: value); state.settings.list = value
                 dismiss()
             } } }
-        }.presentationDetents([.medium, .large])
+        }.presentationDetents([.medium, .large]).appSheet()
             .sheet(isPresented: $paywall) { PaywallView(state: $state, services: services) }
     }
 }

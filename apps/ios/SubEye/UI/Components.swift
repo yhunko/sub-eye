@@ -16,6 +16,7 @@ struct ActionButton: View {
     var role: ButtonRole?
     var icon: String? = nil
     var styledRow = false
+    var iconOnly = false
     var action: @MainActor () async throws -> Void
     @State private var run: UUID?
     @State private var error: String?
@@ -24,8 +25,12 @@ struct ActionButton: View {
             if styledRow {
                 SettingsRow(icon: icon, title: title, color: role == .destructive ? AppTheme.danger : AppTheme.accentBright, chevron: false)
                     .overlay(alignment: .trailing) { if run != nil { ProgressView().controlSize(.small).padding(.trailing, 16) } }
+            } else if iconOnly {
+                if run != nil { ProgressView().controlSize(.small) }
+                else { Label(title, systemImage: icon ?? "checkmark").labelStyle(.iconOnly) }
             } else { HStack { Text(title); if run != nil { ProgressView().controlSize(.small) } } }
         }
+        .accessibilityLabel(title)
         .disabled(run != nil)
         .task(id: run) {
             guard run != nil else { return }
@@ -46,8 +51,10 @@ struct BrandIcon: View {
     let logos: LogoService
     var size: CGFloat = 38
     var dimmed = false
+    var variant: String? = nil
     @State private var payload: LogoPayload?
     @State private var image: UIImage?
+    @State private var revision = 0
     var body: some View {
         Group {
             if let image {
@@ -60,9 +67,12 @@ struct BrandIcon: View {
         .background(AppTheme.surfaceAlt, in: Circle())
         .clipShape(Circle()).opacity(dimmed ? 0.4 : 1)
         .accessibilityHidden(true)
-        .task(id: domain) {
+        .onReceive(NotificationCenter.default.publisher(for: LogoService.variantChanged)) { note in
+            if note.object as? String == domain { revision += 1 }
+        }
+        .task(id: "\(domain ?? ""):\(variant ?? "saved"):\(revision)") {
             guard let domain else { payload = nil; image = nil; return }
-            let variant = await logos.variant(for: domain)
+            let variant = if let variant { variant } else { await logos.variant(for: domain) }
             payload = await logos.cached(domain: domain, variant: variant)
             image = payload?.bytes.flatMap(UIImage.init(data:))
             guard !Task.isCancelled else { return }

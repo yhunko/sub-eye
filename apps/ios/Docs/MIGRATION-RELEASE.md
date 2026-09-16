@@ -101,8 +101,9 @@ was not modified as part of this rewrite.
 2. Preserve a recoverable backup of the existing app container/record data before
    testing the production-identity upgrade. Record old subscription/category/
    phase counts and representative prices, lifecycle states and logo choices.
-3. Set a **monotonically higher build number** for the actual App Store release;
-   the scaffold uses 5.3.1 (1), which is not a release-number decision.
+3. The native application and widget use **6.0.0** for the native iOS milestone.
+   The development build number is 1; set a **monotonically higher build number**
+   for the actual App Store release.
 4. Archive `SubEye` / `Production` with the existing production app/extension
    identities and team. Keep App Groups, iCloud KV, URL scheme, widget kind,
    public RevenueCat SDK key and entitlement `pro` aligned with the existing app.

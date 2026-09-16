@@ -124,13 +124,13 @@ struct CategoryEditor: View {
                     emoji = all[abs(Int(Int32(bitPattern: hash))) % all.count]
                 }
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button(L("common_cancel")) { dismiss() } }
-                    ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("form_save")) {
+                    ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                    ToolbarItem(placement: .confirmationAction) { ActionButton(title: L("form_save"), iconOnly: true) {
                         var category = original ?? SubEyeCore.Category(id: UUID().uuidString, name: "", emoji: "", now: Date())
                         category.name = name.trimmingCharacters(in: .whitespacesAndNewlines); category.emoji = String(emoji.prefix(1)); category.updatedAt = Day.iso(Date())
                         try await services.repository.saveCategory(category, expected: original); onSave?(category); state.reload += 1; dismiss()
                     }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || emoji.isEmpty).accessibilityIdentifier("saveCategory") }
                 }
-        }.presentationDetents([.fraction(0.9)]).presentationDragIndicator(.visible).presentationCornerRadius(32)
+        }.presentationDetents([.fraction(0.9)]).appSheet()
     }
 }

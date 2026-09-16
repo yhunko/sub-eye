@@ -18,6 +18,7 @@ struct SubscriptionEditor: View {
     @State private var offerEnd = Day.shift(Day.today(), days: 7)
     @State private var paywall = false
     @State private var variant = "auto"
+    @State private var initialVariant = "auto"
     @State private var search = ""
     @State private var brands = BrandService.popular
     @State private var searchFailed = false
@@ -28,7 +29,7 @@ struct SubscriptionEditor: View {
         let initial = original ?? Subscription(id: UUID().uuidString, name: "", cost: "", currency: state.wrappedValue.presentation.preferences.preferredCurrency, paymentDate: Day.iso(Day.today()), now: Date())
         self.initial = initial; _draft = State(initialValue: initial); _date = State(initialValue: Day.parse(initial.paymentDate) ?? Day.today())
     }
-    private var dirty: Bool { draft != initial || Day.iso(date) != initial.paymentDate || offer != "none" }
+    private var dirty: Bool { draft != initial || Day.iso(date) != initial.paymentDate || offer != "none" || variant != initialVariant }
     private var valid: Bool { !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && Money.parse(draft.cost) != nil }
     var body: some View {
         NavigationStack(path: $steps) {
@@ -45,9 +46,13 @@ struct SubscriptionEditor: View {
                     }
                 }
         }
-        .interactiveDismissDisabled(dirty)
+        .interactiveDismissDisabled(dirty).appSheet(dismissible: !dirty)
         .sheet(isPresented: $paywall) { PaywallView(state: $state, services: services) }
-        .task(id: draft.brandDomain) { variant = if let domain = draft.brandDomain { await services.logos.variant(for: domain) ?? "auto" } else { "auto" } }
+        .task(id: draft.brandDomain) {
+            let saved = if let domain = draft.brandDomain { await services.logos.variant(for: domain) ?? "auto" } else { "auto" }
+            guard !Task.isCancelled else { return }
+            initialVariant = saved; variant = saved
+        }
     }
     private func editorPage(_ step: Int) -> some View {
         Group {
@@ -63,11 +68,17 @@ struct SubscriptionEditor: View {
             }
         }
         .appScreen()
-        .safeAreaInset(edge: .bottom, spacing: 0) { footer(step) }
+        .safeAreaInset(edge: .bottom, spacing: 0) { if step == 1 || step == 2 { footer(step) } }
         .navigationTitle(L(original == nil ? "form_titleNew" : "form_titleEdit"))
         .toolbar {
             ToolbarItem(placement: step > 1 ? .topBarTrailing : .cancellationAction) {
                 closeEditor
+            }
+            if step == 0 || step == 3 {
+                ToolbarItem(placement: .confirmationAction) {
+                    ActionButton(title: L("form_save"), iconOnly: true, action: save)
+                        .disabled(!valid).accessibilityIdentifier("saveSubscription")
+                }
             }
         }
         .task(id: search) {
@@ -106,7 +117,7 @@ struct SubscriptionEditor: View {
             LazyVStack(alignment: .leading, spacing: 10) {
                 stepHeading(1).padding(.horizontal, 4).padding(.bottom, 6)
                 if draft.brandDomain != nil { brandIdentity }
-                if draft.brandDomain != nil { brandStyle }
+                if let domain = draft.brandDomain { BrandStylePicker(domain: domain, selection: $variant, logos: services.logos) }
                 Button {
                     draft.brandDomain = nil
                 } label: { SettingsRow(icon: "square.dashed", title: L("form_brandNone"), chevron: false).appCard(radius: 18) }.buttonStyle(.plain)
@@ -119,35 +130,26 @@ struct SubscriptionEditor: View {
                         draft.brandDomain = item.domain
                         draft.name = item.name
                     } label: {
-                        BrandOption(brand: item, selected: draft.brandDomain == item.domain, logos: services.logos)
-                    }.buttonStyle(.plain)
+                        BrandOption(brand: item, selected: draft.brandDomain == item.domain, logos: services.logos, variant: draft.brandDomain == item.domain ? variant : nil)
+                    }.buttonStyle(.plain).accessibilityIdentifier("brand-" + item.domain)
                 }
                 if searchFailed { Text(L("form_brandSearchFailed")).appFont(12.5).foregroundStyle(AppTheme.muted) }
             }.padding(.horizontal, 16).padding(.vertical, 16)
         }.scrollDismissesKeyboard(.interactively)
     }
     private var brandIdentity: some View {
-        Button { focusedField = nil; steps.append(.brand) } label: {
         HStack(spacing: 12) {
-            BrandIcon(name: draft.name, domain: draft.brandDomain, logos: services.logos, size: 36)
+            BrandIcon(name: draft.name, domain: draft.brandDomain, logos: services.logos, size: 36, variant: variant)
             VStack(alignment: .leading, spacing: 2) {
                 Text(draft.name.isEmpty ? L("form_brandNone") : draft.name).appFont(16, weight: .semibold)
                 if let domain = draft.brandDomain { Text(domain).appFont(12.5).foregroundStyle(AppTheme.muted) }
             }.frame(maxWidth: .infinity, alignment: .leading)
+            GlassIconButton(title: L("form_brandChange"), icon: "pencil") { focusedField = nil; steps.append(.brand) }
+                .accessibilityIdentifier("subscriptionBrand")
         }.padding(.horizontal, 14).padding(.vertical, 12)
-            .background { BrandWash(domain: draft.brandDomain, logos: services.logos) }
+            .background { BrandWash(domain: draft.brandDomain, logos: services.logos, variant: variant) }
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Color.white.opacity(0.16), lineWidth: 1) }
-        }.buttonStyle(.plain).accessibilityLabel(L("form_brand") + ", " + draft.name).accessibilityIdentifier("subscriptionBrand")
-    }
-    private var brandStyle: some View {
-        AppSection {
-            FormField(title: L("form_brandStyle")) {
-                Picker(L("form_brandStyle"), selection: $variant) {
-                    Text(L("native_logoAuto")).tag("auto"); Text(L("native_logoIcon")).tag("icon"); Text(L("native_logoSymbol")).tag("symbol"); Text(L("native_logoWordmark")).tag("logo")
-                }.labelsHidden().tint(AppTheme.text)
-            }
-        }
     }
     private var priceFields: some View {
         VStack(spacing: 24) {
@@ -159,7 +161,14 @@ struct SubscriptionEditor: View {
                 FormField(title: L("form_price")) {
                     HStack(spacing: 8) {
                         TextField("0", text: $draft.cost).focused($focusedField, equals: .price).keyboardType(.decimalPad).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityLabel(L("form_price")).accessibilityIdentifier("subscriptionPrice")
-                        NavigationLink { CurrencyPicker(selection: $draft.currency) } label: { Text(draft.currency.uppercased()).foregroundStyle(AppTheme.muted).frame(minWidth: 44, minHeight: 44) }.accessibilityIdentifier("currencyPicker")
+                        Rectangle().fill(AppTheme.border).frame(width: 1, height: 24).accessibilityHidden(true)
+                        NavigationLink { CurrencyPicker(selection: $draft.currency) } label: {
+                            HStack(spacing: 5) {
+                                Text(Display.currencyFlag(draft.currency)).accessibilityHidden(true)
+                                Text(draft.currency.uppercased())
+                                Image(systemName: "chevron.up.chevron.down").appFont(12, weight: .semibold).foregroundStyle(AppTheme.muted)
+                            }.foregroundStyle(AppTheme.text).fixedSize().frame(minHeight: 44).padding(.leading, 4)
+                        }.buttonStyle(.plain).accessibilityLabel(L("form_currency") + ", " + draft.currency.uppercased()).accessibilityIdentifier("currencyPicker")
                     }
                 }
                 AppDivider(inset: 16)
@@ -233,12 +242,9 @@ struct SubscriptionEditor: View {
     private func footer(_ step: Int) -> some View {
         VStack(spacing: 0) {
             AppDivider()
-            Group {
-                if step == 1 || step == 2 {
-                    Button(L(step == 1 && draft.brandDomain == nil ? "common_skip" : "common_next")) { focusedField = nil; steps.append(step == 1 ? .price : .dates) }
-                        .disabled(step == 2 && !valid).accessibilityIdentifier("nextSubscriptionStep")
-                } else { ActionButton(title: L("form_save"), action: save).disabled(!valid).accessibilityIdentifier("saveSubscription") }
-            }.buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
+            Button(L(step == 1 && draft.brandDomain == nil ? "common_skip" : "common_next")) { focusedField = nil; steps.append(step == 1 ? .price : .dates) }
+                .disabled(step == 2 && !valid).accessibilityIdentifier("nextSubscriptionStep")
+                .buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
         }.background(AppTheme.background)
     }
     private func save() async throws {
@@ -345,7 +351,6 @@ struct CurrencyPicker: View {
                 }
             }.padding(.horizontal, 16).padding(.bottom, 24)
         }.scrollDismissesKeyboard(.interactively).appScreen().navigationTitle(L("form_currency"))
-            .toolbar(.hidden, for: .tabBar)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: L("currency_search"))
             .disabled(pending != nil)
             .task {
@@ -388,15 +393,7 @@ struct BrandPicker: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
-                if domain != nil {
-                    AppSection {
-                        FormField(title: L("form_brandStyle")) {
-                        Picker(L("form_brandStyle"), selection: $variant) {
-                            Text(L("native_logoAuto")).tag("auto"); Text(L("native_logoIcon")).tag("icon"); Text(L("native_logoSymbol")).tag("symbol"); Text(L("native_logoWordmark")).tag("logo")
-                        }.labelsHidden().tint(AppTheme.text)
-                        }
-                    }
-                }
+                if let domain { BrandStylePicker(domain: domain, selection: $variant, logos: services.logos) }
                 Button { select(nil); dismiss() } label: {
                     SettingsRow(icon: "square.dashed", title: L("form_brandNone"), chevron: false).appCard(radius: 18)
                 }.buttonStyle(.plain)
@@ -405,7 +402,7 @@ struct BrandPicker: View {
                 }
                 AppCaption(title: L(search.isEmpty ? "form_brandPopular" : "form_brandResults")).padding(.horizontal, 4).padding(.top, 12)
                 ForEach(brands) { brand in
-                    Button { select(brand); dismiss() } label: { BrandOption(brand: brand, selected: domain == brand.domain, logos: services.logos) }.buttonStyle(.plain)
+                    Button { select(brand); dismiss() } label: { BrandOption(brand: brand, selected: domain == brand.domain, logos: services.logos, variant: domain == brand.domain ? variant : nil) }.buttonStyle(.plain)
                 }
                 if failed { Text(L("form_brandSearchFailed")).appFont(12.5).foregroundStyle(AppTheme.muted) }
             }.padding(16)
@@ -421,13 +418,74 @@ struct BrandPicker: View {
     }
 }
 
+private struct BrandStylePicker: View {
+    let domain: String
+    @Binding var selection: String
+    let logos: LogoService
+    @State private var previews: [Preview]?
+    private struct Preview: Identifiable, Sendable {
+        let id: String
+        let payload: LogoPayload
+    }
+    private let styles = ["icon", "symbol", "logo"]
+    var body: some View {
+        Group {
+        if previews?.isEmpty != true {
+            AppSection(title: L("form_brandStyle")) {
+                HStack(alignment: .top, spacing: 10) {
+                    if let previews {
+                        ForEach(previews) { preview in
+                            let selected = selection == preview.id || (selection == "auto" && preview.id == previews.first?.id)
+                            Button { selection = preview.id } label: {
+                                VStack(spacing: 6) {
+                                    Group {
+                                        if let bytes = preview.payload.bytes, let image = UIImage(data: bytes) {
+                                            Image(uiImage: image).resizable().scaledToFit().padding(preview.payload.plate ? 0 : 8)
+                                        }
+                                    }.frame(width: 52, height: 52).background(AppTheme.surfaceAlt, in: Circle()).clipShape(Circle())
+                                        .padding(4).overlay { Circle().strokeBorder(selected ? AppTheme.accentBright : .clear, lineWidth: 2) }
+                                    Text(L(preview.id == "icon" ? "native_logoIcon" : preview.id == "symbol" ? "native_logoSymbol" : "native_logoWordmark"))
+                                        .appFont(12.5).foregroundStyle(selected ? AppTheme.text : AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                                }.frame(maxWidth: .infinity)
+                            }.buttonStyle(.plain).accessibilityIdentifier("brandStyle-" + preview.id).accessibilityAddTraits(selected ? .isSelected : [])
+                        }
+                    } else {
+                        ForEach(styles, id: \.self) { _ in
+                            Circle().fill(AppTheme.surfaceAlt).frame(width: 60, height: 60).frame(maxWidth: .infinity).padding(.bottom, 22)
+                        }
+                    }
+                }.padding(12)
+            }
+        }
+        }.task(id: domain) {
+                previews = nil
+                let found = await withTaskGroup(of: Preview?.self) { group in
+                    for style in styles {
+                        group.addTask {
+                            guard let payload = await logos.preview(domain: domain, variant: style), payload.bytes != nil else { return nil }
+                            return Preview(id: style, payload: payload)
+                        }
+                    }
+                    var results: [Preview] = []
+                    for await item in group { if let item { results.append(item) } }
+                    return results
+                }
+                guard !Task.isCancelled else { return }
+                var seen = Set<Data>()
+                previews = styles.compactMap { style in found.first { $0.id == style } }
+                    .filter { preview in preview.payload.bytes.map { seen.insert($0).inserted } ?? false }
+        }
+    }
+}
+
 private struct BrandOption: View {
     let brand: Brand
     let selected: Bool
     let logos: LogoService
+    var variant: String? = nil
     var body: some View {
         HStack(spacing: 12) {
-            BrandIcon(name: brand.name, domain: brand.domain, logos: logos)
+            BrandIcon(name: brand.name, domain: brand.domain, logos: logos, variant: variant)
             VStack(alignment: .leading, spacing: 2) {
                 Text(brand.name).appFont(16, weight: .semibold)
                 Text(brand.domain).appFont(12.5).foregroundStyle(AppTheme.muted)

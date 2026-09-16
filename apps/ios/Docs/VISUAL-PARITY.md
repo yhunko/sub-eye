@@ -143,3 +143,55 @@ Validation on 16 September 2026:
 
 These results cover this UI iteration; the documented external-service release
 gates remain separate.
+
+## Control consistency and brand-style previews
+
+- Today's calendar control has a compact visible capsule with a 44-point touch
+  area. It is accented and selected only while showing the current month.
+- Dismissible sheets share a visible system grabber and corner treatment.
+  Unsaved subscription drafts retain their discard menu and hide the grabber
+  while interactive dismissal is disabled. Sheet cancel/save/confirm controls
+  use accessible cross/checkmark toolbar buttons. Creation's final Save action
+  and pricing/lifecycle confirmations follow the same header pattern.
+- Live Activities sits immediately after renewal reminder settings. Reminder
+  counts, next-fire status and the test action stay at the bottom.
+- Settings currency navigation uses the tab's route path. The surviving stack
+  animates tab-bar visibility, including restoration during a pop. Inspected
+  video frames show the bar fading in before the currency page finishes leaving
+  (`Artifacts/visual/polish-transitions.mp4`, around 104.6–104.9 seconds).
+- The brand row has a native Liquid Glass pencil button on the right, matching
+  Expo's glyph-sized glass inside a 44-point layout slot. Only this button opens
+  the pushed brand picker. Amount entry and currency selection have separate
+  touch areas, a vertical divider, currency flag and disclosure glyph.
+- Brand style uses image preview choices for icon, symbol and wordmark. Preview
+  loading tries only that style's URLs, omits unavailable styles and deduplicates
+  identical images. Previews populate the disk cache used by the actual logo.
+  Changing style updates the draft logo and backdrop immediately; saving also
+  refreshes already-visible logos. A style-only edit now counts as unsaved.
+- Subscription-list rows open the overview with a normal tap. Their long-press
+  context menu has been removed.
+
+The physical check selects Netflix's wordmark, returns to the price step, then
+switches to its icon and verifies selection again. Captures show both distinct
+images and their matching backdrops. It also checks calendar highlighting,
+sheet controls, currency navigation, amount/currency separation and notification
+section order, then discards the unsaved subscription.
+
+Validation on 16 September 2026:
+
+- iOS 18: the final full suite passed 18/18, including logo-style persistence,
+  cache reuse, CRUD, both languages and accessibility layouts. Result:
+  `test_sim_2026-09-16T11-09-18-590Z_pid3725_948e6c2d.xcresult`.
+- iOS 26.5: all ten UI checks passed. The full run passed 17/18; the new logo
+  notification test used an object-identity filter for a bridged string. Its
+  corrected value comparison passed in the final iOS 18 suite. Result:
+  `test_sim_2026-09-16T11-01-51-426Z_pid96036_ea95354f.xcresult`.
+- Repository type-check, test, boundary and diff checks passed.
+- Physical iPhone 17, iOS 27, Ukrainian: the final control check passed 1/1.
+  Captures confirm Live Activities directly below renewal reminders, diagnostics
+  last, and both distinct brand styles. Result:
+  `test_device_2026-09-16T11-11-37-392Z_pid5565_21442358.xcresult`.
+  Twelve captures and their manifest are in `Artifacts/visual/polish-device-complete`.
+- After removing the subscription-row context menu and setting version 6.0.0,
+  the final Production build installed and launched standalone on the iPhone
+  through XcodeBuildMCP (PID 7300). Both app and widget report 6.0.0 (1).

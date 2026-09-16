@@ -8,6 +8,7 @@ struct MainShell: View {
     @ObservedObject var inbox: NotificationInbox
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var tab = AppTab.home
     @State private var paths: [AppTab: [Route]] = [:]
     @State private var sheet: SheetRoute?
@@ -106,6 +107,9 @@ struct MainShell: View {
                 }
             }
             .navigationDestination(for: Route.self) { destination($0) }
+            // The surviving stack owns visibility so the bar animates during a pop, not after the picker disappears.
+            .toolbar(paths[tab]?.contains(.currency) == true ? .hidden : .visible, for: .tabBar)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: paths[tab]?.contains(.currency) == true)
         }
     }
     @ViewBuilder private func destination(_ route: Route) -> some View {
@@ -115,6 +119,11 @@ struct MainShell: View {
         case .cancellationDay(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet, planning: true)
         case .selection(let ids): DueView(day: nil, ids: ids, state: $state, services: services, sheet: $sheet)
         case .categories: CategoriesView(state: $state, services: services, sheet: $sheet)
+        case .currency:
+            CurrencyPicker(selection: $state.presentation.preferences.preferredCurrency) { currency in
+                var preferences = state.presentation.preferences; preferences.preferredCurrency = currency
+                try await services.repository.savePreferences(preferences); state.reload += 1
+            }
         case .notifications: NotificationsView(state: $state, services: services, sheet: $sheet)
         case .year(let year): YearView(year: year, state: $state, services: services)
         case .legal(let kind): LegalView(kind: kind)
@@ -155,19 +164,23 @@ private struct PromptView: View {
         NavigationStack {
             Form {
                 Text(L(prompt == .reminders ? "prompt_remindersBody" : "prompt_proBody"))
-                if prompt == .reminders {
-                    ActionButton(title: L("prompt_remindersConfirm")) {
-                        if try await services.notifications.authorize() {
-                            state.settings.reminders.renewals = true
-                            try await services.repository.setSetting("notifications.settings", value: state.settings.reminders)
-                            state.reload += 1
-                        }
-                        dismiss()
+            }.scrollContentBackground(.hidden).appScreen().navigationTitle(L(prompt == .reminders ? "prompt_remindersTitle" : "prompt_proTitle"))
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
+                    ToolbarItem(placement: .confirmationAction) {
+                        if prompt == .reminders {
+                            ActionButton(title: L("prompt_remindersConfirm"), iconOnly: true) {
+                                if try await services.notifications.authorize() {
+                                    state.settings.reminders.renewals = true
+                                    try await services.repository.setSetting("notifications.settings", value: state.settings.reminders)
+                                    state.reload += 1
+                                }
+                                dismiss()
+                            }
+                        } else { Button { paywall = true } label: { Label(L("prompt_proConfirm"), systemImage: "checkmark") }.labelStyle(.iconOnly) }
                     }
-                } else { Button(L("prompt_proConfirm")) { paywall = true } }
-                Button(L("prompt_notNow")) { dismiss() }
-            }.navigationTitle(L(prompt == .reminders ? "prompt_remindersTitle" : "prompt_proTitle")).navigationBarTitleDisplayMode(.inline)
-        }.presentationDetents([.medium, .large])
+                }
+        }.presentationDetents([.medium, .large]).appSheet()
             .sheet(isPresented: $paywall, onDismiss: { dismiss() }) { PaywallView(state: $state, services: services) }
     }
 }
