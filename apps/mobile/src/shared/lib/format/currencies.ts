@@ -123,7 +123,6 @@ export const CURRENCIES: Record<string, { name: string; symbol: string }> = {
   qar: { name: "Qatari Riyal", symbol: "QAR" },
   ron: { name: "Romanian Leu", symbol: "lei" },
   rsd: { name: "Serbian Dinar", symbol: "RSD" },
-  rub: { name: "Russian Ruble", symbol: "₽" },
   rwf: { name: "Rwandan Franc", symbol: "RF" },
   sar: { name: "Saudi Riyal", symbol: "SAR" },
   sbd: { name: "Solomon Islands Dollar", symbol: "$" },

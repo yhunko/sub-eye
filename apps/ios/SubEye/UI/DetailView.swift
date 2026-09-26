@@ -46,7 +46,6 @@ struct SubscriptionDetail: View {
                     .background(alignment: .top) {
                         BrandWash(domain: row.subscription.brandDomain, logos: services.logos)
                             .frame(height: max(0, heroBottom + geometry.safeAreaInsets.top))
-                            .clipShape(UnevenRoundedRectangleCompat(radius: 28))
                             .offset(y: -geometry.safeAreaInsets.top)
                     }
                     .appScreen().navigationTitle(typeSize.isAccessibilitySize ? L("native_subscriptionTitle") : "")
@@ -238,12 +237,6 @@ struct BrandWash: View {
     }
 }
 
-private struct UnevenRoundedRectangleCompat: Shape {
-    var radius: CGFloat
-    func path(in rect: CGRect) -> Path {
-        Path(UIBezierPath(roundedRect: rect, byRoundingCorners: [.bottomLeft, .bottomRight], cornerRadii: CGSize(width: radius, height: radius)).cgPath)
-    }
-}
 
 struct ConfirmAction: View {
     let title: String

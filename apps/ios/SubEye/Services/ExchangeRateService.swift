@@ -43,6 +43,6 @@ actor ExchangeRateService {
         guard let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let rates = raw["usd"] as? [String: Double], rates["usd"] == 1,
               rates.values.allSatisfy({ $0.isFinite && $0 > 0 }) else { return nil }
-        return ExchangeRates(rates: rates, rateDate: raw["date"] as? String ?? "")
+        return ExchangeRates(rates: rates.filter { $0.key != "rub" }, rateDate: raw["date"] as? String ?? "")
     }
 }

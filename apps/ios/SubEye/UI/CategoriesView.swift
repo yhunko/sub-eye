@@ -16,7 +16,7 @@ struct CategoriesView: View {
                 Button { sheet = state.settings.pro ? .category(category) : .paywall } label: {
                     HStack(spacing: 12) { Text(category.emoji).appFont(24); Text(category.name).appFont(16).foregroundStyle(AppTheme.text); Spacer(); Text(String(state.presentation.rows.filter { $0.category?.id == category.id }.count)).appFont(14).foregroundStyle(AppTheme.muted); Image(systemName: "chevron.right").appFont(13).foregroundStyle(AppTheme.muted) }.padding(16).appCard(radius: 18)
                 }.buttonStyle(.plain).listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16)).listRowBackground(Color.clear).listRowSeparator(.hidden)
-                    .swipeActions { if state.settings.pro { Button(L("native_delete"), role: .destructive) { deleting = category } } }
+                    .swipeActions { if state.settings.pro { Button(L("native_delete"), role: .destructive) { deleting = category }.tint(AppTheme.danger) } }
             }
         }.listStyle(.plain).scrollContentBackground(.hidden).appScreen().navigationTitle(L("settings_categories"))
             .searchable(text: $search, prompt: L("native_categorySearch"))
