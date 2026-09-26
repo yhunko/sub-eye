@@ -1,11 +1,9 @@
 import type { SubscriptionDto } from "@subeye/model";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useCallback, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   SectionList,
   StyleSheet,
   Text,
@@ -13,6 +11,7 @@ import {
 } from "react-native";
 import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 import { categoriesQuery } from "@/entities/category";
+import { useDashboard } from "@/entities/dashboard";
 import { usePro } from "@/entities/pro";
 import {
   ALL_KEY,
@@ -30,7 +29,9 @@ import {
   useSubscriptionFilters,
 } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { colors } from "@/shared/ui/theme";
+import { ListTotals } from "./list-totals";
 import { SectionHeading } from "./section-heading";
 import { SubscriptionRow } from "./subscription-row";
 
@@ -94,6 +95,8 @@ export function SubscriptionsPage() {
   // Only fetched for the menu's category submenu; the list itself carries the
   // category on every row.
   const categories = useQuery(categoriesQuery());
+  // Already in the cache — Home mounts this query on the tab the app opens on.
+  const { data: dashboard } = useDashboard();
 
   // ONE set of lifecycle mutations for the whole screen. Every visible row's
   // swipe actions are built from this — a hook per row would mean five TanStack
@@ -339,31 +342,25 @@ export function SubscriptionsPage() {
             },
           ],
           headerLeft: () => (
-            <Pressable
+            <HeaderButton
+              ios="plus"
+              android="add"
+              label={m.subs_add()}
               onPress={openForm}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.subs_add()}
-            >
-              <Text style={styles.add}>+</Text>
-            </Pressable>
+              tintColor={colors.accent}
+            />
           ),
           // Android has no bar-button menus; the sheet route is the fallback and
           // carries the same four dimensions as rows.
           headerRight: () => (
-            <Pressable
+            <HeaderButton
+              ios="ellipsis.circle"
+              android="more_vert"
+              label={m.subs_listOptions()}
               onPress={() => router.push("/subscriptions/filters")}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.subs_listOptions()}
-              accessibilityState={{ selected: narrowed }}
-            >
-              <SymbolView
-                name={{ ios: "ellipsis.circle", android: "more_vert" }}
-                size={22}
-                tintColor={narrowed ? colors.accent : colors.text}
-              />
-            </Pressable>
+              tintColor={narrowed ? colors.accent : colors.text}
+              selected={narrowed}
+            />
           ),
         }}
       />
@@ -392,6 +389,20 @@ export function SubscriptionsPage() {
         // than the screen is scrollable into blank space, which is what a
         // `flexGrow: 1` here did to a full list.
         contentContainerStyle={[styles.list, !sections.length && styles.grow]}
+        // Hidden the moment the list is narrowed, and only then. These figures
+        // are the whole account's, so printing them over a filtered list would
+        // put a total on screen that no longer describes the rows under it —
+        // and re-deriving them from the visible rows would be a second answer to
+        // a question the dashboard already answers everywhere else.
+        ListHeaderComponent={
+          dashboard && !narrowed && sections.length ? (
+            <ListTotals
+              currency={dashboard.preferredCurrencyCode}
+              monthly={dashboard.monthlyBurnRate}
+              yearly={dashboard.yearlyForecast}
+            />
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             {list.isLoading ? (
@@ -436,10 +447,4 @@ const styles = StyleSheet.create({
   },
   // Android only — iOS draws a real `plus` bar button item. A glyph, not an icon
   // dependency: "+" is the one affordance that needs no legend.
-  add: {
-    fontSize: 28,
-    lineHeight: 30,
-    fontWeight: "300",
-    color: colors.accent,
-  },
 });

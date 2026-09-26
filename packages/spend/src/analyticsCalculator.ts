@@ -377,6 +377,7 @@ export class AnalyticsCalculator {
       const yearlyCost = sub.billing.preferred.monthly * 12;
       if (!best || yearlyCost > best.yearlyAmount) {
         best = {
+          id: sub.id,
           name: sub.name,
           yearlyAmount: yearlyCost,
           brandDomain: sub.brandDomain,

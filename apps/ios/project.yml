@@ -1,0 +1,173 @@
+name: SubEye
+options:
+  bundleIdPrefix: cc.subeye
+  deploymentTarget:
+    iOS: '16.4'
+  developmentLanguage: en
+  knownRegions: [en, uk, Base]
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+  Production: release
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: '16.4'
+    DEVELOPMENT_TEAM: Z6KADG969Z
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: 6.0.0
+    CURRENT_PROJECT_VERSION: 1
+    TARGETED_DEVICE_FAMILY: 1
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG NATIVE_DEVELOPMENT
+      SWIFT_OPTIMIZATION_LEVEL: '-Onone'
+      SUBEYE_BUNDLE_ID: cc.subeye.app.native
+      SUBEYE_SCHEME: subeyenative
+      SUBEYE_NAME: SubEye Native
+      SUBEYE_NAMESPACE: native-development
+      SUBEYE_WIDGET_KEY: snapshot.native-development
+    Release:
+      ENABLE_TESTABILITY: YES
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: NATIVE_DEVELOPMENT
+      SWIFT_OPTIMIZATION_LEVEL: '-O'
+      SUBEYE_BUNDLE_ID: cc.subeye.app.native
+      SUBEYE_SCHEME: subeyenative
+      SUBEYE_NAME: SubEye Native
+      SUBEYE_NAMESPACE: native-development
+      SUBEYE_WIDGET_KEY: snapshot.native-development
+    Production:
+      SWIFT_OPTIMIZATION_LEVEL: '-O'
+      SUBEYE_BUNDLE_ID: cc.subeye.app
+      SUBEYE_SCHEME: subeye
+      SUBEYE_NAME: SubEye
+      SUBEYE_NAMESPACE: native
+      SUBEYE_WIDGET_KEY: snapshot
+packages:
+  SubEyeCore:
+    path: SubEyeCore
+  MMKV:
+    url: https://github.com/Tencent/MMKV.git
+    exactVersion: 2.4.2
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios.git
+    exactVersion: 5.89.0
+targets:
+  SubEye:
+    type: application
+    platform: iOS
+    sources:
+      - path: SubEye
+      - path: Shared
+      - path: ../mobile/icon.icon
+        buildPhase: resources
+    configFiles:
+      Debug: Config/Build.xcconfig
+      Release: Config/Build.xcconfig
+      Production: Config/Build.xcconfig
+    dependencies:
+      - package: SubEyeCore
+      - package: MMKV
+      - package: RevenueCat
+      - target: SubEyeWidget
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(SUBEYE_BUNDLE_ID)
+        ASSETCATALOG_COMPILER_APPICON_NAME: icon
+        CODE_SIGN_ENTITLEMENTS: Config/App.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Config/App-Info.plist
+        PRODUCT_NAME: SubEye
+  SubEyeWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: '18.0'
+    sources:
+      - path: SubEyeWidget
+      - path: Shared
+    dependencies:
+      - package: SubEyeCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(SUBEYE_BUNDLE_ID).widget
+        CODE_SIGN_ENTITLEMENTS: Config/Widget.entitlements
+        INFOPLIST_FILE: Config/Widget-Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+        IPHONEOS_DEPLOYMENT_TARGET: '18.0'
+        SKIP_INSTALL: YES
+  SubEyeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [SubEyeTests]
+    dependencies:
+      - target: SubEye
+      - package: SubEyeCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cc.subeye.native.tests
+        GENERATE_INFOPLIST_FILE: YES
+  SubEyeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [SubEyeUITests]
+    dependencies:
+      - target: SubEye
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cc.subeye.native.uitests
+        GENERATE_INFOPLIST_FILE: YES
+  SubEyePerformanceTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [SubEyePerformanceTests]
+    dependencies:
+      - target: SubEye
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cc.subeye.native.performance
+        GENERATE_INFOPLIST_FILE: YES
+  SubEyeDeviceTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [SubEyeDeviceTests]
+    dependencies:
+      - target: SubEye
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cc.subeye.native.devicetests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  SubEye:
+    build:
+      targets:
+        SubEye: all
+        SubEyeWidget: all
+    run:
+      config: Debug
+    test:
+      config: Release
+      targets: [SubEyeTests, SubEyeUITests]
+    profile:
+      config: Release
+    archive:
+      config: Production
+  SubEyePerformance:
+    build:
+      targets:
+        SubEye: all
+    test:
+      config: Release
+      targets: [SubEyePerformanceTests]
+  SubEyeDevice:
+    build:
+      targets:
+        SubEye: all
+    test:
+      config: Production
+      targets: [SubEyeDeviceTests]

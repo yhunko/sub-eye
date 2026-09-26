@@ -1,0 +1,98 @@
+{
+  "v": 1,
+  "preferences": {
+    "preferredCurrency": "uah",
+    "preferredTimezone": "Europe/Kyiv",
+    "dateFormat": "dd-MM-yyyy",
+    "locale": "uk",
+    "theme": "dark"
+  },
+  "categories": [
+    {
+      "id": "z-media",
+      "name": "Розваги",
+      "emoji": "🎬",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "a-work",
+      "name": "Робота",
+      "emoji": "💼",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "z-trial",
+      "name": "Музика 🎵",
+      "cost": "0.00",
+      "currency": "uah",
+      "every": 1,
+      "period": "month",
+      "status": "active",
+      "autoPaid": true,
+      "categoryId": "z-media",
+      "brandDomain": "spotify.com",
+      "paymentDate": "2026-01-31T00:00:00.000Z",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-09-01T10:00:00.000Z"
+    },
+    {
+      "id": "a-cancelling",
+      "name": "Adobe Creative Cloud",
+      "cost": "59.99",
+      "currency": "usd",
+      "every": 1,
+      "period": "month",
+      "status": "cancelling",
+      "autoPaid": true,
+      "categoryId": "a-work",
+      "willBeCancelledAt": "2026-10-15T00:00:00.000Z",
+      "paymentDate": "2024-02-15T00:00:00.000Z",
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "updatedAt": "2026-09-01T10:00:00.000Z"
+    },
+    {
+      "id": "m-paused",
+      "name": "Тривала перерва",
+      "cost": "120.00",
+      "currency": "eur",
+      "every": 1,
+      "period": "year",
+      "status": "paused",
+      "autoPaid": false,
+      "notes": "Поновити після поїздки",
+      "pausedAt": "2026-09-01T12:00:00.000Z",
+      "resumeAt": "2027-01-01T00:00:00.000Z",
+      "paymentDate": "2024-02-29T00:00:00.000Z",
+      "createdAt": "2024-02-29T00:00:00.000Z",
+      "updatedAt": "2026-09-01T12:00:00.000Z"
+    }
+  ],
+  "phases": [
+    {
+      "id": "z-promo",
+      "subscriptionId": "z-trial",
+      "kind": "trial",
+      "cost": "0.00",
+      "currency": "uah",
+      "startsAt": "2026-09-01T00:00:00.000Z",
+      "endsAt": "2026-09-30T00:00:00.000Z",
+      "appliedAt": "2026-09-01T10:00:00.000Z",
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "updatedAt": "2026-09-01T10:00:00.000Z"
+    },
+    {
+      "id": "a-standard",
+      "subscriptionId": "z-trial",
+      "kind": "standard",
+      "cost": "199.99",
+      "currency": "uah",
+      "startsAt": "2026-09-30T00:00:00.000Z",
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "updatedAt": "2026-09-01T10:00:00.000Z"
+    }
+  ]
+}

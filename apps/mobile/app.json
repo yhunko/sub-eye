@@ -3,7 +3,7 @@
     "name": "SubEye",
     "slug": "sub-eye",
     "scheme": "subeye",
-    "version": "5.2.0",
+    "version": "5.3.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -73,12 +73,9 @@
         "backgroundColor": "#0f1115"
       }
     },
-    "locales": {
-      "en": "./locales/en.json",
-      "uk": "./locales/uk.json"
-    },
     "plugins": [
       "expo-router",
+      "./plugins/with-ios-scene-lifecycle",
       [
         "expo-localization",
         {

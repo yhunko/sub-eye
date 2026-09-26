@@ -2,13 +2,15 @@
 
 `apps/mobile` (`@subeye/mobile`) is the **v4 SubEye client**: an Expo (React Native, expo-router) app that runs entirely on the device — no API, no database, no accounts. It replaces the retired React/Vite web client. Read this before touching mobile code.
 
-**Eleven shipped screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
+**Twelve shipped screens. Every addition requires an explicit argument.** The v3 client reached 33,991 hand-written LOC because features were fun to build, not because they were needed. Do not reproduce that here.
 
 The three beyond the original seven, and why: **`settings/notifications`**, because reminder config outgrew a single switch the moment it had a time, several lead times and a health readout — and a status section is the only way a user can tell a silent OS refusal from an app bug. **`subscriptions/due/[date]`**, because a digest notification that names three services has to be able to show exactly those three — and the list cannot do it, because its filters now PERSIST across launches, so whatever the user last narrowed to would silently hide some of them. **`legal/[doc]`**, because Settings and the paywall used to hand the terms and the privacy policy to Safari — an app with no network on its read path sending a user to a website to read what it does with their data, and a reviewer following that link out of the build they are reviewing. One route serves both documents from `@subeye/legal`, so it is one screen rather than two.
 
 The eleventh is the **currency picker**, and it is one screen doing two jobs — Settings → Currency *and* the price field's currency, wired by each stack's own route the way `categories-page` is. It exists because the catalogue went from five hard-coded codes to the whole ISO-4217 fiat set (156), and an `ActionSheetIOS` stops being a list somewhere around a dozen rows: no search, no grouping, no flags. Adding currencies without it would have been the regression.
 
-The twelfth route, **`settings/developer`**, is not one of them and never counts against that number: it renders nothing in a release build. See the dev-route rule under Routing before adding to it.
+The twelfth is **`calendar/year`**, and it is the only screen in the app that is Pro OUTRIGHT rather than a Pro row inside a free one. That is the whole argument for it: the calendar tab used to truncate its own agenda behind a lock, and the lock withheld nothing — the grid above it already printed each day's logos and total, and the agenda listed every one of them for a free install. A gate a user routes around in one tap does not convert, it teaches them the locks are theatre. So the month screen gives everything away and Pro is additive instead: the year heatmap here, plus the month-over-month delta and the heavy-day flag on the month itself. It is also the one thing the month pager genuinely cannot do — twelve months at a time, off ONE walk over the year (`buildCalendarYear`), where twelve `buildCalendarMonth` calls would re-read and re-parse the subscription list twelve times.
+
+The thirteenth route, **`settings/developer`**, is not one of them and never counts against that number: it renders nothing in a release build. See the dev-route rule under Routing before adding to it.
 
 ## Layers & structure
 
@@ -57,7 +59,7 @@ apps/mobile/src/
 - **Every layout a deep link can land inside needs an `unstable_settings` anchor.** A deep link builds the stack from the URL alone, so a route mounted with nothing under it has no back button and no way out — `subeye:///subscriptions/x` (a widget row, a tapped reminder) was a dead end until the app was force-quit. The root layout anchors `(tabs)`, which is what puts the tab tree under a deep-linked subscription; `(tabs)/subscriptions/_layout.tsx` anchors `index`, which puts the list under a deep-linked due digest. Adding a new deep-linked route means checking the anchor of every layout above it.
 - **Sheets are native `formSheet` routes**, the only sheet mechanism in the app: Manage-pricing, Pause, the category editor, the legal sheet, and the list-options sheet that is now **Android's fallback only**. All of them spread `nativeSheetChrome` from `@/shared/ui/header` — `presentation: "formSheet"`, `sheetGrabberVisible: true` and a FIXED 0.9 detent, because a `flex: 1` scroller has no intrinsic height and `fitToContents` can measure it to nothing. Only a sheet that cannot overflow (the pause date field) overrides the detent. There is **no NiceModal / modal-manager equivalent** — the navigator owns presentation.
 - **A sheet is the fallback, not the first answer.** Where UIKit has a control, use the control: the subscriptions list puts sort / group / status / category behind a real **UIMenu** via `unstable_headerLeftItems` / `unstable_headerRightItems` (expo-router's wrapper over `headerLeftBarButtonItems`), and the detail screen does the same for its lifecycle actions. Items take **`label`, not `title`** — expo-router renames the RNScreens field — and submenus are **single-selection by default** (`multiselectable` is false unless set), so UIKit draws the checkmark itself from each action's `state: "on" | "off"`. Set **`multiselectable: true` on the outer `menu`** whenever its children are all submenus: the default sends `UIMenuOptionsSingleSelection` to a menu that owns no selectable actions, which is what the missing checkmarks were traced to. UIKit gives a submenu **no subtitle, no value slot and no per-item tint**, so a submenu announces itself two ways and only when it is off its default: the **filled variant of its own SF Symbol**, and the chosen value appended to the label (`"Status · Paused"`). A submenu at rest stays a plain glyph and a bare noun — spelling out every default made the top level four sentences long, and the defaults are the longest strings in their own lists. A submenu has **no `disabled`** field, so an empty submenu has to be omitted from the array rather than greyed out. expo-router only swaps native items in **on iOS**, so a screen that uses them keeps its `headerLeft`/`headerRight` Pressables as the Android path — and anything added to the menu must be added to Android's sheet too, or the feature silently does not exist there.
-- **Add/Edit is the exception: a `presentation: "modal"` route that owns its own `Stack`** (`app/subscription-form/`). It lives at the **root**, beside `paywall`, and not under `(tabs)/subscriptions` — four surfaces open it (Home's `+`, the list's `+`, Home's empty state, the detail screen's Edit) and two of them are in a different tab from the list. Nested under the list's stack it was a cross-tab push: expo-router switched tabs and presented the modal in one commit, so the tab visibly changed underneath and the slide-up animation was swallowed by the switch. **Any route reachable from more than one tab belongs at the root for the same reason** — which is also where a subscription's own screen and its three sheets live (`app/subscriptions/[id]/`), reached from Home's rail, the list, the due digest, a widget row and a reminder. It was a formSheet pinned at a 0.9 detent — a modal's footprint without a modal's navigation — which forced the category picker into an ActionSheet with no search and no create. A sheet cannot push a sub-screen without stacking a second sheet on itself. Anything that outgrows an action sheet becomes a pushed screen in that nested stack; the form's draft lives in a React **context** on its layout (`widgets/subscription-form/model/form-context.tsx`), NOT a module store — a half-typed subscription must die with the modal.
+- **Add/Edit is the exception: a `presentation: "modal"` route that owns its own `Stack`** (`app/subscription-form/`). It lives at the **root**, beside `paywall`, and not under `(tabs)/subscriptions` — four surfaces open it (Home's `+`, the list's `+`, Home's empty state, the detail screen's Edit) and two of them are in a different tab from the list. Nested under the list's stack it was a cross-tab push: expo-router switched tabs and presented the modal in one commit, so the tab visibly changed underneath and the slide-up animation was swallowed by the switch. **Any route reachable from more than one tab belongs at the root for the same reason** — which is also where a subscription's own screen and its three sheets live (`app/subscriptions/[id]/`), reached from the list, the calendar, the due digest, a widget row and a reminder. It was a formSheet pinned at a 0.9 detent — a modal's footprint without a modal's navigation — which forced the category picker into an ActionSheet with no search and no create. A sheet cannot push a sub-screen without stacking a second sheet on itself. Anything that outgrows an action sheet becomes a pushed screen in that nested stack; the form's draft lives in a React **context** on its layout (`widgets/subscription-form/model/form-context.tsx`), NOT a module store — a half-typed subscription must die with the modal.
 - **The categories list is ONE screen doing two jobs**, and adding a second one is the mistake it was built to undo. `widgets/categories-page` is Settings → Categories *and* the subscription form's category step: without a `pick` prop a row opens the editor and swipes to delete; with one a row selects and pops, and a leading "None" row appears. Both create through the same `CategorySheet`, whose optional `onCreated` is what lets the form apply the new category and drop back to the form instead of to the list. The two live in different stacks, so **the app layer wires them** (`app/subscription-form/category/index.tsx`) — a widget importing a sibling widget is the one edge FSD has no room for, and the form's draft context is something only a route inside that layout can read. The return is **`router.dismiss(2)`, never `dismissAll()`**: the picker is pushed from the edit form AND from step two of the create flow, so the stack beneath it is not always one deep.
 - **Screen chrome that depends on nothing the screen holds belongs on the LAYOUT** — titles, the categories `+` (`categoryAddHeaderOptions`), and every search field. Options declared inside a screen component go through `navigation.setOptions` in an effect that re-runs on every render, rebuilding the whole navigation item; for a search field that is one `UISearchController` rebuild per keystroke. That is why the category picker's query lives in a module store (`categorySearch`) read with `useSyncExternalStore` rather than in the page's `useState`, and why it clears on unmount — the native field comes back empty, so a surviving term would filter the list with nothing on screen to explain it.
 - **Search fields spread `nativeSearchBarChrome`** from `@/shared/ui/header` into `headerSearchBarOptions` — four screens carry one (the list, the category picker, the brand picker, the currency picker) and all four need the same settings. `placement: "stacked"` + `hideWhenScrolling: false` is a real `UISearchBar` pinned under the nav bar, glass header and all. Not `placement: "automatic"`: UIKit picks a field that retracts on the first scroll, so on a list long enough to want searching the control is gone exactly when it is wanted. If it ever appears not to render, suspect a stale Fast Refresh before concluding the platform cannot do it: a full relaunch was the difference here, and a hand-rolled `TextInput` lookalike was very nearly shipped over it.
@@ -81,14 +83,16 @@ apps/mobile/src/
 
 ## Native tabs & headers
 
-- **Tab bar:** `<NativeTabs minimizeBehavior="onScrollDown">` from `expo-router/unstable-native-tabs` — Liquid Glass on iOS 26, Material 3 on Android. Three triggers: `(home)`, `subscriptions`, `settings`.
+- **iOS uses the scene-based lifecycle.** `plugins/with-ios-scene-lifecycle.js` adds the `UIApplicationSceneManifest`, makes the generated `AppDelegate` conform to `ExpoReactNativeFactoryProvider`, and leaves window creation to Expo's `EXExpoAppSceneDelegate`. Apple makes this mandatory for apps linked with the iOS 27 SDK. The native `ios/` directory is generated and ignored, so this belongs in the config plugin; never patch `AppDelegate.swift` or `Info.plist` by hand.
+- **Tab bar:** `<NativeTabs minimizeBehavior="never">` from `expo-router/unstable-native-tabs` — Liquid Glass on iOS 26+, Material 3 on Android. Four triggers: `(home)`, `subscriptions`, `calendar`, `settings`. Keep the native host pinned to the app's dark color scheme and explicit tab colors. Do not restore scroll minimization: on iOS 27 the expanded floating state can remain over list content after navigation transitions.
 - **ALPHA CONSTRAINT:** triggers must be **static**. Do not map an array into `<NativeTabs.Trigger>`, do not conditionally render one, do not compute `name`. Icons use two platform props — `sf` (iOS SF Symbol name) and `md` (Android Material Symbols name); there is no cross-platform icon component.
 - **Tabs need a nested `Stack` per tab to get a header.** `NativeTabs` children are bare screens with no navigator, so `<Stack.Screen options>` is inert on them. Each tab is a folder with `_layout.tsx` (a `Stack` carrying `nativeHeaderChrome`) plus `index.tsx`.
-- **Header chrome comes from `@/shared/ui/header`** (`nativeHeaderChrome`), spread into every headered screen. iOS gets `headerTransparent: true` + `scrollEdgeEffects: { top: "soft" }`; **Android gets an OPAQUE bar** — glass is iOS-only there, and a transparent header leaves scroll content stacked *under* the bar because `scrollEdgeEffects` and `contentInsetAdjustmentBehavior` are both iOS no-ops.
-- **Never** set `headerStyle.backgroundColor` or `headerBlurEffect` on iOS: a solid background kills the glass, and `headerBlurEffect` paints a permanent gray band over the near-black app while overlapping `scrollEdgeEffects`.
+- **Header chrome comes from `@/shared/ui/header`** (`nativeHeaderChrome`), spread into every headered screen. It is a THREE-way branch, not two. **iOS 26** gets `headerTransparent: true` + `scrollEdgeEffects: { top: "soft" }`. **Android gets an OPAQUE bar** — glass is iOS-only there, and a transparent header leaves scroll content stacked *under* the bar because `scrollEdgeEffects` and `contentInsetAdjustmentBehavior` are both iOS no-ops.
+- **iOS BEFORE 26 gets `headerBlurEffect: "systemChromeMaterialDark"`, and that is not optional.** `scrollEdgeEffects` is an iOS 26 API that older versions ignore in silence, so `headerTransparent` alone leaves the bar a hole: nothing fades what passes under it and rows scroll through the title and the status bar at full opacity. The deployment target is **16.4**, so this is every phone that never got 26 — the iPhone 13 mini among them, which is where it was reported. Verify it on an **iOS 18 simulator**; the iOS 26 one cannot show the bug, and Fast Refresh will not show the fix (blur, like `scrollEdgeEffects`, is sticky — cold-launch to judge either).
+- **Never** set `headerStyle.backgroundColor` or `headerBlurEffect` on iOS **26**: a solid background kills the glass, and `headerBlurEffect` paints a permanent gray band over the near-black app while overlapping `scrollEdgeEffects`. That rule is about the glass, so it stops applying exactly where the glass does.
 - **Every scroll view under a header** sets `contentInsetAdjustmentBehavior="automatic"` and keeps `contentContainerStyle.paddingBottom` small (~24) — the automatic inset already clears the floating tab bar. Do not swap it for a manual `useSafeAreaInsets` padding.
-- **`scrollEdgeEffects` only blurs content passing under HEADER ITEMS.** Home shipped `headerShown: false` and therefore had nothing behind its status bar — cards slid up into bare pixels. It has a header again, and the two things in it are the argument for it: the **current month**, which every figure on the screen is scoped to and which the hero never names, and the **same `+` bar button the subscriptions list carries**. A header repeating the tab's own word is still not worth the fold.
-- **A nested horizontal ScrollView sets `automaticallyAdjustContentInsets={false}`** (Home's upcoming rail). Without it the inner scroller inherits the outer one's automatic inset and starts pushed in by the status-bar height.
+- **`scrollEdgeEffects` only blurs content passing under HEADER ITEMS.** Home shipped `headerShown: false` and therefore had nothing behind its status bar — cards slid up into bare pixels. It has a header again, and the two things in it are the argument for it: the **current month**, which every figure on the screen is scoped to and which the hero never names, and the **same `+` bar button the subscriptions list carries**, on the trailing side. A header repeating the tab's own word is still not worth the fold. The month is `headerLargeTitle`, which is what makes it the page's own heading rather than a caption — UIKit draws it large and flush left and collapses it on the first scroll, so nothing here animates a hero title by hand. It needs the page's scroll view to keep `contentInsetAdjustmentBehavior="automatic"`; the loading, error and first-run branches have no scroll view and simply keep the title expanded, which is correct — there is nothing to scroll.
+- **A nested horizontal ScrollView sets `automaticallyAdjustContentInsets={false}`** (Home's month strip). Without it the inner scroller inherits the outer one's automatic inset and starts pushed in by the status-bar height.
 
 ## Data
 
@@ -309,7 +313,7 @@ Android app widget is RemoteViews/Glance and shares none of this code.
 - Strategy is `--strategy globalVariable baseLocale` — **space-separated, two arguments**. A comma-joined `globalVariable,baseLocale` compiles to one malformed strategy and makes `getLocale()` throw at runtime.
 - **NEVER call `m.someKey()` at module scope.** Module-level tables hold the message-function *reference* (`label: m.foo`) and invoke it at render time; otherwise the string freezes in whichever locale was active at import.
 - Locale is resolved **once at bootstrap** (`shared/i18n/index.ts` → `expo-localization` `getLocales()` → first of en/uk → else **en**) and re-synced by `useAppLocale()` in the root layout, which re-keys the `Stack`. Language switching is **OS-native only** (per-app language in iOS Settings / Android 13+) — no in-app locale state, no MMKV override.
-- Native OS copy (app display name, permission prompts) lives in `apps/mobile/locales/{locale}.json` via `expo.locales`. Editing it needs a **rebuilt dev client**, not a Metro reload.
+- **There is no `expo.locales` map, and re-adding one needs platform scoping.** Every *top-level* key of a locale JSON is written to both `{locale}.lproj/InfoPlist.strings` and Android's `values-b+{locale}/strings.xml` — so an iOS-only key such as `CFBundleDisplayName` becomes an Android translation with no entry in the default `values/strings.xml`, and `lintVitalRelease` fails the release build on `ExtraTranslation`. Nest per platform (`{"ios": {…}, "android": {…}}`) instead. The map held only `CFBundleDisplayName: "SubEye"`, which duplicates `expo.name` and silently **overrode** the suffixed name `app.config.js` builds for `SUBEYE_BUNDLE_SUFFIX`, so it was deleted. `CFBundleLocalizations`, `locales_config.xml` and `resourceConfigurations` come from the `expo-localization` plugin's `supportedLocales` and never came from here. Native OS copy still needs a **rebuilt dev client**, not a Metro reload.
 - New keys are `prefix_camelCase` and must be added to **both** catalogs.
 - **Every `Intl` date format takes `dateLocale()`** from `shared/i18n` — never a hardcoded tag and never the account's `preferences.locale`, which this client cannot write and which printed English months under a Ukrainian UI. It returns the *device's* full tag (day-first vs month-first is regional, not linguistic) but only while that tag still speaks the app's language. A test stub for `@/shared/i18n` must include it: the format barrel reaches `when`, which asks for it at import time, and a missing export is an import-time crash in an unrelated test file.
 
@@ -328,13 +332,80 @@ silent:
   Same choice the reminder planner makes for its firing instants: "has this day
   arrived" is a wall-clock question. The server answers the same question in the
   account's zone for the lifecycle `status` it ships, and the two can differ by a
-  day — but never contradictorily, because `deriveAttention` branches on the
-  server's `status` before it consults its own clock. `useSeedPreferredTimezone`
-  is what stops that gap opening for a new account.
+  day — but never contradictorily, because every surface that dates an event
+  branches on the record's own `status` before it consults a clock:
+  `buildCalendarMonth` drops a cancelled subscription outright, and
+  `subscriptionsDueOn` and the reminder planner both test
+  `isCurrentlyActiveSubscription` first.
 
 ## UI
 
 RN `StyleSheet` only — no Tailwind, no shadcn, no Radix, no styled-components. Tokens come from `@/shared/ui/theme`; the app is **dark-only** (`app.json` pins `userInterfaceStyle: "dark"`).
+
+**Forms are grouped rows, sheets are labelled boxes.** `shared/ui/field.tsx`
+carries both shapes and the doc comment at its top says which is which:
+`FormSection`/`FormRow`/`TextRow`/`ValueRow` put the label LEFT and the control
+right inside `list-row`'s inset-grouped card — that is the subscription form,
+where a dozen short answers each in a full-width box made a four-digit price as
+wide as the screen. `Field` keeps the label ABOVE a full-width control, which is
+the shape for pause, renew and manage-pricing: one or two questions with a
+sentence of context, and a sentence needs the width.
+
+**`@expo/ui/swift-ui` is available and already compiled in.** `expo-router`
+depends on it, so `ExpoUI` is in `ios/Podfile.lock` and using it costs no
+rebuild — that is what the cadence control (a real `UIMenu` with
+`Picker(.inline)` inside it for the checkmarks) and the custom-cadence wheels
+(`Picker(.wheel)` — real `UIPickerView`s) are built from. Reach for it before hand-rolling a control
+out of `ScrollView` and `snapToInterval`, which is what those two replaced.
+
+**A `Host` HAS NO SIZE OF ITS OWN, so never size one to its own content.** It
+either measures that content and reports the size back through shadow-node state
+— a ROUND TRIP — or it takes a frame from Yoga, and only the second is safe.
+Measured, a longer value drew clipped until the trip landed and then popped into
+place (measuring the height alone did not help — a stale frame clips both ways);
+given a frame guessed from a font size, a guess one point short clips forever.
+The cadence label lost three revisions to that.
+
+**The frame must come from the ROW, not from the value.** That is the part those
+revisions missed — not hosting the text, but sizing the host to it.
+`widgets/subscription-form/ui/cadence-picker.ios.tsx` takes `FormRow`'s own
+control slot for width (free space every control in the card already gets, and
+wider than any cadence in any locale, so a longer value grows leftwards into
+slack) and a `fontScale` FLOOR for height, because `rowControl` is sized BY its
+children and asking to stretch inside it is circular. A floor cannot clip. The
+wheels take a frame the same way.
+
+**Given a real frame, the control draws its own text — and the split does not
+work.** Anchoring the menu to a transparent `Rectangle` laid OVER an RN label
+broke on iOS 26 for a reason no styling reaches: the system MORPHS a menu out of
+its anchor and contracts it back on dismiss, so the glass played across text
+that never took part in it. The value changed, then a ghost wobbled over it.
+`buttonStyle` does not touch that; it is the presentation, not the chrome.
+
+**A hosted select builds its own label — `Picker(.menu)` will not reach the
+value column.** The `.menu` style is the shorter spelling and it morphs
+correctly, but it holds its value ~13pt in from its trailing edge and `@expo/ui`
+exposes no `menuIndicator` or `contentMargins` to take it back, so it was the
+one control in the card that could not sit where every other value sits. A
+`Menu` with a hand-built `HStack` label owns that edge instead. **THE NEXT
+SELECT COPIES THIS, INCLUDING THE TYPE**: `buttonStyle("plain")` so no chrome
+insets the label, `frame` with the row's slot and `alignment` flipped to
+`leading` under `useLargeText`, `font({ size: 16 * fontScale })` because a
+SwiftUI `textStyle` only offers Apple's sizes and `body` is 17 — a point off
+every label in the card — and the same 12pt semibold `chevron.up.chevron.down`
+in `colors.muted` that the currency chip wears. Values are `colors.text`, never
+the accent: a row that CHANGES a value where it stands reads as primary, and
+`colors.muted` is for a detail you are only being shown.
+
+**Its components call `requireNativeView` at MODULE SCOPE**, so importing one on
+Android throws before a `Platform.OS` branch could run. That is why
+`widgets/subscription-form/ui/cadence-picker.ios.tsx` exists beside
+`cadence-picker.tsx` — Metro drops a `.ios.tsx` from the Android bundle, which a
+runtime branch cannot. It is the **only** platform-suffixed pair in the app, and
+the cost is that TypeScript resolves the import to the unsuffixed file: the iOS
+one is checked only against itself, so the two signatures drift silently. Prefer
+a runtime `Platform.OS` branch (`native-date-field.tsx`, `step-chrome.tsx`,
+`subscription-form-page.tsx`) unless the import itself is what breaks.
 
 **Never cap text.** `maxFontSizeMultiplier` is what fails Apple's Larger Text
 criterion, and the Accessibility Nutrition Label claims it — Dynamic Type runs to
@@ -363,7 +434,19 @@ the text:
 Verify with `xcrun simctl ui <udid> content_size accessibility-extra-extra-extra-large`
 rather than by tapping through Settings.
 
-**Colour means one thing at a time.** `accent` green is brand and interaction, never "money is good" — the sole exception is Home's next-month chip, where it marks a *direction* of change. `danger`/`warning`/`muted` on Home's upcoming rail encode **when** (≤1 day / ≤7 rolling days / later), never what kind of event it is; the kind is carried by an SF Symbol. The one event that opts out is `ends`, which is always green because a cancellation takes money off the bill. Read the comments on the tokens before reusing one.
+**Home's "Needs a decision" cap cuts BETWEEN days and never inside one.**
+`widgets/home-page/model/decisions.ts` fills to three rows and then stops taking
+NEW days; a day it has started is always shown whole, so five trials converting
+tomorrow are five rows. A plain `.slice(0, 3)` is the obvious simplification and
+it is the one thing this card must not do — three of five shown is a user who
+cancels three and is charged for the two the card chose not to mention. When
+anything is left over the card says so and routes to the calendar, which draws
+all six kinds; a silent truncation on the screen whose promise is "nothing
+surprises you" is worse than no card. The band carries the four kinds where
+opening the app still changes the outcome — `payment` belongs to the strip
+above it, and `ends` is a decision the user already made.
+
+**Colour means one thing at a time.** `accent` green is brand and interaction, never "money is good" — the sole exception is Home's next-month delta, where it marks a *direction* of change. `danger`/`warning`/`muted` on the calendar's agenda rows encode **when** (≤1 day / ≤7 rolling days / later), never what kind of event it is; the kind is carried by an SF Symbol. The one event that opts out is `ends`, which is always green because a cancellation takes money off the bill. Read the comments on the tokens before reusing one.
 
 **`cancelling` is a kind of ACTIVE, not a kind of cancelled.** It still bills
 and still gives access until `willBeCancelledAt`, so the list's "active" filter
@@ -427,10 +510,54 @@ show through and the negative margin would only hide the top of the banner.
 `@react-navigation/elements` is not in this tree — there is no `useHeaderHeight`
 to ask.
 
-**The banner owns the DATE, the card below owns the COUNTDOWN.** Both used to
-print the same date. The banner's line is already worded for the status
-(`detail_heroRenews` / `heroEnds` / `heroResumes` / `heroEnded`), so the card
-keeps only what the banner cannot say: how long, and how far through the cycle.
+**The detail nav bar holds ONE trailing item and no title.** Edit had a
+prominent bar button of its own; it now leads the ellipsis menu instead, because
+the banner's identity is centred under that bar and a second glass capsule
+pushed it off centre — for an action a menu can carry as its first row. The
+title is `headerTitle: ""` on BOTH the page's own `<Stack.Screen>` and the root
+layout's registration: the page's options sit after its loading and error
+returns, so those two branches take the root's, and an unset title there falls
+back to the route name (a literal "subscriptions/[id]/index" across the bar).
+
+**The card owns the EVENT; the banner only says which subscription this is.**
+Both used to print the same date, and the split has since gone the other way:
+the banner keeps a line only for a subscription that is OVER
+(`detail_heroEnded`), because that is the one state with no card underneath to
+own the answer. While a next date exists the card states the whole event — what
+will be taken, how long, the date, and whether a reminder will fire — and the
+banner's own line was deleted along with `detail_heroRenews` / `heroEnds` /
+`heroResumes`. The capsule still answers "what does this cost", which is a
+different question from "what is about to happen": a trial converting before the
+next payment makes those two different numbers.
+
+The identity is a CENTRED column — a 108pt logo whose TOP edge sits on the nav
+bar's own controls, so the mark is chrome with a capsule either side of it
+rather than the first thing below the bar — and the name shrinks rather than
+wrapping freely. Placing it needs the scroll view's REAL top inset
+(`NAV_BAR_INSET`), which on iOS 26 is not the 44pt a standard bar is documented
+at: the glass bar lays out taller and sits its controls near the top of that
+band. It is measured, because `@react-navigation/elements` is not in this tree
+and there is no `useHeaderHeight` to ask; it only places the logo, so a point or
+two out moves the logo a point or two and nothing else.
+Beside the logo it had 298pt and "Amazon" at 78pt broke MID-WORD; centred it has
+the full width and "Adobe Creative Cloud" broke anyway, because one word was
+wider than the phone, which no amount of width fixes. `numberOfLines={2}` plus
+`useShrinkFloor(26, 18)` is the pattern the countdown beneath it already uses:
+the floor is a point size, so the name still grows with Dynamic Type and only
+stops growing past what the screen can set. The logo does not scale at all — it
+is a picture, like the calendar's tiles.
+
+**An amount printed beside a date must be the amount taken ON that date.**
+`billing.preferred` is the price effective TODAY, and the list never settles a
+due phase — `applyDuePhases` runs from `getSubscription` alone — so a row holds
+the un-settled record and the phase it is about to move to side by side. Printing
+the first while naming the second's date said "₴0.00, in 7 days" over a trial
+converting in two, and "Cancelled · Sep 26" beside a live amount over a charge
+`shouldIncludeOccurrence` had already excluded. `nextChargeBilling`
+(`entities/subscription/model/next-charge.ts`, tested) answers the first; the
+list row asks a winding-down subscription for `willBeCancelledAt` and greys its
+amount when nothing more will be taken, which is the same cut the detail card
+makes.
 
 **Nothing on the detail screen may restate the banner.** Two things were cut for
 this and should not come back: a centred "charged as $7.20" line — the
@@ -490,6 +617,35 @@ centres the capsule, the 64pt subscription rows keep both.
 
 Build numbers (`ios.buildNumber` / `android.versionCode`) are **EAS-owned — never hand-edit**. The marketing version is per-profile in `app.config.js`: production uses the hand-set `expo.version` in `app.json`; every other profile uses the fixed `BETA_VERSION` and lets the EAS build number move.
 
+## Dependency pins that outrank the SDK manifest
+
+`expo.install.exclude` in `package.json` is not a snooze button — it is the list
+of deps that are deliberately off Expo SDK 57's manifest, and without it
+`expo doctor` exits non-zero on every build. Take something off the list and the
+check starts governing it again.
+
+- **`react-native-gesture-handler` 3.x** — the SDK expects `~2.32.0`, so the
+  check reports a *downgrade*. Taking it walks back a major under the
+  `ReanimatedSwipeable` rows in `widgets/subscriptions-page` and
+  `widgets/categories-page`.
+- **`@sentry/react-native` 8.x** — the manifest's `~7.11.0` is a snapshot from
+  the SDK's release day and trails every Sentry major. `getSentryExpoConfig`,
+  the `expo` config plugin and the `Sentry.init` keys above all survive the
+  jump.
+- **`react`, `react-native-safe-area-context`,
+  `@react-native-community/datetimepicker`** — ahead of the manifest by a patch
+  or a minor. `react` is the one to watch: it floats only because
+  `react-native@0.86.3` asks for `^19.2.3`, so read that peer range before
+  moving it, never the doctor's exact pin.
+
+Not on the list, because the check does not flag it: **`react-native-nitro-modules`
+is capped at 0.36.x** by its caret, deliberately. `react-native-mmkv@4.3.2` ships
+nitrogen-generated C++ and gradle built against that generation, and a newer
+nitro fails at *link* time — nothing warns you until a native build.
+
+Everything else follows `expo install --check` over npm `latest`; the SDK's
+expected version is usually a few patches behind the registry.
+
 ## Testing
 
 `bun run --cwd apps/mobile test` — `bun:test`, there is no vitest anywhere in the repo. **Run it from this workspace, never `bun test apps/mobile/src` from the root**: `bunfig.toml` here preloads `test-preload.ts`, and without it the first transitive `react-native` import aborts the whole file on a Flow parse error. Test **pure logic only** — locale resolution, transport error mapping, view-shaping over DTO fields. Domain derivations are tested in their own package. **No React Native component renders** (no renderer is configured, and it is out of scope). Co-locate tests as `*.test.ts` next to the module.
@@ -514,3 +670,49 @@ bunx eas build --profile development --platform ios     # dev client
 bunx eas build --profile production --platform all
 bunx eas submit --profile production --platform ios
 ```
+
+**A store build without the cloud queue:** `bun run --cwd apps/mobile
+build:ios:local` compiles the `production` profile on this Mac and drops a
+signed `.ipa` in the gitignored `builds/`, ready to drag into Transporter.
+Same profile, same remote credentials, same remote build number as a cloud
+build — only the compiler moves. Three things differ and all three bite:
+
+- **`LANG` must be UTF-8**, which is why the script sets it. CocoaPods and
+  fastlane both refuse an ASCII-8BIT locale, and this Mac's login shell exports
+  no `LANG` at all.
+- **Secret EAS env vars are not downloadable**, by design — local builds get
+  the `EXPO_PUBLIC_*` values from the `production` environment but never
+  `SENTRY_AUTH_TOKEN`. Export it in the shell or the build ships with no source
+  maps and every TestFlight stack trace is minified garbage.
+- **`.env` is not in the archive.** eas-cli tarballs the git tree, so the
+  gitignored `.env` — with its `test_…` RevenueCat key — cannot reach the
+  bundle. That is load-bearing: a Test Store key in a store build crashes on
+  launch (`docs/release/TESTFLIGHT-STEPS.md`). Never `--include-untracked` here.
+
+**Android is two artifacts, not one.** Play accepts only an `.aab` and an
+`.aab` cannot be sideloaded, so the tester lane and the upload lane are
+different builds: `build:android:apk:local` (profile `production-apk`) makes
+the `.apk` you hand to a tester, `build:android:local` makes the `.aab` you
+upload. Both carry the `production` environment, so a tester exercises the real
+keys. What that costs, and it is not the iOS guarantee:
+
+- **They are not the same binary.** `production-apk` extends `production`, so
+  each build takes its own remote `versionCode` — the APK a tester approved is
+  build N and Play gets N+1. And Play App Signing re-signs the bundle, so the
+  installed app's signature differs from the sideloaded one too. Nothing here
+  pins a signature today; that stops being free the moment anything does.
+- **`ANDROID_HOME` is unset in this Mac's login shell**, which is why the
+  script points it at the standard SDK path rather than trusting the
+  environment. Gradle's failure for a missing SDK names a path, not a cause.
+- **There is no Android keystore on EAS yet** — no Android build has ever run.
+  The first one prompts to generate it, so run it in a terminal that can answer.
+  That keystore becomes the Play **upload key** permanently: back it up with
+  `eas credentials` before it is the only copy.
+
+**Pro does not work on Android.** `entities/pro/model/purchases.ts` configures
+RevenueCat with `env.REVENUECAT_IOS_KEY` unconditionally — there is no
+`Platform.OS` branch and no `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` in any EAS
+environment. RevenueCat rejects an `appl_` key on Play, the module-scope
+`try/catch` fails open, and the paywall reports "could not load" while every
+gate falls back to the cache. A tester APK is otherwise honest; that one screen
+is not.

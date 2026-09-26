@@ -342,6 +342,34 @@ Version and build number are handled for you: the marketing string comes from
 and the build number auto-increments on EAS because `eas.json` sets
 `appVersionSource: "remote"`. **Never hand-edit `ios.buildNumber`.**
 
+### Or build it on this Mac
+
+```bash
+export SENTRY_AUTH_TOKEN=...          # see below — omit it and you lose source maps
+bun run --cwd apps/mobile build:ios:local
+```
+
+Same `production` profile, same credentials pulled from EAS, same remote build
+number — Xcode just runs here instead of in the queue. Roughly 15 minutes and no
+build minutes spent. The signed `.ipa` lands in `apps/mobile/builds/`
+(gitignored), named `subeye-<version>-<timestamp>.ipa`, and step 5 becomes
+"drag it into Transporter".
+
+Prerequisites, one time: Xcode, CocoaPods, and **fastlane** (`brew install
+fastlane`) — eas-cli shells out to `fastlane gym` for the local build.
+
+**`SENTRY_AUTH_TOKEN` is the one thing a local build cannot fetch.** It is
+stored as a *secret* EAS variable, which is readable only by an EAS builder,
+by design — `eas env:list` prints `*****` for it and there is no pull. The other
+four (`EXPO_PUBLIC_*`) come down from the `production` environment normally.
+Without the token the build still succeeds; it just uploads no source maps, so
+every crash in Sentry is minified. Get one from Sentry → Settings → Auth Tokens
+with `project:releases` scope.
+
+**Do not pass `--include-untracked`.** eas-cli archives the git tree, which is
+what keeps the gitignored `.env` — and its `test_…` RevenueCat key — out of a
+store bundle. See the box above for what that key does to a release build.
+
 ---
 
 ## Step 5 — Upload to App Store Connect

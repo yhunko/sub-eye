@@ -16,6 +16,9 @@ dist/
 # Expo-generated env/global types (src/env.d.ts is the committed stand-in)
 expo-env.d.ts
 
+# `eas build --local` output — signed .ipa files staged for Transporter
+/builds/
+
 # Metro
 .metro-health-check*
 

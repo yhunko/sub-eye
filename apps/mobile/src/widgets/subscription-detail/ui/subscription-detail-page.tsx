@@ -15,6 +15,7 @@ import {
 import { useDashboard } from "@/entities/dashboard";
 import { ProLock, usePro } from "@/entities/pro";
 import {
+  nextChargeBilling,
   toTimelineRows,
   usePricingMenu,
   useSubscriptionDetail,
@@ -30,27 +31,28 @@ import {
   formatRemaining,
   formatShortDate,
 } from "@/shared/lib/format";
+import {
+  nextReminderAt,
+  readEffectiveSettings,
+} from "@/shared/lib/notifications";
 import { nativeHeaderChrome } from "@/shared/ui/header";
 import { presentChoice } from "@/shared/ui/present-choice";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 import { chargeBeforeCancellation } from "../model/cancellation";
 import { cycleProgress } from "../model/cycle";
-import { useLifecycleActions } from "../model/use-lifecycle-actions";
+import {
+  type LifecycleActionItem,
+  useLifecycleActions,
+} from "../model/use-lifecycle-actions";
 import { DetailHero } from "./detail-hero";
 import { EndedEmpty } from "./ended-empty";
 import { TimelineRow } from "./timeline-row";
 
 // Platform symbols per lifecycle action. Keys come from the action builder;
-// anything unmapped simply shows as a text-only menu row. One table rather than
-// two because the primary button needs the same glyphs the menu does — and the
-// primary is no longer always `edit`.
-const EDIT_ICON: { ios: SFSymbol; android: AndroidSymbol } = {
-  ios: "pencil",
-  android: "edit",
-};
+// anything unmapped simply shows as a text-only menu row.
 const ACTION_ICON: Record<string, { ios: SFSymbol; android: AndroidSymbol }> = {
-  edit: EDIT_ICON,
+  edit: { ios: "pencil", android: "edit" },
   pricing: { ios: "tag", android: "sell" },
   pause: { ios: "pause.circle", android: "pause_circle" },
   resume: { ios: "play.circle", android: "play_circle" },
@@ -62,6 +64,23 @@ const ACTION_ICON: Record<string, { ios: SFSymbol; android: AndroidSymbol }> = {
 /** The countdown's design size, and the point size it may never shrink past. */
 const COUNTDOWN_SIZE = 26;
 const COUNTDOWN_FLOOR = 18;
+
+/**
+ * "3 Sep, 09:00" — when a reminder fires, in the app's locale.
+ *
+ * Built per call, never once at module scope: a formatter constructed at import
+ * freezes whatever locale was active then, and Android 13+ swaps the app
+ * language with the JS context still alive. Same trap as `m.someKey()` at
+ * module scope. In the DEVICE's zone, because that is the zone the OS matches
+ * the trigger's components in.
+ */
+const formatReminder = (at: Date): string =>
+  new Intl.DateTimeFormat(dateLocale(), {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(at);
 
 function Track({ value }: { value: number }) {
   return (
@@ -99,7 +118,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
 
   // Called unconditionally, before any early return — the mutations behind it
   // are hooks. It tolerates the empty list while the detail is still loading.
-  const { primary, overflow, pageAction } = useLifecycleActions({
+  const { lead, overflow, pageAction } = useLifecycleActions({
     id,
     name: subscription?.name ?? "",
     status: subscription?.status ?? "active",
@@ -137,6 +156,13 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       ? formatMoney(subscription.cost, subscription.currency)
       : null;
 
+  // What the NEXT charge takes, which is not always what the subscription costs
+  // today — the capsule above answers "what is this", this answers "what is about
+  // to happen". A trial converting before the payment date made the card print
+  // ₴0.00 directly under an amber banner saying the price becomes ₴534.89 first.
+  const nextCharge = nextChargeBilling(subscription);
+  const chargePrice = formatMoney(nextCharge.amount, nextCharge.currencyCode);
+
   const cadence = formatCadence(subscription.every, subscription.period);
 
   // One card, one question, and the question changes with the status. A paused
@@ -157,7 +183,20 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
     : (endsAt ?? subscription.nextPaymentDate);
   const showDate = status !== "cancelled" && date !== null;
 
-  const nextCharge = endsAt ? chargeBeforeCancellation(subscription) : null;
+  const lastCharge = endsAt ? chargeBeforeCancellation(subscription) : null;
+
+  // Read straight through on every render rather than memoised: settings live in
+  // MMKV, the reminders sheet below can change them without this screen
+  // remounting, and a stale "Remind 3 Sep" on the screen someone opened to check
+  // their reminder is the exact failure this line exists to prevent. Both calls
+  // are synchronous reads over a list of one.
+  const reminderSettings = readEffectiveSettings(isPro);
+  const remindAt = nextReminderAt(subscription, reminderSettings, new Date());
+  // Offered only when BOTH streams are off — with either on, the planner's
+  // silence means this subscription has nothing to warn about, not that the user
+  // has yet to opt in.
+  const canOfferReminder =
+    !reminderSettings.renewals && !reminderSettings.trials;
 
   // When a finished subscription stopped. `willBeCancelledAt` is non-null by
   // construction on this status (deriveSubscriptionStatus needs it to reach
@@ -165,18 +204,14 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   const endedAt =
     status === "cancelled" ? subscription.willBeCancelledAt : null;
 
-  // The banner answers "when", already worded for the status; the card below it
-  // answers "how long" and owns the countdown. Splitting them this way is what
-  // keeps the same date off the screen twice.
+  // Only for a subscription that is OVER, because that is the one state with no
+  // card underneath to own the answer. While there is a next date, the card
+  // states it in full — amount, how long, weekday and date — and printing a
+  // second version of it up here made the banner argue with the block that owns
+  // it. The banner's job is "which subscription is this".
   const dateLine = endedAt
     ? m.detail_heroEnded({ date: formatDate(endedAt) })
-    : !showDate || date === null
-      ? null
-      : paused
-        ? m.detail_heroResumes({ date: formatDate(date) })
-        : endsAt
-          ? m.detail_heroEnds({ date: formatDate(date) })
-          : m.detail_heroRenews({ date: formatDate(date) });
+    : null;
 
   // How much of the monthly burn rate this one subscription is. Normalised
   // monthly on both sides, so a yearly subscription compares honestly.
@@ -249,6 +284,7 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // dismissed, so the two never fight over the screen.
   const showMore = () =>
     presentChoice(subscription.name, m.detail_moreActions(), [
+      ...(lead ? [{ label: lead.label, onPress: lead.run }] : []),
       ...(pricing.length
         ? [
             {
@@ -264,23 +300,22 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       })),
     ]);
 
+  const menuAction = (item: LifecycleActionItem) => {
+    const icon = ACTION_ICON[item.key];
+    return {
+      type: "action" as const,
+      label: item.label,
+      destructive: item.destructive,
+      icon: icon && { type: "sfSymbol" as const, name: icon.ios },
+      onPress: item.run,
+    };
+  };
+
+  // ONE trailing item. The banner's identity is centred under this bar, and a
+  // second capsule beside the ellipsis pushed it off centre for an action the
+  // menu can carry as its first row.
   const barItems = () => [
-    ...(primary
-      ? [
-          {
-            type: "button" as const,
-            label: primary.label,
-            icon: {
-              type: "sfSymbol" as const,
-              name: (ACTION_ICON[primary.key] ?? EDIT_ICON).ios,
-            },
-            variant: "prominent" as const,
-            tintColor: colors.accent,
-            onPress: primary.run,
-          },
-        ]
-      : []),
-    ...(overflow.length || pricingEntry.length
+    ...(lead || overflow.length || pricingEntry.length
       ? [
           {
             type: "menu" as const,
@@ -296,17 +331,9 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
               // links. The submenu carries the same flag for the same reason.
               multiselectable: true,
               items: [
+                ...(lead ? [menuAction(lead)] : []),
                 ...pricingEntry,
-                ...overflow.map((item) => {
-                  const icon = ACTION_ICON[item.key];
-                  return {
-                    type: "action" as const,
-                    label: item.label,
-                    destructive: item.destructive,
-                    icon: icon && { type: "sfSymbol" as const, name: icon.ios },
-                    onPress: item.run,
-                  };
-                }),
+                ...overflow.map(menuAction),
               ],
             },
           },
@@ -317,39 +344,22 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
   // Android has no bar button items; it keeps the custom view (expo-router only
   // swaps in the native items on iOS) and the OS action sheet behind it.
   const androidActions =
-    primary || overflow.length || pricing.length
+    lead || overflow.length || pricing.length
       ? () => (
           <View style={styles.headerActions}>
-            {primary ? (
-              <Pressable
-                onPress={primary.run}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={primary.label}
-              >
-                <SymbolView
-                  name={ACTION_ICON[primary.key] ?? EDIT_ICON}
-                  size={22}
-                  tintColor={colors.accent}
-                  weight="semibold"
-                />
-              </Pressable>
-            ) : null}
-            {overflow.length || pricing.length ? (
-              <Pressable
-                onPress={showMore}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={m.detail_moreActions()}
-              >
-                <SymbolView
-                  name={{ ios: "ellipsis", android: "more_vert" }}
-                  size={22}
-                  tintColor={colors.text}
-                  weight="semibold"
-                />
-              </Pressable>
-            ) : null}
+            <Pressable
+              onPress={showMore}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={m.detail_moreActions()}
+            >
+              <SymbolView
+                name={{ ios: "ellipsis", android: "more_vert" }}
+                size={22}
+                tintColor={colors.text}
+                weight="semibold"
+              />
+            </Pressable>
           </View>
         )
       : undefined;
@@ -359,7 +369,10 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
       <Stack.Screen
         options={{
           ...nativeHeaderChrome,
-          title: subscription.name,
+          // Empty, not absent: the banner below carries the name at 26pt under
+          // a centred logo, and a bar title printed it a second time a
+          // finger's width above it.
+          headerTitle: "",
           unstable_headerRightItems: barItems,
           headerRight: androidActions,
         }}
@@ -432,18 +445,63 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
                     ? m.detail_ends()
                     : m.detail_nextPayment()}
               </Text>
+              {/* On the label's line, where a caption belongs. Absent when
+                  nothing is scheduled — a reminder row that says "none" is a
+                  setting, and this card is not the settings screen. */}
+              {endsAt ? null : remindAt ? (
+                <View style={styles.remind}>
+                  <SymbolView
+                    name={{ ios: "bell", android: "notifications" }}
+                    size={13}
+                    tintColor={colors.muted}
+                  />
+                  <Text style={styles.remindText} numberOfLines={1}>
+                    {m.detail_remindAt({ when: formatReminder(remindAt) })}
+                  </Text>
+                </View>
+              ) : canOfferReminder ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push("/reminders")}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.remind,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <SymbolView
+                    name={{ ios: "bell.badge", android: "notifications" }}
+                    size={13}
+                    tintColor={colors.accent}
+                  />
+                  <Text style={styles.remindOffer} numberOfLines={1}>
+                    {m.detail_remindOffer()}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
-            {/* "in 2 months and 3 days" is a sentence, so it wraps rather than
-                shrinking once there is a card's width of it. */}
+            {/* The AMOUNT is the headline while money is still going to move —
+                what leaves is the thing the card exists to state, and the
+                countdown it used to print is a fact about the date underneath
+                it. A wind-down has no amount to print: nothing is charged on the
+                day access ends, so that one keeps the countdown. */}
             <Text
               style={styles.countdown}
               numberOfLines={countdownLines}
               adjustsFontSizeToFit
               minimumFontScale={countdownFloor}
             >
+              {endsAt ? formatRemaining(daysUntil(date)) : chargePrice}
+            </Text>
+            {/* Always the date, because the banner no longer carries one and
+                this is the screen a user opens to check it. The countdown joins
+                it only where the headline above is an amount — a wind-down's
+                headline IS the countdown, and printing it twice is the argument
+                that took the date off the banner in the first place. */}
+            <Text style={styles.when}>
               {endsAt
-                ? formatRemaining(daysUntil(date))
-                : formatCountdown(daysUntil(date))}
+                ? formatDate(date)
+                : `${formatCountdown(daysUntil(date))} · ${formatDate(date)}`}
             </Text>
             {/* A cycle bar only means anything while the cycle is running. It
                 is re-anchored to the cancellation date so the bar fills toward
@@ -460,9 +518,9 @@ export function SubscriptionDetailPage({ id }: { id: string }) {
             {/* The whole reason a user opens a cancelling subscription. */}
             {endsAt ? (
               <Text style={styles.footnote}>
-                {nextCharge
+                {lastCharge
                   ? m.detail_endsNextCharge({
-                      date: formatShortDate(nextCharge),
+                      date: formatShortDate(lastCharge),
                     })
                   : m.detail_endsNoCharges()}
               </Text>
@@ -565,6 +623,21 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     color: colors.text,
   },
+  when: { marginTop: 5, fontSize: 14, color: colors.muted },
+  remind: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    flexShrink: 1,
+  },
+  remindText: { flexShrink: 1, fontSize: 12.5, color: colors.muted },
+  remindOffer: {
+    flexShrink: 1,
+    fontSize: 12.5,
+    fontWeight: "600",
+    color: colors.accent,
+  },
+  pressed: { opacity: 0.6 },
   track: {
     marginTop: 14,
     height: 7,

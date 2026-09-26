@@ -13,9 +13,9 @@ import {
 export type { LifecycleActionItem };
 
 /**
- * The detail screen's split of the lifecycle actions: one primary button plus
- * the rest. PRESENTATION is the page's — it has to fold the pricing submenu
- * into the same overflow, which is none of this hook's business. The actions
+ * The detail screen's ordering of the lifecycle actions: the one that leads the
+ * menu, then the rest. PRESENTATION is the page's — it has to fold the pricing
+ * submenu in between them, which is none of this hook's business. The actions
  * themselves, and their confirm flows, come from `useLifecycleActionBuilder`,
  * which the subscriptions list also uses for its swipe actions.
  */
@@ -74,16 +74,20 @@ export function useLifecycleActions({
     [items, pageAction],
   );
 
-  // Edit earns a real button. In the retired web client it sat behind an
-  // ellipsis with everything else; it is the action people reach for most.
-  const primary = useMemo(
+  // Edit LEADS the menu rather than taking a bar button of its own. It is still
+  // the action people reach for most, which is what earned it the button — but a
+  // second glass capsule beside the ellipsis is a second control to read on a
+  // screen whose whole claim is that everything about a subscription lives
+  // behind one, and it crowded out the banner's centred identity. First item in
+  // the menu is one tap further and no worse to find.
+  const lead = useMemo(
     () => barItems.find((item) => item.key === "edit") ?? null,
     [barItems],
   );
   const overflow = useMemo(
-    () => barItems.filter((item) => item.key !== primary?.key),
-    [barItems, primary],
+    () => barItems.filter((item) => item.key !== lead?.key),
+    [barItems, lead],
   );
 
-  return { primary, overflow, pageAction };
+  return { lead, overflow, pageAction };
 }

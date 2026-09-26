@@ -33,7 +33,10 @@ export function PriceStepPage() {
         >
           {/* Back IS the brand step. Pushing the picker would stack a second
               copy of the screen the user just came from. */}
-          <PriceFields onChangeBrand={() => router.back()} />
+          {/* Safe here and nowhere else: this step is PUSHED, so the modal has
+              already finished presenting — `autoFocus` firing into a modal that
+              is still animating silently drops the keyboard. */}
+          <PriceFields autoFocus onChangeBrand={() => router.back()} />
         </ScrollView>
         <StepFooter
           label={m.common_next()}

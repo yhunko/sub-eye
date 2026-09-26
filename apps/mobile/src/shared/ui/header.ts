@@ -9,9 +9,22 @@ import { colors } from "./theme";
 // `contentInsetAdjustmentBehavior` are BOTH iOS no-ops (an opaque header makes
 // the navigator lay content out below it instead).
 //
-// Never set headerStyle.backgroundColor or headerBlurEffect on iOS: a solid
+// Never set headerStyle.backgroundColor or headerBlurEffect on iOS 26: a solid
 // background kills the glass, and headerBlurEffect paints a permanent gray
 // chrome band over the near-black app while also overlapping scrollEdgeEffects.
+//
+// BEFORE 26 that rule inverts, because `scrollEdgeEffects` is an iOS 26 API and
+// older versions ignore it silently. `headerTransparent` there is a HOLE: the
+// bar has nothing behind it and nothing fading what passes under it, so rows
+// scroll through the title and the status bar at full opacity — legible text
+// over legible text. The deployment target is 16.4, so that is most of the
+// install base of every phone that never got 26 (the 13 mini among them). A
+// blurred bar is what those versions have instead of glass; content still slides
+// under it, which is what the layout is built around, and it is what UIKit's own
+// nav bar does there.
+const IOS_GLASS =
+  Platform.OS === "ios" && Number.parseInt(String(Platform.Version), 10) >= 26;
+
 export const nativeHeaderChrome = {
   headerTintColor: colors.text,
   headerTitleStyle: { color: colors.text },
@@ -20,12 +33,20 @@ export const nativeHeaderChrome = {
   // React Navigation's light default and the translucent glass chrome reflects
   // white (near-invisible light-on-light header title).
   contentStyle: { backgroundColor: colors.bg },
-  ...(Platform.OS === "ios"
-    ? ({ headerTransparent: true, scrollEdgeEffects: { top: "soft" } } as const)
-    : ({
+  ...(Platform.OS !== "ios"
+    ? ({
         headerStyle: { backgroundColor: colors.bg },
         headerShadowVisible: false,
-      } as const)),
+      } as const)
+    : IOS_GLASS
+      ? ({
+          headerTransparent: true,
+          scrollEdgeEffects: { top: "soft" },
+        } as const)
+      : ({
+          headerTransparent: true,
+          headerBlurEffect: "systemChromeMaterialDark",
+        } as const)),
 };
 
 // The app's search-field chrome, spread into a screen's `headerSearchBarOptions`
@@ -52,7 +73,10 @@ export const nativeHeaderChrome = {
 // peaked at 0.47 luminance against a resting 0.11, for 12 frames. An opaque fill
 // has nothing to sample and cannot flash. An older note claimed a custom
 // barTintColor renders the magnifier glyph black; it does not on
-// react-native-screens 4.25 — verified on iOS 26.
+// react-native-screens 4.26 — verified on iOS 26. The native tab host also
+// pins its UIKit trait collection to dark: Info.plist's app-wide appearance is
+// not reliably inherited by search controllers nested under UITabBarController
+// on iOS 27, which otherwise produces black placeholder text and glyphs here.
 export const nativeSearchBarChrome = {
   placement: "stacked" as const,
   hideWhenScrolling: false,
@@ -116,3 +140,22 @@ export const nativeInlineSearchBarChrome = {
   placement: "integrated" as const,
   allowToolbarIntegration: false,
 };
+
+// Material's own toolbar height (`?attr/actionBarSize` on a phone). A screen
+// that opts INTO a transparent Android header has to pay this inset itself:
+// `contentInsetAdjustmentBehavior` is an iOS no-op, so nothing else will.
+export const ANDROID_TOOLBAR_HEIGHT = 56;
+
+// Home only. Android's bar is opaque everywhere else for the reason above — but
+// Home draws a brand wash across the top of the screen, and an opaque bar cuts
+// it with a hard horizontal seam because the navigator starts the content below
+// the bar and the gradient's centre lands just under it. Transparent, the wash
+// runs behind the bar exactly as it does on iOS and only its falloff is on the
+// page. Any screen spreading this MUST pay ANDROID_TOOLBAR_HEIGHT.
+export const androidTransparentHeader =
+  Platform.OS === "android"
+    ? ({
+        headerTransparent: true,
+        headerStyle: { backgroundColor: "transparent" },
+      } as const)
+    : null;

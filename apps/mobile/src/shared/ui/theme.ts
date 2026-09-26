@@ -12,14 +12,14 @@ export const colors = {
   borderStrong: "rgba(255,255,255,0.16)",
   // Green is BRAND + interaction, never "money is good" — every amount in a
   // spend tracker is money leaving, so amounts stay neutral. The single
-  // exception is Home's next-month chip, where green marks a smaller bill: that
+  // exception is Home's next-month delta, where green marks a smaller bill: that
   // is a direction of change, not a balance, and it is the one figure here a
   // user can be pleased about.
   accent: "#33a453",
   accentSoft: "rgba(51,164,83,0.14)",
   // A ring rather than a fill, for the one thing that is merely WHERE YOU ARE:
-  // today's calendar tile. Full `accent` there competes with the selected tile
-  // beside it, and `accentSoft` is a fill — at 1px it disappears entirely.
+  // today's calendar tile. Full `accent` there reads as a control on a grid
+  // that has none, and `accentSoft` is a fill — at 1px it disappears entirely.
   accentBorder: "rgba(51,164,83,0.5)",
   // Focus/active affordances only. #33a453 on #0f1115 is 5.92:1 — fine for a
   // filled button, too dim for a 1px focused border, which is what this is for.
@@ -42,8 +42,9 @@ export const colors = {
   mutedPast: "rgba(152,160,174,0.55)",
   // Amber = "not yet, but close", never "this is wrong". Two uses, one meaning:
   // the paused row tint and Pause swipe action (suspended, will come back), and
-  // Home's rail for anything landing inside the next week. `danger` is the step
-  // above it there — imminent, not incorrect.
+  // the calendar's heavy-day flag and its agenda rows for anything landing
+  // inside the next week. `danger` is the step above it there — imminent, not
+  // incorrect.
   warning: "#e0a32e",
   warningSoft: "rgba(224,163,46,0.10)",
 } as const;

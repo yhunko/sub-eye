@@ -14,11 +14,24 @@ import type { StoreDoc } from "@/shared/lib/store";
  * reading "renews 4 Mar" under a September screenshot is the kind of thing a
  * reviewer notices before a user does.
  *
- * The offsets are chosen so the five soonest events are five DIFFERENT kinds:
- * a charge, a trial ending, a yearly charge, a price rise and a resume, with a
- * cancellation sixth so the rail's cut-off card has something to show. Left to
- * chance the rail is five identical renewal cards, which is what the first
- * capture pass shipped.
+ * Two things are arranged by hand, because left to chance both come out
+ * degenerate.
+ *
+ * CHARGE DAYS are spread across a WHOLE cycle, 1 to 30 days out, rather than
+ * bunched into the next fortnight. A monthly subscription due 28 days from now
+ * was charged two days AGO, and Home's month card is a bill being paid down:
+ * with every charge still ahead — which is what the first capture passes
+ * shipped — "charged so far" reads zero and the bar under the headline is an
+ * empty track in every screenshot the seed can ever produce. The three costliest
+ * rows carrying no other story take the tail, so that figure is worth printing
+ * even on a capture taken in the first week of a month.
+ *
+ * DATED EVENTS are each a different KIND, soonest first: a trial converting, an
+ * intro price reverting, then a second trial and a price rise landing on one
+ * day. That pair is the point — "Needs a decision" stops at three rows but never
+ * truncates inside a day, so it has to show four here, and a screenshot is the
+ * only place that rule is visible. A resume and a second rise sit behind the
+ * fold, as the "2 more later" row.
  */
 const MS_DAY = 86_400_000;
 
@@ -67,7 +80,7 @@ const CATEGORIES: [id: string, emoji: string, en: string, uk: string][] = [
   ["cat-work", "💼", "Work", "Робота"],
   ["cat-entertainment", "🎬", "Entertainment", "Розваги"],
   ["cat-ai", "🤖", "AI", "ШІ"],
-  ["cat-health", "💪", "Health", "Здоров'я"],
+  ["cat-health", "💪", "Health", "Здоровʼя"],
   ["cat-home", "🏠", "Home", "Дім"],
   ["cat-music", "🎧", "Music", "Музика"],
 ];
@@ -102,6 +115,20 @@ const SUBSCRIPTIONS: Seed[] = [
     category: "cat-health",
     due: 7,
   },
+  // Converts on the SAME day as Adobe's price rise, and that is the point:
+  // "Needs a decision" refuses to truncate inside a day, so this pair is what
+  // proves the card shows a fourth row rather than the three-row cap silently
+  // eating one. It also puts two different KINDS on that day, which is the
+  // harder case — a day of two identical rows would prove the cap and nothing
+  // about the ranking inside it.
+  {
+    id: "s-perplexity",
+    name: "Perplexity Pro",
+    domain: "perplexity.ai",
+    cost: "0.00",
+    category: "cat-ai",
+    due: 14,
+  },
   {
     id: "s-amazon",
     name: "Amazon Prime",
@@ -110,7 +137,7 @@ const SUBSCRIPTIONS: Seed[] = [
     every: 1,
     period: SubscriptionPeriod.YEAR,
     category: "cat-home",
-    due: 4,
+    due: 3,
   },
   {
     id: "s-adobe",
@@ -136,15 +163,19 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "dropbox.com",
     cost: "11.99",
     category: "cat-work",
-    due: 23,
+    due: 21,
   },
   {
+    // These three, and only these three, are charged BEFORE the capture day: a
+    // month with nothing behind it draws an empty bar. They take the tail
+    // because each is dear enough to be worth naming in "charged so far" and
+    // none of them carries a dated event that has to be seen coming.
     id: "s-netflix",
     name: "Netflix",
     domain: "netflix.com",
     cost: "15.49",
     category: "cat-entertainment",
-    due: 20,
+    due: 27,
   },
   {
     id: "s-chatgpt",
@@ -152,7 +183,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "openai.com",
     cost: "20.00",
     category: "cat-ai",
-    due: 13,
+    due: 28,
   },
   {
     id: "s-claude",
@@ -160,7 +191,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "claude.ai",
     cost: "20.00",
     category: "cat-ai",
-    due: 15,
+    due: 29,
   },
   {
     id: "s-icloud",
@@ -168,7 +199,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "icloud.com",
     cost: "9.99",
     category: "cat-home",
-    due: 8,
+    due: 5,
   },
   {
     id: "s-youtube",
@@ -176,7 +207,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "youtube.com",
     cost: "13.99",
     category: "cat-entertainment",
-    due: 16,
+    due: 25,
   },
   {
     id: "s-notion",
@@ -184,7 +215,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "notion.so",
     cost: "10.00",
     category: "cat-work",
-    due: 11,
+    due: 16,
   },
   {
     id: "s-figma",
@@ -192,7 +223,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "figma.com",
     cost: "15.00",
     category: "cat-work",
-    due: 24,
+    due: 19,
   },
   {
     id: "s-duolingo",
@@ -200,7 +231,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "duolingo.com",
     cost: "6.99",
     category: "cat-health",
-    due: 10,
+    due: 9,
   },
   {
     id: "s-disney",
@@ -208,7 +239,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "disneyplus.com",
     cost: "9.99",
     category: "cat-entertainment",
-    due: 26,
+    due: 23,
   },
   {
     id: "s-copilot",
@@ -216,7 +247,7 @@ const SUBSCRIPTIONS: Seed[] = [
     domain: "github.com",
     cost: "10.00",
     category: "cat-work",
-    due: 14,
+    due: 11,
   },
 ];
 
@@ -261,11 +292,11 @@ export function buildDemoDoc(
     return record;
   };
 
-  // Paused, resuming in 5 days. `pausedAt` is an instant, `resumeAt` a day.
+  // Paused, resuming in 6 days. `pausedAt` is an instant, `resumeAt` a day.
   const appleOne = find("s-appleone");
   appleOne.status = "paused";
   appleOne.pausedAt = at(now, -18);
-  appleOne.resumeAt = day(now, 5);
+  appleOne.resumeAt = day(now, 6);
 
   // Cancelled but still inside the paid period — the row that stops costing
   // money on a date, which is the one attention event that is good news.
@@ -282,7 +313,7 @@ export function buildDemoDoc(
       cost: "0.00",
       currency: "usd",
       startsAt: day(now, -28),
-      endsAt: day(now, 2),
+      endsAt: day(now, 1),
       appliedAt: at(now, -28),
       createdAt: at(now, -28),
       updatedAt: at(now, -28),
@@ -293,13 +324,37 @@ export function buildDemoDoc(
       kind: "standard",
       cost: "11.99",
       currency: "usd",
-      startsAt: day(now, 2),
+      startsAt: day(now, 1),
       endsAt: null,
       appliedAt: null,
       createdAt: at(now, -28),
       updatedAt: at(now, -28),
     },
-    // Half-price introductory year, reverting in 10 days.
+    {
+      id: "p-perplexity-trial",
+      subscriptionId: "s-perplexity",
+      kind: "trial",
+      cost: "0.00",
+      currency: "usd",
+      startsAt: day(now, -10),
+      endsAt: day(now, 4),
+      appliedAt: at(now, -10),
+      createdAt: at(now, -10),
+      updatedAt: at(now, -10),
+    },
+    {
+      id: "p-perplexity-standard",
+      subscriptionId: "s-perplexity",
+      kind: "standard",
+      cost: "20.00",
+      currency: "usd",
+      startsAt: day(now, 4),
+      endsAt: null,
+      appliedAt: null,
+      createdAt: at(now, -10),
+      updatedAt: at(now, -10),
+    },
+    // Half-price introductory year, reverting in 3 days.
     {
       id: "p-duolingo-intro",
       subscriptionId: "s-duolingo",
@@ -307,7 +362,7 @@ export function buildDemoDoc(
       cost: "6.99",
       currency: "usd",
       startsAt: day(now, -170),
-      endsAt: day(now, 10),
+      endsAt: day(now, 3),
       appliedAt: at(now, -170),
       createdAt: at(now, -170),
       updatedAt: at(now, -170),
@@ -318,7 +373,7 @@ export function buildDemoDoc(
       kind: "standard",
       cost: "12.99",
       currency: "usd",
-      startsAt: day(now, 10),
+      startsAt: day(now, 3),
       endsAt: null,
       appliedAt: null,
       createdAt: at(now, -170),
@@ -345,7 +400,7 @@ export function buildDemoDoc(
       cost: "59.99",
       currency: "usd",
       startsAt: day(now, -320),
-      endsAt: day(now, 3),
+      endsAt: day(now, 4),
       appliedAt: at(now, -320),
       createdAt: at(now, -320),
       updatedAt: at(now, -320),
@@ -357,7 +412,7 @@ export function buildDemoDoc(
       kind: "scheduledChange",
       cost: "64.99",
       currency: "usd",
-      startsAt: day(now, 3),
+      startsAt: day(now, 4),
       endsAt: null,
       appliedAt: null,
       createdAt: at(now, -9),
@@ -386,6 +441,33 @@ export function buildDemoDoc(
       appliedAt: at(now, -240),
       createdAt: at(now, -240),
       updatedAt: at(now, -240),
+    },
+    // The rise that is NOT the soonest thing on the screen. One pending change
+    // reads as a special case; two, at opposite ends of the fold, read as the
+    // thing the app does.
+    {
+      id: "p-youtube-now",
+      subscriptionId: "s-youtube",
+      kind: "standard",
+      cost: "13.99",
+      currency: "usd",
+      startsAt: day(now, -400),
+      endsAt: day(now, 11),
+      appliedAt: at(now, -400),
+      createdAt: at(now, -400),
+      updatedAt: at(now, -400),
+    },
+    {
+      id: "p-youtube-rise",
+      subscriptionId: "s-youtube",
+      kind: "scheduledChange",
+      cost: "15.99",
+      currency: "usd",
+      startsAt: day(now, 11),
+      endsAt: null,
+      appliedAt: null,
+      createdAt: at(now, -4),
+      updatedAt: at(now, -4),
     },
   ];
 

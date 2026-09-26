@@ -1,51 +1,23 @@
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import type { AndroidSymbol, SFSymbol } from "expo-symbols";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AppState,
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-} from "react-native";
-import { usePro } from "@/entities/pro";
-import { subscriptionsQuery } from "@/entities/subscription";
+import { useCallback, useEffect, useState } from "react";
+import { AppState, Linking, ScrollView, StyleSheet } from "react-native";
 import { getLocale, m } from "@/shared/i18n";
 import {
-  effectiveSettings,
-  ensureNotificationPermission,
-  LEAD_DAY_CHOICES,
   type NotificationHealth,
   type ReminderSettings,
   readNotificationHealth,
-  readNotificationSettings,
   sendTestNotification,
-  syncReminders,
-  toggleLeadDay,
-  writeNotificationSettings,
 } from "@/shared/lib/notifications";
-import {
-  Divider,
-  PageFootnote,
-  Row,
-  RowCheck,
-  Section,
-} from "@/shared/ui/list-row";
+import { Divider, PageFootnote, Row, Section } from "@/shared/ui/list-row";
 import { colors } from "@/shared/ui/theme";
+import { useReminderSettings } from "../model/use-reminder-settings";
+import { LeadDayRows, TimeRow } from "./reminder-controls";
 
 /**
- * Built per call from the APP's locale, never once at module scope.
- *
- * The same trap as `m.someKey()` at module scope: a formatter constructed at
- * import freezes whatever locale was active then — and `undefined` resolves to
- * the *device* locale, which is not what the app is rendering. It put an
- * English "Aug 2 at 9:00 AM" in the middle of a Ukrainian sentence.
+ * Built per call from the APP's locale, never once at module scope — a
+ * formatter constructed at import freezes whatever locale was active then.
  */
-const timeFormat = () =>
-  new Intl.DateTimeFormat(getLocale(), { hour: "2-digit", minute: "2-digit" });
-
 const nextFireFormat = () =>
   new Intl.DateTimeFormat(getLocale(), {
     day: "numeric",
@@ -53,17 +25,6 @@ const nextFireFormat = () =>
     hour: "2-digit",
     minute: "2-digit",
   });
-
-/** A Date carrying only a wall-clock time, for the picker to edit. */
-const asClock = (hour: number, minute: number) =>
-  new Date(2000, 0, 1, hour, minute);
-
-const LEAD_LABELS: Record<number, () => string> = {
-  0: m.notifs_leadSameDay,
-  1: m.notifs_leadOneDay,
-  3: m.notifs_leadThreeDays,
-  7: m.notifs_leadOneWeek,
-};
 
 type Status = {
   ios: SFSymbol;
@@ -170,104 +131,6 @@ function describeStatus(
 }
 
 /**
- * The time row. iOS renders the picker inline and compact, straight in the row;
- * Android has no inline form, so the row opens the system dialog and shows the
- * value itself.
- */
-function TimeRow({
-  hour,
-  minute,
-  onChange,
-}: {
-  hour: number;
-  minute: number;
-  onChange: (hour: number, minute: number) => void;
-}) {
-  const [androidOpen, setAndroidOpen] = useState(false);
-  const value = asClock(hour, minute);
-  const apply = (next: Date) => onChange(next.getHours(), next.getMinutes());
-
-  if (Platform.OS === "ios") {
-    return (
-      <Row
-        ios="clock"
-        android="schedule"
-        label={m.notifs_time()}
-        accessory={
-          <DateTimePicker
-            value={value}
-            mode="time"
-            display="compact"
-            themeVariant="dark"
-            onValueChange={(_event, next) => apply(next)}
-          />
-        }
-      />
-    );
-  }
-
-  return (
-    <>
-      <Row
-        ios="clock"
-        android="schedule"
-        label={m.notifs_time()}
-        value={timeFormat().format(value)}
-        onPress={() => setAndroidOpen(true)}
-      />
-      {androidOpen ? (
-        <DateTimePicker
-          value={value}
-          mode="time"
-          // Both handlers unmount the dialog, because only `onValueChange`
-          // fires on a pick. Without `onDismiss` a cancelled dialog leaves
-          // `androidOpen` true, and the row cannot be opened a second time.
-          onValueChange={(_event, next) => {
-            setAndroidOpen(false);
-            apply(next);
-          }}
-          onDismiss={() => setAndroidOpen(false)}
-        />
-      ) : null}
-    </>
-  );
-}
-
-function LeadDayRows({
-  selected,
-  locked,
-  onToggle,
-}: {
-  selected: number[];
-  locked: boolean;
-  onToggle: (day: number) => void;
-}) {
-  return (
-    <>
-      {LEAD_DAY_CHOICES.map((day, index) => {
-        const checked = selected.includes(day);
-        return (
-          <Fragment key={day}>
-            {index > 0 ? <Divider /> : null}
-            <Row
-              ios="calendar"
-              android="event"
-              label={LEAD_LABELS[day]?.() ?? String(day)}
-              onPress={() => onToggle(day)}
-              // The badge sits on the rows a free install cannot reach, not on
-              // the one it already has — a "Pro" tag beside a live checkmark
-              // would say the feature they are using is not theirs.
-              value={locked && !checked ? m.paywall_badge() : undefined}
-              accessory={<RowCheck checked={checked} />}
-            />
-          </Fragment>
-        );
-      })}
-    </>
-  );
-}
-
-/**
  * Reminder configuration, on its own screen.
  *
  * Everything here is DEVICE-local — the settings, the schedule, and the OS
@@ -281,17 +144,19 @@ function LeadDayRows({
  */
 export function NotificationsPage() {
   const router = useRouter();
-  const isPro = usePro();
-  const subscriptions = useQuery(subscriptionsQuery());
-  const [settings, setSettings] = useState(readNotificationSettings);
   const [health, setHealth] = useState<NotificationHealth | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const subscriptionData = subscriptions.data;
+  const [testing, setTesting] = useState(false);
 
   const refresh = useCallback(() => {
     void readNotificationHealth().then(setHealth);
   }, []);
+
+  // Everything about the settings themselves — the Pro gate, permission-first
+  // writes, rebuilding the schedule — is `useReminderSettings`, shared with the
+  // offer sheet. This screen owns only what the sheet has no use for: the OS
+  // health readout and the test notification.
+  const { settings, view, isPro, busy, apply, enable, toggleLead } =
+    useReminderSettings(refresh);
 
   // Permission and channel state can change while we are backgrounded — this
   // screen is what sends the user to the OS settings in the first place — so
@@ -304,61 +169,16 @@ export function NotificationsPage() {
     return () => listener.remove();
   }, [refresh]);
 
-  // Memoised so the effect below has a stable dependency: for a free install
-  // `effectiveSettings` returns a fresh object, and an unmemoised one would
-  // rebuild the entire schedule on every render.
-  const view = useMemo(
-    () => effectiveSettings(settings, isPro),
-    [settings, isPro],
-  );
-
-  // Rebuild the schedule whenever the settings or the list change, then re-read
-  // the health so the count on screen is the count the OS actually holds.
-  useEffect(() => {
-    if (!subscriptionData) return;
-    void syncReminders(subscriptionData, view).then(refresh);
-  }, [view, subscriptionData, refresh]);
-
-  const apply = (patch: Partial<ReminderSettings>) =>
-    setSettings(writeNotificationSettings(patch));
-
-  const status = describeStatus(health, view);
-
-  const enable = async (patch: Partial<ReminderSettings>, enabled: boolean) => {
-    if (!enabled) {
-      apply(patch);
-      return;
-    }
-
-    setBusy(true);
-    // Permission first: writing the setting and *then* being refused leaves a
-    // switch that reads "on" over a schedule that will never be built.
-    const allowed = await ensureNotificationPermission();
-    setBusy(false);
-    refresh();
-    if (allowed) apply(patch);
-  };
-
   // A refusal needs no alert: `refresh` flips the status row above to the
   // denied state, which says more than a dialog would and stays on screen.
   const test = async () => {
-    setBusy(true);
+    setTesting(true);
     await sendTestNotification();
-    setBusy(false);
+    setTesting(false);
     refresh();
   };
 
-  const toggleLead = (
-    key: "renewalLeadDays" | "trialLeadDays",
-    day: number,
-  ) => {
-    // The free tier has exactly one lead time, so every row here is the paywall.
-    if (!isPro) {
-      router.push("/paywall");
-      return;
-    }
-    apply({ [key]: toggleLeadDay(settings[key], day) });
-  };
+  const status = describeStatus(health, view);
 
   return (
     <ScrollView
@@ -391,7 +211,7 @@ export function NotificationsPage() {
           android="send"
           label={m.notifs_sendTest()}
           accent
-          onPress={busy ? undefined : () => void test()}
+          onPress={busy || testing ? undefined : () => void test()}
         />
       </Section>
 

@@ -111,6 +111,35 @@ export function makeInitialFormValues({
   };
 }
 
+/**
+ * Whether the draft still says what it said when the form was seeded.
+ *
+ * Dates are compared as the DAY they will be stored as, not as instants. A date
+ * picker hands back a value carrying whatever time of day its seed had, and a
+ * picker touched and returned to where it started is not an edit — comparing
+ * `getTime()` would make the discard prompt appear over a form nobody changed.
+ */
+export function isFormDirty(
+  draft: SubscriptionFormValues,
+  seeded: SubscriptionFormValues,
+): boolean {
+  const day = (date: Date | null) => (date ? toIsoDay(date) : null);
+
+  return (
+    draft.name !== seeded.name ||
+    draft.cost !== seeded.cost ||
+    draft.currency !== seeded.currency ||
+    draft.every !== seeded.every ||
+    draft.period !== seeded.period ||
+    draft.categoryId !== seeded.categoryId ||
+    draft.brandDomain !== seeded.brandDomain ||
+    draft.offerMode !== seeded.offerMode ||
+    draft.offerCost !== seeded.offerCost ||
+    day(draft.paymentDate) !== day(seeded.paymentDate) ||
+    day(draft.offerEndsAt) !== day(seeded.offerEndsAt)
+  );
+}
+
 export function validateSubscriptionForm(
   values: SubscriptionFormValues,
 ):

@@ -1,21 +1,53 @@
-import { ActionSheetIOS, Alert, Platform } from "react-native";
+import { ActionSheetIOS, Platform } from "react-native";
 import { m } from "@/shared/i18n";
 
-type Choice = {
+export type Choice = {
   label: string;
   destructive?: boolean;
   onPress: () => void;
 };
 
+export type ChoiceRequest = {
+  title: string;
+  message?: string;
+  choices: Choice[];
+};
+
 /**
- * A choice among several actions, presented by the OS. There is no NiceModal
- * here and no custom dialog component — the navigator owns presentation, so
- * confirms are the platform's own: a real action sheet on iOS, the equivalent
- * Alert with buttons on Android (where ActionSheetIOS does not exist).
+ * Set by the mounted `ChoiceHost`. A module variable rather than a context,
+ * because most callers are event handlers deep in unrelated trees and two of
+ * them (`lifecycle-actions`, `use-pricing-menu`) are not components at all.
+ *
+ * The host lives in its OWN file, and that split is load bearing: those two
+ * callers sit on the import graph of `bun:test` suites, and a component here
+ * would drag `react-native-safe-area-context` — Flow-typed, unparseable by bun —
+ * into every one of them. See `test-preload.ts`.
+ */
+let present: ((request: ChoiceRequest) => void) | null = null;
+
+/** Wiring for `ChoiceHost`. Nothing else may call this. */
+export function setChoicePresenter(
+  next: ((request: ChoiceRequest) => void) | null,
+): void {
+  present = next;
+}
+
+/**
+ * A choice among several actions, presented by the OS on iOS and by
+ * `ChoiceHost` on Android.
+ *
+ * Android USED to get `Alert.alert` with one button per choice, on the theory
+ * that an alert is that platform's action sheet. It is not: an AlertDialog has
+ * exactly three button slots (positive, negative, neutral), so RN silently drops
+ * every choice past the third and lays the survivors out in a ROW. The billing
+ * cycle offered Daily / Weekly / Every 2 weeks and no way to reach Monthly, and
+ * the detail screen's overflow lost most of its actions the same way — both
+ * without any error. Anything that can grow past two options has to be a list.
  */
 export function presentChoice(
   title: string,
-  message: string,
+  /** The second line. Omitted when the title already asks the whole question. */
+  message: string | undefined,
   choices: Choice[],
 ): void {
   if (Platform.OS === "ios") {
@@ -42,14 +74,5 @@ export function presentChoice(
     return;
   }
 
-  Alert.alert(title, message, [
-    ...choices.map((choice) => ({
-      text: choice.label,
-      style: choice.destructive
-        ? ("destructive" as const)
-        : ("default" as const),
-      onPress: choice.onPress,
-    })),
-    { text: m.common_cancel(), style: "cancel" as const },
-  ]);
+  present?.({ title, message, choices });
 }

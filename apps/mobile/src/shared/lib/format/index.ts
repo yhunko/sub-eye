@@ -10,7 +10,9 @@ export {
   parsePrice,
   supportedCurrencyCode,
 } from "./money";
+export { weekdayNames } from "./weekday";
 export {
+  COUNTDOWN_DAYS,
   daysUntil,
   formatCadence,
   formatCountdown,

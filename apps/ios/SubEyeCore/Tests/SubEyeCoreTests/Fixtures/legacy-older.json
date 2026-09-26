@@ -1,0 +1,26 @@
+{
+  "subscriptions": [
+    {
+      "id": "old-z",
+      "name": "Netflix",
+      "cost": "9.99",
+      "currency": "USD",
+      "every": 1,
+      "period": "month",
+      "paymentDate": "2024-01-31T00:00:00.000Z",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "old-a",
+      "name": "Річна підписка",
+      "cost": "120.00",
+      "currency": "EUR",
+      "every": 1,
+      "period": "year",
+      "paymentDate": "2024-02-29T00:00:00.000Z",
+      "createdAt": "2024-02-29T00:00:00.000Z",
+      "updatedAt": "2024-02-29T00:00:00.000Z"
+    }
+  ]
+}

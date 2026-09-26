@@ -1,13 +1,27 @@
 import type { SubscriptionStatus } from "@subeye/model";
-import { Image, Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { m } from "@/shared/i18n";
-import { BrandLogo, brandLogoUrl } from "@/shared/ui/brand-logo";
+import { BrandBackdrop } from "@/shared/ui/brand-backdrop";
+import { BrandLogo } from "@/shared/ui/brand-logo";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText, useShrinkFloor } from "@/shared/ui/use-large-text";
 
-/** A standard (non-large) iOS navigation bar, under the status bar inset. */
-const NAV_BAR_HEIGHT = 44;
+/**
+ * What `contentInsetAdjustmentBehavior="automatic"` actually insets the scroll
+ * view by, under the status bar — MEASURED, not the 44pt a standard bar is
+ * documented at. iOS 26 lays a glass bar out taller than that and sits its
+ * controls near the top of the band.
+ *
+ * There is no `useHeaderHeight` to ask — `@react-navigation/elements` is not in
+ * this tree — so this is a constant. It is only ever used to place the logo
+ * against the bar's own controls, so a point or two out moves the logo a point
+ * or two and nothing else.
+ */
+const NAV_BAR_INSET = 57;
+
+/** Where the bar's two capsules begin, down from the safe-area inset. */
+const NAV_ITEM_TOP = 3;
 
 /**
  * Pushed past the top of the screen so no rounding or device quirk can leave a
@@ -33,6 +47,19 @@ const OVERSCAN = 12;
  */
 const OVERSCROLL_REACH = 420;
 
+/**
+ * The banner's whole subject, so it takes the room a subject takes.
+ *
+ * Fixed at every Dynamic Type setting: a logo is a picture, not text, and the
+ * calendar's tiles and the month strip keep theirs the same size for the same
+ * reason. The name under it is what grows.
+ */
+const LOGO = 108;
+
+/** The name's design size, and the point size it may never shrink past. */
+const NAME_SIZE = 26;
+const NAME_FLOOR = 18;
+
 /** A segment value's design size, and the point size it may never shrink past. */
 const SEGMENT_SIZE = 15;
 const SEGMENT_FLOOR = 11;
@@ -54,47 +81,6 @@ const STATUS_COLOR: Record<SubscriptionStatus, string> = {
   cancelling: colors.warning,
   cancelled: colors.muted,
 };
-
-/**
- * The banner's colour is the brand's own favicon, scaled past the header and
- * blurred until it is a wash rather than a picture. No colour extraction, no
- * native module and no async step that would pop the header a frame late: RN's
- * `blurRadius` is a core Image prop, so the tint arrives with the image.
- *
- * The scrim is not decoration. Most favicons are a mark on an opaque WHITE
- * plate, which blurs to a near-white field — without a fixed dark gradient over
- * it the white-on-brand text below would be unreadable for a large share of
- * brands, and unpredictably so.
- */
-function Backdrop({ domain }: { domain: string | null }) {
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {domain ? (
-        <Image
-          accessibilityIgnoresInvertColors
-          source={{ uri: brandLogoUrl(domain, 256) }}
-          style={styles.backdropImage}
-          // Tuned against the 256px favicon this asks for, NOT a bigger number
-          // being safer. `blurRadius` blurs the SOURCE at its natural size, so
-          // anything past ~30 averages a 256px icon into one flat colour — and
-          // since most favicons are a mark on white, that colour is grey. Every
-          // brand came out the same pale grey at 55.
-          blurRadius={22}
-          resizeMode="cover"
-        />
-      ) : null}
-      {/* TWO scrims, not one stretched over the taller box. The gradient's own
-          stops are percentages, so covering the overscroll reach with it would
-          slide 52% and 100% down with the extra height and leave the VISIBLE
-          band sitting in the dark end of the ramp — the brand wash would go
-          uniformly murky. Instead the reach gets a flat scrim at exactly the
-          gradient's 0% value, which makes the join invisible, and the gradient
-          keeps the geometry it was tuned for. */}
-      <View style={styles.scrimReach} />
-      <View style={styles.scrim} />
-    </View>
-  );
-}
 
 function Segment({
   label,
@@ -171,32 +157,71 @@ export function DetailHero({
   // of one syllable each. It becomes a stack, and the pill becomes a card.
   const stacked = useLargeText();
 
+  const nameFloor = useShrinkFloor(NAME_SIZE, NAME_FLOOR);
+
   const insets = useSafeAreaInsets();
   const reach =
     Platform.OS === "ios"
-      ? insets.top + NAV_BAR_HEIGHT + OVERSCAN + OVERSCROLL_REACH
+      ? insets.top + NAV_BAR_INSET + OVERSCAN + OVERSCROLL_REACH
       : 0;
+
+  // The logo's TOP edge lands on the NAV BAR's own, immediately under the status
+  // bar, so the mark reads as chrome with a control either side of it rather
+  // than as the first thing below the bar.
+  //
+  // `reach` is the climb paid back as padding, which lands content exactly where
+  // it would have been without it; taking the bar's height back off that lifts
+  // the logo INTO the bar. It renders behind the two buttons — a transparent
+  // header draws over the scroll view — and it is centred, so the only thing
+  // that could collide with them is a logo wider than the gap between them.
+  // Android's header is opaque and cannot be reached under, so it keeps a plain
+  // inset.
+  const padTop =
+    Platform.OS === "ios" ? reach - NAV_BAR_INSET + NAV_ITEM_TOP : 20;
 
   return (
     <View
-      style={[
-        styles.hero,
-        { marginTop: -(16 + reach), paddingTop: 20 + reach },
-      ]}
+      style={[styles.hero, { marginTop: -(16 + reach), paddingTop: padTop }]}
     >
-      <Backdrop domain={brandDomain} />
+      <BrandBackdrop domain={brandDomain}>
+        {/* TWO scrims, not one stretched over the taller box. The gradient's own
+            stops are percentages, so covering the overscroll reach with it would
+            slide 52% and 100% down with the extra height and leave the VISIBLE
+            band sitting in the dark end of the ramp — the brand wash would go
+            uniformly murky. Instead the reach gets a flat scrim at exactly the
+            gradient's 0% value, which makes the join invisible, and the gradient
+            keeps the geometry it was tuned for. */}
+        <View style={styles.scrimReach} />
+        <View style={styles.scrim} />
+      </BrandBackdrop>
 
-      <View style={[styles.identity, stacked && styles.identityStacked]}>
+      {/* Centred under the nav bar, which now holds nothing but a back chevron
+          and the ellipsis — so the logo sits between the two controls and the
+          banner answers "which subscription is this" and nothing else. Beside
+          the name it had 298pt to work with and "Amazon" at 78pt broke
+          MID-WORD; under it, both have the whole width. */}
+      <View style={styles.identity}>
         <BrandLogo
           name={name}
           brandDomain={brandDomain}
-          size={54}
+          size={LOGO}
           dimmed={dead}
         />
-        <View style={styles.identityText}>
-          <Text style={styles.name}>{name}</Text>
-          {dateLine ? <Text style={styles.dateLine}>{dateLine}</Text> : null}
-        </View>
+        {/* Two lines and then it SHRINKS, rather than wrapping freely. "Adobe
+            Creative Cloud" at the accessibility sizes broke mid-word — "Creativ
+            / e Cloud" — because a single word was wider than the phone, which
+            no amount of width fixes. The floor is a point size, so the name
+            still grows with Dynamic Type; it just stops growing past what the
+            screen can set. */}
+        <Text
+          style={styles.name}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={nameFloor}
+        >
+          {name}
+        </Text>
+        {dateLine ? <Text style={styles.dateLine}>{dateLine}</Text> : null}
       </View>
 
       <View style={[styles.bar, stacked && styles.barStacked]}>
@@ -238,21 +263,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 18,
   },
-  // Scaled up and saturated before it is blurred, both for the same reason: a
-  // favicon is a small mark on a white plate, and blurring it at natural size
-  // averages the plate in until every brand comes out the same pale grey. The
-  // zoom throws the plate outside the frame so the blur samples the mark, and
-  // `saturate` puts back what averaging took out. `brightness` is what keeps a
-  // yellow or white brand from lighting the banner up under the scrim.
-  backdropImage: {
-    ...StyleSheet.absoluteFill,
-    width: "100%",
-    transform: [{ scale: 2.6 }],
-    filter: [{ saturate: 2.6 }, { brightness: 0.85 }],
-  },
   // Only the part of the banner that is ever on screen at rest. `top` is the
   // overscroll reach, so this begins exactly where the flat scrim above it ends
   // and at the same 0.40 — one continuous wash across the join.
+  //
+  // It lands on rgba(…,1), the page's own background, rather than short of it:
+  // at 0.93 the banner ended on a colour a shade off `colors.bg` and its rounded
+  // bottom read as a card edge under the capsule. Fully opaque, the wash simply
+  // becomes the page and the corners stop being visible at all.
   scrim: {
     position: "absolute",
     top: OVERSCROLL_REACH,
@@ -260,7 +278,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     experimental_backgroundImage:
-      "linear-gradient(180deg, rgba(15,17,21,0.40) 0%, rgba(15,17,21,0.72) 52%, rgba(15,17,21,0.93) 100%)",
+      "linear-gradient(180deg, rgba(15,17,21,0.40) 0%, rgba(15,17,21,0.72) 52%, rgba(15,17,21,1) 100%)",
   },
   // The reach itself: a flat scrim at the gradient's starting value. Only ever
   // seen mid-pull, and only the last few points of it.
@@ -273,33 +291,20 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15,17,21,0.40)",
   },
 
-  identity: { flexDirection: "row", alignItems: "center", gap: 14 },
-  // Beside a 54pt logo the name gets 298pt, and "Amazon" at 78pt does not fit in
-  // it — it broke MID-WORD. Under the logo it has the whole banner.
-  identityStacked: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  // `flexBasis: "auto"` rather than `flex: 1`: down the column basis 0 would
-  // collapse the text block, because the banner's height is its content's.
-  identityText: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "auto",
-    minWidth: 0,
-    alignSelf: "stretch",
-  },
+  identity: { alignItems: "center", alignSelf: "stretch" },
   name: {
-    fontSize: 22,
+    marginTop: 14,
+    fontSize: NAME_SIZE,
     fontWeight: "800",
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
+    textAlign: "center",
     color: colors.text,
   },
   dateLine: {
     marginTop: 4,
     fontSize: 13,
     fontWeight: "600",
+    textAlign: "center",
     color: "rgba(242,244,248,0.72)",
   },
 

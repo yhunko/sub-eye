@@ -92,6 +92,18 @@ export class DateTimezoneUtils {
     );
   }
 
+  /** First calendar day of the year `day` falls in. */
+  static startOfCalendarYear(day: Date): Date {
+    return DateTimezoneUtils.calendarDay(day.getUTCFullYear(), 0, 1);
+  }
+
+  /** Last instant of the year `day` falls in — an inclusive range bound. */
+  static endOfCalendarYear(day: Date): Date {
+    return DateTimezoneUtils.endOfCalendarDay(
+      DateTimezoneUtils.calendarDay(day.getUTCFullYear(), 11, 31),
+    );
+  }
+
   /** Whether two values name the same calendar day. */
   static isSameCalendarDay(left: Date, right: Date): boolean {
     return (

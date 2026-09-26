@@ -1,22 +1,26 @@
 import * as Sentry from "@sentry/react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { m, useAppLocale } from "@/shared/i18n";
+import { LogoVariantProvider } from "@/shared/ui/logo-variants";
 import "@/shared/lib/focus"; // side-effect only: registers focusManager↔AppState once
 import { queryClient } from "@/shared/lib/query";
 import "@/shared/lib/sentry"; // side-effect only: Sentry.init, before Sentry.wrap below
+import { ChoiceHost } from "@/shared/ui/choice-host";
 import { AppErrorBoundary } from "@/shared/ui/error-boundary";
 import {
+  categorySheetChrome,
   nativeHeaderChrome,
   nativeSearchBarChrome,
   nativeSheetChrome,
 } from "@/shared/ui/header";
 import { colors } from "@/shared/ui/theme";
+import { sheetCloseHeaderOptions } from "@/widgets/calendar-page";
 import { currencySearch } from "@/widgets/currency-page";
 
 // expo-router looks for this exact named export on a layout and uses it as the
@@ -70,6 +74,15 @@ const legalSheet = {
   headerShown: true,
 };
 
+// The day sheet keeps its header for the same reason the legal one does — the
+// only place it can carry a real close button. `categorySheetChrome` is the
+// chrome that turns a header back on; `nativeSheetChrome` alone switches them
+// off, and spreading the header chrome only styles one.
+const daySheet = {
+  ...categorySheetChrome,
+  ...sheetCloseHeaderOptions(() => router.back()),
+};
+
 // The pause sheet is a single date field and cannot overflow, so it gets to be
 // exactly as tall as it needs.
 const compactSheet = {
@@ -100,26 +113,47 @@ function RootLayout() {
         {/* Dark-only app: force light status-bar icons regardless of OS appearance. */}
         <StatusBar style="light" />
         <QueryClientProvider client={queryClient}>
-          <Stack
-            key={locale}
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.bg },
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            {/* Root-level so every gated surface — a tab, a nested stack, a
+          <LogoVariantProvider>
+            <Stack
+              key={locale}
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.bg },
+              }}
+            >
+              <Stack.Screen name="(tabs)" />
+              {/* Root-level so every gated surface — a tab, a nested stack, a
                 sheet — can `router.push("/paywall")` and land on the same
                 screen. It brings its own header options. */}
-            <Stack.Screen
-              name="paywall"
-              options={{ presentation: "modal", headerShown: true }}
-            />
-            {/* Root-level for the same reason, and it has one more: the paywall
+              <Stack.Screen
+                name="paywall"
+                options={{ presentation: "modal", headerShown: true }}
+              />
+              {/* Root-level for the same reason, and it has one more: the paywall
                 is itself a root screen, so a sheet pushed from under its
                 Restore button lands ON it rather than behind it. */}
-            <Stack.Screen name="legal/[doc]" options={legalSheet} />
-            {/* Root-level for the same reason as the paywall: four surfaces open
+              <Stack.Screen name="legal/[doc]" options={legalSheet} />
+              {/* One day's charges. Root-level because TWO tabs open it — the
+                calendar's grid and Home's month strip — and from Home a route
+                inside the calendar's stack would be a cross-tab present: the
+                tab bar would switch to Calendar underneath the sheet. It keeps
+                a header purely to carry a close button, the way the calendar's
+                own options sheet does. */}
+              <Stack.Screen name="day/[date]" options={daySheet} />
+              {/* Root-level beside the paywall, because it REPLACES itself with
+                one: nested under the tab tree it would be presenting a modal
+                from a navigator that is about to be covered.
+
+                `fitToContents` is the exception the sheet chrome documents, and
+                it is safe here for the same reason it is safe on the pause
+                field: nothing above the scroller has a zero flex basis, so
+                there is nothing that can measure the detent to nothing. */}
+              <Stack.Screen name="pro-pitch" options={compactSheet} />
+              {/* Root-level because the subscription form is a root modal and
+                this is presented as that modal dismisses — from inside it, the
+                sheet would go down with the screen that opened it. */}
+              <Stack.Screen name="reminders" options={compactSheet} />
+              {/* Root-level for the same reason as the paywall: four surfaces open
                 it — Home's `+`, the list's `+`, Home's first-run empty state and
                 the detail screen's Edit — and two of them live in a different
                 tab from the list. Nested under `(tabs)/subscriptions` it was a
@@ -129,11 +163,11 @@ function RootLayout() {
                 it presents over whichever tab is showing and nothing moves
                 behind it. headerShown: false because the nested layout inside
                 brings its own nav bar. */}
-            <Stack.Screen
-              name="subscription-form"
-              options={{ presentation: "modal", headerShown: false }}
-            />
-            {/* Root-level so it covers the native tab bar, the same argument the
+              <Stack.Screen
+                name="subscription-form"
+                options={{ presentation: "modal", headerShown: false }}
+              />
+              {/* Root-level so it covers the native tab bar, the same argument the
                 subscription detail makes: it is a 156-row list, and a floating
                 tab bar sitting on its last row is a control the screen has no
                 use for. Pushed from the root the bar slides away WITH the push
@@ -149,25 +183,25 @@ function RootLayout() {
                 re-pushed through `navigation.setOptions` on every render, which
                 for a search field is one UISearchController rebuild per
                 keystroke. */}
-            <Stack.Screen
-              name="currency"
-              options={{
-                ...nativeHeaderChrome,
-                headerShown: true,
-                title: m.settings_currency(),
-                headerBackTitle: m.settings_title(),
-                headerSearchBarOptions: {
-                  ...nativeSearchBarChrome,
-                  placeholder: m.currency_search(),
-                  onChangeText: (event) =>
-                    currencySearch.set(event.nativeEvent.text),
-                },
-              }}
-            />
-            {/* A subscription's own screen, and the three sheets it opens, are
-                root routes for the same reason the form is one: Home's upcoming
-                rail, the list, the due digest, a widget row and a tapped
-                reminder all open it, and from Home it was a CROSS-TAB push —
+              <Stack.Screen
+                name="currency"
+                options={{
+                  ...nativeHeaderChrome,
+                  headerShown: true,
+                  title: m.settings_currency(),
+                  headerBackTitle: m.settings_title(),
+                  headerSearchBarOptions: {
+                    ...nativeSearchBarChrome,
+                    placeholder: m.currency_search(),
+                    onChangeText: (event) =>
+                      currencySearch.set(event.nativeEvent.text),
+                  },
+                }}
+              />
+              {/* A subscription's own screen, and the three sheets it opens, are
+                root routes for the same reason the form is one: the list, the
+                calendar, the due digest, a widget row and a tapped reminder all
+                open it, and from the calendar it was a CROSS-TAB push —
                 expo-router switched to the subscriptions tab and pushed the
                 detail in one commit, so the tab changed underneath and the push
                 animation was swallowed by the switch. From the root it slides
@@ -183,33 +217,46 @@ function RootLayout() {
                 page only sets its own options once the subscription has loaded —
                 without it the loading and error states have no nav bar and no
                 way back. */}
-            <Stack.Screen
-              name="subscriptions/[id]/index"
-              options={{
-                ...nativeHeaderChrome,
-                headerShown: true,
-                // The screen underneath is the tab tree, which carries no
-                // title of its own — so the back button fell back to the ROUTE
-                // NAME and read literally "(tabs)". `generic` drops the
-                // previous screen's title, which is the honest answer here
-                // anyway: Home, the list, the due digest and a deep link all
-                // reach this one screen, so there is no single place to name.
-                headerBackButtonDisplayMode: "generic",
-              }}
-            />
-            <Stack.Screen
-              name="subscriptions/[id]/pricing"
-              options={nativeSheetChrome}
-            />
-            <Stack.Screen
-              name="subscriptions/[id]/pause"
-              options={compactSheet}
-            />
-            <Stack.Screen
-              name="subscriptions/[id]/renew"
-              options={compactSheet}
-            />
-          </Stack>
+              <Stack.Screen
+                name="subscriptions/[id]/index"
+                options={{
+                  ...nativeHeaderChrome,
+                  headerShown: true,
+                  // The screen underneath is the tab tree, which carries no
+                  // title of its own — so the back button fell back to the ROUTE
+                  // NAME and read literally "(tabs)". `generic` drops the
+                  // previous screen's title, which is the honest answer here
+                  // anyway: Home, the list, the due digest and a deep link all
+                  // reach this one screen, so there is no single place to name.
+                  headerBackButtonDisplayMode: "generic",
+                  // The page's own <Stack.Screen> sits AFTER its loading and
+                  // error returns, so those two branches take whatever is set
+                  // here — and an unset title falls back to the route name, which
+                  // rendered a literal "subscriptions/[id]/index" across the bar.
+                  // Empty is what the loaded screen wants too: the banner names
+                  // the subscription under a centred logo.
+                  headerTitle: "",
+                }}
+              />
+              <Stack.Screen
+                name="subscriptions/[id]/pricing"
+                options={nativeSheetChrome}
+              />
+              <Stack.Screen
+                name="subscriptions/[id]/pause"
+                options={compactSheet}
+              />
+              <Stack.Screen
+                name="subscriptions/[id]/renew"
+                options={compactSheet}
+              />
+            </Stack>
+            {/* A SIBLING of the navigator, not a screen in it: every chooser is
+                opened from an event handler somewhere below, including two that
+                are not components at all. Android renders a Modal in its own
+                window, so this sits over whatever is on screen. */}
+            <ChoiceHost />
+          </LogoVariantProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

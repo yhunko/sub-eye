@@ -135,8 +135,6 @@ function ReminderTapRouter() {
 // Symbol name, `md` = an Android Material Symbols name. There is no cross-
 // platform icon component here by design.
 //
-// minimizeBehavior="onScrollDown": the iOS 26 pill tab bar collapses as a list
-// scrolls down and re-expands on scroll up.
 export default function TabsLayout() {
   return <Tabs />;
 }
@@ -267,7 +265,29 @@ function Tabs() {
       <DuePhaseSync />
       <RatesSync />
       <CloudSync />
-      <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.accent}>
+      {/* `indicatorColor` and `rippleColor` are Android-only, and unset they are
+          Material 3's own `secondaryContainer` — a pale BLUE pill behind the
+          selected icon, which is the one thing on screen that does not belong to
+          this app's palette. iOS ignores both. */}
+      <NativeTabs
+        // Keep the shell deterministic across iOS releases. The scroll-driven
+        // state leaves UIKit's expanded floating bar over list content after a
+        // navigation transition on iOS 27.
+        minimizeBehavior="never"
+        tintColor={colors.accent}
+        iconColor={{ default: colors.text, selected: colors.accent }}
+        labelStyle={{
+          default: { color: colors.text },
+          selected: { color: colors.accent },
+        }}
+        backgroundColor={colors.bg}
+        indicatorColor={colors.accentSoft}
+        rippleColor={colors.accentSoft}
+        unstable_nativeProps={{
+          colorScheme: "dark",
+          nativeContainerStyle: { backgroundColor: colors.bg },
+        }}
+      >
         <NativeTabs.Trigger name="(home)">
           <NativeTabs.Trigger.Icon sf="house" md="home" />
           <NativeTabs.Trigger.Label>{m.tabs_home()}</NativeTabs.Trigger.Label>
@@ -278,12 +298,8 @@ function Tabs() {
             {m.tabs_subscriptions()}
           </NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        {/* Present for a free install too, and not only because a trigger here
-            must be STATIC — see the constraint above. The screen behind it is
-            Pro, and it says so with a ProLock over a live grid: a tab that
-            simply is not there teaches nobody that the feature exists, which is
-            the same mistake as a hidden section. Every other gate in this app is
-            visible and pressable. */}
+        {/* Free, like the three around it: see `CalendarPage` for why a tab is
+            the wrong place to put a gate. */}
         <NativeTabs.Trigger name="calendar">
           <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
           <NativeTabs.Trigger.Label>

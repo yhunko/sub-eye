@@ -6,18 +6,22 @@
   "scripts": {
     "eas-build-post-install": "bun run i18n:generate",
     "i18n:generate": "bunx --bun @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/shared/i18n/paraglide --strategy globalVariable baseLocale --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme",
-    "start": "bun run i18n:generate && expo start",
-    "ios": "bun run i18n:generate && expo run:ios",
-    "android": "bun run i18n:generate && expo run:android",
+    "start": "bun run i18n:generate && SUBEYE_BUNDLE_SUFFIX=.dev expo start",
+    "ios": "bun run i18n:generate && SUBEYE_BUNDLE_SUFFIX=.dev expo run:ios",
+    "android": "bun run i18n:generate && SUBEYE_BUNDLE_SUFFIX=.dev expo run:android",
     "prebuild": "expo prebuild --clean",
+    "build:ios:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 EXPO_NO_CAPABILITY_SYNC=1 bunx eas-cli build --platform ios --profile production --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).ipa",
+    "build:android:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk} bunx eas-cli build --platform android --profile production --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).aab",
+    "build:android:apk:local": "mkdir -p builds && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk} bunx eas-cli build --platform android --profile production-apk --local --output builds/subeye-$(node -p \"require('./app.json').expo.version\")-$(date +%Y%m%d-%H%M).apk",
     "lint": "biome check .",
     "type-check": "bun run i18n:generate && tsc --noEmit --pretty",
     "test": "bun test ./src"
   },
   "dependencies": {
     "@bacons/apple-targets": "^5.0.0",
-    "@react-native-community/datetimepicker": "9.1.0",
-    "@sentry/react-native": "~7.11.0",
+    "@expo/ui": "~57.0.18",
+    "@react-native-community/datetimepicker": "9.2.0",
+    "@sentry/react-native": "~8.25.0",
     "@subeye/legal": "workspace:*",
     "@subeye/lifecycle": "workspace:*",
     "@subeye/model": "workspace:*",
@@ -25,38 +29,48 @@
     "@subeye/reminders": "workspace:*",
     "@subeye/store": "workspace:*",
     "@subeye/time": "workspace:*",
-    "@tanstack/react-query": "^5.100.10",
-    "date-fns": "^4.1.0",
-    "expo": "~57.0.7",
-    "expo-constants": "~57.0.6",
-    "expo-crypto": "~57.0.1",
-    "expo-dev-client": "~57.0.7",
-    "expo-linking": "~57.0.3",
-    "expo-localization": "~57.0.1",
-    "expo-notifications": "~57.0.7",
-    "expo-router": "~57.0.7",
-    "expo-splash-screen": "~57.0.4",
+    "@tanstack/react-query": "^5.102.8",
+    "date-fns": "^4.4.0",
+    "expo": "~57.0.23",
+    "expo-constants": "~57.0.18",
+    "expo-crypto": "~57.0.3",
+    "expo-dev-client": "~57.0.19",
+    "expo-linking": "~57.0.10",
+    "expo-localization": "~57.0.2",
+    "expo-notifications": "~57.0.19",
+    "expo-router": "~57.0.21",
+    "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
-    "expo-symbols": "~57.0.1",
-    "expo-system-ui": "~57.0.1",
-    "react": "19.2.3",
-    "react-native": "0.86.0",
-    "react-native-gesture-handler": "~3.1.0",
+    "expo-store-review": "~57.0.3",
+    "expo-symbols": "~57.0.3",
+    "expo-system-ui": "~57.0.4",
+    "react": "19.2.8",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "~3.2.1",
     "react-native-mmkv": "^4.3.2",
     "react-native-nitro-modules": "^0.36.1",
-    "react-native-purchases": "^10.4.4",
-    "react-native-reanimated": "4.5.0",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "4.25.2",
-    "react-native-worklets": "0.10.0"
+    "react-native-purchases": "^10.9.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.9.1",
+    "react-native-screens": "~4.26.0",
+    "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
-    "@inlang/paraglide-js": "^2.18.0",
-    "@types/react": "~19.2.4"
+    "@inlang/paraglide-js": "^2.25.0",
+    "@types/react": "~19.2.18"
   },
   "expo": {
     "autolinking": {
       "nativeModulesDir": "./modules"
+    },
+    "install": {
+      "exclude": [
+        "@react-native-community/datetimepicker",
+        "@sentry/react-native",
+        "react",
+        "react-native-gesture-handler",
+        "react-native-safe-area-context"
+      ]
     }
   }
 }

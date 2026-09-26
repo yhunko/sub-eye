@@ -28,6 +28,8 @@ export interface UpcomingRenewalDto {
 }
 
 export interface MostExpensiveSubscriptionDto {
+  /** Home's month card links to the subscription, so it has to name which one. */
+  id: string;
   name: string;
   yearlyAmount: number;
   brandDomain: string | null;
@@ -105,9 +107,9 @@ export interface DashboardAnalyticsDto {
 /**
  * One dated thing that happens to a subscription.
  *
- * The same vocabulary and the same order the mobile client's `deriveAttention`
- * uses for Home's rail. One list of kinds, so the rail and the calendar cannot
- * come to different conclusions about what a given day contains.
+ * One list of kinds, shared by every projection that dates one — so the
+ * calendar, the reminder planner and any future surface cannot come to different
+ * conclusions about what a given day contains.
  */
 export type CalendarEventKind =
   | "trialEnds"
@@ -146,6 +148,40 @@ export interface CalendarMonthDto {
   month: string;
   currencyCode: string;
   monthTotal: number;
+  /**
+   * The month BEFORE this one, so a client can print the delta without asking
+   * for a second month. Carried here rather than derived from two queries
+   * because the two would be projected independently and could disagree at a
+   * boundary — and because the delta is a property of a month, not of a screen.
+   */
+  previousMonthTotal: number;
   /** Only days that hold something, ascending. */
   days: CalendarDayDto[];
+}
+
+export interface CalendarYearMonthDto {
+  /** First day of the month, UTC midnight. */
+  month: string;
+  total: number;
+  /**
+   * What each day of the month charges, index 0 = the 1st. Length is the
+   * month's OWN day count, so a renderer never has to know how long February
+   * is — and a day with nothing on it is a `0` rather than a gap.
+   */
+  dayTotals: number[];
+}
+
+export interface CalendarYearDto {
+  /** 1 January, UTC midnight. */
+  year: string;
+  currencyCode: string;
+  total: number;
+  /**
+   * The heaviest single day in the year, and the top of a heatmap's scale.
+   * Zero for a year with no charges at all, which a renderer must treat as
+   * "no scale" rather than dividing by it.
+   */
+  heaviestDayTotal: number;
+  /** Always twelve, January first, whether or not a month holds anything. */
+  months: CalendarYearMonthDto[];
 }

@@ -5,6 +5,7 @@ import { usePauseSubscription } from "@/entities/subscription";
 import { m } from "@/shared/i18n";
 import { isFutureDay, toIsoDay } from "@/shared/lib/format";
 import { NativeDateField } from "@/shared/ui/native-date-field";
+import { SheetHeader } from "@/shared/ui/sheet-header";
 import { colors } from "@/shared/ui/theme";
 
 const nextMonth = () => {
@@ -40,25 +41,28 @@ export function PauseSheet({ id }: { id: string }) {
   };
 
   return (
-    <View style={styles.sheet}>
-      <Text style={styles.title}>{m.confirm_pauseTitle()}</Text>
+    <>
+      <SheetHeader />
+      <View style={styles.sheet}>
+        <Text style={styles.title}>{m.confirm_pauseTitle()}</Text>
 
-      <NativeDateField
-        label={m.pause_title()}
-        value={resumeAt}
-        minimumDate={new Date()}
-        onChange={setResumeAt}
-        error={error}
-      />
+        <NativeDateField
+          label={m.pause_title()}
+          value={resumeAt}
+          minimumDate={new Date()}
+          onChange={setResumeAt}
+          error={error}
+        />
 
-      <Pressable
-        style={styles.primary}
-        onPress={submit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.primaryLabel}>{m.pause_confirm()}</Text>
-      </Pressable>
-    </View>
+        <Pressable
+          style={styles.primary}
+          onPress={submit}
+          accessibilityRole="button"
+        >
+          <Text style={styles.primaryLabel}>{m.pause_confirm()}</Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 

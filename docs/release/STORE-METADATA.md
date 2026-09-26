@@ -12,25 +12,27 @@ of every field on this page *and* of Name / Subtitle / Privacy Policy URL on the
 
 ---
 
-## Blockers to clear first
+## Before you submit 5.3.1
 
-1. **Version says `1.0`, the binary will say `5.0.0`.** `apps/mobile/app.json`
-   sets `version: "5.0.0"`, which becomes `CFBundleShortVersionString`, and
-   App Store Connect only offers builds whose version string matches the record.
-   Change the **Version** field on this page to `5.0.0` (it is editable until
-   the first submission), or drop `app.json` to `1.0.0` — but the app config is
-   deliberate, so match the record to the binary.
-2. **"Sign-in required" is ticked under App Review Information.** There is no
-   account, no sign-up and no sign-in anywhere in the app. Untick it; leaving it
-   on with empty credentials is an automatic rejection.
-3. **`privacy@subeye.cc` must actually deliver.** It is the contact address in
-   the privacy policy, on the support page, and in the App Review contact block.
-   MX is on the domain; the alias itself was still outstanding.
-4. **Screenshots** — the 6.9" set (1320×2868) is the one Apple requires today;
-   6.5" is optional. Both are already rendered at
+1. **Add the version record first.** The 5.3.0 train is closed — Transporter
+   refuses any further build carrying that string with `409 Invalid Pre-Release
+   Train`. `apps/mobile/app.json` now sets `version: "5.3.1"` →
+   `CFBundleShortVersionString`, and the record's **Version** field has to match
+   it exactly or the build never appears in the picker.
+2. **Build 29 is unusable.** It was cut on 11 September, after the 5.3.0 train
+   closed, and is stamped 5.3.0. The first submittable build is the next one cut
+   from this commit or later; the build NUMBER keeps climbing on its own
+   (`eas.json` `appVersionSource: remote` + `autoIncrement`).
+3. **Screenshots** — carried over from 5.3.0; nothing in this release changes
+   what they show. The 6.9" set (1320×2868) is the one Apple requires; 6.5" is
+   optional. Both are rendered at
    `~/Developer/projects/sub-eye-store-screenshots/export/apple/iphone/`, **`en`
-   and `uk`**, so upload the `uk/` set into the Ukrainian localization rather
-   than letting it inherit the English captions.
+   and `uk`**. Upload the `uk/` set into the Ukrainian localization rather than
+   letting it inherit the English captions.
+4. **What's New is per locale.** Fill both — an unfilled Ukrainian field shows
+   the English text to Ukrainian users.
+5. **`privacy@subeye.cc` must keep delivering.** It is the contact address in
+   the privacy policy, on the support page, and in the App Review contact block.
 
 ---
 
@@ -50,28 +52,25 @@ Renewals, trials and spending
 
 ### Promotional Text (170)
 
-Editable any time without a new build — use it for launch notes later.
+The one field editable without a new build, so it carries the news and gets
+rewritten between releases rather than at one. 155 characters.
+
+```
+New: Home opens with what still needs a decision — a trial about to start charging, a price rise coming, a pause ending. No account, no bank login, no ads.
+```
+
+Previous, for when there is no news worth the slot:
 
 ```
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
-### What's New in This Version (4000) — 5.2.0
+### What's New in This Version (4000) — 5.3.1
 
 Per version, per locale, and editable until the build is submitted.
 
 ```
-See the month, not just the next payment.
-
-SubEye has a calendar. Every charge in the month on one grid, with what each day comes to printed on the day itself — and an agenda underneath, so you can read the names without tapping anything.
-
-Tap a day for its breakdown: what renews, what a trial is about to turn into, what you stop paying for.
-
-It counts every charge, not only the next one. A weekly subscription shows up on all four or five of its days, and the month's total is the same figure the Home screen already gives you.
-
-Choose where your week starts, how many logos fit on a day, and whether the daily totals show at all.
-
-The calendar is part of SubEye Pro.
+Fixes the top bar on iPhones running iOS 18 or earlier. Content scrolled under the title and the status bar now blurs behind them instead of showing straight through — it was most visible in Settings.
 ```
 
 ### Description (4000)
@@ -84,7 +83,7 @@ You type in what you pay. SubEye keeps the whole schedule: what it costs now, wh
 WHAT YOU GET
 
 • One number that matters — what is still going to leave your account this month, and how much of the month is left to pay it.
-• Next month's forecast, six months of trend, and your most expensive subscription.
+• Next month's forecast set against this one, and the single subscription costing you the most.
 • A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
 • A reminder the day before a renewal, so nothing is a surprise.
@@ -99,12 +98,13 @@ Your subscriptions stay on your phone. There is no server behind SubEye holding 
 
 SUBEYE PRO — ONE PAYMENT
 
-The free app is not a trial and not a teaser. Unlimited subscriptions, the whole dashboard, every lifecycle action, renewal reminders, every currency and iCloud Sync are free, and stay free.
+The free app is not a trial and not a teaser. Unlimited subscriptions, the whole dashboard, the payment calendar, every lifecycle action, renewal reminders, every currency and iCloud Sync are free, and stay free.
 
 Pro is a single purchase that never renews. It adds:
 • Trial-ending alerts, and reminders at the time you choose
 • Pricing phases — trials, intro discounts and scheduled changes on one timeline
-• Categories, the category filter and the spend breakdown
+• Categories, the category filter, and the spend breakdown grouped by them
+• The calendar's year view, and every month set against the one before it
 • Home Screen widgets
 
 Charging a monthly fee to watch your monthly fees would be absurd.
@@ -153,24 +153,22 @@ SubEye: трекер підписок
 
 ### Promotional Text (170)
 
+166 characters.
+
+```
+Нове: головна починається з того, що потребує рішення — пробний період, який ось-ось стане платним, зміна ціни, кінець паузи. Без акаунта, доступу до банку й реклами.
+```
+
+Previous, for when there is no news worth the slot:
+
 ```
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
 ```
 
-### What's New in This Version (4000) — 5.2.0
+### What's New in This Version (4000) — 5.3.1
 
 ```
-Дивіться на місяць, а не лише на наступний платіж.
-
-У SubEye з'явився календар. Усі списання місяця на одній сітці, із сумою за кожен день просто на клітинці, а під сіткою — список, у якому видно назви без жодного дотику.
-
-Торкніться дня, щоб побачити деталі: що поновлюється, що з пробного ось-ось стане платним, за що ви більше не платите.
-
-Календар рахує кожне списання, а не лише найближче. Щотижнева підписка з'являється в усі свої чотири-п'ять днів, а сума за місяць збігається з тією, що вже показує головний екран.
-
-Оберіть, з якого дня починається тиждень, скільки логотипів вміщується в день і чи показувати денні суми взагалі.
-
-Календар — частина SubEye Pro.
+Виправлено верхню панель на iPhone з iOS 18 і старішими версіями. Вміст, що прокручується під заголовком і рядком стану, тепер розмивається під ними, а не просвічує наскрізь — найпомітніше це було в Налаштуваннях.
 ```
 
 ### Description (4000)
@@ -183,7 +181,7 @@ SubEye показує, скільки коштують ваші підписки
 ЩО ВСЕРЕДИНІ
 
 • Одне число, яке має значення, — скільки ще піде з рахунку цього місяця і скільки місяця лишилося.
-• Прогноз на наступний місяць, тренд за пів року і найдорожча підписка.
+• Прогноз на наступний місяць у порівнянні з цим і найдорожча підписка.
 • Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
 • Нагадування за день до списання, щоб нічого не було несподіванкою.
@@ -198,12 +196,13 @@ SubEye показує, скільки коштують ваші підписки
 
 SUBEYE PRO — ОДИН ПЛАТІЖ
 
-Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, уся панель, усі дії з підписками, нагадування про списання, усі валюти й синхронізація через iCloud безкоштовні й такими лишаються.
+Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, уся панель, календар платежів, усі дії з підписками, нагадування про списання, усі валюти й синхронізація через iCloud безкоштовні й такими лишаються.
 
 Pro — це разова покупка, яка ніколи не поновлюється. Вона додає:
 • Сповіщення про кінець пробного періоду й нагадування в той час, який оберете ви
 • Цінові періоди — пробні періоди, знижки та заплановані зміни на одній шкалі
-• Категорії, фільтр за ними і розподіл витрат
+• Категорії, фільтр за ними і розподіл витрат за категоріями
+• Річний огляд у календарі й порівняння кожного місяця з попереднім
 • Віджети на екрані «Дім»
 
 Брати щомісячну плату за те, щоб стежити за щомісячними платежами, було б абсурдом.
@@ -244,15 +243,15 @@ build every time, and a reviewer who has never seen the app gets only what is in
 this field. Replace the WHAT CHANGED block per release; leave the rest.
 
 ```
-WHAT CHANGED IN 5.2.0
-There is a fourth tab, Calendar: the month's charges on a grid, an agenda under it, and a sheet for any day you tap. It is part of SubEye Pro. The tab is present for everyone — without Pro it shows the bare grid over a card that opens the purchase screen, because a feature that is simply absent tells a user nothing about what they would be buying.
+WHAT CHANGED IN 5.3.1
+One fix, to the navigation bar on iOS 18 and earlier: scrolled content showed through the title and the status bar, and now sits under the system blur. No new screens and nothing that needs a purchase to review.
 
-No new permissions, no new data collected and no new outbound requests: the App Privacy answers are unchanged from 5.0.0. The calendar is computed on the device from the subscriptions already entered; nothing about it leaves the phone, and it works with the network off like the rest of the app.
+No new permissions, no new data collected and no new outbound requests: the App Privacy answers are unchanged from 5.0.0. It works with the network off like the rest of the app.
 
 There is no account in this app. No sign-up, no sign-in, no server, no backend of any kind — the app opens straight to the dashboard.
 
 SEEING THE APP WITH DATA
-It starts empty by design. Tap "+" on the Home tab and add one subscription (any name, amount, currency and start date). That single entry populates the dashboard totals, the forecast, the upcoming rail, the list, the detail timeline and the reminder schedule. It takes about twenty seconds.
+It starts empty by design. Tap "+" on the Home tab and add one subscription (any name, amount, currency and start date). That single entry populates the dashboard totals, the forecast, the month strip, the list, the detail timeline and the reminder schedule. It takes about twenty seconds.
 
 WHERE DATA LIVES
 Everything is stored on the device. Nothing about a user's subscriptions is uploaded to us — there is no server to upload it to. iCloud Sync (Settings → Data) is off by default and writes to NSUbiquitousKeyValueStore, i.e. the user's own iCloud, which we cannot read.
@@ -261,7 +260,7 @@ NETWORK
 The app is fully usable with the network off. The only outbound requests are: a daily exchange-rate file from a public CDN, a brand-logo lookup when a service name is typed into the add form, crash reports, and the App Store purchase check. None of them carries a user identifier — the purchase SDK is configured with an anonymous, device-local app user id.
 
 IN-APP PURCHASE
-"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, the payment calendar, pricing phases, categories with the spend breakdown, and Home Screen widgets. Nothing renews. Restore Purchases is on the paywall and in Settings.
+"SubEye Pro" is one non-consumable that unlocks trial-ending alerts, custom reminder times, pricing phases, categories and the spend breakdown grouped by them, the calendar's year view and its month-on-month figures, and Home Screen widgets. The spend breakdown itself is free, grouped by subscription. Nothing renews. Restore Purchases is on the paywall and in Settings.
 
 The app is iPhone-only, portrait-only and dark-only by design.
 ```

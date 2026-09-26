@@ -1,5 +1,4 @@
 import { Stack, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,6 +20,7 @@ import {
 import { m } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { nativeHeaderChrome } from "@/shared/ui/header";
+import { HeaderButton } from "@/shared/ui/header-button";
 import { colors } from "@/shared/ui/theme";
 import { useLargeText } from "@/shared/ui/use-large-text";
 import { FeatureRail } from "./feature-rail";
@@ -169,19 +169,14 @@ export function PaywallPage() {
           ...nativeHeaderChrome,
           title: m.paywall_title(),
           headerLeft: () => (
-            <Pressable
+            <HeaderButton
+              ios="xmark"
+              android="close"
+              label={m.common_cancel()}
               onPress={dismiss}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={m.common_cancel()}
-            >
-              <SymbolView
-                name={{ ios: "xmark", android: "close" }}
-                size={17}
-                tintColor={colors.text}
-                weight="semibold"
-              />
-            </Pressable>
+              size={17}
+              weight="semibold"
+            />
           ),
         }}
       />

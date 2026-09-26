@@ -83,14 +83,27 @@ export function buildWidgetSnapshot(
     locale: dateLocale(),
   };
 
-  // A locked snapshot carries no figures at all. The widget is on a Home Screen
-  // anyone can see over a shoulder, and a paywall is a reason to show less, not
-  // a reason to blur something already written to disk.
+  // A locked snapshot keeps the month TOTAL and gives up everything else.
+  //
+  // It used to carry no figures at all, which made the strongest passive
+  // surface iOS has deliver nothing — a blank lock card earns its place on a
+  // Home Screen for about a day before it is deleted, and a deleted widget
+  // cannot sell anything either. The total is already free inside the app, on
+  // Home, so withholding it here bought no leverage.
+  //
+  // What stays withheld is what the shoulder-surfing argument was ever really
+  // about: WHICH services, on WHAT day, for HOW much. A Home Screen is visible
+  // to whoever is standing behind the user, and a list of named subscriptions
+  // is the part of this that is nobody else's business.
+  //
+  // `delta` stays null because the month-over-month comparison is itself Pro on
+  // the calendar screen — handing it over here would be a different feature
+  // leaking, not a considered giveaway.
   if (input.locked) {
     return {
       ...base,
       locked: true,
-      monthTotal: "",
+      monthTotal: formatMoney(input.monthTotal, input.currency),
       delta: null,
       deltaUp: false,
       alsoDue: null,

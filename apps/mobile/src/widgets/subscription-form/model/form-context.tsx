@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import {
   createContext,
   type ReactNode,
@@ -15,7 +15,13 @@ import {
 } from "@/entities/subscription";
 import { preferencesQuery } from "@/entities/user";
 import {
+  promptFlags,
+  promptSession,
+  remindersOfferDue,
+} from "@/shared/lib/prompts";
+import {
   type FormErrors,
+  isFormDirty,
   makeInitialFormValues,
   type SubscriptionFormValues,
   validateSubscriptionForm,
@@ -37,6 +43,9 @@ type FormContextValue = {
   check: (fields: readonly (keyof SubscriptionFormValues)[]) => boolean;
   /** `false` when nothing was written — the values did not validate. */
   submit: () => boolean;
+  /** Whether the draft has moved since it was seeded. Edit's X asks before
+   *  throwing that away; a clean form has nothing to ask about. */
+  dirty: boolean;
   /** Dismisses the whole modal, from any step inside it. */
   close: () => void;
 };
@@ -81,6 +90,11 @@ export function SubscriptionFormProvider({
   );
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // What the form was handed, so it can tell an edit from an untouched draft.
+  // A ref rather than state: nothing renders because it changed — it changes in
+  // the same commit that sets `values`, which renders anyway.
+  const seededValues = useRef<SubscriptionFormValues | null>(null);
+
   // Preferences and the subscription arrive asynchronously, so the form is
   // seeded when they land — but once PER SUBSCRIPTION. The detail query
   // refetches on mount, and re-seeding on every change would wipe whatever the
@@ -97,21 +111,21 @@ export function SubscriptionFormProvider({
     if (id && !subscription) return;
     seeded.current = id;
 
-    setValues(
-      makeInitialFormValues({
-        preferredCurrency: preferences.preferredCurrency,
-        subscription: subscription && {
-          name: subscription.name,
-          cost: subscription.cost,
-          currency: subscription.currency,
-          every: subscription.every,
-          period: subscription.period,
-          paymentDate: subscription.paymentDate,
-          categoryId: subscription.categoryId,
-          brandDomain: subscription.brandDomain,
-        },
-      }),
-    );
+    const seed = makeInitialFormValues({
+      preferredCurrency: preferences.preferredCurrency,
+      subscription: subscription && {
+        name: subscription.name,
+        cost: subscription.cost,
+        currency: subscription.currency,
+        every: subscription.every,
+        period: subscription.period,
+        paymentDate: subscription.paymentDate,
+        categoryId: subscription.categoryId,
+        brandDomain: subscription.brandDomain,
+      },
+    });
+    seededValues.current = seed;
+    setValues(seed);
   }, [preferences, subscription, id]);
 
   const set = <K extends keyof SubscriptionFormValues>(
@@ -158,6 +172,25 @@ export function SubscriptionFormProvider({
       create.mutate(result.value);
     }
 
+    // The ONE moment the user is demonstrably thinking about being reminded of
+    // a payment: they have just written one down. Creating only — an edit is
+    // housekeeping on something they already track and says nothing about
+    // whether they want to hear from the app.
+    //
+    // OVER the form, and the form stays up behind it. Waiting for the modal to
+    // close first put the offer on whatever screen happened to be underneath,
+    // where it reads as an interruption arriving out of nowhere rather than as
+    // the last step of the thing just finished. `DatesStepPage` closes the form
+    // when this sheet goes away — by Done or by swipe, it does not matter which.
+    if (!id && !promptSession.taken() && remindersOfferDue()) {
+      promptSession.take();
+      // Marked on SHOW, not on accept: a sheet the user dismissed is an answer,
+      // and re-offering it on every save is the nagging this avoids.
+      promptFlags.markRemindersAsked();
+      router.push("/reminders");
+      return true;
+    }
+
     // Edit is optimistic and create seeds the cache on success, so dismissing
     // straight away is correct: there is nothing left to wait for on screen.
     navigation.goBack();
@@ -173,6 +206,11 @@ export function SubscriptionFormProvider({
         set,
         check,
         submit,
+        // Nothing to discard before the seed lands — the form is showing
+        // defaults it invented itself, not anything the user put there.
+        dirty: seededValues.current
+          ? isFormDirty(values, seededValues.current)
+          : false,
         close: () => navigation.goBack(),
       }}
     >

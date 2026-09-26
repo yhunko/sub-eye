@@ -47,15 +47,20 @@ const input = (overrides: Partial<Parameters<typeof buildWidgetSnapshot>[0]>) =>
   });
 
 describe("buildWidgetSnapshot", () => {
-  it("carries no figures at all when locked", () => {
+  it("keeps the month total when locked, and nothing that names a service", () => {
     const snapshot = input({ locked: true });
 
-    // The whole point of the locked branch: a Home Screen is visible to anyone
-    // standing behind the user, so a free account must not have its totals
-    // written to shared storage in the first place.
     expect(snapshot.locked).toBe(true);
-    expect(snapshot.monthTotal).toBe("");
+    // Free gets the figure. It is already free on Home, so blanking it here
+    // only made the widget useless enough to delete.
+    expect(snapshot.monthTotal).toBe("£45.99");
+    // A Home Screen is visible to whoever is standing behind the user, and
+    // WHICH services they pay for is the part that is nobody else's business —
+    // so no row ever reaches shared storage for a free install.
     expect(snapshot.items).toEqual([]);
+    expect(snapshot.alsoDue).toBeNull();
+    // Not withheld for privacy but for consistency: the month-over-month
+    // comparison is itself Pro on the calendar screen.
     expect(snapshot.delta).toBeNull();
   });
 
