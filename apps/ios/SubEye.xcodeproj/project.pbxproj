@@ -19,6 +19,7 @@
 		1CB4AA85B620AF71A263C0E8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = ED0748CFC9CABCAD7BF4AA6D /* Localizable.strings */; };
 		24E3E2BB0CEC22F2F1BF450A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2517C143E41E4A7FA1331 /* Localization.swift */; };
 		2FAF02DFFA642E7226F9AAB9 /* RenewalActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA221CC9E8BA71801CC5745A /* RenewalActivity.swift */; };
+		30A4A727F8C0074B82D2C6B5 /* DeveloperScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193AD6E9C35BF899859CE7C6 /* DeveloperScenario.swift */; };
 		30E4522A0D631EB7C466A5FF /* FirstFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3025F2EF7AC458EFD59D1156 /* FirstFrame.swift */; };
 		3B7A148FC78C01177EF2CEE5 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2517C143E41E4A7FA1331 /* Localization.swift */; };
 		3D3F4536EFFAAF8B6E34FCB6 /* MainShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C00E54D640DD2E38B6343CF /* MainShell.swift */; };
@@ -131,6 +132,7 @@
 		077D5FCAF83F9A3A1BCDE112 /* LogoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoTests.swift; sourceTree = "<group>"; };
 		0DEDE115F7A7C58C9C27CBDD /* SubEye.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SubEye.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		17350D85EC12B7A5D778CB8A /* legal-en.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "legal-en.json"; sourceTree = "<group>"; };
+		193AD6E9C35BF899859CE7C6 /* DeveloperScenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperScenario.swift; sourceTree = "<group>"; };
 		1E294C2AA9D37339470D26D2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1F32AC462BD18F9EFE7F5F83 /* MMKVMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MMKVMigrationTests.swift; sourceTree = "<group>"; };
 		26031C0EB4888718F124C0CA /* SubEyePerformanceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SubEyePerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -275,6 +277,7 @@
 			isa = PBXGroup;
 			children = (
 				E4E3F7EB24E30A7FF7B2D9A1 /* AppServices.swift */,
+				193AD6E9C35BF899859CE7C6 /* DeveloperScenario.swift */,
 				3025F2EF7AC458EFD59D1156 /* FirstFrame.swift */,
 				8C00E54D640DD2E38B6343CF /* MainShell.swift */,
 				A763D65E3FA47C79F451D7AB /* NativeTesting.swift */,
@@ -663,6 +666,7 @@
 				E1F059F9028CDC7CF5CB970D /* Components.swift in Sources */,
 				99BFCBFEF8D2DF84F86A4B7F /* Design.swift in Sources */,
 				EFB8C66A9BA3652520492E11 /* DetailView.swift in Sources */,
+				30A4A727F8C0074B82D2C6B5 /* DeveloperScenario.swift in Sources */,
 				E90B4E49F5B44B97244729A4 /* EditorView.swift in Sources */,
 				DC7B97827CDEB6BB0A527F45 /* ExchangeRateService.swift in Sources */,
 				30E4522A0D631EB7C466A5FF /* FirstFrame.swift in Sources */,

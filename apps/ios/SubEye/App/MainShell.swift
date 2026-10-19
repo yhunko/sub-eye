@@ -150,6 +150,7 @@ struct MainShell: View {
         case .legal(let kind): LegalView(kind: kind)
         #if NATIVE_DEVELOPMENT
         case .developer: DeveloperView(state: $state, services: services)
+        case .developerScenario(let scenario): DeveloperScenarioScreen(scenario: scenario, state: $state, services: services, sheet: $sheet)
         #endif
         }
     }

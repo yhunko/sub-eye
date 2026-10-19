@@ -46,7 +46,7 @@ final class AppServices {
         var settings = DeviceSettings()
         settings.pro = try await repository.setting("pro.entitled", as: Bool.self) ?? false
         #if NATIVE_DEVELOPMENT
-        if try await repository.setting("developer.proOverride", as: Bool.self) == true { settings.pro = true }
+        if let pro = try await repository.setting("developer.proOverride", as: Bool.self) { settings.pro = pro }
         #endif
         settings.cloud = try await repository.setting("cloud.sync", as: Bool.self) ?? false
         settings.liveActivities = try await repository.setting("live.enabled", as: Bool.self) ?? false

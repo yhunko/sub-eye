@@ -48,6 +48,7 @@ enum Route: Hashable {
     case legal(String)
     #if NATIVE_DEVELOPMENT
     case developer
+    case developerScenario(DeveloperScenario)
     #endif
 }
 
@@ -93,6 +94,9 @@ enum DeepLink {
         if parts.first == "legal", let kind = parts.last { return (.settings, .legal(kind), nil) }
         if parts.first == "calendar" { return (.calendar, nil, nil) }
         if parts.first == "settings" { return (.settings, parts.last == "notifications" ? .notifications : nil, nil) }
+        #if NATIVE_DEVELOPMENT
+        if parts.first == "developer" { return (.settings, parts.count > 1 ? DeveloperScenario(rawValue: parts[1]).map(Route.developerScenario) : .developer, nil) }
+        #endif
         return nil
     }
 }
