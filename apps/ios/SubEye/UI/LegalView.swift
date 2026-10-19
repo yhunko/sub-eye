@@ -7,6 +7,12 @@ private struct LegalDocument: Decodable {
     var lead: [LegalBlock]
     var sections: [LegalSection]
 }
+// A construct this view cannot decode blanks only its own document: the terms
+// must stay readable when the policy gains one, and the reverse.
+private struct DecodedDocument: Decodable {
+    var document: LegalDocument?
+    init(from decoder: Decoder) throws { document = try? LegalDocument(from: decoder) }
+}
 private struct LegalSection: Decodable, Identifiable {
     var id: String
     var heading: String
@@ -15,12 +21,20 @@ private struct LegalSection: Decodable, Identifiable {
 private struct LegalBlock: Decodable {
     var p: [LegalInline]?
     var ul: [[LegalInline]]?
+    var dl: [LegalDefinition]?
+}
+private struct LegalDefinition: Decodable {
+    var term: String
+    var desc: [LegalInline]
 }
 private enum LegalInline: Decodable {
-    case text(String), bold(String), email(String), link(String, String)
+    case text(String), bold(String), code(String, bold: Bool), email(String), link(String, String)
+    // Apart from the dictionary below because its `b` is a Bool flag, not text.
+    private struct Code: Decodable { var code: String; var b: Bool? }
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let text = try? container.decode(String.self) { self = .text(text); return }
+        if let run = try? container.decode(Code.self) { self = .code(run.code, bold: run.b ?? false); return }
         let object = try container.decode([String: String].self)
         if let bold = object["b"] { self = .bold(bold) }
         else if let email = object["mailto"] { self = .email(email) }
@@ -52,8 +66,8 @@ struct LegalView: View {
             .task {
                 let language = Bundle.main.preferredLocalizations.first == "uk" ? "uk" : "en"
                 guard let url = Bundle.main.url(forResource: "legal-" + language, withExtension: "json"),
-                      let data = try? Data(contentsOf: url), let documents = try? JSONDecoder().decode([LegalDocument].self, from: data),
-                      let found = documents.first(where: { $0.kind == kind }) else { failed = true; return }
+                      let data = try? Data(contentsOf: url), let documents = try? JSONDecoder().decode([DecodedDocument].self, from: data),
+                      let found = documents.lazy.compactMap(\.document).first(where: { $0.kind == kind }) else { failed = true; return }
                 document = found
             }
     }
@@ -65,6 +79,14 @@ struct LegalView: View {
                     HStack(alignment: .top) { Text("•").accessibilityHidden(true); Text(attributed(item)).fixedSize(horizontal: false, vertical: true) }
                 }
             }
+            if let entries = block.dl {
+                ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.term).font(.headline)
+                        Text(attributed(entry.desc)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
         }
     }
     private func attributed(_ inlines: [LegalInline]) -> AttributedString {
@@ -72,6 +94,7 @@ struct LegalView: View {
             switch inline {
             case .text(let text): result += AttributedString(text)
             case .bold(let text): var value = AttributedString(text); value.font = .body.bold(); result += value
+            case .code(let text, let bold): var value = AttributedString(text); value.font = bold ? .body.monospaced().bold() : .body.monospaced(); result += value
             case .email(let address): var value = AttributedString(address); value.link = URL(string: "mailto:" + address); result += value
             case .link(let title, let address): var value = AttributedString(title); value.link = URL(string: address); result += value
             }
