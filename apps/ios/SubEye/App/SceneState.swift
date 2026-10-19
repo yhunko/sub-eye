@@ -24,6 +24,7 @@ struct SceneState {
     var notice: Notice?
     var reload = 0
     var serviceIssue: String?
+    var update: AppUpdate?
     var calendarMonth: Date?
 }
 

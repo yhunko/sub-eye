@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var syncTimezone = false
     @State private var timezoneChange: UUID?
     @State private var cloudChange = 0
+    @State private var storePage = 0
     private var currencyLabel: String {
         let code = state.presentation.preferences.preferredCurrency.uppercased()
         let flag = Display.currencyFlag(code)
@@ -88,11 +89,15 @@ struct SettingsView: View {
                     NavigationLink(value: Route.legal("privacy-policy")) { SettingsRow(icon: "hand.raised", title: L("settings_privacy")) }.buttonStyle(.plain)
                 }
                 VStack(spacing: 2) {
-                    Text("SubEye " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""))
+                    let version = "SubEye " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    if let update = state.update {
+                        Button(version + " · " + L("update_to", ["version": update.release.version])) { storePage += 1 }
+                            .foregroundStyle(AppTheme.accentBright).frame(minHeight: 44)
+                    } else { Text(version) }
                     Text(L("settings_madeInUkraine"))
                 }.appFont(12.5).foregroundStyle(AppTheme.muted).multilineTextAlignment(.center)
             }.padding(16).padding(.bottom, 8)
-        }.appScreen().navigationTitle(L("settings_title"))
+        }.appScreen().navigationTitle(L("settings_title")).appStoreProductPage(storePage)
             .confirmationDialog(L("settings_timezone"), isPresented: $syncTimezone, titleVisibility: .visible) {
                 Button(L("settings_timezoneUseDevice")) { timezoneChange = UUID() }
                 Button(L("common_cancel"), role: .cancel) {}

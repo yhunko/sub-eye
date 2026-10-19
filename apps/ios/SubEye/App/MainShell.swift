@@ -58,6 +58,10 @@ struct MainShell: View {
                     try await services.synchronizeSurfaces(state)
                 } catch is CancellationError { } catch { state.serviceIssue = L("native_serviceIssue") }
             }
+            .task(id: "\(scenePhase):\(externalTick)") {
+                guard booted, scenePhase == .active else { return }
+                do { state.update = try await services.updates.current(now: Date()) } catch { }
+            }
             .task(id: cloudTick) {
                 guard booted, let notification = cloudNotification else { return }
                 do { if try await services.cloud.receive(notification) { state.reload += 1 } }

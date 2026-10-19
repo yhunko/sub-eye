@@ -70,6 +70,7 @@
 		F6FC8FBB19132C4B75B28F90 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A43322B1B3ADE0CA1AA85E /* AppConfiguration.swift */; };
 		F6FDC2F8B33E8D4411C95165 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EEF3D873406E125F1E2825 /* HomeView.swift */; };
 		F7A0EAD0B09B002930699DBA /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18C0DF92357CD3C3CC442A0 /* PerformanceTests.swift */; };
+		FA64C0C4059F93FFC6AC980B /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFC37D596AEED6E685016C6 /* UpdateService.swift */; };
 		FCE61970CD71088F6261BEFF /* LogoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 077D5FCAF83F9A3A1BCDE112 /* LogoTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -188,6 +189,7 @@
 		EEAB119CA4A858323E5F5638 /* MMKVIntegrity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MMKVIntegrity.swift; sourceTree = "<group>"; };
 		F18C0DF92357CD3C3CC442A0 /* PerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceTests.swift; sourceTree = "<group>"; };
 		F3A43322B1B3ADE0CA1AA85E /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		FCFC37D596AEED6E685016C6 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -304,6 +306,7 @@
 				2E3D9AD317E492EB337EA166 /* NotificationService.swift */,
 				CFDC5229D5E24EE26E935E87 /* PromptCoordinator.swift */,
 				7468277959038767B20B9A74 /* PurchaseService.swift */,
+				FCFC37D596AEED6E685016C6 /* UpdateService.swift */,
 				669C001BAA32C247BD35F69D /* WidgetPublisher.swift */,
 			);
 			path = Services;
@@ -700,6 +703,7 @@
 				00ACD5609211EAA84CFBD8A9 /* SettingsView.swift in Sources */,
 				AD49E75E5496645029650DC5 /* SubEyeApp.swift in Sources */,
 				DDF22B6CFC11CD702A86C02B /* SubscriptionsView.swift in Sources */,
+				FA64C0C4059F93FFC6AC980B /* UpdateService.swift in Sources */,
 				DBAE8A32971935856BB3C5A5 /* WidgetPublisher.swift in Sources */,
 				D380C0D58C60ADCB1F7AB29E /* WidgetSnapshot.swift in Sources */,
 			);
