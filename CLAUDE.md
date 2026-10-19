@@ -35,8 +35,7 @@ bun run check:boundaries  # dependency-cruiser — package layering and cycles
 ```
 
 Run `type-check`, `test`, and `check:boundaries` before calling work done; iOS
-work adds the checks in `apps/ios/CLAUDE.md`. `bun run lint:fix` and
-`bun run format` write.
+work adds the checks in `apps/ios/CLAUDE.md`. `bun run lint:fix` writes.
 
 ## Conventions
 
