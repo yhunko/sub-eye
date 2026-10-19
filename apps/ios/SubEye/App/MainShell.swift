@@ -135,7 +135,11 @@ struct MainShell: View {
     }
     @ViewBuilder private func destinationSheet(_ sheet: SheetRoute) -> some View {
         switch sheet {
-        case .editor(let original): SubscriptionEditor(original: original, state: $state, services: services)
+        case .editor(let original):
+            SubscriptionEditor(original: original, state: $state, services: services) { row, action in
+                if let action { self.sheet = .lifecycle(row, action) }
+                else { self.sheet = nil; paths[tab, default: []].append(.subscription(row.id)) }
+            }
         case .paywall: PaywallView(state: $state, services: services)
         case .pricing(let row): PricingView(row: row, state: $state, services: services)
         case .lifecycle(let row, let action): LifecycleView(row: row, action: action, state: $state, services: services)

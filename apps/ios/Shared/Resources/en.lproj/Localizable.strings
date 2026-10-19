@@ -120,6 +120,8 @@
 "form_discardConfirm" = "Discard changes";
 "form_discardTitle" = "Discard these changes?";
 "form_every" = "Every";
+"form_existingOpen" = "Open";
+"form_existingTitle" = "You already track {name}";
 "form_firstPayment" = "First payment";
 "form_name" = "Name";
 "form_offerCost" = "Offer price";

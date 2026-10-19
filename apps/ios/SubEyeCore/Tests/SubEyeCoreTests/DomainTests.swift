@@ -76,6 +76,24 @@ final class DomainTests: XCTestCase {
         XCTAssertEqual(Pricing.amount(sub, phases: phases, on: Day.parse("2026-04-30")!, rates: rates, currency: "usd"), 20)
     }
 
+    func testCounterpartMatchesBrandOrNameAndPrefersCurrentSubscription() {
+        func row(_ id: String, _ name: String, _ domain: String?, _ status: SubscriptionStatus, updated: String) -> SubscriptionRow {
+            var sub = fixture(); sub.id = id; sub.name = name; sub.brandDomain = domain; sub.updatedAt = updated
+            return SubscriptionRow(subscription: sub, category: nil, status: status, amount: 20, monthly: 20, nextDate: nil, nextAmount: nil,
+                                   effectiveKind: .standard, upcoming: nil, phases: [])
+        }
+        let ended = row("ended", "Claude Pro", "claude.ai", .cancelled, updated: "2026-03-01T00:00:00Z")
+        let paused = row("paused", "Netflix", nil, .paused, updated: "2026-05-01T00:00:00Z")
+        XCTAssertEqual(Lifecycle.counterpart(name: "Claude Max 5x", domain: "Claude.ai", in: [paused, ended])?.id, "ended")
+        XCTAssertEqual(Lifecycle.counterpart(name: " netflix ", domain: "netflix.com", in: [paused, ended])?.id, "paused")
+        XCTAssertNil(Lifecycle.counterpart(name: "Spotify", domain: "spotify.com", in: [paused, ended]))
+        XCTAssertNil(Lifecycle.counterpart(name: "", domain: nil, in: [row("blank", "", nil, .paused, updated: "2026-05-01T00:00:00Z")]))
+        let older = row("older", "Claude", "claude.ai", .cancelled, updated: "2025-01-01T00:00:00Z")
+        let current = row("current", "Claude Team", "claude.ai", .active, updated: "2024-01-01T00:00:00Z")
+        XCTAssertEqual(Lifecycle.counterpart(name: "Claude", domain: "claude.ai", in: [older, ended])?.id, "ended")
+        XCTAssertEqual(Lifecycle.counterpart(name: "Claude", domain: "claude.ai", in: [ended, current, older])?.id, "current")
+    }
+
     func fixture() -> Subscription {
         Subscription(id: "s", name: "Test", cost: "20.00", currency: "usd", paymentDate: "2026-01-20T00:00:00Z", now: now)
     }

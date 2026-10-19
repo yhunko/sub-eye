@@ -120,6 +120,8 @@
 "form_discardConfirm" = "Скасувати зміни";
 "form_discardTitle" = "Справді скасувати ці зміни?";
 "form_every" = "Кожні";
+"form_existingOpen" = "Відкрити";
+"form_existingTitle" = "Ви вже відстежуєте {name}";
 "form_firstPayment" = "Перший платіж";
 "form_name" = "Назва";
 "form_offerCost" = "Ціна пропозиції";

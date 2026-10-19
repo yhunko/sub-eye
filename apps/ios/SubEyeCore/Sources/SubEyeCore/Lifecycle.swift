@@ -24,6 +24,18 @@ public enum Lifecycle {
         }
     }
 
+    public static func counterpart(name: String, domain: String?, in rows: [SubscriptionRow]) -> SubscriptionRow? {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let order: [SubscriptionStatus] = [.active, .cancelling, .paused, .cancelled]
+        return rows.filter { row in
+            if let domain, row.subscription.brandDomain?.caseInsensitiveCompare(domain) == .orderedSame { return true }
+            return !name.isEmpty && row.subscription.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                .compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        }.min { left, right in
+            (order.firstIndex(of: left.status)!, right.subscription.updatedAt) < (order.firstIndex(of: right.status)!, left.subscription.updatedAt)
+        }
+    }
+
     public static func includes(_ subscription: Subscription, occurrence: Date) -> Bool {
         guard let cancellation = Day.parse(subscription.willBeCancelledAt) else { return true }
         return occurrence < cancellation

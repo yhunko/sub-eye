@@ -8,6 +8,7 @@ struct SubscriptionEditor: View {
     let original: Subscription?
     @Binding var state: SceneState
     let services: AppServices
+    let onExisting: @MainActor (SubscriptionRow, LifecycleAction?) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var draft: Subscription
@@ -26,8 +27,8 @@ struct SubscriptionEditor: View {
     @State private var searchFailed = false
     private let initial: Subscription
 
-    init(original: Subscription?, state: Binding<SceneState>, services: AppServices) {
-        self.original = original; _state = state; self.services = services
+    init(original: Subscription?, state: Binding<SceneState>, services: AppServices, onExisting: @escaping @MainActor (SubscriptionRow, LifecycleAction?) -> Void) {
+        self.original = original; _state = state; self.services = services; self.onExisting = onExisting
         let initial = original ?? Subscription(id: UUID().uuidString, name: "", cost: "", currency: state.wrappedValue.presentation.preferences.preferredCurrency, paymentDate: Day.iso(Day.today()), now: Date())
         self.initial = initial; _draft = State(initialValue: initial); _date = State(initialValue: Day.parse(initial.paymentDate) ?? Day.today())
     }
@@ -249,6 +250,9 @@ struct SubscriptionEditor: View {
     private func footer(_ step: Int) -> some View {
         VStack(spacing: 0) {
             AppDivider()
+            if step == 1 || step == 2, let existing = Lifecycle.counterpart(name: draft.name, domain: draft.brandDomain, in: state.presentation.rows) {
+                existingBanner(existing).padding(.horizontal, 20).padding(.top, 14)
+            }
             Group {
                 if step == 0 || step == 3 {
                     ActionButton(title: L("form_save"), action: save)
@@ -260,6 +264,23 @@ struct SubscriptionEditor: View {
                 }
             }.buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
         }.background(AppTheme.background)
+    }
+    private func existingBanner(_ row: SubscriptionRow) -> some View {
+        let action: LifecycleAction? = row.status == .paused ? .resume : row.status == .cancelled ? .restart : nil
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 12))
+        return layout {
+            HStack(spacing: 12) {
+                BrandIcon(name: row.subscription.name, domain: row.subscription.brandDomain, logos: services.logos, size: 32, dimmed: row.status == .cancelled)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("form_existingTitle", ["name": row.subscription.name])).appFont(14, weight: .semibold)
+                    Text([L("subs_status_" + row.status.rawValue), Display.money(NSDecimalNumber(decimal: Money.parse(row.subscription.cost) ?? 0).doubleValue, row.subscription.currency), Display.cadence(row.subscription)].joined(separator: " · "))
+                        .appFont(12.5).foregroundStyle(AppTheme.muted)
+                }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+            }.accessibilityElement(children: .combine)
+            Button(L(action.map { "native_action_" + $0.rawValue } ?? "form_existingOpen")) { focusedField = nil; onExisting(row, action) }
+                .appFont(14, weight: .semibold).buttonStyle(.bordered).buttonBorderShape(.capsule).tint(AppTheme.accentBright)
+                .accessibilityIdentifier("existingSubscription")
+        }.padding(12).appCard(radius: 16, fill: AppTheme.rowFill(row.status), border: AppTheme.rowBorder(row.status))
     }
     private func save() async throws {
         guard !saved else { return }
