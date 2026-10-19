@@ -25,18 +25,3 @@ export const subscriptionStatuses = [
 ] as const;
 
 export type SubscriptionStatus = (typeof subscriptionStatuses)[number];
-
-export const subscriptionAllowedActions = [
-  "edit",
-  "pause",
-  "resume",
-  "cancel",
-  "renew",
-  "delete",
-  "addPhase",
-  "applyPhaseNow",
-  "cancelPhase",
-] as const;
-
-export type SubscriptionAllowedAction =
-  (typeof subscriptionAllowedActions)[number];

@@ -3,8 +3,8 @@
  *
  * Encodes two invariants:
  *  1. Packages never depend on apps.
- *  2. Package layering: legal/time/money/model are leaves and pricing derives
- *     from them, never the reverse.
+ *  2. Package layering: legal/money/model are leaves and pricing derives from
+ *     them, never the reverse.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -34,9 +34,9 @@ module.exports = {
     {
       name: "package-layering",
       comment:
-        "Package layering: time/money/model are leaves and pricing derives from them. An edge in the other direction means the concern is in the wrong package.",
+        "Package layering: money/model are leaves and pricing derives from them. An edge in the other direction means the concern is in the wrong package.",
       severity: "error",
-      from: { path: "^packages/(time|money|model)/" },
+      from: { path: "^packages/(money|model)/" },
       to: { path: "^@subeye/pricing(/|$)" },
     },
     {

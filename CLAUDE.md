@@ -17,9 +17,8 @@ on your phone" is a promise the landing page makes.
 apps/ios           SwiftUI app, widget and Live Activity; SubEyeCore holds the domain rules and the SQLite store
 apps/landing       subeye.cc — Astro 6, static, zero client JS, en + uk
 packages/legal     the privacy policy and terms as data — the app and the site render the same words
-packages/model     records, schemas and the status vocabulary
-packages/time      UTC calendar days and recurrence. A leaf — imports nothing.
-packages/money     currency codes, rate tables, conversion, FX document parsing
+packages/model     the period, status and price-phase types
+packages/money     currency codes, rate tables, conversion
 packages/pricing   pure phase model (trial/intro/scheduledChange/standard) behind the site's price mockup
 ```
 
@@ -47,7 +46,7 @@ work adds the checks in `apps/ios/CLAUDE.md`. `bun run lint:fix` and
 
 **Boundaries are enforced, not suggested.** `dependency-cruiser.cjs` fails the
 build on a package importing from `apps/`, any edge out of `legal`, and
-`time`/`money`/`model` importing `pricing`. If a rule blocks you, the design is
+`money`/`model` importing `pricing`. If a rule blocks you, the design is
 wrong — do not add an exception. The rules match the `@subeye/…` specifier
 string, not a resolved path — the root `tsconfig.json` declares no `paths`, so a
 rule written against `^packages/…` in its `to` clause silently matches nothing.

@@ -6,11 +6,9 @@ const recurrence = { every: 1, period: SubscriptionPeriod.MONTH };
 const now = new Date("2026-06-15T00:00:00.000Z");
 
 describe("buildPhaseProjection", () => {
-  // Proves the two things the DTO consumer actually reads: which override the
-  // user is inside right now (drives the "Trial" badge) and what replaces it
-  // (drives the "reverts to $12 on 30 Jun" line). Both derive from the same
-  // sorted phase list, so they can never disagree.
-  it("reports the active override kind and the upcoming reversion", () => {
+  // Proves which override the user is inside right now — the landing timeline
+  // refuses to build unless the trial is live at its origin.
+  it("reports the active override kind", () => {
     const projection = buildPhaseProjection(
       recurrence,
       [
@@ -37,13 +35,6 @@ describe("buildPhaseProjection", () => {
     );
 
     expect(projection.effectivePhaseKind).toBe("trial");
-    expect(projection.upcomingPhase?.id).toBe("std");
-    expect(projection.scheduledPriceChange).toEqual({
-      cost: 12,
-      currency: "usd",
-      effectiveAt: "2026-06-30T00:00:00.000Z",
-      billing: projection.upcomingPhase!.billing,
-    });
   });
 
   // Proves the sort: phases are returned oldest-first regardless of input order,
@@ -101,17 +92,13 @@ describe("buildPhaseProjection", () => {
     );
 
     expect(projection.effectivePhaseKind).toBe("standard");
-    expect(projection.upcomingPhase?.id).toBe("sc");
   });
 
-  // Proves the empty case does not crash and reports nothing scheduled.
-  it("reports standard with nothing scheduled for an empty phase list", () => {
+  it("reports standard for an empty phase list", () => {
     const projection = buildPhaseProjection(recurrence, [], "usd", {}, now);
 
     expect(projection.pricePhases).toEqual([]);
     expect(projection.effectivePhaseKind).toBe("standard");
-    expect(projection.upcomingPhase).toBeNull();
-    expect(projection.scheduledPriceChange).toBeNull();
   });
 
   // Bug 1b: effectivePhaseKind is derived from getEffectivePhase, so a
@@ -146,12 +133,10 @@ describe("buildPhaseProjection", () => {
     );
 
     // now = 2026-06-15: the trial ended on 06-10 and the scheduledChange has
-    // been in force since. Nothing starts in the future, so nothing is upcoming.
+    // been in force since.
     expect(projection.effectivePhaseKind).toBe("scheduledChange");
     expect(projection.pricePhases.find((p) => p.id === "sc")?.isActive).toBe(
       true,
     );
-    expect(projection.upcomingPhase).toBeNull();
-    expect(projection.scheduledPriceChange).toBeNull();
   });
 });

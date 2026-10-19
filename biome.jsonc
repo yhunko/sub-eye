@@ -43,8 +43,7 @@
     "rules": {
       "preset": "recommended",
       "complexity": {
-        // CurrencyUtils, DateTimezoneUtils and RecurrenceUtils are static-only
-        // classes used as namespaces, deliberately.
+        // CurrencyUtils is a static-only class used as a namespace, deliberately.
         "noStaticOnlyClass": "off"
       },
       "style": {

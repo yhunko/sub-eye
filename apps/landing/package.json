@@ -4,6 +4,7 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "@subeye/legal": "workspace:*",
+    "@subeye/money": "workspace:*",
     "@subeye/pricing": "workspace:*",
     "@subeye/model": "workspace:*",
     "astro": "^7.3.1",
