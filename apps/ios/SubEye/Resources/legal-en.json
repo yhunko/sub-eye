@@ -4,7 +4,7 @@
     "locale": "en",
     "title": "Privacy policy",
     "description": "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-    "updated": "2026-08-26",
+    "updated": "2026-10-19",
     "lead": [
       {
         "p": [
@@ -146,7 +146,7 @@
               {
                 "term": "Apple — the App Store and iCloud",
                 "desc": [
-                  "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them."
+                  "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them. Once a day, the app also asks the App Store which version of SubEye is current, so it can tell you an update is out; that request carries only the app's ID, your store country and your IP address."
                 ]
               }
             ]

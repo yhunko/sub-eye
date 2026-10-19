@@ -6,7 +6,9 @@ marketing site, over seven pure packages and one that owns storage.
 **There is no server, no database and no account.** Everything the app holds
 lives in MMKV on the device; `@subeye/store`'s ports are implemented against it
 in `apps/mobile/src/shared/lib/store`. The only network calls left are Sentry,
-RevenueCat, Brandfetch, Google favicons and the daily FX document from jsDelivr.
+RevenueCat, Brandfetch, Google favicons, the daily FX document from jsDelivr
+and the native app's daily App Store version lookup (`itunes.apple.com/lookup`,
+app ID and storefront country only — `apps/ios/SubEye/Services/UpdateService.swift`).
 
 The one exception is **iCloud key-value sync**, which is off by default and is
 the only path that ever sends a user's own data anywhere. It is Apple's

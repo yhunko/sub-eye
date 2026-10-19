@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Privacy policy",
   description:
     "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-  updated: "2026-08-26",
+  updated: "2026-10-19",
   lead: [
     {
       p: [
@@ -130,7 +130,7 @@ const EN: LegalDoc = {
             {
               term: "Apple — the App Store and iCloud",
               desc: [
-                "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them.",
+                "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them. Once a day, the app also asks the App Store which version of SubEye is current, so it can tell you an update is out; that request carries only the app's ID, your store country and your IP address.",
               ],
             },
           ],
@@ -260,7 +260,7 @@ const UK: LegalDoc = {
   title: "Політика конфіденційності",
   description:
     "Які дані збирає SubEye, хто їх обробляє, скільки вони зберігаються і як їх видалити.",
-  updated: "2026-08-26",
+  updated: "2026-10-19",
   lead: [
     {
       p: [
@@ -386,7 +386,7 @@ const UK: LegalDoc = {
             {
               term: "Apple — App Store та iCloud",
               desc: [
-                "Обробляє покупку, якщо ви купуєте SubEye Pro, згідно з власною політикою конфіденційності Apple. SubEye ніколи не бачить ваших платіжних даних. Якщо ви робите резервну копію iPhone в iCloud, ваші дані SubEye лежать усередині цієї копії — на умовах Apple. А якщо ви ввімкнете синхронізацію з iCloud, ваші підписки також записуються у ваше власне сховище iCloud, щоб їх бачили інші ваші пристрої: вони лежать під вашим Apple Account, на умовах Apple, і SubEye їх усе одно не отримує.",
+                "Обробляє покупку, якщо ви купуєте SubEye Pro, згідно з власною політикою конфіденційності Apple. SubEye ніколи не бачить ваших платіжних даних. Якщо ви робите резервну копію iPhone в iCloud, ваші дані SubEye лежать усередині цієї копії — на умовах Apple. А якщо ви ввімкнете синхронізацію з iCloud, ваші підписки також записуються у ваше власне сховище iCloud, щоб їх бачили інші ваші пристрої: вони лежать під вашим Apple Account, на умовах Apple, і SubEye їх усе одно не отримує. Раз на день застосунок також питає App Store, яка версія SubEye зараз актуальна, щоб підказати вам про оновлення; цей запит містить лише ID застосунку, країну вашого App Store і вашу IP-адресу.",
               ],
             },
           ],
@@ -407,7 +407,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Більше нічого з цим запитом не йде. Ні ідентифікатора, ні пошти, ні даних про підписки, ні токена. Результати використовуються лише для того, щоб намалювати список на екрані, і ніколи не записуються на диск. Якщо ви не хочете цим користуватися — залиште поле сайту порожнім і введіть назву сервісу вручну: без логотипа застосунок працює точно так само.",
+            "Більше нічого з цим запитом не йде. Ні ідентифікатора, ні пошти, ні даних про підписки, ні токена. Результати використовуються лише для того, щоб намалювати список на екрані, і ніколи не записуються на диск. Якщо ви не хочете цим користуватися — залиште поле сайту порожнім і введіть назву сервісу вручну: без логотипу застосунок працює точно так само.",
           ],
         },
       ],
