@@ -393,6 +393,11 @@
 "unit_months" = "Місяці";
 "unit_weeks" = "Тижні";
 "unit_years" = "Роки";
+"update_action" = "Оновити";
+"update_available" = "Доступна версія SubEye {version}";
+"update_dismiss" = "Закрити";
+"update_notes" = "Виправлення та покращення";
+"update_to" = "Оновити до {version}";
 "validation_futureDate" = "Оберіть майбутню дату";
 "validation_invalidNumber" = "Введіть коректне число";
 "validation_positiveNumber" = "Має бути більше нуля";

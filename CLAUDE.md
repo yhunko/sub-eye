@@ -6,7 +6,9 @@ TypeScript packages the site and the app's bundled documents draw on.
 
 **There is no server, no database and no account.** Everything lives on the
 device in SQLite. The only network calls are RevenueCat, Brandfetch, Google
-favicons and the daily FX document from jsDelivr.
+favicons, the daily FX document from jsDelivr and the daily App Store version
+lookup (`itunes.apple.com/lookup`, app ID and storefront country only —
+`apps/ios/SubEye/Services/UpdateService.swift`).
 
 The one exception is **iCloud key-value sync**, off by default and the only path
 that ever sends a user's own data anywhere. It is Apple's transport — still no

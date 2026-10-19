@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var syncTimezone = false
     @State private var timezoneChange: UUID?
     @State private var cloudChange = 0
+    @State private var storePage = 0
     private var currencyLabel: String {
         let code = state.presentation.preferences.preferredCurrency.uppercased()
         let flag = Display.currencyFlag(code)
@@ -30,6 +31,12 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                if let update = state.update, update.banner {
+                    UpdateCard(release: update.release) {
+                        state.update?.banner = false
+                        Task { try? await services.updates.dismiss(update.release.version) }
+                    }
+                }
                 AppSection(footnote: L(state.settings.pro ? "settings_proActiveHint" : "settings_proPitch")) {
                     Button { sheet = .paywall } label: {
                         SettingsRow(icon: state.settings.pro ? "checkmark.seal.fill" : "sparkles", title: L("paywall_title"), value: L(state.settings.pro ? "settings_proActive" : "paywall_unlock"), chevron: !state.settings.pro)
@@ -95,11 +102,15 @@ struct SettingsView: View {
                 }
                 #endif
                 VStack(spacing: 2) {
-                    Text("SubEye " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""))
+                    let version = "SubEye " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    if let update = state.update {
+                        Button(version + " · " + L("update_to", ["version": update.release.version])) { storePage += 1 }
+                            .foregroundStyle(AppTheme.accentBright).frame(minHeight: 44)
+                    } else { Text(version) }
                     Text(L("settings_madeInUkraine"))
                 }.appFont(12.5).foregroundStyle(AppTheme.muted).multilineTextAlignment(.center)
             }.padding(16).padding(.bottom, 8)
-        }.appScreen().navigationTitle(L("settings_title"))
+        }.appScreen().navigationTitle(L("settings_title")).appStoreProductPage(storePage)
             .confirmationDialog(L("settings_timezone"), isPresented: $syncTimezone, titleVisibility: .visible) {
                 Button(L("settings_timezoneUseDevice")) { timezoneChange = UUID() }
                 Button(L("common_cancel"), role: .cancel) {}
@@ -143,6 +154,8 @@ struct DeveloperView: View {
     let services: AppServices
     @State private var previewCount = 0
     @State private var demoSeeded = false
+    @State private var fakeUpdate = false
+    @State private var fakeUpdateChange = 0
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -178,10 +191,24 @@ struct DeveloperView: View {
                         SettingsRow(icon: "checkmark.circle", title: "Demo subscriptions ready", chevron: false)
                     }
                 }
+                AppSection(title: "App Update", footnote: "Pretends the App Store has the next minor version, live for three days. Switching it on also forgets this device's dismissal, so the alert, the Settings banner and the tab dot all come back.") {
+                    Toggle(isOn: Binding(get: { fakeUpdate }, set: { fakeUpdate = $0; fakeUpdateChange += 1 })) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "arrow.down.app").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                            Text("Fake available update").appFont(16)
+                        }
+                    }.padding(.horizontal, 16).padding(.vertical, 8)
+                }
                 Text("This screen is compiled only into native development builds. Live Activity previews do not change subscriptions or the saved Live Activities preference.")
                     .appFont(12.5).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
             }.padding(16)
         }.appScreen().navigationTitle("Developer Tools").task { previewCount = services.live.previewCount }
+            .task { fakeUpdate = (try? await services.updates.faking()) ?? false }
+            .task(id: fakeUpdateChange) {
+                guard fakeUpdateChange > 0 else { return }
+                do { try await services.updates.fake(fakeUpdate); state.update = try await services.updates.current(now: Date()) }
+                catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
+            }
     }
 }
 #endif

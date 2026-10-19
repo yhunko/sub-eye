@@ -393,6 +393,11 @@
 "unit_months" = "Months";
 "unit_weeks" = "Weeks";
 "unit_years" = "Years";
+"update_action" = "Update";
+"update_available" = "SubEye {version} is available";
+"update_dismiss" = "Dismiss";
+"update_notes" = "Fixes and improvements";
+"update_to" = "Update to {version}";
 "validation_futureDate" = "Pick a future date";
 "validation_invalidNumber" = "Enter a valid number";
 "validation_positiveNumber" = "Must be greater than zero";

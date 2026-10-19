@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import SubEyeCore
 
 struct DestructiveMenuLabel: View {
@@ -182,6 +183,88 @@ struct EmptySubscriptions: View {
             Text(L("native_emptyBody")).foregroundStyle(.secondary)
             Button(L("subs_add"), action: add).buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("addSubscription")
         }.multilineTextAlignment(.center).padding(32).frame(maxWidth: .infinity)
+    }
+}
+
+struct UpdateCard: View {
+    let release: StoreRelease
+    let dismiss: () -> Void
+    @State private var storePage = 0
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric private var iconSize: CGFloat = 40
+    var body: some View {
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top) { icon; Spacer(); close }
+                    summary
+                    update
+                }
+            } else {
+                HStack(spacing: 12) { icon; summary; update; close }
+            }
+        }.padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 12).appCard(radius: 20)
+            .appStoreProductPage(storePage)
+    }
+    private var icon: some View {
+        let icons = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any]
+        let files = (icons?["CFBundlePrimaryIcon"] as? [String: Any])?["CFBundleIconFiles"] as? [String]
+        return Group {
+            if let image = files?.last.flatMap(UIImage.init(named:)) { Image(uiImage: image).resizable() }
+            else { Image(systemName: "app.fill").resizable().foregroundStyle(AppTheme.accent) }
+        }.frame(width: iconSize, height: iconSize).clipShape(RoundedRectangle(cornerRadius: iconSize * 0.225, style: .continuous)).accessibilityHidden(true)
+    }
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(L("update_available", ["version": release.version])).appFont(15, weight: .semibold).fixedSize(horizontal: false, vertical: true)
+            Text(release.notes ?? L("update_notes")).appFont(13, relativeTo: .footnote).foregroundStyle(AppTheme.muted).lineLimit(2)
+        }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .combine)
+    }
+    private var update: some View {
+        Button(L("update_action")) { storePage += 1 }
+            .appFont(14, weight: .semibold).fixedSize()
+            .buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
+            .tint(AppTheme.accent).foregroundStyle(AppTheme.background)
+    }
+    private var close: some View {
+        Button(action: dismiss) {
+            Image(systemName: "xmark").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted)
+                .frame(minWidth: 32, minHeight: 44).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel(L("update_dismiss"))
+    }
+}
+
+extension View {
+    func appStoreProductPage(_ request: Int) -> some View {
+        background(AppStoreProductPage(request: request).frame(width: 0, height: 0).accessibilityHidden(true))
+    }
+}
+
+// SKStoreProductViewController refuses to be embedded, so a SwiftUI sheet cannot host it; it has to be presented modally.
+private struct AppStoreProductPage: UIViewControllerRepresentable {
+    let request: Int
+    func makeCoordinator() -> Coordinator { Coordinator(handled: request) }
+    func makeUIViewController(context: Context) -> UIViewController { UIViewController() }
+    func updateUIViewController(_ host: UIViewController, context: Context) {
+        guard request != context.coordinator.handled else { return }
+        context.coordinator.handled = request
+        guard host.presentedViewController == nil else { return }
+        let page = SKStoreProductViewController()
+        page.delegate = context.coordinator
+        host.present(page, animated: true)
+        let openURL = context.environment.openURL
+        Task {
+            do { try await page.loadProduct(withParameters: [SKStoreProductParameterITunesItemIdentifier: UpdateService.appID]) }
+            catch {
+                page.dismiss(animated: true)
+                openURL(URL(string: "https://apps.apple.com/app/id\(UpdateService.appID)")!)
+            }
+        }
+    }
+    @MainActor final class Coordinator: NSObject, @MainActor SKStoreProductViewControllerDelegate {
+        var handled: Int
+        init(handled: Int) { self.handled = handled }
+        func productViewControllerDidFinish(_ controller: SKStoreProductViewController) { controller.dismiss(animated: true) }
     }
 }
 

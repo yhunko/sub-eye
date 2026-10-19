@@ -16,6 +16,7 @@ final class AppServices {
     lazy var purchases = PurchaseService(repository: repository)
     lazy var cloud = CloudService(repository: repository)
     lazy var prompts = PromptCoordinator(repository: repository)
+    lazy var updates = UpdateService(repository: repository)
 
     init(directory: URL) {
         let defaults = Preferences(currency: Locale.current.currency?.identifier.lowercased() ?? "uah", timezone: TimeZone.current.identifier)
