@@ -55,8 +55,10 @@ final class SubEyeUITests: XCTestCase {
         app.tabBars.buttons[uk ? "Головна" : "Home"].tap()
         app.buttons["addSubscription"].firstMatch.tap(); app.buttons["nextSubscriptionStep"].tap()
         let name = app.textFields["subscriptionName"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Draft survives back")
-        let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("1")
+        // Return moves focus without a coordinate tap: the first keyboard can finish presenting after typing ends,
+        // and its keyboardDidShow reveal scrolls the price field while XCUITest is computing its hit point.
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Draft survives back\n")
+        let price = app.textFields["subscriptionPrice"]; price.typeText("1")
         XCTAssertGreaterThan(app.buttons["currencyPicker"].frame.minX, price.frame.maxX)
         app.buttons["nextSubscriptionStep"].tap()
         XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5))
@@ -180,8 +182,8 @@ final class SubEyeUITests: XCTestCase {
         XCTAssertTrue(add.waitForExistence(timeout: 10)); add.tap()
         app.buttons["nextSubscriptionStep"].tap()
         let name = app.textFields["subscriptionName"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Native Flow Test")
-        let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("12.99")
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Native Flow Test\n")
+        let price = app.textFields["subscriptionPrice"]; price.typeText("12.99")
         app.buttons["nextSubscriptionStep"].tap()
         app.buttons["saveSubscription"].tap()
         XCTAssertTrue(app.tabBars.buttons["Subscriptions"].waitForExistence(timeout: 5)); app.tabBars.buttons["Subscriptions"].tap()
