@@ -21,7 +21,9 @@ struct SubscriptionDetail: View {
                     VStack(alignment: .leading, spacing: 14) {
                         hero(row).padding(.horizontal, -16)
                             .background { GeometryReader { heroGeometry in Color.clear.preference(key: HeroBottomKey.self, value: heroGeometry.frame(in: .named("subscriptionDetail")).maxY) } }
-                        if let upcoming = row.upcoming { pending(upcoming, row: row) }
+                        if let upcoming = row.upcoming {
+                            PendingPriceCard(row: row, upcoming: upcoming, editable: state.settings.pro) { apply in await managePhase(upcoming, apply: apply) }
+                        }
                         if let date = displayDate(row), row.status != .cancelled { paymentCard(row, date: date) }
                         if row.status.isCurrent, state.presentation.dashboard.monthly > 0 { shareCard(row) }
                         if !row.phases.isEmpty {
@@ -178,15 +180,9 @@ struct SubscriptionDetail: View {
             }
         }.padding(18).appCard()
     }
-    private func pending(_ upcoming: PricePhase, row: SubscriptionRow) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(L("pricing_pendingTitle"), systemImage: "exclamationmark.triangle").appFont(14, weight: .semibold).foregroundStyle(AppTheme.warning)
-            Text(Display.money(Double(upcoming.cost) ?? 0, upcoming.currency) + " · " + Display.date(Day.parse(upcoming.startsAt)!)).appFont(13)
-            if state.settings.pro {
-                ActionButton(title: L("native_applyNow")) { try await services.repository.managePhase(subscriptionId: id, phaseId: upcoming.id, apply: true, rates: try await services.exchange.cached(), now: Date()); state.reload += 1 }
-                ActionButton(title: L("native_removePending"), role: .destructive) { try await services.repository.managePhase(subscriptionId: id, phaseId: upcoming.id, apply: false, rates: try await services.exchange.cached(), now: Date()); state.reload += 1 }
-            }
-        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).appCard(radius: 18, fill: AppTheme.warning.opacity(0.10), border: AppTheme.warning.opacity(0.3))
+    private func managePhase(_ phase: PricePhase, apply: Bool) async {
+        do { try await services.repository.managePhase(subscriptionId: id, phaseId: phase.id, apply: apply, rates: try await services.exchange.cached(), now: Date()); state.reload += 1 }
+        catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
     }
     private func displayDate(_ row: SubscriptionRow) -> Date? {
         row.status == .cancelling ? row.subscription.willBeCancelledAt.flatMap(Day.parse) : row.status == .paused ? row.subscription.resumeAt.flatMap(Day.parse) : row.nextDate
@@ -206,6 +202,92 @@ struct SubscriptionDetail: View {
         case .keep, .restart: "arrow.clockwise"
         case .delete: "trash"
         }
+    }
+}
+
+private struct PendingPriceCard: View {
+    let row: SubscriptionRow
+    let upcoming: PricePhase
+    let editable: Bool
+    let manage: @MainActor (Bool) async -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var confirming: Bool?
+    @State private var running: Bool?
+    private var date: Date { Day.parse(upcoming.startsAt) ?? Day.today() }
+    private var current: String { price(row.subscription.cost, row.subscription.currency) }
+    private var next: String { price(upcoming.cost, upcoming.currency) }
+    // An offer ends by its standard phase starting, so that phase reads as the offer ending, not as a new price.
+    private var endsOffer: Bool { upcoming.kind == .standard && (row.effectiveKind == .trial || row.effectiveKind == .intro) }
+    private var title: String {
+        switch upcoming.kind {
+        case .trial: L("detail_trialStarts")
+        case .intro: L("detail_introStarts")
+        default: L(!endsOffer ? "calendar_kindPriceChange" : row.effectiveKind == .trial ? "calendar_kindTrialEnds" : "calendar_kindIntroEnds")
+        }
+    }
+    private var yearly: String? {
+        guard upcoming.kind == .scheduledChange, row.subscription.currency.lowercased() == upcoming.currency.lowercased(),
+              let from = Double(row.subscription.cost), let to = Double(upcoming.cost), from != to else { return nil }
+        let amount = Money.monthly(abs(to - from), every: row.subscription.every, period: row.subscription.period) * 12
+        return L(to > from ? "pricing_summaryYearlyMore" : "pricing_summaryYearlyLess", ["delta": Display.money(amount, upcoming.currency)])
+    }
+    var body: some View {
+        AppSection {
+            summary
+            if editable {
+                AppDivider(inset: 16)
+                action(apply: true)
+                AppDivider(inset: 16)
+                action(apply: false)
+            }
+        }
+        .accessibilityElement(children: .contain).accessibilityIdentifier("pendingPriceCard")
+        .confirmationDialog(confirming == false ? L("detail_removePendingTitle") : L(endsOffer ? "pricing_endOfferTitle" : "detail_applyNowTitle"),
+                            isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }), titleVisibility: .visible, presenting: confirming) { apply in
+            Button(actionTitle(apply: apply), role: apply ? nil : .destructive) { running = apply }
+                .accessibilityIdentifier("confirmPendingPrice")
+            Button(L("common_cancel"), role: .cancel) {}
+        } message: { apply in Text(message(apply: apply)) }
+        .task(id: running) {
+            guard let apply = running else { return }
+            await manage(apply)
+            running = nil
+        }
+    }
+    private var summary: some View {
+        let line = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 12))
+        return VStack(alignment: .leading, spacing: 4) {
+            line {
+                Text(title).appFont(16).frame(maxWidth: .infinity, alignment: .leading)
+                Text(next).appFont(16, weight: .semibold)
+            }
+            line {
+                Text(Display.when(date, countdown: true) + " · " + Display.date(date, long: true)).frame(maxWidth: .infinity, alignment: .leading)
+                Text(current).strikethrough()
+            }.appFont(13).foregroundStyle(AppTheme.muted)
+            if let yearly { Text(yearly).appFont(13).foregroundStyle(AppTheme.muted) }
+        }
+        .monospacedDigit().fixedSize(horizontal: false, vertical: true).padding(16)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([title, L("pricing_summaryChange", ["date": Display.date(date), "to": next, "from": current]), yearly].compactMap { $0 }.joined(separator: ". "))
+    }
+    private func action(apply: Bool) -> some View {
+        Button(role: apply ? nil : .destructive) { confirming = apply } label: {
+            SettingsRow(title: actionTitle(apply: apply), color: apply ? AppTheme.accentBright : AppTheme.danger, chevron: false)
+                .overlay(alignment: .trailing) { if running == apply { ProgressView().controlSize(.small).padding(.trailing, 16) } }
+        }
+        .buttonStyle(.plain).disabled(running != nil)
+        .accessibilityIdentifier(apply ? "applyPendingPrice" : "removePendingPrice")
+    }
+    private func actionTitle(apply: Bool) -> String { L(apply ? (endsOffer ? "native_endOffer" : "native_applyNow") : "native_removePending") }
+    private func message(apply: Bool) -> String {
+        let day = Display.date(date)
+        if !apply { return L("detail_removePendingBody", ["price": current, "date": day]) }
+        return endsOffer ? L("pricing_endOfferHint", ["date": day]) : L("detail_applyNowBody", ["price": next, "date": day])
+    }
+    private func price(_ cost: String, _ currency: String) -> String {
+        let value = Double(cost) ?? 0
+        return value == 0 ? L("pricing_free") : Display.money(value, currency)
     }
 }
 

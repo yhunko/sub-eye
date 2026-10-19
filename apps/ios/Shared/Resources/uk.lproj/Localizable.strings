@@ -67,11 +67,14 @@
 "currency_results" = "Результати";
 "currency_search" = "Пошук валют";
 "currency_suggested" = "Рекомендовані";
+"detail_applyNowBody" = "{price} діятиме від сьогодні, а не з {date}.";
+"detail_applyNowTitle" = "Застосувати нову ціну зараз?";
 "detail_endedBody" = "Цю підписку завершено. Відновіть її, якщо ви знову почали платити.";
 "detail_ends" = "Доступ до";
 "detail_endsNextCharge" = "Наступне списання {date}";
 "detail_endsNoCharges" = "Списань більше не буде";
 "detail_heroEnded" = "Завершено {date}";
+"detail_introStarts" = "Знижка починається";
 "detail_lastPrice" = "Остання ціна";
 "detail_moreActions" = "Ще";
 "detail_nextPayment" = "Наступний платіж";
@@ -80,6 +83,8 @@
 "detail_priceChangeTitle" = "Наступний платіж — за новою ціною";
 "detail_remindAt" = "Нагадаю {when}";
 "detail_remindOffer" = "Нагадати";
+"detail_removePendingBody" = "Зміну з {date} буде скасовано, ціна залишиться {price}.";
+"detail_removePendingTitle" = "Видалити заплановану зміну?";
 "detail_resumes" = "Відновиться";
 "detail_savedSinceEnded" = "Від завершення заощаджено {amount}";
 "detail_segAmount" = "Сума";
@@ -88,6 +93,7 @@
 "detail_spendShare" = "Частка місячних витрат";
 "detail_spendShareOf" = "{amount} із {total} на місяць";
 "detail_timeline" = "Історія цін";
+"detail_trialStarts" = "Пробний період починається";
 "due_empty" = "Цього дня нічого не поновлюється.";
 "due_title" = "Поновлення {date}";
 "due_total" = "Разом того дня";
@@ -287,7 +293,6 @@
 "pricing_pendingBadge" = "Заплановано";
 "pricing_pendingFrom" = "З {date} · {cadence}";
 "pricing_pendingRow" = "{price} з {date}";
-"pricing_pendingTitle" = "Запланована зміна";
 "pricing_scheduleHint" = "Ціна змінилася назавжди — з наступного платежу або з обраної дати.";
 "pricing_scheduleTitle" = "Нова звичайна ціна";
 "pricing_standardCost" = "Ціна після пропозиції";
