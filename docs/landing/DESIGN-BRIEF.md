@@ -115,7 +115,7 @@ Exhaustive. Do not invent features.
 - No push server, no notification tokens.
 
 **Handles real money**
-- 156 currencies — the ISO-4217 fiat set. State the number; don't list codes,
+- 155 currencies — the ISO-4217 fiat set. State the number; don't list codes,
   and don't render a row of flags. The flags belong in the app's own picker,
   where each one labels a row the reader can tap.
 - Daily exchange rates. Everything re-denominates into your home currency, so a

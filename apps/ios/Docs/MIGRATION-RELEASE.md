@@ -131,7 +131,7 @@ explicit reverse migration. Never promise an automatic lossless binary rollback.
 - [ ] Real notification permission/test delivery and renewal schedule health.
 - [ ] iCloud two-device initial union, updates, deletion and offline retry.
 - [ ] RevenueCat sandbox lifetime purchase, restore, cancel and offline entitlement.
-- [ ] iOS 27 scheduled renewal-day activity, same-day grouping and privacy off.
+- [ ] iOS 26+ scheduled renewal-day activity, iOS 17–25 open-day activity, same-day grouping and privacy off.
 - [x] Single-renewal Lock Screen presentation: glass, logo/name/amount row and
   fully visible Keep/Cancel buttons. Existing-activity layout refresh is versioned.
 - [ ] Keep acknowledges without changing billing; Cancel opens planning and local

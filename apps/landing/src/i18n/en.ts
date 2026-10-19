@@ -87,7 +87,7 @@ export const en = {
     },
     currency: {
       title: "Every currency, one honest total.",
-      body: "156 currencies, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
+      body: "155 currencies, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
     },
   },
 

@@ -45,6 +45,9 @@ enum Route: Hashable {
     case notifications
     case year(Int)
     case legal(String)
+    #if NATIVE_DEVELOPMENT
+    case developer
+    #endif
 }
 
 enum SheetRoute: Identifiable {
@@ -79,7 +82,8 @@ enum DeepLink {
             }
             if parts.count > 1 {
                 let planning = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains { $0.name == "action" && $0.value == "plan-cancellation" } == true
-                return (.subscriptions, .subscription(parts[1]), planning ? .cancellation(parts[1]) : nil)
+                if planning { return (.subscriptions, nil, .cancellation(parts[1])) }
+                return (.subscriptions, .subscription(parts[1]), nil)
             }
             let ids = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "ids" }?.value?.split(separator: ",").map(String.init)
             return (.subscriptions, ids.map(Route.selection), nil)

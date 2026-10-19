@@ -1,18 +1,16 @@
 import { getLegalDoc } from "../../../packages/legal/src/index";
-import { CURRENCIES } from "../../mobile/src/shared/lib/format/currencies";
-import seed from "../../mobile/src/shared/lib/store/fx-seed.json";
 
-console.log(
-  JSON.stringify({
-    "legal-en.json": [
-      getLegalDoc("privacy-policy", "en"),
-      getLegalDoc("terms-of-service", "en"),
-    ],
-    "legal-uk.json": [
-      getLegalDoc("privacy-policy", "uk"),
-      getLegalDoc("terms-of-service", "uk"),
-    ],
-    "currencies.json": Object.keys(CURRENCIES),
-    "fx-seed.json": seed,
-  }),
-);
+// The app bundles the same documents the site renders; rerun after editing @subeye/legal.
+for (const locale of ["en", "uk"] as const) {
+  await Bun.write(
+    new URL(`../SubEye/Resources/legal-${locale}.json`, import.meta.url),
+    `${JSON.stringify(
+      [
+        getLegalDoc("privacy-policy", locale),
+        getLegalDoc("terms-of-service", locale),
+      ],
+      null,
+      2,
+    )}\n`,
+  );
+}

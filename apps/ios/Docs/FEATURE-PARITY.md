@@ -27,7 +27,7 @@ native layout and its validation record.
   ended; category filter; next/name/cost sorting; none/category/period/currency
   grouping with monthly section totals. Persist options, not search.
 - [x] Create/edit: brand search and manual entry, logo variant selection,
-  localized decimal entry, 156 fiat currencies, custom every-N day/week/month/
+  localized decimal entry, 155 fiat currencies, custom every-N day/week/month/
   year cadence, initial payment day, optional trial/intro end and standard price,
   category picker/create. Draft lifetime belongs to the sheet.
 - [x] Details: identity, current and next-charge price, exact lifecycle event,
@@ -84,9 +84,9 @@ native layout and its validation record.
 - [x] Local model first; external services only after usable frame.
 - [x] Renewal Live Activities, default off under Settings → Notifications;
   explain system permission, privacy, group same-day renewals, bounded lifetime.
-- [x] iOS 27 scheduled ActivityKit request; earlier OS uses local notifications.
-  The installed Xcode 27 SDK exposes the `start:` request (marked iOS 26); the
-  product gate remains iOS 27 as requested.
+- [x] iOS 26+ scheduled ActivityKit request (`start:`); iOS 17–25 starts the
+  activity when the app is opened on the renewal day; iOS 16 disables the
+  setting and keeps local notifications.
 - [x] Keep acknowledges only and ends the activity; Cancel opens cancellation
   planning/provider instructions and requires confirmation before local mutation.
 - [x] Versioned, resumable, idempotent migration; legacy inputs never overwritten.
@@ -127,7 +127,7 @@ commit together; retry after interruption is safe.
 - Xcode 27.0, build 27A266a, iPhoneOS27.0 SDK.
 - Connected physical iPhone: iOS 27.0, device identifier
   8E9E582B-7667-5520-A2FA-F6FCD2E537DB (model/signing measured later).
-- Existing app deployment target 16.4; widget 18.0.
+- Existing app deployment target 16.4; widget 17.0.
 - Team Z6KADG969Z; production cc.subeye.app / cc.subeye.app.widget.
 
 ## Evidence status

@@ -52,10 +52,10 @@ packages:
     path: SubEyeCore
   MMKV:
     url: https://github.com/Tencent/MMKV.git
-    exactVersion: 2.4.2
+    exactVersion: 2.4.3
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios.git
-    exactVersion: 5.89.0
+    exactVersion: 5.96.0
 targets:
   SubEye:
     type: application
@@ -63,7 +63,7 @@ targets:
     sources:
       - path: SubEye
       - path: Shared
-      - path: ../mobile/icon.icon
+      - path: icon.icon
         buildPhase: resources
     configFiles:
       Debug: Config/Build.xcconfig
@@ -86,7 +86,7 @@ targets:
   SubEyeWidget:
     type: app-extension
     platform: iOS
-    deploymentTarget: '18.0'
+    deploymentTarget: '17.0'
     sources:
       - path: SubEyeWidget
       - path: Shared
@@ -99,7 +99,7 @@ targets:
         INFOPLIST_FILE: Config/Widget-Info.plist
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
-        IPHONEOS_DEPLOYMENT_TARGET: '18.0'
+        IPHONEOS_DEPLOYMENT_TARGET: '17.0'
         SKIP_INSTALL: YES
   SubEyeTests:
     type: bundle.unit-test

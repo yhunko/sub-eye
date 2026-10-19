@@ -128,6 +128,9 @@ struct MainShell: View {
         case .notifications: NotificationsView(state: $state, services: services, sheet: $sheet)
         case .year(let year): YearView(year: year, state: $state, services: services)
         case .legal(let kind): LegalView(kind: kind)
+        #if NATIVE_DEVELOPMENT
+        case .developer: DeveloperView(state: $state, services: services)
+        #endif
         }
     }
     @ViewBuilder private func destinationSheet(_ sheet: SheetRoute) -> some View {

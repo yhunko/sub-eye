@@ -18,7 +18,7 @@ final class GoldenTests: XCTestCase {
         var pricing: [PricingVector]
         var pauses: [Pause]
     }
-    func testSharedTypeScriptRecurrenceMoneyAndLifecycleVectors() throws {
+    func testFrozenRecurrenceMoneyAndLifecycleVectors() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "golden-v1", withExtension: "json", subdirectory: "Fixtures"))
         let golden = try JSONCodec.decode(Golden.self, Data(contentsOf: url))
         for vector in golden.recurrence {

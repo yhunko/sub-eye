@@ -25,12 +25,3 @@ line between them, and every other package depends on it holding.
   `SubscriptionPeriod`: `@subeye/model` reaches back into `time` for calendar
   days, so an edge outward would be a cycle. The string enum is assignable to the
   union, so call sites are unaffected.
-
-## Hermes
-
-`Intl.DateTimeFormat(…, { timeZoneName: "longOffset" })` verified working on
-device 2026-08-24 — returned `GMT+03:00` for `Europe/Kyiv`. This is what makes
-`TZDate` from `@date-fns/tz` safe here. If it ever regresses, the library
-swallows the failure and `tzOffset` returns `NaN`, so every derived date becomes
-Invalid Date with nothing thrown. Re-probe before trusting a new RN or Hermes
-version.

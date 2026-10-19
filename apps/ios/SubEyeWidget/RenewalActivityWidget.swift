@@ -10,26 +10,46 @@ struct RenewalActivityWidget: Widget {
                 .widgetURL(destination(context))
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { Image(systemName: "repeat.circle.fill").foregroundStyle(.green) }
-                DynamicIslandExpandedRegion(.trailing) { if visible(context), context.state.count > 1 { Text(context.state.total).font(.headline).monospacedDigit() } }
-                DynamicIslandExpandedRegion(.center) { Text("SubEye").font(.headline) }
-                DynamicIslandExpandedRegion(.bottom) {
+                DynamicIslandExpandedRegion(.leading) {
+                    if visible(context) { avatarCluster(context, size: 30) }
+                    else { Image(systemName: "eye.slash.fill").foregroundStyle(.secondary) }
+                }
+                DynamicIslandExpandedRegion(.trailing, priority: 1) {
                     if visible(context) {
-                        VStack(spacing: 10) {
-                            ForEach(context.state.items, id: \.id) { item in
-                                HStack(spacing: 8) {
-                                    SurfaceLogo(name: item.name, url: item.logoURL, size: 24)
-                                    Text(item.name).font(.subheadline).lineLimit(1)
-                                    Spacer(); Text(item.price).font(.subheadline).monospacedDigit()
-                                }
-                            }
-                            actionButtons(context)
-                        }
+                        Text(context.state.total).font(.headline).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
                     }
                 }
-            } compactLeading: { Image(systemName: "repeat").foregroundStyle(.green) }
-            compactTrailing: { if visible(context) { Text(String(context.state.count)).monospacedDigit() } }
-            minimal: { Image(systemName: "repeat").foregroundStyle(.green) }
+                DynamicIslandExpandedRegion(.center) {
+                    if visible(context) {
+                        if context.state.count == 1, let item = context.state.items.first {
+                            Text(item.name).font(.headline).lineLimit(1)
+                        } else {
+                            HStack(spacing: 4) {
+                                Text(L("native_liveDay")).font(.headline).lineLimit(1)
+                                Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Text("SubEye").font(.headline)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if visible(context) {
+                        if context.state.count == 1 { actionButtons(context, compact: true) }
+                        else { renewalRows(context) }
+                    }
+                }
+            } compactLeading: {
+                if visible(context), !context.state.items.isEmpty { avatarCluster(context, size: 20) }
+                else { Image(systemName: "eye.slash").foregroundStyle(.secondary) }
+            }
+            compactTrailing: {
+                if visible(context) { Text(context.state.total).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6) }
+            }
+            minimal: {
+                if visible(context), !context.state.items.isEmpty { avatarCluster(context, size: 20) }
+                else { Image(systemName: "eye.slash").foregroundStyle(.secondary) }
+            }
             .widgetURL(destination(context))
         }
     }
@@ -44,14 +64,14 @@ struct RenewalActivityWidget: Widget {
             if context.state.count == 1, let item = context.state.items.first {
                 VStack(spacing: 12) {
                     HStack(spacing: 12) {
-                        SurfaceLogo(name: item.name, url: item.logoURL, size: 44)
+                        SurfaceLogo(name: item.name, url: item.logoURL, size: 44, fullColor: true, scale: LiveActivityLogo.scale)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(item.name).font(.headline).lineLimit(1)
-                            Text(L("native_liveDay")).font(.caption).foregroundStyle(.secondary)
+                            Text(L("native_liveRenewsToday")).font(.caption).foregroundStyle(.secondary)
                         }.frame(maxWidth: .infinity, alignment: .leading)
                         Text(item.price).font(.title3.bold()).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
                     }.frame(minHeight: 44)
-                    actionButtons(context)
+                    actionButtons(context, compact: false)
                 }.padding(16)
             } else {
                 VStack(spacing: 8) {
@@ -60,18 +80,9 @@ struct RenewalActivityWidget: Widget {
                         if context.state.count > 2 { Text("+\(context.state.count - 2)").foregroundStyle(.secondary) }
                         Spacer(minLength: 8)
                         Text(context.state.total).bold().monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
+                        Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
                     }.font(.caption)
-                    VStack(spacing: 6) {
-                        ForEach(context.state.items.prefix(2), id: \.id) { item in
-                            HStack(spacing: 10) {
-                                SurfaceLogo(name: item.name, url: item.logoURL)
-                                Text(item.name).lineLimit(1)
-                                Spacer(minLength: 8)
-                                Text(item.price).monospacedDigit().lineLimit(1)
-                            }.font(.subheadline)
-                        }
-                    }
-                    actionButtons(context)
+                    renewalRows(context)
                 }.padding(.horizontal, 16).padding(.vertical, 10)
             }
         } else {
@@ -81,15 +92,62 @@ struct RenewalActivityWidget: Widget {
     private func visible(_ context: ActivityViewContext<RenewalActivity>) -> Bool {
         !context.state.hidden && !context.isStale && UserDefaults(suiteName: AppConfiguration.group)?.bool(forKey: AppConfiguration.namespace + ".live.enabled") == true
     }
-    private func actionButtons(_ context: ActivityViewContext<RenewalActivity>) -> some View {
+    private func avatarCluster(_ context: ActivityViewContext<RenewalActivity>, size: CGFloat) -> some View {
+        HStack(spacing: -(size * 0.28)) {
+            if let first = context.state.items.first {
+                activityAvatar(first, size: size)
+                    .overlay { Circle().stroke(.black.opacity(0.8), lineWidth: 2) }
+            }
+            if context.state.count == 2, let second = context.state.items.dropFirst().first {
+                activityAvatar(second, size: size)
+                    .overlay { Circle().stroke(.black.opacity(0.8), lineWidth: 2) }
+            } else if context.state.count > 2 {
+                Text("+\(context.state.count - 1)")
+                    .font(.system(size: max(8, size * 0.34), weight: .bold, design: .rounded))
+                    .monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                    .foregroundStyle(.white)
+                    .frame(width: size, height: size)
+                    .background(.white.opacity(0.18), in: Circle())
+                    .overlay { Circle().stroke(.black.opacity(0.8), lineWidth: 2) }
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(context.state.items.map(\.name).joined(separator: ", "))
+    }
+    private func activityAvatar(_ item: RenewalActivity.Item, size: CGFloat) -> some View {
+        SurfaceLogo(name: item.name, url: item.logoURL, size: size, fullColor: true, scale: LiveActivityLogo.scale)
+            .background(.white.opacity(0.14), in: Circle())
+    }
+    private func renewalRows(_ context: ActivityViewContext<RenewalActivity>) -> some View {
+        VStack(spacing: 6) {
+            ForEach(context.state.items.prefix(2), id: \.id) { item in
+                HStack(spacing: 8) {
+                    SurfaceLogo(name: item.name, url: item.logoURL, size: 24, fullColor: true, scale: LiveActivityLogo.scale)
+                    Text(item.name).font(.subheadline).lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(item.price).font(.subheadline).monospacedDigit().lineLimit(1)
+                }
+            }
+        }
+    }
+    private func actionButtons(_ context: ActivityViewContext<RenewalActivity>, compact: Bool) -> some View {
         HStack(spacing: 12) {
             Button(intent: KeepRenewalIntent(day: context.attributes.day)) {
-                Text(L("native_keep")).frame(maxWidth: .infinity, minHeight: 44).background(.quaternary, in: Capsule())
+                Label(L("native_keep"), systemImage: "checkmark")
+                    .frame(maxWidth: .infinity, minHeight: compact ? 36 : 44).background(.white.opacity(0.12), in: Capsule())
             }.accessibilityHint(L("native_keepHint")).accessibilityIdentifier("keepRenewal")
-            Button(intent: PlanCancellationIntent(subscriptionId: context.state.count == 1 ? context.state.items.first?.id ?? "" : "", day: context.attributes.day)) {
-                Text(L("native_cancel")).frame(maxWidth: .infinity, minHeight: 44).background(.quaternary, in: Capsule())
-            }.accessibilityHint(L("native_cancelHint"))
+            Link(destination: cancellationDestination(context)) {
+                Label(L("native_cancel"), systemImage: "xmark")
+                    .frame(maxWidth: .infinity, minHeight: compact ? 36 : 44).background(.red.opacity(0.2), in: Capsule())
+            }.accessibilityHint(L("native_cancelHint")).accessibilityIdentifier("planCancellation")
         }.font(.subheadline.weight(.semibold)).buttonStyle(.plain)
+    }
+    private func cancellationDestination(_ context: ActivityViewContext<RenewalActivity>) -> URL {
+        guard let item = context.state.items.first else { return destination(context) }
+        var components = URLComponents(url: AppConfiguration.url("subscriptions/" + item.id), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "action", value: "plan-cancellation")]
+        return components.url!
     }
 }
 

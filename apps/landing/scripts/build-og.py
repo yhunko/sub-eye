@@ -6,8 +6,7 @@
 Committed output — this runs on a Mac and CI has no QuickLook. Re-run only when
 the card's copy or the mark changes.
 
-QuickLook is the rasteriser because it is already on every Mac and this is the
-same trick apps/mobile/scripts/build-android-icon.py uses. It flattens onto
+QuickLook is the rasteriser because it is already on every Mac. It flattens onto
 opaque white, which is harmless here: the card paints its own full-bleed
 background. The vendored woff2 goes in as a data URI so the card is set in the
 site's own face rather than whatever WebKit would fall back to.

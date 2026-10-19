@@ -1,8 +1,9 @@
 # @subeye/legal — the two documents, once
 
 The privacy policy and the terms of service, in English and Ukrainian, as data.
-`apps/landing` renders them as pages and `apps/mobile` renders them in a sheet;
-neither owns a word of the copy, so the site and the shipped binary cannot
+`apps/landing` renders them as pages and `apps/ios` bundles them as JSON
+(regenerate with `bun apps/ios/Contracts/resources.ts`); neither owns a word of
+the copy, so the site and the shipped binary cannot
 disagree about what a user agreed to. Before this package they were two
 independent copies of the same prose in four `.astro` files.
 
@@ -22,7 +23,7 @@ independent copies of the same prose in four `.astro` files.
   pins the full ordered list per document, and pins it for BOTH locales — a
   translation that loses a section fails there and nowhere else.
 - **Prose is single-spaced and pre-joined.** The source markup used to hard-wrap
-  and let HTML collapse it; a React Native `<Text>` collapses nothing, so a
+  and let HTML collapse it; SwiftUI's `Text` collapses nothing, so a
   string carrying a newline reads correctly on the site and ragged in the app.
   Tested.
 - **`updated` is an ISO calendar day and is per document.** Both renderers must

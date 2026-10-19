@@ -87,7 +87,7 @@ WHAT YOU GET
 • A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
 • A reminder the day before a renewal, so nothing is a surprise.
-• 156 currencies — every one the world bills in — converted daily into the one you count in.
+• 155 currencies — every one the world bills in — converted daily into the one you count in.
 • English and Ukrainian, and iCloud Sync when you want the same list on two devices.
 
 NO ACCOUNT. NO BANK. NO NETWORK.
@@ -185,7 +185,7 @@ SubEye показує, скільки коштують ваші підписки
 • Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
 • Нагадування за день до списання, щоб нічого не було несподіванкою.
-• 156 валют — усі, якими у світі виставляють рахунки, — за щоденним курсом переводяться в ту, у якій рахуєте ви.
+• 155 валют — усі, якими у світі виставляють рахунки, — за щоденним курсом переводяться в ту, у якій рахуєте ви.
 • Українська та англійська, а якщо потрібен той самий список на двох пристроях — синхронізація через iCloud.
 
 БЕЗ АКАУНТА. БЕЗ БАНКУ. БЕЗ МЕРЕЖІ.

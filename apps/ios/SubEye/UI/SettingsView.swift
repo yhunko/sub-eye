@@ -87,6 +87,13 @@ struct SettingsView: View {
                     AppDivider(inset: 47)
                     NavigationLink(value: Route.legal("privacy-policy")) { SettingsRow(icon: "hand.raised", title: L("settings_privacy")) }.buttonStyle(.plain)
                 }
+                #if NATIVE_DEVELOPMENT
+                AppSection(title: "Development") {
+                    NavigationLink(value: Route.developer) {
+                        SettingsRow(icon: "hammer", title: "Developer Tools")
+                    }.buttonStyle(.plain)
+                }
+                #endif
                 VStack(spacing: 2) {
                     Text("SubEye " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""))
                     Text(L("settings_madeInUkraine"))
@@ -129,6 +136,55 @@ struct SettingsView: View {
             }
     }
 }
+
+#if NATIVE_DEVELOPMENT
+struct DeveloperView: View {
+    @Binding var state: SceneState
+    let services: AppServices
+    @State private var previewCount = 0
+    @State private var demoSeeded = false
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                AppSection(title: "Live Activity", footnote: "Previews use current subscriptions. Seed the demo first for deterministic routes and avatars, then lock the iPhone and long-press the Dynamic Island.") {
+                    SettingsRow(icon: services.live.authorized ? "checkmark.circle" : "exclamationmark.triangle",
+                                title: "System permission", value: services.live.authorized ? "Enabled" : "Disabled", chevron: false)
+                    AppDivider(inset: 47)
+                    SettingsRow(icon: "waveform", title: "Preview activities", value: String(previewCount), chevron: false)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Show one renewal", icon: "1.circle", styledRow: true) {
+                        try await services.live.showPreview(.single, model: state.presentation, logos: services.logos); previewCount = services.live.previewCount
+                    }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Show grouped renewals", icon: "rectangle.stack", styledRow: true) {
+                        try await services.live.showPreview(.multiple, model: state.presentation, logos: services.logos); previewCount = services.live.previewCount
+                    }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Show hidden state", icon: "eye.slash", styledRow: true) {
+                        try await services.live.showPreview(.hidden, model: state.presentation, logos: services.logos); previewCount = services.live.previewCount
+                    }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "End preview", role: .destructive, icon: "xmark.circle", styledRow: true) {
+                        try await services.live.endPreview(); previewCount = services.live.previewCount
+                    }.buttonStyle(.plain)
+                }
+                AppSection(title: "Demo Data", footnote: "Adds or resets five fixed demo subscriptions in the isolated native development store and unlocks their price timelines.") {
+                    ActionButton(title: "Seed timeline demo", icon: "sparkles", styledRow: true) {
+                        try await NativeTesting.seedDemo(services.repository)
+                        demoSeeded = true; state.reload += 1
+                    }.buttonStyle(.plain)
+                    if demoSeeded {
+                        AppDivider(inset: 47)
+                        SettingsRow(icon: "checkmark.circle", title: "Demo subscriptions ready", chevron: false)
+                    }
+                }
+                Text("This screen is compiled only into native development builds. Live Activity previews do not change subscriptions or the saved Live Activities preference.")
+                    .appFont(12.5).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+            }.padding(16)
+        }.appScreen().navigationTitle("Developer Tools").task { previewCount = services.live.previewCount }
+    }
+}
+#endif
 
 actor ArchiveReader {
     static func importFile(_ url: URL, repository: SubscriptionRepository) async throws {

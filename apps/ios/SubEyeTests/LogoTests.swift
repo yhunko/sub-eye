@@ -52,6 +52,18 @@ final class LogoTests: XCTestCase {
         if let activityFile { XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent("logos/live-activity").appendingPathComponent(activityFile).path)) }
     }
 
+    func testLiveActivityLogoFitsTheSmallestDynamicIslandPresentation() throws {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1024, height: 512), format: {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1; return format
+        }())
+        let source = renderer.pngData { context in UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: 1024, height: 512)) }
+        let data = try XCTUnwrap(LogoService.activityImage(source))
+        let image = try XCTUnwrap(UIImage(data: data, scale: LiveActivityLogo.scale))
+        XCTAssertEqual(image.size.width * image.scale, 108)
+        XCTAssertLessThanOrEqual(image.size.width, 36.67)
+        XCTAssertEqual(image.size.height, 18)
+    }
+
     func testRejectsNonImagesAndDownsamplesValidImagesWithAspectPreserved() throws {
         XCTAssertNil(LogoService.validated(Data("<svg/>".utf8), plate: true, fetchedAt: Date()))
         XCTAssertNil(LogoService.validated(Data(repeating: 0, count: 2_000_001), plate: true, fetchedAt: Date()))
