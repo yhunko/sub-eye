@@ -117,7 +117,7 @@ public enum Projection {
             while date <= through {
                 if let cancel, date >= cancel { break }
                 if !(paused.map { date >= $0 && (resume.map { date < $0 } ?? true) } ?? false) {
-                    let phase = phases.first { $0.1 <= date && ($0.2.map { date < $0 } ?? true) }?.0
+                    let phase = phases.filter { $0.1 <= date && ($0.2.map { date < $0 } ?? true) }.max { $0.1 < $1.1 }?.0
                     let amount = rates.convert(Double(phase?.cost ?? sub.cost) ?? 0, from: phase?.currency ?? sub.currency, to: currency)
                     output.append(CalendarEvent(subscriptionId: sub.id, name: sub.name, domain: sub.brandDomain,
                                                 kind: .payment, date: date, amount: amount))

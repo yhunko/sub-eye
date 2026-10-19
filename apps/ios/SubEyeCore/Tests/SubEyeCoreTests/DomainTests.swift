@@ -76,6 +76,43 @@ final class DomainTests: XCTestCase {
         XCTAssertEqual(Pricing.amount(sub, phases: phases, on: Day.parse("2026-04-30")!, rates: rates, currency: "usd"), 20)
     }
 
+    func testPendingChangeOutranksOpenEndedAppliedPhaseOnItsDay() throws {
+        var sub = fixture(); sub.cost = "9.99"
+        var phases = [try Pricing.scheduled(sub, cost: "14.99", currency: "usd", on: nil, now: Day.parse("2026-05-15T12:00:00Z")!, zone: .gmt, id: "raise")]
+        try Pricing.settle(subscription: &sub, phases: &phases, now: Day.parse("2026-05-20T08:00:00Z")!)
+        phases.append(try Pricing.scheduled(sub, cost: "11.99", currency: "usd", on: nil, now: now, zone: .gmt, id: "cut"))
+        let rates = ExchangeRates(rates: ["usd": 1])
+        func row(_ at: Date) throws -> SubscriptionRow {
+            try XCTUnwrap(Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: at).first)
+        }
+        let pending = try row(now)
+        XCTAssertEqual(pending.nextDate.map(Day.key), "2026-09-20")
+        XCTAssertEqual(pending.nextAmount, 11.99)
+        XCTAssertEqual(Projection.payments([pending], from: Day.parse("2026-08-01")!, through: Day.parse("2026-10-31")!,
+                                           rates: rates, currency: "usd").map(\.amount), [14.99, 11.99, 11.99])
+        // Settling later that day closes the old phase at the instant, not at the day the new one starts.
+        let settledAt = Day.parse("2026-09-20T09:00:00Z")!
+        try Pricing.settle(subscription: &sub, phases: &phases, now: settledAt)
+        let settled = try row(settledAt)
+        XCTAssertEqual(settled.nextAmount, 11.99)
+        XCTAssertEqual(Projection.payments([settled], from: Day.parse("2026-09-20")!, through: Day.parse("2026-09-20")!,
+                                           rates: rates, currency: "usd").map(\.amount), [11.99])
+    }
+
+    func testDeferredOfferOutranksOpenEndedAppliedPhase() throws {
+        var sub = fixture()
+        var phases = [PricePhase(id: "old", subscriptionId: sub.id, kind: .standard, cost: "20.00", currency: "usd",
+                                 startsAt: "2026-03-20T00:00:00Z", appliedAt: "2026-03-20T00:00:00Z", now: now)]
+        phases += try Pricing.offer(subscription: &sub, promoCost: "5.00", standardCost: "25.00", currency: "usd", payments: 2,
+                                    endDate: nil, deferred: true, now: now, zone: .gmt, ids: ("offer", "revert"))
+        let rates = ExchangeRates(rates: ["usd": 1])
+        let row = try XCTUnwrap(Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases),
+                                                rates: rates, now: now).first)
+        XCTAssertEqual(row.nextAmount, 5)
+        XCTAssertEqual(Projection.payments([row], from: Day.parse("2026-08-01")!, through: Day.parse("2026-11-30")!,
+                                           rates: rates, currency: "usd").map(\.amount), [20, 5, 5, 25])
+    }
+
     func testCounterpartMatchesBrandOrNameAndPrefersCurrentSubscription() {
         func row(_ id: String, _ name: String, _ domain: String?, _ status: SubscriptionStatus, updated: String) -> SubscriptionRow {
             var sub = fixture(); sub.id = id; sub.name = name; sub.brandDomain = domain; sub.updatedAt = updated

@@ -15,11 +15,9 @@ public enum Pricing {
 
     public static func amount(_ subscription: Subscription, phases: [PricePhase], on date: Date,
                               rates: ExchangeRates, currency: String) -> Double {
-        // Occurrence pricing follows the first half-open window, not the latest-starting phase `effective` picks.
-        let phase = phases.sorted { $0.startsAt < $1.startsAt }.first { phase in
-            guard let start = Day.parse(phase.startsAt), start <= date else { return false }
-            return Day.parse(phase.endsAt).map { date < $0 } ?? true
-        }
+        // An applied phase stays open-ended while a later one waits to settle, so windows overlap and the
+        // latest-starting one owns the date — the price `settle` will have made true by then.
+        let phase = effective(phases, at: date)
         return rates.convert(Double(phase?.cost ?? subscription.cost) ?? 0,
                              from: phase?.currency ?? subscription.currency, to: currency)
     }
