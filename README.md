@@ -41,17 +41,17 @@ swift test --package-path apps/ios/SubEyeCore
 bun run type-check
 bun run test              # bun:test
 bun run lint              # biome
-bun run check:boundaries  # dependency-cruiser — package layering
-bun run check:circular    # madge
+bun run check:boundaries  # dependency-cruiser — package layering and cycles
 ```
+
+GitHub Actions runs the TypeScript gates on every push to `dev`/`main` and every
+pull request, and `swift test` whenever `apps/ios/SubEyeCore` changes.
 
 ## Releases
 
-Conventional commits, automated by
-[semantic-release](https://semantic-release.gitbook.io) from GitHub Actions.
-CI releases but does not deploy: the app ships as a local IPA
-(`bun run build:ios`) uploaded with Transporter, and the landing site with
-`bun run --cwd apps/landing deploy`.
+CI neither releases nor deploys. The app's version is `MARKETING_VERSION` in
+`apps/ios/project.yml`; it ships as a local IPA (`bun run build:ios`) uploaded
+with Transporter, and the landing site with `bun run --cwd apps/landing deploy`.
 
 ## Contributing
 

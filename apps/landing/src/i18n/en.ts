@@ -3,7 +3,7 @@ import type { PricePhaseKind, SubscriptionStatus } from "@subeye/model";
 /**
  * English is the shape of the whole dictionary. It lives here rather than in
  * the barrel so `uk.ts` can annotate itself without the two files importing
- * each other — `check:circular` fails on that cycle even though it is types-only.
+ * each other — `check:boundaries` fails on that cycle even though it is types-only.
  */
 export type Copy = typeof en;
 

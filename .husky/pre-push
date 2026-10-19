@@ -9,9 +9,6 @@ bun run lint
 echo "🔎 Running type checks across the repo..."
 bun run type-check
 
-echo "🔄 Checking for circular dependencies..."
-bun run check:circular
-
 echo "🧪 Running tests..."
 bun run test
 

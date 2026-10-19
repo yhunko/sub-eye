@@ -31,8 +31,7 @@ the one you are touching — those carry the rules that actually bite.
 bun run type-check        # turbo, every workspace
 bun run test              # turbo — bun:test everywhere, there is no vitest
 bun run lint              # biome (not eslint, not prettier)
-bun run check:boundaries  # dependency-cruiser — package layering
-bun run check:circular    # madge
+bun run check:boundaries  # dependency-cruiser — package layering and cycles
 ```
 
 Run `type-check`, `test`, and `check:boundaries` before calling work done; iOS
@@ -55,18 +54,19 @@ Probe any new rule by breaking it once.
 **Purity in packages.** Every package takes `now` as a parameter and never
 touches `db`, `fetch`, or a clock; a caller error is a `null` return.
 
-**Commits are conventional** — commitlint gates them and semantic-release reads
-them to cut versions.
+**Commits are conventional** — commitlint gates them.
 
 **`.astro` files are not linted by Biome** — it sees the frontmatter but not the
 template, so rendered variables look unused. `apps/landing` runs `astro check`
 with `noUnusedLocals` instead. A new file type in a workspace also needs its glob
 in `turbo.json`; a missing glob silently replays a stale cached build.
 
-**CI releases, it does not deploy.** Workflows run the quality gate and
-semantic-release, then stop. `apps/landing` deploys with
-`bun run --cwd apps/landing deploy`; the app ships as a local IPA
-(`bun run build:ios`) uploaded with Transporter.
+**CI checks, it does not release or deploy.** `ci.yml` runs the quality gate on
+every push to `dev`/`main` and every PR; `subeyecore.yml` runs `swift test` when
+`apps/ios/SubEyeCore` changes. The app's version is `MARKETING_VERSION` in
+`apps/ios/project.yml` and it ships as a local IPA (`bun run build:ios`)
+uploaded with Transporter; `apps/landing` deploys with
+`bun run --cwd apps/landing deploy`.
 
 ## Comments
 

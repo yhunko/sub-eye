@@ -1,10 +1,11 @@
 /**
  * Architecture boundary enforcement. Run with `bun run check:boundaries`.
  *
- * Encodes two invariants:
+ * Encodes three invariants:
  *  1. Packages never depend on apps.
  *  2. Package layering: legal/money/model are leaves and pricing derives from
  *     them, never the reverse.
+ *  3. No cycles, type-only imports included.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
@@ -42,7 +43,7 @@ module.exports = {
     {
       name: "no-circular",
       comment: "Circular dependencies are forbidden.",
-      severity: "warn",
+      severity: "error",
       from: {},
       to: { circular: true },
     },
