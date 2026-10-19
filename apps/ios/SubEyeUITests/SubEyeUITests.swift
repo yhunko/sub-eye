@@ -43,7 +43,7 @@ final class SubEyeUITests: XCTestCase {
         app.buttons[uk ? "Сьогодні" : "Today"].tap()
         XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5))
         capture(app, name: language + "-Calendar-current")
-        app.tabBars.buttons[uk ? "Налаштування" : "Settings"].tap()
+        app.tabBars.buttons[uk ? "Параметри" : "Settings"].tap()
         app.buttons["settingsCurrency"].tap()
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.tabBars.firstMatch.waitForNonExistence(timeout: 5))
@@ -213,7 +213,7 @@ final class SubEyeUITests: XCTestCase {
         let cancelSearch = app.buttons.matching(NSPredicate(format: "label IN %@", ["Закрити", "Скасувати"])).firstMatch
         XCTAssertTrue(cancelSearch.waitForExistence(timeout: 5)); cancelSearch.tap()
         app.tabBars.buttons["Календар"].tap(); XCTAssertTrue(app.buttons["Наступний місяць"].waitForExistence(timeout: 5))
-        app.tabBars.buttons["Налаштування"].tap(); XCTAssertTrue(app.buttons["notificationSettings"].waitForExistence(timeout: 5))
+        app.tabBars.buttons["Параметри"].tap(); XCTAssertTrue(app.buttons["notificationSettings"].waitForExistence(timeout: 5))
     }
     func testOfflineWarmLaunchRetainsLocalSubscriptions() {
         let app = application(count: 80); app.launch()
