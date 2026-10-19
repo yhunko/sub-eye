@@ -21,8 +21,15 @@ struct MainShell: View {
     @State private var pendingURL: URL?
     @State private var cloudNotification: Notification?
     @State private var cloudTick = 0
+    @State private var updateAlert: StoreRelease?
+    @State private var storePage = 0
     var body: some View {
         tabs
+            .alert(L("update_available", ["version": updateAlert?.version ?? ""]), isPresented: Binding(get: { updateAlert != nil }, set: { if !$0 { updateAlert = nil } }), presenting: updateAlert) { _ in
+                Button(L("update_action")) { storePage += 1 }
+                Button(L("prompt_notNow"), role: .cancel) { }
+            } message: { Text($0.notes ?? L("update_notes")) }
+            .appStoreProductPage(storePage)
             .environment(\.symbolVariants, .none)
             .background(FirstFrame { firstFrame = true }.frame(width: 0, height: 0))
             .overlay(alignment: .top) { if !state.ready { ProgressView().padding(6).accessibilityLabel(L("native_loading")) } }
@@ -62,6 +69,13 @@ struct MainShell: View {
                 guard booted, scenePhase == .active else { return }
                 do { state.update = try await services.updates.current(now: Date()) } catch { }
             }
+            .onChange(of: state.update) { update in
+                guard let update, update.alert, sheet == nil, !services.prompts.interrupted else { return }
+                services.prompts.interrupted = true
+                state.update?.alert = false
+                updateAlert = update.release
+                Task { try? await services.updates.alerted(update.release.version) }
+            }
             .task(id: cloudTick) {
                 guard booted, let notification = cloudNotification else { return }
                 do { if try await services.cloud.receive(notification) { state.reload += 1 } }
@@ -87,17 +101,19 @@ struct MainShell: View {
                 Tab(value: AppTab.home) { stack(.home) } label: { tabLabel("tabs_home", icon: "house") }
                 Tab(value: AppTab.subscriptions) { stack(.subscriptions) } label: { tabLabel("tabs_subscriptions", icon: "rectangle.stack") }
                 Tab(value: AppTab.calendar) { stack(.calendar) } label: { tabLabel("tabs_calendar", icon: "calendar") }
-                Tab(value: AppTab.settings) { stack(.settings) } label: { tabLabel("tabs_settings", icon: "gearshape") }
+                Tab(value: AppTab.settings) { stack(.settings) } label: { tabLabel("tabs_settings", icon: "gearshape") }.badge(settingsBadge)
             }
         } else {
             TabView(selection: $tab) {
                 stack(.home).tabItem { tabLabel("tabs_home", icon: "house") }.tag(AppTab.home)
                 stack(.subscriptions).tabItem { tabLabel("tabs_subscriptions", icon: "rectangle.stack") }.tag(AppTab.subscriptions)
                 stack(.calendar).tabItem { tabLabel("tabs_calendar", icon: "calendar") }.tag(AppTab.calendar)
-                stack(.settings).tabItem { tabLabel("tabs_settings", icon: "gearshape") }.tag(AppTab.settings)
+                stack(.settings).tabItem { tabLabel("tabs_settings", icon: "gearshape") }.tag(AppTab.settings).badge(settingsBadge)
             }
         }
     }
+    // An empty badge is UIKit's dot; any text would read as a count.
+    private var settingsBadge: Text? { state.update?.banner == true ? Text("") : nil }
     private func tabLabel(_ key: String, icon: String) -> some View {
         Label(L(key), systemImage: icon).environment(\.symbolVariants, .none)
     }

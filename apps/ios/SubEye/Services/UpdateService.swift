@@ -6,6 +6,7 @@ import UIKit
 struct AppUpdate: Equatable {
     var release: StoreRelease
     var banner: Bool
+    var alert: Bool
 }
 
 @MainActor
@@ -15,17 +16,41 @@ final class UpdateService {
     private var firstSession: Bool?
     init(repository: SubscriptionRepository) { self.repository = repository }
 
+    private var installed: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
+
     func current(now: Date) async throws -> AppUpdate? {
         let firstSession = try await isFirstSession(now: now)
-        guard let release = try await release(now: now) else { return nil }
-        let installed = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-        let system = UIDevice.current.systemVersion
-        guard UpdatePolicy.available(release, installed: installed, system: system, now: now, firstSession: firstSession) else { return nil }
-        let dismissed = try await repository.setting("update.dismissed", as: String.self)
-        return AppUpdate(release: release, banner: UpdatePolicy.banner(release, installed: installed, system: system, now: now, firstSession: firstSession, dismissed: dismissed))
+        #if NATIVE_DEVELOPMENT
+        if try await faking() {
+            let parts = installed.split(separator: ".").map { Int($0) ?? 0 }
+            let version = "\(parts.first ?? 0).\((parts.dropFirst().first ?? 0) + 1).0"
+            return try await offer(StoreRelease(version: version, releasedAt: now.addingTimeInterval(-UpdatePolicy.grace), minimumOS: "16.4"), firstSession: false, now: now)
+        }
+        #endif
+        return try await offer(lookupIfDue(now: now), firstSession: firstSession, now: now)
     }
 
     func dismiss(_ version: String) async throws { try await repository.setSetting("update.dismissed", value: version) }
+    func alerted(_ version: String) async throws { try await repository.setSetting("update.alerted", value: version) }
+
+    #if NATIVE_DEVELOPMENT
+    func faking() async throws -> Bool { try await repository.setting("developer.fakeUpdate", as: Bool.self) == true }
+    func fake(_ enabled: Bool) async throws {
+        try await repository.setSetting("developer.fakeUpdate", value: enabled)
+        try await repository.setSetting("update.dismissed", value: "")
+        try await repository.setSetting("update.alerted", value: "")
+    }
+    #endif
+
+    private func offer(_ release: StoreRelease?, firstSession: Bool, now: Date) async throws -> AppUpdate? {
+        let system = UIDevice.current.systemVersion
+        guard let release, UpdatePolicy.available(release, installed: installed, system: system, now: now, firstSession: firstSession) else { return nil }
+        let dismissed = try await repository.setting("update.dismissed", as: String.self)
+        let alerted = try await repository.setting("update.alerted", as: String.self)
+        return AppUpdate(release: release,
+                         banner: UpdatePolicy.shows(release, installed: installed, system: system, now: now, firstSession: firstSession, hiddenFor: dismissed),
+                         alert: UpdatePolicy.shows(release, installed: installed, system: system, now: now, firstSession: firstSession, hiddenFor: alerted))
+    }
 
     private func isFirstSession(now: Date) async throws -> Bool {
         if let firstSession { return firstSession }
@@ -35,14 +60,7 @@ final class UpdateService {
         return first
     }
 
-    private func release(now: Date) async throws -> StoreRelease? {
-        #if NATIVE_DEVELOPMENT
-        let arguments = ProcessInfo.processInfo.arguments
-        if let index = arguments.firstIndex(of: "--fake-update"), index + 1 < arguments.count {
-            let notes = arguments.firstIndex(of: "--fake-update-notes").flatMap { $0 + 1 < arguments.count ? arguments[$0 + 1] : nil }
-            return StoreRelease(version: arguments[index + 1], releasedAt: now.addingTimeInterval(-UpdatePolicy.grace), minimumOS: "16.4", notes: notes)
-        }
-        #endif
+    private func lookupIfDue(now: Date) async throws -> StoreRelease? {
         guard Bundle.main.bundleIdentifier == "cc.subeye.app", Bundle.main.appStoreReceiptURL?.lastPathComponent != "sandboxReceipt" else { return nil }
         let cached = try await repository.setting("update.check", as: UpdateCheck.self)
         guard UpdatePolicy.isDue(cached, now: now) else { return cached?.release }

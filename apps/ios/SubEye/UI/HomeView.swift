@@ -25,12 +25,6 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                if let update = state.update, update.banner {
-                    UpdateCard(release: update.release) {
-                        state.update?.banner = false
-                        Task { try? await services.updates.dismiss(update.release.version) }
-                    }
-                }
                 if model.totalCount == 0 { EmptySubscriptions { sheet = .editor(nil) } }
                 else {
                     paymentRail.padding(.bottom, 14)

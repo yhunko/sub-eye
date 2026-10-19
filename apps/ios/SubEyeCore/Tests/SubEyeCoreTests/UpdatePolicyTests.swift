@@ -35,17 +35,17 @@ final class UpdatePolicyTests: XCTestCase {
         XCTAssertFalse(available(release(age: -60)), "a release date in the future is not live")
     }
 
-    func testDismissalHidesOnlyThatVersion() {
+    func testDismissingOrAlertingHidesOnlyThatVersion() {
         let current = release("6.1.0")
-        XCTAssertFalse(UpdatePolicy.banner(current, installed: "6.0.0", system: "26.0", now: now, firstSession: false, dismissed: "6.1.0"))
-        XCTAssertTrue(available(current), "Settings keeps offering a dismissed update")
-        XCTAssertTrue(UpdatePolicy.banner(release("6.2.0"), installed: "6.0.0", system: "26.0", now: now, firstSession: false, dismissed: "6.1.0"))
-        XCTAssertTrue(UpdatePolicy.banner(current, installed: "6.0.0", system: "26.0", now: now, firstSession: false, dismissed: nil))
+        XCTAssertFalse(UpdatePolicy.shows(current, installed: "6.0.0", system: "26.0", now: now, firstSession: false, hiddenFor: "6.1.0"))
+        XCTAssertTrue(available(current), "the Settings footer keeps offering a dismissed update")
+        XCTAssertTrue(UpdatePolicy.shows(release("6.2.0"), installed: "6.0.0", system: "26.0", now: now, firstSession: false, hiddenFor: "6.1.0"))
+        XCTAssertTrue(UpdatePolicy.shows(current, installed: "6.0.0", system: "26.0", now: now, firstSession: false, hiddenFor: nil))
     }
 
     func testFirstSessionAfterInstallShowsNothing() {
         XCTAssertFalse(available(release(), firstSession: true), "a fresh install from an old link must not open on an update nag")
-        XCTAssertFalse(UpdatePolicy.banner(release(), installed: "6.0.0", system: "26.0", now: now, firstSession: true, dismissed: nil))
+        XCTAssertFalse(UpdatePolicy.shows(release(), installed: "6.0.0", system: "26.0", now: now, firstSession: true, hiddenFor: nil))
         XCTAssertFalse(UpdatePolicy.available(nil, installed: "6.0.0", system: "26.0", now: now, firstSession: false))
     }
 

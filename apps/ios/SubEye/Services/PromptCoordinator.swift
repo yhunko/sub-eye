@@ -4,7 +4,7 @@ import SubEyeCore
 @MainActor
 final class PromptCoordinator {
     private let repository: SubscriptionRepository
-    private var interrupted = false
+    var interrupted = false
     init(repository: SubscriptionRepository) { self.repository = repository }
 
     func afterCreation(settings: DeviceSettings, permissionAllowsNotifications: Bool) async throws -> Bool {

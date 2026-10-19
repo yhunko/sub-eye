@@ -43,8 +43,8 @@ public enum UpdatePolicy {
         return !precedes(os, minimum) && now.timeIntervalSince(release.releasedAt) >= grace
     }
 
-    public static func banner(_ release: StoreRelease?, installed: String, system: String, now: Date, firstSession: Bool, dismissed: String?) -> Bool {
-        available(release, installed: installed, system: system, now: now, firstSession: firstSession) && release?.version != dismissed
+    public static func shows(_ release: StoreRelease?, installed: String, system: String, now: Date, firstSession: Bool, hiddenFor version: String?) -> Bool {
+        available(release, installed: installed, system: system, now: now, firstSession: firstSession) && release?.version != version
     }
 
     public static func isNewer(_ candidate: String, than current: String) -> Bool {
