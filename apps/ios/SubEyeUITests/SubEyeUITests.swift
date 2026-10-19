@@ -252,7 +252,9 @@ final class SubEyeUITests: XCTestCase {
             let labels = bars.flatMap { $0.buttons.allElementsBoundByIndex + $0.staticTexts.allElementsBoundByIndex }.map(\.label)
             guard !labels.contains(element.label) else { return false }
             let status = CGRect(x: app.frame.minX, y: app.frame.minY, width: app.frame.width, height: max(0, app.navigationBars.firstMatch.frame.minY - app.frame.minY))
-            return element.frame.intersects(status) || bars.contains { element.frame.intersects($0.frame) }
+            // The soft scroll edge starts fading content about 37 pt above the tab bar's own frame.
+            let glass = bars.map { $0.elementType == .tabBar ? $0.frame.insetBy(dx: 0, dy: -40) : $0.frame }
+            return element.frame.intersects(status) || glass.contains { element.frame.intersects($0) }
         }
     }
     func testClearLifecycleAndPricingSheets() { clearSheets(language: "en") }

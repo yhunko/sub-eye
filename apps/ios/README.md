@@ -99,7 +99,8 @@ longer because the new presentation cache does not yet exist.
   test can leave its clearly named temporary record for cleanup.
 
 The accessibility audit excludes contrast samples underneath the native glass
-navigation/tab bars, where iOS deliberately blurs scrolling content. It does not exclude
+navigation/tab bars and in the soft scroll edge just above the tab bar, where iOS
+deliberately blurs scrolling content. It does not exclude
 visible content or clipping/hit-region checks; offscreen contrast samples are
 excluded as well. Manual VoiceOver and system
 accessibility-setting verification remain part of physical-device acceptance.
