@@ -29,6 +29,7 @@ public struct Subscription: Codable, Identifiable, Equatable, Sendable {
     public var willBeCancelledAt: String?
     public var pausedAt: String?
     public var resumeAt: String?
+    public var bankedSavings: String?
     public var createdAt: String
     public var updatedAt: String
 

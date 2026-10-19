@@ -74,7 +74,7 @@ final class WidgetTests: XCTestCase {
         for original in subscriptions.dropFirst() {
             var subscription = original
             subscription.paymentDate = subscriptions[0].paymentDate
-            try await repository.save(subscription, expected: original, now: now)
+            try await repository.save(subscription, expected: original, rates: .init(rates: ["usd": 1]), now: now)
         }
         let sameDayModel = try await repository.presentation(rates: .init(rates: ["usd": 1]), now: now)
         try await publisher.publish(sameDayModel, pro: true, logos: logos)

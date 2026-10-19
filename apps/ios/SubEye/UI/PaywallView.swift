@@ -10,6 +10,7 @@ struct PaywallView: View {
     @State private var package: Package?
     @State private var loaded = false
     @State private var result: String?
+    @State private var rates: ExchangeRates?
     @State private var page = 0
     @ScaledMetric private var captionHeight: CGFloat = 112
     private let features = ["Reminders", "Calendar", "Pricing", "Categories", "Widgets"]
@@ -36,7 +37,7 @@ struct PaywallView: View {
                     if !typeSize.isAccessibilitySize { purchase.padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 14).background(AppTheme.background) }
                 }
                 .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCloseButton() } }
-                .task { package = try? await services.purchases.offering(); loaded = true }
+                .task { rates = try? await services.exchange.cached(); package = try? await services.purchases.offering(); loaded = true }
         }.appSheet()
     }
     private func feature(_ index: Int) -> some View {
@@ -52,6 +53,9 @@ struct PaywallView: View {
             Text(L("paywall_featureSupportBody")).appFont(12.5).foregroundStyle(AppTheme.muted).multilineTextAlignment(.center)
             if state.settings.pro { Text(L("paywall_owned")).appFont(15, weight: .semibold).foregroundStyle(AppTheme.accentBright).padding(.vertical, 12) }
             else if let package {
+                if let saved = savedLine(package) {
+                    Text(saved).appFont(14, weight: .semibold).foregroundStyle(AppTheme.accentBright).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                }
                 ActionButton(title: L("paywall_buy", ["price": package.localizedPriceString])) {
                     do {
                         if let entitled = try await services.purchases.purchase(package) {
@@ -77,6 +81,12 @@ struct PaywallView: View {
                 NavigationLink(L("settings_privacy")) { LegalView(kind: "privacy-policy") }
             }.appFont(13).foregroundStyle(AppTheme.muted).frame(minHeight: 44)
         }.frame(maxWidth: .infinity)
+    }
+    private func savedLine(_ package: Package) -> String? {
+        let saved = state.presentation.dashboard.savings?.total ?? 0, currency = state.presentation.preferences.preferredCurrency
+        guard let rates, Savings.coversPrice(saved, price: package.storeProduct.price, priceCurrency: package.storeProduct.currencyCode,
+                                             currency: currency, rates: rates) else { return nil }
+        return L("paywall_saved", ["saved": Display.money(saved, currency), "price": package.localizedPriceString])
     }
 }
 

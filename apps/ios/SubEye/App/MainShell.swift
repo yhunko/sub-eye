@@ -63,13 +63,13 @@ struct MainShell: View {
                 do { if try await services.cloud.receive(notification) { state.reload += 1 } }
                 catch { state.serviceIssue = L("settings_syncUnavailableHint") }
             }
-            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount):\(state.settings.pro):\(scenePhase)") {
+            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount):\((state.presentation.dashboard.savings?.total ?? 0) > 0):\(state.settings.pro):\(scenePhase)") {
                 guard booted, sheet == nil, scenePhase == .active else { return }
                 do {
                     if tab == .home {
                         try await Task.sleep(for: .milliseconds(1500))
                         let permission = await services.notifications.permission()
-                        if let prompt = try await services.prompts.home(tracked: state.presentation.totalCount, settings: state.settings, now: Date(),
+                        if let prompt = try await services.prompts.home(tracked: state.presentation.totalCount, saved: state.presentation.dashboard.savings?.total ?? 0, settings: state.settings, now: Date(),
                             permissionAllowsNotifications: permission == .authorized || permission == .provisional || permission == .ephemeral) {
                             if prompt == .review { requestReview() } else { sheet = .prompt(prompt) }
                         }
@@ -179,7 +179,7 @@ struct PromptView: View {
             else {
                 NavigationStack {
                     Form { Text(L("prompt_proBody")) }.scrollContentBackground(.hidden)
-                        .appScreen().navigationTitle(L("prompt_proTitle"))
+                        .appScreen().navigationTitle(proTitle)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
                             ToolbarItem(placement: .confirmationAction) {
@@ -198,6 +198,11 @@ struct PromptView: View {
                     catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
                 }
             }
+    }
+    private var proTitle: String {
+        let saved = state.presentation.dashboard.savings?.total ?? 0
+        guard saved > 0 else { return L("prompt_proTitle") }
+        return L("prompt_proSavedTitle", ["amount": Display.money(saved, state.presentation.preferences.preferredCurrency)])
     }
     private var reminderOffer: some View {
         ScrollView {

@@ -36,6 +36,9 @@ struct SubscriptionDetail: View {
                         }
                         if row.status == .cancelled {
                             VStack(spacing: 12) {
+                                if let saved = state.presentation.dashboard.savings?.sinceEnded[row.id], saved > 0 {
+                                    Text(L("detail_savedSinceEnded", ["amount": Display.money(saved, currency)])).appFont(16, weight: .semibold).foregroundStyle(AppTheme.accentBright)
+                                }
                                 Text(L("detail_endedBody")).appFont(14).foregroundStyle(AppTheme.muted)
                                 Button(L("native_action_restart")) { perform(.restart, row: row) }.buttonStyle(AppPrimaryButtonStyle())
                             }.padding(18).appCard()
@@ -71,18 +74,22 @@ struct SubscriptionDetail: View {
             } else { Text(L("common_loadFailed")) }
         }
         .task(id: id) {
-            do { try await services.repository.settleDetail(id: id, now: Date()); state.reload += 1 }
+            do { try await services.repository.settleDetail(id: id, rates: try await services.exchange.cached(), now: Date()); state.reload += 1 }
             catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
         }
         .alert(L("native_deleteSubscription"), isPresented: $delete) {
             Button(L("native_delete"), role: .destructive) { deletion = UUID() }.accessibilityIdentifier("confirmAction")
             Button(L("common_cancel"), role: .cancel) {}.accessibilityIdentifier("cancelDeletion")
-        } message: { Text(L("native_deleteBody")) }
+        } message: { Text(deleteMessage) }
         .task(id: deletion) {
             guard deletion != nil else { return }
             do { try await services.repository.deleteSubscription(id: id); state.reload += 1; dismiss() }
             catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)); deletion = nil }
         }
+    }
+    private var deleteMessage: String {
+        guard let saved = state.presentation.dashboard.savings?.subscriptions[id], saved > 0 else { return L("native_deleteBody") }
+        return L("native_deleteBody") + " " + L("native_deleteSavings", ["amount": Display.money(saved, currency)])
     }
     private func hero(_ row: SubscriptionRow) -> some View {
         let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 0))
@@ -176,8 +183,8 @@ struct SubscriptionDetail: View {
             Label(L("pricing_pendingTitle"), systemImage: "exclamationmark.triangle").appFont(14, weight: .semibold).foregroundStyle(AppTheme.warning)
             Text(Display.money(Double(upcoming.cost) ?? 0, upcoming.currency) + " · " + Display.date(Day.parse(upcoming.startsAt)!)).appFont(13)
             if state.settings.pro {
-                ActionButton(title: L("native_applyNow")) { try await services.repository.managePhase(subscriptionId: id, phaseId: upcoming.id, apply: true, now: Date()); state.reload += 1 }
-                ActionButton(title: L("native_removePending"), role: .destructive) { try await services.repository.managePhase(subscriptionId: id, phaseId: upcoming.id, apply: false, now: Date()); state.reload += 1 }
+                ActionButton(title: L("native_applyNow")) { try await services.repository.managePhase(subscriptionId: id, phaseId: upcoming.id, apply: true, rates: try await services.exchange.cached(), now: Date()); state.reload += 1 }
+                ActionButton(title: L("native_removePending"), role: .destructive) { try await services.repository.managePhase(subscriptionId: id, phaseId: upcoming.id, apply: false, rates: try await services.exchange.cached(), now: Date()); state.reload += 1 }
             }
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading).appCard(radius: 18, fill: AppTheme.warning.opacity(0.10), border: AppTheme.warning.opacity(0.3))
     }
@@ -268,6 +275,7 @@ struct LifecycleView: View {
     @State private var immediate = false
     @State private var timed = false
     @State private var date = Day.today()
+    @State private var rates: ExchangeRates?
     private var cancellationDate: Date? {
         let zone = TimeZone(identifier: state.presentation.preferences.preferredTimezone) ?? .current
         return Recurrence.next(row.subscription, onOrAfter: Day.today(Date(), zone: zone))
@@ -304,6 +312,11 @@ struct LifecycleView: View {
                                 .accessibilityIdentifier("cancelImmediately")
                         }
                         if let ending = immediate ? Day.today() : cancellationDate {
+                            let currency = state.presentation.preferences.preferredCurrency
+                            if let rates, case let yearly = Savings.annual(row.subscription, phases: row.phases, from: ending, rates: rates, currency: currency), yearly > 0 {
+                                Text(L("native_cancelYearly", ["amount": Display.money(yearly, currency)]))
+                                    .appFont(16, weight: .semibold).foregroundStyle(AppTheme.accentBright).fixedSize(horizontal: false, vertical: true)
+                            }
                             Text(L("native_cancelSummary", ["date": Display.date(ending)]))
                                 .appFont(14).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("cancellationSummary")
@@ -323,10 +336,11 @@ struct LifecycleView: View {
                     ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
                     ToolbarItem(placement: .confirmationAction) { ActionButton(title: L(action == .cancel ? "form_save" : "native_confirm")) {
                     let day = action == .restart || (action == .pause && timed) ? Day.floor(date) : nil
-                    try await services.repository.transition(id: row.id, action: action, day: day, immediate: immediate, now: Date())
+                    try await services.repository.transition(id: row.id, action: action, day: day, immediate: immediate, rates: try await services.exchange.cached(), now: Date())
                     state.reload += 1; dismiss()
                     }.accessibilityIdentifier("confirmLifecycle") }
                 }
+                .task { if action == .cancel { rates = try? await services.exchange.cached() } }
         }.appSheet()
     }
 }

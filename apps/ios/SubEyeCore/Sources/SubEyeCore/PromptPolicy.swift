@@ -13,9 +13,10 @@ public struct ReviewState: Codable, Equatable, Sendable {
 
 public enum UserPrompt: String, Sendable { case reminders, pro, review }
 public enum PromptPolicy {
-    public static func home(tracked: Int, pro: Bool, proPitched: Bool, reviewDue: Bool, interrupted: Bool, remindersPending: Bool) -> UserPrompt? {
+    public static func home(saved: Double, firstSeenAt: Double, now: Date, pro: Bool, proPitched: Bool, reviewDue: Bool, interrupted: Bool, remindersPending: Bool) -> UserPrompt? {
         guard !interrupted, !remindersPending else { return nil }
-        if !pro && !proPitched && tracked >= 3 { return .pro }
+        let settled = firstSeenAt > 0 && now.timeIntervalSince1970 * 1000 - firstSeenAt >= 14 * 86_400_000
+        if !pro && !proPitched && (saved > 0 || settled) { return .pro }
         return reviewDue ? .review : nil
     }
 }

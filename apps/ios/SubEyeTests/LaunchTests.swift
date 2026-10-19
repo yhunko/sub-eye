@@ -20,7 +20,7 @@ extension LaunchTests {
         var enabled = DeviceSettings(); enabled.reminders.renewals = true
         let alreadyEnabled = try await prompts.afterCreation(settings: enabled, permissionAllowsNotifications: true)
         XCTAssertFalse(alreadyEnabled)
-        let home = try await prompts.home(tracked: 3, settings: enabled, now: Date(), permissionAllowsNotifications: false)
+        let home = try await prompts.home(tracked: 3, saved: 10, settings: enabled, now: Date(), permissionAllowsNotifications: false)
         XCTAssertNil(home, "Home must reserve the session for the Save offer when system notifications are blocked")
         let denied = try await prompts.afterCreation(settings: enabled, permissionAllowsNotifications: false)
         XCTAssertTrue(denied, "System denial makes an enabled app toggle ineffective")

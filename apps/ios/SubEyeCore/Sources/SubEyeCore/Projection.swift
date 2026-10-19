@@ -42,6 +42,7 @@ public struct Dashboard: Codable, Equatable, Sendable {
     public var upcoming: [CalendarEvent] = []
     public var decisions: [CalendarEvent] = []
     public var paymentDays: [String: PaymentDay]? = nil
+    public var savings: SavingsLedger? = nil
     public init() {}
 }
 
@@ -169,6 +170,7 @@ public enum Projection {
             return CalendarEvent(subscriptionId: row.id, name: row.subscription.name, domain: row.subscription.brandDomain, kind: .payment, date: date, amount: amount)
         }.sorted { $0.date < $1.date }.prefix(5))
         dashboard.decisions = events(rows, from: today, through: Day.shift(today, days: 30), rates: rates, currency: currency).filter { $0.kind != .payment }
+        dashboard.savings = Savings.ledger(rows, rates: rates, currency: currency, now: now, zone: zone)
         return Presentation(preferences: doc.preferences, categories: doc.categories, rows: rows, dashboard: dashboard,
                             revision: revision, totalCount: rows.count, generatedAt: now)
     }

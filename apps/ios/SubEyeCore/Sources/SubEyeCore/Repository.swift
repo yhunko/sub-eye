@@ -103,7 +103,7 @@ public actor SubscriptionRepository {
                                  rates: rates, currency: doc.preferences.preferredCurrency)
     }
 
-    public func save(_ value: Subscription, expected: Subscription?, offer: OfferInput? = nil, now: Date) throws {
+    public func save(_ value: Subscription, expected: Subscription?, offer: OfferInput? = nil, rates: ExchangeRates, now: Date) throws {
         try LegacyMigration.validate(value)
         let database = try ready()
         try database.transaction {
@@ -115,6 +115,7 @@ public actor SubscriptionRepository {
             }
             var next = value; next.updatedAt = Day.iso(now)
             next.status = Lifecycle.status(next, now: now, zone: try zone(database))
+            if let current { Savings.rebase(&next, from: current.currency, rates: rates) }
             var phases: [PricePhase]?
             if let offer {
                 guard current == nil else { throw DomainError.illegalAction }
@@ -137,22 +138,27 @@ public actor SubscriptionRepository {
         }
     }
 
-    public func transition(id: String, action: LifecycleAction, day: Date? = nil, immediate: Bool = false, now: Date) throws {
+    public func transition(id: String, action: LifecycleAction, day: Date? = nil, immediate: Bool = false,
+                           rates: ExchangeRates, now: Date) throws {
         let database = try ready()
         try database.transaction {
             guard let sub = try record(Subscription.self, key: "sub." + id, database: database) else { throw DomainError.notFound }
-            let next = try Lifecycle.change(sub, action: action, day: day, immediate: immediate, now: now, zone: try zone(database))
+            let zone = try zone(database)
+            var next = try Lifecycle.change(sub, action: action, day: day, immediate: immediate, now: now, zone: zone)
+            Savings.bank(&next, previous: sub, action: action, phases: try allPhases(database).filter { $0.subscriptionId == id },
+                         rates: rates, now: now, zone: zone)
             try write("sub." + id, next, database: database)
         }
     }
 
-    public func settleDetail(id: String, now: Date) throws {
+    public func settleDetail(id: String, rates: ExchangeRates, now: Date) throws {
         let database = try ready()
         try database.transaction {
             guard var sub = try record(Subscription.self, key: "sub." + id, database: database) else { throw DomainError.notFound }
             var phases = try allPhases(database).filter { $0.subscriptionId == id }
             let prior = sub, previousPhases = phases
             try Pricing.settle(subscription: &sub, phases: &phases, now: now)
+            Savings.rebase(&sub, from: prior.currency, rates: rates)
             if sub != prior { try write("sub." + id, sub, database: database) }
             for phase in phases where !previousPhases.contains(phase) { try write("phase." + phase.id, phase, database: database) }
         }
@@ -171,28 +177,32 @@ public actor SubscriptionRepository {
         }
     }
 
-    public func startOffer(id: String, offer: OfferInput, now: Date) throws {
+    public func startOffer(id: String, offer: OfferInput, rates: ExchangeRates, now: Date) throws {
         let database = try ready()
         try database.transaction {
             guard var sub = try record(Subscription.self, key: "sub." + id, database: database) else { throw DomainError.notFound }
+            let currency = sub.currency
             guard Lifecycle.status(sub, now: now, zone: try zone(database)) == .active else { throw DomainError.illegalAction }
             let phases = try Pricing.offer(subscription: &sub, promoCost: offer.promoCost, standardCost: offer.standardCost,
                                           currency: offer.currency, payments: offer.payments, endDate: offer.endDate, deferred: offer.deferred,
                                           now: now, zone: try zone(database), ids: (UUID().uuidString, UUID().uuidString))
+            Savings.rebase(&sub, from: currency, rates: rates)
             for old in try allPhases(database) where old.subscriptionId == id { try remove("phase." + old.id, database: database) }
             for phase in phases { try write("phase." + phase.id, phase, database: database) }
             try write("sub." + id, sub, database: database)
         }
     }
 
-    public func managePhase(subscriptionId: String, phaseId: String, apply: Bool, now: Date) throws {
+    public func managePhase(subscriptionId: String, phaseId: String, apply: Bool, rates: ExchangeRates, now: Date) throws {
         let database = try ready()
         try database.transaction {
             guard var sub = try record(Subscription.self, key: "sub." + subscriptionId, database: database) else { throw DomainError.notFound }
             var phases = try allPhases(database).filter { $0.subscriptionId == subscriptionId }
             guard let target = phases.first(where: { $0.id == phaseId }), target.appliedAt == nil else { throw DomainError.illegalAction }
             if apply {
+                let currency = sub.currency
                 try Pricing.apply(phaseId, subscription: &sub, phases: &phases, now: now)
+                Savings.rebase(&sub, from: currency, rates: rates)
                 try write("sub." + subscriptionId, sub, database: database)
                 for phase in phases { try write("phase." + phase.id, phase, database: database) }
             } else {

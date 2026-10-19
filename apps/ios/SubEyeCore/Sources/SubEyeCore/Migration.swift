@@ -97,6 +97,10 @@ public enum LegacyMigration {
         for date in [row.willBeCancelledAt, row.pausedAt, row.resumeAt].compactMap({ $0 }) {
             guard Day.parse(date) != nil else { throw DomainError.invalidField("subscription.date") }
         }
+        // Not Money.parse: its entry-form ceiling would reject a large banked total and drop the record from sync.
+        if let banked = row.bankedSavings, banked.range(of: #"^\d+(\.\d{1,2})?$"#, options: .regularExpression) == nil {
+            throw DomainError.invalidField("subscription.bankedSavings")
+        }
     }
 
     private static func unique(_ ids: [String]) throws {

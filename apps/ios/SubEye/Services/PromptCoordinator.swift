@@ -15,7 +15,7 @@ final class PromptCoordinator {
         return true
     }
 
-    func home(tracked: Int, settings: DeviceSettings, now: Date, permissionAllowsNotifications: Bool = true) async throws -> UserPrompt? {
+    func home(tracked: Int, saved: Double, settings: DeviceSettings, now: Date, permissionAllowsNotifications: Bool = true) async throws -> UserPrompt? {
         guard !NativeTesting.enabled, tracked > 0 else { return nil }
         var review = try await repository.setting("review.state", as: ReviewState.self) ?? ReviewState()
         if review.firstSeenAt == 0 {
@@ -23,7 +23,7 @@ final class PromptCoordinator {
             try await repository.setSetting("review.state", value: review)
         }
         let proPitched = try await repository.setting("prompts.proPitched", as: Bool.self) ?? false
-        let decision = try await PromptPolicy.home(tracked: tracked, pro: settings.pro, proPitched: proPitched,
+        let decision = try await PromptPolicy.home(saved: saved, firstSeenAt: review.firstSeenAt, now: now, pro: settings.pro, proPitched: proPitched,
             reviewDue: review.isDue(now: now, tracked: tracked), interrupted: interrupted, remindersPending: remindersPending(settings, permissionAllowsNotifications: permissionAllowsNotifications))
         try Task.checkCancellation()
         guard let decision else { return nil }

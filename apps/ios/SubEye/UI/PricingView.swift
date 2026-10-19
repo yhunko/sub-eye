@@ -89,7 +89,7 @@ struct PricingView: View {
                     }
                     if row.effectiveKind == .trial || row.effectiveKind == .intro, let revert = row.upcoming {
                         ActionButton(title: L("native_endOffer")) {
-                            try await services.repository.managePhase(subscriptionId: row.id, phaseId: revert.id, apply: true, now: Date()); state.reload += 1; dismiss()
+                            try await services.repository.managePhase(subscriptionId: row.id, phaseId: revert.id, apply: true, rates: try await services.exchange.cached(), now: Date()); state.reload += 1; dismiss()
                         }.appFont(15).frame(maxWidth: .infinity, minHeight: 44)
                     }
                 }.appFont(16).padding(20)
@@ -138,7 +138,7 @@ struct PricingView: View {
         let price = try Display.amount(cost)
         if temporary {
             let offer = OfferInput(promoCost: price, standardCost: try Display.amount(standard), currency: currency, payments: payments, deferred: deferred)
-            try await services.repository.startOffer(id: row.id, offer: offer, now: Date())
+            try await services.repository.startOffer(id: row.id, offer: offer, rates: try await services.exchange.cached(), now: Date())
         } else {
             try await services.repository.schedulePrice(id: row.id, cost: price, currency: currency, date: custom ? Day.floor(date) : nil, now: Date())
         }

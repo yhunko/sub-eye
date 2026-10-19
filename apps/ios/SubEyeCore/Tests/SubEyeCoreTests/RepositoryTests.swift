@@ -66,12 +66,12 @@ final class RepositoryTests: XCTestCase {
         let second = SubscriptionRepository(url: first.url)
         let original = fixture().subscriptions[0]
         var edited = original; edited.name = "Edited"
-        try await first.save(edited, expected: original, now: now)
+        try await first.save(edited, expected: original, rates: .init(), now: now)
         var stale = original; stale.cost = "999.00"
-        do { try await second.save(stale, expected: original, now: now); XCTFail("Lost update") }
+        do { try await second.save(stale, expected: original, rates: .init(), now: now); XCTFail("Lost update") }
         catch DomainError.conflict { }
         let other = Subscription(id: "other", name: "Other", cost: "3.00", currency: "usd", paymentDate: original.paymentDate, now: now)
-        try await second.save(other, expected: nil, now: now)
+        try await second.save(other, expected: nil, rates: .init(), now: now)
         let saved = try await first.document()
         XCTAssertEqual(saved.subscriptions.count, 2)
         XCTAssertEqual(saved.subscriptions.first(where: { $0.id == original.id })?.name, "Edited")
@@ -98,7 +98,7 @@ final class RepositoryTests: XCTestCase {
         let before = try await store.document()
         XCTAssertEqual(before.subscriptions[0].cost, "20.00")
         XCTAssertNil(before.phases[0].appliedAt)
-        try await store.settleDetail(id: "s", now: now)
+        try await store.settleDetail(id: "s", rates: .init(rates: ["usd": 1]), now: now)
         let after = try await store.document()
         XCTAssertEqual(after.subscriptions[0].cost, "50.00")
         XCTAssertNotNil(after.phases[0].appliedAt)

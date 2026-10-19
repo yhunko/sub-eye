@@ -288,7 +288,7 @@ struct SubscriptionEditor: View {
         var value = draft; value.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         value.cost = try Display.amount(draft.cost); value.paymentDate = Day.iso(Day.floor(date))
         let offerInput: OfferInput? = offer == "none" ? nil : OfferInput(promoCost: offer == "trial" ? "0" : try Display.amount(offerPrice), standardCost: value.cost, currency: value.currency, endDate: Day.floor(offerEnd))
-        try await services.repository.save(value, expected: original, offer: offerInput, now: Date())
+        try await services.repository.save(value, expected: original, offer: offerInput, rates: try await services.exchange.cached(), now: Date())
         saved = true
         if let domain = value.brandDomain {
             do { try await services.logos.setVariant(variant, for: domain) }

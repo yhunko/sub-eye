@@ -30,6 +30,7 @@ struct HomeView: View {
                     paymentRail.padding(.bottom, 14)
                     if !model.dashboard.decisions.isEmpty { decisions }
                     monthCard
+                    if let savings = model.dashboard.savings, savings.total > 0 { savedCard(savings) }
                     if !breakdown.isEmpty { spending }
                 }
             }.padding(16).padding(.bottom, 8)
@@ -155,6 +156,17 @@ struct HomeView: View {
     }
     @ViewBuilder private var denominator: some View {
         if model.dashboard.monthTotal > 0 { Text(L("home_remainingOf", ["total": Display.money(model.dashboard.monthTotal, currency, decimals: 0)])).appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted) }
+    }
+    private func savedCard(_ savings: SavingsLedger) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            AppCaption(title: L("home_saved"))
+            Text(Display.money(savings.total, currency)).appFont(26, weight: .heavy, relativeTo: .title).tracking(-0.6).monospacedDigit()
+                .foregroundStyle(AppTheme.accentBright).lineLimit(1).minimumScaleFactor(0.7)
+            if savings.stopped > 0 {
+                Text(L("home_savedStopped", ["count": String(savings.stopped), "amount": Display.money(savings.monthly, currency, decimals: 0)]))
+                    .appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted)
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading).padding(18).appCard().accessibilityElement(children: .combine)
     }
     private var decisions: some View {
         VStack(alignment: .leading, spacing: 10) {

@@ -81,6 +81,7 @@
 "detail_remindAt" = "Нагадаю {when}";
 "detail_remindOffer" = "Нагадати";
 "detail_resumes" = "Відновиться";
+"detail_savedSinceEnded" = "Від завершення заощаджено {amount}";
 "detail_segAmount" = "Сума";
 "detail_segBilling" = "Оплата";
 "detail_segStatus" = "Статус";
@@ -171,6 +172,8 @@
 "home_remainingOf" = "з {total}";
 "home_remainingOfTotal" = "{remaining} з {total}";
 "home_remainingThisMonth" = "Залишилось";
+"home_saved" = "Заощаджено з SubEye";
+"home_savedStopped" = "Скасовано: {count} · на {amount}/міс менше";
 "home_uncategorized" = "Без категорії";
 "home_whereItGoes" = "Куди йдуть гроші";
 "legal_updated" = "Оновлено";
@@ -252,6 +255,7 @@
 "paywall_restoreDone" = "SubEye Pro повернувся.";
 "paywall_restoreFailed" = "Не вдалося звʼязатися з App Store, щоб перевірити. Спробуйте за хвилину.";
 "paywall_restoreNone" = "Попередніх покупок для цього Apple Account не знайдено.";
+"paywall_saved" = "SubEye уже допоміг вам заощадити {saved}. Pro коштує {price} — один раз.";
 "paywall_subtitle" = "Один платіж. Назавжди ваш.";
 "paywall_title" = "SubEye Pro";
 "paywall_unavailable" = "Магазин зараз недоступний. Спробуйте за хвилину.";
@@ -304,7 +308,8 @@
 "prompt_notNow" = "Не зараз";
 "prompt_proBody" = "SubEye працює. Pro додає більше — одна оплата, нічого не поновлюється.";
 "prompt_proConfirm" = "Що входить у Pro";
-"prompt_proTitle" = "Уже три підписки.";
+"prompt_proSavedTitle" = "Ви вже заощадили {amount}.";
+"prompt_proTitle" = "Уже два тижні.";
 "prompt_remindersBody" = "Отримуйте нагадування перед оплатою підписок. Час нагадувань можна змінити в Налаштуваннях.";
 "prompt_remindersConfirm" = "Увімкнути нагадування";
 "prompt_remindersTitle" = "Нагадувати про оплату?";
@@ -422,6 +427,7 @@
 "native_delete" = "Видалити";
 "native_deleteSubscription" = "Видалити підписку?";
 "native_deleteBody" = "Це видалить підписку та історію її цін із SubEye.";
+"native_deleteSavings" = "Заощаджені на ній {amount} зникнуть із суми «Заощаджено з SubEye».";
 "native_phase_standard" = "Звичайна ціна";
 "native_phase_trial" = "Пробний період";
 "native_phase_intro" = "Початкова ціна";
@@ -528,6 +534,7 @@
 "native_cancelNoWebsite" = "Спочатку скасуйте послугу в застосунку або на сайті постачальника.";
 
 "native_cancelSummary" = "Платежі від {date} не враховуватимуться в SubEye. Це не скасовує послугу у постачальника.";
+"native_cancelYearly" = "Це {amount} на рік, які залишаться у вас.";
 
 "native_priceChangeType" = "Тип зміни";
 
