@@ -65,6 +65,10 @@ struct MainShell: View {
                     try await services.synchronizeSurfaces(state)
                 } catch is CancellationError { } catch { state.serviceIssue = L("native_serviceIssue") }
             }
+            .task(id: "\(scenePhase):\(booted)") {
+                guard booted, scenePhase == .active else { return }
+                state.notificationsAllowed = await services.notifications.allowed()
+            }
             .task(id: "\(scenePhase):\(externalTick)") {
                 guard booted, scenePhase == .active else { return }
                 do { state.update = try await services.updates.current(now: Date()) } catch { }
@@ -139,6 +143,7 @@ struct MainShell: View {
         case .due(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet)
         case .cancellationDay(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet, planning: true)
         case .selection(let ids): DueView(day: nil, ids: ids, state: $state, services: services, sheet: $sheet)
+        case .saved: SavedSubscriptionsView(state: $state, services: services)
         case .categories: CategoriesView(state: $state, services: services, sheet: $sheet)
         case .currency:
             CurrencyPicker(selection: $state.presentation.preferences.preferredCurrency) { currency in
@@ -150,7 +155,10 @@ struct MainShell: View {
         case .legal(let kind): LegalView(kind: kind)
         #if NATIVE_DEVELOPMENT
         case .developer: DeveloperView(state: $state, services: services)
-        case .developerScenario(let scenario): DeveloperScenarioScreen(scenario: scenario, state: $state, services: services, sheet: $sheet)
+        case .developerScenario(let scenario):
+            DeveloperScenarioScreen(scenario: scenario, state: $state, services: services, sheet: $sheet) {
+                tab = .home; paths[.home] = []; paths[.settings] = [.developer]
+            }
         #endif
         }
     }

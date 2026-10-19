@@ -30,7 +30,7 @@ struct HomeView: View {
                     paymentRail.padding(.bottom, 14)
                     if !model.dashboard.decisions.isEmpty { decisions }
                     monthCard
-                    if let savings = model.dashboard.savings, savings.total > 0 { savedCard(savings) }
+                    if let savings = model.dashboard.savings, savings.total > 0 { savedRow(savings) }
                     if !breakdown.isEmpty { spending }
                 }
             }.padding(16).padding(.bottom, 8)
@@ -97,21 +97,13 @@ struct HomeView: View {
         let dashboard = model.dashboard
         let charged = max(0, dashboard.monthTotal - dashboard.remaining)
         return VStack(alignment: .leading, spacing: 0) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline) {
-                    AppCaption(title: L("home_remainingThisMonth")); Spacer(minLength: 12)
-                    Text(L("home_chargedSoFar", ["amount": Display.money(charged, currency)])).appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    AppCaption(title: L("home_remainingThisMonth"))
-                    Text(L("home_chargedSoFar", ["amount": Display.money(charged, currency)])).appFont(12.5).foregroundStyle(AppTheme.muted)
-                }
-            }
+            Text(L("home_remainingThisMonth")).appFont(13, weight: .medium, relativeTo: .caption).foregroundStyle(AppTheme.muted).accessibilityAddTraits(.isHeader)
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: 7) { remainingAmount; denominator }
                 VStack(alignment: .leading, spacing: 2) { remainingAmount; denominator }
-            }.padding(.top, 6)
-            if dashboard.monthTotal > 0 { SpendTrack(progress: charged / dashboard.monthTotal).padding(.top, 14) }
+            }.padding(.top, 4)
+            if dashboard.monthTotal > 0 { SpendTrack(progress: charged / dashboard.monthTotal, height: 6).padding(.top, 12) }
+            Text(L("home_chargedSoFar", ["amount": Display.money(charged, currency)])).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted).padding(.top, 8)
             AppDivider().padding(.top, 16).padding(.bottom, 14)
             layout {
                 forecast
@@ -119,7 +111,7 @@ struct HomeView: View {
                     if !typeSize.isAccessibilitySize { Rectangle().fill(AppTheme.border).frame(width: 0.5, height: 58) }
                     NavigationLink(value: Route.subscription(biggest.id)) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(L("home_biggest").uppercased()).appFont(11.5, relativeTo: .caption).tracking(0.5).foregroundStyle(AppTheme.muted)
+                            Text(L("home_biggest")).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
                             HStack(spacing: 9) {
                                 BrandIcon(name: biggest.subscription.name, domain: biggest.subscription.brandDomain, logos: services.logos)
                                 VStack(alignment: .leading, spacing: 5) {
@@ -137,7 +129,7 @@ struct HomeView: View {
     private var forecast: some View {
         let delta = model.dashboard.nextMonth.rounded() - model.dashboard.monthTotal.rounded()
         return VStack(alignment: .leading, spacing: 4) {
-            Text(L("home_nextMonthForecast").uppercased()).appFont(11.5, relativeTo: .caption).tracking(0.5).foregroundStyle(AppTheme.muted)
+            Text(L("home_nextMonthForecast")).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
             Text(Display.money(model.dashboard.nextMonth, currency, decimals: 0)).appFont(19, weight: .bold).monospacedDigit()
             if delta == 0 { Text(L("home_deltaNone")).appFont(11.5, relativeTo: .caption).foregroundStyle(AppTheme.muted) }
             else {
@@ -157,37 +149,54 @@ struct HomeView: View {
     @ViewBuilder private var denominator: some View {
         if model.dashboard.monthTotal > 0 { Text(L("home_remainingOf", ["total": Display.money(model.dashboard.monthTotal, currency, decimals: 0)])).appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted) }
     }
-    private func savedCard(_ savings: SavingsLedger) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            AppCaption(title: L("home_saved"))
-            Text(Display.money(savings.total, currency)).appFont(26, weight: .heavy, relativeTo: .title).tracking(-0.6).monospacedDigit()
-                .foregroundStyle(AppTheme.accentBright).lineLimit(1).minimumScaleFactor(0.7)
-            if savings.stopped > 0 {
-                Text(L("home_savedStopped", ["count": String(savings.stopped), "amount": Display.money(savings.monthly, currency, decimals: 0)]))
-                    .appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted)
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(18).appCard().accessibilityElement(children: .combine)
+    private func savedRow(_ savings: SavingsLedger) -> some View {
+        let total = Text(Display.money(savings.total, currency, decimals: 0)).appFont(17, weight: .bold).monospacedDigit().foregroundStyle(AppTheme.accentBright).lineLimit(1)
+        return NavigationLink(value: Route.saved) {
+            HStack(spacing: 12) {
+                ToneIcon(symbol: "chart.line.downtrend.xyaxis", tone: AppTheme.accentBright, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("home_saved")).appFont(15, weight: .semibold)
+                    if savings.stopped > 0 {
+                        Text(L("home_savedStopped", ["count": String(savings.stopped), "amount": Display.money(savings.monthly, currency, decimals: 0)]))
+                            .appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
+                    }
+                    if typeSize.isAccessibilitySize { total }
+                }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+                if !typeSize.isAccessibilitySize { total }
+                Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
+            }.padding(.leading, 16).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityIdentifier("savedWithSubEye")
     }
     private var decisions: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack { AppCaption(title: L("home_decisions")); Spacer(); Text(String(model.dashboard.decisions.count)).appFont(11, weight: .bold).foregroundStyle(AppTheme.danger).padding(.horizontal, 6).padding(.vertical, 2).appCard(radius: 6, border: AppTheme.danger.opacity(0.32)) }
+            HStack(alignment: .firstTextBaseline) { sectionTitle(L("home_decisions")); Spacer(); Text(String(model.dashboard.decisions.count)).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted) }.padding(.horizontal, 4)
             VStack(spacing: 0) {
                 ForEach(Array(model.dashboard.decisions.prefix(3).enumerated()), id: \.element.id) { index, event in
                     if index > 0 { AppDivider() }
-                    NavigationLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: currency, logos: services.logos) }.buttonStyle(.plain).padding(.vertical, 12)
+                    NavigationLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
                 }
                 if model.dashboard.decisions.count > 3 { Button(L("home_decisionMore", ["count": String(model.dashboard.decisions.count - 3)]), action: openCalendar).appFont(13.5).padding(.vertical, 12) }
             }.padding(.horizontal, 16).appCard()
         }
+    }
+    private func decisionNote(_ event: CalendarEvent) -> String? {
+        switch event.kind {
+        case .priceChange, .introEnds: model.rows.first { $0.id == event.subscriptionId }.map { L("home_decisionWas", ["amount": Display.money($0.amount, currency)]) }
+        case .trialEnds: L("home_decisionFirstPayment")
+        default: nil
+        }
+    }
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title).appFont(15, weight: .semibold).fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
     }
     private var spending: some View {
         let rows = breakdown
         let total = rows.reduce(0) { $0 + $1.amount }
         return VStack(alignment: .leading, spacing: 10) {
             ViewThatFits(in: .horizontal) {
-                HStack { AppCaption(title: L("home_whereItGoes")); Spacer(); breakdownCount(rows.count) }
-                VStack(alignment: .leading) { AppCaption(title: L("home_whereItGoes")); breakdownCount(rows.count) }
-            }.padding(.horizontal, 2).padding(.top, 8)
+                HStack(alignment: .firstTextBaseline) { sectionTitle(L("home_whereItGoes")); Spacer(); breakdownCount(rows.count) }
+                VStack(alignment: .leading) { sectionTitle(L("home_whereItGoes")); breakdownCount(rows.count) }
+            }.padding(.horizontal, 4).padding(.top, 6)
             VStack(spacing: 0) {
                 GeometryReader { geometry in
                     HStack(spacing: 3) {
@@ -224,12 +233,34 @@ struct HomeView: View {
         }
     }
     private func breakdownCount(_ count: Int) -> some View {
-        Text(L(state.settings.pro ? "home_countCategories" : "home_countSubscriptions", ["count": String(count)])).appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted)
+        Text(L(state.settings.pro ? "home_countCategories" : "home_countSubscriptions", ["count": String(count)])).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
     }
     private func breakdownFigures(_ amount: Double, total: Double) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text("\(Int((amount / max(1, total) * 100).rounded()))%").appFont(12.5, relativeTo: .caption).foregroundStyle(AppTheme.muted)
             Text(Display.money(amount, currency)).appFont(14, weight: .bold).monospacedDigit().frame(minWidth: 78, alignment: .trailing)
         }
+    }
+}
+
+struct SavedSubscriptionsView: View {
+    @Binding var state: SceneState
+    let services: AppServices
+    private var rows: [SubscriptionRow] {
+        let savings = state.presentation.dashboard.savings?.subscriptions ?? [:]
+        let ended = state.presentation.rows.filter { $0.status == .cancelled }
+        let rows = ended.isEmpty ? state.presentation.rows.filter { (savings[$0.id] ?? 0) > 0 } : ended
+        return rows.sorted { (savings[$0.id] ?? 0) > (savings[$1.id] ?? 0) }
+    }
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 8) {
+                ForEach(rows) { row in
+                    NavigationLink(value: Route.subscription(row.id)) {
+                        SubscriptionCell(row: row, currency: state.presentation.preferences.preferredCurrency, logos: services.logos)
+                    }.buttonStyle(.plain).accessibilityIdentifier("subscription-" + row.id)
+                }
+            }.padding(.horizontal, 12).padding(.top, 4).padding(.bottom, 24)
+        }.appScreen().navigationTitle(L("home_saved"))
     }
 }

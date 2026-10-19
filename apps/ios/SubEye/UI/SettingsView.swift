@@ -156,25 +156,25 @@ struct DeveloperView: View {
     @State private var demoSeeded = false
     @State private var fakeUpdate = false
     @State private var fakeUpdateChange = 0
-    @State private var proChange: Bool?
+    @State private var change: DeveloperOverride?
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                AppSection(title: "Access", footnote: "Overrides the store entitlement in this build, so every screen can be previewed on the free plan or with Pro.") {
-                    Toggle(isOn: Binding(get: { proChange ?? state.settings.pro }, set: { proChange = $0 })) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "sparkles").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
-                            Text("Pro features").appFont(16)
-                        }
-                    }.padding(.horizontal, 16).padding(.vertical, 8).accessibilityIdentifier("developerPro")
+                AppSection(title: "Access", footnote: "Pro overrides the store entitlement in this build; Reminders switches the real reminder setting of this development store. Scenario screens carry the same switches under the hammer button, so a change shows on the open screen.") {
+                    overrideToggle("Pro features", icon: "sparkles", key: DeveloperOverride.pro).accessibilityIdentifier("developerPro")
+                    AppDivider(inset: 47)
+                    overrideToggle("Reminders on", icon: "bell", key: DeveloperOverride.reminders).accessibilityIdentifier("developerReminders")
                 }
                 AppSection(title: "Price changes", footnote: "Each row resets its own subscription in the development store and opens the real detail screen, so actions there really run. Open the row again to start over.") {
                     scenarioRows(DeveloperScenario.pricing)
                 }
                 AppSection(title: "Lifecycle") {
                     scenarioRows(DeveloperScenario.lifecycle)
+                }
+                AppSection(title: "Home", footnote: "Each row seeds scenario subscriptions and switches to Home. Your own subscriptions still count toward every card.") {
+                    scenarioRows(DeveloperScenario.home)
                     AppDivider(inset: 47)
-                    ActionButton(title: "Remove scenario subscriptions", role: .destructive, icon: "trash", styledRow: true) {
+                    ActionButton(title: "Remove scenario data", role: .destructive, icon: "trash", styledRow: true) {
                         try await DeveloperScenario.clear(services.repository); state.reload += 1
                     }.buttonStyle(.plain)
                 }
@@ -228,11 +228,15 @@ struct DeveloperView: View {
                 do { try await services.updates.fake(fakeUpdate); state.update = try await services.updates.current(now: Date()) }
                 catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
             }
-            .task(id: proChange) {
-                guard let proChange else { return }
-                do { try await services.repository.setSetting("developer.proOverride", value: proChange); state.reload += 1 }
-                catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
+            .developerOverride(change, state: $state, services: services)
+    }
+    private func overrideToggle(_ title: String, icon: String, key: String) -> some View {
+        Toggle(isOn: DeveloperOverride.binding(key, state: $state, change: $change)) {
+            HStack(spacing: 12) {
+                Image(systemName: icon).appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                Text(title).appFont(16)
             }
+        }.padding(.horizontal, 16).padding(.vertical, 8)
     }
     private func scenarioRows(_ scenarios: [DeveloperScenario]) -> some View {
         ForEach(Array(scenarios.enumerated()), id: \.element) { index, scenario in

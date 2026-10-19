@@ -131,6 +131,23 @@ final class DomainTests: XCTestCase {
         XCTAssertEqual(Lifecycle.counterpart(name: "Claude", domain: "claude.ai", in: [ended, current, older])?.id, "current")
     }
 
+    func testYearlyChangeCountsAnIntroEndingAndSkipsOffersAndCurrencySwitches() throws {
+        func phase(_ kind: PhaseKind, _ cost: String, _ currency: String = "usd") -> PricePhase {
+            PricePhase(id: kind.rawValue, subscriptionId: "s", kind: kind, cost: cost, currency: currency, startsAt: "2026-10-20T00:00:00Z", now: now)
+        }
+        var sub = fixture(); sub.cost = "4.99"
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase(.standard, "11.99"))), 84, accuracy: 0.001)
+        sub.cost = "11.99"
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase(.scheduledChange, "15.00"))), 36.12, accuracy: 0.001)
+        sub.cost = "14.99"
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase(.scheduledChange, "11.99"))), -36, accuracy: 0.001)
+        sub.period = .year
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase(.scheduledChange, "11.99"))), -3, accuracy: 0.001)
+        XCTAssertNil(Pricing.yearlyChange(sub, to: phase(.scheduledChange, "13.50", "eur")))
+        XCTAssertNil(Pricing.yearlyChange(sub, to: phase(.trial, "0")))
+        XCTAssertNil(Pricing.yearlyChange(sub, to: phase(.scheduledChange, "14.99")))
+    }
+
     func fixture() -> Subscription {
         Subscription(id: "s", name: "Test", cost: "20.00", currency: "usd", paymentDate: "2026-01-20T00:00:00Z", now: now)
     }

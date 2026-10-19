@@ -61,8 +61,10 @@ struct NotificationsView: View {
             .task(id: changes) {
                 guard changes > 0 else { return }
                 do {
-                    if state.settings.reminders.renewals || state.settings.reminders.trials { _ = try await services.notifications.authorize() }
+                    // Saved before the permission prompt: the prompt cycles the scene, and the refresh that follows
+                    // would otherwise adopt the old setting and flip the switch back.
                     try await services.repository.setSetting("notifications.settings", value: state.settings.reminders)
+                    if state.settings.reminders.renewals || state.settings.reminders.trials { _ = try await services.notifications.authorize() }
                     try await services.synchronizeSurfaces(state)
                     await refreshHealth()
                 } catch is CancellationError { } catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
@@ -96,6 +98,7 @@ struct NotificationsView: View {
     }
     private func refreshHealth() async {
         permission = await services.notifications.permission()
+        state.notificationsAllowed = permission == .authorized || permission == .provisional || permission == .ephemeral
         pending = await services.notifications.pendingCount()
         nextFire = await services.notifications.nextFireDate()
     }

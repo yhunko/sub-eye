@@ -91,7 +91,7 @@ enum NativeTesting {
         )
         try await repository.importArchive(JSONCodec.encode(document))
         try await repository.setSetting("pro.entitled", value: true)
-        try await repository.setSetting("developer.proOverride", value: true)
+        try await repository.setSetting(DeveloperOverride.pro, value: true)
     }
     #endif
     private static func argument(_ key: String) -> String? {

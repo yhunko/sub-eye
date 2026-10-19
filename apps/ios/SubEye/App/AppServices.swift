@@ -45,9 +45,6 @@ final class AppServices {
         let presentation = try await repository.presentation(rates: rates, now: Date())
         var settings = DeviceSettings()
         settings.pro = try await repository.setting("pro.entitled", as: Bool.self) ?? false
-        #if NATIVE_DEVELOPMENT
-        if let pro = try await repository.setting("developer.proOverride", as: Bool.self) { settings.pro = pro }
-        #endif
         settings.cloud = try await repository.setting("cloud.sync", as: Bool.self) ?? false
         settings.liveActivities = try await repository.setting("live.enabled", as: Bool.self) ?? false
         if let reminders = try await repository.setting("notifications.settings", as: ReminderSettings.self) {
@@ -55,6 +52,9 @@ final class AppServices {
         } else {
             settings.reminders.renewals = try await repository.setting("notifications.renewalReminders", as: Bool.self) ?? false
         }
+        #if NATIVE_DEVELOPMENT
+        if let pro = try await repository.setting(DeveloperOverride.pro, as: Bool.self) { settings.pro = pro }
+        #endif
         settings.list = try await repository.setting("subs.filters", as: ListOptions.self) ?? ListOptions()
         settings.calendar = try await repository.setting("calendar.settings", as: CalendarOptions.self) ?? CalendarOptions()
         do { try await cache.write(presentation) }

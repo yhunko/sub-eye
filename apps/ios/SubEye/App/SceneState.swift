@@ -26,6 +26,7 @@ struct SceneState {
     var serviceIssue: String?
     var update: AppUpdate?
     var calendarMonth: Date?
+    var notificationsAllowed: Bool?
 }
 
 @available(iOS 17, *)
@@ -41,6 +42,7 @@ enum Route: Hashable {
     case due(String)
     case cancellationDay(String)
     case selection([String])
+    case saved
     case categories
     case currency
     case notifications

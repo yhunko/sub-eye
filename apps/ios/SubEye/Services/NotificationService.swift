@@ -8,6 +8,7 @@ actor NotificationService {
     private var generation = 0
     private var scheduling: Task<Void, Error>?
     func permission() async -> UNAuthorizationStatus { await center.notificationSettings().authorizationStatus }
+    func allowed() async -> Bool { [.authorized, .provisional, .ephemeral].contains(await permission()) }
     func authorize() async throws -> Bool { try await center.requestAuthorization(options: [.alert, .sound, .badge]) }
     func pendingCount() async -> Int { await center.pendingNotificationRequests().filter { $0.identifier.hasPrefix("subeye:") }.count }
     func nextFireDate() async -> Date? {

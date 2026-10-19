@@ -41,6 +41,9 @@ enum Display {
         if days <= 0 { return L("when_today") }
         if days == 1 { return L("when_tomorrow") }
         if days < 14 || countdown { return L("when_inDays", ["days": String(days)]) }
+        return day(date, today: today)
+    }
+    static func day(_ date: Date, today: Date = Day.today()) -> String {
         let format = Date.FormatStyle(timeZone: .gmt).day().month(.abbreviated)
         return date.formatted(Day.utc.component(.year, from: date) == Day.utc.component(.year, from: today) ? format : format.year())
     }

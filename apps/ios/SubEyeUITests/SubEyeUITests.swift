@@ -400,10 +400,13 @@ final class SubEyeUITests: XCTestCase {
         let app = application(); app.launchArguments.append("--fixture-pro"); app.launch()
         openDeveloperTools(app)
         let card = app.descendants(matching: .any)["pendingPriceCard"]
+        let manage = app.buttons["managePendingPrice"]
         for (scenario, apply) in [("priceIncrease", true), ("priceDecrease", false)] {
             openScenario(scenario, in: app)
             XCTAssertTrue(card.waitForExistence(timeout: 5), scenario)
-            app.buttons[apply ? "applyPendingPrice" : "removePendingPrice"].tap()
+            manage.tap()
+            let action = app.buttons[apply ? "applyPendingPrice" : "removePendingPrice"]
+            XCTAssertTrue(action.waitForExistence(timeout: 5), scenario); action.tap()
             // iOS nests the action sheet button inside a container that repeats its identifier.
             let confirm = app.buttons["confirmPendingPrice"].firstMatch
             XCTAssertTrue(confirm.waitForExistence(timeout: 5), scenario); confirm.tap()
@@ -413,12 +416,17 @@ final class SubEyeUITests: XCTestCase {
             XCTAssertTrue(card.waitForExistence(timeout: 5), "Reopening \(scenario) must reset its fixture")
             back(app)
         }
-        for scenario in ["priceCurrency", "trialEnding", "introEnding", "offerStarting"] {
+        for scenario in ["priceIncreaseLater", "priceCurrency", "introEnding", "offerStarting"] {
             openScenario(scenario, in: app)
             XCTAssertTrue(card.waitForExistence(timeout: 5), scenario)
-            XCTAssertTrue(app.buttons["applyPendingPrice"].exists && app.buttons["removePendingPrice"].exists, scenario)
+            XCTAssertTrue(manage.exists, scenario)
             back(app)
         }
+        openScenario("trialEnding", in: app)
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["cancelTrial"].exists)
+        XCTAssertFalse(manage.exists)
+        back(app)
         for scenario in ["active", "paused", "cancelling", "cancelled"] {
             openScenario(scenario, in: app)
             XCTAssertTrue(app.staticTexts["subscriptionDetailName"].waitForExistence(timeout: 5), scenario)
@@ -432,8 +440,53 @@ final class SubEyeUITests: XCTestCase {
         openDeveloperTools(app)
         openScenario("priceIncrease", in: app)
         XCTAssertTrue(app.descendants(matching: .any)["pendingPriceCard"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["applyPendingPrice"].exists)
-        XCTAssertFalse(app.buttons["removePendingPrice"].exists)
+        XCTAssertFalse(app.buttons["managePendingPrice"].exists)
+        XCTAssertTrue(app.buttons["timelineLock"].exists)
+    }
+
+    func testDeveloperProOverrideAppliesToTheOpenScenario() {
+        let app = application(); app.launch()
+        openDeveloperTools(app)
+        openScenario("priceIncrease", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["pendingPriceCard"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["managePendingPrice"].exists)
+        app.buttons["developerOverrides"].tap()
+        let pro = app.buttons["overridePro"]
+        XCTAssertTrue(pro.waitForExistence(timeout: 5)); pro.tap()
+        XCTAssertTrue(app.buttons["managePendingPrice"].waitForExistence(timeout: 5))
+    }
+
+    func testRemindMeTurnsRemindersOnInPlace() {
+        let app = application(); app.launch()
+        openDeveloperTools(app)
+        openScenario("priceIncrease", in: app)
+        let remind = app.buttons["remindMe"]
+        XCTAssertTrue(remind.waitForExistence(timeout: 5)); remind.tap()
+        // Permission survives between runs on one simulator, so the system prompt shows only on the first,
+        // and the checkmark stays for about a second, so both are polled rather than awaited in turn.
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+        let confirmation = app.buttons["reminderSet"]
+        var confirmed = false
+        let deadline = Date().addingTimeInterval(10)
+        while !confirmed, Date() < deadline {
+            if allow.exists { allow.tap() }
+            confirmed = confirmation.exists
+        }
+        XCTAssertTrue(confirmed)
+        XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(remind.exists)
+    }
+
+    func testDeveloperHomeSavingsOpensEndedSubscriptions() {
+        let app = application(); app.launch()
+        openDeveloperTools(app)
+        openScenario("homeSavingsSeveral", in: app)
+        let saved = app.buttons["savedWithSubEye"]
+        XCTAssertTrue(saved.waitForExistence(timeout: 10))
+        for _ in 0..<6 where !saved.isHittable { app.swipeUp() }
+        saved.tap()
+        XCTAssertTrue(app.buttons["subscription-developer-stopped-adobe"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["subscription-developer-cancelled"].exists)
     }
 
     private func openDeveloperTools(_ app: XCUIApplication) {

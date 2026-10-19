@@ -22,6 +22,15 @@ public enum Pricing {
                              from: phase?.currency ?? subscription.currency, to: currency)
     }
 
+    // A standard phase after an intro is a price change too; a trial or intro starting is an offer, not a change.
+    public static func yearlyChange(_ subscription: Subscription, to next: PricePhase) -> Double? {
+        guard next.kind == .scheduledChange || next.kind == .standard,
+              subscription.currency.lowercased() == next.currency.lowercased(),
+              let from = Double(subscription.cost), let to = Double(next.cost), from != to else { return nil }
+        let yearly = Money.monthly(abs(to - from), every: subscription.every, period: subscription.period) * 12
+        return to > from ? yearly : -yearly
+    }
+
     public static func apply(_ phaseId: String, subscription: inout Subscription,
                              phases: inout [PricePhase], now: Date) throws {
         guard let index = phases.firstIndex(where: { $0.id == phaseId }) else { throw DomainError.notFound }

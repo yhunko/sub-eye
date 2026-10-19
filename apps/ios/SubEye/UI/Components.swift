@@ -12,6 +12,19 @@ struct DestructiveMenuLabel: View {
     }
 }
 
+struct ToneIcon: View {
+    let symbol: String
+    var tone: Color? = nil
+    var size: CGFloat = 30
+    var body: some View {
+        Image(systemName: symbol).font(.system(size: size * 0.5, weight: .semibold))
+            .foregroundStyle(tone ?? AppTheme.text.opacity(0.8))
+            .frame(width: size, height: size)
+            .background(tone?.opacity(0.15) ?? Color.white.opacity(0.08), in: Circle())
+            .accessibilityHidden(true)
+    }
+}
+
 struct ActionButton: View {
     let title: String
     var role: ButtonRole?
@@ -130,6 +143,7 @@ struct EventCell: View {
     let currency: String
     var logos: LogoService? = nil
     var showDate = true
+    var note: String? = nil
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -138,10 +152,16 @@ struct EventCell: View {
                 Text(event.name).appFont(15, weight: .semibold).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                 Label(Display.event(event.kind) + (showDate ? " · " + Display.when(event.date) : ""), systemImage: eventIcon)
                     .appFont(12.5).foregroundStyle(event.kind == .resumes ? AppTheme.accent : AppTheme.muted)
-                if typeSize.isAccessibilitySize { amount }
+                if typeSize.isAccessibilitySize { figures(.leading) }
             }.frame(maxWidth: .infinity, alignment: .leading)
-            if !typeSize.isAccessibilitySize { amount }
+            if !typeSize.isAccessibilitySize { figures(.trailing) }
         }.foregroundStyle(AppTheme.text).frame(minHeight: 44).contentShape(Rectangle()).accessibilityElement(children: .combine)
+    }
+    private func figures(_ alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 3) {
+            amount
+            if let note { Text(note).appFont(12, relativeTo: .caption).foregroundStyle(AppTheme.muted).monospacedDigit() }
+        }
     }
     private var amount: some View {
         Text(Display.money(event.amount, currency)).appFont(14, weight: .bold).monospacedDigit().fixedSize(horizontal: true, vertical: false)
