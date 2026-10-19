@@ -285,10 +285,10 @@ struct LifecycleView: View {
                                     HStack(spacing: 12) {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(L(ProviderCancellation.url(row.subscription.brandDomain) == nil ? "native_providerSite" : "native_provider"))
-                                                .appFont(16, weight: .semibold)
+                                                .appFont(16, weight: .semibold).lineLimit(1).minimumScaleFactor(0.8)
+                                                .multilineTextAlignment(.leading)
                                             if let host = link.host { Text(host).appFont(13).foregroundStyle(AppTheme.muted) }
-                                        }.fixedSize(horizontal: false, vertical: true)
-                                        Spacer(minLength: 0)
+                                        }.frame(maxWidth: .infinity, alignment: .leading)
                                         Image(systemName: "arrow.up.right.square").accessibilityHidden(true)
                                     }.padding(16).frame(minHeight: 52).contentShape(Rectangle())
                                 }.foregroundStyle(AppTheme.accentBright).accessibilityIdentifier("providerWebsite")

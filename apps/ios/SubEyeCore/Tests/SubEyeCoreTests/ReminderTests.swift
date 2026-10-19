@@ -47,6 +47,35 @@ final class ReminderTests: XCTestCase {
             XCTAssertNil(ReminderPlanner.repeatRule(row, lead: 1, hour: 9, minute: 0, now: february, zone: .gmt), row.id)
         }
     }
+    func testCopyNamesTheDayInsteadOfAGenericUpcomingRenewal() {
+        var settings = ReminderSettings(); settings.renewals = true; settings.renewalLeadDays = [0, 1]
+        let single = ReminderPlanner.plan(rows: rows([subscription("Netflix", date: "2026-09-16")]), settings: settings, pro: true,
+                                          rates: rates, currency: "usd", now: now, zone: .gmt).map(message)
+        XCTAssertEqual(Set(single.map(\.title)), ["Netflix renews today", "Netflix renews tomorrow"])
+        XCTAssertEqual(single.first?.body, "$10.00 will be charged.")
+
+        settings.renewalLeadDays = [3]
+        let digest = ReminderPlanner.plan(rows: rows(["a", "b", "c", "d"].map { subscription($0, date: "2026-09-20") }), settings: settings,
+                                          pro: true, rates: rates, currency: "usd", now: now, zone: .gmt).map(message)
+        XCTAssertEqual(digest, [ReminderMessage(title: "Renewing in 3 days", body: "a, b, c and 1 more · $40.00")])
+    }
+    func testOneMorningCoveringDifferentDueDaysDoesNotClaimASingleDay() {
+        var settings = ReminderSettings(); settings.renewals = true; settings.renewalLeadDays = [1, 3]
+        let planned = ReminderPlanner.plan(rows: rows([subscription("a", date: "2026-09-20"), subscription("b", date: "2026-09-22")]),
+                                           settings: settings, pro: true, rates: rates, currency: "usd", now: now, zone: .gmt)
+        let shared = planned.first { $0.events.count == 2 }
+        XCTAssertNil(shared?.lead)
+        XCTAssertEqual(shared.map(message)?.title, "Upcoming renewals")
+    }
+    private func message(_ reminder: PlannedReminder) -> ReminderMessage {
+        let english = ["notif_whenToday": "today", "notif_whenTomorrow": "tomorrow", "notif_whenInDays": "in {days} days",
+                       "notif_renewalTitle": "{name} renews {when}", "notif_renewalBody": "{amount} will be charged.",
+                       "notif_renewalDigestTitle": "Renewing {when}", "notif_renewalDigestTitleMixed": "Upcoming renewals",
+                       "notif_digestBody": "{names} · {amount}", "notif_digestMore": "{names} and {count} more"]
+        return reminder.message({ key, arguments in
+            arguments.reduce(english[key] ?? key) { $0.replacingOccurrences(of: "{" + $1.key + "}", with: $1.value) }
+        }, money: { String(format: "$%.2f", $0) })
+    }
     private func subscription(_ id: String, date: String) -> Subscription { Subscription(id: id, name: id, cost: "10", currency: "usd", paymentDate: Day.iso(Day.parse(date)!), now: now) }
     private func rows(_ subscriptions: [Subscription]) -> [SubscriptionRow] { Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: subscriptions), rates: rates, now: now) }
 }

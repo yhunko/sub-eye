@@ -36,15 +36,14 @@ actor NotificationService {
         let planned = ReminderPlanner.plan(rows: model.rows, settings: settings, pro: pro, rates: rates, currency: model.preferences.preferredCurrency, now: Date(), zone: .current)
         let previous = await center.pendingNotificationRequests()
         let identifiers = Set(planned.map { "subeye:" + $0.id })
+        let currency = model.preferences.preferredCurrency
         for reminder in planned {
             try Task.checkCancellation(); guard generation == self.generation else { return }
             let content = UNMutableNotificationContent()
-            content.title = L(reminder.kind == "trial" ? "native_trialTitle" : "native_renewalTitle")
-            content.body = reminder.events.prefix(3).map(\.name).joined(separator: ", ") + " · " + Display.money(reminder.events.reduce(0) { $0 + $1.amount }, model.preferences.preferredCurrency)
+            let message = reminder.message(L, money: { Display.money($0, currency) })
+            content.title = message.title; content.body = message.body
             content.sound = .default; content.threadIdentifier = "subeye-renewals"
-            var url = URLComponents(url: AppConfiguration.url("subscriptions"), resolvingAgainstBaseURL: false)!
-            url.queryItems = [URLQueryItem(name: "ids", value: reminder.events.map(\.subscriptionId).joined(separator: ","))]
-            content.userInfo = ["url": url.url!.absoluteString]
+            content.userInfo = ["url": Self.destination(reminder.events.map(\.subscriptionId)).absoluteString]
             let trigger: UNCalendarNotificationTrigger
             if let rule = reminder.repeatRule { trigger = UNCalendarNotificationTrigger(dateMatching: rule.components, repeats: true) }
             else { trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminder.fireAt), repeats: false) }
@@ -53,6 +52,12 @@ actor NotificationService {
         try Task.checkCancellation(); guard generation == self.generation else { return }
         // Replace Expo requests only after the native schedule has succeeded.
         center.removePendingNotificationRequests(withIdentifiers: previous.map(\.identifier).filter { !identifiers.contains($0) })
+    }
+    static func destination(_ ids: [String]) -> URL {
+        if ids.count == 1, let id = ids.first { return AppConfiguration.url("subscriptions/" + id) }
+        var url = URLComponents(url: AppConfiguration.url("subscriptions"), resolvingAgainstBaseURL: false)!
+        url.queryItems = [URLQueryItem(name: "ids", value: ids.joined(separator: ","))]
+        return url.url!
     }
     func test() async throws {
         guard try await authorize() else { throw DomainError.illegalAction }

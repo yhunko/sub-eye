@@ -1,8 +1,7 @@
 # SubEye for iOS
 
-Native SwiftUI client alongside `apps/mobile`. The Expo client remains intact
-for Android and as the migration source. This target has no React Native,
-Expo, Hermes, JavaScript bundle or web UI.
+The native SwiftUI app — the only SubEye client. It replaced the retired Expo
+app and migrates that app's MMKV store on first launch.
 
 The optimized **6.0.0 Production build is installed and launches standalone on
 the physical iPhone**. Device and simulator UI results are recorded in
@@ -16,8 +15,9 @@ See [parity](Docs/FEATURE-PARITY.md) and the
 
 Requires Xcode 27 and Swift 6; the development commands below use XcodeBuildMCP.
 The application supports iOS 16.4+;
-the widget supports iOS 18+. Scheduled renewal Live Activities are gated to
-iOS 27. `SubEye.xcodeproj` and source are checked in; XcodeGen is optional when
+the widget and renewal Live Activities support iOS 17+. iOS 26+ schedules the
+activity for 9:00 on the renewal day; iOS 17–25 starts it when SubEye is opened
+that day, and iOS 16 shows the setting as unavailable. `SubEye.xcodeproj` and source are checked in; XcodeGen is optional when
 editing project configuration.
 
 1. Copy `Config/Local.xcconfig.example` to ignored `Config/Local.xcconfig`.
@@ -34,7 +34,6 @@ From the repository root:
 rtk proxy xcodebuildmcp simulator build-and-run --project-path "$PWD/apps/ios/SubEye.xcodeproj" --scheme SubEye --configuration Release --simulator-name "iPhone 17 Pro"
 rtk proxy xcodebuildmcp simulator test --project-path "$PWD/apps/ios/SubEye.xcodeproj" --scheme SubEye --configuration Release --simulator-name "iPhone 17 Pro" --extra-args -parallel-testing-enabled NO
 rtk proxy xcodebuildmcp swift-package test --package-path "$PWD/apps/ios/SubEyeCore" --configuration release
-rtk proxy bun apps/ios/Contracts/golden.ts
 ```
 
 If changing `project.yml`, regenerate and commit the resulting project:
@@ -57,7 +56,7 @@ This automatically reserves the next build number, archives `SubEye` /
 `SubEye.ipa` also keeps a copy of the latest build. It preserves archives,
 IPAs, dSYMs and logs and uploads nothing. The counter survives deleting `builds/`
 and is shared by worktrees of
-this checkout; it is not a remote EAS/App Store counter.
+this checkout; it is not an App Store counter.
 
 The Mac's local Apple Distribution certificate and App Store profiles are
 configured for command-line export. See [IPA build and signing](Docs/BUILD-IPA.md)
@@ -73,7 +72,7 @@ for setup on another Mac, build-number overrides, export retries and checks.
 | SubEye/Services | MMKV migration reader, cloud, notifications, purchases, logos, rates, widget publication and ActivityKit |
 | Shared | Configuration, localization, widget snapshot contract and App Intents |
 | SubEyeWidget | Small/medium widget and renewal Live Activity |
-| Contracts | Shared TypeScript golden vectors and resource generation |
+| Contracts | Regenerates the bundled legal documents from `packages/legal` |
 
 State uses Observation on iOS 17+ and a value-type `@State` adapter on 16.4.
 SQLite runs on a repository actor; transactions protect writes across the main

@@ -1,11 +1,10 @@
 import type {
   PricePhaseDto,
   PricePhaseKind,
-  SubscriptionDto,
   SubscriptionPeriod,
 } from "@subeye/model";
 import { buildBillingDetails, type RateTable } from "@subeye/money";
-import { getEffectivePhase, getUpcomingPhase } from "./phaseSelection";
+import { getEffectivePhase } from "./phaseSelection";
 
 /** The minimum shape of a stored pricing-phase row. A DB row satisfies it. */
 export type PricePhaseInput = {
@@ -23,16 +22,10 @@ export type PhaseRecurrence = {
   period: SubscriptionPeriod;
 };
 
-/**
- * Everything the subscription DTO needs to say about pricing over time:
- * the full timeline, which override (if any) is live right now, what comes
- * next, and the flattened "scheduled price change" shape the UI reads.
- */
+/** The full timeline and which override (if any) is live right now. */
 export type PhaseProjection = {
-  pricePhases: SubscriptionDto["pricePhases"];
-  effectivePhaseKind: SubscriptionDto["effectivePhaseKind"];
-  upcomingPhase: SubscriptionDto["upcomingPhase"];
-  scheduledPriceChange: SubscriptionDto["scheduledPriceChange"];
+  pricePhases: PricePhaseDto[];
+  effectivePhaseKind: PricePhaseKind;
 };
 
 const normalizeIsoOrEmpty = (value?: string | null): string => {
@@ -102,21 +95,8 @@ export const buildPhaseProjection = (
     )
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 
-  const effective = getEffectivePhase(phaseDtos, now);
-  const upcoming = getUpcomingPhase(phaseDtos, now);
-  const scheduledPriceChange = upcoming
-    ? {
-        cost: upcoming.cost,
-        currency: upcoming.currency,
-        effectiveAt: upcoming.startsAt,
-        billing: upcoming.billing,
-      }
-    : null;
-
   return {
     pricePhases: phaseDtos,
-    effectivePhaseKind: effective?.kind ?? "standard",
-    upcomingPhase: upcoming,
-    scheduledPriceChange,
+    effectivePhaseKind: getEffectivePhase(phaseDtos, now)?.kind ?? "standard",
   };
 };

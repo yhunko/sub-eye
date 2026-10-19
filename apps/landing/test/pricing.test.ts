@@ -1,11 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { getLegalDoc, type Inline } from "@subeye/legal";
-// Reaching into apps/mobile deliberately, and only from a test: that module
-// imports nothing at all, and its catalogue is the claim this page makes out
-// loud. The page names a COUNT now rather than five codes, so a currency added
-// or dropped in the app should fail here rather than ship a page that says 156
-// while the product ships something else.
-import { CURRENCY_CODES } from "../../mobile/src/shared/lib/format/money";
+// Reaching into apps/ios deliberately, and only from a test: the bundled
+// catalogue is the claim this page makes out loud. The page names a COUNT, so a
+// currency added or dropped in the app should fail here rather than ship a page
+// that says one number while the product ships another.
+import CURRENCY_CODES from "../../ios/SubEye/Resources/currencies.json";
 import { en } from "../src/i18n/en";
 import { uk } from "../src/i18n/uk";
 import { currencyMockup } from "../src/lib/currencies";

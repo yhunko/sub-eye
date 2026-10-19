@@ -15,7 +15,7 @@ public enum Pricing {
 
     public static func amount(_ subscription: Subscription, phases: [PricePhase], on date: Date,
                               rates: ExchangeRates, currency: String) -> Double {
-        // Occurrence pricing follows the first half-open window, matching @subeye/spend.
+        // Occurrence pricing follows the first half-open window, not the latest-starting phase `effective` picks.
         let phase = phases.sorted { $0.startsAt < $1.startsAt }.first { phase in
             guard let start = Day.parse(phase.startsAt), start <= date else { return false }
             return Day.parse(phase.endsAt).map { date < $0 } ?? true

@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Tencent/MMKV.git",
       "state" : {
-        "revision" : "ad7657ef9d120dbcdd7432d75aa6c59391149b22",
-        "version" : "2.4.2"
+        "revision" : "007a393cd5e255e9aa68d6648f7179159bdf0f9d",
+        "version" : "2.4.3"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios.git",
       "state" : {
-        "revision" : "1b65c3baa951ad5ef4ab46f3b96a6e1dcc5cf015",
-        "version" : "5.89.0"
+        "revision" : "62df33e85b1aefaecbf7f19e89e71e2322ec15ac",
+        "version" : "5.96.0"
       }
     }
   ],

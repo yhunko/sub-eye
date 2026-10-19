@@ -52,7 +52,34 @@ public struct PlannedReminder: Sendable, Identifiable {
     public var repeatRule: RepeatRule?
     public var kind: String
     public var events: [CalendarEvent]
-    public var lead: Int
+    // Nil when one morning covers several due days, so the copy cannot name a single "when".
+    public var lead: Int?
+
+    // A repeating trigger keeps its lead on every firing, so "tomorrow" stays true for the life of the rule.
+    public func message(_ text: (String, [String: String]) -> String, money: (Double) -> String) -> ReminderMessage {
+        let trial = kind == "trial"
+        let when = lead.map { lead in
+            lead == 0 ? text("notif_whenToday", [:]) : lead == 1 ? text("notif_whenTomorrow", [:]) : text("notif_whenInDays", ["days": String(lead)])
+        }
+        // An unconvertible or unknown price is 0; a total that quietly understates the charge is worse than none.
+        let total = events.allSatisfy { $0.amount > 0 } ? money(events.reduce(0) { $0 + $1.amount }) : nil
+        if events.count == 1, let event = events.first, let when {
+            let title = text(trial ? "notif_trialTitle" : "notif_renewalTitle", ["name": event.name, "when": when])
+            let body = total.map { text(trial ? "notif_trialBody" : "notif_renewalBody", ["amount": $0]) }
+                ?? text(trial ? "notif_trialBodyNoAmount" : "notif_renewalBodyNoAmount", [:])
+            return ReminderMessage(title: title, body: body)
+        }
+        let shown = events.prefix(3).map(\.name).joined(separator: ", ")
+        let names = events.count > 3 ? text("notif_digestMore", ["names": shown, "count": String(events.count - 3)]) : shown
+        let title = when.map { text(trial ? "notif_trialDigestTitle" : "notif_renewalDigestTitle", ["when": $0]) }
+            ?? text(trial ? "notif_trialDigestTitleMixed" : "notif_renewalDigestTitleMixed", [:])
+        return ReminderMessage(title: title, body: total.map { text("notif_digestBody", ["names": names, "amount": $0]) } ?? names)
+    }
+}
+
+public struct ReminderMessage: Equatable, Sendable {
+    public var title: String
+    public var body: String
 }
 
 public enum ReminderPlanner {
@@ -97,7 +124,10 @@ public enum ReminderPlanner {
                     guard fire > now else { continue }
                     let key = kind + ":" + (rule.flatMap { try? JSONCodec.string($0) } ?? Day.iso(fire))
                     if var group = groups[key] {
-                        if !group.events.contains(where: { $0.subscriptionId == event.subscriptionId }) { group.events.append(event) }
+                        if !group.events.contains(where: { $0.subscriptionId == event.subscriptionId }) {
+                            group.events.append(event)
+                            if group.lead != lead { group.lead = nil }
+                        }
                         groups[key] = group
                     } else {
                         groups[key] = PlannedReminder(id: key, fireAt: fire, repeatRule: rule, kind: kind, events: [event], lead: lead)

@@ -274,17 +274,22 @@ struct SurfaceLogo: View {
     let name: String
     let url: URL?
     var size: CGFloat = 28
+    var fullColor = false
+    var scale: CGFloat = 1
     var body: some View {
         Group {
-            if let url, let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image).resizable()
-                    .widgetAccentedRenderingMode(.desaturated)
-                    .scaledToFit()
+            if let url, let data = try? Data(contentsOf: url), let image = UIImage(data: data, scale: scale) {
+                accented(Image(uiImage: image).resizable()).scaledToFit()
             } else {
                 Text(String(name.prefix(1)).uppercased()).font(.system(size: size * 0.45, weight: .semibold))
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, maxHeight: .infinity).background(.quaternary)
             }
         }.frame(width: size, height: size).clipShape(Circle()).accessibilityHidden(true)
+    }
+    @ViewBuilder private func accented(_ image: Image) -> some View {
+        if #available(iOS 18, *) { image.widgetAccentedRenderingMode(fullColor ? .fullColor : .desaturated) }
+        else { image }
     }
 }
 

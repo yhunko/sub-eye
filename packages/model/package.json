@@ -6,12 +6,7 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {
-    "valibot": "^1.4.2"
-  },
   "scripts": {
-    "lint": "biome check .",
-    "test": "bun test ./test",
     "type-check": "tsc --noEmit --pretty"
   }
 }

@@ -19,10 +19,18 @@ struct RenewalActivity: ActivityAttributes {
         var total: String
         var expiresAt: Date
         var hidden = false
+        var preview: Bool? = nil
         // A layout change must refresh ActivityKit's cached presentation after an app upgrade.
-        var layoutVersion: Int? = 2
+        var layoutVersion: Int? = 4
     }
     var day: String
+}
+
+// ActivityKit may refuse to start an activity whose image is larger than its smallest presentation (the 36.67 pt
+// minimal Dynamic Island). 108 px read at 3× is 36 pt, which still leaves enough pixels for the 44 pt Lock Screen logo.
+enum LiveActivityLogo {
+    static let pixels = 108
+    static let scale: CGFloat = 3
 }
 
 struct KeepRenewalIntent: LiveActivityIntent {
@@ -39,27 +47,6 @@ struct KeepRenewalIntent: LiveActivityIntent {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
         return .result()
-    }
-}
-
-@available(iOS 18, *)
-struct PlanCancellationIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource { "native_cancel" }
-    static var description: IntentDescription { IntentDescription("native_cancelHint") }
-    @Parameter(title: "form_name") var subscriptionId: String
-    @Parameter(title: "native_date") var day: String
-    init() { }
-    init(subscriptionId: String, day: String) { self.subscriptionId = subscriptionId; self.day = day }
-    func perform() async throws -> some IntentResult & OpensIntent {
-        let repository = try AppConfiguration.repository()
-        let enabled = try await repository.setting("live.enabled", as: Bool.self) == true
-        var url = AppConfiguration.url("subscriptions")
-        if enabled {
-            url = AppConfiguration.url(subscriptionId.isEmpty ? "subscriptions/due/" + day : "subscriptions/" + subscriptionId)
-            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-            components.queryItems = [URLQueryItem(name: "action", value: "plan-cancellation")]; url = components.url!
-        }
-        return .result(opensIntent: OpenURLIntent(url))
     }
 }
 

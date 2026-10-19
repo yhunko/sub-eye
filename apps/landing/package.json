@@ -4,6 +4,7 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "@subeye/legal": "workspace:*",
+    "@subeye/money": "workspace:*",
     "@subeye/pricing": "workspace:*",
     "@subeye/model": "workspace:*",
     "astro": "^7.3.1",
@@ -19,7 +20,6 @@
     "deploy": "astro build && wrangler deploy",
     "dev": "astro dev",
     "fonts": "bun ./scripts/fetch-fonts.ts",
-    "lint": "biome check .",
     "preview": "astro preview",
     "test": "bun test ./test",
     "type-check": "astro check"

@@ -76,14 +76,21 @@ struct NotificationsView: View {
             }
     }
     private var liveActivities: some View {
-        AppSection(footnote: L("native_liveHint")) {
-            Toggle(L("native_liveTitle"), isOn: $state.settings.liveActivities).notificationRow().accessibilityIdentifier("liveActivitiesToggle")
-            if #available(iOS 27, *) {
+        let support = LiveActivityService.support
+        return AppSection(footnote: L("native_liveHint")) {
+            Toggle(L("native_liveTitle"), isOn: support == .unavailable ? .constant(false) : $state.settings.liveActivities)
+                .disabled(support == .unavailable).notificationRow().accessibilityIdentifier("liveActivitiesToggle")
+            if support == .unavailable {
+                Text(L("native_liveFallback")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(.horizontal, 16).padding(.bottom, 12)
+            } else {
+                if support == .onOpen {
+                    Text(L("native_liveOnOpen")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(.horizontal, 16).padding(.bottom, 12)
+                }
                 if !services.live.authorized {
                     Text(L("native_liveDenied")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(16)
                     Link(destination: URL(string: UIApplication.openSettingsURLString)!) { SettingsRow(icon: "gearshape", title: L("settings_openDeviceSettings")) }.buttonStyle(.plain)
                 }
-            } else { Text(L("native_liveFallback")).appFont(12.5).foregroundStyle(AppTheme.muted).padding(.horizontal, 16).padding(.bottom, 12) }
+            }
             if let liveIssue { Text(liveIssue).appFont(12.5).foregroundStyle(AppTheme.muted).padding(16) }
         }
     }

@@ -83,7 +83,9 @@ actor LogoService {
     }
 
     func activityLogo(domain: String) async -> String? {
-        guard let payload = await cached(domain: domain, variant: variant(for: domain)), let bytes = payload.bytes else { return nil }
+        let selected = await variant(for: domain)
+        guard let payload = await load(domain: domain, variant: selected), let source = payload.bytes,
+              let bytes = Self.activityImage(source) else { return nil }
         let filename = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined() + ".png"
         let folder = directory.appendingPathComponent("live-activity")
         do {
@@ -92,6 +94,21 @@ actor LogoService {
             if !FileManager.default.fileExists(atPath: url.path) { try bytes.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }
             return filename
         } catch { return nil }
+    }
+
+    nonisolated static func activityImage(_ bytes: Data) -> Data? {
+        guard let source = CGImageSourceCreateWithData(bytes as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: LiveActivityLogo.pixels,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else { return nil }
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(output, UTType.png.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, thumbnail, nil)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return output as Data
     }
 
     func retainActivityLogos(_ filenames: Set<String>) {

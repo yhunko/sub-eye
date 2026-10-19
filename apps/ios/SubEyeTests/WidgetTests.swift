@@ -31,6 +31,22 @@ final class WidgetTests: XCTestCase {
         XCTAssertTrue(valid.logoURL?.path.hasSuffix("logos/live-activity/" + valid.logoFile!) == true)
     }
 
+    func testLiveActivityDestinationsOpenSingleCancellationAndGroupedDay() throws {
+        var single = URLComponents(url: AppConfiguration.url("subscriptions/demo-streaming"), resolvingAgainstBaseURL: false)!
+        single.queryItems = [URLQueryItem(name: "action", value: "plan-cancellation")]
+        let singleResult = try XCTUnwrap(DeepLink.route(try XCTUnwrap(single.url)))
+        XCTAssertEqual(singleResult.0, .subscriptions)
+        XCTAssertNil(singleResult.1)
+        guard case .cancellation("demo-streaming")? = singleResult.2 else {
+            return XCTFail("Single cancellation must open the existing confirmation sheet")
+        }
+
+        let groupedResult = try XCTUnwrap(DeepLink.route(AppConfiguration.url("subscriptions/due/2026-09-29")))
+        XCTAssertEqual(groupedResult.0, .subscriptions)
+        XCTAssertEqual(groupedResult.1, .due("2026-09-29"))
+        XCTAssertNil(groupedResult.2)
+    }
+
     func testFreeSnapshotOmitsPrivateRenewalsAndProIncludesThem() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

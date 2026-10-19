@@ -1,4 +1,3 @@
-"$schema" = "https://inlang.com/schema/inlang-message-format";
 "action_cancel" = "Cancel subscription";
 "action_cancelImmediate" = "Cancel now";
 "action_cancelPeriodEnd" = "Cancel at period end";
@@ -452,7 +451,7 @@
 "native_periodEnd" = "At the next renewal";
 "native_resumeDate" = "Set a resume date";
 "native_cancellationBody" = "SubEye tracks your plan; it cannot cancel a service for you. Cancel with the provider first, then confirm when SubEye should stop counting future charges.";
-"native_provider" = "Open provider’s cancellation page";
+"native_provider" = "Cancel with provider";
 "native_providerSite" = "Open provider website";
 "native_categoryName" = "Category name";
 "native_emoji" = "Emoji";
@@ -478,19 +477,17 @@
 "native_testReminder" = "Send a test reminder";
 "native_testTitle" = "Your SubEye reminders are ready";
 "native_testBody" = "Renewal reminders will appear here.";
-"native_renewalTitle" = "Upcoming renewal";
-"native_trialTitle" = "Trial ending soon";
-"native_renewalBody" = "{count} subscriptions · {amount}";
 "native_liveTitle" = "Renewal Live Activities";
 "native_liveHint" = "Show renewal names and prices on the Lock Screen and Dynamic Island. iOS also controls Live Activities permission in Settings.";
-"native_liveFallback" = "Scheduled Live Activities require iOS 27. On this version, use renewal reminders above.";
+"native_liveFallback" = "Live Activities need iOS 17 or later. Renewal reminders above work on this version.";
+"native_liveOnOpen" = "On this iOS version, a renewal’s activity appears once you open SubEye that day. From iOS 26 it starts on its own at 9:00.";
 "native_liveDenied" = "Live Activities are disabled in iOS Settings.";
 "native_liveDay" = "Renewals today";
+"native_liveRenewsToday" = "Renews today";
 "native_keep" = "Keep";
 "native_cancel" = "Cancel";
 "native_keepHint" = "Acknowledge this renewal and dismiss the activity. Your subscription stays unchanged.";
 "native_cancelHint" = "Open SubEye to plan cancellation with the provider.";
-"native_liveCount" = "+{count} more";
 "native_liveHidden" = "Renewal activity disabled";
 "native_serviceIssue" = "Some online services are unavailable. Your local data is ready.";
 "native_purchaseError" = "The purchase could not be verified. Check your App Store purchases or try Restore Purchases.";

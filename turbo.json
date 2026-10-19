@@ -49,9 +49,7 @@
         "src/**/*.css",
         "astro.config.*",
         "tsconfig.json",
-        "package.json",
-        "messages/**",
-        "project.inlang/settings.json"
+        "package.json"
       ],
       "outputs": ["dist/**/*.d.ts", ".tsbuildinfo"],
       "env": ["NODE_ENV"]
@@ -71,11 +69,8 @@
         "public/**",
         "astro.config.*",
         "bunfig.toml",
-        "test-preload.ts",
         "package.json",
-        "tsconfig.json",
-        "messages/**",
-        "project.inlang/settings.json"
+        "tsconfig.json"
       ],
       "outputs": ["coverage/**", ".nyc_output/**", "test-results/**"],
       "env": ["NODE_ENV", "CI"]

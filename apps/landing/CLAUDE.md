@@ -40,8 +40,8 @@ fails, do not "fix" the test — a scheme change costs a new App Store build.
 Both documents live in [`@subeye/legal`](../../packages/legal) as data, and the
 four `.astro` pages are ten lines each: fetch the doc, hand it to
 `components/LegalBody.astro`, which maps blocks onto the `h2`/`p`/`ul`/`dl`/
-`strong`/`code` tags `layouts/Legal.astro` already styles. `apps/mobile` renders
-the same object natively in its legal sheet, so **editing the words here is
+`strong`/`code` tags `layouts/Legal.astro` already styles. `apps/ios` bundles
+the same object (`apps/ios/Contracts/resources.ts`), so **editing the words here is
 impossible by design** — change them in the package or the app and the site say
 different things to the same user.
 
@@ -150,10 +150,10 @@ and both copy dictionaries type their status labels as
 `Record<SubscriptionStatus, string>`. A new status fails `astro check` rather
 than rendering a gap.
 
-`test/pricing.test.ts` reaches into
-`apps/mobile/src/shared/lib/format/money.ts` — deliberately, and only from a
-test. The page names the SIZE of the catalogue out loud ("156 currencies"), so
-the test pins that number against `CURRENCY_CODES.length` in both locales, and
+`test/pricing.test.ts` reads the app's bundled
+`apps/ios/SubEye/Resources/currencies.json` — deliberately, and only from a
+test. The page names the SIZE of the catalogue out loud ("155 currencies"), so
+the test pins that number against the catalogue's length in both locales, and
 separately asserts that every code the page prints is one the app can hold. It
 used to pin the whole five-code set; the catalogue is the ISO-4217 fiat list now
 and copying it here would be the drift the test exists to prevent.
@@ -189,10 +189,10 @@ worth having. `type-check` **is** `astro check`; it is not optional here.
 1. **`turbo.json` had no `.astro` in its input globs.** They are there now
    (`build`, `dev`, `type-check`, `test`). Adding a new file type without adding
    its glob means Turbo replays a stale cached build after you edit a page.
-2. **CI never deploys this site.** Both release workflows run the repo-wide
-   quality gate and semantic-release and stop; `apps/landing` ships only when
-   someone runs `bun run --cwd apps/landing deploy`. A landing type error still
-   fails CI — it just cannot block a release.
+2. **CI never deploys this site.** It runs the repo-wide quality gate and
+   stops; `apps/landing` ships only when someone runs
+   `bun run --cwd apps/landing deploy`. CI never runs `astro build` either, so
+   a build-only failure first shows up at deploy time.
 
 ## Commands
 
