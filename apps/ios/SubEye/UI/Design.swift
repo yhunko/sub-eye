@@ -105,7 +105,8 @@ struct AppSection<Content: View>: View {
 
 struct AppCaption: View {
     let title: String
-    var body: some View { Text(title.uppercased()).appFont(12.5, relativeTo: .caption).tracking(0.6).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true) }
+    // Not .tracking: it sizes the frame without the last glyph's spacing, so a line that fills the width overflows it and fails the text-clipped audit.
+    var body: some View { Text(title.uppercased()).appFont(12.5, relativeTo: .caption).kerning(0.6).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true) }
 }
 
 struct AppDivider: View {
