@@ -122,7 +122,7 @@ private struct CalendarMonthPage: View {
                         agendaHeading(day, events: dayEvents).padding(.horizontal, 6).padding(.top, 6).padding(.bottom, 4)
                         ForEach(dayEvents) { event in
                             NavigationLink(value: Route.subscription(event.subscriptionId)) {
-                                EventCell(event: event, currency: currency, logos: services.logos, showDate: false).padding(.vertical, 10)
+                                EventCell(event: event, currency: currency, logos: services.logos, showDate: false).padding(.vertical, 10).contentShape(Rectangle())
                             }.buttonStyle(.plain)
                         }
                     }

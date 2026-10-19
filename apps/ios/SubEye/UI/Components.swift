@@ -140,7 +140,7 @@ struct EventCell: View {
                 if typeSize.isAccessibilitySize { amount }
             }.frame(maxWidth: .infinity, alignment: .leading)
             if !typeSize.isAccessibilitySize { amount }
-        }.foregroundStyle(AppTheme.text).frame(minHeight: 44).accessibilityElement(children: .combine)
+        }.foregroundStyle(AppTheme.text).frame(minHeight: 44).contentShape(Rectangle()).accessibilityElement(children: .combine)
     }
     private var amount: some View {
         Text(Display.money(event.amount, currency)).appFont(14, weight: .bold).monospacedDigit().fixedSize(horizontal: true, vertical: false)
