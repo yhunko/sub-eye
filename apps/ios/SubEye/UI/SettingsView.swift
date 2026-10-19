@@ -156,9 +156,28 @@ struct DeveloperView: View {
     @State private var demoSeeded = false
     @State private var fakeUpdate = false
     @State private var fakeUpdateChange = 0
+    @State private var proChange: Bool?
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                AppSection(title: "Access", footnote: "Overrides the store entitlement in this build, so every screen can be previewed on the free plan or with Pro.") {
+                    Toggle(isOn: Binding(get: { proChange ?? state.settings.pro }, set: { proChange = $0 })) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "sparkles").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                            Text("Pro features").appFont(16)
+                        }
+                    }.padding(.horizontal, 16).padding(.vertical, 8).accessibilityIdentifier("developerPro")
+                }
+                AppSection(title: "Price changes", footnote: "Each row resets its own subscription in the development store and opens the real detail screen, so actions there really run. Open the row again to start over.") {
+                    scenarioRows(DeveloperScenario.pricing)
+                }
+                AppSection(title: "Lifecycle") {
+                    scenarioRows(DeveloperScenario.lifecycle)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Remove scenario subscriptions", role: .destructive, icon: "trash", styledRow: true) {
+                        try await DeveloperScenario.clear(services.repository); state.reload += 1
+                    }.buttonStyle(.plain)
+                }
                 AppSection(title: "Live Activity", footnote: "Previews use current subscriptions. Seed the demo first for deterministic routes and avatars, then lock the iPhone and long-press the Dynamic Island.") {
                     SettingsRow(icon: services.live.authorized ? "checkmark.circle" : "exclamationmark.triangle",
                                 title: "System permission", value: services.live.authorized ? "Enabled" : "Disabled", chevron: false)
@@ -209,6 +228,18 @@ struct DeveloperView: View {
                 do { try await services.updates.fake(fakeUpdate); state.update = try await services.updates.current(now: Date()) }
                 catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
             }
+            .task(id: proChange) {
+                guard let proChange else { return }
+                do { try await services.repository.setSetting("developer.proOverride", value: proChange); state.reload += 1 }
+                catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
+            }
+    }
+    private func scenarioRows(_ scenarios: [DeveloperScenario]) -> some View {
+        ForEach(Array(scenarios.enumerated()), id: \.element) { index, scenario in
+            if index > 0 { AppDivider(inset: 47) }
+            NavigationLink(value: Route.developerScenario(scenario)) { SettingsRow(icon: scenario.symbol, title: scenario.title) }
+                .buttonStyle(.plain).accessibilityIdentifier("scenario-" + scenario.rawValue)
+        }
     }
 }
 #endif

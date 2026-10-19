@@ -396,6 +396,63 @@ final class SubEyeUITests: XCTestCase {
         wait(for: [repeated], timeout: 2)
     }
 
+    func testDeveloperScenariosDriveTheRealDetailScreen() {
+        let app = application(); app.launchArguments.append("--fixture-pro"); app.launch()
+        openDeveloperTools(app)
+        let card = app.descendants(matching: .any)["pendingPriceCard"]
+        for (scenario, apply) in [("priceIncrease", true), ("priceDecrease", false)] {
+            openScenario(scenario, in: app)
+            XCTAssertTrue(card.waitForExistence(timeout: 5), scenario)
+            app.buttons[apply ? "applyPendingPrice" : "removePendingPrice"].tap()
+            // iOS nests the action sheet button inside a container that repeats its identifier.
+            let confirm = app.buttons["confirmPendingPrice"].firstMatch
+            XCTAssertTrue(confirm.waitForExistence(timeout: 5), scenario); confirm.tap()
+            XCTAssertTrue(card.waitForNonExistence(timeout: 5), scenario)
+            back(app)
+            openScenario(scenario, in: app)
+            XCTAssertTrue(card.waitForExistence(timeout: 5), "Reopening \(scenario) must reset its fixture")
+            back(app)
+        }
+        for scenario in ["priceCurrency", "trialEnding", "introEnding", "offerStarting"] {
+            openScenario(scenario, in: app)
+            XCTAssertTrue(card.waitForExistence(timeout: 5), scenario)
+            XCTAssertTrue(app.buttons["applyPendingPrice"].exists && app.buttons["removePendingPrice"].exists, scenario)
+            back(app)
+        }
+        for scenario in ["active", "paused", "cancelling", "cancelled"] {
+            openScenario(scenario, in: app)
+            XCTAssertTrue(app.staticTexts["subscriptionDetailName"].waitForExistence(timeout: 5), scenario)
+            XCTAssertFalse(card.exists, scenario)
+            back(app)
+        }
+    }
+
+    func testDeveloperPriceChangeIsReadOnlyOnFreePlan() {
+        let app = application(); app.launch()
+        openDeveloperTools(app)
+        openScenario("priceIncrease", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["pendingPriceCard"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["applyPendingPrice"].exists)
+        XCTAssertFalse(app.buttons["removePendingPrice"].exists)
+    }
+
+    private func openDeveloperTools(_ app: XCUIApplication) {
+        let settings = app.tabBars.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10)); settings.tap()
+        let tools = app.buttons["Developer Tools"]
+        for _ in 0..<8 where !tools.isHittable { app.swipeUp() }
+        tools.tap()
+    }
+
+    private func openScenario(_ name: String, in app: XCUIApplication) {
+        let row = app.buttons["scenario-" + name]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), name)
+        for _ in 0..<6 where !row.isHittable { if row.frame.midY < app.frame.midY { app.swipeDown() } else { app.swipeUp() } }
+        row.tap()
+    }
+
+    private func back(_ app: XCUIApplication) { app.navigationBars.buttons.element(boundBy: 0).tap() }
+
     private func application(language: String = "en", count: Int = 0) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--test-store", UUID().uuidString, "--fixture-count", String(count), "-AppleLanguages", "(" + language + ")", "-AppleLocale", language == "uk" ? "uk_UA" : "en_US"]

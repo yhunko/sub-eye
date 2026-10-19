@@ -67,11 +67,14 @@
 "currency_results" = "Results";
 "currency_search" = "Search currencies";
 "currency_suggested" = "Suggested";
+"detail_applyNowBody" = "{price} applies from today instead of {date}.";
+"detail_applyNowTitle" = "Apply the new price now?";
 "detail_endedBody" = "This one is over. Renew it if you have started paying again.";
 "detail_ends" = "Access ends";
 "detail_endsNextCharge" = "Next charge {date}";
 "detail_endsNoCharges" = "No further charges";
 "detail_heroEnded" = "Ended {date}";
+"detail_introStarts" = "Intro price starts";
 "detail_lastPrice" = "Last price";
 "detail_moreActions" = "More";
 "detail_nextPayment" = "Next payment";
@@ -80,6 +83,8 @@
 "detail_priceChangeTitle" = "Next payment is at the new price";
 "detail_remindAt" = "Remind {when}";
 "detail_remindOffer" = "Remind me";
+"detail_removePendingBody" = "The change on {date} is removed and the price stays {price}.";
+"detail_removePendingTitle" = "Remove the scheduled change?";
 "detail_resumes" = "Resumes";
 "detail_savedSinceEnded" = "Saved {amount} since it ended";
 "detail_segAmount" = "Amount";
@@ -88,6 +93,7 @@
 "detail_spendShare" = "Share of monthly spend";
 "detail_spendShareOf" = "{amount} of {total} a month";
 "detail_timeline" = "Price history";
+"detail_trialStarts" = "Free trial starts";
 "due_empty" = "Nothing renews on this day.";
 "due_title" = "Renewing {date}";
 "due_total" = "Total that day";
@@ -287,7 +293,6 @@
 "pricing_pendingBadge" = "Scheduled";
 "pricing_pendingFrom" = "From {date} · {cadence}";
 "pricing_pendingRow" = "{price} from {date}";
-"pricing_pendingTitle" = "Scheduled change";
 "pricing_scheduleHint" = "It changed for good — from the next payment or a date you pick.";
 "pricing_scheduleTitle" = "New standard price";
 "pricing_standardCost" = "Price after the offer";
