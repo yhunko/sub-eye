@@ -11,14 +11,23 @@ struct CategoriesView: View {
         List {
             if state.presentation.categories.isEmpty {
                 VStack(alignment: .leading, spacing: 8) { Text(L("category_empty")).font(.headline); Text(L("category_listHint")).foregroundStyle(.secondary) }
+                    .listRowBackground(Color.clear)
             }
-            ForEach(state.presentation.categories.filter { search.isEmpty || $0.name.localizedStandardContains(search) }) { category in
-                Button { sheet = state.settings.pro ? .category(category) : .paywall } label: {
-                    HStack(spacing: 12) { Text(category.emoji).appFont(24); Text(category.name).appFont(16).foregroundStyle(AppTheme.text); Spacer(); Text(String(state.presentation.rows.filter { $0.category?.id == category.id }.count)).appFont(14).foregroundStyle(AppTheme.muted); Image(systemName: "chevron.right").appFont(13).foregroundStyle(AppTheme.muted) }.padding(16).appCard(radius: 18)
-                }.buttonStyle(.plain).listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16)).listRowBackground(Color.clear).listRowSeparator(.hidden)
-                    .swipeActions { if state.settings.pro { Button(L("native_delete"), role: .destructive) { deleting = category }.tint(AppTheme.danger) } }
+            Section {
+                ForEach(state.presentation.categories.filter { search.isEmpty || $0.name.localizedStandardContains(search) }) { category in
+                    Button { sheet = state.settings.pro ? .category(category) : .paywall } label: {
+                        HStack(spacing: 12) {
+                            Text(category.emoji).appFont(20).frame(width: 28).accessibilityHidden(true)
+                            Text(category.name).appFont(16).foregroundStyle(AppTheme.text)
+                                .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }.frame(maxWidth: .infinity, alignment: .leading)
+                            Text(String(state.presentation.rows.filter { $0.category?.id == category.id }.count)).appFont(16).foregroundStyle(AppTheme.muted)
+                            Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
+                        }.contentShape(Rectangle())
+                    }.listRowBackground(AppTheme.surface).listRowSeparatorTint(AppTheme.border)
+                        .swipeActions { if state.settings.pro { Button(L("native_delete"), role: .destructive) { deleting = category }.tint(AppTheme.danger) } }
+                }
             }
-        }.listStyle(.plain).scrollContentBackground(.hidden).appScreen().navigationTitle(L("settings_categories"))
+        }.listStyle(.insetGrouped).scrollContentBackground(.hidden).appScreen().navigationTitle(L("settings_categories"))
             .searchable(text: $search, prompt: L("native_categorySearch"))
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { sheet = state.settings.pro ? .category(nil) : .paywall } label: { Image(systemName: "plus") }.accessibilityLabel(L("settings_categories")) } }
             .sheet(item: $deleting) { category in
