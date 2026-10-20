@@ -86,11 +86,6 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         }
     }
 
-    static func clear(_ repository: SubscriptionRepository) async throws {
-        for id in allCases.map(\.id) + stopped.map(\.id) { try await repository.deleteSubscription(id: id) }
-        try await repository.setSetting(DeveloperOverride.pro, value: nil as Bool?)
-    }
-
     private func fixture(now: Date, today: Date) -> (subscription: Subscription, phases: [PricePhase])? {
         guard let name else { return nil }
         var subscription = Subscription(id: id, name: name, cost: "11.99", currency: "usd",
@@ -162,6 +157,29 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case "Headspace": "headspace.com"
         case "YouTube Premium": "youtube.com"
         default: "duolingo.com"
+        }
+    }
+}
+
+enum DeveloperTextSize: String, CaseIterable {
+    static let key = "developer.textSize"
+    case system, xxxLarge, accessibility3, accessibility5
+
+    var size: DynamicTypeSize? {
+        switch self {
+        case .system: nil
+        case .xxxLarge: .xxxLarge
+        case .accessibility3: .accessibility3
+        case .accessibility5: .accessibility5
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .system: "System"
+        case .xxxLarge: "XXXL"
+        case .accessibility3: "AX3"
+        case .accessibility5: "AX5 · largest"
         }
     }
 }

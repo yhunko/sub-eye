@@ -37,23 +37,41 @@ actor NotificationService {
         let planned = ReminderPlanner.plan(rows: model.rows, settings: settings, pro: pro, rates: rates, currency: model.preferences.preferredCurrency, now: Date(), zone: .current)
         let previous = await center.pendingNotificationRequests()
         let identifiers = Set(planned.map { "subeye:" + $0.id })
-        let currency = model.preferences.preferredCurrency
         for reminder in planned {
             try Task.checkCancellation(); guard generation == self.generation else { return }
-            let content = UNMutableNotificationContent()
-            let message = reminder.message(L, money: { Display.money($0, currency) })
-            content.title = message.title; content.body = message.body
-            content.sound = .default; content.threadIdentifier = "subeye-renewals"
-            content.userInfo = ["url": Self.destination(reminder.events.map(\.subscriptionId)).absoluteString]
             let trigger: UNCalendarNotificationTrigger
             if let rule = reminder.repeatRule { trigger = UNCalendarNotificationTrigger(dateMatching: rule.components, repeats: true) }
             else { trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminder.fireAt), repeats: false) }
-            try await center.add(UNNotificationRequest(identifier: "subeye:" + reminder.id, content: content, trigger: trigger))
+            try await center.add(UNNotificationRequest(identifier: "subeye:" + reminder.id, content: Self.content(reminder, currency: model.preferences.preferredCurrency), trigger: trigger))
         }
         try Task.checkCancellation(); guard generation == self.generation else { return }
-        // Replace Expo requests only after the native schedule has succeeded.
-        center.removePendingNotificationRequests(withIdentifiers: previous.map(\.identifier).filter { !identifiers.contains($0) })
+        // Replace Expo requests only after the native schedule has succeeded. Previews are left alone: granting permission
+        // cycles the scene, and the synchronize that follows would otherwise remove them before they fire.
+        center.removePendingNotificationRequests(withIdentifiers: previous.map(\.identifier).filter { !identifiers.contains($0) && !$0.hasPrefix("subeye:preview-") })
     }
+    private static func content(_ reminder: PlannedReminder, currency: String) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        let message = reminder.message(L, money: { Display.money($0, currency) })
+        content.title = message.title; content.body = message.body
+        content.sound = .default; content.threadIdentifier = "subeye-renewals"
+        content.userInfo = ["url": destination(reminder.events.map(\.subscriptionId)).absoluteString]
+        return content
+    }
+    #if NATIVE_DEVELOPMENT
+    // Delivers one planned reminder of each shape (single renewal, digest, trial) within seconds, with both kinds switched on
+    // whatever the saved switches say.
+    func preview(model: Presentation, pro: Bool, rates: ExchangeRates) async throws -> Int {
+        guard try await authorize() else { throw DomainError.illegalAction }
+        var settings = ReminderSettings(); settings.renewals = true; settings.trials = true
+        let planned = ReminderPlanner.plan(rows: model.rows, settings: settings, pro: pro, rates: rates, currency: model.preferences.preferredCurrency, now: Date(), zone: .current)
+        let shapes = [planned.first { $0.kind == "renewal" && $0.events.count == 1 }, planned.first { $0.kind == "renewal" && $0.events.count > 1 }, planned.first { $0.kind == "trial" }].compactMap { $0 }
+        for (index, reminder) in shapes.enumerated() {
+            try await center.add(UNNotificationRequest(identifier: "subeye:preview-" + String(index), content: Self.content(reminder, currency: model.preferences.preferredCurrency),
+                                                       trigger: UNTimeIntervalNotificationTrigger(timeInterval: Double(3 + index * 3), repeats: false)))
+        }
+        return shapes.count
+    }
+    #endif
     static func destination(_ ids: [String]) -> URL {
         if ids.count == 1, let id = ids.first { return AppConfiguration.url("subscriptions/" + id) }
         var url = URLComponents(url: AppConfiguration.url("subscriptions"), resolvingAgainstBaseURL: false)!

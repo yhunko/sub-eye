@@ -154,7 +154,7 @@ struct MainShell: View {
         case .year(let year): YearView(year: year, state: $state, services: services)
         case .legal(let kind): LegalView(kind: kind)
         #if NATIVE_DEVELOPMENT
-        case .developer: DeveloperView(state: $state, services: services)
+        case .developer: DeveloperView(state: $state, services: services, sheet: $sheet)
         case .developerScenario(let scenario):
             DeveloperScenarioScreen(scenario: scenario, state: $state, services: services, sheet: $sheet) {
                 tab = .home; paths[.home] = []; paths[.settings] = [.developer]
