@@ -202,22 +202,42 @@ struct PromptView: View {
     @State private var paywall = false
     @State private var permission = UNAuthorizationStatus.notDetermined
     @State private var awaitingSettings = false
+    @State private var contentHeight: CGFloat = 0
+    @State private var actionsHeight: CGFloat = 0
+    private var currency: String { state.presentation.preferences.preferredCurrency }
     var body: some View {
         Group {
-            if prompt == .reminders { reminderOffer }
-            else {
-                NavigationStack {
-                    Form { Text(L("prompt_proBody")) }.scrollContentBackground(.hidden)
-                        .appScreen().navigationTitle(proTitle)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) { SheetCloseButton() }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button { paywall = true } label: { Label(L("prompt_proConfirm"), systemImage: "checkmark") }.labelStyle(.iconOnly)
-                            }
-                        }
+            if prompt == .reminders {
+                offer(message: L("prompt_remindersBody"), note: permission == .denied ? L("native_permissionDenied") : nil,
+                      confirm: L(permission == .denied ? "settings_openDeviceSettings" : "prompt_remindersConfirm"),
+                      identifiers: ("enableReminderOffer", "skipReminderOffer")) {
+                    title(L("prompt_remindersTitle")).accessibilityIdentifier("reminderOfferTitle")
+                } detail: {
+                    if let row = nextRenewal, let amount = row.nextAmount { reminderPreview(row, amount: amount) }
+                } action: {
+                    permission = await services.notifications.permission()
+                    if permission == .denied {
+                        awaitingSettings = true
+                        openURL(URL(string: UIApplication.openSettingsURLString)!)
+                    } else if try await services.notifications.authorize() {
+                        try await enableReminders()
+                    } else {
+                        permission = await services.notifications.permission()
+                    }
                 }
+            } else {
+                offer(message: L("prompt_proBody"), note: nil, confirm: L("prompt_proConfirm"), identifiers: ("openProOffer", "skipProOffer")) {
+                    proHero.accessibilityIdentifier("proOfferTitle")
+                } detail: {
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(Self.proFeatures, id: \.key) { feature in
+                            Label { Text(L(feature.key)).appFont(17) } icon: { Image(systemName: feature.icon).appFont(17).foregroundStyle(AppTheme.muted) }
+                                .labelStyle(PromptFeatureLabelStyle())
+                        }
+                    }
+                } action: { paywall = true }
             }
-        }.presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large]).appSheet()
+        }.presentationDetents(typeSize.isAccessibilitySize ? [.large] : contentHeight > 0 ? [.height(contentHeight + actionsHeight)] : [.medium]).appSheet()
             .sheet(isPresented: $paywall, onDismiss: { dismiss() }) { PaywallView(state: $state, services: services) }
             .task(id: scenePhase) {
                 guard prompt == .reminders, scenePhase == .active else { return }
@@ -228,46 +248,62 @@ struct PromptView: View {
                 }
             }
     }
-    private var proTitle: String {
-        let saved = state.presentation.dashboard.savings?.total ?? 0
-        guard saved > 0 else { return L("prompt_proTitle") }
-        return L("prompt_proSavedTitle", ["amount": Display.money(saved, state.presentation.preferences.preferredCurrency)])
+    private static let proFeatures = [(key: "paywall_featureReminders", icon: "bell.badge"), (key: "paywall_featureCalendar", icon: "calendar"),
+                                      (key: "paywall_featureCategories", icon: "chart.pie"), (key: "paywall_lockWidgets", icon: "square.grid.2x2")]
+    private func title(_ text: String) -> some View {
+        Text(text).appFont(28, weight: .bold, relativeTo: .title).tracking(-0.4).fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
     }
-    private var reminderOffer: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 28, weight: .medium)).foregroundStyle(AppTheme.accentBright)
-                    .frame(width: 64, height: 64)
-                    .background(AppTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 20))
-                    .accessibilityHidden(true)
-                Text(L("prompt_remindersTitle")).font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("reminderOfferTitle")
-                Text(L("prompt_remindersBody")).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
-                if permission == .denied {
-                    Text(L("native_permissionDenied")).font(.callout).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+    @ViewBuilder private var proHero: some View {
+        if let savings = state.presentation.dashboard.savings, savings.total > 0 {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L("home_saved")).appFont(15, relativeTo: .subheadline).foregroundStyle(AppTheme.muted)
+                Text(Display.money(savings.total, currency)).appFont(36, weight: .heavy, relativeTo: .largeTitle).tracking(-1.2).monospacedDigit()
+                    .foregroundStyle(AppTheme.accentBright).lineLimit(1).minimumScaleFactor(0.6)
+                if savings.stopped > 0 {
+                    Text(L("home_savedStopped", ["count": String(savings.stopped), "amount": Display.money(savings.monthly, currency, decimals: 0)]))
+                        .appFont(15, relativeTo: .subheadline).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
                 }
-            }.multilineTextAlignment(.center).frame(maxWidth: .infinity)
-                .padding(.horizontal, 24).padding(.top, 32).padding(.bottom, 20)
-        }.appScreen()
+            }.accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
+        } else { title(L("prompt_proTitle")) }
+    }
+    // The soonest renewal whose day-before reminder is still ahead, so the preview shows one this person would actually get.
+    private var nextRenewal: SubscriptionRow? {
+        let today = Day.today()
+        return state.presentation.rows.filter { $0.status == .active && ($0.nextAmount ?? 0) > 0 && ($0.nextDate ?? .distantPast) > today }
+            .min { ($0.nextDate ?? .distantFuture) < ($1.nextDate ?? .distantFuture) }
+    }
+    private func reminderPreview(_ row: SubscriptionRow, amount: Double) -> some View {
+        HStack(alignment: .top, spacing: 11) {
+            Image(systemName: "eye.fill").font(.system(size: 17)).foregroundStyle(AppTheme.accent)
+                .frame(width: 34, height: 34).appCard(radius: 9, fill: AppTheme.background)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L("notif_renewalTitle", ["name": row.subscription.name, "when": L("notif_whenTomorrow")])).appFont(15, weight: .semibold, relativeTo: .subheadline)
+                Text(L("notif_renewalBody", ["amount": Display.money(amount, currency)])).appFont(15, relativeTo: .subheadline)
+            }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+        }.padding(.horizontal, 14).padding(.vertical, 13).appCard(radius: 20, fill: AppTheme.surfaceAlt).accessibilityElement(children: .combine)
+    }
+    // Sized to its content: a fixed medium detent left a blank band between the copy and the buttons.
+    private func offer<Hero: View, Detail: View>(message: String, note: String?, confirm: String, identifiers: (confirm: String, skip: String),
+                                                 @ViewBuilder hero: () -> Hero, @ViewBuilder detail: () -> Detail,
+                                                 action: @escaping @MainActor () async throws -> Void) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                hero()
+                Text(message).appFont(17).fixedSize(horizontal: false, vertical: true).padding(.top, 20)
+                detail().padding(.top, 24)
+                if let note { Text(note).appFont(15, relativeTo: .subheadline).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true).padding(.top, 16) }
+            }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.top, 32).padding(.bottom, 8)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+        }.scrollBounceBehavior(.basedOnSize).appScreen()
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 8) {
-                ActionButton(title: L(permission == .denied ? "settings_openDeviceSettings" : "prompt_remindersConfirm")) {
-                    permission = await services.notifications.permission()
-                    if permission == .denied {
-                        awaitingSettings = true
-                        openURL(URL(string: UIApplication.openSettingsURLString)!)
-                    } else if try await services.notifications.authorize() {
-                        try await enableReminders()
-                    } else {
-                        permission = await services.notifications.permission()
-                    }
-                }.buttonStyle(AppPrimaryButtonStyle()).accessibilityIdentifier("enableReminderOffer")
+            VStack(spacing: 4) {
+                ActionButton(title: confirm, action: action).buttonStyle(AppPrimaryButtonStyle()).accessibilityIdentifier(identifiers.confirm)
                 Button(L("prompt_notNow")) { dismiss() }
                     .font(.body.weight(.medium)).foregroundStyle(AppTheme.muted)
                     .frame(maxWidth: .infinity, minHeight: 48).contentShape(Rectangle())
-                    .accessibilityIdentifier("skipReminderOffer")
-            }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 12).background(AppTheme.background)
+                    .accessibilityIdentifier(identifiers.skip)
+            }.padding(.horizontal, 24).padding(.top, 16).background(AppTheme.background)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionsHeight = $0 }
         }
     }
     private func enableReminders() async throws {
@@ -277,6 +313,13 @@ struct PromptView: View {
         state.settings.reminders = settings
         state.reload += 1
         dismiss()
+    }
+}
+
+private struct PromptFeatureLabelStyle: LabelStyle {
+    @ScaledMetric private var iconWidth: CGFloat = 24
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) { configuration.icon.frame(width: iconWidth); configuration.title.fixedSize(horizontal: false, vertical: true) }
     }
 }
 
