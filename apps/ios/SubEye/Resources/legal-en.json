@@ -4,7 +4,7 @@
     "locale": "en",
     "title": "Privacy policy",
     "description": "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-    "updated": "2026-10-19",
+    "updated": "2026-10-20",
     "lead": [
       {
         "p": [
@@ -75,9 +75,9 @@
               ],
               [
                 {
-                  "b": "Diagnostics, when something goes wrong:"
+                  "b": "Your purchase, if you buy SubEye Pro:"
                 },
-                " if the app crashes, the stack trace with your device model and OS version. If you buy SubEye Pro, the App Store receipt for that purchase. Neither carries anything you typed, and neither is tied to a name, an email address or an account."
+                " the App Store receipt for it. It carries nothing you typed, and it is not tied to a name, an email address or an account. If you have chosen to share analytics with app developers in your iPhone's settings, Apple may also pass on a crash report, under Apple's terms; the app sends none itself."
               ],
               [
                 {
@@ -89,7 +89,7 @@
           },
           {
             "p": [
-              "There is no advertising identifier, no location data, no contacts, no photos, and no advertising or product-analytics SDK in the app. Two SDKs do ship inside it — crash reporting and purchases — and both are listed below."
+              "There is no advertising identifier, no location data, no contacts, no photos, and no advertising, product-analytics or crash-reporting SDK in the app. The one SDK that talks to a service is for purchases, and it is listed below."
             ]
           }
         ]
@@ -105,12 +105,6 @@
           },
           {
             "dl": [
-              {
-                "term": "Sentry — crash reporting (European Union)",
-                "desc": [
-                  "Receives the stack trace of a crash in the app, with your device model and OS version. That is all of it: no subscription names, no amounts, no notes, no email address, no user identifier, no screenshots and no session recording."
-                ]
-              },
               {
                 "term": "RevenueCat — purchases (United States)",
                 "desc": [
@@ -183,7 +177,7 @@
         "blocks": [
           {
             "p": [
-              "Your subscriptions are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, fixing crashes, honouring a purchase you made, and converting currencies correctly."
+              "Your subscriptions are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, honouring a purchase you made, and converting currencies correctly."
             ]
           },
           {
@@ -225,7 +219,7 @@
           },
           {
             "p": [
-              "A crash report already sent to Sentry is kept under Sentry's own retention policy and then dropped. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro."
+              "Versions of SubEye before 6.0 sent crash reports to Sentry; a report already sent is kept under Sentry's own retention policy and then dropped, and the app sends none now. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro."
             ]
           }
         ]
@@ -241,7 +235,7 @@
           },
           {
             "p": [
-              "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a crash report or a purchase record held by one of the services above — write to ",
+              "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a purchase record held by one of the services above — write to ",
               {
                 "mailto": "privacy@subeye.cc"
               },

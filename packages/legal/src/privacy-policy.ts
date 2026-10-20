@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Privacy policy",
   description:
     "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-  updated: "2026-10-19",
+  updated: "2026-10-20",
   lead: [
     {
       p: [
@@ -66,8 +66,8 @@ const EN: LegalDoc = {
               " — an IP address and a device user agent — seen by the services listed below at the moment the app talks to one of them.",
             ],
             [
-              { b: "Diagnostics, when something goes wrong:" },
-              " if the app crashes, the stack trace with your device model and OS version. If you buy SubEye Pro, the App Store receipt for that purchase. Neither carries anything you typed, and neither is tied to a name, an email address or an account.",
+              { b: "Your purchase, if you buy SubEye Pro:" },
+              " the App Store receipt for it. It carries nothing you typed, and it is not tied to a name, an email address or an account. If you have chosen to share analytics with app developers in your iPhone's settings, Apple may also pass on a crash report, under Apple's terms; the app sends none itself.",
             ],
             [
               { b: "What you type into the brand logo search" },
@@ -77,7 +77,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "There is no advertising identifier, no location data, no contacts, no photos, and no advertising or product-analytics SDK in the app. Two SDKs do ship inside it — crash reporting and purchases — and both are listed below.",
+            "There is no advertising identifier, no location data, no contacts, no photos, and no advertising, product-analytics or crash-reporting SDK in the app. The one SDK that talks to a service is for purchases, and it is listed below.",
           ],
         },
       ],
@@ -93,12 +93,6 @@ const EN: LegalDoc = {
         },
         {
           dl: [
-            {
-              term: "Sentry — crash reporting (European Union)",
-              desc: [
-                "Receives the stack trace of a crash in the app, with your device model and OS version. That is all of it: no subscription names, no amounts, no notes, no email address, no user identifier, no screenshots and no session recording.",
-              ],
-            },
             {
               term: "RevenueCat — purchases (United States)",
               desc: [
@@ -162,7 +156,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "Your subscriptions are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, fixing crashes, honouring a purchase you made, and converting currencies correctly.",
+            "Your subscriptions are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, honouring a purchase you made, and converting currencies correctly.",
           ],
         },
         {
@@ -204,7 +198,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "A crash report already sent to Sentry is kept under Sentry's own retention policy and then dropped. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro.",
+            "Versions of SubEye before 6.0 sent crash reports to Sentry; a report already sent is kept under Sentry's own retention policy and then dropped, and the app sends none now. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro.",
           ],
         },
       ],
@@ -220,7 +214,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a crash report or a purchase record held by one of the services above — write to ",
+            "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a purchase record held by one of the services above — write to ",
             { mailto: "privacy@subeye.cc" },
             " and expect an answer within 30 days.",
           ],
@@ -260,7 +254,7 @@ const UK: LegalDoc = {
   title: "Політика конфіденційності",
   description:
     "Які дані збирає SubEye, хто їх обробляє, скільки вони зберігаються і як їх видалити.",
-  updated: "2026-10-19",
+  updated: "2026-10-20",
   lead: [
     {
       p: [
@@ -322,8 +316,8 @@ const UK: LegalDoc = {
               " — IP-адресу та user agent пристрою. Їх бачать перелічені нижче сервіси в той момент, коли застосунок звертається до одного з них.",
             ],
             [
-              { b: "Діагностику, коли щось ламається:" },
-              " якщо застосунок аварійно завершується — стек виклику разом із моделлю вашого пристрою та версією ОС. Якщо ви купуєте SubEye Pro — чек App Store за цю покупку. Жодне з цього не несе нічого з набраного вами і не прив’язане ні до імені, ні до пошти, ні до акаунта.",
+              { b: "Вашу покупку, якщо ви купуєте SubEye Pro:" },
+              " чек App Store за неї. Він не несе нічого з набраного вами і не прив’язаний ні до імені, ні до пошти, ні до акаунта. Якщо в налаштуваннях iPhone ви дозволили ділитися аналітикою з розробниками, Apple може також передати звіт про збій — на умовах Apple; сам застосунок таких звітів не надсилає.",
             ],
             [
               { b: "Текст, який ви вводите в пошук логотипів" },
@@ -333,7 +327,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Жодного рекламного ідентифікатора, даних про місцеперебування, контактів, фотографій, рекламного чи продуктово-аналітичного SDK у застосунку немає. Усередині нього є два SDK — звіти про збої та покупки — і обидва перелічені нижче.",
+            "Жодного рекламного ідентифікатора, даних про місцеперебування, контактів чи фотографій. У застосунку немає ні рекламного чи продуктово-аналітичного SDK, ні SDK для звітів про збої. Єдиний SDK, що звертається до сервісу, — для покупок, і він перелічений нижче.",
           ],
         },
       ],
@@ -349,12 +343,6 @@ const UK: LegalDoc = {
         },
         {
           dl: [
-            {
-              term: "Sentry — звіти про збої (Європейський Союз)",
-              desc: [
-                "Отримує стек виклику збою в застосунку разом із моделлю вашого пристрою та версією ОС. І це все: ні назв підписок, ні сум, ні нотаток, ні пошти, ні ідентифікатора користувача, ні знімків екрана, ні запису сесій.",
-              ],
-            },
             {
               term: "RevenueCat — покупки (США)",
               desc: [
@@ -418,7 +406,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Ваші підписки лежать на вашому пристрої, бо в цьому й полягає застосунок: він не може порахувати те, чого не зберігає. За GDPR дані, які залишаються на вашому власному пристрої і ніколи не передаються до SubEye, SubEye не обробляє взагалі. Для тих небагатьох запитів, які таки залишають телефон, підставою є законний інтерес — щоб застосунок працював, щоб збої виправляли, щоб покупка, яку ви зробили, залишалася вашою, і щоб валюти переводилися правильно.",
+            "Ваші підписки лежать на вашому пристрої, бо в цьому й полягає застосунок: він не може порахувати те, чого не зберігає. За GDPR дані, які залишаються на вашому власному пристрої і ніколи не передаються до SubEye, SubEye не обробляє взагалі. Для тих небагатьох запитів, які таки залишають телефон, підставою є законний інтерес — щоб застосунок працював, щоб покупка, яку ви зробили, залишалася вашою, і щоб валюти переводилися правильно.",
           ],
         },
         {
@@ -460,7 +448,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Звіт про збій, уже надісланий до Sentry, зберігається згідно з політикою зберігання самої Sentry, а потім видаляється. Запис про покупку в RevenueCat і в Apple зберігається стільки, скільки вимагають ці сервіси, бо саме він підтверджує, що Pro ваш.",
+            "Версії SubEye до 6.0 надсилали звіти про збої до Sentry; уже надісланий звіт зберігається згідно з політикою зберігання самої Sentry, а потім видаляється, а тепер застосунок таких звітів не надсилає. Запис про покупку в RevenueCat і в Apple зберігається стільки, скільки вимагають ці сервіси, бо саме він підтверджує, що Pro ваш.",
           ],
         },
       ],
@@ -476,7 +464,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "На практиці більшість із цього вже у ваших руках, а не в чиїхось: ваші дані на вашому пристрої, і ви можете їх переглянути, виправити й стерти прямо в застосунку, ні в кого не питаючи дозволу. З усього іншого — зокрема щодо звіту про збій чи запису про покупку, які тримає котрийсь із перелічених вище сервісів, — пишіть на ",
+            "На практиці більшість із цього вже у ваших руках, а не в чиїхось: ваші дані на вашому пристрої, і ви можете їх переглянути, виправити й стерти прямо в застосунку, ні в кого не питаючи дозволу. З усього іншого — зокрема щодо запису про покупку, який тримає котрийсь із перелічених вище сервісів, — пишіть на ",
             { mailto: "privacy@subeye.cc" },
             " — відповідь буде протягом 30 днів.",
           ],
