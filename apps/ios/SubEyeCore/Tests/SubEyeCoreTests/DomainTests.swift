@@ -148,6 +148,26 @@ final class DomainTests: XCTestCase {
         XCTAssertNil(Pricing.yearlyChange(sub, to: phase(.scheduledChange, "14.99")))
     }
 
+    func testYearlyChangeAcrossACurrencySwitchComparesConvertedPrices() throws {
+        let rates = ExchangeRates(rates: ["usd": 1, "uah": 40, "eur": 0.8])
+        func phase(_ cost: String, _ currency: String) -> PricePhase {
+            PricePhase(id: "p", subscriptionId: "s", kind: .scheduledChange, cost: cost, currency: currency, startsAt: "2026-10-20T00:00:00Z", now: now)
+        }
+        var sub = fixture(); sub.cost = "11.99"
+        // $11.99 is ₴479.60 and €13.50 is ₴675.00: ₴195.40 more a month.
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase("13.50", "eur"), rates: rates, currency: "uah")), 2344.8, accuracy: 0.001)
+        // €10 is $12.50, so the smaller number still costs $0.51 more a month.
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase("10.00", "eur"), rates: rates, currency: "usd")), 6.12, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase("9.00", "eur"), rates: rates, currency: "usd")), -8.88, accuracy: 0.001)
+        XCTAssertNil(Pricing.yearlyChange(sub, to: phase("9.592", "eur"), rates: rates, currency: "usd"))
+        // €13.50 at 0.89 is $15.1685, shown as $15.17: the year is 12 × ($15.17 − $11.99), not 12 × $3.1785.
+        let shown = ExchangeRates(rates: ["usd": 1, "eur": 0.89])
+        XCTAssertEqual(try XCTUnwrap(Pricing.yearlyChange(sub, to: phase("13.50", "eur"), rates: shown, currency: "usd")), 38.16, accuracy: 0.001)
+        XCTAssertNil(Pricing.yearlyChange(sub, to: phase("13.50", "gbp"), rates: rates, currency: "uah"))
+        XCTAssertNil(rates.converted(10, from: "gbp", to: "usd"))
+        XCTAssertEqual(rates.converted(10, from: "gbp", to: "GBP"), 10)
+    }
+
     func fixture() -> Subscription {
         Subscription(id: "s", name: "Test", cost: "20.00", currency: "usd", paymentDate: "2026-01-20T00:00:00Z", now: now)
     }

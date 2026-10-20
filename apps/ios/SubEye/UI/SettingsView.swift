@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import UniformTypeIdentifiers
 import SubEyeCore
 
@@ -69,7 +70,7 @@ struct SettingsView: View {
                 AppSection(title: L("settings_data"), footnote: L("settings_syncHint")) {
                     Toggle(isOn: $state.settings.cloud) {
                         HStack(spacing: 12) {
-                            Image(systemName: state.settings.cloud ? "icloud.fill" : "icloud.slash").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                            RowIcon(symbol: state.settings.cloud ? "icloud.fill" : "icloud.slash")
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(L("settings_sync")).appFont(16)
                                 if !state.settings.cloud { Text(L("settings_syncOffSubtitle")).appFont(12.5).foregroundStyle(AppTheme.muted) }
@@ -152,18 +153,54 @@ struct SettingsView: View {
 struct DeveloperView: View {
     @Binding var state: SceneState
     let services: AppServices
+    @Binding var sheet: SheetRoute?
+    @Environment(\.requestReview) private var requestReview
+    @AppStorage(DeveloperTextSize.key) private var textSize = DeveloperTextSize.system.rawValue
     @State private var previewCount = 0
-    @State private var demoSeeded = false
+    @State private var emptying = false
+    @State private var reminders: Int?
     @State private var fakeUpdate = false
     @State private var fakeUpdateChange = 0
     @State private var change: DeveloperOverride?
+    // The busiest upcoming payment day this month, so the day list shows several rows when there are any.
+    private var paymentDay: String? {
+        let today = Day.today()
+        let payments = state.presentation.dashboard.monthEvents.filter { $0.kind == .payment && $0.date >= today }
+        let busiest = Dictionary(grouping: payments) { Day.key($0.date) }.max { $0.value.count == $1.value.count ? $0.key > $1.key : $0.value.count < $1.value.count }?.key
+        return busiest ?? state.presentation.rows.compactMap(\.nextDate).filter { $0 >= today }.min().map(Day.key)
+    }
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                AppSection(title: "Access", footnote: "Pro overrides the store entitlement in this build; Reminders switches the real reminder setting of this development store. Scenario screens carry the same switches under the hammer button, so a change shows on the open screen.") {
+                AppSection(title: "Data", footnote: "Portfolio adds or resets 14 subscriptions in five categories: four currencies, every two weeks to yearly, a trial, an intro history, a scheduled increase, paused, cancelling and ended, and turns Pro on. Start empty deletes every subscription and category but keeps settings; Remove developer data deletes only what this screen added and the Pro override.") {
+                    SettingsRow(icon: "tray.full", title: "Subscriptions in store", value: String(state.presentation.totalCount), chevron: false)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Seed portfolio", icon: "sparkles", styledRow: true) {
+                        try await NativeTesting.seedPortfolio(services.repository); state.reload += 1
+                    }.buttonStyle(.plain).accessibilityIdentifier("seedPortfolio")
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Add 100 subscriptions", icon: "list.bullet", styledRow: true) {
+                        try await NativeTesting.addFixtures(100, to: services.repository); state.reload += 1
+                    }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    Button { emptying = true } label: { SettingsRow(icon: "tray", title: "Start empty", color: AppTheme.danger, chevron: false) }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Remove developer data", role: .destructive, icon: "trash", styledRow: true) {
+                        try await NativeTesting.clearDeveloperData(services.repository); state.reload += 1
+                    }.buttonStyle(.plain)
+                }
+                AppSection(title: "Access", footnote: "Pro overrides the store entitlement in this build; Reminders switches the real reminder setting of this development store. Scenario screens carry the same switches under the hammer button, so a change shows on the open screen. Text size overrides Dynamic Type inside the app; navigation and tab bars, menus and alerts keep the system size.") {
                     overrideToggle("Pro features", icon: "sparkles", key: DeveloperOverride.pro).accessibilityIdentifier("developerPro")
                     AppDivider(inset: 47)
                     overrideToggle("Reminders on", icon: "bell", key: DeveloperOverride.reminders).accessibilityIdentifier("developerReminders")
+                    AppDivider(inset: 47)
+                    Menu {
+                        Picker("Text size", selection: $textSize) {
+                            ForEach(DeveloperTextSize.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+                        }
+                    } label: {
+                        SettingsRow(icon: "textformat.size", title: "Text size", value: (DeveloperTextSize(rawValue: textSize) ?? .system).title, chevron: false)
+                    }.buttonStyle(.plain).accessibilityIdentifier("developerTextSize")
                 }
                 AppSection(title: "Price changes", footnote: "Each row resets its own subscription in the development store and opens the real detail screen, so actions there really run. Open the row again to start over.") {
                     scenarioRows(DeveloperScenario.pricing)
@@ -173,12 +210,43 @@ struct DeveloperView: View {
                 }
                 AppSection(title: "Home", footnote: "Each row seeds scenario subscriptions and switches to Home. Your own subscriptions still count toward every card.") {
                     scenarioRows(DeveloperScenario.home)
+                }
+                AppSection(title: "Prompts", footnote: "Each row shows the prompt directly. Reset forgets that reminders, Pro and a rating were already offered, so the editor and Home offer them again on their own schedule.") {
+                    Button { sheet = .prompt(.reminders) } label: { SettingsRow(icon: "bell.badge", title: "Reminders offer", chevron: false) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
-                    ActionButton(title: "Remove scenario data", role: .destructive, icon: "trash", styledRow: true) {
-                        try await DeveloperScenario.clear(services.repository); state.reload += 1
+                    Button { sheet = .prompt(.pro) } label: {
+                        SettingsRow(icon: "sparkles", title: "Pro pitch", value: (state.presentation.dashboard.savings?.total ?? 0) > 0 ? "With savings" : nil, chevron: false)
+                    }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    Button { requestReview() } label: { SettingsRow(icon: "star", title: "Rating request", chevron: false) }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Reset prompt history", icon: "arrow.counterclockwise", styledRow: true) {
+                        for key in ["prompts.remindersAsked", "prompts.proPitched"] { try await services.repository.setSetting(key, value: nil as Bool?) }
+                        try await services.repository.setSetting("review.state", value: nil as ReviewState?)
+                        services.prompts.interrupted = false
                     }.buttonStyle(.plain)
                 }
-                AppSection(title: "Live Activity", footnote: "Previews use current subscriptions. Seed the demo first for deterministic routes and avatars, then lock the iPhone and long-press the Dynamic Island.") {
+                AppSection(title: "Screens", footnote: "Day list opens the busiest upcoming payment day, as a multi-charge day on Home does; Plan a cancellation opens the same day the way the Live Activity's cancel button does. Far time zone moves the preferred time zone a day away from this device, which brings up the Settings row that offers to switch back.") {
+                    NavigationLink(value: paymentDay.map(Route.due)) { SettingsRow(icon: "calendar.day.timeline.left", title: "Day list", value: paymentDay) }.buttonStyle(.plain).disabled(paymentDay == nil)
+                    AppDivider(inset: 47)
+                    NavigationLink(value: paymentDay.map(Route.cancellationDay)) { SettingsRow(icon: "xmark.circle", title: "Plan a cancellation") }.buttonStyle(.plain).disabled(paymentDay == nil)
+                    AppDivider(inset: 47)
+                    ActionButton(title: "Use a far time zone", icon: "clock.arrow.2.circlepath", styledRow: true) {
+                        var preferences = state.presentation.preferences
+                        preferences.preferredTimezone = TimeZone.current.secondsFromGMT() >= 0 ? "Pacific/Pago_Pago" : "Pacific/Kiritimati"
+                        try await services.repository.savePreferences(preferences); state.reload += 1
+                    }.buttonStyle(.plain)
+                }
+                AppSection(title: "Reminders", footnote: "Delivers one real reminder of each shape from the current subscriptions, a few seconds apart: a single renewal, a digest of several and a trial ending (Pro). Lock the simulator to see them on the Lock Screen.") {
+                    ActionButton(title: "Deliver sample reminders", icon: "bell.and.waves.left.and.right", styledRow: true) {
+                        reminders = try await services.notifications.preview(model: state.presentation, pro: state.settings.pro, rates: services.exchange.cached())
+                    }.buttonStyle(.plain)
+                    if let reminders {
+                        AppDivider(inset: 47)
+                        SettingsRow(icon: reminders > 0 ? "checkmark.circle" : "exclamationmark.triangle", title: reminders > 0 ? "Reminders on the way" : "Nothing to remind about", value: String(reminders), chevron: false)
+                    }
+                }
+                AppSection(title: "Live Activity", footnote: "Previews use current subscriptions. Seed the portfolio first for deterministic routes and avatars, then lock the iPhone and long-press the Dynamic Island.") {
                     SettingsRow(icon: services.live.authorized ? "checkmark.circle" : "exclamationmark.triangle",
                                 title: "System permission", value: services.live.authorized ? "Enabled" : "Disabled", chevron: false)
                     AppDivider(inset: 47)
@@ -200,20 +268,10 @@ struct DeveloperView: View {
                         try await services.live.endPreview(); previewCount = services.live.previewCount
                     }.buttonStyle(.plain)
                 }
-                AppSection(title: "Demo Data", footnote: "Adds or resets five fixed demo subscriptions in the isolated native development store and unlocks their price timelines.") {
-                    ActionButton(title: "Seed timeline demo", icon: "sparkles", styledRow: true) {
-                        try await NativeTesting.seedDemo(services.repository)
-                        demoSeeded = true; state.reload += 1
-                    }.buttonStyle(.plain)
-                    if demoSeeded {
-                        AppDivider(inset: 47)
-                        SettingsRow(icon: "checkmark.circle", title: "Demo subscriptions ready", chevron: false)
-                    }
-                }
                 AppSection(title: "App Update", footnote: "Pretends the App Store has the next minor version, live for three days. Switching it on also forgets this device's dismissal, so the alert, the Settings banner and the tab dot all come back.") {
                     Toggle(isOn: Binding(get: { fakeUpdate }, set: { fakeUpdate = $0; fakeUpdateChange += 1 })) {
                         HStack(spacing: 12) {
-                            Image(systemName: "arrow.down.app").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                            RowIcon(symbol: "arrow.down.app")
                             Text("Fake available update").appFont(16)
                         }
                     }.padding(.horizontal, 16).padding(.vertical, 8)
@@ -228,12 +286,17 @@ struct DeveloperView: View {
                 do { try await services.updates.fake(fakeUpdate); state.update = try await services.updates.current(now: Date()) }
                 catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
             }
+            .sheet(isPresented: $emptying) {
+                ConfirmAction(title: "Start empty", message: "Deletes every subscription and category in the development store, your own included. Settings stay.", destructive: true) {
+                    try await NativeTesting.empty(services.repository); state.reload += 1
+                }
+            }
             .developerOverride(change, state: $state, services: services)
     }
     private func overrideToggle(_ title: String, icon: String, key: String) -> some View {
         Toggle(isOn: DeveloperOverride.binding(key, state: $state, change: $change)) {
             HStack(spacing: 12) {
-                Image(systemName: icon).appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                RowIcon(symbol: icon)
                 Text(title).appFont(16)
             }
         }.padding(.horizontal, 16).padding(.vertical, 8)

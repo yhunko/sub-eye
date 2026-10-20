@@ -16,6 +16,13 @@ public struct ExchangeRates: Codable, Equatable, Sendable {
               fromRate.isFinite, toRate.isFinite, fromRate > 0, toRate > 0 else { return amount }
         return amount / fromRate * toRate
     }
+
+    // Nil when a currency has no usable rate, where `convert` would hand the amount back unconverted.
+    public func converted(_ amount: Double, from: String, to: String) -> Double? {
+        guard from.lowercased() == to.lowercased()
+                || [from, to].allSatisfy({ rates[$0.lowercased()].map { $0.isFinite && $0 > 0 } == true }) else { return nil }
+        return convert(amount, from: from, to: to)
+    }
 }
 
 public enum Money {

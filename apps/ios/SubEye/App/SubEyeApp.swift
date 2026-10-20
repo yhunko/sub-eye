@@ -23,10 +23,20 @@ struct SubEyeApp: App {
     }
 }
 
+// One unconditional modifier keeps the scene's identity, so a Developer Tools change does not rebuild the app under it.
 private struct TestingTextSize: ViewModifier {
-    @ViewBuilder func body(content: Content) -> some View {
-        if NativeTesting.largestText { content.environment(\.dynamicTypeSize, .accessibility5) }
-        else { content }
+    @Environment(\.dynamicTypeSize) private var system
+    #if NATIVE_DEVELOPMENT
+    @AppStorage(DeveloperTextSize.key) private var developer = DeveloperTextSize.system.rawValue
+    #endif
+    func body(content: Content) -> some View { content.environment(\.dynamicTypeSize, size ?? system) }
+    private var size: DynamicTypeSize? {
+        if NativeTesting.largestText { return .accessibility5 }
+        #if NATIVE_DEVELOPMENT
+        return DeveloperTextSize(rawValue: developer)?.size
+        #else
+        return nil
+        #endif
     }
 }
 

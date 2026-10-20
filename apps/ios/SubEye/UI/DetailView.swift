@@ -292,7 +292,14 @@ struct SubscriptionDetail: View {
         for (index, point) in points.enumerated() {
             let value = Double(point.cost) ?? 0
             let previous = index > 0 ? points[index - 1] : nil
-            let difference = previous.flatMap { $0.currency.lowercased() == point.currency.lowercased() ? value - (Double($0.cost) ?? 0) : nil } ?? 0
+            // Across a currency switch the step is measured in the preferred currency, so a rise never reads as no change.
+            let step: (amount: Double, currency: String)? = previous.flatMap { prior in
+                if prior.currency.lowercased() == point.currency.lowercased() { return (value - (Double(prior.cost) ?? 0), point.currency) }
+                guard let rates, let new = rates.converted(value, from: point.currency, to: currency),
+                      let old = rates.converted(Double(prior.cost) ?? 0, from: prior.currency, to: currency) else { return nil }
+                return ((new - old) * 100).rounded() == 0 ? nil : (new - old, currency)
+            }
+            let difference = step?.amount ?? 0
             let start = point.phase.flatMap { Day.parse($0.startsAt) } ?? Day.parse(subscription.createdAt)
             if point.phase == nil || point.phase?.id == current?.id {
                 entries.append(HistoryEntry(id: point.phase?.id ?? "current", symbol: "tag", tone: nil, title: L("detail_historyCurrent"),
@@ -317,7 +324,7 @@ struct SubscriptionDetail: View {
             entries.append(HistoryEntry(id: phase.id, symbol: difference > 0 ? "arrow.up.right" : difference < 0 ? "arrow.down.right" : "tag",
                                         tone: difference > 0 ? AppTheme.warning : difference < 0 ? AppTheme.accentBright : nil,
                                         title: title, detail: detail, price: price(phase.cost, phase.currency),
-                                        delta: difference == 0 ? nil : (difference > 0 ? "+" : "−") + Display.money(abs(difference), phase.currency)))
+                                        delta: difference == 0 ? nil : (difference > 0 ? "+" : "−") + Display.money(abs(difference), step?.currency ?? phase.currency)))
         }
         return entries.reversed()
     }
@@ -505,17 +512,19 @@ private struct PaymentCard: View {
                         line: L("detail_trialCancelBy", ["date": day]), cancels: row.allowedActions.contains(.cancel))
         }
         let switches = subscription.currency.lowercased() != upcoming.currency.lowercased()
-        let up = (Double(upcoming.cost) ?? 0) > (Double(subscription.cost) ?? 0)
+        let change = switches ? rates.flatMap { Pricing.yearlyChange(subscription, to: upcoming, rates: $0, currency: currency) } : Pricing.yearlyChange(subscription, to: upcoming)
+        // Nil only for a currency switch with no rate to compare by.
+        let up: Bool? = switches ? change.map { $0 > 0 } : (Double(upcoming.cost) ?? 0) > (Double(subscription.cost) ?? 0)
         let title = if row.effectiveKind == .intro && upcoming.kind == .standard {
             onPayment ? L("detail_introEndsNext") : L("detail_introEndsOn", ["date": day])
         } else if onPayment { L("detail_newPriceNext") }
-        else { L(switches ? "detail_priceChangesOn" : up ? "detail_priceUpOn" : "detail_priceDownOn", ["date": day]) }
-        let effect = switches ? L("detail_billedIn", ["currency": upcoming.currency.uppercased()])
-            : Pricing.yearlyChange(subscription, to: upcoming).map { L($0 > 0 ? "detail_yearlyMore" : "detail_yearlyLess", ["delta": Display.money(abs($0), upcoming.currency)]) }
+        else { L(up.map { $0 ? "detail_priceUpOn" : "detail_priceDownOn" } ?? "detail_priceChangesOn", ["date": day]) }
+        let yearly = change.map { L($0 > 0 ? "detail_yearlyMore" : "detail_yearlyLess", ["delta": Display.money(abs($0), switches ? currency : upcoming.currency)]) }
+        let billed = switches ? L("detail_billedIn", ["currency": upcoming.currency.uppercased()]) : nil
         // On the next payment the card above already shows the new amount, so only the effect is left to say.
-        let line = onPayment ? effect.map(sentence) ?? "" : ([from + " → " + to] + [effect].compactMap { $0 }).joined(separator: " · ")
-        return Note(symbol: switches ? "arrow.left.arrow.right" : up ? "arrow.up.right" : "arrow.down.right",
-                    tone: switches ? nil : up ? AppTheme.warning : AppTheme.accentBright,
+        let line = onPayment ? sentence([billed, yearly].compactMap { $0 }.joined(separator: " · ")) : ([from + " → " + to] + [yearly].compactMap { $0 }).joined(separator: " · ")
+        return Note(symbol: up.map { $0 ? "arrow.up.right" : "arrow.down.right" } ?? "arrow.left.arrow.right",
+                    tone: up.map { $0 ? AppTheme.warning : AppTheme.accentBright },
                     title: title, line: line, phase: upcoming)
     }
 

@@ -78,11 +78,13 @@ struct HomeView: View {
                                 .overlay { Circle().strokeBorder(date == next ? AppTheme.accent : .clear, lineWidth: 2) }
                             VStack(spacing: 4) {
                                 if !charges.isEmpty {
+                                    let count = summary?.count ?? charges.count
+                                    // Two logos already fill the column, so a third charge shows one logo and the rest as a count, as the calendar does.
                                     HStack(spacing: -4) {
-                                        ForEach(charges.prefix(2)) { event in
+                                        ForEach(charges.prefix(count > 2 ? 1 : 2)) { event in
                                             BrandIcon(name: event.name, domain: event.domain, logos: services.logos, size: 22).padding(2).background(AppTheme.background, in: Circle())
                                         }
-                                        if (summary?.count ?? charges.count) > 2 { Text("+\((summary?.count ?? charges.count) - 2)").appFont(10, weight: .bold).padding(4).background(AppTheme.surfaceAlt, in: Capsule()) }
+                                        if count > 2 { Text("+\(count - 1)").appFont(10, weight: .bold).padding(4).background(AppTheme.surfaceAlt, in: Capsule()) }
                                     }
                                     Text(Display.money(summary?.total ?? 0, currency, decimals: 0)).appFont(10.5, weight: .semibold, relativeTo: .caption2).foregroundStyle(AppTheme.muted).lineLimit(1).minimumScaleFactor(0.76)
                                 }
