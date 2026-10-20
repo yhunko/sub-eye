@@ -105,7 +105,7 @@ struct MainShell: View {
                 Tab(value: AppTab.home) { stack(.home) } label: { tabLabel("tabs_home", icon: "house") }
                 Tab(value: AppTab.subscriptions) { stack(.subscriptions) } label: { tabLabel("tabs_subscriptions", icon: "rectangle.stack") }
                 Tab(value: AppTab.calendar) { stack(.calendar) } label: { tabLabel("tabs_calendar", icon: "calendar") }
-                Tab(value: AppTab.settings) { stack(.settings) } label: { tabLabel("tabs_settings", icon: "gearshape") }.badge(settingsBadge)
+                Tab(value: AppTab.settings) { stack(.settings) } label: { settingsLabel }.badge(settingsBadge)
             }
         } else {
             TabView(selection: $tab) {
@@ -116,8 +116,31 @@ struct MainShell: View {
             }
         }
     }
-    // An empty badge is UIKit's dot; any text would read as a count.
-    private var settingsBadge: Text? { state.update?.banner == true ? Text("") : nil }
+    // An empty badge is UIKit's dot; any text would read as a count. iOS 26 draws it as a full 18 pt disc over the icon,
+    // so there the gear carries its own small dot instead.
+    private var settingsBadge: Text? {
+        if #available(iOS 26, *) { return nil }
+        return state.update?.banner == true ? Text("") : nil
+    }
+    @ViewBuilder private var settingsLabel: some View {
+        if #available(iOS 26, *), state.update?.banner == true {
+            Label { Text(L("tabs_settings")) } icon: { Image(uiImage: Self.gearWithDot) }
+        } else { tabLabel("tabs_settings", icon: "gearshape") }
+    }
+    // The gear in the symbol configuration the iOS 26 tab bar gives its icons, with a dot cut into its corner the way
+    // SF Symbols' badge variants are drawn; as a template it takes the same tint as the other tabs.
+    private static let gearWithDot: UIImage = {
+        let gear = UIImage(systemName: "gearshape", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .medium, scale: .large))!
+        let dot: CGFloat = 8, gap: CGFloat = 2
+        return UIGraphicsImageRenderer(size: gear.size).image { context in
+            gear.withTintColor(.black).draw(at: .zero)
+            let ring = CGRect(x: gear.size.width - dot - gap, y: -gap, width: dot + gap * 2, height: dot + gap * 2)
+            context.cgContext.setBlendMode(.clear)
+            context.cgContext.fillEllipse(in: ring)
+            context.cgContext.setBlendMode(.normal)
+            context.cgContext.fillEllipse(in: ring.insetBy(dx: gap, dy: gap))
+        }.withRenderingMode(.alwaysTemplate)
+    }()
     private func tabLabel(_ key: String, icon: String) -> some View {
         Label(L(key), systemImage: icon).environment(\.symbolVariants, .none)
     }
