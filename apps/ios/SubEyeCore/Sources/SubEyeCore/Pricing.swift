@@ -31,6 +31,19 @@ public enum Pricing {
         return to > from ? yearly : -yearly
     }
 
+    // Across a currency switch the two prices only compare once both are in `currency`, at today's rates: €10 reads
+    // lower than $11.99 and costs more. The result is in `currency`. Each converted price is rounded to the cent first,
+    // so the yearly figure agrees with the two prices the screen shows beside it.
+    public static func yearlyChange(_ subscription: Subscription, to next: PricePhase, rates: ExchangeRates, currency: String) -> Double? {
+        func cents(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+        guard next.kind == .scheduledChange || next.kind == .standard,
+              let from = Double(subscription.cost).flatMap({ rates.converted($0, from: subscription.currency, to: currency) }).map(cents),
+              let to = Double(next.cost).flatMap({ rates.converted($0, from: next.currency, to: currency) }).map(cents) else { return nil }
+        let yearly = Money.monthly(abs(to - from), every: subscription.every, period: subscription.period) * 12
+        guard (yearly * 100).rounded() != 0 else { return nil }
+        return to > from ? yearly : -yearly
+    }
+
     public static func apply(_ phaseId: String, subscription: inout Subscription,
                              phases: inout [PricePhase], now: Date) throws {
         guard let index = phases.firstIndex(where: { $0.id == phaseId }) else { throw DomainError.notFound }
