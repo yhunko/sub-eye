@@ -114,6 +114,20 @@ struct AppDivider: View {
     var body: some View { Rectangle().fill(AppTheme.border).frame(height: 0.5).padding(.leading, inset).accessibilityHidden(true) }
 }
 
+// Grows with text only up to the largest standard size: at accessibility sizes a full-scale glyph would outgrow its column
+// and take a fifth of the row from the words it labels.
+struct RowIcon: View {
+    let symbol: String
+    var color = AppTheme.muted
+    var body: some View { Glyph(symbol: symbol, color: color).dynamicTypeSize(...DynamicTypeSize.xxxLarge) }
+    private struct Glyph: View {
+        let symbol: String
+        let color: Color
+        @ScaledMetric private var width: CGFloat = 19
+        var body: some View { Image(systemName: symbol).appFont(19).foregroundStyle(color).frame(width: width).accessibilityHidden(true) }
+    }
+}
+
 struct SettingsRow: View {
     var icon: String? = nil
     let title: String
@@ -123,7 +137,7 @@ struct SettingsRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         HStack(spacing: 12) {
-            if let icon { Image(systemName: icon).appFont(19).foregroundStyle(color == AppTheme.text ? AppTheme.muted : color).frame(width: 19).accessibilityHidden(true) }
+            if let icon { RowIcon(symbol: icon, color: color == AppTheme.text ? AppTheme.muted : color) }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).foregroundStyle(color).fixedSize(horizontal: false, vertical: true)
                 if typeSize.isAccessibilitySize, let value { Text(value).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true) }

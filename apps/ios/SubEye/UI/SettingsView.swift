@@ -69,7 +69,7 @@ struct SettingsView: View {
                 AppSection(title: L("settings_data"), footnote: L("settings_syncHint")) {
                     Toggle(isOn: $state.settings.cloud) {
                         HStack(spacing: 12) {
-                            Image(systemName: state.settings.cloud ? "icloud.fill" : "icloud.slash").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                            RowIcon(symbol: state.settings.cloud ? "icloud.fill" : "icloud.slash")
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(L("settings_sync")).appFont(16)
                                 if !state.settings.cloud { Text(L("settings_syncOffSubtitle")).appFont(12.5).foregroundStyle(AppTheme.muted) }
@@ -213,7 +213,7 @@ struct DeveloperView: View {
                 AppSection(title: "App Update", footnote: "Pretends the App Store has the next minor version, live for three days. Switching it on also forgets this device's dismissal, so the alert, the Settings banner and the tab dot all come back.") {
                     Toggle(isOn: Binding(get: { fakeUpdate }, set: { fakeUpdate = $0; fakeUpdateChange += 1 })) {
                         HStack(spacing: 12) {
-                            Image(systemName: "arrow.down.app").appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                            RowIcon(symbol: "arrow.down.app")
                             Text("Fake available update").appFont(16)
                         }
                     }.padding(.horizontal, 16).padding(.vertical, 8)
@@ -233,7 +233,7 @@ struct DeveloperView: View {
     private func overrideToggle(_ title: String, icon: String, key: String) -> some View {
         Toggle(isOn: DeveloperOverride.binding(key, state: $state, change: $change)) {
             HStack(spacing: 12) {
-                Image(systemName: icon).appFont(19).foregroundStyle(AppTheme.muted).frame(width: 19)
+                RowIcon(symbol: icon)
                 Text(title).appFont(16)
             }
         }.padding(.horizontal, 16).padding(.vertical, 8)
