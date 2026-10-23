@@ -170,7 +170,7 @@
 "form_existingTitle" = "You already track {name}";
 "form_firstPayment" = "First payment";
 "form_name" = "Name";
-"form_licenseCost" = "License price";
+"form_renewalCost" = "Updates renewal";
 "form_offerCost" = "Offer price";
 "form_offerEndsAt" = "Offer ends";
 "form_offerIntro" = "Intro discount";

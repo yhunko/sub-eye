@@ -170,7 +170,7 @@
 "form_existingTitle" = "Ви вже відстежуєте {name}";
 "form_firstPayment" = "Перший платіж";
 "form_name" = "Назва";
-"form_licenseCost" = "Ціна ліцензії";
+"form_renewalCost" = "Продовження оновлень";
 "form_offerCost" = "Ціна пропозиції";
 "form_offerEndsAt" = "Пропозиція діє до";
 "form_offerIntro" = "Вступна знижка";

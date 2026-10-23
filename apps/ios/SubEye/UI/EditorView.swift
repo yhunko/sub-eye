@@ -38,7 +38,7 @@ struct SubscriptionEditor: View {
     private var termsValid: Bool {
         switch offer {
         case "intro": Money.parse(offerPrice) != nil
-        case "license": (Money.parse(offerPrice) ?? 0) > 0
+        case "license": (Money.parse(offerPrice) ?? 0) > 0 && (Money.parse(draft.cost) ?? 0) > 0
         default: true
         }
     }
@@ -251,7 +251,9 @@ struct SubscriptionEditor: View {
     }
     @ViewBuilder private func offerTerms(_ mode: String) -> some View {
         if mode == "intro" || mode == "license" {
-            FormField(title: L(mode == "license" ? "form_licenseCost" : "form_offerCost")) {
+            // Step 2 asked for "Price" before the kind was known, and a license is what people remember paying, so it holds the
+            // license and this field the cheaper renewal.
+            FormField(title: L(mode == "license" ? "form_renewalCost" : "form_offerCost")) {
                 TextField("0", text: $offerPrice).focused($focusedField, equals: .offerPrice).id(Field.offerPrice).keyboardType(.decimalPad).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).accessibilityIdentifier("offerPrice")
             }
             AppDivider(inset: 16)
@@ -272,7 +274,7 @@ struct SubscriptionEditor: View {
         switch offer {
         case "trial": return [(L("form_offerTrial"), first, nil, L("pricing_free")), (then, offerEnd, nil, price)]
         case "intro": return [(L("native_phase_intro"), first, nil, promo), (then, offerEnd, nil, price)]
-        case "license": return [(L("form_offerLicense"), first, nil, promo), (L("form_planUpdatesEnd"), nextCycle, L("form_planRenewal", ["cadence": Display.cadence(draft)]), price)]
+        case "license": return [(L("form_offerLicense"), first, nil, price), (L("form_planUpdatesEnd"), nextCycle, L("form_planRenewal", ["cadence": Display.cadence(draft)]), promo)]
         default: return [(L("form_firstPayment"), first, nil, price), (then, nextCycle, nil, price)]
         }
     }
@@ -343,7 +345,11 @@ struct SubscriptionEditor: View {
         focusedField = nil
         var value = draft; value.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         value.cost = try Display.amount(draft.cost); value.paymentDate = Day.iso(Day.floor(date))
-        let offerInput: OfferInput? = offer == "none" ? nil : OfferInput(promoCost: offer == "trial" ? "0" : try Display.amount(offerPrice), standardCost: value.cost, currency: value.currency, endDate: Day.floor(offerEnd), license: offer == "license")
+        let offerInput: OfferInput? = switch offer {
+        case "none": nil
+        case "license": OfferInput(promoCost: value.cost, standardCost: try Display.amount(offerPrice), currency: value.currency, license: true)
+        default: OfferInput(promoCost: offer == "trial" ? "0" : try Display.amount(offerPrice), standardCost: value.cost, currency: value.currency, endDate: Day.floor(offerEnd))
+        }
         try await services.repository.save(value, expected: original, offer: offerInput, rates: try await services.exchange.cached(), now: Date())
         saved = true
         if let domain = value.brandDomain {
