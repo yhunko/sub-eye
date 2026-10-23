@@ -104,6 +104,26 @@ final class RepositoryTests: XCTestCase {
         XCTAssertNotNil(after.phases[0].appliedAt)
     }
 
+    func testLicenseEditsAndScheduledPricesKeepOnePurchaseAndItsRenewal() async throws {
+        let store = repository(), rates = ExchangeRates(rates: ["usd": 1])
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        let created = Subscription(id: "c", name: "CleanShot X", cost: "41.00", currency: "usd", period: .year, paymentDate: "2026-10-01T00:00:00Z", now: now)
+        try await store.save(created, expected: nil, offer: OfferInput(promoCost: "41.00", standardCost: "19.00", currency: "usd", license: true), rates: rates, now: now)
+        try await store.schedulePrice(id: "c", cost: "25.00", currency: "usd", date: nil, now: now)
+        func phases() async throws -> [PricePhase] { try await store.document().phases.filter { $0.subscriptionId == "c" }.sorted { $0.startsAt < $1.startsAt } }
+        let scheduled = try await phases()
+        XCTAssertEqual(scheduled.map(\.kind), [.license, .standard])
+        XCTAssertEqual(scheduled.map(\.cost), ["41.00", "25.00"])
+
+        let document = try await store.document()
+        let saved = try XCTUnwrap(document.subscriptions.first { $0.id == "c" })
+        var moved = saved; moved.paymentDate = "2026-03-01T00:00:00Z"
+        try await store.save(moved, expected: saved, rates: rates, now: now)
+        let realigned = try await phases()
+        XCTAssertEqual(realigned.map { $0.endsAt.flatMap(Day.parse).map(Day.key) }, ["2027-03-01", nil])
+        XCTAssertEqual(realigned.map(\.cost), ["41.00", "19.00"])
+    }
+
     func testEraseCannotResurrectRetainedLegacyDocument() async throws {
         let store = repository()
         let legacy = LegacySnapshot(slotA: try JSONCodec.string(fixture()), sourceExists: true)

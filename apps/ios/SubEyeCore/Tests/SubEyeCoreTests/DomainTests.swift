@@ -197,6 +197,33 @@ final class DomainTests: XCTestCase {
         XCTAssertThrowsError(try Pricing.license(subscription: &sub, licenseCost: "0", renewalCost: "19", currency: "usd", now: now, ids: ("a", "b")))
     }
 
+    func testEditingOrRestartingALicenseNeverChargesItTwice() throws {
+        let rates = ExchangeRates(rates: ["usd": 1])
+        func charges(_ sub: Subscription, _ phases: [PricePhase], from: String) -> [String] {
+            let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: now)
+            return Projection.payments(rows, from: Day.parse(from)!, through: Day.parse("2027-12-31")!, rates: rates, currency: "usd")
+                .map { "\(Day.key($0.date)) \($0.amount)" }
+        }
+        var sub = license(purchase: "2026-09-15")
+        var phases = try Pricing.license(subscription: &sub, licenseCost: "41", renewalCost: "19", currency: "usd", now: now, ids: ("license", "renewal"))
+        sub.paymentDate = Day.iso(Day.parse("2026-03-15")!)
+        phases = try XCTUnwrap(Pricing.realignLicense(subscription: &sub, phases: phases, now: now))
+        XCTAssertEqual(charges(sub, phases, from: "2026-01-01"), ["2026-03-15 41.0", "2027-03-15 19.0"])
+        sub.period = .month; sub.cost = "2"
+        phases = try XCTUnwrap(Pricing.realignLicense(subscription: &sub, phases: phases, now: now))
+        let monthly = charges(sub, phases, from: "2026-01-01")
+        XCTAssertEqual(monthly.filter { $0.hasSuffix(" 41.0") }, ["2026-03-15 41.0"])
+        XCTAssertEqual(monthly[1], "2026-04-15 2.0")
+
+        var stopped = license(purchase: "2026-03-15")
+        var window = try Pricing.license(subscription: &stopped, licenseCost: "41", renewalCost: "19", currency: "usd", now: now, ids: ("license", "renewal"))
+        stopped.willBeCancelledAt = "2026-08-01T00:00:00Z"
+        let restarted = try Lifecycle.change(stopped, action: .restart, day: Day.parse("2026-09-01"), now: now, zone: .gmt)
+        let changed = Pricing.restartLicense(phases: window, on: Day.parse(restarted.paymentDate)!, now: now)
+        window = window.map { phase in changed.first { $0.id == phase.id } ?? phase }
+        XCTAssertEqual(charges(restarted, window, from: "2026-09-01").first, "2026-09-01 19.0")
+    }
+
     // Stopping a license mid-window saves the renewals it would have bought, not another license.
     func testStoppedLicenseSavesTheRenewalPrice() throws {
         let rates = ExchangeRates(rates: ["usd": 1])

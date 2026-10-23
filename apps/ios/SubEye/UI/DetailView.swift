@@ -502,6 +502,8 @@ private struct PaymentCard: View {
         }
         // The cheaper renewal after a license only buys updates, and skipping it takes nothing back, so it is no price change.
         if row.licensed, let next = row.nextDate, row.upcoming.map({ $0.kind == .standard && row.effectiveKind == .license }) ?? true {
+            // A paused card already leads with the resume date; "this date" would point at it.
+            guard row.status == .active else { return nil }
             if let renewal = row.upcoming, let end = Day.parse(renewal.startsAt), Pricing.effective(row.phases, at: next)?.kind == .license {
                 return Note(symbol: "key", tone: AppTheme.accentBright, title: L("detail_updatesUntil", ["date": Display.day(end)]),
                             line: L("detail_updatesThen", ["price": perPeriod(renewal.cost, renewal.currency, subscription)]))

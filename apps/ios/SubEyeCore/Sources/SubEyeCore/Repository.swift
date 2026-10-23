@@ -127,6 +127,10 @@ public actor SubscriptionRepository {
                                           currency: offer.currency, payments: offer.payments, endDate: offer.endDate,
                                           deferred: offer.deferred, now: now, zone: try zone(database), ids: (UUID().uuidString, UUID().uuidString))
             }
+            if let current, (current.paymentDate, current.every, current.period, current.cost, current.currency)
+                != (next.paymentDate, next.every, next.period, next.cost, next.currency) {
+                phases = try Pricing.realignLicense(subscription: &next, phases: try allPhases(database).filter { $0.subscriptionId == next.id }, now: now)
+            }
             try write("sub." + next.id, next, database: database)
             if let phases { for phase in phases { try write("phase." + phase.id, phase, database: database) } }
         }
@@ -149,9 +153,12 @@ public actor SubscriptionRepository {
             guard let sub = try record(Subscription.self, key: "sub." + id, database: database) else { throw DomainError.notFound }
             let zone = try zone(database)
             var next = try Lifecycle.change(sub, action: action, day: day, immediate: immediate, now: now, zone: zone)
-            Savings.bank(&next, previous: sub, action: action, phases: try allPhases(database).filter { $0.subscriptionId == id },
-                         rates: rates, now: now, zone: zone)
+            let phases = try allPhases(database).filter { $0.subscriptionId == id }
+            Savings.bank(&next, previous: sub, action: action, phases: phases, rates: rates, now: now, zone: zone)
             try write("sub." + id, next, database: database)
+            if action == .restart, let restart = Day.parse(next.paymentDate) {
+                for phase in Pricing.restartLicense(phases: phases, on: restart, now: now) { try write("phase." + phase.id, phase, database: database) }
+            }
         }
     }
 
@@ -173,8 +180,17 @@ public actor SubscriptionRepository {
         try database.transaction {
             guard let sub = try record(Subscription.self, key: "sub." + id, database: database) else { throw DomainError.notFound }
             guard Lifecycle.status(sub, now: now, zone: try zone(database)) == .active else { throw DomainError.illegalAction }
+            let existing = try allPhases(database).filter { $0.subscriptionId == id }
+            let renewal = Pricing.licenseRenewal(existing).flatMap { $0.appliedAt == nil ? $0 : nil }
+            // Inside a license's window the next price that can change is the updates renewal itself, not a change on top of it.
+            if var renewal, let end = Day.parse(renewal.startsAt), date.map({ Day.floor($0) <= end }) ?? true {
+                guard Money.parse(cost) != nil else { throw DomainError.invalidField("cost") }
+                renewal.cost = cost; renewal.currency = currency.lowercased(); renewal.updatedAt = Day.iso(now)
+                try write("phase." + renewal.id, renewal, database: database)
+                return
+            }
             let phase = try Pricing.scheduled(sub, cost: cost, currency: currency, on: date, now: now, zone: try zone(database), id: UUID().uuidString)
-            for old in try allPhases(database) where old.subscriptionId == id && old.appliedAt == nil {
+            for old in existing where old.appliedAt == nil && old.id != renewal?.id {
                 try remove("phase." + old.id, database: database)
             }
             try write("phase." + phase.id, phase, database: database)

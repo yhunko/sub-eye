@@ -126,7 +126,6 @@ public enum Pricing {
         guard let price = Money.parse(licenseCost), price > 0, let renewal = Money.parse(renewalCost),
               let purchase = Day.parse(subscription.paymentDate) else { throw DomainError.invalidField("cost") }
         let end = Recurrence.occurrence(anchor: purchase, every: subscription.every, period: subscription.period, index: 1)
-        if let cancellation = Day.parse(subscription.willBeCancelledAt), end >= cancellation { throw DomainError.illegalAction }
         let renewed = end <= now
         subscription.cost = Money.canonical(renewal); subscription.currency = currency.lowercased()
         subscription.updatedAt = Day.iso(now)
@@ -136,6 +135,30 @@ public enum Pricing {
             PricePhase(id: ids.1, subscriptionId: subscription.id, kind: .standard, cost: Money.canonical(renewal), currency: currency,
                        startsAt: Day.iso(end), appliedAt: renewed ? Day.iso(now) : nil, now: now)
         ]
+    }
+
+    public static func licenseRenewal(_ phases: [PricePhase]) -> PricePhase? {
+        guard let license = phases.first(where: { $0.kind == .license }) else { return nil }
+        return phases.first { $0.kind == .standard && $0.startsAt == license.endsAt }
+    }
+
+    // The window is stored as dates, so an edit that moves the purchase or changes the cadence or renewal price rebuilds it
+    // from the edited subscription; otherwise a later payment lands inside the old window and is charged as a second license.
+    public static func realignLicense(subscription: inout Subscription, phases: [PricePhase], now: Date) throws -> [PricePhase]? {
+        guard let license = phases.first(where: { $0.kind == .license }) else { return nil }
+        return try self.license(subscription: &subscription, licenseCost: license.cost, renewalCost: subscription.cost,
+                                currency: subscription.currency, now: now,
+                                ids: (license.id, licenseRenewal(phases)?.id ?? license.id + "-renewal"))
+    }
+
+    // Restarting moves the anchor to the restart day; inside the window that charge renews updates, it is no second purchase.
+    public static func restartLicense(phases: [PricePhase], on day: Date, now: Date) -> [PricePhase] {
+        guard var license = phases.first(where: { $0.kind == .license }), let start = Day.parse(license.startsAt),
+              let end = Day.parse(license.endsAt), day > start, day < end else { return [] }
+        var renewal = licenseRenewal(phases)
+        license.endsAt = Day.iso(day); license.updatedAt = Day.iso(now)
+        renewal?.startsAt = Day.iso(day); renewal?.appliedAt = Day.iso(now); renewal?.updatedAt = Day.iso(now)
+        return [license] + [renewal].compactMap { $0 }
     }
 
     private static func validateBoundary(_ subscription: Subscription, boundary: Date, now: Date) throws {
