@@ -57,22 +57,20 @@ public struct PlannedReminder: Sendable, Identifiable {
 
     // A repeating trigger keeps its lead on every firing, so "tomorrow" stays true for the life of the rule.
     public func message(_ text: (String, [String: String]) -> String, money: (Double) -> String) -> ReminderMessage {
-        let trial = kind == "trial"
+        let copy = "notif_" + kind
         let when = lead.map { lead in
             lead == 0 ? text("notif_whenToday", [:]) : lead == 1 ? text("notif_whenTomorrow", [:]) : text("notif_whenInDays", ["days": String(lead)])
         }
         // An unconvertible or unknown price is 0; a total that quietly understates the charge is worse than none.
         let total = events.allSatisfy { $0.amount > 0 } ? money(events.reduce(0) { $0 + $1.amount }) : nil
         if events.count == 1, let event = events.first, let when {
-            let title = text(trial ? "notif_trialTitle" : "notif_renewalTitle", ["name": event.name, "when": when])
-            let body = total.map { text(trial ? "notif_trialBody" : "notif_renewalBody", ["amount": $0]) }
-                ?? text(trial ? "notif_trialBodyNoAmount" : "notif_renewalBodyNoAmount", [:])
+            let title = text(copy + "Title", ["name": event.name, "when": when])
+            let body = total.map { text(copy + "Body", ["amount": $0]) } ?? text(copy + "BodyNoAmount", [:])
             return ReminderMessage(title: title, body: body)
         }
         let shown = events.prefix(3).map(\.name).joined(separator: ", ")
         let names = events.count > 3 ? text("notif_digestMore", ["names": shown, "count": String(events.count - 3)]) : shown
-        let title = when.map { text(trial ? "notif_trialDigestTitle" : "notif_renewalDigestTitle", ["when": $0]) }
-            ?? text(trial ? "notif_trialDigestTitleMixed" : "notif_renewalDigestTitleMixed", [:])
+        let title = when.map { text(copy + "DigestTitle", ["when": $0]) } ?? text(copy + "DigestTitleMixed", [:])
         return ReminderMessage(title: title, body: total.map { text("notif_digestBody", ["names": names, "amount": $0]) } ?? names)
     }
 }
@@ -140,7 +138,10 @@ public enum ReminderPlanner {
             if settings.renewals, let next = row.nextDate {
                 let end = Recurrence.occurrence(anchor: next, every: row.subscription.every, period: row.subscription.period, index: 2)
                 let events = Array(Projection.payments([row], from: next, through: end, rates: rates, currency: currency).prefix(3))
-                collect(row, events: events, leads: settings.renewalLeadDays, kind: "renewal", repeats: true)
+                // Past a license's window a charge is optional and only buys updates, so its reminder says what lapses.
+                let updates = events.filter { row.licensed && Pricing.effective(row.phases, at: $0.date)?.kind != .license }
+                collect(row, events: events.filter { !updates.contains($0) }, leads: settings.renewalLeadDays, kind: "renewal", repeats: true)
+                collect(row, events: updates, leads: settings.renewalLeadDays, kind: "updates", repeats: true)
             }
             if settings.trials, let trial = Pricing.effective(row.phases, at: now), trial.kind == .trial,
                let end = Day.parse(trial.endsAt), Lifecycle.includes(row.subscription, occurrence: end) {

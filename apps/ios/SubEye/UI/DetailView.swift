@@ -301,8 +301,12 @@ struct SubscriptionDetail: View {
             }
             let difference = step?.amount ?? 0
             let start = point.phase.flatMap { Day.parse($0.startsAt) } ?? Day.parse(subscription.createdAt)
+            // After a license the price buys a further stretch of updates, not the app, so it is named for that in every tense.
+            let renewal = point.phase?.kind == .standard && previous?.phase?.kind == .license
             if point.phase == nil || point.phase?.id == current?.id {
-                entries.append(HistoryEntry(id: point.phase?.id ?? "current", symbol: "tag", tone: nil, title: L("detail_historyCurrent"),
+                let license = point.phase?.kind == .license
+                entries.append(HistoryEntry(id: point.phase?.id ?? "current", symbol: license || renewal ? "key" : "tag", tone: nil,
+                                            title: L(license ? "native_phase_license" : renewal ? "detail_historyRenewal" : "detail_historyCurrent"),
                                             detail: start.map { L("detail_historySince", ["date": Display.date($0)]) } ?? "", price: price(point.cost, point.currency), delta: nil))
                 continue
             }
@@ -311,8 +315,9 @@ struct SubscriptionDetail: View {
             let detail = future ? L("detail_historyScheduled", ["date": Display.date(start)])
                 : Display.date(start) + (phase.endsAt.flatMap(Day.parse).map { " – " + Display.date($0) } ?? "")
             let offer = phase.kind == .standard ? previous?.phase?.kind : nil
-            if future, offer == .trial {
-                entries.append(HistoryEntry(id: phase.id, symbol: "hourglass", tone: AppTheme.warning, title: L("calendar_kindTrialEnds"),
+            if renewal || (future && offer == .trial) {
+                entries.append(HistoryEntry(id: phase.id, symbol: renewal ? "key" : "hourglass", tone: renewal ? nil : AppTheme.warning,
+                                            title: L(renewal ? "detail_historyRenewal" : "calendar_kindTrialEnds"),
                                             detail: detail, price: price(phase.cost, phase.currency), delta: nil))
                 continue
             }
@@ -321,7 +326,7 @@ struct SubscriptionDetail: View {
             else if future, phase.kind == .scheduledChange || phase.kind == .standard {
                 title = L(difference > 0 ? "detail_historyUp" : difference < 0 ? "detail_historyDown" : "calendar_kindPriceChange")
             } else { title = L("native_phase_" + phase.kind.rawValue) }
-            entries.append(HistoryEntry(id: phase.id, symbol: difference > 0 ? "arrow.up.right" : difference < 0 ? "arrow.down.right" : "tag",
+            entries.append(HistoryEntry(id: phase.id, symbol: phase.kind == .license ? "key" : difference > 0 ? "arrow.up.right" : difference < 0 ? "arrow.down.right" : "tag",
                                         tone: difference > 0 ? AppTheme.warning : difference < 0 ? AppTheme.accentBright : nil,
                                         title: title, detail: detail, price: price(phase.cost, phase.currency),
                                         delta: difference == 0 ? nil : (difference > 0 ? "+" : "−") + Display.money(abs(difference), step?.currency ?? phase.currency)))
@@ -494,6 +499,14 @@ private struct PaymentCard: View {
             return Note(symbol: "chart.line.downtrend.xyaxis", tone: AppTheme.accentBright,
                         title: L("detail_savesYearly", ["amount": Display.money(yearly, currency, decimals: 0)]),
                         line: L("detail_savingsFrom", ["date": Display.day(end)]))
+        }
+        // The cheaper renewal after a license only buys updates, and skipping it takes nothing back, so it is no price change.
+        if row.licensed, let next = row.nextDate, row.upcoming.map({ $0.kind == .standard && row.effectiveKind == .license }) ?? true {
+            if let renewal = row.upcoming, let end = Day.parse(renewal.startsAt), Pricing.effective(row.phases, at: next)?.kind == .license {
+                return Note(symbol: "key", tone: AppTheme.accentBright, title: L("detail_updatesUntil", ["date": Display.day(end)]),
+                            line: L("detail_updatesThen", ["price": perPeriod(renewal.cost, renewal.currency, subscription)]))
+            }
+            return Note(symbol: "key", tone: AppTheme.accentBright, title: L("detail_updatesEndNext"), line: L("detail_updatesRenew"))
         }
         guard let upcoming = row.upcoming, let start = Day.parse(upcoming.startsAt) else { return nil }
         let onPayment = row.nextDate.map(Day.key) == Day.key(start)

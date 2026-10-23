@@ -48,7 +48,7 @@ enum Display {
         return date.formatted(Day.utc.component(.year, from: date) == Day.utc.component(.year, from: today) ? format : format.year())
     }
     static func event(_ kind: EventKind) -> String {
-        let keys: [EventKind: String] = [.payment: "calendar_kindPayment", .trialEnds: "calendar_kindTrialEnds", .introEnds: "calendar_kindIntroEnds", .priceChange: "calendar_kindPriceChange", .resumes: "calendar_kindResumes", .ends: "calendar_kindEnds"]
+        let keys: [EventKind: String] = [.payment: "calendar_kindPayment", .trialEnds: "calendar_kindTrialEnds", .introEnds: "calendar_kindIntroEnds", .updatesEnd: "calendar_kindUpdatesEnd", .priceChange: "calendar_kindPriceChange", .resumes: "calendar_kindResumes", .ends: "calendar_kindEnds"]
         return L(keys[kind]!)
     }
     static func period(_ value: BillingPeriod) -> String { L("period_" + value.rawValue) }

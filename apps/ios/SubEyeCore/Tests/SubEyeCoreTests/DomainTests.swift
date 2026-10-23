@@ -168,7 +168,49 @@ final class DomainTests: XCTestCase {
         XCTAssertEqual(rates.converted(10, from: "gbp", to: "GBP"), 10)
     }
 
+    func testLicenseChargesOnceThenEveryRenewalIsAnUpdatesDecision() throws {
+        let rates = ExchangeRates(rates: ["usd": 1])
+        var sub = license(purchase: "2026-09-15")
+        let phases = try Pricing.license(subscription: &sub, licenseCost: "41", renewalCost: "19", currency: "usd", now: now, ids: ("license", "renewal"))
+        XCTAssertEqual(sub.cost, "19.00")
+        XCTAssertEqual(phases.map(\.kind), [.license, .standard])
+        XCTAssertEqual(phases[0].endsAt.flatMap(Day.parse).map(Day.key), "2027-09-15")
+        let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: now)
+        XCTAssertEqual(rows[0].nextAmount, 41)
+        XCTAssertEqual(rows[0].monthly, 19.0 / 12, accuracy: 0.0001)
+        let events = Projection.events(rows, from: Day.parse("2026-09-15")!, through: Day.parse("2028-12-31")!, rates: rates, currency: "usd")
+        XCTAssertEqual(events.filter { $0.kind == .payment }.map(\.amount), [41, 19, 19])
+        XCTAssertEqual(events.filter { $0.kind == .payment }.map(\.purchase), [true, nil, nil])
+        XCTAssertEqual(events.filter { $0.kind != .payment }.map { "\($0.kind.rawValue) \(Day.key($0.date)) \($0.amount)" },
+                       ["updatesEnd 2027-09-15 19.0", "updatesEnd 2028-09-15 19.0"])
+    }
+
+    func testLicenseBoughtLongAgoStillReadsAsALicenseAndChargesTheRenewal() throws {
+        let rates = ExchangeRates(rates: ["usd": 1])
+        var sub = license(purchase: "2024-03-01")
+        let phases = try Pricing.license(subscription: &sub, licenseCost: "41", renewalCost: "19", currency: "usd", now: now, ids: ("license", "renewal"))
+        XCTAssertEqual(sub.cost, "19.00")
+        XCTAssertNotNil(phases[1].appliedAt)
+        let row = try XCTUnwrap(Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: now).first)
+        XCTAssertTrue(row.licensed); XCTAssertNil(row.upcoming)
+        XCTAssertEqual(row.nextDate.map(Day.key), "2027-03-01"); XCTAssertEqual(row.nextAmount, 19)
+        XCTAssertThrowsError(try Pricing.license(subscription: &sub, licenseCost: "0", renewalCost: "19", currency: "usd", now: now, ids: ("a", "b")))
+    }
+
+    // Stopping a license mid-window saves the renewals it would have bought, not another license.
+    func testStoppedLicenseSavesTheRenewalPrice() throws {
+        let rates = ExchangeRates(rates: ["usd": 1])
+        var sub = license(purchase: "2026-01-20")
+        let phases = try Pricing.license(subscription: &sub, licenseCost: "41", renewalCost: "19", currency: "usd", now: now, ids: ("license", "renewal"))
+        sub.willBeCancelledAt = "2026-09-01T00:00:00Z"
+        let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: now)
+        XCTAssertEqual(Savings.ledger(rows, rates: rates, currency: "usd", now: now, zone: .gmt).monthly, 19.0 / 12, accuracy: 0.0001)
+    }
+
     func fixture() -> Subscription {
         Subscription(id: "s", name: "Test", cost: "20.00", currency: "usd", paymentDate: "2026-01-20T00:00:00Z", now: now)
+    }
+    func license(purchase: String) -> Subscription {
+        Subscription(id: "s", name: "CleanShot X", cost: "19", currency: "usd", period: .year, paymentDate: Day.iso(Day.parse(purchase)!), now: now)
     }
 }

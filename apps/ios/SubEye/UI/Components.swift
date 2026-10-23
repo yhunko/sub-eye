@@ -150,7 +150,7 @@ struct EventCell: View {
             if let logos { BrandIcon(name: event.name, domain: event.domain, logos: logos, size: 36, dimmed: event.kind == .ends) }
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.name).appFont(15, weight: .semibold).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                Label(Display.event(event.kind) + (showDate ? " · " + Display.when(event.date) : ""), systemImage: eventIcon)
+                Label((event.purchase == true ? L("calendar_kindPurchase") : Display.event(event.kind)) + (showDate ? " · " + Display.when(event.date) : ""), systemImage: eventIcon)
                     .appFont(12.5).foregroundStyle(event.kind == .resumes ? AppTheme.accent : AppTheme.muted)
                 if typeSize.isAccessibilitySize { figures(.leading) }
             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -172,8 +172,9 @@ struct EventCell: View {
         switch event.kind {
         case .trialEnds: "hourglass"
         case .introEnds: "tag"
+        case .updatesEnd: "key"
         case .priceChange: "arrow.up.right"
-        case .payment: "arrow.triangle.2.circlepath"
+        case .payment: event.purchase == true ? "key" : "arrow.triangle.2.circlepath"
         case .resumes: "play.circle"
         case .ends: "xmark.circle"
         }

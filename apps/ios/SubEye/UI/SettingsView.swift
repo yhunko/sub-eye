@@ -237,7 +237,7 @@ struct DeveloperView: View {
                         try await services.repository.savePreferences(preferences); state.reload += 1
                     }.buttonStyle(.plain)
                 }
-                AppSection(title: "Reminders", footnote: "Delivers one real reminder of each shape from the current subscriptions, a few seconds apart: a single renewal, a digest of several and a trial ending (Pro). Lock the simulator to see them on the Lock Screen.") {
+                AppSection(title: "Reminders", footnote: "Delivers one real reminder of each shape from the current subscriptions, a few seconds apart: a single renewal, a digest of several, a trial ending (Pro) and a license's updates ending (open a License scenario first). Lock the simulator to see them on the Lock Screen.") {
                     ActionButton(title: "Deliver sample reminders", icon: "bell.and.waves.left.and.right", styledRow: true) {
                         reminders = try await services.notifications.preview(model: state.presentation, pro: state.settings.pro, rates: services.exchange.cached())
                     }.buttonStyle(.plain)

@@ -427,6 +427,12 @@ final class SubEyeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["cancelTrial"].exists)
         XCTAssertFalse(manage.exists)
         back(app)
+        for scenario in ["licensePurchase", "licenseUpdates", "licenseRenewed"] {
+            openScenario(scenario, in: app)
+            XCTAssertTrue(card.waitForExistence(timeout: 5), scenario)
+            XCTAssertFalse(manage.exists, "An optional updates renewal is not a pending price to apply or remove")
+            back(app)
+        }
         for scenario in ["active", "paused", "cancelling", "cancelled"] {
             openScenario(scenario, in: app)
             XCTAssertTrue(app.staticTexts["subscriptionDetailName"].waitForExistence(timeout: 5), scenario)

@@ -12,10 +12,11 @@ public struct OfferInput: Sendable {
     public var payments: Int?
     public var endDate: Date?
     public var deferred: Bool
+    public var license: Bool
     public init(promoCost: String, standardCost: String, currency: String, payments: Int? = nil,
-                endDate: Date? = nil, deferred: Bool = false) {
+                endDate: Date? = nil, deferred: Bool = false, license: Bool = false) {
         self.promoCost = promoCost; self.standardCost = standardCost; self.currency = currency
-        self.payments = payments; self.endDate = endDate; self.deferred = deferred
+        self.payments = payments; self.endDate = endDate; self.deferred = deferred; self.license = license
     }
 }
 
@@ -119,7 +120,10 @@ public actor SubscriptionRepository {
             var phases: [PricePhase]?
             if let offer {
                 guard current == nil else { throw DomainError.illegalAction }
-                phases = try Pricing.offer(subscription: &next, promoCost: offer.promoCost, standardCost: offer.standardCost,
+                phases = offer.license
+                    ? try Pricing.license(subscription: &next, licenseCost: offer.promoCost, renewalCost: offer.standardCost,
+                                          currency: offer.currency, now: now, ids: (UUID().uuidString, UUID().uuidString))
+                    : try Pricing.offer(subscription: &next, promoCost: offer.promoCost, standardCost: offer.standardCost,
                                           currency: offer.currency, payments: offer.payments, endDate: offer.endDate,
                                           deferred: offer.deferred, now: now, zone: try zone(database), ids: (UUID().uuidString, UUID().uuidString))
             }

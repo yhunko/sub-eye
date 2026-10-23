@@ -117,6 +117,27 @@ public enum Pricing {
         ]
     }
 
+    // The window is one cycle from the purchase, not a picked date: renewals fall on the anchor, so any other end would put
+    // a second license charge inside the window or start renewals between payments. The subscription keeps the renewal
+    // price from the start — the license is paid once, so only its phase may price the purchase, never the monthly figure.
+    // A purchase long past keeps its phases so the row still reads as a license whose charges renew updates.
+    public static func license(subscription: inout Subscription, licenseCost: String, renewalCost: String, currency: String,
+                               now: Date, ids: (String, String)) throws -> [PricePhase] {
+        guard let price = Money.parse(licenseCost), price > 0, let renewal = Money.parse(renewalCost),
+              let purchase = Day.parse(subscription.paymentDate) else { throw DomainError.invalidField("cost") }
+        let end = Recurrence.occurrence(anchor: purchase, every: subscription.every, period: subscription.period, index: 1)
+        if let cancellation = Day.parse(subscription.willBeCancelledAt), end >= cancellation { throw DomainError.illegalAction }
+        let renewed = end <= now
+        subscription.cost = Money.canonical(renewal); subscription.currency = currency.lowercased()
+        subscription.updatedAt = Day.iso(now)
+        return [
+            PricePhase(id: ids.0, subscriptionId: subscription.id, kind: .license, cost: Money.canonical(price), currency: currency,
+                       startsAt: Day.iso(min(purchase, now)), endsAt: Day.iso(end), appliedAt: Day.iso(now), now: now),
+            PricePhase(id: ids.1, subscriptionId: subscription.id, kind: .standard, cost: Money.canonical(renewal), currency: currency,
+                       startsAt: Day.iso(end), appliedAt: renewed ? Day.iso(now) : nil, now: now)
+        ]
+    }
+
     private static func validateBoundary(_ subscription: Subscription, boundary: Date, now: Date) throws {
         guard boundary >= Day.floor(now) else { throw DomainError.invalidField("boundary") }
         if let cancellation = Day.parse(subscription.willBeCancelledAt), boundary >= cancellation {

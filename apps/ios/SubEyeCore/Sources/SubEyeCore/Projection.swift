@@ -13,10 +13,11 @@ public struct SubscriptionRow: Codable, Identifiable, Equatable, Sendable {
     public var upcoming: PricePhase?
     public var phases: [PricePhase]
     public var allowedActions: [LifecycleAction] { Lifecycle.actions(status) }
+    public var licensed: Bool { phases.contains { $0.kind == .license } }
 }
 
 public enum EventKind: String, Codable, Sendable, CaseIterable {
-    case trialEnds, introEnds, priceChange, payment, resumes, ends
+    case trialEnds, introEnds, updatesEnd, priceChange, payment, resumes, ends
     public var rank: Int { Self.allCases.firstIndex(of: self)! }
 }
 
@@ -28,6 +29,8 @@ public struct CalendarEvent: Codable, Identifiable, Equatable, Sendable {
     public var kind: EventKind
     public var date: Date
     public var amount: Double
+    // A payment inside a license's window buys the license itself, so it is no renewal.
+    public var purchase: Bool? = nil
 }
 
 public struct Dashboard: Codable, Equatable, Sendable {
@@ -120,7 +123,7 @@ public enum Projection {
                     let phase = phases.filter { $0.1 <= date && ($0.2.map { date < $0 } ?? true) }.max { $0.1 < $1.1 }?.0
                     let amount = rates.convert(Double(phase?.cost ?? sub.cost) ?? 0, from: phase?.currency ?? sub.currency, to: currency)
                     output.append(CalendarEvent(subscriptionId: sub.id, name: sub.name, domain: sub.brandDomain,
-                                                kind: .payment, date: date, amount: amount))
+                                                kind: .payment, date: date, amount: amount, purchase: phase?.kind == .license ? true : nil))
                 }
                 index += 1
                 date = Recurrence.occurrence(anchor: anchor, every: sub.every, period: sub.period, index: index)
@@ -137,7 +140,14 @@ public enum Projection {
                 result.append(CalendarEvent(subscriptionId: row.id, name: row.subscription.name, domain: row.subscription.brandDomain,
                                             kind: kind, date: date, amount: amount))
             }
-            if let next = row.upcoming {
+            // A license's later charges only buy another stretch of updates, so every one of them is a choice, not just the first.
+            if row.licensed {
+                for payment in result where payment.subscriptionId == row.id && payment.kind == .payment
+                    && Pricing.effective(row.phases, at: payment.date)?.kind != .license {
+                    var decision = payment; decision.kind = .updatesEnd; result.append(decision)
+                }
+            }
+            if let next = row.upcoming, !(row.effectiveKind == .license && next.kind == .standard) {
                 let kind: EventKind = row.effectiveKind == .trial ? .trialEnds : row.effectiveKind == .intro ? .introEnds : .priceChange
                 append(next.startsAt, kind: kind, amount: rates.convert(Double(next.cost) ?? 0, from: next.currency, to: currency))
             }

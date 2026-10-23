@@ -185,6 +185,7 @@ struct HomeView: View {
         switch event.kind {
         case .priceChange, .introEnds: model.rows.first { $0.id == event.subscriptionId }.map { L("home_decisionWas", ["amount": Display.money($0.amount, currency)]) }
         case .trialEnds: L("home_decisionFirstPayment")
+        case .updatesEnd: L("home_decisionOptional")
         default: nil
         }
     }

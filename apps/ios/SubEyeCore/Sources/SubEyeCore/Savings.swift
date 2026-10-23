@@ -98,7 +98,7 @@ public enum Savings {
 
     private static func standard(_ subscription: Subscription, phases: [PricePhase], on day: Date,
                                  rates: ExchangeRates, currency: String) -> Double {
-        let promotional: Set<PhaseKind> = [.trial, .intro]
+        let promotional: Set<PhaseKind> = [.trial, .intro, .license]
         if let promo = Pricing.effective(phases, at: day), promotional.contains(promo.kind),
            let regular = Pricing.upcoming(phases.filter { !promotional.contains($0.kind) }, at: day) {
             return rates.convert(Double(regular.cost) ?? 0, from: regular.currency, to: currency)

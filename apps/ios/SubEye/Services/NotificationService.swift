@@ -58,13 +58,13 @@ actor NotificationService {
         return content
     }
     #if NATIVE_DEVELOPMENT
-    // Delivers one planned reminder of each shape (single renewal, digest, trial) within seconds, with both kinds switched on
+    // Delivers one planned reminder of each shape (single renewal, digest, trial, license updates) within seconds, with both kinds switched on
     // whatever the saved switches say.
     func preview(model: Presentation, pro: Bool, rates: ExchangeRates) async throws -> Int {
         guard try await authorize() else { throw DomainError.illegalAction }
         var settings = ReminderSettings(); settings.renewals = true; settings.trials = true
         let planned = ReminderPlanner.plan(rows: model.rows, settings: settings, pro: pro, rates: rates, currency: model.preferences.preferredCurrency, now: Date(), zone: .current)
-        let shapes = [planned.first { $0.kind == "renewal" && $0.events.count == 1 }, planned.first { $0.kind == "renewal" && $0.events.count > 1 }, planned.first { $0.kind == "trial" }].compactMap { $0 }
+        let shapes = [planned.first { $0.kind == "renewal" && $0.events.count == 1 }, planned.first { $0.kind == "renewal" && $0.events.count > 1 }, planned.first { $0.kind == "trial" }, planned.first { $0.kind == "updates" }].compactMap { $0 }
         for (index, reminder) in shapes.enumerated() {
             try await center.add(UNNotificationRequest(identifier: "subeye:preview-" + String(index), content: Self.content(reminder, currency: model.preferences.preferredCurrency),
                                                        trigger: UNTimeIntervalNotificationTrigger(timeInterval: Double(3 + index * 3), repeats: false)))

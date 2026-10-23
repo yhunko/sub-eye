@@ -3,11 +3,11 @@ import SwiftUI
 import SubEyeCore
 
 enum DeveloperScenario: String, CaseIterable, Hashable {
-    case priceIncrease, priceIncreaseLater, priceDecrease, priceCurrency, trialEnding, introEnding, offerStarting
+    case priceIncrease, priceIncreaseLater, priceDecrease, priceCurrency, trialEnding, introEnding, offerStarting, licensePurchase, licenseUpdates, licenseRenewed
     case active, paused, cancelling, cancelled
     case homeSavingsNone, homeSavingsOne, homeSavingsSeveral, homeDecisions
 
-    static let pricing: [Self] = [.priceIncrease, .priceIncreaseLater, .priceDecrease, .priceCurrency, .trialEnding, .introEnding, .offerStarting]
+    static let pricing: [Self] = [.priceIncrease, .priceIncreaseLater, .priceDecrease, .priceCurrency, .trialEnding, .introEnding, .offerStarting, .licensePurchase, .licenseUpdates, .licenseRenewed]
     static let lifecycle: [Self] = [.active, .paused, .cancelling, .cancelled]
     static let home: [Self] = [.homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral, .homeDecisions]
     // Ended subscriptions that exist only to fill the savings row; no detail scenario opens them.
@@ -26,6 +26,9 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .trialEnding: "Free trial ends"
         case .introEnding: "Intro price ends"
         case .offerStarting: "Free trial starts · deferred offer"
+        case .licensePurchase: "License · purchase upcoming"
+        case .licenseUpdates: "License · included updates end"
+        case .licenseRenewed: "License · renewed, updates end again"
         case .active: "Active · no pricing history"
         case .paused: "Paused · resumes"
         case .cancelling: "Cancelling · access ends"
@@ -33,7 +36,7 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .homeSavingsNone: "Saved row · nothing stopped"
         case .homeSavingsOne: "Saved row · one stopped"
         case .homeSavingsSeveral: "Saved row · three stopped"
-        case .homeDecisions: "Needs a decision · five events"
+        case .homeDecisions: "Needs a decision · six events"
         }
     }
 
@@ -45,6 +48,7 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .priceCurrency: "arrow.left.arrow.right"
         case .trialEnding: "hourglass"
         case .introEnding, .offerStarting: "tag"
+        case .licensePurchase, .licenseUpdates, .licenseRenewed: "key"
         case .active: "checkmark.circle"
         case .paused: "pause.circle"
         case .cancelling: "clock.badge.xmark"
@@ -60,7 +64,7 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         let members: [Self] = switch self {
         case .homeSavingsNone: []
         case .homeSavingsOne, .homeSavingsSeveral: [.cancelled]
-        case .homeDecisions: [.priceIncrease, .trialEnding, .introEnding, .paused, .cancelling]
+        case .homeDecisions: [.priceIncrease, .trialEnding, .introEnding, .licenseUpdates, .paused, .cancelling]
         default: [self]
         }
         var subscriptions: [Subscription] = [], phases: [PricePhase] = []
@@ -122,6 +126,12 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
             let revert = Day.utc.date(byAdding: .month, value: 3, to: renewal)!
             phases = [phase(.trial, "0", from: renewal, to: revert, applied: false),
                       phase(.standard, "11.99", from: revert, applied: false)]
+        case .licensePurchase, .licenseUpdates, .licenseRenewed:
+            // Built by the editor's own rule, so each fixture is exactly what saving a license that many years ago stores.
+            let years = self == .licensePurchase ? 0 : self == .licenseUpdates ? -1 : -2
+            subscription.period = .year; subscription.paymentDate = Day.iso(Day.utc.date(byAdding: .year, value: years, to: renewal)!)
+            phases = (try? Pricing.license(subscription: &subscription, licenseCost: "29.00", renewalCost: "19.00", currency: "usd",
+                                           now: now, ids: (id + "-license", id + "-renewal"))) ?? []
         case .paused:
             subscription.pausedAt = Day.iso(Day.shift(today, days: -4)); subscription.resumeAt = Day.iso(Day.shift(today, days: 10)); subscription.status = .paused
         case .cancelling:
@@ -144,6 +154,9 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .trialEnding, .cancelled: "Headspace"
         case .introEnding: "YouTube Premium"
         case .offerStarting: "Duolingo"
+        case .licensePurchase: "Sketch"
+        case .licenseUpdates: "CleanShot X"
+        case .licenseRenewed: "Nova"
         case .homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral, .homeDecisions: nil
         }
     }
@@ -156,6 +169,9 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case "Netflix": "netflix.com"
         case "Headspace": "headspace.com"
         case "YouTube Premium": "youtube.com"
+        case "CleanShot X": "cleanshot.com"
+        case "Sketch": "sketch.com"
+        case "Nova": "nova.app"
         default: "duolingo.com"
         }
     }

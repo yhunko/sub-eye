@@ -67,10 +67,26 @@ final class ReminderTests: XCTestCase {
         XCTAssertNil(shared?.lead)
         XCTAssertEqual(shared.map(message)?.title, "Upcoming renewals")
     }
+    func testLicenseRenewalsSayUpdatesEndWhileItsPurchaseStaysARenewal() throws {
+        var settings = ReminderSettings(); settings.renewals = true
+        func planned(purchase: String) throws -> [PlannedReminder] {
+            var sub = Subscription(id: "c", name: "CleanShot X", cost: "19", currency: "usd", period: .year, paymentDate: Day.iso(Day.parse(purchase)!), now: now)
+            let phases = try Pricing.license(subscription: &sub, licenseCost: "41", renewalCost: "19", currency: "usd", now: now, ids: ("l", "r"))
+            let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: now)
+            return ReminderPlanner.plan(rows: rows, settings: settings, pro: false, rates: rates, currency: "usd", now: now, zone: .gmt)
+        }
+        let fresh = try planned(purchase: "2026-09-16")
+        XCTAssertEqual(fresh.map(\.kind), ["renewal", "updates", "updates"])
+        XCTAssertEqual(message(fresh[0]).title, "CleanShot X renews tomorrow")
+        XCTAssertEqual(message(fresh[1]), ReminderMessage(title: "CleanShot X updates end tomorrow", body: "Renew for $19.00 to keep getting them. The app stays yours."))
+        let owned = try planned(purchase: "2024-09-16")
+        XCTAssertEqual(owned.count, 1); XCTAssertEqual(owned[0].kind, "updates"); XCTAssertNotNil(owned[0].repeatRule)
+    }
     private func message(_ reminder: PlannedReminder) -> ReminderMessage {
         let english = ["notif_whenToday": "today", "notif_whenTomorrow": "tomorrow", "notif_whenInDays": "in {days} days",
                        "notif_renewalTitle": "{name} renews {when}", "notif_renewalBody": "{amount} will be charged.",
                        "notif_renewalDigestTitle": "Renewing {when}", "notif_renewalDigestTitleMixed": "Upcoming renewals",
+                       "notif_updatesTitle": "{name} updates end {when}", "notif_updatesBody": "Renew for {amount} to keep getting them. The app stays yours.",
                        "notif_digestBody": "{names} · {amount}", "notif_digestMore": "{names} and {count} more"]
         return reminder.message({ key, arguments in
             arguments.reduce(english[key] ?? key) { $0.replacingOccurrences(of: "{" + $1.key + "}", with: $1.value) }

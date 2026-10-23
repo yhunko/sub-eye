@@ -10,7 +10,7 @@ public enum SubscriptionStatus: String, Codable, CaseIterable, Sendable {
 }
 
 public enum PhaseKind: String, Codable, CaseIterable, Sendable {
-    case trial, intro, scheduledChange, standard
+    case trial, intro, scheduledChange, standard, license
 }
 
 public struct Subscription: Codable, Identifiable, Equatable, Sendable {
