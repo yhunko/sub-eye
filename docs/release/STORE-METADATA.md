@@ -48,10 +48,10 @@ Subscriptions Tracker - SubEye
 Renewals, trials and spending
 ```
 
-### Promotional Text (170) — 6.1.0
+### Promotional Text (170) — 6.2.0
 
 ```
-New: see how much you've saved by stopping subscriptions, and every price change spelled out before it hits — even a switch to another currency. No account, no ads.
+New: track apps you buy once with a year of updates. SubEye counts the license once and reminds you before the updates run out. No account, no ads.
 ```
 
 For when there is no news worth the slot:
@@ -60,18 +60,12 @@ For when there is no news worth the slot:
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
-### What's New in This Version (4000) — 6.1.0
+### What's New in This Version (4000) — 6.2.0
 
 ```
-• Saved with SubEye: Home now shows how much you've kept by pausing or cancelling subscriptions.
-• Clearer subscription pages. The next payment comes first, and a price change, a trial ending or an intro price ending is spelled out — including whether a switch to another currency costs you more or less.
-• Turn on renewal reminders right from a subscription with the bell.
-• Reminders name the day — "Netflix renews tomorrow" — and open the subscription they're about.
-• Renewal Live Activities now work on iOS 17 and later, and one you dismiss stays dismissed.
-• Adding a subscription you already track? SubEye offers to resume or restart it instead of making a duplicate.
-• SubEye tells you when an update is out.
-• A scheduled price change now counts from its own day in totals, the calendar and reminders.
-• Fixed: Terms of service and Privacy policy open again, busy days on Home show every payment, and layouts hold up at the largest text sizes.
+• One-time licenses (SubEye Pro): track software you buy once with a year of updates included. SubEye counts the purchase once, shows the optional renewal on its own date and reminds you before your updates run out — renewing is your call.
+• A clearer way to add a subscription: choose how you pay — regular, free trial, intro discount or one-time license — and see the first charges laid out before you save.
+• The calendar marks a license purchase, and "Needs a decision" on Home shows when updates are about to end.
 ```
 
 ### Description (4000)
@@ -85,7 +79,7 @@ WHAT YOU GET
 
 • One number that matters — what is still going to leave your account this month, and how much of the month is left to pay it.
 • Next month's forecast set against this one, and the single subscription costing you the most.
-• A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, and any change you have scheduled — all on one line, months before it reaches your statement.
+• A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, a license you bought once with its optional updates renewal, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
 • Saved with SubEye — what pausing and cancelling has kept in your pocket, counted from the day each one stopped.
 • A reminder the day before a renewal, so nothing is a surprise.
@@ -104,7 +98,7 @@ The free app is not a trial and not a teaser. Unlimited subscriptions, the whole
 
 Pro is a single purchase that never renews. It adds:
 • Trial-ending alerts, and reminders at the time you choose
-• Pricing phases — trials, intro discounts and scheduled changes on one timeline
+• Pricing phases — trials, intro discounts, one-time licenses and scheduled changes on one timeline
 • Categories, the category filter, and the spend breakdown grouped by them
 • The calendar's year view, and every month set against the one before it
 • Home Screen widgets
@@ -153,10 +147,10 @@ recurring,bill,payment,budget,expense,money,finance,reminder,cancel,manage,price
 Витрати, списання, нагадування
 ```
 
-### Promotional Text (170) — 6.1.0
+### Promotional Text (170) — 6.2.0
 
 ```
-Нове: SubEye показує, скільки ви заощадили, зупинивши підписки, і кожну зміну ціни ще до списання — навіть перехід на іншу валюту. Без акаунта й реклами.
+Нове: програми, куплені один раз із роком оновлень. SubEye врахує ліцензію один раз і нагадає, коли оновлення закінчуються. Без акаунта й реклами.
 ```
 
 For when there is no news worth the slot:
@@ -165,18 +159,12 @@ For when there is no news worth the slot:
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
 ```
 
-### What's New in This Version (4000) — 6.1.0
+### What's New in This Version (4000) — 6.2.0
 
 ```
-• Заощаджено з SubEye: на головній видно, скільки ви зберегли, призупинивши або скасувавши підписки.
-• Зрозуміліші сторінки підписок. Спершу — наступний платіж, а зміна ціни, кінець пробного періоду чи стартової ціни пояснені прямо, зокрема чи перехід на іншу валюту обійдеться дорожче або дешевше.
-• Нагадування про списання вмикаються просто зі сторінки підписки — дзвіночком.
-• Нагадування називають день — «Netflix поновлюється завтра» — і відкривають саме ту підписку.
-• Активності поновлень наживо тепер працюють з iOS 17, а закрита активність більше не повертається.
-• Додаєте підписку, яка вже є? SubEye запропонує відновити її, а не створювати дублікат.
-• SubEye повідомить, коли вийде оновлення.
-• Запланована зміна ціни тепер діє саме з її дня — у підсумках, календарі й нагадуваннях.
-• Виправлено: Умови користування й Політика конфіденційності знову відкриваються, дні з кількома платежами на головній показують їх усі, а екрани коректно виглядають із найбільшим текстом.
+• Разові ліцензії (SubEye Pro): відстежуйте програми, куплені один раз із роком оновлень. SubEye враховує покупку один раз, показує необов’язкове продовження в його день і нагадує, коли оновлення закінчуються, — продовжувати чи ні, вирішуєте ви.
+• Простіше додати підписку: оберіть, як ви платите, — звичайна оплата, пробний період, вступна знижка чи разова ліцензія — і ще до збереження побачите перші платежі.
+• Календар позначає купівлю ліцензії, а «Потребує рішення» на головній показує, коли закінчуються оновлення.
 ```
 
 ### Description (4000)
@@ -190,7 +178,7 @@ SubEye показує, скільки коштують ваші підписки
 
 • Одне число, яке має значення, — скільки ще піде з рахунку цього місяця і скільки місяця лишилося.
 • Прогноз на наступний місяць у порівнянні з цим і найдорожча підписка.
-• Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
+• Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, ліцензія, куплена один раз, із необов’язковим продовженням оновлень, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
 • Заощаджено з SubEye — скільки лишилося у вашій кишені завдяки паузам і скасуванням, від дня, коли кожна підписка зупинилася.
 • Нагадування за день до списання, щоб нічого не було несподіванкою.
@@ -209,7 +197,7 @@ SUBEYE PRO — ОДИН ПЛАТІЖ
 
 Pro — це разова покупка, яка ніколи не поновлюється. Вона додає:
 • Сповіщення про кінець пробного періоду й нагадування в той час, який оберете ви
-• Цінові періоди — пробні періоди, знижки та заплановані зміни на одній шкалі
+• Цінові періоди — пробні періоди, знижки, разові ліцензії та заплановані зміни на одній шкалі
 • Категорії, фільтр за ними і розподіл витрат за категоріями
 • Річний огляд у календарі й порівняння кожного місяця з попереднім
 • Віджети на екрані «Дім»
@@ -254,16 +242,11 @@ line against the app: the external services and the Pro list drift.
 ```
 No account: no sign-up, no sign-in, no server, no backend. The app opens straight to the dashboard, so "Sign-In Required" is unticked.
 
-1. WHAT CHANGED IN 6.1.0
-- Home shows what pausing and cancelling subscriptions has saved, computed on the device. Free.
-- Redesigned subscription detail: a scheduled price change, trial end or intro end is explained in one card; a switch to another currency is compared at today's exchange rate.
-- Reminders name the day; a bell on the detail page turns them on.
-- Renewal Live Activities on iOS 17 and later.
-- Adding a service already tracked offers Resume or Restart instead of a duplicate.
-- Update notice: once a day the app asks Apple's public App Store lookup (itunes.apple.com/lookup, app ID and storefront country only) for a newer version and shows a one-time alert and a Settings banner. Skipped for sandbox and TestFlight receipts, so it will not appear in review.
-- After a first saving or two weeks of use, Home may show the SubEye Pro offer once; it opens the same paywall as Settings.
-- Fixes: Terms of service and Privacy policy open again; layout fixes at the largest text sizes.
-No new permissions, no new data collected. The only new request is the App Store lookup.
+1. WHAT CHANGED IN 6.2.0
+- One-time licenses: an entry can now be software bought once with a year of updates included, followed by an optional yearly updates renewal. The license price is counted once on its purchase date; each later renewal shows as an "Updates end" decision, and its reminder says the updates end, not that the app renews. Part of SubEye Pro (pricing phases).
+- The last step of adding a subscription is redesigned: four ways to pay (regular, free trial, intro discount, one-time license), each opening its own fields, and a timeline of the first charges before saving.
+To try it (SubEye Pro; the sandbox purchase works): Home, "+", any name, Price 41, Billing cycle Yearly, Next, choose "One-time license", Updates renewal 19, Save.
+No new permissions, no new data collected, no new network requests.
 
 2. TESTED ON
 iPhone 17, iOS 27.0.1; iPhone 17 Pro simulator, iOS 26.5. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.
@@ -278,7 +261,7 @@ No credentials, demo account or configuration. Empty on first launch by design: 
 - Apple In-App Purchase via RevenueCat, configured anonymously.
 - jsDelivr CDN: one public exchange-rate file, at most once a day.
 - Brandfetch, with Google's favicon service as fallback: a logo for the service name typed into the add form.
-- Apple App Store lookup: the daily version check above.
+- Apple App Store lookup (itunes.apple.com/lookup, app ID and storefront country only): at most once a day, to show a notice when a newer version is out. Skipped for sandbox and TestFlight receipts, so it will not appear in review.
 - Apple iCloud key-value storage: off by default, opt-in at Settings, Data; the user's own iCloud, which we cannot read.
 No authentication, analytics, crash-reporting, advertising or AI SDK, no payment processor other than Apple, and no server of ours.
 
@@ -290,8 +273,8 @@ Not regulated: no bank connection, financial account, money movement, credential
 Brand logos are fetched at runtime for a domain the user typed, never bundled, and imply no affiliation; the mark identifies the service the user already named.
 
 8. IN-APP PURCHASE
-"SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder times, pricing phases, categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, and Home Screen widgets.
-Buy at Settings, first row, "SubEye Pro". Locked features open the same paywall: Settings, Categories; Settings, Reminders, trial alerts; Calendar, year view; a subscription's Manage pricing.
+"SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder times, pricing phases (trials, intro prices, scheduled changes and one-time licenses), categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, and Home Screen widgets.
+Buy at Settings, first row, "SubEye Pro". Locked features open the same paywall: Settings, Categories; Settings, Reminders, trial alerts; Calendar, year view; a subscription's Manage pricing; the trial, intro and license options when adding a subscription.
 The paywall shows Apple's storefront price, says it does not renew, and links the Terms of Use and Privacy Policy. Restore Purchases is on the paywall and in Settings.
 ```
 
