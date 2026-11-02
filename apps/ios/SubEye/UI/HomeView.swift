@@ -43,10 +43,11 @@ struct HomeView: View {
                 }
             }.padding(16).padding(.bottom, 8)
         }
-        .background(alignment: .topLeading) {
+        .background(alignment: .top) {
             if sections != .breakdown {
-                RadialGradient(colors: [AppTheme.accent.opacity(0.30), AppTheme.accent.opacity(0.06), .clear], center: .center, startRadius: 0, endRadius: 230)
-                    .frame(width: 460, height: 420).offset(x: -90, y: -170).accessibilityHidden(true)
+                LinearGradient(stops: [.init(color: AppTheme.accent.opacity(0.34), location: 0), .init(color: AppTheme.accent.opacity(0.14), location: 0.45), .init(color: .clear, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 380).frame(maxWidth: .infinity).ignoresSafeArea(edges: .top).accessibilityHidden(true)
             }
         }
         .appScreen().navigationTitle("")
