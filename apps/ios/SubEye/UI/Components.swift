@@ -207,6 +207,30 @@ struct EmptySubscriptions: View {
     }
 }
 
+// Set on a split view's leading column, whose links open in the trailing column rather than pushing beside the list.
+// Equal per tab, so the closure does not count as a change on every update.
+struct OpenRouteAction: Equatable {
+    let tab: AppTab
+    let open: (Route) -> Void
+    static func == (left: Self, right: Self) -> Bool { left.tab == right.tab }
+}
+
+extension EnvironmentValues {
+    @Entry var openRoute: OpenRouteAction? = nil
+    // Set on a split view's trailing column, which has the list beside it.
+    @Entry var besideList = false
+}
+
+struct RouteLink<Label: View>: View {
+    let value: Route
+    @ViewBuilder let label: () -> Label
+    @Environment(\.openRoute) private var openRoute
+    var body: some View {
+        if let openRoute { Button(action: { openRoute.open(value) }, label: label) }
+        else { NavigationLink(value: value, label: label) }
+    }
+}
+
 struct UpdateCard: View {
     let release: StoreRelease
     let dismiss: () -> Void

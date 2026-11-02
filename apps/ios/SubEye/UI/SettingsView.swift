@@ -49,7 +49,7 @@ struct SettingsView: View {
                     }.buttonStyle(.plain)
                 }
                 AppSection(title: L("settings_preferences"), footnote: L("settings_deviceHint")) {
-                    NavigationLink(value: Route.currency) { SettingsRow(icon: "creditcard", title: L("settings_currency"), value: currencyLabel) }.buttonStyle(.plain).accessibilityIdentifier("settingsCurrency")
+                    RouteLink(value: Route.currency) { SettingsRow(icon: "creditcard", title: L("settings_currency"), value: currencyLabel) }.buttonStyle(.plain).accessibilityIdentifier("settingsCurrency")
                     AppDivider(inset: 47)
                     if state.presentation.preferences.preferredTimezone == TimeZone.current.identifier {
                         SettingsRow(icon: "clock", title: L("settings_timezone"), value: state.presentation.preferences.preferredTimezone, chevron: false).accessibilityIdentifier("settingsTimezone")
@@ -57,9 +57,9 @@ struct SettingsView: View {
                         Button { syncTimezone = true } label: { SettingsRow(icon: "clock", title: L("settings_timezone"), value: state.presentation.preferences.preferredTimezone) }.buttonStyle(.plain).disabled(timezoneChange != nil).accessibilityIdentifier("settingsTimezone")
                     }
                     AppDivider(inset: 47)
-                    NavigationLink(value: Route.categories) { SettingsRow(icon: "tag", title: L("settings_categories"), value: state.settings.pro ? nil : L("paywall_badge")) }.buttonStyle(.plain)
+                    RouteLink(value: Route.categories) { SettingsRow(icon: "tag", title: L("settings_categories"), value: state.settings.pro ? nil : L("paywall_badge")) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
-                    NavigationLink(value: Route.notifications) {
+                    RouteLink(value: Route.notifications) {
                         SettingsRow(icon: state.settings.reminders.renewals ? "bell" : "bell.slash", title: L("settings_reminders"), value: L(state.settings.reminders.renewals || state.settings.reminders.trials ? "settings_on" : "settings_off"))
                     }.buttonStyle(.plain).accessibilityIdentifier("notificationSettings")
                     AppDivider(inset: 47)
@@ -91,13 +91,13 @@ struct SettingsView: View {
                     }.buttonStyle(.plain)
                 }
                 AppSection(title: L("settings_legal")) {
-                    NavigationLink(value: Route.legal("terms-of-service")) { SettingsRow(icon: "doc.text", title: L("settings_terms")) }.buttonStyle(.plain)
+                    RouteLink(value: Route.legal("terms-of-service")) { SettingsRow(icon: "doc.text", title: L("settings_terms")) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
-                    NavigationLink(value: Route.legal("privacy-policy")) { SettingsRow(icon: "hand.raised", title: L("settings_privacy")) }.buttonStyle(.plain)
+                    RouteLink(value: Route.legal("privacy-policy")) { SettingsRow(icon: "hand.raised", title: L("settings_privacy")) }.buttonStyle(.plain)
                 }
                 #if NATIVE_DEVELOPMENT
                 AppSection(title: "Development") {
-                    NavigationLink(value: Route.developer) {
+                    RouteLink(value: Route.developer) {
                         SettingsRow(icon: "hammer", title: "Developer Tools")
                     }.buttonStyle(.plain)
                 }

@@ -11,6 +11,7 @@ struct MainShell: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.requestReview) private var requestReview
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var tab = AppTab.home
     @State private var paths: [AppTab: [Route]] = [:]
     @State private var sheet: SheetRoute?
@@ -23,6 +24,7 @@ struct MainShell: View {
     @State private var cloudTick = 0
     @State private var updateAlert: StoreRelease?
     @State private var storePage = 0
+    @State private var resizing: (tab: AppTab, path: [Route])?
     var body: some View {
         tabs
             .alert(L("update_available", ["version": updateAlert?.version ?? ""]), isPresented: Binding(get: { updateAlert != nil }, set: { if !$0 { updateAlert = nil } }), presenting: updateAlert) { _ in
@@ -39,6 +41,10 @@ struct MainShell: View {
                 return Alert(title: Text(notice.title), message: Text(notice.message), dismissButton: .default(Text(L("common_done"))))
             }
             .onOpenURL { route($0) }
+            .onChange(of: sizeClass) { _ in
+                resizing = (tab, paths[tab] ?? [])
+                Task { try? await Task.sleep(for: .seconds(1)); resizing = nil }
+            }
             .onReceive(inbox.$url) { if let url = $0 { route(url); inbox.url = nil } }
             .onReceive(NotificationCenter.default.publisher(for: NSUbiquitousKeyValueStore.didChangeExternallyNotification)) { cloudNotification = $0; cloudTick += 1 }
             .task(id: "\(firstFrame):\(retry)") {
@@ -144,20 +150,70 @@ struct MainShell: View {
     private func tabLabel(_ key: String, icon: String) -> some View {
         Label(L(key), systemImage: icon).environment(\.symbolVariants, .none)
     }
-    private func stack(_ tab: AppTab) -> some View {
-        NavigationStack(path: Binding(get: { paths[tab] ?? [] }, set: { paths[tab] = $0 })) {
-            Group {
-                switch tab {
-                case .home: HomeView(state: $state, services: services, sheet: $sheet) { self.tab = .calendar; paths[.calendar] = [] }
-                case .subscriptions: SubscriptionsView(state: $state, services: services, sheet: $sheet)
-                case .calendar: RenewalCalendarView(state: $state, services: services, sheet: $sheet)
-                case .settings: SettingsView(state: $state, services: services, sheet: $sheet)
+    // The open iPhone Duo is regular width: the tab's screen leads and what it opens fills the trailing column. Both columns
+    // read the same path as the folded stack, so folding and unfolding keep the place.
+    @ViewBuilder private func stack(_ tab: AppTab) -> some View {
+        if #available(iOS 17, *), sizeClass == .regular {
+            // Home's trailing column is a screen that routes push onto; the others only say what to pick, so the first route
+            // replaces that and has no back button to it.
+            let picked = tab == .home ? 0 : 1
+            NavigationSplitView {
+                root(tab, sections: .summary)
+                    .environment(\.openRoute, OpenRouteAction(tab: tab) { paths[tab] = [$0] })
+                    .toolbar(removing: .sidebarToggle)
+                    .navigationSplitViewColumnWidth(min: 320, ideal: 420, max: 480)
+            } detail: {
+                NavigationStack(path: Binding(get: { Array((paths[tab] ?? []).dropFirst(picked)) }, set: { setPath(tab, Array((paths[tab] ?? []).prefix(picked)) + $0) })) {
+                    Group {
+                        if picked > 0, let route = paths[tab]?.first { destination(route) } else { unselected(tab) }
+                    }
+                    .id(paths[tab]?.prefix(picked).first)
+                    .navigationDestination(for: Route.self) { destination($0) }
                 }
+                .environment(\.besideList, true)
+            }.navigationSplitViewStyle(.balanced)
+        } else {
+            NavigationStack(path: Binding(get: { paths[tab] ?? [] }, set: { setPath(tab, $0) })) {
+                root(tab, sections: .all)
+                    .navigationDestination(for: Route.self) { destination($0) }
+                    // The surviving stack owns visibility so the bar animates during a pop, not after the picker disappears.
+                    .toolbar(paths[tab]?.contains(.currency) == true ? .hidden : .visible, for: .tabBar)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: paths[tab]?.contains(.currency) == true)
             }
-            .navigationDestination(for: Route.self) { destination($0) }
-            // The surviving stack owns visibility so the bar animates during a pop, not after the picker disappears.
-            .toolbar(paths[tab]?.contains(.currency) == true ? .hidden : .visible, for: .tabBar)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: paths[tab]?.contains(.currency) == true)
+        }
+    }
+    // A stack built while the window changes size class, as on folding or unfolding, reports an empty path before it has
+    // pushed the one it was given; that path is pushed again once the swap settles.
+    private func setPath(_ tab: AppTab, _ path: [Route]) {
+        if path.isEmpty, let resizing, resizing.tab == tab, !resizing.path.isEmpty {
+            self.resizing = nil
+            paths[tab] = []
+            DispatchQueue.main.async {
+                var transaction = Transaction(); transaction.disablesAnimations = true
+                withTransaction(transaction) { paths[tab] = resizing.path }
+            }
+        } else { paths[tab] = path }
+    }
+    @ViewBuilder private func root(_ tab: AppTab, sections: HomeSections) -> some View {
+        switch tab {
+        case .home: HomeView(state: $state, services: services, sheet: $sheet, openCalendar: { self.tab = .calendar; paths[.calendar] = [] }, sections: sections)
+        case .subscriptions: SubscriptionsView(state: $state, services: services, sheet: $sheet, selected: openSubscription)
+        case .calendar: RenewalCalendarView(state: $state, services: services, sheet: $sheet)
+        case .settings: SettingsView(state: $state, services: services, sheet: $sheet)
+        }
+    }
+    private var openSubscription: String? {
+        if case .subscription(let id) = paths[.subscriptions]?.first { return id }
+        return nil
+    }
+    @available(iOS 17, *)
+    @ViewBuilder private func unselected(_ tab: AppTab) -> some View {
+        switch tab {
+        case .home where state.presentation.totalCount > 0: root(.home, sections: .breakdown)
+        case .subscriptions where state.presentation.totalCount > 0: ContentUnavailableView(L("native_pickSubscription"), systemImage: "rectangle.stack").appScreen()
+        case .calendar: ContentUnavailableView(L("native_pickDay"), systemImage: "calendar").appScreen()
+        case .settings: ContentUnavailableView(L("native_pickSetting"), systemImage: "gearshape").appScreen()
+        case .home, .subscriptions: Color.clear.appScreen()
         }
     }
     @ViewBuilder private func destination(_ route: Route) -> some View {

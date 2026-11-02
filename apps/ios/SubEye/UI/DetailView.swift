@@ -11,6 +11,7 @@ struct SubscriptionDetail: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.besideList) private var besideList
     @State private var delete = false
     @State private var deletion: UUID?
     @State private var heroBottom: CGFloat = 300
@@ -58,7 +59,18 @@ struct SubscriptionDetail: View {
                     .background(alignment: .top) {
                         BrandWash(domain: row.subscription.brandDomain, logos: services.logos)
                             .frame(height: max(0, heroBottom + geometry.safeAreaInsets.top))
+                            // Beside a list on the open iPhone Duo, the wash fades into the seam instead of ending on a hard edge. The
+                            // list floats over this column as its leading safe area, so the fade starts where the list ends.
+                            .mask(alignment: .leading) {
+                                HStack(spacing: 0) {
+                                    Color.clear.frame(width: besideList ? geometry.safeAreaInsets.leading : 0)
+                                    LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing).frame(width: besideList ? 96 : 0)
+                                    Color.black
+                                }
+                            }
                             .offset(y: -geometry.safeAreaInsets.top)
+                            // Runs on under the side bar and status bar, which iPhone Duo reports as a horizontal safe area.
+                            .ignoresSafeArea(edges: .horizontal)
                     }
                     .appScreen().navigationTitle(typeSize.isAccessibilitySize ? L("native_subscriptionTitle") : "")
                     .toolbarBackground(.hidden, for: .navigationBar)

@@ -5,6 +5,7 @@ struct SubscriptionsView: View {
     @Binding var state: SceneState
     let services: AppServices
     @Binding var sheet: SheetRoute?
+    var selected: String?
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var search = ""
     @State private var settingsChange = 0
@@ -37,8 +38,10 @@ struct SubscriptionsView: View {
                     ForEach(grouped, id: \.0) { group in
                         if !group.0.isEmpty { sectionHeading(group).padding(.top, 14) }
                         ForEach(group.1) { row in
-                            NavigationLink(value: Route.subscription(row.id)) { SubscriptionCell(row: row, currency: currency, logos: services.logos) }
+                            RouteLink(value: Route.subscription(row.id)) { SubscriptionCell(row: row, currency: currency, logos: services.logos) }
                                 .buttonStyle(.plain).accessibilityIdentifier("subscription-" + row.id)
+                                .overlay { if row.id == selected { RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(AppTheme.accent, lineWidth: 2) } }
+                                .accessibilityAddTraits(row.id == selected ? .isSelected : [])
                         }
                     }
                 }
@@ -74,7 +77,7 @@ struct SubscriptionsView: View {
                         } label: { Label(L("form_category") + (state.presentation.categories.first { $0.id == state.settings.list.categoryId }.map { " · " + $0.name } ?? ""), systemImage: state.settings.list.categoryId == nil ? "tag" : "tag.fill") }.accessibilityIdentifier("filterCategory")
                     } else if !state.settings.pro { Button { sheet = .paywall } label: { Label(L("paywall_lockFilter"), systemImage: "lock") } }
                     if narrowed || state.settings.list != ListOptions() { Section { Button { state.settings.list = ListOptions(); search = "" } label: { Label(L("subs_filterReset"), systemImage: "arrow.counterclockwise") } } }
-                } label: { Label(L("subs_listOptions"), systemImage: narrowed ? "line.3.horizontal.decrease.circle.fill" : "ellipsis.circle") }
+                } label: { Label(L("subs_listOptions"), systemImage: narrowed ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") }
                     .tint(narrowed ? AppTheme.accent : AppTheme.text).accessibilityIdentifier("subscriptionFilters")
             }
         }

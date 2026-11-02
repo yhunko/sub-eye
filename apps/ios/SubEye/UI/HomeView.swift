@@ -1,11 +1,15 @@
 import SwiftUI
 import SubEyeCore
 
+// Side by side on the open iPhone Duo, the month leads and where the money goes sits in the trailing column.
+enum HomeSections { case all, summary, breakdown }
+
 struct HomeView: View {
     @Binding var state: SceneState
     let services: AppServices
     @Binding var sheet: SheetRoute?
     var openCalendar: () -> Void
+    var sections = HomeSections.all
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var expanded = false
     @ScaledMetric private var railWidth: CGFloat = 50
@@ -27,24 +31,32 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 14) {
                 if model.totalCount == 0 { EmptySubscriptions { sheet = .editor(nil) } }
                 else {
-                    paymentRail.padding(.bottom, 14)
-                    if !model.dashboard.decisions.isEmpty { decisions }
-                    monthCard
-                    if let savings = model.dashboard.savings, savings.total > 0 { savedRow(savings) }
-                    if !breakdown.isEmpty { spending }
+                    if sections != .breakdown {
+                        paymentRail.padding(.bottom, 14)
+                        if !model.dashboard.decisions.isEmpty { decisions }
+                        monthCard
+                    }
+                    if sections != .summary {
+                        if let savings = model.dashboard.savings, savings.total > 0 { savedRow(savings) }
+                        if !breakdown.isEmpty { spending }
+                    }
                 }
             }.padding(16).padding(.bottom, 8)
         }
         .background(alignment: .topLeading) {
-            RadialGradient(colors: [AppTheme.accent.opacity(0.30), AppTheme.accent.opacity(0.06), .clear], center: .center, startRadius: 0, endRadius: 230)
-                .frame(width: 460, height: 420).offset(x: -90, y: -170).accessibilityHidden(true)
+            if sections != .breakdown {
+                RadialGradient(colors: [AppTheme.accent.opacity(0.30), AppTheme.accent.opacity(0.06), .clear], center: .center, startRadius: 0, endRadius: 230)
+                    .frame(width: 460, height: 420).offset(x: -90, y: -170).accessibilityHidden(true)
+            }
         }
         .appScreen().navigationTitle("")
         .toolbar {
-            if #available(iOS 26, *) {
-                ToolbarItem(placement: .topBarLeading) { monthHeading }.sharedBackgroundVisibility(.hidden)
-            } else { ToolbarItem(placement: .topBarLeading) { monthHeading } }
-            ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton { sheet = .editor(nil) } }
+            if sections != .breakdown {
+                if #available(iOS 26, *) {
+                    ToolbarItem(placement: .topBarLeading) { monthHeading }.sharedBackgroundVisibility(.hidden)
+                } else { ToolbarItem(placement: .topBarLeading) { monthHeading } }
+                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton { sheet = .editor(nil) } }
+            }
         }
     }
     @ViewBuilder private var monthHeading: some View {
@@ -68,7 +80,7 @@ struct HomeView: View {
                         Rectangle().fill(AppTheme.border).frame(width: 0.5, height: 108).padding(.horizontal, 5)
                     }
                     let ids = Set(charges.map(\.subscriptionId))
-                    NavigationLink(value: ids.count == 1 ? Route.subscription(ids.first!) : Route.due(Day.key(date))) {
+                    RouteLink(value: ids.count == 1 ? Route.subscription(ids.first!) : Route.due(Day.key(date))) {
                         VStack(spacing: 7) {
                             Text(date.formatted(Date.FormatStyle(timeZone: .gmt).weekday(.abbreviated)).uppercased()).appFont(11, weight: .semibold, relativeTo: .caption).tracking(0.4).foregroundStyle(AppTheme.muted)
                             Text(String(Day.utc.component(.day, from: date))).appFont(17, weight: .semibold).monospacedDigit()
@@ -111,7 +123,7 @@ struct HomeView: View {
                 forecast
                 if let biggest = active.first(where: { $0.nextAmount != nil }) {
                     if !typeSize.isAccessibilitySize { Rectangle().fill(AppTheme.border).frame(width: 0.5, height: 58) }
-                    NavigationLink(value: Route.subscription(biggest.id)) {
+                    RouteLink(value: Route.subscription(biggest.id)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(L("home_biggest")).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
                             HStack(spacing: 9) {
@@ -153,7 +165,7 @@ struct HomeView: View {
     }
     private func savedRow(_ savings: SavingsLedger) -> some View {
         let total = Text(Display.money(savings.total, currency, decimals: 0)).appFont(17, weight: .bold).monospacedDigit().foregroundStyle(AppTheme.accentBright).lineLimit(1)
-        return NavigationLink(value: Route.saved) {
+        return RouteLink(value: Route.saved) {
             HStack(spacing: 12) {
                 ToneIcon(symbol: "chart.line.downtrend.xyaxis", tone: AppTheme.accentBright, size: 36)
                 VStack(alignment: .leading, spacing: 2) {
@@ -175,7 +187,7 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 ForEach(Array(model.dashboard.decisions.prefix(3).enumerated()), id: \.element.id) { index, event in
                     if index > 0 { AppDivider() }
-                    NavigationLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
+                    RouteLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
                 }
                 if model.dashboard.decisions.count > 3 { Button(L("home_decisionMore", ["count": String(model.dashboard.decisions.count - 3)]), action: openCalendar).appFont(13.5).padding(.vertical, 12) }
             }.padding(.horizontal, 16).appCard()
@@ -208,7 +220,7 @@ struct HomeView: View {
                         }
                     }
                 }.frame(height: 10).padding(.bottom, 6).accessibilityHidden(true)
-                ForEach(Array(rows.prefix(expanded ? rows.count : 4).enumerated()), id: \.element.id) { index, row in
+                ForEach(Array(rows.prefix(expanded || sections == .breakdown ? rows.count : 4).enumerated()), id: \.element.id) { index, row in
                     if index > 0 { AppDivider() }
                     HStack(alignment: .center, spacing: 10) {
                         Circle().fill(AppTheme.categoryColors[index % 7]).frame(width: 9, height: 9).accessibilityHidden(true)
@@ -223,7 +235,7 @@ struct HomeView: View {
                         }
                     }.padding(.vertical, 11).padding(.horizontal, 2).accessibilityElement(children: .combine)
                 }
-                if rows.count > 4 {
+                if rows.count > 4 && sections != .breakdown {
                     AppDivider()
                     Button { expanded.toggle() } label: {
                         HStack {

@@ -606,3 +606,7 @@
 "native_offerSummary" = "Track {price} from {start}; the standard price of {standard} returns on {end}";
 
 "native_cancellationTitle" = "Cancellation";
+
+"native_pickSubscription" = "Choose a subscription";
+"native_pickDay" = "Choose a day";
+"native_pickSetting" = "Choose a setting";

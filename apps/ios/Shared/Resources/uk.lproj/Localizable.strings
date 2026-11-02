@@ -606,3 +606,7 @@
 "native_offerSummary" = "Враховувати {price} від {start}; звичайна ціна {standard} повернеться {end}";
 
 "native_cancellationTitle" = "Скасування";
+
+"native_pickSubscription" = "Оберіть підписку";
+"native_pickDay" = "Оберіть день";
+"native_pickSetting" = "Оберіть параметр";

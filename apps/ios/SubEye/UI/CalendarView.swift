@@ -35,7 +35,7 @@ struct RenewalCalendarView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if state.settings.pro {
-                        NavigationLink(value: Route.year(Day.utc.component(.year, from: month))) { Label(L("calendar_year"), systemImage: "square.grid.3x3") }.accessibilityIdentifier("calendarYear")
+                        RouteLink(value: Route.year(Day.utc.component(.year, from: month))) { Label(L("calendar_year"), systemImage: "square.grid.3x3") }.accessibilityIdentifier("calendarYear")
                     } else {
                         Button { sheet = .paywall } label: { Label(L("calendar_year"), systemImage: "square.grid.3x3") }.accessibilityIdentifier("calendarYear")
                     }
@@ -121,7 +121,7 @@ private struct CalendarMonthPage: View {
                     VStack(spacing: 0) {
                         agendaHeading(day, events: dayEvents).padding(.horizontal, 6).padding(.top, 6).padding(.bottom, 4)
                         ForEach(dayEvents) { event in
-                            NavigationLink(value: Route.subscription(event.subscriptionId)) {
+                            RouteLink(value: Route.subscription(event.subscriptionId)) {
                                 EventCell(event: event, currency: currency, logos: services.logos, showDate: false).padding(.vertical, 10).contentShape(Rectangle())
                             }.buttonStyle(.plain)
                         }
@@ -216,7 +216,7 @@ private struct CalendarMonthPage: View {
         let ids = Set(dayEvents.map(\.subscriptionId))
         return Group {
             if let id = ids.first {
-                NavigationLink(value: ids.count == 1 ? Route.subscription(id) : Route.due(Day.key(day))) { tile }
+                RouteLink(value: ids.count == 1 ? Route.subscription(id) : Route.due(Day.key(day))) { tile }
                     .accessibilityIdentifier("calendar-day-" + Day.key(day))
             } else { tile }
         }.buttonStyle(.plain).accessibilityLabel(Display.date(day, long: true) + ", " + Display.money(amount, currency))
