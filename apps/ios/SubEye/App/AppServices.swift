@@ -91,7 +91,8 @@ final class AppServices {
         try await widget.publish(state.presentation, pro: state.settings.pro, logos: logos)
         guard !NativeTesting.enabled else { return }
         let rates = try await exchange.cached()
-        try await notifications.synchronize(model: state.presentation, settings: state.settings.reminders, pro: state.settings.pro, rates: rates)
+        try await notifications.synchronize(model: state.presentation, installments: state.presentation.installments?.map(\.plan) ?? [],
+                                            settings: state.settings.reminders, pro: state.settings.pro, rates: rates)
         try await live.synchronize(model: state.presentation, rates: rates, logos: logos)
     }
 }

@@ -206,10 +206,15 @@ struct MainShell: View {
         if case .subscription(let id) = paths[.subscriptions]?.first { return id }
         return nil
     }
+    private var openInstallment: String? {
+        if case .installment(let id) = paths[.subscriptions]?.first { return id }
+        return nil
+    }
     @available(iOS 17, *)
     @ViewBuilder private func unselected(_ tab: AppTab) -> some View {
         switch tab {
         case .home where state.presentation.totalCount > 0: root(.home, sections: .breakdown)
+        case .subscriptions where state.effectiveSegment == .installments: ContentUnavailableView(L("native_pickInstallment"), systemImage: "creditcard").appScreen()
         case .subscriptions where state.presentation.totalCount > 0: ContentUnavailableView(L("native_pickSubscription"), systemImage: "rectangle.stack").appScreen()
         case .calendar: ContentUnavailableView(L("native_pickDay"), systemImage: "calendar").appScreen()
         case .settings: ContentUnavailableView(L("native_pickSetting"), systemImage: "gearshape").appScreen()
@@ -267,10 +272,11 @@ struct MainShell: View {
     }
     private func route(_ url: URL) {
         guard booted else { pendingURL = url; return }
-        guard let (newTab, route, newSheet) = DeepLink.route(url) else { return }
-        if let newTab { tab = newTab }
-        if let route { paths[tab] = [route] }
-        if let newSheet { sheet = newSheet }
+        guard let target = DeepLink.route(url) else { return }
+        if let newTab = target.tab { tab = newTab }
+        if let segment = target.segment { state.listSegment = segment; paths[.subscriptions] = [] }
+        if let route = target.route { paths[tab] = [route] }
+        if let newSheet = target.sheet { sheet = newSheet }
     }
 }
 

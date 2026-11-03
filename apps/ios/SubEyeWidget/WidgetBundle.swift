@@ -44,7 +44,7 @@ struct SubscriptionWidgetView: View {
     private var destination: URL {
         if entry.snapshot?.locked == true { return AppConfiguration.url("paywall") }
         if family == .systemSmall, let item = entry.snapshot?.items.first {
-            return AppConfiguration.url("subscriptions/" + item.id)
+            return item.destination
         }
         return AppConfiguration.url("")
     }
@@ -155,7 +155,7 @@ private struct SmallSubscriptionWidget: View {
         VStack(alignment: .leading, spacing: 4) {
             if let item = snapshot.items.first {
                 if !typeSize.isAccessibilitySize {
-                    SurfaceLogo(name: item.name, url: item.logoURL, size: 32)
+                    SurfaceLogo(name: item.name, url: item.logoURL, size: 32, symbol: item.symbol, tint: item.tint)
                     Spacer(minLength: 4)
                 }
                 Text(item.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
@@ -199,7 +199,7 @@ private struct MediumSubscriptionWidget: View {
                         Text(snapshot.emptyLabel).font(.caption).foregroundStyle(.secondary)
                     } else {
                         ForEach(snapshot.items.prefix(rowLimit)) { item in
-                            Link(destination: AppConfiguration.url("subscriptions/" + item.id)) {
+                            Link(destination: item.destination) {
                                 WidgetRenewalRow(item: item, locale: snapshot.locale, date: date)
                             }
                             .buttonStyle(.plain)
@@ -226,7 +226,7 @@ private struct WidgetRenewalRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            if !typeSize.isAccessibilitySize { SurfaceLogo(name: item.name, url: item.logoURL, size: 26) }
+            if !typeSize.isAccessibilitySize { SurfaceLogo(name: item.name, url: item.logoURL, size: 26, symbol: item.symbol, tint: item.tint) }
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name).font(.caption.weight(.semibold)).lineLimit(1)
                 ViewThatFits(in: .horizontal) {
@@ -276,10 +276,16 @@ struct SurfaceLogo: View {
     var size: CGFloat = 28
     var fullColor = false
     var scale: CGFloat = 1
+    var symbol: String? = nil
+    var tint: String? = nil
     var body: some View {
         Group {
             if let url, let data = try? Data(contentsOf: url), let image = UIImage(data: data, scale: scale) {
                 accented(Image(uiImage: image).resizable()).scaledToFit()
+            } else if let symbol {
+                let color = InstallmentStyle.color(tint ?? "")
+                Image(systemName: InstallmentStyle.symbol(symbol)).font(.system(size: size * 0.5, weight: .semibold)).foregroundStyle(color)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity).background(color.opacity(0.15))
             } else {
                 Text(String(name.prefix(1)).uppercased()).font(.system(size: size * 0.45, weight: .semibold))
                     .foregroundStyle(.white)
