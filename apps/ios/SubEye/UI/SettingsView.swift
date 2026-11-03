@@ -60,7 +60,8 @@ struct SettingsView: View {
                     RouteLink(value: Route.categories) { SettingsRow(icon: "tag", title: L("settings_categories"), value: state.settings.pro ? nil : L("paywall_badge")) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
                     RouteLink(value: Route.notifications) {
-                        SettingsRow(icon: state.settings.reminders.renewals ? "bell" : "bell.slash", title: L("settings_reminders"), value: L(state.settings.reminders.renewals || state.settings.reminders.trials ? "settings_on" : "settings_off"))
+                        let reminders = state.settings.reminders, on = reminders.renewals || reminders.trials || reminders.installments
+                        SettingsRow(icon: on ? "bell" : "bell.slash", title: L("settings_reminders"), value: L(on ? "settings_on" : "settings_off"))
                     }.buttonStyle(.plain).accessibilityIdentifier("notificationSettings")
                     AppDivider(inset: 47)
                     Link(destination: URL(string: UIApplication.openSettingsURLString)!) {
