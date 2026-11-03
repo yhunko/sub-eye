@@ -100,8 +100,11 @@ public actor SubscriptionRepository {
 
     public func calendar(from: Date, through: Date, rates: ExchangeRates, now: Date) throws -> [CalendarEvent] {
         let doc = try document()
-        return Projection.events(Projection.rows(doc, rates: rates, now: now), from: from, through: through,
-                                 rates: rates, currency: doc.preferences.preferredCurrency)
+        let currency = doc.preferences.preferredCurrency
+        let today = Day.today(now, zone: TimeZone(identifier: doc.preferences.preferredTimezone) ?? .gmt)
+        return Projection.events(Projection.rows(doc, rates: rates, now: now), from: from, through: through, rates: rates, currency: currency,
+                                 installments: Installments.events(doc.installments, from: from, through: through, today: today,
+                                                                   rates: rates, currency: currency))
     }
 
     public func save(_ value: Subscription, expected: Subscription?, offer: OfferInput? = nil, rates: ExchangeRates, now: Date) throws {
