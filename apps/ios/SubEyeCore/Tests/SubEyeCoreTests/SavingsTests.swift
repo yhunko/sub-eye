@@ -176,6 +176,17 @@ final class SavingsTests: XCTestCase {
         }
     }
 
+    func testPlansWithoutOptionalsKeepTheirExactBytes() throws {
+        let plan = InstallmentPlan(id: "plan", name: "MacBook", symbol: "laptopcomputer", tint: "blue", currency: "uah",
+                                   total: "300.00", payment: "100.00", paymentCount: 3, firstPaymentDate: "2026-09-04T00:00:00.000Z", now: now)
+        let raw = try JSONCodec.string(plan)
+        for key in ["lenderName", "lenderDomain", "paidAtPurchase", "price", "paidOffAt", "payoffAmount", "notes"] {
+            XCTAssertFalse(raw.contains(key), "Re-encoding an old plan must not add \(key), or every plan would look changed")
+        }
+        XCTAssertEqual(try JSONCodec.string(JSONCodec.decode(InstallmentPlan.self, Data(raw.utf8))), raw)
+        XCTAssertTrue(CloudRecords.valid("installment.plan", value: raw, defaults: .init()))
+    }
+
     func testAnnualCostFollowsPhasesAndSkipsPausedOccurrences() {
         let from = Day.parse("2026-09-20")!
         XCTAssertEqual(Savings.annual(sub(), phases: [], from: from, rates: usd, currency: "usd"), 240)

@@ -130,16 +130,17 @@ public struct Preferences: Codable, Equatable, Sendable {
 }
 
 public struct StoreDocument: Codable, Equatable, Sendable {
-    public var v: Int = 1
+    public var v: Int = 2
     public var preferences: Preferences
     public var categories: [Category]
     public var subscriptions: [Subscription]
     public var phases: [PricePhase]
+    public var installments: [InstallmentPlan]
 
     public init(preferences: Preferences = .init(), categories: [Category] = [],
-                subscriptions: [Subscription] = [], phases: [PricePhase] = []) {
+                subscriptions: [Subscription] = [], phases: [PricePhase] = [], installments: [InstallmentPlan] = []) {
         self.preferences = preferences; self.categories = categories
-        self.subscriptions = subscriptions; self.phases = phases
+        self.subscriptions = subscriptions; self.phases = phases; self.installments = installments
     }
 }
 

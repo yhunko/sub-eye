@@ -73,7 +73,8 @@ native layout and its validation record.
   retained legacy migration source after an explicit erase.
 - [x] Import/export: the current shipped Expo client has NO import/export UI
   (settings exposes sync and erase only). Native JSON archive import/export is
-  useful for recovery and migration verification; preserve StoreDoc v1 contract.
+  useful for recovery and migration verification; preserve StoreDoc v1 contract
+  (a plan-free export stays v1; one with installment plans is v2).
 - [x] Developer-only demo/pro override and reminder prompts/review throttling
   must never grant Pro or seed demo data in a production binary.
 
@@ -105,17 +106,18 @@ The default instance id is `mmkv.default`. The old app has no encryption key.
 | Instance / surface | Keys and payload |
 | --- | --- |
 | subeye.store | subeye.doc.a, subeye.doc.b: JSON StoreDoc; subeye.doc.active points at one slot (defaults a). Read active, then other on parse failure. |
-| StoreDoc | v:1; preferences object; categories[], subscriptions[], phases[]. Older docs merge missing prefs/arrays with defaults. Unknown future versions must not be silently rewritten by native. |
+| StoreDoc | v:1 in the Expo slots; native writes v:2 and adds installments[]. preferences object; categories[], subscriptions[], phases[], installments[]. Older docs merge missing prefs/arrays with defaults. Unknown future versions must not be silently rewritten by native. |
 | Subscription | id,name,cost:string,currency:lowercase,every,period,status,autoPaid,categoryId?,notes?,brandDomain?,paymentDate,willBeCancelledAt?,pausedAt?,resumeAt?,createdAt,updatedAt |
 | Phase | id,subscriptionId,kind,cost:string,currency,startsAt,endsAt?,appliedAt?,createdAt,updatedAt |
 | Category | id,name,emoji,createdAt,updatedAt |
+| InstallmentPlan (native only) | id,name,kind,symbol,tint,lenderName?,lenderDomain?,currency:lowercase,total:string,payment:string,paymentCount,every,period,firstPaymentDate,paidAtPurchase?,price?,paidOffAt?,payoffAmount?,notes?,createdAt,updatedAt |
 | Preferences | preferredCurrency,preferredTimezone,dateFormat,locale,theme |
 | mmkv.default | cloud.sync boolean; pro.entitled boolean; dev.forcePro boolean (never migrate to release); notifications.settings JSON; notifications.renewalReminders legacy boolean; subs.filters JSON; calendar.settings JSON; prompt/review state (inventory retained in migration report). |
 | subeye.fx | subeye.fx.usd: {base:"usd",rates,rateDate}; subeye.fx.checkedAt ISO last attempt |
 | subeye.logos | symbol:<auto/icon/symbol/logo>:<domain>, plate:auto:<domain>; {uri:data-URI-or-null,plate,aspect,at:epoch-ms}. Older entries can lack aspect. |
 | subeye.logo-variants | <domain>: icon / symbol / logo |
 | App Group | group.cc.subeye.app UserDefaults string `snapshot`: WidgetSnapshot v1, already formatted/translated; not a complete backup. |
-| iCloud KV | $(TeamIdentifierPrefix)cc.subeye.app; prefs, sub.<id>, cat.<id>, phase.<id>, each a JSON string. Absence is deletion only for explicitly changed keys. Budget 1000 keys; Apple 1 MB quota. |
+| iCloud KV | $(TeamIdentifierPrefix)cc.subeye.app; prefs, sub.<id>, cat.<id>, phase.<id>, installment.<id>, each a JSON string. Absence is deletion only for explicitly changed keys. Budget 1000 keys; Apple 1 MB quota. |
 
 Migration must retain raw values and source hashes as well as validated records.
 Corrupt/unsupported data must produce a recoverable migration error, not an empty

@@ -13,9 +13,9 @@ rule.
 - Every shared-store mutation is an SQLite transaction, including widget and
   Live Activity intent acknowledgements: a process-local actor cannot protect
   IO shared with an extension.
-- iCloud uses `prefs`, `sub.<id>`, `cat.<id>`, `phase.<id>`. Apply changed keys
-  only; initial linking unions records. Never replace a store with a cloud
-  snapshot.
+- iCloud uses `prefs`, `sub.<id>`, `cat.<id>`, `phase.<id>`, `installment.<id>`.
+  Apply changed keys only; initial linking unions records. Never replace a store
+  with a cloud snapshot.
 - Migration reads copies of the MMKV files and leaves the originals intact until
   a validated migration commits. Never treat an unreadable legacy store as empty.
 - `Debug` and `Release` build the separate development identity
