@@ -185,6 +185,19 @@ final class SavingsTests: XCTestCase {
         XCTAssertEqual(Savings.annual(paused, phases: [], from: from, rates: usd, currency: "usd"), 200)
     }
 
+    func testYearlyEstimateCountsTheSameDayNextYearOnce() {
+        func yearly(every: Int = 1, _ period: BillingPeriod, from paymentDate: String) -> Double {
+            let sub = Subscription(id: "s", name: "Test", cost: "1.00", currency: "usd", every: every, period: period,
+                                   paymentDate: paymentDate + "T00:00:00.000Z", now: now)
+            let doc = StoreDocument(preferences: .init(currency: "usd", timezone: "UTC"), subscriptions: [sub])
+            return Projection.presentation(doc, rates: usd, now: now, revision: 0).dashboard.yearly
+        }
+        XCTAssertEqual(yearly(.month, from: "2026-09-15"), 12)
+        XCTAssertEqual(yearly(.year, from: "2026-09-15"), 1)
+        XCTAssertEqual(yearly(.week, from: "2026-09-16"), 52)
+        XCTAssertEqual(yearly(every: 2, .week, from: "2026-09-16"), 26)
+    }
+
     func testProPriceComparisonSkipsAnUnconvertiblePrice() {
         let price = Decimal(string: "11.99")!
         XCTAssertTrue(Savings.coversPrice(480, price: price, priceCurrency: "USD", currency: "uah", rates: usd))
