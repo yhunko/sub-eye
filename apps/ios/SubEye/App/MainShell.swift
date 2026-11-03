@@ -91,13 +91,13 @@ struct MainShell: View {
                 do { if try await services.cloud.receive(notification) { state.reload += 1 } }
                 catch { state.serviceIssue = L("settings_syncUnavailableHint") }
             }
-            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount):\((state.presentation.dashboard.savings?.total ?? 0) > 0):\(state.settings.pro):\(scenePhase)") {
+            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount + state.presentation.installmentCount):\((state.presentation.dashboard.savings?.total ?? 0) > 0):\(state.settings.pro):\(scenePhase)") {
                 guard booted, sheet == nil, scenePhase == .active else { return }
                 do {
                     if tab == .home {
                         try await Task.sleep(for: .milliseconds(1500))
                         let permission = await services.notifications.permission()
-                        if let prompt = try await services.prompts.home(tracked: state.presentation.totalCount, saved: state.presentation.dashboard.savings?.total ?? 0, settings: state.settings, now: Date(),
+                        if let prompt = try await services.prompts.home(state.presentation, settings: state.settings, now: Date(),
                             permissionAllowsNotifications: permission == .authorized || permission == .provisional || permission == .ephemeral) {
                             if prompt == .review { requestReview() } else { sheet = .prompt(prompt) }
                         }
@@ -196,8 +196,12 @@ struct MainShell: View {
     }
     @ViewBuilder private func root(_ tab: AppTab, sections: HomeSections) -> some View {
         switch tab {
-        case .home: HomeView(state: $state, services: services, sheet: $sheet, openCalendar: { self.tab = .calendar; paths[.calendar] = [] }, sections: sections)
-        case .subscriptions: SubscriptionsView(state: $state, services: services, sheet: $sheet, selected: openSubscription)
+        case .home:
+            HomeView(state: $state, services: services, sheet: $sheet, openCalendar: { self.tab = .calendar; paths[.calendar] = [] },
+                     openInstallments: { self.tab = .subscriptions; state.listSegment = .installments; paths[.subscriptions] = [] }, sections: sections)
+        case .subscriptions:
+            SubscriptionsView(state: $state, services: services, sheet: $sheet, selected: openSubscription, selectedInstallment: openInstallment,
+                              openSegment: { state.listSegment = $0; paths[.subscriptions] = [] })
         case .calendar: RenewalCalendarView(state: $state, services: services, sheet: $sheet)
         case .settings: SettingsView(state: $state, services: services, sheet: $sheet)
         }
@@ -319,8 +323,8 @@ struct PromptView: View {
                     proHero.accessibilityIdentifier("proOfferTitle")
                 } detail: {
                     VStack(alignment: .leading, spacing: 14) {
-                        ForEach(Self.proFeatures, id: \.key) { feature in
-                            Label { Text(L(feature.key)).appFont(17) } icon: { Image(systemName: feature.icon).appFont(17).foregroundStyle(AppTheme.muted) }
+                        ForEach(Self.proFeatures, id: \.self) { feature in
+                            Label { Text(L(feature.title)).appFont(17) } icon: { Image(systemName: feature.icon).appFont(17).foregroundStyle(AppTheme.muted) }
                                 .labelStyle(PromptFeatureLabelStyle())
                         }
                     }
@@ -337,8 +341,7 @@ struct PromptView: View {
                 }
             }
     }
-    private static let proFeatures = [(key: "paywall_featureReminders", icon: "bell.badge"), (key: "paywall_featureCalendar", icon: "calendar"),
-                                      (key: "paywall_featureCategories", icon: "chart.pie"), (key: "paywall_lockWidgets", icon: "square.grid.2x2")]
+    private static let proFeatures: [ProFeature] = [.reminders, .calendar, .categories, .installments, .widgets]
     private func title(_ text: String) -> some View {
         Text(text).appFont(28, weight: .bold, relativeTo: .title).tracking(-0.4).fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
     }
@@ -397,7 +400,7 @@ struct PromptView: View {
     }
     private func enableReminders() async throws {
         var settings = state.settings.reminders
-        settings.renewals = true
+        settings.renewals = true; settings.installments = true
         try await services.repository.setSetting("notifications.settings", value: settings)
         state.settings.reminders = settings
         state.reload += 1

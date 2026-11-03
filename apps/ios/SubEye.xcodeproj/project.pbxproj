@@ -22,6 +22,7 @@
 		2FAF02DFFA642E7226F9AAB9 /* RenewalActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA221CC9E8BA71801CC5745A /* RenewalActivity.swift */; };
 		30A4A727F8C0074B82D2C6B5 /* DeveloperScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193AD6E9C35BF899859CE7C6 /* DeveloperScenario.swift */; };
 		30E4522A0D631EB7C466A5FF /* FirstFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3025F2EF7AC458EFD59D1156 /* FirstFrame.swift */; };
+		38E79AE5C15BE127D29EA11D /* InstallmentsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7216EA3F83AAC6DFCD41FBB7 /* InstallmentsList.swift */; };
 		3B7A148FC78C01177EF2CEE5 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2517C143E41E4A7FA1331 /* Localization.swift */; };
 		3D3F4536EFFAAF8B6E34FCB6 /* MainShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C00E54D640DD2E38B6343CF /* MainShell.swift */; };
 		42E2DB2A3E1DED78F47946FD /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 842C6D65C7988E73AD20C4BA /* RevenueCat */; };
@@ -166,6 +167,7 @@
 		6370845AEDF054C9DE5CD7CF /* RenewalActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenewalActivityWidget.swift; sourceTree = "<group>"; };
 		63ADD4AE0CA596EB5469B7AA /* Build.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Build.xcconfig; sourceTree = "<group>"; };
 		669C001BAA32C247BD35F69D /* WidgetPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPublisher.swift; sourceTree = "<group>"; };
+		7216EA3F83AAC6DFCD41FBB7 /* InstallmentsList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallmentsList.swift; sourceTree = "<group>"; };
 		7468277959038767B20B9A74 /* PurchaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseService.swift; sourceTree = "<group>"; };
 		81A67BC8BC78FDBC4D97CA9B /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		81BB8452A0FCED2DF1505BD1 /* PricingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PricingView.swift; sourceTree = "<group>"; };
@@ -376,6 +378,7 @@
 				A8EEF3D873406E125F1E2825 /* HomeView.swift */,
 				A897E4167D4538D4E20173F3 /* InstallmentDetail.swift */,
 				FF419AE529288167F612B5CD /* InstallmentEditor.swift */,
+				7216EA3F83AAC6DFCD41FBB7 /* InstallmentsList.swift */,
 				C18E2F05BADF7B5BD65EE8A5 /* LegalView.swift */,
 				34AF6E0296F70F90F86B340C /* NotificationsView.swift */,
 				597F24329AB3208966D469F2 /* PaywallView.swift */,
@@ -693,6 +696,7 @@
 				918203497FEF13C5886531BF /* InstallmentDetail.swift in Sources */,
 				84BECB1DC46876045E71254E /* InstallmentEditor.swift in Sources */,
 				CBDA167143C1CAFF9E28EFFC /* InstallmentStyle.swift in Sources */,
+				38E79AE5C15BE127D29EA11D /* InstallmentsList.swift in Sources */,
 				E596F6B8B39FC0BAA04E92B3 /* LaunchCache.swift in Sources */,
 				B216E4D81C2F1D8B111DB94E /* LegacyMMKVReader.swift in Sources */,
 				6291B21AB84BC4559D40E6D6 /* LegalView.swift in Sources */,

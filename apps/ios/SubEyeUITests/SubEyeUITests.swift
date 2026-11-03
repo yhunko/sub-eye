@@ -53,7 +53,7 @@ final class SubEyeUITests: XCTestCase {
         capture(app, name: language + "-Settings")
         XCTAssertFalse(app.buttons["settingsTimezone"].exists)
         app.tabBars.buttons[uk ? "Головна" : "Home"].tap()
-        app.buttons["addSubscription"].firstMatch.tap(); app.buttons["nextSubscriptionStep"].tap()
+        startSubscription(app); app.buttons["nextSubscriptionStep"].tap()
         let name = app.textFields["subscriptionName"]
         // Return moves focus without a coordinate tap: the first keyboard can finish presenting after typing ends,
         // and its keyboardDidShow reveal scrolls the price field while XCUITest is computing its hit point.
@@ -82,7 +82,7 @@ final class SubEyeUITests: XCTestCase {
     func testCurrencyCategoryNavigationAndYear() {
         let app = application(count: 12); app.launchArguments.append("--fixture-pro"); app.launch()
         XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
-        app.buttons["addSubscription"].firstMatch.tap(); app.buttons["nextSubscriptionStep"].tap()
+        startSubscription(app); app.buttons["nextSubscriptionStep"].tap()
         app.buttons["billingCycle"].tap(); app.buttons["Custom"].tap()
         XCTAssertTrue(app.pickerWheels.firstMatch.waitForExistence(timeout: 5))
         capture(app, name: "Recurrence-custom")
@@ -153,7 +153,7 @@ final class SubEyeUITests: XCTestCase {
         app.buttons["notificationSettings"].tap()
         capture(app, name: "Reminders")
         app.tabBars.buttons["Home"].tap()
-        app.buttons["addSubscription"].firstMatch.tap()
+        startSubscription(app)
         XCTAssertTrue(app.buttons["nextSubscriptionStep"].waitForExistence(timeout: 5))
         capture(app, name: "Add-brand")
         app.buttons["nextSubscriptionStep"].tap()
@@ -179,7 +179,7 @@ final class SubEyeUITests: XCTestCase {
     func testCreateEditSearchCalendarSettingsAndDelete() {
         let app = application(); app.launch()
         let add = app.buttons["addSubscription"].firstMatch
-        XCTAssertTrue(add.waitForExistence(timeout: 10)); add.tap()
+        XCTAssertTrue(add.waitForExistence(timeout: 10)); app.buttons["emptyNewSubscription"].tap()
         app.buttons["nextSubscriptionStep"].tap()
         let name = app.textFields["subscriptionName"]
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Native Flow Test\n")
@@ -326,7 +326,7 @@ final class SubEyeUITests: XCTestCase {
         let app = application(language: "uk")
         app.launchArguments.append("--largest-text"); app.launch()
         XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
-        app.buttons["addSubscription"].firstMatch.tap()
+        app.buttons["emptyNewSubscription"].tap()
         app.buttons["nextSubscriptionStep"].tap()
         let name = app.textFields["subscriptionName"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
@@ -361,7 +361,7 @@ final class SubEyeUITests: XCTestCase {
         app.launchArguments.append("--test-reminder-prompt"); app.launch()
         func createSubscription(_ name: String) {
             XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 10))
-            app.buttons["addSubscription"].firstMatch.tap()
+            startSubscription(app)
             app.buttons["nextSubscriptionStep"].tap()
             let nameField = app.textFields["subscriptionName"]
             XCTAssertTrue(nameField.waitForExistence(timeout: 5)); nameField.tap(); nameField.typeText(name)
@@ -493,6 +493,97 @@ final class SubEyeUITests: XCTestCase {
         saved.tap()
         XCTAssertTrue(app.buttons["subscription-developer-stopped-adobe"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["subscription-developer-cancelled"].exists)
+    }
+
+    func testAddInstallmentShowsTheSwitchUntilTheLastIsDeleted() { addAndDeleteInstallment(language: "en") }
+    func testAddInstallmentInUkrainian() { addAndDeleteInstallment(language: "uk") }
+
+    private func addAndDeleteInstallment(language: String) {
+        let app = application(language: language, count: 1); app.launch()
+        let uk = language == "uk"
+        let subscriptions = app.tabBars.buttons[uk ? "Підписки" : "Subscriptions"]
+        XCTAssertTrue(subscriptions.waitForExistence(timeout: 10)); subscriptions.tap()
+        XCTAssertTrue(app.buttons["subscription-fixture-0"].waitForExistence(timeout: 5))
+        let segment = app.segmentedControls["listSegment"]
+        XCTAssertFalse(segment.exists, "The switch stays hidden until a plan exists")
+        app.navigationBars.buttons["addSubscription"].firstMatch.tap()
+        let item = app.buttons["newInstallment"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5)); item.tap()
+        let name = app.textFields["installmentName"]
+        let title = uk ? "Ноутбук" : "Laptop"
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText(title + "\n")
+        app.textFields["installmentTotal"].typeText("1200")
+        app.buttons["dismissEditorKeyboard"].tap()
+        let count = app.textFields["installmentCount"]
+        for _ in 0..<4 where !count.isHittable { app.swipeUp() }
+        count.tap(); count.typeText("4")
+        app.buttons["dismissEditorKeyboard"].tap()
+        capture(app, name: language + "-Installment-editor")
+        app.buttons["saveInstallment"].tap()
+        XCTAssertTrue(segment.waitForExistence(timeout: 5), "Saving the first plan shows the switch")
+        segment.buttons[uk ? "Розстрочки" : "Installments"].tap()
+        XCTAssertFalse(app.buttons["subscriptionFilters"].exists, "Subscription filters do not apply to plans")
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'installment-'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5)); capture(app, name: language + "-Installments")
+        row.tap()
+        XCTAssertTrue(app.buttons["installmentActions"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["installmentDetailName"].label, title)
+        app.buttons["installmentActions"].tap(); app.buttons["deleteInstallment"].tap()
+        app.buttons["confirmAction"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["subscription-fixture-0"].waitForExistence(timeout: 5), "Deleting the last plan returns to Subscriptions")
+        XCTAssertFalse(segment.exists)
+    }
+
+    func testHomeCardOpensTheInstallmentsList() {
+        let app = application(count: 2); app.launchArguments += ["--fixture-installments", "4"]; app.launch()
+        let card = app.buttons["homeInstallments"]
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        for _ in 0..<6 where !card.isHittable { app.swipeUp() }
+        capture(app, name: "Home-installments")
+        card.tap()
+        XCTAssertTrue(app.buttons["installment-fixture-installment-0"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["installment-fixture-installment-2"].exists, "Paid-off plans are listed too")
+        let segment = app.segmentedControls["listSegment"]
+        XCTAssertTrue(segment.buttons["Installments"].isSelected)
+        segment.buttons["Subscriptions"].tap()
+        XCTAssertTrue(app.buttons["subscription-fixture-0"].waitForExistence(timeout: 5))
+    }
+
+    func testLargestUkrainianTextWithInstallments() throws {
+        let app = application(language: "uk", count: 3)
+        app.launchArguments += ["--fixture-installments", "4", "--largest-text"]; app.launch()
+        let card = app.buttons["homeInstallments"]
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        for _ in 0..<8 where !card.isHittable { app.swipeUp() }
+        capture(app, name: "uk-AX-Home-installments")
+        if #available(iOS 17, *) { try auditVisibleContent(app) }
+        card.tap()
+        let segment = app.segmentedControls["listSegment"]
+        XCTAssertTrue(app.buttons["installment-fixture-installment-0"].waitForExistence(timeout: 5))
+        capture(app, name: "uk-AX-Installments")
+        if #available(iOS 17, *) { try auditVisibleContent(app) }
+        app.swipeUp()
+        if #available(iOS 17, *) { try auditVisibleContent(app) }
+        for _ in 0..<8 where !segment.isHittable { app.swipeDown() }
+        segment.buttons["Підписки"].tap()
+        XCTAssertTrue(app.buttons["subscription-fixture-0"].waitForExistence(timeout: 5))
+        capture(app, name: "uk-AX-Subscriptions-segment")
+        if #available(iOS 17, *) { try auditVisibleContent(app) }
+        segment.buttons["Розстрочки"].tap()
+        let long = app.buttons["installment-fixture-installment-3"]
+        for _ in 0..<8 where !long.isHittable { app.swipeUp() }
+        long.tap()
+        XCTAssertTrue(app.buttons["installmentActions"].waitForExistence(timeout: 5))
+        capture(app, name: "uk-AX-Installment-detail")
+        if #available(iOS 17, *) { try auditVisibleContent(app) }
+        app.swipeUp()
+        if #available(iOS 17, *) { try auditVisibleContent(app) }
+    }
+
+    private func startSubscription(_ app: XCUIApplication) {
+        app.navigationBars.buttons["addSubscription"].firstMatch.tap()
+        let item = app.buttons["newSubscription"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5)); item.tap()
     }
 
     private func openDeveloperTools(_ app: XCUIApplication) {

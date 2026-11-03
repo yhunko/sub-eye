@@ -60,7 +60,8 @@ struct SettingsView: View {
                     RouteLink(value: Route.categories) { SettingsRow(icon: "tag", title: L("settings_categories"), value: state.settings.pro ? nil : L("paywall_badge")) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
                     RouteLink(value: Route.notifications) {
-                        SettingsRow(icon: state.settings.reminders.renewals ? "bell" : "bell.slash", title: L("settings_reminders"), value: L(state.settings.reminders.renewals || state.settings.reminders.trials ? "settings_on" : "settings_off"))
+                        let reminders = state.settings.reminders, on = reminders.renewals || reminders.trials || reminders.installments
+                        SettingsRow(icon: on ? "bell" : "bell.slash", title: L("settings_reminders"), value: L(on ? "settings_on" : "settings_off"))
                     }.buttonStyle(.plain).accessibilityIdentifier("notificationSettings")
                     AppDivider(inset: 47)
                     Link(destination: URL(string: UIApplication.openSettingsURLString)!) {
@@ -172,7 +173,7 @@ struct DeveloperView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                AppSection(title: "Data", footnote: "Portfolio adds or resets 14 subscriptions in five categories: four currencies, every two weeks to yearly, a trial, an intro history, a scheduled increase, paused, cancelling and ended, and turns Pro on. Start empty deletes every subscription and category but keeps settings; Remove developer data deletes only what this screen added and the Pro override.") {
+                AppSection(title: "Data", footnote: "Portfolio adds or resets 14 subscriptions in five categories: four currencies, every two weeks to yearly, a trial, an intro history, a scheduled increase, paused, cancelling and ended; three installment plans: monobank pay in parts in hryvnias, Klarna every two weeks in euros and a dollar loan with a purchase price; and turns Pro on. Start empty deletes every subscription, installment plan and category but keeps settings; Remove developer data deletes only what this screen added and the Pro override.") {
                     SettingsRow(icon: "tray.full", title: "Subscriptions in store", value: String(state.presentation.totalCount), chevron: false)
                     AppDivider(inset: 47)
                     ActionButton(title: "Seed portfolio", icon: "sparkles", styledRow: true) {
@@ -211,6 +212,9 @@ struct DeveloperView: View {
                 AppSection(title: "Home", footnote: "Each row seeds scenario subscriptions and switches to Home. Your own subscriptions still count toward every card.") {
                     scenarioRows(DeveloperScenario.home)
                 }
+                AppSection(title: "Installments", footnote: "Each row resets its own plan in the development store and opens the real installment detail, so paying off, undoing and deleting really run.") {
+                    scenarioRows(DeveloperScenario.installments)
+                }
                 AppSection(title: "Prompts", footnote: "Each row shows the prompt directly. Reset forgets that reminders, Pro and a rating were already offered, so the editor and Home offer them again on their own schedule.") {
                     Button { sheet = .prompt(.reminders) } label: { SettingsRow(icon: "bell.badge", title: "Reminders offer", chevron: false) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
@@ -237,7 +241,7 @@ struct DeveloperView: View {
                         try await services.repository.savePreferences(preferences); state.reload += 1
                     }.buttonStyle(.plain)
                 }
-                AppSection(title: "Reminders", footnote: "Delivers one real reminder of each shape from the current subscriptions, a few seconds apart: a single renewal, a digest of several, a trial ending (Pro) and a license's updates ending (open a License scenario first). Lock the simulator to see them on the Lock Screen.") {
+                AppSection(title: "Reminders", footnote: "Delivers one real reminder of each shape from the current subscriptions, a few seconds apart: a single renewal, a digest of several, a trial ending (Pro) and a license's updates ending (open a License scenario first); from the current installment plans, a payment due, a last payment and a paid-off notice. Lock the simulator to see them on the Lock Screen.") {
                     ActionButton(title: "Deliver sample reminders", icon: "bell.and.waves.left.and.right", styledRow: true) {
                         reminders = try await services.notifications.preview(model: state.presentation, pro: state.settings.pro, rates: services.exchange.cached())
                     }.buttonStyle(.plain)
@@ -287,7 +291,7 @@ struct DeveloperView: View {
                 catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
             }
             .sheet(isPresented: $emptying) {
-                ConfirmAction(title: "Start empty", message: "Deletes every subscription and category in the development store, your own included. Settings stay.", destructive: true) {
+                ConfirmAction(title: "Start empty", message: "Deletes every subscription, installment plan and category in the development store, your own included. Settings stay.", destructive: true) {
                     try await NativeTesting.empty(services.repository); state.reload += 1
                 }
             }

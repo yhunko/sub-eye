@@ -13,22 +13,20 @@ struct PaywallView: View {
     @State private var rates: ExchangeRates?
     @State private var page = 0
     @ScaledMetric private var captionHeight: CGFloat = 112
-    private let features = ["Reminders", "Calendar", "Pricing", "Categories", "Widgets"]
-    private let icons = ["bell.badge", "calendar", "tag", "chart.pie", "square.grid.2x2"]
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(L("paywall_subtitle")).appFont(24, weight: .heavy, relativeTo: .title2).tracking(-0.3)
                     if typeSize.isAccessibilitySize {
-                        ForEach(0..<features.count, id: \.self) { feature($0) }
+                        ForEach(ProFeature.allCases, id: \.self) { feature($0) }
                         purchase
                     } else {
                         TabView(selection: $page) {
-                            ForEach(0..<features.count, id: \.self) { feature($0).tag($0) }
+                            ForEach(Array(ProFeature.allCases.enumerated()), id: \.element) { index, item in feature(item).tag(index) }
                         }.tabViewStyle(.page(indexDisplayMode: .never)).frame(height: 220 + captionHeight)
                         HStack(spacing: 6) {
-                            ForEach(0..<features.count, id: \.self) { index in Circle().fill(index == page ? AppTheme.accent : Color.white.opacity(0.16)).frame(width: 6, height: 6) }
+                            ForEach(0..<ProFeature.allCases.count, id: \.self) { index in Circle().fill(index == page ? AppTheme.accent : Color.white.opacity(0.16)).frame(width: 6, height: 6) }
                         }.frame(maxWidth: .infinity).accessibilityHidden(true)
                     }
                 }.padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 16)
@@ -40,11 +38,11 @@ struct PaywallView: View {
                 .task { rates = try? await services.exchange.cached(); package = try? await services.purchases.offering(); loaded = true }
         }.appSheet()
     }
-    private func feature(_ index: Int) -> some View {
+    private func feature(_ feature: ProFeature) -> some View {
         VStack(spacing: 13) {
-            ProFeaturePreview(index: index).frame(maxWidth: .infinity).frame(height: 220).appCard().accessibilityHidden(true)
-            Label(L(index == 4 ? "paywall_lockWidgets" : "paywall_feature" + features[index]), systemImage: icons[index]).appFont(16.5, weight: .bold).labelStyle(.titleAndIcon)
-            Text(L(index == 4 ? "paywall_lockWidgetsBody" : "paywall_feature" + features[index] + "Body")).appFont(13.5).foregroundStyle(AppTheme.muted).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).frame(maxWidth: 320)
+            ProFeaturePreview(feature: feature).frame(maxWidth: .infinity).frame(height: 220).appCard().accessibilityHidden(true)
+            Label(L(feature.title), systemImage: feature.icon).appFont(16.5, weight: .bold).labelStyle(.titleAndIcon)
+            Text(L(feature.body)).appFont(13.5).foregroundStyle(AppTheme.muted).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).frame(maxWidth: 320)
             Spacer(minLength: 0)
         }
     }
@@ -90,11 +88,36 @@ struct PaywallView: View {
     }
 }
 
+enum ProFeature: CaseIterable {
+    case reminders, calendar, pricing, categories, installments, widgets
+    var title: String {
+        switch self {
+        case .reminders: "paywall_featureReminders"
+        case .calendar: "paywall_featureCalendar"
+        case .pricing: "paywall_featurePricing"
+        case .categories: "paywall_featureCategories"
+        case .installments: "paywall_featureInstallments"
+        case .widgets: "paywall_lockWidgets"
+        }
+    }
+    var body: String { title + "Body" }
+    var icon: String {
+        switch self {
+        case .reminders: "bell.badge"
+        case .calendar: "calendar"
+        case .pricing: "tag"
+        case .categories: "chart.pie"
+        case .installments: "creditcard"
+        case .widgets: "square.grid.2x2"
+        }
+    }
+}
+
 private struct ProFeaturePreview: View {
-    let index: Int
+    let feature: ProFeature
     var body: some View {
-        switch index {
-        case 0:
+        switch feature {
+        case .reminders:
             HStack(spacing: 11) {
                 Image(systemName: "eye.fill").font(.system(size: 17)).foregroundStyle(AppTheme.accent).frame(width: 34, height: 34).appCard(radius: 9, fill: AppTheme.background)
                 VStack(alignment: .leading, spacing: 2) {
@@ -102,7 +125,7 @@ private struct ProFeaturePreview: View {
                     Text(L("home_attnPayment", ["when": L("when_tomorrow").lowercased()])).font(.system(size: 13)).foregroundStyle(AppTheme.muted)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }.padding(.horizontal, 14).padding(.vertical, 13).appCard(radius: 20, fill: AppTheme.surfaceAlt, border: Color.white.opacity(0.16)).padding(.horizontal, 24)
-        case 1:
+        case .calendar:
             VStack(spacing: 10) {
                 HStack { Capsule().fill(Color.white.opacity(0.16)).frame(width: 62, height: 9); Spacer(); Capsule().fill(AppTheme.border).frame(width: 38, height: 7) }
                 Grid(horizontalSpacing: 4, verticalSpacing: 4) {
@@ -118,14 +141,14 @@ private struct ProFeaturePreview: View {
                     }
                 }
             }.frame(width: 196)
-        case 2:
+        case .pricing:
             HStack(alignment: .bottom, spacing: 10) {
                 ForEach(Array([26.0, 46, 74].enumerated()), id: \.offset) { index, height in
                     RoundedRectangle(cornerRadius: 9).fill(index == 0 ? AppTheme.accent.opacity(0.14) : AppTheme.surfaceAlt)
                         .frame(width: 46, height: height).overlay { RoundedRectangle(cornerRadius: 9).strokeBorder(index == 0 ? AppTheme.accent.opacity(0.5) : AppTheme.border) }
                 }
             }
-        case 3:
+        case .categories:
             VStack(alignment: .leading, spacing: 14) {
                 ForEach(0..<3, id: \.self) { index in
                     HStack(spacing: 10) {
@@ -134,7 +157,27 @@ private struct ProFeaturePreview: View {
                     }
                 }
             }
-        default:
+        case .installments:
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "laptopcomputer").font(.system(size: 15, weight: .semibold)).foregroundStyle(AppTheme.accent)
+                        .frame(width: 34, height: 34).background(AppTheme.accent.opacity(0.14), in: Circle())
+                    VStack(alignment: .leading, spacing: 6) {
+                        Capsule().fill(AppTheme.text).frame(width: 84, height: 9)
+                        Capsule().fill(AppTheme.border).frame(width: 52, height: 7)
+                    }
+                    Spacer(minLength: 0)
+                    Capsule().fill(AppTheme.muted).frame(width: 34, height: 8)
+                }
+                HStack(spacing: 3) {
+                    ForEach(0..<6, id: \.self) { index in Capsule().fill(index < 3 ? AppTheme.accent : AppTheme.border).frame(height: 6) }
+                }
+                HStack(spacing: 8) {
+                    Capsule().fill(AppTheme.warning.opacity(0.5)).frame(width: 46, height: 7)
+                    Capsule().fill(AppTheme.border).frame(height: 7)
+                }
+            }.padding(15).frame(width: 196).appCard(radius: 20, fill: AppTheme.surfaceAlt, border: Color.white.opacity(0.16))
+        case .widgets:
             VStack(alignment: .leading, spacing: 8) {
                 Capsule().fill(AppTheme.border).frame(width: 52, height: 7)
                 RoundedRectangle(cornerRadius: 6).fill(AppTheme.text).frame(width: 108, height: 19)

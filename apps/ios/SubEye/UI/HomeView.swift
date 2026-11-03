@@ -9,6 +9,7 @@ struct HomeView: View {
     let services: AppServices
     @Binding var sheet: SheetRoute?
     var openCalendar: () -> Void
+    var openInstallments: () -> Void
     var sections = HomeSections.all
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var expanded = false
@@ -29,12 +30,13 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                if model.totalCount == 0 { EmptySubscriptions(sheet: $sheet) }
+                if model.totalCount == 0 && model.installmentCount == 0 { EmptySubscriptions(sheet: $sheet) }
                 else {
                     if sections != .breakdown {
                         paymentRail.padding(.bottom, 14)
                         if !model.dashboard.decisions.isEmpty { decisions }
                         monthCard
+                        if let installments = model.installments, !installments.isEmpty { installmentsRow(installments) }
                     }
                     if sections != .summary {
                         if let savings = model.dashboard.savings, savings.total > 0 { savedRow(savings) }
@@ -180,6 +182,23 @@ struct HomeView: View {
                 Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
             }.padding(.leading, 16).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityIdentifier("savedWithSubEye")
+    }
+    private func installmentsRow(_ rows: [InstallmentRow]) -> some View {
+        let active = rows.filter { !$0.finished }
+        let next = active.compactMap { row in row.nextDate.flatMap { date in row.nextConverted.map { (date: date, amount: $0) } } }.min { $0.date < $1.date }
+        let summary = next.map {
+            L("home_installmentsActive", ["count": String(active.count), "amount": Display.money($0.amount, currency), "when": Display.when($0.date, today: today)])
+        } ?? L("home_installmentsDone")
+        return Button(action: openInstallments) {
+            HStack(spacing: 12) {
+                ToneIcon(symbol: "creditcard", tone: AppTheme.accentBright, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("home_installments")).appFont(15, weight: .semibold)
+                    Text(summary).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
+                }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
+            }.padding(.leading, 16).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityIdentifier("homeInstallments")
     }
     private var decisions: some View {
         VStack(alignment: .leading, spacing: 10) {

@@ -20,8 +20,12 @@ enum NativeTesting {
         #if NATIVE_DEVELOPMENT
         guard enabled, try await repository.setting("test.seeded", as: Bool.self) != true else { return }
         let count = min(10_000, max(0, Int(argument("--fixture-count") ?? "0") ?? 0))
+        let plans = installmentFixtures(count: min(100, max(0, Int(argument("--fixture-installments") ?? "0") ?? 0)))
         let fixtures = fixtures(count: count, brands: ProcessInfo.processInfo.arguments.contains("--fixture-brands"))
-        if count > 0 { try await repository.importArchive(JSONCodec.encode(StoreDocument(preferences: .init(currency: "usd", timezone: TimeZone.current.identifier), subscriptions: fixtures.subscriptions, phases: fixtures.phases))) }
+        if count > 0 || !plans.isEmpty {
+            try await repository.importArchive(JSONCodec.encode(StoreDocument(preferences: .init(currency: "usd", timezone: TimeZone.current.identifier),
+                                                                            subscriptions: fixtures.subscriptions, phases: fixtures.phases, installments: plans)))
+        }
         try await repository.setSetting("pro.entitled", value: ProcessInfo.processInfo.arguments.contains("--fixture-pro"))
         try await repository.setSetting("test.seeded", value: true)
         #endif
@@ -44,6 +48,24 @@ enum NativeTesting {
         return (subscriptions, phases)
     }
 
+    // Every fourth plan finished months ago, so both list sections fill; the others have a payment ahead.
+    static func installmentFixtures(count: Int) -> [InstallmentPlan] {
+        let now = Date(), today = Day.today()
+        let names = ["iPhone 17 Pro", "MacBook Air", "Диван", "Дуже довга назва розстрочки для перевірки доступності"]
+        let symbols = ["iphone", "laptopcomputer", "sofa.fill", "house.fill"], tints = ["blue", "purple", "orange", "green"]
+        let lenders: [(name: String, domain: String)?] = [("monobank", "monobank.ua"), ("Klarna", "klarna.com"), ("PrivatBank", "privatbank.ua"), nil]
+        return (0..<count).map { index in
+            let finished = index % 4 == 2
+            let first = Day.utc.date(byAdding: .month, value: finished ? -8 : -2, to: Day.shift(today, days: 1 + index % 20))!
+            var plan = InstallmentPlan(id: "fixture-installment-" + String(index), name: names[index % 4] + " " + String(index), kind: InstallmentKind.allCases[index % 3],
+                                       symbol: symbols[index % 4], tint: tints[index % 4], currency: index % 2 == 0 ? "uah" : "usd",
+                                       total: "1200.00", payment: "200.00", paymentCount: 6, firstPaymentDate: Day.iso(first), now: now)
+            plan.lenderName = lenders[index % 4]?.name; plan.lenderDomain = lenders[index % 4]?.domain
+            plan.createdAt = Day.iso(Day.month(today, offset: -9))
+            return plan
+        }
+    }
+
     // An archive import also writes `prefs`; carrying the current ones keeps the preferred currency and time zone.
     static func addFixtures(_ count: Int, to repository: SubscriptionRepository) async throws {
         let fixtures = fixtures(count: count, brands: true)
@@ -55,6 +77,7 @@ enum NativeTesting {
         let now = Date(), today = Day.today()
         let document = try await repository.document()
         for subscription in document.subscriptions where subscription.id.hasPrefix("demo-") { try await repository.deleteSubscription(id: subscription.id) }
+        for plan in document.installments where plan.id.hasPrefix("demo-") { try await repository.deleteInstallment(id: plan.id) }
         let categories = [Category(id: "demo-entertainment", name: "Entertainment", emoji: "🎬", now: now),
                           Category(id: "demo-work", name: "Work", emoji: "💼", now: now),
                           Category(id: "demo-health", name: "Health", emoji: "🧘", now: now),
@@ -79,6 +102,15 @@ enum NativeTesting {
                        startsAt: Day.iso(start), endsAt: end.map(Day.iso), appliedAt: applied ? Day.iso(start) : nil, now: now)
         }
         func months(_ offset: Int, from day: Date = today) -> Date { Day.utc.date(byAdding: .month, value: offset, to: day)! }
+        func plan(_ id: String, _ name: String, kind: InstallmentKind, symbol: String, tint: String, currency: String, total: Decimal, count: Int,
+                  every: Int = 1, period: BillingPeriod = .month, first: Date, lender: (name: String, domain: String)? = nil) -> InstallmentPlan {
+            var value = InstallmentPlan(id: "demo-installment-" + id, name: name, kind: kind, symbol: symbol, tint: tint, currency: currency, total: Money.canonical(total),
+                                        payment: Money.canonical(Installments.regularPayment(total: total, count: count)!), paymentCount: count,
+                                        every: every, period: period, firstPaymentDate: Day.iso(first), now: now)
+            value.lenderName = lender?.name; value.lenderDomain = lender?.domain
+            value.createdAt = Day.iso(first)
+            return value
+        }
 
         var netflix = subscription("netflix", "Netflix", "12.99", dueIn: 1, category: "entertainment", domain: "netflix.com")
         netflix.notes = "Family plan, split four ways. Trial, then an introductory price, then the standard price."
@@ -112,8 +144,16 @@ enum NativeTesting {
             phase(disney, .trial, "0", from: Day.shift(today, days: -3), to: Day.shift(today, days: 4)),
             phase(disney, .standard, "9.99", from: Day.shift(today, days: 4), applied: false),
         ]
+        var iphone = plan("iphone", "iPhone 17 Pro", kind: .payInParts, symbol: "iphone", tint: "blue", currency: "uah", total: 59999, count: 6,
+                          first: months(-2, from: Day.shift(today, days: 4)), lender: ("monobank", "monobank.ua"))
+        iphone.paidAtPurchase = true
+        let sofa = plan("sofa", "Sofa", kind: .payInParts, symbol: "sofa.fill", tint: "orange", currency: "eur", total: 480, count: 4, every: 2, period: .week,
+                        first: Day.shift(today, days: -17), lender: ("Klarna", "klarna.com"))
+        var car = plan("car", "Car loan", kind: .loan, symbol: "car.fill", tint: "teal", currency: "usd", total: 12480, count: 24, first: months(-7, from: Day.shift(today, days: 9)))
+        car.price = "10000.00"
         try await repository.importArchive(JSONCodec.encode(StoreDocument(preferences: document.preferences, categories: categories,
-            subscriptions: [netflix, adobe, spotify, icloud, hellofresh, notion, duolingo, local, youtube, chatgpt, disney, nytimes, strava, headspace], phases: phases)))
+            subscriptions: [netflix, adobe, spotify, icloud, hellofresh, notion, duolingo, local, youtube, chatgpt, disney, nytimes, strava, headspace], phases: phases,
+            installments: [iphone, sofa, car])))
         try await repository.setSetting(DeveloperOverride.pro, value: true)
     }
 
@@ -122,6 +162,9 @@ enum NativeTesting {
         for subscription in document.subscriptions where ["developer-", "demo-", "fixture-"].contains(where: { subscription.id.hasPrefix($0) }) {
             try await repository.deleteSubscription(id: subscription.id)
         }
+        for plan in document.installments where ["developer-", "demo-", "fixture-"].contains(where: { plan.id.hasPrefix($0) }) {
+            try await repository.deleteInstallment(id: plan.id)
+        }
         for category in document.categories where category.id.hasPrefix("demo-") { try await repository.deleteCategory(id: category.id, now: Date()) }
         try await repository.setSetting(DeveloperOverride.pro, value: nil as Bool?)
     }
@@ -129,6 +172,7 @@ enum NativeTesting {
     static func empty(_ repository: SubscriptionRepository) async throws {
         let document = try await repository.document()
         for subscription in document.subscriptions { try await repository.deleteSubscription(id: subscription.id) }
+        for plan in document.installments { try await repository.deleteInstallment(id: plan.id) }
         for category in document.categories { try await repository.deleteCategory(id: category.id, now: Date()) }
     }
     #endif
