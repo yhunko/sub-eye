@@ -121,12 +121,24 @@ final class ReminderTests: XCTestCase {
         XCTAssertTrue(settings.effective(pro: false).installments)
         XCTAssertEqual(settings.effective(pro: false).installmentLeadDays, [1])
         XCTAssertEqual(settings.effective(pro: true).installmentLeadDays, [0, 3])
+        settings.installmentLeadDays = [7, 9, 0, 7]
+        XCTAssertEqual(settings.effective(pro: true).installmentLeadDays, [0, 7])
+        settings.installmentLeadDays = [0, 3]
         func leads(pro: Bool) -> [String] {
             ReminderPlanner.plan(rows: [], installments: [plan("phone", first: "2026-09-20", count: 2)], settings: settings, pro: pro,
                                  rates: rates, currency: "usd", now: now, zone: .gmt).filter { $0.kind == "installment" }.map { Day.iso($0.fireAt) }
         }
         XCTAssertEqual(leads(pro: false), ["2026-09-19T09:00:00.000Z"])
         XCTAssertEqual(leads(pro: true), ["2026-09-17T09:00:00.000Z", "2026-09-20T09:00:00.000Z"])
+    }
+    func testInstallmentRemindersNeedTheirOwnSwitch() {
+        func kinds(_ settings: ReminderSettings) -> [String] {
+            ReminderPlanner.plan(rows: [], installments: [plan("phone", first: "2026-09-20", count: 6)], settings: settings, pro: true,
+                                 rates: rates, currency: "usd", now: now, zone: .gmt).map(\.kind)
+        }
+        XCTAssertEqual(kinds(ReminderSettings()), [])
+        var renewalsOnly = ReminderSettings(); renewalsOnly.renewals = true
+        XCTAssertEqual(kinds(renewalsOnly), [], "Renewal consent carries over only when old settings decode, never at plan time")
     }
     func testInstallmentRemindersInheritRenewalConsentAndAreSaved() throws {
         func decode(_ json: String) throws -> ReminderSettings { try JSONCodec.decode(ReminderSettings.self, Data(json.utf8)) }
