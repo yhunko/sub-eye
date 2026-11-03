@@ -32,12 +32,6 @@ enum AppTheme {
     }
 }
 
-extension Color {
-    init(hex: UInt32) {
-        self.init(red: Double((hex >> 16) & 255) / 255, green: Double((hex >> 8) & 255) / 255, blue: Double(hex & 255) / 255)
-    }
-}
-
 private struct AppFont: ViewModifier {
     @ScaledMetric private var size: CGFloat
     let weight: Font.Weight
@@ -161,14 +155,19 @@ struct SpendTrack: View {
 }
 
 struct AddSubscriptionButton: View {
-    let action: () -> Void
+    @Binding var sheet: SheetRoute?
     var body: some View {
-        if #available(iOS 17, *) { button.buttonBorderShape(.circle) }
-        else { button.buttonBorderShape(.capsule) }
+        if #available(iOS 17, *) { menu.buttonBorderShape(.circle) }
+        else { menu.buttonBorderShape(.capsule) }
     }
-    private var button: some View {
-        Button(action: action) { Label(L("subs_add"), systemImage: "plus") }
-            .labelStyle(.iconOnly).buttonStyle(.borderedProminent)
+    private var menu: some View {
+        Menu {
+            Button { sheet = .editor(nil) } label: { Label(L("subs_newSubscription"), systemImage: "arrow.triangle.2.circlepath") }
+                .accessibilityIdentifier("newSubscription")
+            Button { sheet = .installmentEditor(nil) } label: { Label(L("subs_newInstallment"), systemImage: "creditcard") }
+                .accessibilityIdentifier("newInstallment")
+        } label: { Label(L("subs_add"), systemImage: "plus") }
+            .menuStyle(.button).labelStyle(.iconOnly).buttonStyle(.borderedProminent)
             .tint(AppTheme.accent).foregroundStyle(AppTheme.background).accessibilityIdentifier("addSubscription")
     }
 }

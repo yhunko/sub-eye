@@ -39,6 +39,7 @@ final class SceneModel {
 enum AppTab: String, Hashable { case home, subscriptions, calendar, settings }
 enum Route: Hashable {
     case subscription(String)
+    case installment(String)
     case due(String)
     case cancellationDay(String)
     case selection([String])
@@ -62,6 +63,8 @@ enum SheetRoute: Identifiable {
     case category(SubEyeCore.Category?)
     case cancellation(String)
     case prompt(UserPrompt)
+    case installmentEditor(InstallmentPlan?)
+    case installmentPayoff(String)
     var id: String {
         switch self {
         case .editor(let sub): "edit:" + (sub?.id ?? "new")
@@ -71,6 +74,8 @@ enum SheetRoute: Identifiable {
         case .category(let category): "category:" + (category?.id ?? "new")
         case .cancellation(let id): "cancellation:" + id
         case .prompt(let prompt): "prompt:" + prompt.rawValue
+        case .installmentEditor(let plan): "installment:" + (plan?.id ?? "new")
+        case .installmentPayoff(let id): "installmentPayoff:" + id
         }
     }
 }

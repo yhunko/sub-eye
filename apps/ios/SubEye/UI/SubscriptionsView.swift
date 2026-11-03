@@ -31,7 +31,7 @@ struct SubscriptionsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                if state.presentation.totalCount == 0 { EmptySubscriptions { sheet = .editor(nil) } }
+                if state.presentation.totalCount == 0 { EmptySubscriptions(sheet: $sheet) }
                 else {
                     if !narrowed { totals.padding(.bottom, 6) }
                     if rows.isEmpty { Text(L("subs_emptyFiltered")).appFont(14).foregroundStyle(AppTheme.muted).padding(.vertical, 48) }
@@ -50,7 +50,7 @@ struct SubscriptionsView: View {
         .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("subs_searchPlaceholder"))
         .appScreen().navigationTitle(L("tabs_subscriptions"))
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) { AddSubscriptionButton { sheet = .editor(nil) } }
+            ToolbarItem(placement: .topBarLeading) { AddSubscriptionButton(sheet: $sheet) }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Menu {

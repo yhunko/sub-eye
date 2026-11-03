@@ -489,10 +489,14 @@ struct BrandPicker: View {
     let services: AppServices
     let domain: String?
     @Binding var variant: String
+    var popular = BrandService.popular
+    var title = L("form_brand")
+    var prompt = L("form_brandSearch")
+    var failure = L("form_brandSearchFailed")
     let select: (Brand?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
-    @State private var brands = BrandService.popular
+    @State private var brands: [Brand]?
     @State private var failed = false
     var body: some View {
         ScrollView {
@@ -505,19 +509,20 @@ struct BrandPicker: View {
                     Button(L("form_brandUse", ["domain": domain])) { select(Brand(name: domain, domain: domain)); dismiss() }.frame(minHeight: 44)
                 }
                 AppCaption(title: L(search.isEmpty ? "form_brandPopular" : "form_brandResults")).padding(.horizontal, 4).padding(.top, 12)
-                ForEach(brands) { brand in
+                ForEach(brands ?? popular) { brand in
                     Button { select(brand); dismiss() } label: { BrandOption(brand: brand, selected: domain == brand.domain, logos: services.logos, variant: domain == brand.domain ? variant : nil) }.buttonStyle(.plain)
                 }
-                if failed { Text(L("form_brandSearchFailed")).appFont(12.5).foregroundStyle(AppTheme.muted) }
+                if failed { Text(failure).appFont(12.5).foregroundStyle(AppTheme.muted) }
             }.padding(16)
-        }.scrollDismissesKeyboard(.interactively).appScreen().searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("form_brandSearch"))
-                .navigationTitle(L("form_brand"))
+        }.scrollDismissesKeyboard(.interactively).appScreen().searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: prompt)
+                .navigationTitle(title)
                 .task(id: search) {
                     do {
-                        if search.isEmpty { brands = BrandService.popular; failed = false; return }
+                        // The service answers a one-letter query with its own popular list, which is the subscription one.
+                        if search.count < 2 { brands = popular; failed = false; return }
                         try await Task.sleep(for: .milliseconds(300))
                         brands = try await services.brands.search(search); failed = false
-                    } catch is CancellationError { } catch { brands = BrandService.popular.filter { $0.name.localizedStandardContains(search) }; failed = true }
+                    } catch is CancellationError { } catch { brands = popular.filter { $0.name.localizedStandardContains(search) }; failed = true }
                 }
     }
 }
