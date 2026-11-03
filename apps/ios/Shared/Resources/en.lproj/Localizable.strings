@@ -21,6 +21,9 @@
 "calendar_empty" = "Nothing renews this month.";
 "calendar_heavyDay" = "{count} charges together";
 "calendar_kindEnds" = "Ends";
+"calendar_kindInstallment" = "Payment {number} of {count}";
+"calendar_kindInstallmentFinal" = "Last payment";
+"calendar_kindInstallmentPayoff" = "Paid off early";
 "calendar_kindIntroEnds" = "Intro price ends";
 "calendar_kindPayment" = "Renews";
 "calendar_kindPriceChange" = "Price changes";
@@ -231,6 +234,21 @@
 "legal_updated" = "Last updated";
 "notif_digestBody" = "{names} · {amount}";
 "notif_digestMore" = "{names} and {count} more";
+"notif_installmentBody" = "{amount} is due.";
+"notif_installmentBodyNoAmount" = "A payment is due.";
+"notif_installmentDigestTitle" = "Payments due {when}";
+"notif_installmentDigestTitleMixed" = "Upcoming payments";
+"notif_installmentFinalBody" = "Pay {amount} and it’s paid off.";
+"notif_installmentFinalBodyNoAmount" = "One more payment and it’s paid off.";
+"notif_installmentFinalDigestTitle" = "Last payments {when}";
+"notif_installmentFinalDigestTitleMixed" = "Last payments coming up";
+"notif_installmentFinalTitle" = "{name}: last payment {when}";
+"notif_installmentPaidOffBody" = "That was the last payment.";
+"notif_installmentPaidOffBodyNoAmount" = "That was the last payment.";
+"notif_installmentPaidOffDigestTitle" = "Paid off";
+"notif_installmentPaidOffDigestTitleMixed" = "Paid off";
+"notif_installmentPaidOffTitle" = "{name} is paid off";
+"notif_installmentTitle" = "{name}: payment due {when}";
 "notif_renewalBody" = "{amount} will be charged.";
 "notif_renewalBodyNoAmount" = "You will be charged.";
 "notif_renewalDigestTitle" = "Renewing {when}";
@@ -608,6 +626,7 @@
 "native_cancellationTitle" = "Cancellation";
 
 "native_pickSubscription" = "Choose a subscription";
+"native_pickInstallment" = "Choose an installment or loan";
 "native_pickDay" = "Choose a day";
 "native_pickSetting" = "Choose a setting";
 

@@ -21,6 +21,9 @@
 "calendar_empty" = "Цього місяця нічого не поновлюється.";
 "calendar_heavyDay" = "{count} списань разом";
 "calendar_kindEnds" = "Завершується";
+"calendar_kindInstallment" = "Платіж {number} з {count}";
+"calendar_kindInstallmentFinal" = "Останній платіж";
+"calendar_kindInstallmentPayoff" = "Дострокове погашення";
 "calendar_kindIntroEnds" = "Знижка завершується";
 "calendar_kindPayment" = "Поновлення";
 "calendar_kindPriceChange" = "Ціна змінюється";
@@ -231,6 +234,21 @@
 "legal_updated" = "Оновлено";
 "notif_digestBody" = "{names} · {amount}";
 "notif_digestMore" = "{names} та ще {count}";
+"notif_installmentBody" = "До сплати {amount}.";
+"notif_installmentBodyNoAmount" = "Час внести черговий платіж.";
+"notif_installmentDigestTitle" = "Платежі {when}";
+"notif_installmentDigestTitleMixed" = "Найближчі платежі";
+"notif_installmentFinalBody" = "Сплатіть {amount} — і все виплачено.";
+"notif_installmentFinalBodyNoAmount" = "Ще один платіж — і все виплачено.";
+"notif_installmentFinalDigestTitle" = "Останні платежі {when}";
+"notif_installmentFinalDigestTitleMixed" = "Скоро останні платежі";
+"notif_installmentFinalTitle" = "{name}: останній платіж {when}";
+"notif_installmentPaidOffBody" = "Це був останній платіж.";
+"notif_installmentPaidOffBodyNoAmount" = "Це був останній платіж.";
+"notif_installmentPaidOffDigestTitle" = "Виплачено повністю";
+"notif_installmentPaidOffDigestTitleMixed" = "Виплачено повністю";
+"notif_installmentPaidOffTitle" = "{name}: виплачено повністю";
+"notif_installmentTitle" = "{name}: платіж {when}";
 "notif_renewalBody" = "Буде списано {amount}.";
 "notif_renewalBodyNoAmount" = "Буде здійснено списання.";
 "notif_renewalDigestTitle" = "Поновлюються {when}";
@@ -608,6 +626,7 @@
 "native_cancellationTitle" = "Скасування";
 
 "native_pickSubscription" = "Оберіть підписку";
+"native_pickInstallment" = "Оберіть розстрочку чи кредит";
 "native_pickDay" = "Оберіть день";
 "native_pickSetting" = "Оберіть параметр";
 

@@ -80,8 +80,7 @@ struct HomeView: View {
                     if offset > 0 && Day.utc.component(.weekday, from: date) == 2 {
                         Rectangle().fill(AppTheme.border).frame(width: 0.5, height: 108).padding(.horizontal, 5)
                     }
-                    let ids = Set(charges.map(\.subscriptionId))
-                    RouteLink(value: ids.count == 1 ? Route.subscription(ids.first!) : Route.due(Day.key(date))) {
+                    RouteLink(value: Route.day(date, events: charges)) {
                         VStack(spacing: 7) {
                             Text(date.formatted(Date.FormatStyle(timeZone: .gmt).weekday(.abbreviated)).uppercased()).appFont(11, weight: .semibold, relativeTo: .caption).tracking(0.4).foregroundStyle(AppTheme.muted)
                             Text(String(Day.utc.component(.day, from: date))).appFont(17, weight: .semibold).monospacedDigit()
@@ -95,7 +94,7 @@ struct HomeView: View {
                                     // Two logos already fill the column, so a third charge shows one logo and the rest as a count, as the calendar does.
                                     HStack(spacing: -4) {
                                         ForEach(charges.prefix(count > 2 ? 1 : 2)) { event in
-                                            BrandIcon(name: event.name, domain: event.domain, logos: services.logos, size: 22).padding(2).background(AppTheme.background, in: Circle())
+                                            EventIcon(event: event, logos: services.logos, size: 22).padding(2).background(AppTheme.background, in: Circle())
                                         }
                                         if count > 2 { Text("+\(count - 1)").appFont(10, weight: .bold).padding(4).background(AppTheme.surfaceAlt, in: Capsule()) }
                                     }
@@ -188,7 +187,7 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 ForEach(Array(model.dashboard.decisions.prefix(3).enumerated()), id: \.element.id) { index, event in
                     if index > 0 { AppDivider() }
-                    RouteLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
+                    RouteLink(value: event.owner) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
                 }
                 if model.dashboard.decisions.count > 3 { Button(L("home_decisionMore", ["count": String(model.dashboard.decisions.count - 3)]), action: openCalendar).appFont(13.5).padding(.vertical, 12) }
             }.padding(.horizontal, 16).appCard()

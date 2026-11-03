@@ -27,6 +27,7 @@
 		42E2DB2A3E1DED78F47946FD /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 842C6D65C7988E73AD20C4BA /* RevenueCat */; };
 		4980DBFAD3EB42CC20D203E2 /* SubEyeCore in Frameworks */ = {isa = PBXBuildFile; productRef = B942E1DBAF2830B37E6031EA /* SubEyeCore */; };
 		4A760220D47582DCFA785223 /* AppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E3F7EB24E30A7FF7B2D9A1 /* AppServices.swift */; };
+		4B77F71F41755307CA817404 /* InstallmentCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA36C3674A3F2A6A9D90FCC /* InstallmentCopyTests.swift */; };
 		5332DDF90107F76D62FD79AF /* icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 8C1948C21B208B7D5663C47A /* icon.icon */; };
 		584B0E85066E44483B3F22A5 /* MMKV in Frameworks */ = {isa = PBXBuildFile; productRef = 5A84AAA1A50C257F3F47EC2D /* MMKV */; };
 		5C9192A458C83786847F83D0 /* LogoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BAEAE9080AC9FEDD101898E /* LogoService.swift */; };
@@ -142,6 +143,7 @@
 		1F32AC462BD18F9EFE7F5F83 /* MMKVMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MMKVMigrationTests.swift; sourceTree = "<group>"; };
 		26031C0EB4888718F124C0CA /* SubEyePerformanceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SubEyePerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2747C3C6EADD35C0087A88B4 /* SceneState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneState.swift; sourceTree = "<group>"; };
+		2CA36C3674A3F2A6A9D90FCC /* InstallmentCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallmentCopyTests.swift; sourceTree = "<group>"; };
 		2E3D9AD317E492EB337EA166 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		2E7979995941E4E8684FC008 /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3025F2EF7AC458EFD59D1156 /* FirstFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstFrame.swift; sourceTree = "<group>"; };
@@ -352,6 +354,7 @@
 		B3A7E9DCBDBEE2D5712C1826 /* SubEyeTests */ = {
 			isa = PBXGroup;
 			children = (
+				2CA36C3674A3F2A6A9D90FCC /* InstallmentCopyTests.swift */,
 				33845FAEB5B56D78B14F6C7C /* InstallmentEditorTests.swift */,
 				E17BD3638BE48B34EB15042C /* LaunchTests.swift */,
 				077D5FCAF83F9A3A1BCDE112 /* LogoTests.swift */,
@@ -661,6 +664,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B77F71F41755307CA817404 /* InstallmentCopyTests.swift in Sources */,
 				7F92EADF5B9B976EC4A3F8FC /* InstallmentEditorTests.swift in Sources */,
 				0A3FB2960B5C3549EE8600D8 /* LaunchTests.swift in Sources */,
 				FCE61970CD71088F6261BEFF /* LogoTests.swift in Sources */,

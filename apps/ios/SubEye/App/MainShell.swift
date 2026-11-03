@@ -206,10 +206,15 @@ struct MainShell: View {
         if case .subscription(let id) = paths[.subscriptions]?.first { return id }
         return nil
     }
+    private var openInstallment: String? {
+        if case .installment(let id) = paths[.subscriptions]?.first { return id }
+        return nil
+    }
     @available(iOS 17, *)
     @ViewBuilder private func unselected(_ tab: AppTab) -> some View {
         switch tab {
         case .home where state.presentation.totalCount > 0: root(.home, sections: .breakdown)
+        case .subscriptions where state.effectiveSegment == .installments: ContentUnavailableView(L("native_pickInstallment"), systemImage: "creditcard").appScreen()
         case .subscriptions where state.presentation.totalCount > 0: ContentUnavailableView(L("native_pickSubscription"), systemImage: "rectangle.stack").appScreen()
         case .calendar: ContentUnavailableView(L("native_pickDay"), systemImage: "calendar").appScreen()
         case .settings: ContentUnavailableView(L("native_pickSetting"), systemImage: "gearshape").appScreen()
@@ -267,10 +272,11 @@ struct MainShell: View {
     }
     private func route(_ url: URL) {
         guard booted else { pendingURL = url; return }
-        guard let (newTab, route, newSheet) = DeepLink.route(url) else { return }
-        if let newTab { tab = newTab }
-        if let route { paths[tab] = [route] }
-        if let newSheet { sheet = newSheet }
+        guard let target = DeepLink.route(url) else { return }
+        if let newTab = target.tab { tab = newTab }
+        if let segment = target.segment { state.listSegment = segment; paths[.subscriptions] = [] }
+        if let route = target.route { paths[tab] = [route] }
+        if let newSheet = target.sheet { sheet = newSheet }
     }
 }
 
@@ -421,14 +427,17 @@ private struct DueView: View {
                 ForEach(state.presentation.rows.filter { ids.contains($0.id) }) { row in
                     NavigationLink(value: Route.subscription(row.id)) { SubscriptionCell(row: row, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
                 }
+                ForEach(state.presentation.installments?.filter { ids.contains($0.id) } ?? []) { row in
+                    NavigationLink(value: Route.installment(row.id)) { InstallmentCell(row: row, logos: services.logos, currency: state.presentation.preferences.preferredCurrency) }
+                }
             } else {
                 ForEach(events) { event in
                     if planning {
                         Button { sheet = .cancellation(event.subscriptionId) } label: { EventCell(event: event, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
                     } else {
-                        NavigationLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
+                        NavigationLink(value: event.owner) { EventCell(event: event, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
                             .accessibilityIdentifier("due-" + event.subscriptionId)
-                            .swipeActions { Button(L("native_action_cancel")) { sheet = .cancellation(event.subscriptionId) } }
+                            .swipeActions { if event.installment == nil { Button(L("native_action_cancel")) { sheet = .cancellation(event.subscriptionId) } } }
                     }
                 }
                 if events.isEmpty { Text(L("native_noRenewals")).foregroundStyle(.secondary) }
@@ -438,7 +447,7 @@ private struct DueView: View {
                 guard let day = day.flatMap(Day.parse) else { return }
                 do {
                     let result = try await services.repository.calendar(from: day, through: day, rates: services.exchange.cached(), now: Date())
-                    events = planning ? result.filter { event in event.kind == .payment && state.presentation.rows.first(where: { $0.id == event.subscriptionId })?.allowedActions.contains(.cancel) == true } : result
+                    events = planning ? LiveActivityService.renewalEvents(result).filter { event in state.presentation.rows.first(where: { $0.id == event.subscriptionId })?.allowedActions.contains(.cancel) == true } : result
                 }
                 catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
             }

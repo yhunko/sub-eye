@@ -121,7 +121,7 @@ private struct CalendarMonthPage: View {
                     VStack(spacing: 0) {
                         agendaHeading(day, events: dayEvents).padding(.horizontal, 6).padding(.top, 6).padding(.bottom, 4)
                         ForEach(dayEvents) { event in
-                            RouteLink(value: Route.subscription(event.subscriptionId)) {
+                            RouteLink(value: event.owner) {
                                 EventCell(event: event, currency: currency, logos: services.logos, showDate: false).padding(.vertical, 10).contentShape(Rectangle())
                             }.buttonStyle(.plain)
                         }
@@ -202,7 +202,7 @@ private struct CalendarMonthPage: View {
                 if !dayEvents.isEmpty {
                     HStack(spacing: 2) {
                         ForEach(dayEvents.prefix(dayEvents.count > 2 ? 1 : 2)) { event in
-                            BrandIcon(name: event.name, domain: event.domain, logos: services.logos, size: state.settings.calendar.showDayTotals ? 20 : dayEvents.count == 1 ? 30 : 22, dimmed: past || adjacent)
+                            EventIcon(event: event, logos: services.logos, size: state.settings.calendar.showDayTotals ? 20 : dayEvents.count == 1 ? 30 : 22, dimmed: past || adjacent)
                         }
                         if dayEvents.count > 2 { Text("+\(dayEvents.count - 1)").appFont(10, weight: .bold).foregroundStyle(AppTheme.muted) }
                     }
@@ -213,10 +213,9 @@ private struct CalendarMonthPage: View {
                 Spacer(minLength: 0)
             }.padding(.top, 6).padding(.bottom, 5).frame(maxWidth: .infinity).frame(height: 66)
                 .appCard(radius: 13, fill: fill, border: border)
-        let ids = Set(dayEvents.map(\.subscriptionId))
         return Group {
-            if let id = ids.first {
-                RouteLink(value: ids.count == 1 ? Route.subscription(id) : Route.due(Day.key(day))) { tile }
+            if !dayEvents.isEmpty {
+                RouteLink(value: Route.day(day, events: dayEvents)) { tile }
                     .accessibilityIdentifier("calendar-day-" + Day.key(day))
             } else { tile }
         }.buttonStyle(.plain).accessibilityLabel(Display.date(day, long: true) + ", " + Display.money(amount, currency))
