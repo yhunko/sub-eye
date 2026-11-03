@@ -168,6 +168,7 @@
 "form_cycleYearly" = "Щорічно";
 "form_discardConfirm" = "Скасувати зміни";
 "form_discardTitle" = "Справді скасувати ці зміни?";
+"form_endTooSoon" = "Виберіть пізнішу дату завершення.";
 "form_every" = "Кожні";
 "form_existingOpen" = "Відкрити";
 "form_existingTitle" = "Ви вже відстежуєте {name}";
@@ -183,20 +184,25 @@
 "form_offerNone" = "Звичайна оплата";
 "form_offerNoneHint" = "Оплата з першого платежу.";
 "form_offerTrial" = "Пробний період";
-"form_offerTrialHint" = "Ви не платите до вибраної дати.";
 "form_planRenewal" = "продовження {cadence} — за бажанням";
 "form_planThen" = "Далі {cadence}";
 "form_planUpdatesEnd" = "Оновлення закінчуються";
 "form_purchaseDate" = "Дата покупки";
 "form_price" = "Ціна";
+"form_priceAboveZero" = "Вкажіть ціну, більшу за нуль.";
 "form_save" = "Зберегти";
 "form_stepDates" = "Як ви платите";
 "form_stepOf" = "Крок {step} з {total}";
 "form_stepPrice" = "Ціна й періодичність";
+"form_stepTrial" = "Пробний період і ціна";
 "form_summaryTitle" = "Що вийде";
 "form_updatesUntil" = "Оновлення до";
 "form_titleEdit" = "Редагувати підписку";
 "form_titleNew" = "Нова підписка";
+"form_titleTrial" = "Новий пробний період";
+"form_trialEnds" = "Пробний період до";
+"form_trialEndsHint" = "Цього дня спишуть перший платіж.";
+"form_trialPrice" = "Ціна після пробного періоду";
 "home_attnPayment" = "Платіж {when}";
 "home_attnStops" = "{amount} більше не списуватиметься";
 "home_biggest" = "Найбільша";
@@ -631,6 +637,7 @@
 "native_pickSetting" = "Оберіть параметр";
 
 "subs_newSubscription" = "Підписка";
+"subs_newTrial" = "Пробний період";
 "subs_newInstallment" = "Розстрочка або кредит";
 "subs_addInstallment" = "Додати розстрочку або кредит";
 "installment_titleNew" = "Нова розстрочка або кредит";

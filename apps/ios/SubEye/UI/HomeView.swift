@@ -58,7 +58,7 @@ struct HomeView: View {
                 if #available(iOS 26, *) {
                     ToolbarItem(placement: .topBarLeading) { monthHeading }.sharedBackgroundVisibility(.hidden)
                 } else { ToolbarItem(placement: .topBarLeading) { monthHeading } }
-                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton(sheet: $sheet) }
+                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton(sheet: $sheet, pro: state.settings.pro) }
             }
         }
     }

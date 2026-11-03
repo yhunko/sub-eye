@@ -17,7 +17,7 @@ final class SubscriptionEditorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let repository = SubscriptionRepository(url: directory.appendingPathComponent("test.sqlite"))
         _ = try await repository.migrate(LegacySnapshot(slotA: JSONCodec.string(StoreDocument(preferences: .init(currency: "usd")))), now: now)
-        let (value, input) = try SubscriptionEditor.value(draft, firstPayment: firstPayment, offer: offer)
+        let (value, input) = try SubscriptionEditor.value(draft, firstPayment: firstPayment, offer: offer, now: now)
         try await repository.save(value, expected: nil, offer: input, rates: ExchangeRates(), now: now)
         return try await repository.document()
     }
@@ -48,16 +48,23 @@ final class SubscriptionEditorTests: XCTestCase {
         XCTAssertEqual(stored[1].startsAt, Day.iso(end)); XCTAssertNil(stored[1].appliedAt)
     }
 
-    func testTrialIsFreeUntilItsEnd() async throws {
+    func testTrialIsFreeUntilItsEndAndChargedThatDay() async throws {
         let end = Day.parse("2026-11-11")!
-        let document = try await store(draft("11.99"), firstPayment: today, offer: .trial(ends: end))
+        let document = try await store(draft("11.99"), firstPayment: today, offer: .trial(ends: Day.parse("2026-11-11T15:00:00.000Z")!))
         let subscription = try XCTUnwrap(document.subscriptions.first)
         XCTAssertEqual(subscription.cost, "0.00")
-        XCTAssertEqual(subscription.paymentDate, Day.iso(today))
         let stored = phases(document)
         XCTAssertEqual(stored.map(\.kind), [.trial, .standard])
         XCTAssertEqual(stored.map(\.cost), ["0.00", "11.99"])
         XCTAssertEqual(stored[0].endsAt, Day.iso(end)); XCTAssertEqual(stored[1].startsAt, Day.iso(end))
+        XCTAssertEqual(subscription.paymentDate, stored[0].endsAt, "The trial's end is its first charge")
+        let payments = Projection.payments(Projection.rows(document, rates: ExchangeRates(), now: now), from: today, through: Day.parse("2026-12-31")!,
+                                           rates: ExchangeRates(), currency: "usd")
+        XCTAssertEqual(payments.map(\.date), [end, Day.parse("2026-12-11")!], "Nothing is charged before the trial ends")
+        XCTAssertEqual(payments.map(\.amount), [11.99, 11.99])
+        XCTAssertEqual(SubscriptionEditor.rejection(draft("0"), firstPayment: today, offer: .trial(ends: end), now: now), "form_priceAboveZero")
+        XCTAssertEqual(SubscriptionEditor.rejection(draft("11.99"), firstPayment: today, offer: .trial(ends: today), now: now), "form_endTooSoon")
+        XCTAssertThrowsError(try SubscriptionEditor.value(draft("0"), firstPayment: today, offer: .trial(ends: end), now: now))
     }
 
     func testLicenseChargesThePurchaseOnceAndRenewsUpdates() async throws {

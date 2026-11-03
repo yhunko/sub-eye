@@ -168,6 +168,7 @@
 "form_cycleYearly" = "Yearly";
 "form_discardConfirm" = "Discard changes";
 "form_discardTitle" = "Discard these changes?";
+"form_endTooSoon" = "Pick a later end date.";
 "form_every" = "Every";
 "form_existingOpen" = "Open";
 "form_existingTitle" = "You already track {name}";
@@ -183,20 +184,25 @@
 "form_offerNone" = "Regular";
 "form_offerNoneHint" = "Charged from the first payment.";
 "form_offerTrial" = "Free trial";
-"form_offerTrialHint" = "You pay nothing until the date you pick.";
 "form_planRenewal" = "renewing {cadence} is optional";
 "form_planThen" = "Then {cadence}";
 "form_planUpdatesEnd" = "Updates end";
 "form_purchaseDate" = "Purchased on";
 "form_price" = "Price";
+"form_priceAboveZero" = "Enter a price above zero.";
 "form_save" = "Save";
 "form_stepDates" = "How you pay";
 "form_stepOf" = "Step {step} of {total}";
 "form_stepPrice" = "Price and cadence";
+"form_stepTrial" = "Trial and price";
 "form_summaryTitle" = "What you get";
 "form_updatesUntil" = "Updates until";
 "form_titleEdit" = "Edit subscription";
 "form_titleNew" = "New subscription";
+"form_titleTrial" = "New free trial";
+"form_trialEnds" = "Trial ends";
+"form_trialEndsHint" = "The first payment is due that day.";
+"form_trialPrice" = "Price after the trial";
 "home_attnPayment" = "Payment due {when}";
 "home_attnStops" = "{amount} no longer charged";
 "home_biggest" = "Biggest";
@@ -631,6 +637,7 @@
 "native_pickSetting" = "Choose a setting";
 
 "subs_newSubscription" = "Subscription";
+"subs_newTrial" = "Free trial";
 "subs_newInstallment" = "Installment or loan";
 "subs_addInstallment" = "Add installment or loan";
 "installment_titleNew" = "New installment or loan";

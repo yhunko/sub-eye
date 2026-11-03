@@ -60,7 +60,7 @@ enum Route: Hashable {
 }
 
 enum SheetRoute: Identifiable {
-    case editor(Subscription?)
+    case editor(Subscription?, SubscriptionEditor.Flow = .subscription)
     case paywall
     case pricing(SubscriptionRow)
     case lifecycle(SubscriptionRow, LifecycleAction)
@@ -71,7 +71,7 @@ enum SheetRoute: Identifiable {
     case installmentPayoff(String)
     var id: String {
         switch self {
-        case .editor(let sub): "edit:" + (sub?.id ?? "new")
+        case .editor(let sub, let flow): "edit:" + (sub?.id ?? "new-" + flow.rawValue)
         case .paywall: "paywall"
         case .pricing(let row): "pricing:" + row.id
         case .lifecycle(let row, let action): action.rawValue + row.id
