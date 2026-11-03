@@ -49,6 +49,32 @@ public enum Installments {
         return rounded * Decimal(count - 1) < total ? rounded : nil
     }
 
+    public static func events(_ plans: [InstallmentPlan], from: Date, through: Date, today: Date,
+                              rates: ExchangeRates, currency: String) -> [CalendarEvent] {
+        plans.flatMap { plan in
+            var entries = payments(plan, today: today).map { (number: Optional($0.number), date: $0.date, amount: $0.amount, paid: $0.paid) }
+            if let payoff = payoff(plan) { entries.append((nil, payoff.date, payoff.amount, payoff.date <= Day.floor(today))) }
+            return entries.filter { $0.date >= from && $0.date <= through }.map { entry in
+                CalendarEvent(subscriptionId: plan.id, name: plan.name, domain: plan.lenderDomain, kind: .payment, date: entry.date,
+                              amount: rates.convert(double(entry.amount), from: plan.currency, to: currency),
+                              installment: InstallmentMark(number: entry.number, count: plan.paymentCount, paid: entry.paid ? true : nil,
+                                                           symbol: plan.symbol, tint: plan.tint))
+            }
+        }
+    }
+
+    public static func row(_ plan: InstallmentPlan, today: Date, rates: ExchangeRates, currency: String) -> InstallmentRow {
+        let kept = payments(plan, today: today), totals = totals(plan, today: today), payoff = payoff(plan)
+        let next = kept.first { !$0.paid }.map { (date: $0.date, amount: $0.amount) } ?? payoff.flatMap { $0.date > Day.floor(today) ? $0 : nil }
+        let overpayment = plan.price.flatMap { Money.parse($0, below: ceiling) }.map { totals.spent - $0 }
+        return InstallmentRow(plan: plan, paidCount: kept.filter(\.paid).count, count: plan.paymentCount,
+                              paid: double(totals.paid), left: double(totals.left),
+                              nextAmount: next.map { double($0.amount) },
+                              nextConverted: next.map { rates.convert(double($0.amount), from: plan.currency, to: currency) },
+                              nextDate: next?.date, endDate: payoff?.date ?? kept.last?.date, finished: next == nil,
+                              overpayment: overpayment.flatMap { $0 >= 0 ? double($0) : nil })
+    }
+
     public static func editorAccepts(every: Int, period: BillingPeriod, count: Int) -> Bool {
         ((every == 1 && period == .month) || (every == 2 && period == .week)) && (1...360).contains(count)
     }
@@ -72,4 +98,6 @@ public enum Installments {
               let created = Day.parse(plan.createdAt).map(Day.floor) else { return false }
         return payment.date <= Day.shift(created, days: 1)
     }
+
+    private static func double(_ value: Decimal) -> Double { NSDecimalNumber(decimal: value).doubleValue }
 }

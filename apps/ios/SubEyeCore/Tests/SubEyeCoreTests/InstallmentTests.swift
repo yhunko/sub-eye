@@ -3,6 +3,7 @@ import XCTest
 
 final class InstallmentTests: XCTestCase {
     let now = Day.parse("2026-09-15T12:00:00Z")!
+    let rates = ExchangeRates(rates: ["usd": 1, "uah": 40])
 
     func testEqualSplitPutsTheRemainderOnTheLastPaymentAndSumsExactly() {
         let schedule = Installments.payments(plan(total: "3407.00", payment: "1135.67", count: 3, first: "2026-07-04"), today: day("2026-07-01"))
@@ -148,6 +149,89 @@ final class InstallmentTests: XCTestCase {
         XCTAssertFalse(Installments.editorAccepts(every: 1, period: .month, count: 361))
     }
 
+    func testPlanThatEndedEarlierThisMonthStillCountsInTheMonthTotal() {
+        let dashboard = presentation([plan(count: 3, first: "2026-07-05")]).dashboard
+        XCTAssertEqual(dashboard.monthTotal, 100, "Its last payment on Sep 5 belongs to September")
+        XCTAssertEqual(dashboard.remaining, 0)
+    }
+
+    func testPaymentChargedAtPurchaseCountsInTheMonthButIsNotStillDue() {
+        var bought = plan(count: 3, first: "2026-09-15"); bought.paidAtPurchase = true
+        let dashboard = presentation([bought]).dashboard
+        XCTAssertEqual(dashboard.monthTotal, 100)
+        XCTAssertEqual(dashboard.remaining, 0, "Charged at checkout today, so nothing is left to pay this month")
+    }
+
+    func testEarlyPayoffReplacesTheLaterPaymentsOnceAndOverpaymentFollowsWhatWasSpent() throws {
+        var loan = plan(total: "12000.00", payment: "1000.00", count: 12, first: "2026-05-10")
+        loan.paidOffAt = "2026-09-12T00:00:00.000Z"; loan.payoffAmount = "6000.00"; loan.price = "10000.00"
+        let model = presentation([loan])
+        let september = model.dashboard.monthEvents
+        XCTAssertEqual(september.map { Day.key($0.date) }, ["2026-09-10", "2026-09-12"])
+        XCTAssertEqual(september.map(\.amount), [1000, 6000])
+        XCTAssertEqual(september.map { $0.installment?.number }, [5, nil])
+        XCTAssertEqual(model.dashboard.nextMonth, 0, "Payments after the payoff are gone")
+        let row = try XCTUnwrap(model.installments?.first)
+        XCTAssertEqual(row.overpayment, 1000, "11,000 spent against a 10,000 price, not the 12,000 the schedule would have cost")
+        XCTAssertEqual([row.paid, row.left], [11000, 0])
+        XCTAssertTrue(row.finished)
+        XCTAssertEqual(row.endDate, day("2026-09-12"))
+        loan.price = "11500.00"
+        XCTAssertNil(presentation([loan]).installments?.first?.overpayment, "Paying less than the price is no overpayment")
+    }
+
+    func testPayoffOnTheDayOfAPurchasePaymentKeepsDistinctIds() {
+        var bought = plan(count: 3, first: "2026-09-15"); bought.paidAtPurchase = true
+        bought.paidOffAt = "2026-09-15T00:00:00.000Z"; bought.payoffAmount = "200.00"
+        let dashboard = presentation([bought]).dashboard, events = dashboard.monthEvents
+        XCTAssertEqual(dashboard.remaining, 0, "A payoff counts as paid once its day has come")
+        XCTAssertEqual(events.map { $0.installment?.number }, [nil, 1])
+        XCTAssertEqual(Set(events.map(\.id)).count, 2)
+        XCTAssertTrue(events.allSatisfy { $0.id.hasPrefix("installment:") })
+    }
+
+    func testNextPaymentIsConvertedToThePreferredCurrency() throws {
+        let row = try XCTUnwrap(presentation([plan(total: "1200.00", payment: "400.00", count: 3, first: "2026-10-01")], currency: "usd").installments?.first)
+        XCTAssertEqual(row.nextAmount, 400)
+        XCTAssertEqual(row.nextConverted, 10)
+        XCTAssertEqual(row.nextDate, day("2026-10-01"))
+    }
+
+    func testRowsListActivePlansByNextPaymentAndTheLaunchCacheKeepsForty() {
+        var later = plan(count: 3, first: "2026-11-01"); later.id = "later"
+        var sooner = plan(count: 3, first: "2026-10-01"); sooner.id = "sooner"
+        var done = plan(count: 3, first: "2026-06-01"); done.id = "done"
+        XCTAssertEqual(presentation([done, later, sooner]).installments?.map(\.id), ["sooner", "later", "done"])
+        let many = (0..<41).map { index in var value = plan(count: 3, first: "2026-10-01"); value.id = "p\(index)"; return value }
+        XCTAssertEqual(presentation(many).launchPreview().installments?.count, 40)
+    }
+
+    func testCachedPresentationsAndEventsWithoutTheNewFieldsStillDecode() throws {
+        func strip(_ value: some Encodable, _ key: String) throws -> Data {
+            var object = try JSONSerialization.jsonObject(with: JSONCodec.encode(value)) as! [String: Any]
+            object.removeValue(forKey: key)
+            return try JSONSerialization.data(withJSONObject: object)
+        }
+        let model = presentation([plan(count: 3, first: "2026-09-10")])
+        let event = try XCTUnwrap(model.dashboard.monthEvents.first)
+        XCTAssertNil(try JSONCodec.decode(Presentation.self, strip(model, "installments")).installments)
+        XCTAssertNil(try JSONCodec.decode(CalendarEvent.self, strip(event, "installment")).installment)
+    }
+
+    func testStoreCalendarMergesPlanEventsInOrder() async throws {
+        let store = SubscriptionRepository(url: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("store.sqlite"))
+        let biweekly = plan(total: "3600.00", payment: "1200.00", count: 3, every: 2, period: .week, first: "2026-09-06")
+        let sub = Subscription(id: "s", name: "Test", cost: "20.00", currency: "usd", paymentDate: "2026-01-20T00:00:00.000Z", now: now)
+        let doc = StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], installments: [biweekly])
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(doc), sourceExists: true), now: now)
+        let events = try await store.calendar(from: day("2026-09-01"), through: day("2026-09-30"), rates: rates, now: now)
+        XCTAssertEqual(events.map(\.id), ["installment:plan:payment:2026-09-06", "installment:plan:payment:2026-09-20", "s:payment:2026-09-20"],
+                       "30 dollars of plan before the 20-dollar renewal on the same day")
+    }
+
+    private func presentation(_ plans: [InstallmentPlan], currency: String = "uah") -> Presentation {
+        Projection.presentation(StoreDocument(preferences: .init(currency: currency), installments: plans), rates: rates, now: now, revision: 0)
+    }
     private func plan(total: String = "300.00", payment: String = "100.00", count: Int, every: Int = 1,
                       period: BillingPeriod = .month, first: String, now: Date? = nil) -> InstallmentPlan {
         InstallmentPlan(id: "plan", name: "MacBook", symbol: "laptopcomputer", tint: "blue", currency: "uah",
