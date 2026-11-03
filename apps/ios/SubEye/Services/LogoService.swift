@@ -218,6 +218,12 @@ actor BrandService {
         Brand(name: "Figma", domain: "figma.com"), Brand(name: "Telegram", domain: "telegram.org"),
         Brand(name: "PlayStation Plus", domain: "playstation.com"), Brand(name: "Xbox Game Pass", domain: "xbox.com")
     ]
+    static let lenders: [Brand] = [
+        Brand(name: "monobank", domain: "monobank.ua"), Brand(name: "PrivatBank", domain: "privatbank.ua"),
+        Brand(name: "PUMB", domain: "pumb.ua"), Brand(name: "A-Bank", domain: "a-bank.com.ua"),
+        Brand(name: "Klarna", domain: "klarna.com"), Brand(name: "Affirm", domain: "affirm.com"),
+        Brand(name: "PayPal", domain: "paypal.com"), Brand(name: "Afterpay", domain: "afterpay.com")
+    ]
     nonisolated static func normalizeDomain(_ value: String) -> String? {
         let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard let url = URL(string: cleaned.contains("://") ? cleaned : "https://" + cleaned),

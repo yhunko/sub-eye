@@ -62,6 +62,7 @@ enum SheetRoute: Identifiable {
     case category(SubEyeCore.Category?)
     case cancellation(String)
     case prompt(UserPrompt)
+    case installmentEditor(InstallmentPlan?)
     var id: String {
         switch self {
         case .editor(let sub): "edit:" + (sub?.id ?? "new")
@@ -71,6 +72,7 @@ enum SheetRoute: Identifiable {
         case .category(let category): "category:" + (category?.id ?? "new")
         case .cancellation(let id): "cancellation:" + id
         case .prompt(let prompt): "prompt:" + prompt.rawValue
+        case .installmentEditor(let plan): "installment:" + (plan?.id ?? "new")
         }
     }
 }

@@ -29,7 +29,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                if model.totalCount == 0 { EmptySubscriptions { sheet = .editor(nil) } }
+                if model.totalCount == 0 { EmptySubscriptions(sheet: $sheet) }
                 else {
                     if sections != .breakdown {
                         paymentRail.padding(.bottom, 14)
@@ -56,7 +56,7 @@ struct HomeView: View {
                 if #available(iOS 26, *) {
                     ToolbarItem(placement: .topBarLeading) { monthHeading }.sharedBackgroundVisibility(.hidden)
                 } else { ToolbarItem(placement: .topBarLeading) { monthHeading } }
-                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton { sheet = .editor(nil) } }
+                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton(sheet: $sheet) }
             }
         }
     }

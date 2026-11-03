@@ -31,10 +31,11 @@ enum Display {
         guard code.count == 3, code.unicodeScalars.allSatisfy({ (97...122).contains($0.value) }) else { return "" }
         return code.uppercased().prefix(2).unicodeScalars.compactMap { UnicodeScalar(127397 + $0.value) }.map(String.init).joined()
     }
-    static func cadence(_ subscription: Subscription) -> String {
-        if subscription.every == 1 { return L("cadence_" + subscription.period.rawValue) }
+    static func cadence(_ subscription: Subscription) -> String { cadence(every: subscription.every, period: subscription.period) }
+    static func cadence(every: Int, period: BillingPeriod) -> String {
+        if every == 1 { return L("cadence_" + period.rawValue) }
         let plural: [BillingPeriod: String] = [.day: "Days", .week: "Weeks", .month: "Months", .year: "Years"]
-        return L("cadence_every" + plural[subscription.period]!, ["every": String(subscription.every)])
+        return L("cadence_every" + plural[period]!, ["every": String(every)])
     }
     static func when(_ date: Date, today: Date = Day.today(), countdown: Bool = false) -> String {
         let days = Day.utc.dateComponents([.day], from: today, to: date).day ?? 0

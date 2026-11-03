@@ -255,6 +255,7 @@ struct MainShell: View {
         case .cancellation(let id):
             if let row = state.presentation.rows.first(where: { $0.id == id }) { LifecycleView(row: row, action: .cancel, state: $state, services: services) }
         case .prompt(let prompt): PromptView(prompt: prompt, state: $state, services: services)
+        case .installmentEditor(let original): InstallmentEditor(original: original, state: $state, services: services)
         }
     }
     private func adopt(_ next: SceneState) {

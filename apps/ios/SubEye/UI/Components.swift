@@ -25,6 +25,26 @@ struct ToneIcon: View {
     }
 }
 
+struct InstallmentIcon: View {
+    let symbol: String
+    let tint: String
+    var lenderName: String? = nil
+    var lenderDomain: String? = nil
+    let logos: LogoService
+    var size: CGFloat = 38
+    var ring = AppTheme.background
+    var body: some View {
+        ToneIcon(symbol: InstallmentStyle.symbol(symbol), tone: InstallmentStyle.color(tint), size: size)
+            .overlay(alignment: .bottomTrailing) {
+                if let lenderDomain {
+                    BrandIcon(name: lenderName ?? lenderDomain, domain: lenderDomain, logos: logos, size: size * 0.45)
+                        .padding(max(1.5, size * 0.04)).background(ring, in: Circle()).offset(x: size * 0.08, y: size * 0.08)
+                }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
 struct ActionButton: View {
     let title: String
     var role: ButtonRole?
@@ -196,13 +216,14 @@ struct AmountLine: View {
 }
 
 struct EmptySubscriptions: View {
-    let add: () -> Void
+    @Binding var sheet: SheetRoute?
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "repeat.circle").font(.system(size: 48)).foregroundStyle(.tint)
             Text(L("native_noSubscriptions")).font(.title2.bold())
             Text(L("native_emptyBody")).foregroundStyle(.secondary)
-            Button(L("subs_add"), action: add).buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("addSubscription")
+            Button(L("subs_emptyAddSubscription")) { sheet = .editor(nil) }.buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("emptyNewSubscription")
+            Button(L("subs_addInstallment")) { sheet = .installmentEditor(nil) }.controlSize(.large).accessibilityIdentifier("emptyNewInstallment")
         }.multilineTextAlignment(.center).padding(32).frame(maxWidth: .infinity)
     }
 }
