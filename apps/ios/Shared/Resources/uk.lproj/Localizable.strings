@@ -175,12 +175,12 @@
 "form_firstPayment" = "Перший платіж";
 "form_name" = "Назва";
 "form_renewalCost" = "Продовження оновлень";
+"form_renewalHint" = "Скільки коштуватиме ще один період оновлень. Продовжувати чи ні — вирішуєте ви.";
 "form_offerCost" = "Ціна пропозиції";
 "form_offerEndsAt" = "Пропозиція діє до";
 "form_offerIntro" = "Вступна знижка";
 "form_offerIntroHint" = "Нижча ціна на певний час.";
 "form_offerLicense" = "Разова ліцензія";
-"form_offerLicenseHint" = "Один платіж, оновлення — за бажанням.";
 "form_offerNone" = "Звичайна оплата";
 "form_offerNoneHint" = "Оплата з першого платежу.";
 "form_offerTrial" = "Пробний період";
@@ -189,17 +189,21 @@
 "form_planUpdatesEnd" = "Оновлення закінчуються";
 "form_purchaseDate" = "Дата покупки";
 "form_price" = "Ціна";
+"form_licensePrice" = "Ціна ліцензії";
 "form_priceAboveZero" = "Вкажіть ціну, більшу за нуль.";
 "form_save" = "Зберегти";
 "form_stepDates" = "Як ви платите";
 "form_stepOf" = "Крок {step} з {total}";
 "form_stepPrice" = "Ціна й періодичність";
 "form_stepTrial" = "Пробний період і ціна";
+"form_stepLicense" = "Ліцензія й оновлення";
 "form_summaryTitle" = "Що вийде";
 "form_updatesUntil" = "Оновлення до";
+"form_updatesCycle" = "Період оновлень";
 "form_titleEdit" = "Редагувати підписку";
 "form_titleNew" = "Нова підписка";
 "form_titleTrial" = "Новий пробний період";
+"form_titleLicense" = "Нова ліцензія";
 "form_trialEnds" = "Пробний період до";
 "form_trialEndsHint" = "Цього дня спишуть перший платіж.";
 "form_trialPrice" = "Ціна після пробного періоду";
@@ -638,6 +642,7 @@
 
 "subs_newSubscription" = "Підписка";
 "subs_newTrial" = "Пробний період";
+"subs_newLicense" = "Разова ліцензія";
 "subs_newInstallment" = "Розстрочка або кредит";
 "subs_addInstallment" = "Додати розстрочку або кредит";
 "installment_titleNew" = "Нова розстрочка або кредит";

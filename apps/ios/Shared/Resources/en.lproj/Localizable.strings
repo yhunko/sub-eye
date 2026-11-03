@@ -175,12 +175,12 @@
 "form_firstPayment" = "First payment";
 "form_name" = "Name";
 "form_renewalCost" = "Updates renewal";
+"form_renewalHint" = "What another period of updates would cost. Renewing is up to you.";
 "form_offerCost" = "Offer price";
 "form_offerEndsAt" = "Offer ends";
 "form_offerIntro" = "Intro discount";
 "form_offerIntroHint" = "A lower price for a while.";
 "form_offerLicense" = "One-time license";
-"form_offerLicenseHint" = "Pay once, renew updates if you want.";
 "form_offerNone" = "Regular";
 "form_offerNoneHint" = "Charged from the first payment.";
 "form_offerTrial" = "Free trial";
@@ -189,17 +189,21 @@
 "form_planUpdatesEnd" = "Updates end";
 "form_purchaseDate" = "Purchased on";
 "form_price" = "Price";
+"form_licensePrice" = "License price";
 "form_priceAboveZero" = "Enter a price above zero.";
 "form_save" = "Save";
 "form_stepDates" = "How you pay";
 "form_stepOf" = "Step {step} of {total}";
 "form_stepPrice" = "Price and cadence";
 "form_stepTrial" = "Trial and price";
+"form_stepLicense" = "License and updates";
 "form_summaryTitle" = "What you get";
 "form_updatesUntil" = "Updates until";
+"form_updatesCycle" = "Updates period";
 "form_titleEdit" = "Edit subscription";
 "form_titleNew" = "New subscription";
 "form_titleTrial" = "New free trial";
+"form_titleLicense" = "New license";
 "form_trialEnds" = "Trial ends";
 "form_trialEndsHint" = "The first payment is due that day.";
 "form_trialPrice" = "Price after the trial";
@@ -638,6 +642,7 @@
 
 "subs_newSubscription" = "Subscription";
 "subs_newTrial" = "Free trial";
+"subs_newLicense" = "One-time license";
 "subs_newInstallment" = "Installment or loan";
 "subs_addInstallment" = "Add installment or loan";
 "installment_titleNew" = "New installment or loan";

@@ -155,11 +155,12 @@ struct SpendTrack: View {
 }
 
 enum AddKind: CaseIterable {
-    case subscription, trial, installment
+    case subscription, trial, license, installment
     var title: String {
         switch self {
         case .subscription: L("subs_newSubscription")
         case .trial: L("subs_newTrial")
+        case .license: L("subs_newLicense")
         case .installment: L("subs_newInstallment")
         }
     }
@@ -167,6 +168,7 @@ enum AddKind: CaseIterable {
         switch self {
         case .subscription: "newSubscription"
         case .trial: "newTrial"
+        case .license: "newLicense"
         case .installment: "newInstallment"
         }
     }
@@ -174,14 +176,16 @@ enum AddKind: CaseIterable {
         switch self {
         case .subscription: "arrow.triangle.2.circlepath"
         case .trial: "hourglass"
+        case .license: "key"
         case .installment: "creditcard"
         }
     }
-    var pro: Bool { self == .trial }
+    var pro: Bool { self == .trial || self == .license }
     var sheet: SheetRoute {
         switch self {
         case .subscription: .editor(nil)
         case .trial: .editor(nil, .trial)
+        case .license: .editor(nil, .license)
         case .installment: .installmentEditor(nil)
         }
     }

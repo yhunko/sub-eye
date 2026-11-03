@@ -78,6 +78,9 @@ final class SubscriptionEditorTests: XCTestCase {
         XCTAssertEqual(stored.map(\.cost), ["29.00", "19.00"])
         XCTAssertEqual(stored[0].startsAt, Day.iso(purchase)); XCTAssertEqual(stored[0].endsAt, Day.iso(end))
         XCTAssertEqual(stored[1].startsAt, Day.iso(end)); XCTAssertEqual(stored[1].appliedAt, Day.iso(now), "A window already over renews at save")
+        XCTAssertEqual(SubscriptionEditor.rejection(draft("0", period: .year), firstPayment: purchase, offer: .license(price: "29"), now: now), "form_priceAboveZero")
+        XCTAssertEqual(SubscriptionEditor.rejection(draft("19", period: .year), firstPayment: purchase, offer: .license(price: "0"), now: now), "form_priceAboveZero")
+        XCTAssertThrowsError(try SubscriptionEditor.value(draft("0", period: .year), firstPayment: purchase, offer: .license(price: "29"), now: now))
     }
 
     func testLicenseBoughtTodayChargesItsPriceToday() async throws {
