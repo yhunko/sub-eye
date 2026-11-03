@@ -141,16 +141,23 @@ public enum ReminderPlanner {
             }
         }
         for row in rows where row.status.isCurrent {
+            let trialEnd = settings.trials ? Pricing.effective(row.phases, at: now).flatMap { trial in
+                trial.kind == .trial ? Day.parse(trial.endsAt).flatMap { Lifecycle.includes(row.subscription, occurrence: $0) ? $0 : nil } : nil
+            } : nil
             if settings.renewals, let next = row.nextDate {
                 let end = Recurrence.occurrence(anchor: next, every: row.subscription.every, period: row.subscription.period, index: 2)
                 let events = Array(Projection.payments([row], from: next, through: end, rates: rates, currency: currency).prefix(3))
                 // Past a license's window a charge is optional and only buys updates, so its reminder says what lapses.
                 let updates = events.filter { row.licensed && Pricing.effective(row.phases, at: $0.date)?.kind != .license }
-                collect(events.filter { !updates.contains($0) }, leads: settings.renewalLeadDays, kind: "renewal", repeating: row)
+                let renewals = events.filter { !updates.contains($0) }
+                // The trial reminder already names the charge that ends the trial, so at its leads a renewal reminder would repeat it
+                // that morning. Leads stay the outer loop: a group keeps the first charge it sees, and that must be the nearest one.
+                for lead in settings.renewalLeadDays {
+                    collect(renewals.filter { $0.date != trialEnd || !settings.trialLeadDays.contains(lead) }, leads: [lead], kind: "renewal", repeating: row)
+                }
                 collect(updates, leads: settings.renewalLeadDays, kind: "updates", repeating: row)
             }
-            if settings.trials, let trial = Pricing.effective(row.phases, at: now), trial.kind == .trial,
-               let end = Day.parse(trial.endsAt), Lifecycle.includes(row.subscription, occurrence: end) {
+            if let end = trialEnd {
                 let amount = row.upcoming.map { rates.convert(Double($0.cost) ?? 0, from: $0.currency, to: currency) } ?? 0
                 let event = CalendarEvent(subscriptionId: row.id, name: row.subscription.name, domain: row.subscription.brandDomain,
                                           kind: .trialEnds, date: end, amount: amount)

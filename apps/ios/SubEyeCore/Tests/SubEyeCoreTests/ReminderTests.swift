@@ -86,6 +86,51 @@ final class ReminderTests: XCTestCase {
         let owned = try planned(purchase: "2024-09-16")
         XCTAssertEqual(owned.count, 1); XCTAssertEqual(owned[0].kind, "updates"); XCTAssertNotNil(owned[0].repeatRule)
     }
+    func testTrialReminderReplacesTheRenewalReminderForItsFirstCharge() throws {
+        var trial = subscription("trial", date: "2026-09-25")
+        let phases = try Pricing.offer(subscription: &trial, promoCost: "0", standardCost: "10.00", currency: "usd", payments: nil,
+                                       endDate: Day.parse("2026-09-25"), deferred: false, now: now, zone: .gmt, ids: ("t", "s"))
+        let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [trial], phases: phases), rates: rates, now: now)
+        var settings = ReminderSettings(); settings.renewals = true; settings.trials = true
+        settings.renewalLeadDays = [1, 7]; settings.trialLeadDays = [1, 3]
+        func fires(_ settings: ReminderSettings) -> [String] {
+            ReminderPlanner.plan(rows: rows, settings: settings, pro: true, rates: rates, currency: "usd", now: now, zone: .gmt)
+                .map { $0.kind + ":" + Day.key($0.fireAt) }.sorted()
+        }
+        XCTAssertEqual(fires(settings), ["renewal:2026-09-18", "renewal:2026-10-18", "renewal:2026-10-24", "renewal:2026-11-18", "renewal:2026-11-24",
+                                         "trial:2026-09-22", "trial:2026-09-24"], "One reminder the morning before the charge that ends the trial")
+        settings.trials = false
+        XCTAssertEqual(fires(settings), ["renewal:2026-09-18", "renewal:2026-09-24", "renewal:2026-10-18", "renewal:2026-10-24", "renewal:2026-11-18",
+                                         "renewal:2026-11-24"], "Without trial reminders the renewal reminder still warns of the charge")
+    }
+    func testTrialEndDaySaysTheChargeIsToday() throws {
+        var trial = subscription("weekly", date: "2026-09-25"); trial.period = .week
+        let phases = try Pricing.offer(subscription: &trial, promoCost: "0", standardCost: "10.00", currency: "usd", payments: nil,
+                                       endDate: Day.parse("2026-09-25"), deferred: false, now: now, zone: .gmt, ids: ("t", "s"))
+        let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [trial], phases: phases), rates: rates, now: now)
+        var settings = ReminderSettings(); settings.renewals = true; settings.trials = true
+        settings.renewalLeadDays = [0, 7]; settings.trialLeadDays = [1, 3]
+        let planned = ReminderPlanner.plan(rows: rows, settings: settings, pro: true, rates: rates, currency: "usd", now: now, zone: .gmt)
+        let onTheDay = try XCTUnwrap(planned.first { $0.kind == "renewal" && Day.key($0.fireAt) == "2026-09-25" })
+        XCTAssertEqual(onTheDay.events.map { Day.key($0.date) }, ["2026-09-25"], "The next week's charge must not take the end day's slot")
+        XCTAssertEqual(message(onTheDay).title, "weekly renews today")
+    }
+    func testOnlyAFreeTrialHandsItsChargeToTheTrialReminder() throws {
+        var settings = ReminderSettings(); settings.renewals = true; settings.trials = true
+        settings.renewalLeadDays = [1]; settings.trialLeadDays = [1]
+        func renewals(promo: String, end: String) throws -> [String] {
+            var sub = subscription("s", date: "2026-09-18"); sub.period = .week
+            let phases = try Pricing.offer(subscription: &sub, promoCost: promo, standardCost: "10.00", currency: "usd", payments: nil,
+                                           endDate: Day.parse(end), deferred: false, now: now, zone: .gmt, ids: ("p", "s"))
+            let rows = Projection.rows(StoreDocument(preferences: .init(currency: "usd"), subscriptions: [sub], phases: phases), rates: rates, now: now)
+            return ReminderPlanner.plan(rows: rows, settings: settings, pro: true, rates: rates, currency: "usd", now: now, zone: .gmt)
+                .filter { $0.kind == "renewal" }.map { Day.key($0.events[0].date) }.sorted()
+        }
+        XCTAssertEqual(try renewals(promo: "5", end: "2026-09-25"), ["2026-09-18", "2026-09-25", "2026-10-02"],
+                       "An intro ending on a charge has no trial reminder, so its renewal reminder stays")
+        XCTAssertEqual(try renewals(promo: "0", end: "2026-09-22"), ["2026-09-18", "2026-09-25", "2026-10-02"],
+                       "A trial ending between charges announces no charge, so every renewal reminder stays")
+    }
     func testInstallmentsNeverRepeatWhereASubscriptionWould() {
         var settings = ReminderSettings(); settings.renewals = true; settings.installments = true
         let planned = ReminderPlanner.plan(rows: rows([subscription("netflix", date: "2026-08-12")]), installments: [plan("phone", first: "2026-08-12", count: 12)],
