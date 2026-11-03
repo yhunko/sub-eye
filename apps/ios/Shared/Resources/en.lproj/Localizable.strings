@@ -21,6 +21,9 @@
 "calendar_empty" = "Nothing renews this month.";
 "calendar_heavyDay" = "{count} charges together";
 "calendar_kindEnds" = "Ends";
+"calendar_kindInstallment" = "Payment {number} of {count}";
+"calendar_kindInstallmentFinal" = "Last payment";
+"calendar_kindInstallmentPayoff" = "Paid off early";
 "calendar_kindIntroEnds" = "Intro price ends";
 "calendar_kindPayment" = "Renews";
 "calendar_kindPriceChange" = "Price changes";
