@@ -32,4 +32,19 @@ final class PromptPolicyTests: XCTestCase {
         XCTAssertNil(PromptPolicy.home(saved: 50, firstSeenAt: settled, now: now, pro: false, proPitched: true, reviewDue: false, interrupted: false, remindersPending: false),
                      "The pitch is once only")
     }
+    func testAPaidOffPlanAsksForAReviewOnlyOutsideTheCooldown() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let milliseconds = now.timeIntervalSince1970 * 1000
+        XCTAssertTrue(ReviewState().cooled(now: now))
+        XCTAssertFalse(ReviewState(firstSeenAt: 1, askedAt: milliseconds - 179 * 86_400_000).cooled(now: now))
+        XCTAssertTrue(ReviewState(firstSeenAt: 1, askedAt: milliseconds - 180 * 86_400_000).cooled(now: now))
+        func home(interrupted: Bool = false, remindersPending: Bool = false, cooled: Bool = true) -> UserPrompt? {
+            PromptPolicy.home(saved: 10, firstSeenAt: 0, now: now, pro: false, proPitched: false, reviewDue: false, interrupted: interrupted,
+                              remindersPending: remindersPending, celebrating: true, reviewCooled: cooled)
+        }
+        XCTAssertEqual(home(), .review, "Paying off a plan outranks the Pro pitch and skips the three-tracked and seven-day checks")
+        XCTAssertNil(home(interrupted: true))
+        XCTAssertNil(home(remindersPending: true))
+        XCTAssertEqual(home(cooled: false), .pro)
+    }
 }
