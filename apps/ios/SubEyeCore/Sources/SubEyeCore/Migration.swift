@@ -103,6 +103,25 @@ public enum LegacyMigration {
         }
     }
 
+    // The gate for import and sync, so it checks only what the schedule needs. The editor's narrower choices live in
+    // Installments.editorAccepts: a plan a later build allows must not be rejected here and then overwritten by this build.
+    public static func validate(_ row: InstallmentPlan) throws {
+        func amount(_ text: String) -> Decimal? { Money.parse(text, below: Installments.ceiling) }
+        let named = [row.name, row.kind, row.symbol, row.tint].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard !row.id.isEmpty, named, row.currency.count == 3,
+              let total = amount(row.total), total > 0, let payment = amount(row.payment), payment > 0,
+              (1...1000).contains(row.paymentCount), (1...365).contains(row.every),
+              payment * Decimal(row.paymentCount - 1) < total,
+              Day.parse(row.firstPaymentDate) != nil, Day.parse(row.createdAt) != nil,
+              Day.parse(row.updatedAt) != nil else { throw DomainError.invalidField("installment") }
+        guard (row.paidOffAt == nil) == (row.payoffAmount == nil),
+              row.paidOffAt.map({ Day.parse($0) != nil }) ?? true,
+              row.payoffAmount.map({ amount($0) != nil }) ?? true else { throw DomainError.invalidField("installment.payoff") }
+        if let price = row.price {
+            guard let value = amount(price), value > 0 else { throw DomainError.invalidField("installment.price") }
+        }
+    }
+
     private static func unique(_ ids: [String]) throws {
         guard ids.allSatisfy({ !$0.isEmpty }), Set(ids).count == ids.count else { throw DomainError.invalidDocument("Duplicate or empty id") }
     }

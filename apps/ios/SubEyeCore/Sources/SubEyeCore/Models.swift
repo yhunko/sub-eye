@@ -77,6 +77,45 @@ public struct PricePhase: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
+public enum InstallmentKind: String, CaseIterable, Sendable {
+    case payInParts, cardInstallment, loan
+}
+
+// `kind`, `symbol` and `tint` stay strings so a value added by a later build survives a sync round trip here.
+public struct InstallmentPlan: Codable, Identifiable, Equatable, Sendable {
+    public var id: String
+    public var name: String
+    public var kind: String
+    public var symbol: String
+    public var tint: String
+    public var lenderName: String?
+    public var lenderDomain: String?
+    public var currency: String
+    public var total: String
+    public var payment: String
+    public var paymentCount: Int
+    public var every: Int
+    public var period: BillingPeriod
+    public var firstPaymentDate: String
+    public var paidAtPurchase: Bool?
+    public var price: String?
+    public var paidOffAt: String?
+    public var payoffAmount: String?
+    public var notes: String?
+    public var createdAt: String
+    public var updatedAt: String
+
+    public init(id: String, name: String, kind: InstallmentKind = .payInParts, symbol: String, tint: String,
+                currency: String, total: String, payment: String, paymentCount: Int,
+                every: Int = 1, period: BillingPeriod = .month, firstPaymentDate: String, now: Date) {
+        self.id = id; self.name = name; self.kind = kind.rawValue; self.symbol = symbol; self.tint = tint
+        self.currency = currency.lowercased(); self.total = total; self.payment = payment
+        self.paymentCount = paymentCount; self.every = every; self.period = period
+        self.firstPaymentDate = firstPaymentDate
+        createdAt = Day.iso(now); updatedAt = Day.iso(now)
+    }
+}
+
 public struct Preferences: Codable, Equatable, Sendable {
     public var preferredCurrency: String
     public var preferredTimezone: String
