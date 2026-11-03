@@ -166,7 +166,7 @@ public enum Projection {
         let monthPayments = payments(active, from: start, through: Day.shift(Day.month(start, offset: 1), days: -1), rates: rates, currency: currency)
         var dashboard = Dashboard()
         dashboard.monthly = active.reduce(0) { $0 + $1.monthly }
-        dashboard.yearly = payments(active, from: today, through: Day.utc.date(byAdding: .month, value: 12, to: today)!, rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
+        dashboard.yearly = payments(active, from: today, through: Day.shift(Day.utc.date(byAdding: .month, value: 12, to: today)!, days: -1), rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
         dashboard.monthTotal = monthPayments.reduce(0) { $0 + $1.amount }
         dashboard.remaining = monthPayments.filter { $0.date >= today }.reduce(0) { $0 + $1.amount }
         dashboard.nextMonth = payments(active, from: Day.month(start, offset: 1), through: Day.shift(Day.month(start, offset: 2), days: -1), rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
