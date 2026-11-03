@@ -92,7 +92,7 @@ final class DeviceAcceptanceTests: XCTestCase {
         capture(app, name: "Device-calendar-current")
         app.tabBars.buttons["gearshape"].tap(); capture(app, name: "Device-settings-revised")
         app.tabBars.buttons["house"].tap()
-        app.buttons["addSubscription"].firstMatch.tap(); app.buttons["nextSubscriptionStep"].tap()
+        startSubscription(app); app.buttons["nextSubscriptionStep"].tap()
         let name = app.textFields["subscriptionName"]
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Unsaved visual check")
         let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("1")
@@ -140,7 +140,7 @@ final class DeviceAcceptanceTests: XCTestCase {
         XCTAssertLessThan(live.frame.minY, debug.frame.minY)
         capture(app, name: "Polish-notification-settings")
         app.swipeUp(); capture(app, name: "Polish-notification-diagnostics")
-        app.tabBars.buttons["house"].tap(); app.buttons["addSubscription"].firstMatch.tap()
+        app.tabBars.buttons["house"].tap(); startSubscription(app)
         XCTAssertTrue(app.buttons["brand-netflix.com"].waitForExistence(timeout: 5))
         capture(app, name: "Polish-clean-editor-handle")
         app.buttons["brand-netflix.com"].tap()
@@ -167,6 +167,11 @@ final class DeviceAcceptanceTests: XCTestCase {
         XCTAssertTrue(app.buttons["addSubscription"].firstMatch.waitForExistence(timeout: 5))
     }
 
+    private func startSubscription(_ app: XCUIApplication) {
+        app.navigationBars.buttons["addSubscription"].firstMatch.tap()
+        let item = app.buttons["newSubscription"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5)); item.tap()
+    }
     private func capture(_ app: XCUIApplication, name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
@@ -178,7 +183,7 @@ final class DeviceAcceptanceTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'subscription-'")).firstMatch.waitForExistence(timeout: 10))
         let name = "Native Device Check " + String(UUID().uuidString.prefix(6))
         addTeardownBlock { @MainActor in Self.removeTemporaryRecord(named: name) }
-        app.buttons["addSubscription"].firstMatch.tap()
+        startSubscription(app)
         app.buttons["nextSubscriptionStep"].tap()
         let field = app.textFields["subscriptionName"]
         XCTAssertTrue(field.waitForExistence(timeout: 5)); field.tap(); field.typeText(name)

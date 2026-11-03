@@ -49,7 +49,7 @@ struct InstallmentDetail: View {
                         .background(alignment: .top) {
                             if let domain = plan.lenderDomain { DetailWash(domain: domain, logos: services.logos, height: heroBottom, insets: geometry.safeAreaInsets) }
                         }
-                        .appScreen().navigationTitle(typeSize.isAccessibilitySize ? plan.name : "")
+                        .appScreen().navigationTitle(typeSize.isAccessibilitySize ? L("installment_detailTitle") : "")
                         .toolbarBackground(.hidden, for: .navigationBar)
                         .toolbar { ToolbarItem(placement: .topBarTrailing) { actions(row) } }
                 }

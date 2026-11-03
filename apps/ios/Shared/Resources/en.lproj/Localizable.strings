@@ -724,3 +724,4 @@
 "notifs_installmentsHint" = "Reminds you before installment and loan payments, and tells you when one is paid off.";
 "paywall_featureInstallments" = "The real cost of credit";
 "paywall_featureInstallmentsBody" = "See what a credit really costs, choose when installment reminders arrive, and keep the next payment on your Home Screen.";
+"installment_detailTitle" = "Installment";
