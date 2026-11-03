@@ -219,6 +219,7 @@ struct MainShell: View {
     @ViewBuilder private func destination(_ route: Route) -> some View {
         switch route {
         case .subscription(let id): SubscriptionDetail(id: id, state: $state, services: services, sheet: $sheet)
+        case .installment(let id): InstallmentDetail(id: id, state: $state, services: services, sheet: $sheet)
         case .due(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet)
         case .cancellationDay(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet, planning: true)
         case .selection(let ids): DueView(day: nil, ids: ids, state: $state, services: services, sheet: $sheet)
@@ -256,6 +257,8 @@ struct MainShell: View {
             if let row = state.presentation.rows.first(where: { $0.id == id }) { LifecycleView(row: row, action: .cancel, state: $state, services: services) }
         case .prompt(let prompt): PromptView(prompt: prompt, state: $state, services: services)
         case .installmentEditor(let original): InstallmentEditor(original: original, state: $state, services: services)
+        case .installmentPayoff(let id):
+            if let plan = state.presentation.installments?.first(where: { $0.id == id })?.plan { InstallmentPayoff(plan: plan, state: $state, services: services) }
         }
     }
     private func adopt(_ next: SceneState) {

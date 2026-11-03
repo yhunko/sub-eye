@@ -86,4 +86,11 @@ final class InstallmentEditorTests: XCTestCase {
         XCTAssertNil(try paid(true, Day.shift(created, days: 31)))
         XCTAssertNil(try paid(true, Day.shift(created, days: -1)))
     }
+
+    func testPayoffAmountTakesLoanTotalsAndStoresTheDay() throws {
+        let value = try InstallmentPayoff.value(draft, date: Day.parse("2026-12-05T15:30:00.000Z")!, amount: "1 150 000 000,40")
+        XCTAssertEqual(value.payoffAmount, "1150000000.40")
+        XCTAssertEqual(value.paidOffAt, "2026-12-05T00:00:00.000Z")
+        XCTAssertThrowsError(try InstallmentPayoff.value(draft, date: created, amount: "1000000000000"))
+    }
 }
