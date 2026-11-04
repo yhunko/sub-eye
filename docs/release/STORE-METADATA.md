@@ -9,9 +9,8 @@ Name, Subtitle and the Privacy Policy URL live on **App Information** and apply
 to every version; everything else is per version and per locale. An unfilled
 Ukrainian field shows the English text to Ukrainian users, so fill both.
 
-The What's New, Description and App Review sections below are drafted for the
-release that ships installments and loans; App Store Connect keeps the 6.2.0
-copy until that version record exists. The Promotional Text is still 6.2.0's.
+This is the 6.3.0 listing: installments and loans, the per-type + menu and the
+iPhone Duo layout. Pro rose to $14.99 (Ukraine $11.99) on 2026-11-04.
 
 ---
 
@@ -52,10 +51,10 @@ Subscriptions Tracker - SubEye
 Renewals, trials and spending
 ```
 
-### Promotional Text (170) — 6.2.0
+### Promotional Text (170) — 6.3.0
 
 ```
-New: track apps you buy once with a year of updates. SubEye counts the license once and reminds you before the updates run out. No account, no ads.
+New: installments and loans next to your subscriptions, and a + menu with its own short flow for each kind. No account, no bank login, no ads.
 ```
 
 For when there is no news worth the slot:
@@ -64,8 +63,15 @@ For when there is no news worth the slot:
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
-### What's New in This Version (4000) — installments release
+### What's New in This Version (4000) — 6.3.0
 
+```
+• Installments and loans: track a pay-in-parts purchase, a buy now, pay later plan, a card installment or a bank loan next to your subscriptions. See how many payments are made, what is paid, what is left and the day it ends.
+• Every payment counts in this month's total and shows in the calendar. A reminder the day before each payment — the one for the last payment says it is the last — and a note once the plan is paid off. Paid it off early? Record it and the schedule ends there.
+• The + button now asks what you are adding — a subscription, a free trial, a one-time license, or an installment or loan — and each has its own short flow. A subscription takes two steps, with an intro price one switch away.
+• On iPhone Duo, unfolded, each tab shows its list and what you open side by side.
+• SubEye Pro: add the purchase price to see how much more the credit costs, choose how many days ahead installment reminders arrive, and keep the next payment in the Home Screen widget. Already have Pro? All of it is included.
+• Using iCloud Sync? Update SubEye on every device you sync — older versions do not show installments.
 ```
 • Installments and loans: track a pay-in-parts purchase, a buy now, pay later plan, a card installment or a bank loan next to your subscriptions. See how many payments are made, what is paid, what is left and the day it ends.
 • Every payment counts in this month's total and shows in the calendar. A reminder the day before each payment — the one for the last payment says it is the last — and a note once the plan is paid off. Paid it off early? Record it and the schedule ends there.
@@ -121,14 +127,12 @@ Comma-separated, no spaces. Words already in the Name or Subtitle are indexed
 anyway, so they stay out.
 
 ```
-recurring,bill,payment,budget,expense,money,finance,reminder,cancel,manage,price,widget,due,calendar
+recurring,bill,payment,budget,expense,money,finance,reminder,cancel,loan,price,widget,due,calendar
 ```
 
-Unchanged for the installments release. Candidates for Yehor to weigh at
-release: `installment`, `loan`, `bnpl`. The field is at exactly 100, so a
-candidate fits only by freeing at least its own length plus a comma: `loan` or
-`bnpl` replaces any word but `due`; `installment` is longer than every current
-word and has to replace two that together have at least 10 letters.
+6.3.0 swapped `manage` for `loan` (98 characters). `installment` is longer than
+every current word and would have to replace two that together have at least
+10 letters; `bnpl` fits in the two spare characters only by replacing a word.
 
 ### URLs
 
@@ -160,10 +164,10 @@ word and has to replace two that together have at least 10 letters.
 Витрати, списання, нагадування
 ```
 
-### Promotional Text (170) — 6.2.0
+### Promotional Text (170) — 6.3.0
 
 ```
-Нове: програми, куплені один раз із роком оновлень. SubEye врахує ліцензію один раз і нагадає, коли оновлення закінчуються. Без акаунта й реклами.
+Нове: розстрочки й кредити поруч із підписками та меню «+» з окремим коротким шляхом для кожного виду. Без акаунта, без доступу до банку, без реклами.
 ```
 
 For when there is no news worth the slot:
@@ -172,8 +176,15 @@ For when there is no news worth the slot:
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
 ```
 
-### What's New in This Version (4000) — installments release
+### What's New in This Version (4000) — 6.3.0
 
+```
+• Розстрочки й кредити: відстежуйте покупку частинами, розстрочку на картці чи банківський кредит поруч із підписками. Видно, скільки платежів уже зроблено, скільки сплачено, скільки лишилося і коли все закінчиться.
+• Кожен платіж враховується в сумі за місяць і є в календарі. Нагадування за день до кожного платежу (про останній — що він останній) і повідомлення, коли розстрочку чи кредит погашено. Погасили достроково? Позначте це — і графік на цьому закінчиться.
+• Кнопка «+» тепер питає, що ви додаєте, — підписку, пробний період, разову ліцензію чи розстрочку або кредит, — і для кожного є свій короткий шлях. Підписка додається за два кроки, а нижча ціна на старт — за один перемикач.
+• На iPhone Duo в розкладеному вигляді кожна вкладка показує список і те, що ви відкрили, поруч.
+• SubEye Pro: додайте ціну покупки, щоб побачити переплату, оберіть, за скільки днів до платежу нагадувати про розстрочки й кредити, і тримайте наступний платіж у віджеті на Початковому екрані. Уже маєте Pro? Усе це вже ваше.
+• Користуєтеся синхронізацією з iCloud? Оновіть SubEye на кожному пристрої, який синхронізуєте, — старіші версії розстрочок не показують.
 ```
 • Розстрочки й кредити: відстежуйте покупку частинами, розстрочку на картці чи банківський кредит поруч із підписками. Видно, скільки платежів уже зроблено, скільки сплачено, скільки лишилося і коли все закінчиться.
 • Кожен платіж враховується в сумі за місяць і є в календарі. Нагадування за день до кожного платежу (про останній — що він останній) і повідомлення, коли розстрочку чи кредит погашено. Погасили достроково? Позначте це — і графік на цьому закінчиться.
@@ -226,15 +237,11 @@ Pro — це разова покупка, яка ніколи не поновл�
 ### Keywords (100)
 
 ```
-підписки,платежі,бюджет,гроші,фінанси,скасувати,ціна,віджет,рахунки,облік,календар,менеджер,пробний
+підписки,платежі,бюджет,гроші,фінанси,скасувати,ціна,віджет,рахунки,облік,календар,кредит,пробний
 ```
 
-Unchanged for the installments release. Candidates for Yehor to weigh at
-release: `розстрочка`, `кредит`, `частинами`. The field is at 99, so one swap
-fits only if the removed word is at most one letter shorter: `розстрочка` can
-replace only `скасувати`; `частинами` can replace `скасувати`, `підписки`,
-`менеджер` or `календар`; `кредит` replaces any word but `ціна`. Two swaps
-share the one spare character.
+6.3.0 swapped `менеджер` (already indexed from the Name) for `кредит` (97
+characters). `розстрочка` can still replace only `скасувати`.
 
 ### URLs
 
@@ -269,30 +276,33 @@ No account: no sign-up, no sign-in, no server, no backend. The app opens straigh
 - Installments and loans: the user records a plan or loan they already have (pay in parts, buy now pay later, card installment, bank loan) by payment, number of payments and first date. SubEye shows progress, counts each payment in the month and calendar, and reminds the day before. Free; the Pro parts are in section 8.
 - It only tracks repayments of credit the user already has; it offers, brokers or advertises none (Guideline 3.2.1(viii)).
 To try it: Home, "+", "Installment or loan", any name, a payment and a number of payments, Save.
+- "+" now opens one flow per kind: Subscription, Free trial, One-time license, Installment or loan. Trials and licenses stay Pro and open the paywall for a free user.
+- iPhone Duo, unfolded: each tab is a two-column split view.
+- Pro is now $14.99 (Ukraine $11.99), shown from StoreKit.
 
 2. TESTED ON
-iPhone 17, iOS 27.0.1; iPhone 17 Pro simulator, iOS 26.5. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.
+iPhone 17, iOS 27.2; iPhone 17 Pro simulator, iOS 26.5. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.
 
 3. WHAT IT DOES
-A manual subscription tracker. The user types what they pay — name, amount, currency, billing cycle, start date — and sees what will still leave their account this month, next month's forecast, exact renewal dates and the day a trial turns into a charge, and can pause, cancel at period end, cancel immediately or renew. It also tracks the user's own installment plans and loans. No bank credentials, no email access. For general consumers paying for several subscriptions. Rated 4+.
+A manual subscription tracker: the user types what they pay (name, amount, currency, cycle, start date) and sees what still leaves their account this month, next month's forecast, renewal dates and when a trial turns into a charge; they can pause, cancel or renew. It also tracks the user's own installment plans and loans. No bank credentials, no email access. Rated 4+.
 
 4. SETUP
-No credentials, demo account or configuration. Empty on first launch by design: Home, "+", "Subscription", any service name, amount, currency and start date, Save. That one entry fills the dashboard, forecast, list, calendar and reminder schedule in about twenty seconds. Fully usable with the network off.
+No credentials, demo account or configuration. Empty on first launch by design: Home, "+", "Subscription", any name, Next, an amount, Save. That one entry fills the dashboard, list, calendar and reminders. Works offline.
 
 5. EXTERNAL SERVICES
 - Apple In-App Purchase via RevenueCat, configured anonymously.
 - jsDelivr CDN: one public exchange-rate file, at most once a day.
 - Brandfetch, with Google's favicon service as fallback: a logo for a domain the user typed or picked, a service's or a lender's.
-- Apple App Store lookup (itunes.apple.com/lookup, app ID and storefront country only): at most once a day, to show a notice when a newer version is out. Skipped for sandbox and TestFlight receipts, so it will not appear in review.
+- Apple App Store lookup (itunes.apple.com/lookup, app ID and country only), at most daily, for a new-version notice; skipped for sandbox and TestFlight receipts.
 - Apple iCloud key-value storage: off by default, opt-in at Settings, Data; the user's own iCloud, which we cannot read.
 No authentication, analytics, crash-reporting, advertising or AI SDK, no payment processor other than Apple, and no server of ours.
 
 6. REGIONAL DIFFERENCES
-None. English and Ukrainian from the device language; all 155 currencies everywhere; nothing geo-restricted. Only the purchase price varies, read from Apple's storefront at runtime.
+None. English and Ukrainian from the device language; all 155 currencies; nothing geo-restricted. Only the purchase price varies by storefront.
 
 7. REGULATED INDUSTRY, THIRD-PARTY MATERIAL
 Not regulated: no bank or lender connection, financial account, money movement, credential, transaction or advice. Guideline 3.2.1(viii) does not apply; Finance is the category for discoverability only.
-Brand logos are fetched at runtime for a domain the user typed or picked, never bundled, and imply no affiliation; the mark identifies the service the user already named.
+Brand logos are fetched at runtime for a domain the user typed or picked, never bundled, and imply no affiliation.
 
 8. IN-APP PURCHASE
 "SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder days, installments too, pricing phases (trials, intro prices, scheduled changes and one-time licenses), categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, installment overpayment, and Home Screen widgets, installments included.
