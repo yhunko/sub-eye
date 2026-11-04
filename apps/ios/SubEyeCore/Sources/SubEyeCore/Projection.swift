@@ -16,13 +16,41 @@ public struct SubscriptionRow: Codable, Identifiable, Equatable, Sendable {
     public var licensed: Bool { phases.contains { $0.kind == .license } }
 }
 
+public struct InstallmentRow: Codable, Identifiable, Equatable, Sendable {
+    public var id: String { plan.id }
+    public var plan: InstallmentPlan
+    public var paidCount: Int
+    public var count: Int
+    public var paid: Double
+    public var left: Double
+    public var nextAmount: Double?
+    public var nextConverted: Double?
+    public var nextDate: Date?
+    public var endDate: Date?
+    public var finished: Bool
+    public var overpayment: Double?
+}
+
 public enum EventKind: String, Codable, Sendable, CaseIterable {
     case trialEnds, introEnds, updatesEnd, priceChange, payment, resumes, ends
     public var rank: Int { Self.allCases.firstIndex(of: self)! }
 }
 
+public struct InstallmentMark: Codable, Equatable, Sendable {
+    public var number: Int?      // nil for an early payoff
+    public var count: Int
+    public var paid: Bool?
+    public var symbol: String
+    public var tint: String
+}
+
 public struct CalendarEvent: Codable, Identifiable, Equatable, Sendable {
-    public var id: String { "\(subscriptionId):\(kind.rawValue):\(Day.key(date))" }
+    public var id: String {
+        let base = "\(subscriptionId):\(kind.rawValue):\(Day.key(date))"
+        guard let installment else { return base }
+        // A payoff on the day of a first payment charged at purchase would otherwise share its id.
+        return "installment:" + base + (installment.number == nil ? ":payoff" : "")
+    }
     public var subscriptionId: String
     public var name: String
     public var domain: String?
@@ -31,6 +59,7 @@ public struct CalendarEvent: Codable, Identifiable, Equatable, Sendable {
     public var amount: Double
     // A payment inside a license's window buys the license itself, so it is no renewal.
     public var purchase: Bool? = nil
+    public var installment: InstallmentMark? = nil
 }
 
 public struct Dashboard: Codable, Equatable, Sendable {
@@ -62,11 +91,15 @@ public struct Presentation: Codable, Equatable, Sendable {
     public var revision: Int64
     public var totalCount: Int
     public var generatedAt: Date
+    public var installments: [InstallmentRow]? = nil
+    public var installmentCount: Int { installments?.count ?? 0 }
 
     public init(preferences: Preferences = .init(), categories: [Category] = [], rows: [SubscriptionRow] = [],
-                dashboard: Dashboard = .init(), revision: Int64 = 0, totalCount: Int = 0, generatedAt: Date = .distantPast) {
+                dashboard: Dashboard = .init(), revision: Int64 = 0, totalCount: Int = 0, generatedAt: Date = .distantPast,
+                installments: [InstallmentRow]? = nil) {
         self.preferences = preferences; self.categories = categories; self.rows = rows
         self.dashboard = dashboard; self.revision = revision; self.totalCount = totalCount; self.generatedAt = generatedAt
+        self.installments = installments
     }
 
     public func launchPreview() -> Presentation {
@@ -74,6 +107,7 @@ public struct Presentation: Codable, Equatable, Sendable {
         copy.rows = Array(rows.prefix(40)).map { row in
             var reduced = row; reduced.phases = []; return reduced
         }
+        copy.installments = installments.map { Array($0.prefix(40)) }
         copy.categories = Array(categories.prefix(100))
         copy.dashboard.monthEvents = Array(dashboard.monthEvents.prefix(120))
         copy.dashboard.decisions = Array(dashboard.decisions.prefix(30))
@@ -129,10 +163,11 @@ public enum Projection {
                 date = Recurrence.occurrence(anchor: anchor, every: sub.every, period: sub.period, index: index)
             }
         }
-        return output.sorted { $0.date == $1.date ? $0.amount > $1.amount : $0.date < $1.date }
+        return output.sorted(by: chronological)
     }
 
-    public static func events(_ rows: [SubscriptionRow], from: Date, through: Date, rates: ExchangeRates, currency: String) -> [CalendarEvent] {
+    public static func events(_ rows: [SubscriptionRow], from: Date, through: Date, rates: ExchangeRates, currency: String,
+                              installments: [CalendarEvent] = []) -> [CalendarEvent] {
         var result = payments(rows, from: from, through: through, rates: rates, currency: currency)
         for row in rows where row.status != .cancelled {
             func append(_ raw: String?, kind: EventKind, amount: Double) {
@@ -154,6 +189,7 @@ public enum Projection {
             if row.status == .paused { append(row.subscription.resumeAt, kind: .resumes, amount: row.amount) }
             if row.status == .cancelling { append(row.subscription.willBeCancelledAt, kind: .ends, amount: row.amount) }
         }
+        result += installments
         return result.sorted { $0.date == $1.date ? ($0.kind.rank == $1.kind.rank ? $0.amount > $1.amount : $0.kind.rank < $1.kind.rank) : $0.date < $1.date }
     }
 
@@ -163,14 +199,20 @@ public enum Projection {
         let today = Day.today(now, zone: zone), start = Day.monthStart(Day.today(now, zone: zone))
         let currency = doc.preferences.preferredCurrency
         let active = rows.filter { $0.status.isCurrent && $0.nextAmount != nil }
-        let monthPayments = payments(active, from: start, through: Day.shift(Day.month(start, offset: 1), days: -1), rates: rates, currency: currency)
+        let planEvents = Installments.events(doc.installments, from: Day.month(start, offset: -1), through: Day.shift(Day.month(start, offset: 2), days: -1),
+                                             today: today, rates: rates, currency: currency)
+        func plans(_ offset: Int) -> [CalendarEvent] {
+            planEvents.filter { $0.date >= Day.month(start, offset: offset) && $0.date < Day.month(start, offset: offset + 1) }
+        }
+        let monthPayments = (payments(active, from: start, through: Day.shift(Day.month(start, offset: 1), days: -1), rates: rates, currency: currency) + plans(0))
+            .sorted(by: chronological)
         var dashboard = Dashboard()
         dashboard.monthly = active.reduce(0) { $0 + $1.monthly }
-        dashboard.yearly = payments(active, from: today, through: Day.utc.date(byAdding: .month, value: 12, to: today)!, rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
+        dashboard.yearly = payments(active, from: today, through: Day.shift(Day.utc.date(byAdding: .month, value: 12, to: today)!, days: -1), rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
         dashboard.monthTotal = monthPayments.reduce(0) { $0 + $1.amount }
-        dashboard.remaining = monthPayments.filter { $0.date >= today }.reduce(0) { $0 + $1.amount }
-        dashboard.nextMonth = payments(active, from: Day.month(start, offset: 1), through: Day.shift(Day.month(start, offset: 2), days: -1), rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
-        dashboard.previousMonth = payments(rows, from: Day.month(start, offset: -1), through: Day.shift(start, days: -1), rates: rates, currency: currency).reduce(0) { $0 + $1.amount }
+        dashboard.remaining = monthPayments.filter { $0.date >= today && $0.installment?.paid != true }.reduce(0) { $0 + $1.amount }
+        dashboard.nextMonth = (payments(active, from: Day.month(start, offset: 1), through: Day.shift(Day.month(start, offset: 2), days: -1), rates: rates, currency: currency) + plans(1)).reduce(0) { $0 + $1.amount }
+        dashboard.previousMonth = (payments(rows, from: Day.month(start, offset: -1), through: Day.shift(start, days: -1), rates: rates, currency: currency) + plans(-1)).reduce(0) { $0 + $1.amount }
         dashboard.activeCount = active.count; dashboard.monthEvents = monthPayments
         dashboard.paymentDays = Dictionary(grouping: monthPayments, by: { Day.key($0.date) }).mapValues {
             PaymentDay(count: $0.count, total: $0.reduce(0) { $0 + $1.amount })
@@ -181,7 +223,13 @@ public enum Projection {
         }.sorted { $0.date < $1.date }.prefix(5))
         dashboard.decisions = events(rows, from: today, through: Day.shift(today, days: 30), rates: rates, currency: currency).filter { $0.kind != .payment }
         dashboard.savings = Savings.ledger(rows, rates: rates, currency: currency, now: now, zone: zone)
+        let installments = doc.installments.map { Installments.row($0, today: today, rates: rates, currency: currency) }
+            .sorted { ($0.nextDate ?? .distantFuture, $0.id) < ($1.nextDate ?? .distantFuture, $1.id) }
         return Presentation(preferences: doc.preferences, categories: doc.categories, rows: rows, dashboard: dashboard,
-                            revision: revision, totalCount: rows.count, generatedAt: now)
+                            revision: revision, totalCount: rows.count, generatedAt: now, installments: installments)
+    }
+
+    private static func chronological(_ lhs: CalendarEvent, _ rhs: CalendarEvent) -> Bool {
+        lhs.date == rhs.date ? lhs.amount > rhs.amount : lhs.date < rhs.date
     }
 }

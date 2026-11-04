@@ -66,8 +66,9 @@ its version; old readers ignore the added field. Free snapshots omit individual
 subscription names, dates and prices. Development snapshots use separate keys
 and logo directories.
 
-iCloud remains record-based: `prefs`, `sub.<id>`, `cat.<id>`, `phase.<id>`. Initial
-linking unions records; change notifications apply only their stated keys.
+iCloud remains record-based: `prefs`, `sub.<id>`, `cat.<id>`, `phase.<id>`,
+`installment.<id>`. Initial linking unions records; change notifications apply
+only their stated keys.
 Pending local mutations and explicit deletion tombstones remain in a persistent
 outbox until acknowledged. A stale acknowledgement cannot clear a newer write.
 The adapter surfaces quota/account errors rather than replacing a whole document.
@@ -117,8 +118,9 @@ was not modified as part of this rewrite.
 
 The old MMKV files are a pre-upgrade recovery source, **not a reverse sync** of
 subsequent native edits. Reinstalling an older Expo binary after native editing
-can therefore show stale data. Export the native StoreDoc v1 JSON archive and
-preserve the SQLite database/WAL before rollback; plan a forward repair or an
+can therefore show stale data. Export the native StoreDoc JSON archive (v1, or
+v2 once installment plans exist, which the Expo app cannot read) and preserve
+the SQLite database/WAL before rollback; plan a forward repair or an
 explicit reverse migration. Never promise an automatic lossless binary rollback.
 
 ## Physical-device acceptance — still required

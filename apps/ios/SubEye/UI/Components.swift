@@ -25,6 +25,51 @@ struct ToneIcon: View {
     }
 }
 
+struct InstallmentIcon: View {
+    let symbol: String
+    let tint: String
+    var lenderName: String? = nil
+    var lenderDomain: String? = nil
+    let logos: LogoService
+    var size: CGFloat = 38
+    var ring = AppTheme.background
+    var body: some View {
+        ToneIcon(symbol: InstallmentStyle.symbol(symbol), tone: InstallmentStyle.color(tint), size: size)
+            .overlay(alignment: .bottomTrailing) {
+                if let lenderDomain {
+                    BrandIcon(name: lenderName ?? lenderDomain, domain: lenderDomain, logos: logos, size: size * 0.45)
+                        .padding(max(1.5, size * 0.04)).background(ring, in: Circle()).offset(x: size * 0.08, y: size * 0.08)
+                }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+struct EventIcon: View {
+    let event: CalendarEvent
+    let logos: LogoService
+    var size: CGFloat = 36
+    var dimmed = false
+    var body: some View {
+        if let mark = event.installment {
+            InstallmentIcon(symbol: mark.symbol, tint: mark.tint, lenderDomain: event.domain, logos: logos, size: size).opacity(dimmed ? 0.4 : 1)
+        } else {
+            BrandIcon(name: event.name, domain: event.domain, logos: logos, size: size, dimmed: dimmed)
+        }
+    }
+}
+
+extension CalendarEvent {
+    var owner: Route { installment == nil ? .subscription(subscriptionId) : .installment(subscriptionId) }
+}
+
+extension Route {
+    static func day(_ day: Date, events: [CalendarEvent]) -> Route {
+        let owners = Set(events.map(\.owner))
+        return owners.count == 1 ? owners.first! : .due(Day.key(day))
+    }
+}
+
 struct ActionButton: View {
     let title: String
     var role: ButtonRole?
@@ -138,6 +183,49 @@ struct SubscriptionCell: View {
     }
 }
 
+struct InstallmentCell: View {
+    let row: InstallmentRow
+    let logos: LogoService
+    // Set where plans sit beside subscriptions, so the list shows one currency.
+    var currency: String? = nil
+    @Environment(\.dynamicTypeSize) private var typeSize
+    var body: some View {
+        HStack(alignment: .center, spacing: 11) {
+            InstallmentIcon(symbol: row.plan.symbol, tint: row.plan.tint, lenderName: row.plan.lenderName, lenderDomain: row.plan.lenderDomain, logos: logos)
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 5) { name; amount }
+            } else {
+                name.frame(maxWidth: .infinity, alignment: .leading)
+                amount.multilineTextAlignment(.trailing)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8).frame(minHeight: 64)
+        .appCard(radius: 18, fill: AppTheme.surface, border: AppTheme.border)
+        .accessibilityElement(children: .combine)
+    }
+    private var name: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(row.plan.name).appFont(15, weight: .semibold).foregroundStyle(AppTheme.text).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+            Text(subtitle).appFont(12.5, relativeTo: .subheadline).foregroundStyle(AppTheme.muted).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+        }
+    }
+    @ViewBuilder private var amount: some View {
+        if let amountText {
+            Text(amountText).appFont(15.5, weight: .bold).monospacedDigit()
+                .foregroundStyle(row.nextAmount == nil ? AppTheme.muted : AppTheme.text).fixedSize(horizontal: true, vertical: false)
+        }
+    }
+    private var amountText: String? {
+        guard let currency else { return Display.money(row.nextAmount ?? row.paid, row.plan.currency) }
+        return row.nextConverted.map { Display.money($0, currency) }
+    }
+    private var subtitle: String {
+        guard !row.finished else { return L("installment_paidOff") }
+        let progress = L("installment_progress", ["paid": String(row.paidCount), "count": String(row.count)])
+        return row.nextDate.map { Display.when($0) + " · " + progress } ?? progress
+    }
+}
+
 struct EventCell: View {
     let event: CalendarEvent
     let currency: String
@@ -147,10 +235,10 @@ struct EventCell: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            if let logos { BrandIcon(name: event.name, domain: event.domain, logos: logos, size: 36, dimmed: event.kind == .ends) }
+            if let logos { EventIcon(event: event, logos: logos, dimmed: event.kind == .ends) }
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.name).appFont(15, weight: .semibold).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                Label((event.purchase == true ? L("calendar_kindPurchase") : Display.event(event.kind)) + (showDate ? " · " + Display.when(event.date) : ""), systemImage: eventIcon)
+                Label(kindLabel + (showDate ? " · " + Display.when(event.date) : ""), systemImage: eventIcon)
                     .appFont(12.5).foregroundStyle(event.kind == .resumes ? AppTheme.accent : AppTheme.muted)
                 if typeSize.isAccessibilitySize { figures(.leading) }
             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -168,8 +256,16 @@ struct EventCell: View {
             .strikethrough(event.kind == .ends).foregroundStyle(event.kind == .ends ? AppTheme.muted : AppTheme.text)
             .accessibilityLabel(event.kind == .ends ? L("home_attnStops", ["amount": Display.money(event.amount, currency)]) : Display.money(event.amount, currency))
     }
+    private var kindLabel: String {
+        if let mark = event.installment {
+            guard let number = mark.number else { return L("calendar_kindInstallmentPayoff") }
+            return number == mark.count ? L("calendar_kindInstallmentFinal") : L("calendar_kindInstallment", ["number": String(number), "count": String(mark.count)])
+        }
+        return event.purchase == true ? L("calendar_kindPurchase") : Display.event(event.kind)
+    }
     private var eventIcon: String {
-        switch event.kind {
+        if let mark = event.installment { return mark.number == nil ? "checkmark.seal" : mark.number == mark.count ? "flag.checkered" : "creditcard" }
+        return switch event.kind {
         case .trialEnds: "hourglass"
         case .introEnds: "tag"
         case .updatesEnd: "key"
@@ -196,13 +292,14 @@ struct AmountLine: View {
 }
 
 struct EmptySubscriptions: View {
-    let add: () -> Void
+    @Binding var sheet: SheetRoute?
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "repeat.circle").font(.system(size: 48)).foregroundStyle(.tint)
             Text(L("native_noSubscriptions")).font(.title2.bold())
             Text(L("native_emptyBody")).foregroundStyle(.secondary)
-            Button(L("subs_add"), action: add).buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("addSubscription")
+            Button(L("subs_emptyAddSubscription")) { sheet = .editor(nil) }.buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("emptyNewSubscription")
+            Button(L("subs_addInstallment")) { sheet = .installmentEditor(nil) }.controlSize(.large).accessibilityIdentifier("emptyNewInstallment")
         }.multilineTextAlignment(.center).padding(32).frame(maxWidth: .infinity)
     }
 }

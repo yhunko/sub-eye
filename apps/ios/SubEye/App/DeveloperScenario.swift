@@ -6,16 +6,19 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
     case priceIncrease, priceIncreaseLater, priceDecrease, priceCurrency, trialEnding, introEnding, offerStarting, licensePurchase, licenseUpdates, licenseRenewed
     case active, paused, cancelling, cancelled
     case homeSavingsNone, homeSavingsOne, homeSavingsSeveral, homeDecisions
+    case installmentMidPlan, installmentLastTomorrow, installmentPaidOff, installmentPaidOffEarly, installmentMonthEnd
 
     static let pricing: [Self] = [.priceIncrease, .priceIncreaseLater, .priceDecrease, .priceCurrency, .trialEnding, .introEnding, .offerStarting, .licensePurchase, .licenseUpdates, .licenseRenewed]
     static let lifecycle: [Self] = [.active, .paused, .cancelling, .cancelled]
     static let home: [Self] = [.homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral, .homeDecisions]
+    static let installments: [Self] = [.installmentMidPlan, .installmentLastTomorrow, .installmentPaidOff, .installmentPaidOffEarly, .installmentMonthEnd]
     // Ended subscriptions that exist only to fill the savings row; no detail scenario opens them.
     private static let stopped = [(id: "developer-stopped-adobe", name: "Adobe Creative Cloud", domain: "adobe.com", cost: "22.99", months: 4),
                                   (id: "developer-stopped-disney", name: "Disney+", domain: "disneyplus.com", cost: "9.99", months: 2)]
 
     var id: String { "developer-" + rawValue }
     var opensHome: Bool { Self.home.contains(self) }
+    var opensInstallment: Bool { Self.installments.contains(self) }
 
     var title: String {
         switch self {
@@ -37,6 +40,11 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .homeSavingsOne: "Saved row · one stopped"
         case .homeSavingsSeveral: "Saved row · three stopped"
         case .homeDecisions: "Needs a decision · six events"
+        case .installmentMidPlan: "Installment · mid-plan"
+        case .installmentLastTomorrow: "Installment · last payment tomorrow"
+        case .installmentPaidOff: "Installment · paid off"
+        case .installmentPaidOffEarly: "Loan · paid off early"
+        case .installmentMonthEnd: "Installment · 31st, through February"
         }
     }
 
@@ -55,12 +63,21 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .cancelled: "xmark.circle"
         case .homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral: "chart.line.downtrend.xyaxis"
         case .homeDecisions: "exclamationmark.circle"
+        case .installmentMidPlan: "creditcard"
+        case .installmentLastTomorrow: "flag.checkered"
+        case .installmentPaidOff, .installmentPaidOffEarly: "checkmark.seal"
+        case .installmentMonthEnd: "calendar.badge.exclamationmark"
         }
     }
 
     // Deleting first drops phases a previous visit added, so every open starts from the same state.
     func seed(_ repository: SubscriptionRepository) async throws {
         let now = Date(), today = Day.today()
+        if let plan = installment(now: now, today: today) {
+            let preferences = try await repository.document().preferences
+            try await repository.importArchive(JSONCodec.encode(StoreDocument(preferences: preferences, installments: [plan])))
+            return
+        }
         let members: [Self] = switch self {
         case .homeSavingsNone: []
         case .homeSavingsOne, .homeSavingsSeveral: [.cancelled]
@@ -139,10 +156,50 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .cancelled:
             subscription.paymentDate = Day.iso(Day.month(today, offset: -6))
             subscription.willBeCancelledAt = Day.iso(Day.shift(today, days: -12)); subscription.status = .cancelled
-        case .active, .homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral, .homeDecisions:
+        case .active, .homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral, .homeDecisions,
+             .installmentMidPlan, .installmentLastTomorrow, .installmentPaidOff, .installmentPaidOffEarly, .installmentMonthEnd:
             break
         }
         return (subscription, phases)
+    }
+
+    private func installment(now: Date, today: Date) -> InstallmentPlan? {
+        func months(_ offset: Int, from days: Int) -> Date { Day.utc.date(byAdding: .month, value: offset, to: Day.shift(today, days: days))! }
+        func plan(_ name: String, kind: InstallmentKind, symbol: String, tint: String, currency: String, total: Decimal, count: Int,
+                  every: Int = 1, period: BillingPeriod = .month, first: Date, lender: (name: String, domain: String)? = nil) -> InstallmentPlan {
+            var value = InstallmentPlan(id: id, name: name, kind: kind, symbol: symbol, tint: tint, currency: currency, total: Money.canonical(total),
+                                        payment: Money.canonical(Installments.regularPayment(total: total, count: count)!), paymentCount: count,
+                                        every: every, period: period, firstPaymentDate: Day.iso(first), now: now)
+            value.lenderName = lender?.name; value.lenderDomain = lender?.domain
+            // Entered before its first payment, so the paid-off scenarios count as plans SubEye watched through.
+            value.createdAt = Day.iso(Day.shift(first, days: -1))
+            return value
+        }
+        switch self {
+        case .installmentMidPlan:
+            return plan("iPhone 17 Pro", kind: .payInParts, symbol: "iphone", tint: "blue", currency: "uah", total: 59999, count: 6,
+                        first: months(-3, from: 5), lender: ("monobank", "monobank.ua"))
+        case .installmentLastTomorrow:
+            return plan("Sofa", kind: .payInParts, symbol: "sofa.fill", tint: "orange", currency: "eur", total: 480, count: 4, every: 2, period: .week,
+                        first: Day.shift(today, days: -41), lender: ("Klarna", "klarna.com"))
+        case .installmentPaidOff:
+            var value = plan("MacBook Air", kind: .cardInstallment, symbol: "laptopcomputer", tint: "purple", currency: "usd", total: 1199, count: 3,
+                             first: months(-2, from: -5), lender: ("PrivatBank", "privatbank.ua"))
+            value.price = "1099.00"
+            return value
+        case .installmentPaidOffEarly:
+            var value = plan("Car loan", kind: .loan, symbol: "car.fill", tint: "teal", currency: "usd", total: 6000, count: 12,
+                             first: months(-6, from: 3))
+            let payoff = Day.shift(today, days: -10)
+            value.paidOffAt = Day.iso(payoff); value.payoffAmount = Money.canonical(Installments.remaining(value, on: payoff)); value.price = "5400.00"
+            return value
+        case .installmentMonthEnd:
+            let year = Day.utc.component(.year, from: today)
+            return plan("Washing machine", kind: .payInParts, symbol: "washer.fill", tint: "green", currency: "uah", total: 24000, count: 12,
+                        first: Day.utc.date(from: DateComponents(year: year, month: 1, day: 31))!, lender: ("PUMB", "pumb.ua"))
+        default:
+            return nil
+        }
     }
 
     private var name: String? {
@@ -158,6 +215,7 @@ enum DeveloperScenario: String, CaseIterable, Hashable {
         case .licenseUpdates: "CleanShot X"
         case .licenseRenewed: "Nova"
         case .homeSavingsNone, .homeSavingsOne, .homeSavingsSeveral, .homeDecisions: nil
+        case .installmentMidPlan, .installmentLastTomorrow, .installmentPaidOff, .installmentPaidOffEarly, .installmentMonthEnd: nil
         }
     }
 
@@ -210,9 +268,15 @@ struct DeveloperOverride: Equatable {
     let id = UUID()
 
     @MainActor static func binding(_ key: String, state: Binding<SceneState>, change: Binding<DeveloperOverride?>) -> Binding<Bool> {
-        Binding(get: { key == pro ? state.wrappedValue.settings.pro : state.wrappedValue.settings.reminders.renewals }, set: { value in
+        Binding(get: {
+            let reminders = state.wrappedValue.settings.reminders
+            return key == pro ? state.wrappedValue.settings.pro : reminders.renewals || reminders.trials || reminders.installments
+        }, set: { value in
             if key == pro { state.wrappedValue.settings.pro = value }
-            else { state.wrappedValue.settings.reminders.renewals = value; state.wrappedValue.settings.reminders.trials = value }
+            else {
+                state.wrappedValue.settings.reminders.renewals = value; state.wrappedValue.settings.reminders.trials = value
+                state.wrappedValue.settings.reminders.installments = value
+            }
             change.wrappedValue = DeveloperOverride(key: key, value: value)
         })
     }
@@ -241,7 +305,8 @@ struct DeveloperScenarioScreen: View {
     @State private var change: DeveloperOverride?
     var body: some View {
         Group {
-            if prepared == scenario, !scenario.opensHome { SubscriptionDetail(id: scenario.id, state: $state, services: services, sheet: $sheet) }
+            if prepared == scenario, scenario.opensInstallment { InstallmentDetail(id: scenario.id, state: $state, services: services, sheet: $sheet) }
+            else if prepared == scenario, !scenario.opensHome { SubscriptionDetail(id: scenario.id, state: $state, services: services, sheet: $sheet) }
             else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).appScreen() }
         }
         .toolbar {

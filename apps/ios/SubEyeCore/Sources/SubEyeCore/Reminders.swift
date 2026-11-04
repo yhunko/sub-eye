@@ -5,17 +5,22 @@ public struct ReminderSettings: Codable, Equatable, Sendable {
     public var renewalLeadDays = [1]
     public var trials = false
     public var trialLeadDays = [1, 3]
+    public var installments = false
+    public var installmentLeadDays = [1]
     public var hour = 9
     public var minute = 0
     public init() {}
-    private enum CodingKeys: String, CodingKey { case renewals, renewalLeadDays, trials, trialLeadDays, hour, minute }
+    private enum CodingKeys: String, CodingKey { case renewals, renewalLeadDays, trials, trialLeadDays, installments, installmentLeadDays, hour, minute }
     public init(from decoder: Decoder) throws {
         self.init()
         guard let values = try? decoder.container(keyedBy: CodingKeys.self) else { return }
         renewals = (try? values.decode(Bool.self, forKey: .renewals)) ?? false
         trials = (try? values.decode(Bool.self, forKey: .trials)) ?? false
+        // Settings saved before installments existed inherit the renewal consent the user already gave.
+        installments = (try? values.decode(Bool.self, forKey: .installments)) ?? renewals
         renewalLeadDays = Self.leads((try? values.decode([Int].self, forKey: .renewalLeadDays)) ?? [1], fallback: [1])
         trialLeadDays = Self.leads((try? values.decode([Int].self, forKey: .trialLeadDays)) ?? [1, 3], fallback: [1, 3])
+        installmentLeadDays = Self.leads((try? values.decode([Int].self, forKey: .installmentLeadDays)) ?? [1], fallback: [1])
         let storedHour = (try? values.decode(Int.self, forKey: .hour)) ?? 9
         let storedMinute = (try? values.decode(Int.self, forKey: .minute)) ?? 0
         hour = (0...23).contains(storedHour) ? storedHour : 9
@@ -28,7 +33,8 @@ public struct ReminderSettings: Codable, Equatable, Sendable {
         value.minute = (0...59).contains(minute) ? minute : 0
         value.renewalLeadDays = Self.leads(renewalLeadDays, fallback: [1])
         value.trialLeadDays = Self.leads(trialLeadDays, fallback: [1, 3])
-        if !pro { value.trials = false; value.renewalLeadDays = [1]; value.trialLeadDays = [1] }
+        value.installmentLeadDays = Self.leads(installmentLeadDays, fallback: [1])
+        if !pro { value.trials = false; value.renewalLeadDays = [1]; value.trialLeadDays = [1]; value.installmentLeadDays = [1] }
         return value
     }
     public static func leads(_ values: [Int], fallback: [Int]) -> [Int] {
@@ -110,13 +116,13 @@ public enum ReminderPlanner {
         return result
     }
 
-    public static func plan(rows: [SubscriptionRow], settings: ReminderSettings, pro: Bool, rates: ExchangeRates,
+    public static func plan(rows: [SubscriptionRow], installments: [InstallmentPlan] = [], settings: ReminderSettings, pro: Bool, rates: ExchangeRates,
                             currency: String, now: Date, zone: TimeZone, limit: Int = budget) -> [PlannedReminder] {
         let settings = settings.effective(pro: pro)
         var groups: [String: PlannedReminder] = [:]
-        func collect(_ row: SubscriptionRow, events: [CalendarEvent], leads: [Int], kind: String, repeats: Bool) {
+        func collect(_ events: [CalendarEvent], leads: [Int], kind: String, repeating source: SubscriptionRow? = nil) {
             for lead in leads {
-                let rule = repeats ? repeatRule(row, lead: lead, hour: settings.hour, minute: settings.minute, now: now, zone: zone) : nil
+                let rule = source.flatMap { repeatRule($0, lead: lead, hour: settings.hour, minute: settings.minute, now: now, zone: zone) }
                 for event in events {
                     let fire = Day.localInstant(Day.shift(event.date, days: -lead), hour: settings.hour, minute: settings.minute, zone: zone)
                     guard fire > now else { continue }
@@ -135,20 +141,43 @@ public enum ReminderPlanner {
             }
         }
         for row in rows where row.status.isCurrent {
+            let trialEnd = settings.trials ? Pricing.effective(row.phases, at: now).flatMap { trial in
+                trial.kind == .trial ? Day.parse(trial.endsAt).flatMap { Lifecycle.includes(row.subscription, occurrence: $0) ? $0 : nil } : nil
+            } : nil
             if settings.renewals, let next = row.nextDate {
                 let end = Recurrence.occurrence(anchor: next, every: row.subscription.every, period: row.subscription.period, index: 2)
                 let events = Array(Projection.payments([row], from: next, through: end, rates: rates, currency: currency).prefix(3))
                 // Past a license's window a charge is optional and only buys updates, so its reminder says what lapses.
                 let updates = events.filter { row.licensed && Pricing.effective(row.phases, at: $0.date)?.kind != .license }
-                collect(row, events: events.filter { !updates.contains($0) }, leads: settings.renewalLeadDays, kind: "renewal", repeats: true)
-                collect(row, events: updates, leads: settings.renewalLeadDays, kind: "updates", repeats: true)
+                let renewals = events.filter { !updates.contains($0) }
+                // The trial reminder already names the charge that ends the trial, so at its leads a renewal reminder would repeat it
+                // that morning. Leads stay the outer loop: a group keeps the first charge it sees, and that must be the nearest one.
+                for lead in settings.renewalLeadDays {
+                    collect(renewals.filter { $0.date != trialEnd || !settings.trialLeadDays.contains(lead) }, leads: [lead], kind: "renewal", repeating: row)
+                }
+                collect(updates, leads: settings.renewalLeadDays, kind: "updates", repeating: row)
             }
-            if settings.trials, let trial = Pricing.effective(row.phases, at: now), trial.kind == .trial,
-               let end = Day.parse(trial.endsAt), Lifecycle.includes(row.subscription, occurrence: end) {
+            if let end = trialEnd {
                 let amount = row.upcoming.map { rates.convert(Double($0.cost) ?? 0, from: $0.currency, to: currency) } ?? 0
                 let event = CalendarEvent(subscriptionId: row.id, name: row.subscription.name, domain: row.subscription.brandDomain,
                                           kind: .trialEnds, date: end, amount: amount)
-                collect(row, events: [event], leads: settings.trialLeadDays, kind: "trial", repeats: false)
+                collect([event], leads: settings.trialLeadDays, kind: "trial")
+            }
+        }
+        for plan in installments where settings.installments {
+            let payments = Installments.payments(plan, today: Day.today(now, zone: zone))
+            let next = payments.filter { !$0.paid }.prefix(3)
+            func event(_ date: Date, amount: Double) -> CalendarEvent {
+                CalendarEvent(subscriptionId: plan.id, name: plan.name, domain: plan.lenderDomain, kind: .payment, date: date, amount: amount)
+            }
+            for payment in next {
+                let amount = rates.convert(NSDecimalNumber(decimal: payment.amount).doubleValue, from: plan.currency, to: currency)
+                collect([event(payment.date, amount: amount)], leads: settings.installmentLeadDays,
+                        kind: payment.number == plan.paymentCount ? "installmentFinal" : "installment")
+            }
+            // The day after the final charge, not the day of it: a payment is paid only once its day has passed.
+            if plan.paidOffAt == nil, let final = payments.last, final.paid || next.last?.number == final.number {
+                collect([event(Day.shift(final.date, days: 1), amount: 0)], leads: [0], kind: "installmentPaidOff")
             }
         }
         return Array(groups.values.sorted {

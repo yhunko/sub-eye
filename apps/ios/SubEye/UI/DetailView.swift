@@ -11,7 +11,6 @@ struct SubscriptionDetail: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.besideList) private var besideList
     @State private var delete = false
     @State private var deletion: UUID?
     @State private var heroBottom: CGFloat = 300
@@ -36,11 +35,14 @@ struct SubscriptionDetail: View {
                         details(row)
                         if !row.phases.isEmpty {
                             if state.settings.pro { history(row) }
-                            else { timelineLock }
+                            else {
+                                ProTeaser(title: L("paywall_lockTimeline"), message: L("paywall_lockTimelineBody")) { sheet = .paywall }
+                                    .padding(.top, 8).accessibilityIdentifier("timelineLock")
+                            }
                         }
                         if let notes = row.subscription.notes, !notes.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
-                                caption(L("native_notes"))
+                                DetailCaption(title: L("native_notes"))
                                 Text(notes).appFont(15).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(16).appCard()
                             }.padding(.top, 8)
                         }
@@ -57,20 +59,7 @@ struct SubscriptionDetail: View {
                 }.coordinateSpace(name: "subscriptionDetail")
                     .onPreferenceChange(HeroBottomKey.self) { heroBottom = $0 }
                     .background(alignment: .top) {
-                        BrandWash(domain: row.subscription.brandDomain, logos: services.logos)
-                            .frame(height: max(0, heroBottom + geometry.safeAreaInsets.top))
-                            // Beside a list on the open iPhone Duo, the wash fades into the seam instead of ending on a hard edge. The
-                            // list floats over this column as its leading safe area, so the fade starts where the list ends.
-                            .mask(alignment: .leading) {
-                                HStack(spacing: 0) {
-                                    Color.clear.frame(width: besideList ? geometry.safeAreaInsets.leading : 0)
-                                    LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing).frame(width: besideList ? 96 : 0)
-                                    Color.black
-                                }
-                            }
-                            .offset(y: -geometry.safeAreaInsets.top)
-                            // Runs on under the side bar and status bar, which iPhone Duo reports as a horizontal safe area.
-                            .ignoresSafeArea(edges: .horizontal)
+                        DetailWash(domain: row.subscription.brandDomain, logos: services.logos, height: heroBottom, insets: geometry.safeAreaInsets)
                     }
                     .appScreen().navigationTitle(typeSize.isAccessibilitySize ? L("native_subscriptionTitle") : "")
                     .toolbarBackground(.hidden, for: .navigationBar)
@@ -173,10 +162,6 @@ struct SubscriptionDetail: View {
         guard row.effectiveKind == .trial, let next = row.upcoming, next.kind != .trial, next.kind != .intro else { return nil }
         return next
     }
-    private func caption(_ title: String) -> some View {
-        Text(title).appFont(13, weight: .medium, relativeTo: .footnote).foregroundStyle(AppTheme.muted)
-            .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 18).accessibilityAddTraits(.isHeader)
-    }
     // Renewal reminders also cover a trial's first paid charge; trial reminders count only where the planner keeps them, on Pro.
     private func reminded(_ row: SubscriptionRow) -> Bool {
         let reminders = state.settings.reminders
@@ -188,9 +173,7 @@ struct SubscriptionDetail: View {
         return L(paidAfterTrial(row) != nil ? "detail_remindTrial" : "detail_remindRenewal")
     }
     private var reminderConfirmation: String {
-        let lead = ReminderSettings.leads(state.settings.reminders.renewalLeadDays, fallback: [1]).max() ?? 1
-        let label = L([0: "notifs_leadSameDay", 1: "notifs_leadOneDay", 3: "notifs_leadThreeDays", 7: "notifs_leadOneWeek"][state.settings.pro ? lead : 1]!)
-        return L("detail_reminderOn", ["lead": label.prefix(1).lowercased() + label.dropFirst()])
+        L("detail_reminderOn", ["lead": reminderLead(state.settings.reminders.renewalLeadDays, pro: state.settings.pro)])
     }
     private func share(_ row: SubscriptionRow) -> Double? {
         let total = state.presentation.dashboard.monthly
@@ -217,29 +200,21 @@ struct SubscriptionDetail: View {
         let trialStart = paidAfterTrial(row) != nil ? Pricing.effective(row.phases, at: Date()).flatMap { Day.parse($0.startsAt) } : nil
         let tracked = Day.parse(subscription.createdAt)
         return AppSection {
-            detailRow(L("detail_segBilling"), value: sentence(Display.cadence(subscription)))
+            DetailRow(title: L("detail_segBilling"), value: sentence(Display.cadence(subscription)))
             AppDivider(inset: 18)
-            detailRow(L("form_price"), value: priceValue(row))
+            DetailRow(title: L("form_price"), value: priceValue(row))
             if let trialStart {
                 AppDivider(inset: 18)
-                detailRow(L("detail_trialStarted"), value: Display.date(trialStart))
+                DetailRow(title: L("detail_trialStarted"), value: Display.date(trialStart))
             } else if let tracked {
                 AppDivider(inset: 18)
-                detailRow(L("detail_trackedSince"), value: Display.date(tracked))
+                DetailRow(title: L("detail_trackedSince"), value: Display.date(tracked))
             }
             if let category = row.category {
                 AppDivider(inset: 18)
-                detailRow(L("form_category"), value: category.emoji + " " + category.name)
+                DetailRow(title: L("form_category"), value: category.emoji + " " + category.name)
             }
         }
-    }
-    private func detailRow(_ title: String, value: String) -> some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(spacing: 16))
-        return layout {
-            Text(title).fixedSize(horizontal: false, vertical: true)
-            if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
-            Text(value).foregroundStyle(AppTheme.muted).monospacedDigit().multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).fixedSize(horizontal: false, vertical: true)
-        }.appFont(15).padding(.horizontal, 18).padding(.vertical, 12).frame(minHeight: 48).accessibilityElement(children: .combine)
     }
     private func priceValue(_ row: SubscriptionRow) -> String {
         if let paid = paidAfterTrial(row) {
@@ -252,24 +227,9 @@ struct SubscriptionDetail: View {
         guard (Double(cost) ?? 0) > 0, code.lowercased() != currency.lowercased(), let converted else { return native }
         return native + " · " + Display.money(converted, currency)
     }
-    private var timelineLock: some View {
-        Button { sheet = .paywall } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        Text(L("paywall_lockTimeline")).appFont(15, weight: .semibold)
-                        Text(L("paywall_badge").uppercased()).appFont(11, weight: .bold, relativeTo: .caption2).foregroundStyle(AppTheme.accentBright)
-                            .padding(.horizontal, 7).padding(.vertical, 2).background(AppTheme.accentBright.opacity(0.14), in: Capsule())
-                    }
-                    Text(L("paywall_lockTimelineBody")).appFont(13).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
-            }.padding(.leading, 18).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
-        }.buttonStyle(.plain).padding(.top, 8).accessibilityIdentifier("timelineLock")
-    }
     private func history(_ row: SubscriptionRow) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            caption(L("detail_timeline"))
+            DetailCaption(title: L("detail_timeline"))
             VStack(spacing: 0) {
                 ForEach(Array(historyEntries(row).enumerated()), id: \.element.id) { index, entry in
                     if index > 0 { AppDivider(inset: 42) }
@@ -418,6 +378,79 @@ private func perPeriod(_ cost: String, _ currency: String, _ subscription: Subsc
 }
 
 private func sentence(_ text: String) -> String { text.prefix(1).uppercased() + text.dropFirst() }
+
+func reminderLead(_ days: [Int], pro: Bool) -> String {
+    let lead = ReminderSettings.leads(days, fallback: [1]).max() ?? 1
+    let label = L([0: "notifs_leadSameDay", 1: "notifs_leadOneDay", 3: "notifs_leadThreeDays", 7: "notifs_leadOneWeek"][pro ? lead : 1]!)
+    return label.prefix(1).lowercased() + label.dropFirst()
+}
+
+struct DetailCaption: View {
+    let title: String
+    var body: some View {
+        Text(title).appFont(13, weight: .medium, relativeTo: .footnote).foregroundStyle(AppTheme.muted)
+            .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 18).accessibilityAddTraits(.isHeader)
+    }
+}
+
+struct DetailRow: View {
+    let title: String
+    let value: String
+    @Environment(\.dynamicTypeSize) private var typeSize
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(spacing: 16))
+        layout {
+            Text(title).fixedSize(horizontal: false, vertical: true)
+            if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
+            Text(value).foregroundStyle(AppTheme.muted).monospacedDigit().multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing).fixedSize(horizontal: false, vertical: true)
+        }.appFont(15).padding(.horizontal, 18).padding(.vertical, 12).frame(minHeight: 48).accessibilityElement(children: .combine)
+    }
+}
+
+struct ProTeaser: View {
+    let title: String
+    let message: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(title).appFont(15, weight: .semibold)
+                        Text(L("paywall_badge").uppercased()).appFont(11, weight: .bold, relativeTo: .caption2).foregroundStyle(AppTheme.accentBright)
+                            .padding(.horizontal, 7).padding(.vertical, 2).background(AppTheme.accentBright.opacity(0.14), in: Capsule())
+                    }
+                    Text(message).appFont(13).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
+            }.padding(.leading, 18).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
+}
+
+struct DetailWash: View {
+    let domain: String?
+    let logos: LogoService
+    let height: CGFloat
+    let insets: EdgeInsets
+    @Environment(\.besideList) private var besideList
+    var body: some View {
+        BrandWash(domain: domain, logos: logos)
+            .frame(height: max(0, height + insets.top))
+            // Beside a list on the open iPhone Duo, the wash fades into the seam instead of ending on a hard edge. The
+            // list floats over this column as its leading safe area, so the fade starts where the list ends.
+            .mask(alignment: .leading) {
+                HStack(spacing: 0) {
+                    Color.clear.frame(width: besideList ? insets.leading : 0)
+                    LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing).frame(width: besideList ? 96 : 0)
+                    Color.black
+                }
+            }
+            .offset(y: -insets.top)
+            // Runs on under the side bar and status bar, which iPhone Duo reports as a horizontal safe area.
+            .ignoresSafeArea(edges: .horizontal)
+    }
+}
 
 private struct PaymentCard: View {
     let row: SubscriptionRow
@@ -642,7 +675,7 @@ private enum BrandTint {
     }
 }
 
-private struct HeroBottomKey: PreferenceKey {
+struct HeroBottomKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }

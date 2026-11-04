@@ -79,7 +79,7 @@ export const en = {
     title: "What it does",
     money: {
       title: "One number, with a denominator.",
-      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast and whether it moved up or down, what the next twelve months come to, and where the money actually goes.",
+      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast and whether it moved up or down, what the next twelve months come to, and where the money actually goes. Installment and loan payments count in this month's and next month's figures: each falls in its own month, and each plan shows what is paid and what is left.",
     },
     lifecycle: {
       title: "Pause it, cancel it, change your mind.",
@@ -119,10 +119,11 @@ export const en = {
     freeItems: [
       "No account, and it works offline",
       "Unlimited subscriptions",
+      "Installments and loans, payment by payment",
       "Spend, next month, and the year ahead",
       "A payment calendar for every month",
       "Pause, cancel, renew",
-      "Renewal reminders, the day before",
+      "A reminder the day before each payment",
       "Every currency at daily rates",
       "iCloud Sync across your own devices",
       "English and Ukrainian",
@@ -138,7 +139,8 @@ export const en = {
       "Price history on every subscription",
       "Categories, category filters and the breakdown",
       "A year of spending, and each month against the last",
-      "Home Screen widgets",
+      "What a credit costs over the purchase price",
+      "Home Screen widgets, next installment included",
     ],
     joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
     storefrontTitle: "Priced for where you live.",

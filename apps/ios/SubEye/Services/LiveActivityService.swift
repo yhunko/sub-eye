@@ -67,7 +67,7 @@ final class LiveActivityService {
             if days.count == 2 { break }
         }
         guard let through = days.last else { await endAll(); return }
-        let events = try await repository.calendar(from: from, through: through, rates: rates, now: now).filter { $0.kind == .payment }
+        let events = Self.renewalEvents(try await repository.calendar(from: from, through: through, rates: rates, now: now))
         let groups = Dictionary(grouping: events) { Day.key($0.date) }
         guard current == generation, !Task.isCancelled else { return }
         var planned: [(String, Date, RenewalActivity.ContentState)] = []
@@ -119,6 +119,8 @@ final class LiveActivityService {
             await logos.retainActivityLogos(Set(planned.flatMap { $0.2.items.compactMap(\.logoFile) } + previewFiles))
         }
     }
+    // A plan payment has nothing to keep or cancel, and its id names no subscription for the activity's Cancel sheet.
+    static func renewalEvents(_ events: [CalendarEvent]) -> [CalendarEvent] { events.filter { $0.kind == .payment && $0.installment == nil } }
     static func alert(_ state: RenewalActivity.ContentState) -> AlertConfiguration {
         let today = L("notif_whenToday")
         let title: String, body: String

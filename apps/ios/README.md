@@ -87,9 +87,19 @@ longer because the new presentation cache does not yet exist.
   repository conflicts, cloud merge/outbox, deletion, reminder boundaries and
   review-prompt policy.
 - `SubEyeTests`: real native binary MMKV migration, source byte preservation,
-  bounded launch cache, development namespace and raster logo validation.
+  bounded launch cache, development namespace, raster logo validation, the
+  installment editor's derivation, installment reminder copy and widget items,
+  the prompt rules (reminders offer, paid-off celebration), and what each add
+  flow saves (subscription, lower start, free trial, license) through a real
+  repository, with the rules that keep Save off.
 - `SubEyeUITests`: English create/edit/search/delete/calendar/settings, offline
-  relaunch, Ukrainian flow and largest Dynamic Type accessibility audit.
+  relaunch, Ukrainian flow and largest Dynamic Type accessibility audit; adding
+  and deleting an installment in English and Ukrainian (the Subscriptions |
+  Installments switch shows only while a plan exists), the Home Installments
+  card, and the largest-text Ukrainian audit of both segments and the
+  installment detail; adding each type from the + menu in English, a trial
+  and a license in Ukrainian, the free user's locked menu items, and the
+  largest-text Ukrainian audit of every add-flow page.
 - `SubEyePerformance` scheme: populated-cache process launch, large-list scroll
   metrics and repeated detail-page memory inspection. Test arguments and fixture
   entitlement overrides compile only in development configurations.
@@ -104,6 +114,17 @@ deliberately blurs scrolling content. It does not exclude
 visible content or clipping/hit-region checks; offscreen contrast samples are
 excluded as well. Manual VoiceOver and system
 accessibility-setting verification remain part of physical-device acceptance.
+
+UI tests seed the isolated store with `--fixture-count N` subscriptions; add
+`--fixture-installments N` for installment plans (every fourth one long paid
+off), which `--fixture-count` alone never creates.
+
+Localizable strings keep identical keys in English and Ukrainian. From the
+repository root, this prints nothing when they match:
+
+```sh
+diff <(sed -n 's/^"\([^"]*\)".*/\1/p' apps/ios/Shared/Resources/en.lproj/Localizable.strings | sort) <(sed -n 's/^"\([^"]*\)".*/\1/p' apps/ios/Shared/Resources/uk.lproj/Localizable.strings | sort)
+```
 
 Widget visual checks can opt in to publishing the isolated UI-test store with
 `--ui-testing --test-store <UUID> --fixture-count 12 --fixture-pro --publish-widget-fixture`.

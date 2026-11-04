@@ -9,6 +9,7 @@ struct HomeView: View {
     let services: AppServices
     @Binding var sheet: SheetRoute?
     var openCalendar: () -> Void
+    var openInstallments: () -> Void
     var sections = HomeSections.all
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var expanded = false
@@ -29,12 +30,13 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                if model.totalCount == 0 { EmptySubscriptions { sheet = .editor(nil) } }
+                if model.totalCount == 0 && model.installmentCount == 0 { EmptySubscriptions(sheet: $sheet) }
                 else {
                     if sections != .breakdown {
                         paymentRail.padding(.bottom, 14)
                         if !model.dashboard.decisions.isEmpty { decisions }
                         monthCard
+                        if let installments = model.installments, !installments.isEmpty { installmentsRow(installments) }
                     }
                     if sections != .summary {
                         if let savings = model.dashboard.savings, savings.total > 0 { savedRow(savings) }
@@ -56,7 +58,7 @@ struct HomeView: View {
                 if #available(iOS 26, *) {
                     ToolbarItem(placement: .topBarLeading) { monthHeading }.sharedBackgroundVisibility(.hidden)
                 } else { ToolbarItem(placement: .topBarLeading) { monthHeading } }
-                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton { sheet = .editor(nil) } }
+                ToolbarItem(placement: .topBarTrailing) { AddSubscriptionButton(sheet: $sheet, pro: state.settings.pro) }
             }
         }
     }
@@ -80,8 +82,7 @@ struct HomeView: View {
                     if offset > 0 && Day.utc.component(.weekday, from: date) == 2 {
                         Rectangle().fill(AppTheme.border).frame(width: 0.5, height: 108).padding(.horizontal, 5)
                     }
-                    let ids = Set(charges.map(\.subscriptionId))
-                    RouteLink(value: ids.count == 1 ? Route.subscription(ids.first!) : Route.due(Day.key(date))) {
+                    RouteLink(value: Route.day(date, events: charges)) {
                         VStack(spacing: 7) {
                             Text(date.formatted(Date.FormatStyle(timeZone: .gmt).weekday(.abbreviated)).uppercased()).appFont(11, weight: .semibold, relativeTo: .caption).tracking(0.4).foregroundStyle(AppTheme.muted)
                             Text(String(Day.utc.component(.day, from: date))).appFont(17, weight: .semibold).monospacedDigit()
@@ -95,7 +96,7 @@ struct HomeView: View {
                                     // Two logos already fill the column, so a third charge shows one logo and the rest as a count, as the calendar does.
                                     HStack(spacing: -4) {
                                         ForEach(charges.prefix(count > 2 ? 1 : 2)) { event in
-                                            BrandIcon(name: event.name, domain: event.domain, logos: services.logos, size: 22).padding(2).background(AppTheme.background, in: Circle())
+                                            EventIcon(event: event, logos: services.logos, size: 22).padding(2).background(AppTheme.background, in: Circle())
                                         }
                                         if count > 2 { Text("+\(count - 1)").appFont(10, weight: .bold).padding(4).background(AppTheme.surfaceAlt, in: Capsule()) }
                                     }
@@ -182,13 +183,30 @@ struct HomeView: View {
             }.padding(.leading, 16).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityIdentifier("savedWithSubEye")
     }
+    private func installmentsRow(_ rows: [InstallmentRow]) -> some View {
+        let active = rows.filter { !$0.finished }
+        let next = active.compactMap { row in row.nextDate.flatMap { date in row.nextConverted.map { (date: date, amount: $0) } } }.min { $0.date < $1.date }
+        let summary = next.map {
+            L("home_installmentsActive", ["count": String(active.count), "amount": Display.money($0.amount, currency), "when": Display.when($0.date, today: today)])
+        } ?? L("home_installmentsDone")
+        return Button(action: openInstallments) {
+            HStack(spacing: 12) {
+                ToneIcon(symbol: "creditcard", tone: AppTheme.accentBright, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("home_installments")).appFont(15, weight: .semibold)
+                    Text(summary).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted)
+                }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right").appFont(13, weight: .semibold).foregroundStyle(AppTheme.muted).accessibilityHidden(true)
+            }.padding(.leading, 16).padding(.trailing, 14).padding(.vertical, 14).appCard().contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityIdentifier("homeInstallments")
+    }
     private var decisions: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) { sectionTitle(L("home_decisions")); Spacer(); Text(String(model.dashboard.decisions.count)).appFont(13, relativeTo: .caption).foregroundStyle(AppTheme.muted) }.padding(.horizontal, 4)
             VStack(spacing: 0) {
                 ForEach(Array(model.dashboard.decisions.prefix(3).enumerated()), id: \.element.id) { index, event in
                     if index > 0 { AppDivider() }
-                    RouteLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
+                    RouteLink(value: event.owner) { EventCell(event: event, currency: currency, logos: services.logos, note: decisionNote(event)) }.buttonStyle(.plain).padding(.vertical, 12)
                 }
                 if model.dashboard.decisions.count > 3 { Button(L("home_decisionMore", ["count": String(model.dashboard.decisions.count - 3)]), action: openCalendar).appFont(13.5).padding(.vertical, 12) }
             }.padding(.horizontal, 16).appCard()

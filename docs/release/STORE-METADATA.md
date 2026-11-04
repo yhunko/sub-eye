@@ -9,6 +9,10 @@ Name, Subtitle and the Privacy Policy URL live on **App Information** and apply
 to every version; everything else is per version and per locale. An unfilled
 Ukrainian field shows the English text to Ukrainian users, so fill both.
 
+The What's New, Description and App Review sections below are drafted for the
+release that ships installments and loans; App Store Connect keeps the 6.2.0
+copy until that version record exists. The Promotional Text is still 6.2.0's.
+
 ---
 
 ## Releasing a version
@@ -60,12 +64,13 @@ For when there is no news worth the slot:
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
-### What's New in This Version (4000) — 6.2.0
+### What's New in This Version (4000) — installments release
 
 ```
-• One-time licenses (SubEye Pro): track software you buy once with a year of updates included. SubEye counts the purchase once, shows the optional renewal on its own date and reminds you before your updates run out — renewing is your call.
-• A clearer way to add a subscription: choose how you pay — regular, free trial, intro discount or one-time license — and see the first charges laid out before you save.
-• The calendar marks a license purchase, and "Needs a decision" on Home shows when updates are about to end.
+• Installments and loans: track a pay-in-parts purchase, a buy now, pay later plan, a card installment or a bank loan next to your subscriptions. See how many payments are made, what is paid, what is left and the day it ends.
+• Every payment counts in this month's total and shows in the calendar. A reminder the day before each payment — the one for the last payment says it is the last — and a note once the plan is paid off. Paid it off early? Record it and the schedule ends there.
+• SubEye Pro: add the purchase price to see how much more the credit costs, choose how many days ahead installment reminders arrive, and keep the next payment in the Home Screen widget.
+• Using iCloud Sync? Update SubEye on every device you sync — older versions do not show installments.
 ```
 
 ### Description (4000)
@@ -81,8 +86,9 @@ WHAT YOU GET
 • Next month's forecast set against this one, and the single subscription costing you the most.
 • A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, a license you bought once with its optional updates renewal, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
+• Installments and loans next to your subscriptions — a pay-in-parts purchase, buy now, pay later, a card installment or a bank loan. How many payments are made, what is left to pay and the day it ends, with every payment counted in its month and shown in the calendar.
 • Saved with SubEye — what pausing and cancelling has kept in your pocket, counted from the day each one stopped.
-• A reminder the day before a renewal, so nothing is a surprise.
+• A reminder the day before a renewal or an installment payment, so nothing is a surprise.
 • 155 currencies — every one the world bills in — converted daily into the one you count in.
 • English and Ukrainian, and iCloud Sync when you want the same list on two devices.
 
@@ -90,18 +96,19 @@ NO ACCOUNT. NO BANK. NO SERVER.
 
 Most trackers ask for one of two things: the credentials to your bank, or permission to read your email. SubEye asks for neither. There is nothing to sign up for and nothing to sign in to — open the app and start typing.
 
-Your subscriptions stay on your phone. There is no server behind SubEye holding a copy, so there is nothing to breach and nothing to sell. Settings → Erase all data removes every subscription, reminder and setting from the device, for real.
+Your subscriptions and installments stay on your phone. There is no server behind SubEye holding a copy, so there is nothing to breach and nothing to sell. Settings → Erase all data removes every subscription, installment, reminder and setting from the device, for real.
 
 SUBEYE PRO — ONE PAYMENT
 
-The free app is not a trial and not a teaser. Unlimited subscriptions, the whole dashboard, the payment calendar, every lifecycle action, renewal reminders, Live Activities, every currency and iCloud Sync are free, and stay free.
+The free app is not a trial and not a teaser. Unlimited subscriptions and installments, the whole dashboard, the payment calendar, every lifecycle action, renewal and installment reminders, Live Activities, every currency and iCloud Sync are free, and stay free.
 
 Pro is a single purchase that never renews. It adds:
-• Trial-ending alerts, and reminders at the time you choose
+• Trial-ending alerts, and reminders on the days you choose — the same day, or 1, 3 or 7 days before — for installments too
 • Pricing phases — trials, intro discounts, one-time licenses and scheduled changes on one timeline
 • Categories, the category filter, and the spend breakdown grouped by them
 • The calendar's year view, and every month set against the one before it
-• Home Screen widgets
+• What a credit really costs — the purchase price set against what you repay
+• Home Screen widgets, with your next installment payment among the upcoming ones
 
 Charging a monthly fee to watch your monthly fees would be absurd.
 
@@ -116,6 +123,12 @@ anyway, so they stay out.
 ```
 recurring,bill,payment,budget,expense,money,finance,reminder,cancel,manage,price,widget,due,calendar
 ```
+
+Unchanged for the installments release. Candidates for Yehor to weigh at
+release: `installment`, `loan`, `bnpl`. The field is at exactly 100, so a
+candidate fits only by freeing at least its own length plus a comma: `loan` or
+`bnpl` replaces any word but `due`; `installment` is longer than every current
+word and has to replace two that together have at least 10 letters.
 
 ### URLs
 
@@ -159,12 +172,13 @@ For when there is no news worth the slot:
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
 ```
 
-### What's New in This Version (4000) — 6.2.0
+### What's New in This Version (4000) — installments release
 
 ```
-• Разові ліцензії (SubEye Pro): відстежуйте програми, куплені один раз із роком оновлень. SubEye враховує покупку один раз, показує необов’язкове продовження в його день і нагадує, коли оновлення закінчуються, — продовжувати чи ні, вирішуєте ви.
-• Простіше додати підписку: оберіть, як ви платите, — звичайна оплата, пробний період, вступна знижка чи разова ліцензія — і ще до збереження побачите перші платежі.
-• Календар позначає купівлю ліцензії, а «Потребує рішення» на головній показує, коли закінчуються оновлення.
+• Розстрочки й кредити: відстежуйте покупку частинами, розстрочку на картці чи банківський кредит поруч із підписками. Видно, скільки платежів уже зроблено, скільки сплачено, скільки лишилося і коли все закінчиться.
+• Кожен платіж враховується в сумі за місяць і є в календарі. Нагадування за день до кожного платежу (про останній — що він останній) і повідомлення, коли розстрочку чи кредит погашено. Погасили достроково? Позначте це — і графік на цьому закінчиться.
+• SubEye Pro: додайте ціну покупки, щоб побачити переплату, оберіть, за скільки днів до платежу нагадувати про розстрочки й кредити, і тримайте наступний платіж у віджеті на Початковому екрані.
+• Користуєтеся синхронізацією з iCloud? Оновіть SubEye на кожному пристрої, який синхронізуєте, — старіші версії розстрочок не показують.
 ```
 
 ### Description (4000)
@@ -180,8 +194,9 @@ SubEye показує, скільки коштують ваші підписки
 • Прогноз на наступний місяць у порівнянні з цим і найдорожча підписка.
 • Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, ліцензія, куплена один раз, із необов’язковим продовженням оновлень, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
+• Розстрочки й кредити поруч із підписками — покупка частинами, розстрочка на картці чи банківський кредит. Скільки платежів уже зроблено, скільки лишилося сплатити і коли все закінчиться, а кожен платіж — у своєму місяці й у календарі.
 • Заощаджено з SubEye — скільки лишилося у вашій кишені завдяки паузам і скасуванням, від дня, коли кожна підписка зупинилася.
-• Нагадування за день до списання, щоб нічого не було несподіванкою.
+• Нагадування за день до списання чи платежу за розстрочкою, щоб нічого не було несподіванкою.
 • 155 валют — усі, якими у світі виставляють рахунки, — за щоденним курсом переводяться в ту, у якій рахуєте ви.
 • Українська та англійська, а якщо потрібен той самий список на двох пристроях — синхронізація через iCloud.
 
@@ -189,18 +204,19 @@ SubEye показує, скільки коштують ваші підписки
 
 Більшість трекерів хочуть одне з двох: доступ до вашого банківського рахунку або дозвіл читати вашу пошту. SubEye не просить ні того, ні іншого. Реєструватися нема де, входити нема куди — відкриваєте застосунок і починаєте вводити.
 
-Ваші підписки лишаються на телефоні. За SubEye немає сервера з копією, тож нема чого зламувати і нема чого продавати. «Налаштування → Стерти всі дані» прибирає з пристрою всі підписки, нагадування й налаштування — по-справжньому.
+Ваші підписки, розстрочки й кредити лишаються на телефоні. За SubEye немає сервера з копією, тож нема чого зламувати і нема чого продавати. «Налаштування → Стерти всі дані» прибирає з пристрою всі підписки, розстрочки, кредити, нагадування й налаштування — по-справжньому.
 
 SUBEYE PRO — ОДИН ПЛАТІЖ
 
-Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, уся панель, календар платежів, усі дії з підписками, нагадування про списання, активності поновлень наживо, усі валюти й синхронізація через iCloud безкоштовні й такими лишаються.
+Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, розстрочок і кредитів, уся панель, календар платежів, усі дії з підписками, нагадування про списання й платежі за розстрочками, активності поновлень наживо, усі валюти й синхронізація через iCloud безкоштовні й такими лишаються.
 
 Pro — це разова покупка, яка ніколи не поновлюється. Вона додає:
-• Сповіщення про кінець пробного періоду й нагадування в той час, який оберете ви
+• Сповіщення про кінець пробного періоду й нагадування в дні, які оберете ви, — у день платежу або за 1, 3 чи 7 днів, і для розстрочок та кредитів теж
 • Цінові періоди — пробні періоди, знижки, разові ліцензії та заплановані зміни на одній шкалі
 • Категорії, фільтр за ними і розподіл витрат за категоріями
 • Річний огляд у календарі й порівняння кожного місяця з попереднім
-• Віджети на екрані «Дім»
+• Скільки насправді коштує кредит — переплата порівняно з ціною покупки
+• Віджети на Початковому екрані — з наступним платежем за розстрочкою чи кредитом серед найближчих
 
 Брати щомісячну плату за те, щоб стежити за щомісячними платежами, було б абсурдом.
 
@@ -212,6 +228,13 @@ Pro — це разова покупка, яка ніколи не поновл�
 ```
 підписки,платежі,бюджет,гроші,фінанси,скасувати,ціна,віджет,рахунки,облік,календар,менеджер,пробний
 ```
+
+Unchanged for the installments release. Candidates for Yehor to weigh at
+release: `розстрочка`, `кредит`, `частинами`. The field is at 99, so one swap
+fits only if the removed word is at most one letter shorter: `розстрочка` can
+replace only `скасувати`; `частинами` can replace `скасувати`, `підписки`,
+`менеджер` or `календар`; `кредит` replaces any word but `ціна`. Two swaps
+share the one spare character.
 
 ### URLs
 
@@ -242,25 +265,24 @@ line against the app: the external services and the Pro list drift.
 ```
 No account: no sign-up, no sign-in, no server, no backend. The app opens straight to the dashboard, so "Sign-In Required" is unticked.
 
-1. WHAT CHANGED IN 6.2.0
-- One-time licenses: an entry can now be software bought once with a year of updates included, followed by an optional yearly updates renewal. The license price is counted once on its purchase date; each later renewal shows as an "Updates end" decision, and its reminder says the updates end, not that the app renews. Part of SubEye Pro (pricing phases).
-- The last step of adding a subscription is redesigned: four ways to pay (regular, free trial, intro discount, one-time license), each opening its own fields, and a timeline of the first charges before saving.
-To try it (SubEye Pro; the sandbox purchase works): Home, "+", any name, Price 41, Billing cycle Yearly, Next, choose "One-time license", Updates renewal 19, Save.
-No new permissions, no new data collected, no new network requests.
+1. WHAT CHANGED IN THIS VERSION
+- Installments and loans: the user records a plan or loan they already have (pay in parts, buy now pay later, card installment, bank loan) by payment, number of payments and first date. SubEye shows progress, counts each payment in the month and calendar, and reminds the day before. Free; the Pro parts are in section 8.
+- It only tracks repayments of credit the user already has; it offers, brokers or advertises none (Guideline 3.2.1(viii)).
+To try it: Home, "+", "Installment or loan", any name, a payment and a number of payments, Save.
 
 2. TESTED ON
 iPhone 17, iOS 27.0.1; iPhone 17 Pro simulator, iOS 26.5. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.
 
 3. WHAT IT DOES
-A manual subscription tracker. The user types what they pay — name, amount, currency, billing cycle, start date — and sees what will still leave their account this month, next month's forecast, exact renewal dates and the day a trial turns into a charge, and can pause, cancel at period end, cancel immediately or renew. No bank credentials, no email access. For general consumers paying for several subscriptions. Rated 4+.
+A manual subscription tracker. The user types what they pay — name, amount, currency, billing cycle, start date — and sees what will still leave their account this month, next month's forecast, exact renewal dates and the day a trial turns into a charge, and can pause, cancel at period end, cancel immediately or renew. It also tracks the user's own installment plans and loans. No bank credentials, no email access. For general consumers paying for several subscriptions. Rated 4+.
 
 4. SETUP
-No credentials, demo account or configuration. Empty on first launch by design: Home, "+", any service name, amount, currency and start date, Save. That one entry fills the dashboard, forecast, list, calendar and reminder schedule in about twenty seconds. Fully usable with the network off.
+No credentials, demo account or configuration. Empty on first launch by design: Home, "+", "Subscription", any service name, amount, currency and start date, Save. That one entry fills the dashboard, forecast, list, calendar and reminder schedule in about twenty seconds. Fully usable with the network off.
 
 5. EXTERNAL SERVICES
 - Apple In-App Purchase via RevenueCat, configured anonymously.
 - jsDelivr CDN: one public exchange-rate file, at most once a day.
-- Brandfetch, with Google's favicon service as fallback: a logo for the service name typed into the add form.
+- Brandfetch, with Google's favicon service as fallback: a logo for a domain the user typed or picked, a service's or a lender's.
 - Apple App Store lookup (itunes.apple.com/lookup, app ID and storefront country only): at most once a day, to show a notice when a newer version is out. Skipped for sandbox and TestFlight receipts, so it will not appear in review.
 - Apple iCloud key-value storage: off by default, opt-in at Settings, Data; the user's own iCloud, which we cannot read.
 No authentication, analytics, crash-reporting, advertising or AI SDK, no payment processor other than Apple, and no server of ours.
@@ -269,12 +291,12 @@ No authentication, analytics, crash-reporting, advertising or AI SDK, no payment
 None. English and Ukrainian from the device language; all 155 currencies everywhere; nothing geo-restricted. Only the purchase price varies, read from Apple's storefront at runtime.
 
 7. REGULATED INDUSTRY, THIRD-PARTY MATERIAL
-Not regulated: no bank connection, financial account, money movement, credential, transaction or advice. Guideline 3.2.1(viii) does not apply; Finance is the category for discoverability only.
-Brand logos are fetched at runtime for a domain the user typed, never bundled, and imply no affiliation; the mark identifies the service the user already named.
+Not regulated: no bank or lender connection, financial account, money movement, credential, transaction or advice. Guideline 3.2.1(viii) does not apply; Finance is the category for discoverability only.
+Brand logos are fetched at runtime for a domain the user typed or picked, never bundled, and imply no affiliation; the mark identifies the service the user already named.
 
 8. IN-APP PURCHASE
-"SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder times, pricing phases (trials, intro prices, scheduled changes and one-time licenses), categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, and Home Screen widgets.
-Buy at Settings, first row, "SubEye Pro". Locked features open the same paywall: Settings, Categories; Settings, Reminders, trial alerts; Calendar, year view; a subscription's Manage pricing; the trial, intro and license options when adding a subscription.
+"SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder days, installments too, pricing phases (trials, intro prices, scheduled changes and one-time licenses), categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, installment overpayment, and Home Screen widgets, installments included.
+Buy at Settings, first row, "SubEye Pro". Locked features open the same paywall: Settings, Categories; Settings, Reminders, trial alerts; Calendar, year view; a subscription's Manage pricing; the + menu's Free trial and One-time license and a subscription's "Starts at a lower price"; an installment's purchase price and overpayment.
 The paywall shows Apple's storefront price, says it does not renew, and links the Terms of Use and Privacy Policy. Restore Purchases is on the paywall and in Settings.
 ```
 
@@ -326,10 +348,12 @@ Voice Control, Captions, Audio Descriptions (there is no audio or video).
 - **Age rating:** every question NO, which lands on **4+**. There is no web
   view, no user-generated content and no advertising.
 - **Category:** primary **Finance**, secondary **Productivity**. Guideline
-  3.2.1(viii) does not apply: no bank, no money movement, no credential. If a
-  reviewer raises it, swap the two.
+  3.2.1(viii) does not apply: no bank, no money movement, no credential, and an
+  installment plan or loan is the user's record of credit they already have,
+  never an offer of one. If a reviewer raises it, swap the two.
 - **Content Rights:** Yes. Brand logos are fetched at runtime from Brandfetch
-  with a Google favicon fallback for a domain the user typed, never bundled.
+  with a Google favicon fallback for a domain the user typed or picked, never
+  bundled.
 - **In-app purchase:** "Pro Lifetime" (`cc.subeye.app.pro.lifetime`),
   non-consumable, approved.
 - **App Previews:** none.

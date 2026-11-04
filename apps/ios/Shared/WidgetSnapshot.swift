@@ -30,6 +30,10 @@ struct WidgetItem: Codable, Identifiable, Sendable {
     var amount: String
     var date: String
     var logoFile: String? = nil
+    var link: String? = nil
+    var symbol: String? = nil
+    var tint: String? = nil
+    var destination: URL { AppConfiguration.url(link ?? "subscriptions/" + id) }
     var logoURL: URL? {
         guard let logoFile, logoFile.range(of: "^[a-f0-9]{64}\\.png$", options: .regularExpression) != nil else { return nil }
         return try? AppConfiguration.directory.appendingPathComponent("widget-logos").appendingPathComponent(logoFile)

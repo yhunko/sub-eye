@@ -176,6 +176,17 @@ final class SavingsTests: XCTestCase {
         }
     }
 
+    func testPlansWithoutOptionalsKeepTheirExactBytes() throws {
+        let plan = InstallmentPlan(id: "plan", name: "MacBook", symbol: "laptopcomputer", tint: "blue", currency: "uah",
+                                   total: "300.00", payment: "100.00", paymentCount: 3, firstPaymentDate: "2026-09-04T00:00:00.000Z", now: now)
+        let raw = try JSONCodec.string(plan)
+        for key in ["lenderName", "lenderDomain", "paidAtPurchase", "price", "paidOffAt", "payoffAmount", "notes"] {
+            XCTAssertFalse(raw.contains(key), "Re-encoding an old plan must not add \(key), or every plan would look changed")
+        }
+        XCTAssertEqual(try JSONCodec.string(JSONCodec.decode(InstallmentPlan.self, Data(raw.utf8))), raw)
+        XCTAssertTrue(CloudRecords.valid("installment.plan", value: raw, defaults: .init()))
+    }
+
     func testAnnualCostFollowsPhasesAndSkipsPausedOccurrences() {
         let from = Day.parse("2026-09-20")!
         XCTAssertEqual(Savings.annual(sub(), phases: [], from: from, rates: usd, currency: "usd"), 240)
@@ -183,6 +194,41 @@ final class SavingsTests: XCTestCase {
         XCTAssertEqual(Savings.annual(sub(cost: "0.00"), phases: trial, from: from, rates: usd, currency: "usd"), 165)
         var paused = sub(); paused.pausedAt = "2026-09-01T10:00:00.000Z"; paused.resumeAt = "2026-11-01T00:00:00.000Z"
         XCTAssertEqual(Savings.annual(paused, phases: [], from: from, rates: usd, currency: "usd"), 200)
+    }
+
+    func testYearlyEstimateCountsTheSameDayNextYearOnce() {
+        func yearly(every: Int = 1, _ period: BillingPeriod, from paymentDate: String) -> Double {
+            let sub = Subscription(id: "s", name: "Test", cost: "1.00", currency: "usd", every: every, period: period,
+                                   paymentDate: paymentDate + "T00:00:00.000Z", now: now)
+            let doc = StoreDocument(preferences: .init(currency: "usd", timezone: "UTC"), subscriptions: [sub])
+            return Projection.presentation(doc, rates: usd, now: now, revision: 0).dashboard.yearly
+        }
+        XCTAssertEqual(yearly(.month, from: "2026-09-15"), 12)
+        XCTAssertEqual(yearly(.year, from: "2026-09-15"), 1)
+        XCTAssertEqual(yearly(.week, from: "2026-09-16"), 52)
+        XCTAssertEqual(yearly(every: 2, .week, from: "2026-09-16"), 26)
+    }
+
+    func testPlansCountInMonthTotalsButNotInTheSubscriptionCost() {
+        let plan = InstallmentPlan(id: "plan", name: "Phone", symbol: "iphone", tint: "blue", currency: "uah", total: "2400.00",
+                                   payment: "400.00", paymentCount: 6, every: 2, period: .week, firstPaymentDate: "2026-08-27T00:00:00.000Z", now: now)
+        func model(_ installments: [InstallmentPlan]) -> Presentation {
+            let doc = StoreDocument(preferences: .init(currency: "usd", timezone: "UTC"), subscriptions: [sub()], installments: installments)
+            return Projection.presentation(doc, rates: usd, now: now, revision: 0)
+        }
+        let base = model([]).dashboard, mixed = model([plan]), dashboard = mixed.dashboard
+        XCTAssertEqual(dashboard.monthTotal, base.monthTotal + 20, "400 UAH on Sep 10 and Sep 24 at 40 per dollar")
+        XCTAssertEqual(dashboard.remaining, base.remaining + 10, "Sep 10 is already paid")
+        XCTAssertEqual(dashboard.monthEvents.map(\.subscriptionId), ["plan", "s", "plan"])
+        XCTAssertEqual(dashboard.paymentDays?["2026-09-24"], PaymentDay(count: 1, total: 10))
+        XCTAssertEqual(dashboard.nextMonth, base.nextMonth + 20)
+        XCTAssertEqual(dashboard.previousMonth, base.previousMonth + 10)
+        XCTAssertEqual(dashboard.monthly, base.monthly, "A plan is not a subscription cost")
+        XCTAssertEqual(dashboard.yearly, base.yearly)
+        XCTAssertEqual(dashboard.savings?.total, base.savings?.total)
+        XCTAssertEqual(dashboard.upcoming, base.upcoming)
+        XCTAssertEqual(dashboard.decisions, base.decisions)
+        XCTAssertEqual([mixed.totalCount, mixed.installmentCount], [1, 1])
     }
 
     func testProPriceComparisonSkipsAnUnconvertiblePrice() {

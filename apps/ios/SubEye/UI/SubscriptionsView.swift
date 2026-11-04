@@ -6,6 +6,8 @@ struct SubscriptionsView: View {
     let services: AppServices
     @Binding var sheet: SheetRoute?
     var selected: String?
+    var selectedInstallment: String?
+    let openSegment: (ListSegment) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var search = ""
     @State private var settingsChange = 0
@@ -28,11 +30,21 @@ struct SubscriptionsView: View {
             return left.1.reduce(0) { $0 + $1.monthly } > right.1.reduce(0) { $0 + $1.monthly }
         }
     }
+    private var segment: Binding<ListSegment> { Binding(get: { state.effectiveSegment }, set: { openSegment($0) }) }
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                if state.presentation.totalCount == 0 { EmptySubscriptions { sheet = .editor(nil) } }
-                else {
+                if state.presentation.installmentCount > 0 {
+                    Picker(L("tabs_subscriptions"), selection: segment) {
+                        Text(L("tabs_subscriptions")).tag(ListSegment.subscriptions)
+                        Text(L("subs_segmentInstallments")).tag(ListSegment.installments)
+                    }.pickerStyle(.segmented).accessibilityIdentifier("listSegment").padding(.bottom, 6)
+                }
+                if state.effectiveSegment == .installments {
+                    InstallmentsList(rows: state.presentation.installments ?? [], search: search, logos: services.logos, selected: selectedInstallment)
+                } else if state.presentation.totalCount == 0 {
+                    if state.presentation.installmentCount == 0 { EmptySubscriptions(sheet: $sheet) } else { noSubscriptions }
+                } else {
                     if !narrowed { totals.padding(.bottom, 6) }
                     if rows.isEmpty { Text(L("subs_emptyFiltered")).appFont(14).foregroundStyle(AppTheme.muted).padding(.vertical, 48) }
                     ForEach(grouped, id: \.0) { group in
@@ -50,8 +62,8 @@ struct SubscriptionsView: View {
         .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("subs_searchPlaceholder"))
         .appScreen().navigationTitle(L("tabs_subscriptions"))
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) { AddSubscriptionButton { sheet = .editor(nil) } }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) { AddSubscriptionButton(sheet: $sheet, pro: state.settings.pro) }
+            if state.effectiveSegment == .subscriptions { ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Menu {
                     Picker(L("subs_filterSort"), selection: $state.settings.list.sort) {
@@ -79,7 +91,7 @@ struct SubscriptionsView: View {
                     if narrowed || state.settings.list != ListOptions() { Section { Button { state.settings.list = ListOptions(); search = "" } label: { Label(L("subs_filterReset"), systemImage: "arrow.counterclockwise") } } }
                 } label: { Label(L("subs_listOptions"), systemImage: narrowed ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") }
                     .tint(narrowed ? AppTheme.accent : AppTheme.text).accessibilityIdentifier("subscriptionFilters")
-            }
+            } }
         }
         .onChange(of: state.settings.list) { _ in settingsChange += 1 }
         .task(id: settingsChange) {
@@ -87,6 +99,13 @@ struct SubscriptionsView: View {
             do { try await services.repository.setSetting("subs.filters", value: state.settings.list) }
             catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
         }
+    }
+    private var noSubscriptions: some View {
+        VStack(spacing: 16) {
+            Text(L("subs_emptySegmentTitle")).font(.title3.bold())
+            Text(L("subs_emptySegmentBody")).foregroundStyle(.secondary)
+            Button(L("subs_emptyAddSubscription")) { sheet = .editor(nil) }.buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("emptyNewSubscription")
+        }.multilineTextAlignment(.center).padding(32).frame(maxWidth: .infinity)
     }
     private func optionLabel(_ title: String, value: String, active: Bool) -> String {
         L(title) + (active ? " · " + L(value) : "")

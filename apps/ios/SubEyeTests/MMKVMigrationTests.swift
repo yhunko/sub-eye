@@ -14,9 +14,10 @@ final class MMKVMigrationTests: XCTestCase {
         MMKV.initialize(rootDir: source.path, logLevel: .none)
         let now = Day.parse("2026-09-15T12:00:00Z")!
         let original = StoreDocument(preferences: .init(currency: "uah", timezone: "Europe/Kyiv"), subscriptions: [Subscription(id: "existing-українська", name: "Музика 🎵", cost: "199.99", currency: "uah", paymentDate: "2026-01-31T00:00:00.000Z", now: now)])
+        var expo = original; expo.v = 1
         let store = try XCTUnwrap(MMKV(mmapID: "subeye.store", rootPath: source.path))
         XCTAssertTrue(store.set("{interrupted", forKey: "subeye.doc.a"))
-        XCTAssertTrue(store.set(try JSONCodec.string(original), forKey: "subeye.doc.b"))
+        XCTAssertTrue(store.set(try JSONCodec.string(expo), forKey: "subeye.doc.b"))
         XCTAssertTrue(store.set("subeye.doc.b", forKey: "subeye.doc.active")); store.sync(); store.close()
         let flags = try XCTUnwrap(MMKV(mmapID: "mmkv.default", rootPath: source.path))
         XCTAssertTrue(flags.set(true, forKey: "pro.entitled")); XCTAssertTrue(flags.set(true, forKey: "dev.forcePro"))

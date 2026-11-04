@@ -36,7 +36,7 @@ public enum Money {
         }
     }
 
-    public static func parse(_ text: String) -> Decimal? {
+    public static func parse(_ text: String, below ceiling: Decimal = 100_000_000) -> Decimal? {
         let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\u{00a0}", with: "")
             .replacingOccurrences(of: "\u{202f}", with: "")
@@ -44,7 +44,7 @@ public enum Money {
             .replacingOccurrences(of: ",", with: ".")
         guard !cleaned.isEmpty, cleaned.range(of: #"^\d+(\.\d{1,2})?$"#, options: .regularExpression) != nil,
               let value = Decimal(string: cleaned, locale: Locale(identifier: "en_US_POSIX")),
-              value >= 0, value < 100_000_000 else { return nil }
+              value >= 0, value < ceiling else { return nil }
         return value
     }
 

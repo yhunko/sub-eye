@@ -100,8 +100,11 @@ public actor SubscriptionRepository {
 
     public func calendar(from: Date, through: Date, rates: ExchangeRates, now: Date) throws -> [CalendarEvent] {
         let doc = try document()
-        return Projection.events(Projection.rows(doc, rates: rates, now: now), from: from, through: through,
-                                 rates: rates, currency: doc.preferences.preferredCurrency)
+        let currency = doc.preferences.preferredCurrency
+        let today = Day.today(now, zone: TimeZone(identifier: doc.preferences.preferredTimezone) ?? .gmt)
+        return Projection.events(Projection.rows(doc, rates: rates, now: now), from: from, through: through, rates: rates, currency: currency,
+                                 installments: Installments.events(doc.installments, from: from, through: through, today: today,
+                                                                   rates: rates, currency: currency))
     }
 
     public func save(_ value: Subscription, expected: Subscription?, offer: OfferInput? = nil, rates: ExchangeRates, now: Date) throws {
@@ -238,6 +241,21 @@ public actor SubscriptionRepository {
         }
     }
 
+    public func saveInstallment(_ value: InstallmentPlan, expected: InstallmentPlan?, now: Date) throws {
+        try LegacyMigration.validate(value)
+        let database = try ready()
+        try database.transaction {
+            guard try record(InstallmentPlan.self, key: "installment." + value.id, database: database) == expected else { throw DomainError.conflict }
+            var next = value; next.updatedAt = Day.iso(now)
+            try write("installment." + next.id, next, database: database)
+        }
+    }
+
+    public func deleteInstallment(id: String) throws {
+        let database = try ready()
+        try database.transaction { try remove("installment." + id, database: database) }
+    }
+
     public func saveCategory(_ category: Category, expected: Category?) throws {
         try LegacyMigration.validate(StoreDocument(preferences: defaults, categories: [category]))
         let database = try ready()
@@ -280,7 +298,13 @@ public actor SubscriptionRepository {
         })
     }
 
-    public func exportArchive() throws -> Data { try JSONCodec.encode(document()) }
+    public func exportArchive() throws -> Data {
+        var doc = try document()
+        // 6.2.0 imports only v1 and ignores the empty key, so a plan-free archive stays importable there;
+        // one with plans stays v2 so 6.2.0 refuses it instead of silently dropping every plan.
+        if doc.installments.isEmpty { doc.v = 1 }
+        return try JSONCodec.encode(doc)
+    }
 
     public func importArchive(_ data: Data) throws {
         let document = try LegacyMigration.decode(data, defaults: defaults)
@@ -364,6 +388,7 @@ public actor SubscriptionRepository {
             else if key.hasPrefix("sub.") { doc.subscriptions.append(try JSONCodec.decode(Subscription.self, data)) }
             else if key.hasPrefix("cat.") { doc.categories.append(try JSONCodec.decode(Category.self, data)) }
             else if key.hasPrefix("phase.") { doc.phases.append(try JSONCodec.decode(PricePhase.self, data)) }
+            else if key.hasPrefix("installment.") { doc.installments.append(try JSONCodec.decode(InstallmentPlan.self, data)) }
         }
         return doc
     }

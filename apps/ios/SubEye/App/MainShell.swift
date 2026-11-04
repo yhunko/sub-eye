@@ -91,13 +91,13 @@ struct MainShell: View {
                 do { if try await services.cloud.receive(notification) { state.reload += 1 } }
                 catch { state.serviceIssue = L("settings_syncUnavailableHint") }
             }
-            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount):\((state.presentation.dashboard.savings?.total ?? 0) > 0):\(state.settings.pro):\(scenePhase)") {
+            .task(id: "\(state.ready):\(tab):\(sheet?.id ?? ""):\(state.presentation.totalCount + state.presentation.installmentCount):\((state.presentation.dashboard.savings?.total ?? 0) > 0):\(state.settings.pro):\(scenePhase)") {
                 guard booted, sheet == nil, scenePhase == .active else { return }
                 do {
                     if tab == .home {
                         try await Task.sleep(for: .milliseconds(1500))
                         let permission = await services.notifications.permission()
-                        if let prompt = try await services.prompts.home(tracked: state.presentation.totalCount, saved: state.presentation.dashboard.savings?.total ?? 0, settings: state.settings, now: Date(),
+                        if let prompt = try await services.prompts.home(state.presentation, settings: state.settings, now: Date(),
                             permissionAllowsNotifications: permission == .authorized || permission == .provisional || permission == .ephemeral) {
                             if prompt == .review { requestReview() } else { sheet = .prompt(prompt) }
                         }
@@ -196,8 +196,12 @@ struct MainShell: View {
     }
     @ViewBuilder private func root(_ tab: AppTab, sections: HomeSections) -> some View {
         switch tab {
-        case .home: HomeView(state: $state, services: services, sheet: $sheet, openCalendar: { self.tab = .calendar; paths[.calendar] = [] }, sections: sections)
-        case .subscriptions: SubscriptionsView(state: $state, services: services, sheet: $sheet, selected: openSubscription)
+        case .home:
+            HomeView(state: $state, services: services, sheet: $sheet, openCalendar: { self.tab = .calendar; paths[.calendar] = [] },
+                     openInstallments: { self.tab = .subscriptions; state.listSegment = .installments; paths[.subscriptions] = [] }, sections: sections)
+        case .subscriptions:
+            SubscriptionsView(state: $state, services: services, sheet: $sheet, selected: openSubscription, selectedInstallment: openInstallment,
+                              openSegment: { state.listSegment = $0; paths[.subscriptions] = [] })
         case .calendar: RenewalCalendarView(state: $state, services: services, sheet: $sheet)
         case .settings: SettingsView(state: $state, services: services, sheet: $sheet)
         }
@@ -206,10 +210,15 @@ struct MainShell: View {
         if case .subscription(let id) = paths[.subscriptions]?.first { return id }
         return nil
     }
+    private var openInstallment: String? {
+        if case .installment(let id) = paths[.subscriptions]?.first { return id }
+        return nil
+    }
     @available(iOS 17, *)
     @ViewBuilder private func unselected(_ tab: AppTab) -> some View {
         switch tab {
         case .home where state.presentation.totalCount > 0: root(.home, sections: .breakdown)
+        case .subscriptions where state.effectiveSegment == .installments: ContentUnavailableView(L("native_pickInstallment"), systemImage: "creditcard").appScreen()
         case .subscriptions where state.presentation.totalCount > 0: ContentUnavailableView(L("native_pickSubscription"), systemImage: "rectangle.stack").appScreen()
         case .calendar: ContentUnavailableView(L("native_pickDay"), systemImage: "calendar").appScreen()
         case .settings: ContentUnavailableView(L("native_pickSetting"), systemImage: "gearshape").appScreen()
@@ -219,6 +228,7 @@ struct MainShell: View {
     @ViewBuilder private func destination(_ route: Route) -> some View {
         switch route {
         case .subscription(let id): SubscriptionDetail(id: id, state: $state, services: services, sheet: $sheet)
+        case .installment(let id): InstallmentDetail(id: id, state: $state, services: services, sheet: $sheet)
         case .due(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet)
         case .cancellationDay(let date): DueView(day: date, ids: nil, state: $state, services: services, sheet: $sheet, planning: true)
         case .selection(let ids): DueView(day: nil, ids: ids, state: $state, services: services, sheet: $sheet)
@@ -243,8 +253,8 @@ struct MainShell: View {
     }
     @ViewBuilder private func destinationSheet(_ sheet: SheetRoute) -> some View {
         switch sheet {
-        case .editor(let original):
-            SubscriptionEditor(original: original, state: $state, services: services) { row, action in
+        case .editor(let original, let flow):
+            SubscriptionEditor(original: original, flow: flow, state: $state, services: services) { row, action in
                 if let action { self.sheet = .lifecycle(row, action) }
                 else { self.sheet = nil; paths[tab, default: []].append(.subscription(row.id)) }
             }
@@ -255,6 +265,9 @@ struct MainShell: View {
         case .cancellation(let id):
             if let row = state.presentation.rows.first(where: { $0.id == id }) { LifecycleView(row: row, action: .cancel, state: $state, services: services) }
         case .prompt(let prompt): PromptView(prompt: prompt, state: $state, services: services)
+        case .installmentEditor(let original): InstallmentEditor(original: original, state: $state, services: services)
+        case .installmentPayoff(let id):
+            if let plan = state.presentation.installments?.first(where: { $0.id == id })?.plan { InstallmentPayoff(plan: plan, state: $state, services: services) }
         }
     }
     private func adopt(_ next: SceneState) {
@@ -263,10 +276,11 @@ struct MainShell: View {
     }
     private func route(_ url: URL) {
         guard booted else { pendingURL = url; return }
-        guard let (newTab, route, newSheet) = DeepLink.route(url) else { return }
-        if let newTab { tab = newTab }
-        if let route { paths[tab] = [route] }
-        if let newSheet { sheet = newSheet }
+        guard let target = DeepLink.route(url) else { return }
+        if let newTab = target.tab { tab = newTab }
+        if let segment = target.segment { state.listSegment = segment; paths[.subscriptions] = [] }
+        if let route = target.route { paths[tab] = [route] }
+        if let newSheet = target.sheet { sheet = newSheet }
     }
 }
 
@@ -309,8 +323,8 @@ struct PromptView: View {
                     proHero.accessibilityIdentifier("proOfferTitle")
                 } detail: {
                     VStack(alignment: .leading, spacing: 14) {
-                        ForEach(Self.proFeatures, id: \.key) { feature in
-                            Label { Text(L(feature.key)).appFont(17) } icon: { Image(systemName: feature.icon).appFont(17).foregroundStyle(AppTheme.muted) }
+                        ForEach(Self.proFeatures, id: \.self) { feature in
+                            Label { Text(L(feature.title)).appFont(17) } icon: { Image(systemName: feature.icon).appFont(17).foregroundStyle(AppTheme.muted) }
                                 .labelStyle(PromptFeatureLabelStyle())
                         }
                     }
@@ -327,8 +341,7 @@ struct PromptView: View {
                 }
             }
     }
-    private static let proFeatures = [(key: "paywall_featureReminders", icon: "bell.badge"), (key: "paywall_featureCalendar", icon: "calendar"),
-                                      (key: "paywall_featureCategories", icon: "chart.pie"), (key: "paywall_lockWidgets", icon: "square.grid.2x2")]
+    private static let proFeatures: [ProFeature] = [.reminders, .calendar, .categories, .installments, .widgets]
     private func title(_ text: String) -> some View {
         Text(text).appFont(28, weight: .bold, relativeTo: .title).tracking(-0.4).fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
     }
@@ -387,7 +400,7 @@ struct PromptView: View {
     }
     private func enableReminders() async throws {
         var settings = state.settings.reminders
-        settings.renewals = true
+        settings.renewals = true; settings.installments = true
         try await services.repository.setSetting("notifications.settings", value: settings)
         state.settings.reminders = settings
         state.reload += 1
@@ -417,14 +430,17 @@ private struct DueView: View {
                 ForEach(state.presentation.rows.filter { ids.contains($0.id) }) { row in
                     NavigationLink(value: Route.subscription(row.id)) { SubscriptionCell(row: row, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
                 }
+                ForEach(state.presentation.installments?.filter { ids.contains($0.id) } ?? []) { row in
+                    NavigationLink(value: Route.installment(row.id)) { InstallmentCell(row: row, logos: services.logos, currency: state.presentation.preferences.preferredCurrency) }
+                }
             } else {
                 ForEach(events) { event in
                     if planning {
                         Button { sheet = .cancellation(event.subscriptionId) } label: { EventCell(event: event, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
                     } else {
-                        NavigationLink(value: Route.subscription(event.subscriptionId)) { EventCell(event: event, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
+                        NavigationLink(value: event.owner) { EventCell(event: event, currency: state.presentation.preferences.preferredCurrency, logos: services.logos) }
                             .accessibilityIdentifier("due-" + event.subscriptionId)
-                            .swipeActions { Button(L("native_action_cancel")) { sheet = .cancellation(event.subscriptionId) } }
+                            .swipeActions { if event.installment == nil { Button(L("native_action_cancel")) { sheet = .cancellation(event.subscriptionId) } } }
                     }
                 }
                 if events.isEmpty { Text(L("native_noRenewals")).foregroundStyle(.secondary) }
@@ -434,7 +450,7 @@ private struct DueView: View {
                 guard let day = day.flatMap(Day.parse) else { return }
                 do {
                     let result = try await services.repository.calendar(from: day, through: day, rates: services.exchange.cached(), now: Date())
-                    events = planning ? result.filter { event in event.kind == .payment && state.presentation.rows.first(where: { $0.id == event.subscriptionId })?.allowedActions.contains(.cancel) == true } : result
+                    events = planning ? LiveActivityService.renewalEvents(result).filter { event in state.presentation.rows.first(where: { $0.id == event.subscriptionId })?.allowedActions.contains(.cancel) == true } : result
                 }
                 catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
             }

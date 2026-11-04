@@ -20,11 +20,22 @@ public.
 
 | Free, forever | Pro |
 | --- | --- |
-| Unlimited subscriptions | Renewal reminders |
-| The whole Home dashboard | Pricing phases — trial / intro / scheduled change |
-| List, search, filter, sort | Categories, the breakdown and the filter |
-| Every lifecycle action | |
+| Unlimited subscriptions | Trial-ending reminders, and renewal reminder lead days (same day, 1, 3, 7) |
+| The whole Home dashboard and the payment calendar | Pricing phases — trial / intro / one-time license / scheduled change — and the price history |
+| List, search, status filter, sort | Categories, the breakdown and the filter |
+| Every lifecycle action | The calendar's year view and month-on-month figures |
+| A renewal reminder the day before, and Live Activities | Home Screen widgets |
 | Multi-currency at daily rates | |
+| iCloud Sync between the user's own devices | |
+| **Installments:** unlimited plans; progress (x of N, paid, left to pay, end date); purpose icon and lender logo; counted in Home month totals and the calendar | **Installments:** the overpayment over the purchase price |
+| **Installments:** a reminder the day before; last-payment and paid-off notices; "Paid off early" | **Installments:** reminder lead days (same day, 1, 3, 7) |
+| | **Installments:** the next payment in the Home Screen widget's upcoming list |
+
+Renewal reminders moved to the free tier after this brief was written; the
+table is the split the app ships, plus installments as decided on 2026-11-03.
+Existing
+owners get the installment Pro features with the same non-consumable and the
+same `pro` entitlement.
 
 The gate is **features, not a count cap**. Nothing gated costs anything at
 runtime, so the free tier cannot be griefed into a bill and the cap never

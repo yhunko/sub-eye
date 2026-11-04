@@ -47,12 +47,12 @@ public enum LegacyMigration {
             throw DomainError.invalidDocument("Expected an object")
         }
         let version = root["v"] as? Int ?? 0
-        guard version == 0 || version == 1 else { throw DomainError.unsupportedVersion(version) }
-        root["v"] = 1
+        guard (0...2).contains(version) else { throw DomainError.unsupportedVersion(version) }
+        root["v"] = 2
         var prefs = try JSONSerialization.jsonObject(with: JSONCodec.encode(defaults)) as! [String: Any]
         if let existing = root["preferences"] as? [String: Any] { prefs.merge(existing) { _, old in old } }
         root["preferences"] = prefs
-        for key in ["categories", "subscriptions", "phases"] {
+        for key in ["categories", "subscriptions", "phases", "installments"] {
             if root[key] == nil { root[key] = [] as [[String: Any]] }
             guard var records = root[key] as? [[String: Any]] else { throw DomainError.invalidDocument(key) }
             for index in records.indices {
@@ -70,11 +70,13 @@ public enum LegacyMigration {
     }
 
     public static func validate(_ doc: StoreDocument) throws {
-        guard doc.v == 1 else { throw DomainError.unsupportedVersion(doc.v) }
+        guard doc.v == 2 else { throw DomainError.unsupportedVersion(doc.v) }
         try unique(doc.subscriptions.map(\.id)); try unique(doc.categories.map(\.id)); try unique(doc.phases.map(\.id))
+        try unique(doc.installments.map(\.id))
         guard doc.preferences.preferredCurrency.count == 3,
               TimeZone(identifier: doc.preferences.preferredTimezone) != nil else { throw DomainError.invalidField("preferences") }
         for row in doc.subscriptions { try validate(row) }
+        for row in doc.installments { try validate(row) }
         for row in doc.categories {
             guard !row.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   Day.parse(row.createdAt) != nil, Day.parse(row.updatedAt) != nil else { throw DomainError.invalidField("category") }
@@ -103,6 +105,25 @@ public enum LegacyMigration {
         }
     }
 
+    // The gate for import and sync, so it checks only what the schedule needs. The editor's narrower choices live in
+    // Installments.editorAccepts: a plan a later build allows must not be rejected here and then overwritten by this build.
+    public static func validate(_ row: InstallmentPlan) throws {
+        func amount(_ text: String) -> Decimal? { Money.parse(text, below: Installments.ceiling) }
+        let named = [row.name, row.kind, row.symbol, row.tint].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard !row.id.isEmpty, named, row.currency.count == 3,
+              let total = amount(row.total), total > 0, let payment = amount(row.payment), payment > 0,
+              (1...1000).contains(row.paymentCount), (1...365).contains(row.every),
+              payment * Decimal(row.paymentCount - 1) < total,
+              Day.parse(row.firstPaymentDate) != nil, Day.parse(row.createdAt) != nil,
+              Day.parse(row.updatedAt) != nil else { throw DomainError.invalidField("installment") }
+        guard (row.paidOffAt == nil) == (row.payoffAmount == nil),
+              row.paidOffAt.map({ Day.parse($0) != nil }) ?? true,
+              row.payoffAmount.map({ amount($0) != nil }) ?? true else { throw DomainError.invalidField("installment.payoff") }
+        if let price = row.price {
+            guard let value = amount(price), value > 0 else { throw DomainError.invalidField("installment.price") }
+        }
+    }
+
     private static func unique(_ ids: [String]) throws {
         guard ids.allSatisfy({ !$0.isEmpty }), Set(ids).count == ids.count else { throw DomainError.invalidDocument("Duplicate or empty id") }
     }
@@ -110,13 +131,14 @@ public enum LegacyMigration {
 
 public enum CloudRecords {
     public static func owns(_ key: String) -> Bool {
-        key == "prefs" || key.hasPrefix("sub.") || key.hasPrefix("cat.") || key.hasPrefix("phase.")
+        key == "prefs" || key.hasPrefix("sub.") || key.hasPrefix("cat.") || key.hasPrefix("phase.") || key.hasPrefix("installment.")
     }
     public static func entries(_ doc: StoreDocument) throws -> [String: String] {
         var entries = ["prefs": try JSONCodec.string(doc.preferences)]
         for row in doc.subscriptions { entries["sub." + row.id] = try JSONCodec.string(row) }
         for row in doc.categories { entries["cat." + row.id] = try JSONCodec.string(row) }
         for row in doc.phases { entries["phase." + row.id] = try JSONCodec.string(row) }
+        for row in doc.installments { entries["installment." + row.id] = try JSONCodec.string(row) }
         return entries
     }
 
@@ -131,6 +153,9 @@ public enum CloudRecords {
         }
         if key.hasPrefix("phase."), let row = try? JSONCodec.decode(PricePhase.self, data), row.id == String(key.dropFirst(6)) {
             return (try? LegacyMigration.validate(StoreDocument(preferences: defaults, phases: [row]))) != nil
+        }
+        if key.hasPrefix("installment."), let row = try? JSONCodec.decode(InstallmentPlan.self, data), row.id == String(key.dropFirst(12)) {
+            return (try? LegacyMigration.validate(row)) != nil
         }
         return false
     }
