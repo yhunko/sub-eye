@@ -28,8 +28,10 @@ native layout and its validation record.
   grouping with monthly section totals. Persist options, not search.
 - [x] Create/edit: brand search and manual entry, logo variant selection,
   localized decimal entry, 155 fiat currencies, custom every-N day/week/month/
-  year cadence, initial payment day, optional trial/intro end and standard price,
-  category picker/create. Draft lifetime belongs to the sheet.
+  year cadence, initial payment day, category picker/create. The + menu picks
+  the type: a subscription with an optional lower start (price and end date),
+  a free trial whose end is its first charge, or a one-time license with its
+  purchase date and updates renewal. Draft lifetime belongs to the sheet.
 - [x] Details: identity, current and next-charge price, exact lifecycle event,
   category, timeline; preserve cancellation/phase boundaries and action legality.
 - [x] Lifecycle: immediate/end-of-period cancellation, keep an existing winding

@@ -322,8 +322,8 @@ notification permission or the native tab bar the same way:
       Sort by and Category each apply live, Reset clears them, and the button
       renders filled + green while any filter is on**
 - [ ] **Pause a subscription, then find it under the Paused filter**
-- [ ] Add a subscription with a free trial; check the detail screen's price
-      timeline
+- [ ] Add a free trial from the + menu; check that the detail screen's first
+      payment is the trial's end day and its price timeline
 - [ ] Pause with a date, resume, cancel at period end, cancel now, renew, delete
 - [ ] **A cancelled subscription reads as finished**, and Home's attention card
       surfaces what needs attention rather than a trend chart

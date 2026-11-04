@@ -96,16 +96,21 @@ final class DeviceAcceptanceTests: XCTestCase {
         let name = app.textFields["subscriptionName"]
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Unsaved visual check")
         let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("1")
-        app.buttons["nextSubscriptionStep"].tap()
-        XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5)); capture(app, name: "Device-add-dates-revised")
+        app.buttons["dismissEditorKeyboard"].tap()
+        let intro = app.descendants(matching: .any)["introOffer"].firstMatch
+        for _ in 0..<4 where !intro.isHittable { app.swipeUp() }
+        XCTAssertTrue(intro.exists); capture(app, name: "Device-add-terms-revised")
         app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["nextSubscriptionStep"].waitForExistence(timeout: 5)); app.buttons["nextSubscriptionStep"].tap()
         XCTAssertTrue(name.waitForExistence(timeout: 5)); XCTAssertEqual(name.value as? String, "Unsaved visual check")
+        XCTAssertTrue(intro.exists)
         capture(app, name: "Device-add-price-revised")
-        app.buttons["subscriptionBrand"].tap()
+        let brand = app.buttons["subscriptionBrand"]
+        for _ in 0..<4 where !brand.isHittable { app.swipeDown() }
+        brand.tap()
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5)); capture(app, name: "Device-brand-picker-revised")
         app.navigationBars.buttons.firstMatch.tap()
-        app.buttons["nextSubscriptionStep"].tap()
-        XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5))
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
         app.buttons["closeSubscriptionEditor"].tap()
         XCTAssertFalse(app.alerts.firstMatch.exists); capture(app, name: "Device-discard-menu")
         app.buttons.matching(NSPredicate(format: "label IN %@", ["Discard changes", "Скасувати зміни"])).firstMatch.tap()
@@ -160,7 +165,7 @@ final class DeviceAcceptanceTests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(app.textFields["subscriptionName"].waitForExistence(timeout: 5))
         capture(app, name: "Polish-icon-price")
-        amount.tap(); amount.typeText("1"); app.buttons["nextSubscriptionStep"].tap()
+        amount.tap(); amount.typeText("1")
         XCTAssertTrue(app.buttons["saveSubscription"].waitForExistence(timeout: 5))
         capture(app, name: "Polish-editor-confirm-icons")
         app.buttons["closeSubscriptionEditor"].tap(); app.buttons["Скасувати зміни"].tap()
@@ -188,7 +193,6 @@ final class DeviceAcceptanceTests: XCTestCase {
         let field = app.textFields["subscriptionName"]
         XCTAssertTrue(field.waitForExistence(timeout: 5)); field.tap(); field.typeText(name)
         let price = app.textFields["subscriptionPrice"]; price.tap(); price.typeText("1.23")
-        app.buttons["nextSubscriptionStep"].tap()
         app.buttons["saveSubscription"].tap()
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 10)); search.tap(); search.typeText(name)

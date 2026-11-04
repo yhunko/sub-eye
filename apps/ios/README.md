@@ -89,13 +89,17 @@ longer because the new presentation cache does not yet exist.
 - `SubEyeTests`: real native binary MMKV migration, source byte preservation,
   bounded launch cache, development namespace, raster logo validation, the
   installment editor's derivation, installment reminder copy and widget items,
-  and the prompt rules (reminders offer, paid-off celebration).
+  the prompt rules (reminders offer, paid-off celebration), and what each add
+  flow saves (subscription, lower start, free trial, license) through a real
+  repository, with the rules that keep Save off.
 - `SubEyeUITests`: English create/edit/search/delete/calendar/settings, offline
   relaunch, Ukrainian flow and largest Dynamic Type accessibility audit; adding
   and deleting an installment in English and Ukrainian (the Subscriptions |
   Installments switch shows only while a plan exists), the Home Installments
   card, and the largest-text Ukrainian audit of both segments and the
-  installment detail.
+  installment detail; adding each type from the + menu in English, a trial
+  and a license in Ukrainian, the free user's locked menu items, and the
+  largest-text Ukrainian audit of every add-flow page.
 - `SubEyePerformance` scheme: populated-cache process launch, large-list scroll
   metrics and repeated detail-page memory inspection. Test arguments and fixture
   entitlement overrides compile only in development configurations.

@@ -154,18 +154,60 @@ struct SpendTrack: View {
     }
 }
 
+enum AddKind: CaseIterable {
+    case subscription, trial, license, installment
+    var title: String {
+        switch self {
+        case .subscription: L("subs_newSubscription")
+        case .trial: L("subs_newTrial")
+        case .license: L("subs_newLicense")
+        case .installment: L("subs_newInstallment")
+        }
+    }
+    var identifier: String {
+        switch self {
+        case .subscription: "newSubscription"
+        case .trial: "newTrial"
+        case .license: "newLicense"
+        case .installment: "newInstallment"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .subscription: "arrow.triangle.2.circlepath"
+        case .trial: "hourglass"
+        case .license: "key"
+        case .installment: "creditcard"
+        }
+    }
+    var pro: Bool { self == .trial || self == .license }
+    var sheet: SheetRoute {
+        switch self {
+        case .subscription: .editor(nil)
+        case .trial: .editor(nil, .trial)
+        case .license: .editor(nil, .license)
+        case .installment: .installmentEditor(nil)
+        }
+    }
+}
+
 struct AddSubscriptionButton: View {
     @Binding var sheet: SheetRoute?
+    let pro: Bool
     var body: some View {
         if #available(iOS 17, *) { menu.buttonBorderShape(.circle) }
         else { menu.buttonBorderShape(.capsule) }
     }
     private var menu: some View {
         Menu {
-            Button { sheet = .editor(nil) } label: { Label(L("subs_newSubscription"), systemImage: "arrow.triangle.2.circlepath") }
-                .accessibilityIdentifier("newSubscription")
-            Button { sheet = .installmentEditor(nil) } label: { Label(L("subs_newInstallment"), systemImage: "creditcard") }
-                .accessibilityIdentifier("newInstallment")
+            ForEach(AddKind.allCases, id: \.self) { kind in
+                let locked = kind.pro && !pro
+                Button { sheet = locked ? .paywall : kind.sheet } label: {
+                    Label(kind.title, systemImage: locked ? "lock" : kind.symbol)
+                }.accessibilityIdentifier(kind.identifier)
+                    // The lock is only an image, which a menu row does not speak.
+                    .accessibilityLabel(locked ? kind.title + ", " + L("paywall_badge") : kind.title)
+            }
         } label: { Label(L("subs_add"), systemImage: "plus") }
             .menuStyle(.button).labelStyle(.iconOnly).buttonStyle(.borderedProminent)
             .tint(AppTheme.accent).foregroundStyle(AppTheme.background).accessibilityIdentifier("addSubscription")

@@ -19,7 +19,7 @@ Fonts scale with Dynamic Type; accessibility sizes stack prices and controls.
 | Home | Month heading, horizontal payment rail, remaining/forecast/largest-payment card, segmented spending bar and expandable breakdown |
 | Details | 108-point identity logo, brand-color backdrop, 26-point name, billing/amount/status pill, next-payment and spending-share cards, Pro history, overflow actions |
 | Calendar | 66-point day tiles, 3-point gaps, month total, borderless agenda headings, past-charge summary, Pro heavy-day highlighting and compact three-column year heatmap |
-| Creation/editing | Brand → price/cadence → date/offer steps, step indicator, 56-point fields, grouped cards and full-width bottom action |
+| Creation/editing | The + menu picks the type (subscription, free trial, one-time license, installment); brand → one terms page per type, step indicator, 56-point fields, grouped cards and full-width bottom action |
 | Settings/reminders | 16-point page inset, 24-point card corners, section captions, symbol/label/value rows, compact explanatory footnotes |
 | Paywall | Five illustrated feature pages, native pagination, purchase/restore/legal footer; vertically stacked features at accessibility sizes |
 
@@ -112,12 +112,14 @@ sources for these details:
   covering the Next action on return. A dirty editor's close button becomes
   a native discard menu anchored to that button, matching Expo; untouched
   forms close immediately. Discard has a red trash symbol as well.
-  Starting offers use full-width labeled choice rows with explanatory text,
-  matching Expo's layout and Pro access. Shared section cards fill their width.
+  The + menu chooses what is added; Free trial and One-time license are Pro
+  items that open the paywall for free users. A subscription's lower start is
+  a full-width labeled card with explanatory text. Shared section cards fill
+  their width.
 
 The focused simulator tests capture both English and Ukrainian and exercise
 menu expansion, cancelled deletion, month swipes, Today, backward navigation,
-brand selection and retained offer selection. The physical test for this pass
+brand selection and a retained lower start. The physical test for this pass
 opens the deletion alert and cancels it, edits an existing name and discards
 that draft, verifies the original name, then discards a new-subscription draft.
 It does not save or delete a subscription.
@@ -171,7 +173,7 @@ gates remain separate.
 - Subscription-list rows open the overview with a normal tap. Their long-press
   context menu has been removed.
 
-The physical check selects Netflix's wordmark, returns to the price step, then
+The physical check selects Netflix's wordmark, returns to the terms page, then
 switches to its icon and verifies selection again. Captures show both distinct
 images and their matching backdrops. It also checks calendar highlighting,
 sheet controls, currency navigation, amount/currency separation and notification
