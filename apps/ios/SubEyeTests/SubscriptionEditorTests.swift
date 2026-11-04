@@ -17,7 +17,7 @@ final class SubscriptionEditorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let repository = SubscriptionRepository(url: directory.appendingPathComponent("test.sqlite"))
         _ = try await repository.migrate(LegacySnapshot(slotA: JSONCodec.string(StoreDocument(preferences: .init(currency: "usd")))), now: now)
-        let (value, input) = try SubscriptionEditor.value(draft, firstPayment: firstPayment, offer: offer, now: now)
+        let (value, input) = try SubscriptionEditor.value(draft, firstPayment: firstPayment, offer: offer, now: now, zone: .gmt)
         try await repository.save(value, expected: nil, offer: input, rates: ExchangeRates(), now: now)
         return try await repository.document()
     }
@@ -46,6 +46,40 @@ final class SubscriptionEditorTests: XCTestCase {
         XCTAssertEqual(stored.map(\.cost), ["4.99", "11.99"])
         XCTAssertEqual(stored[0].startsAt, Day.iso(now)); XCTAssertEqual(stored[0].endsAt, Day.iso(end)); XCTAssertEqual(stored[0].appliedAt, Day.iso(now))
         XCTAssertEqual(stored[1].startsAt, Day.iso(end)); XCTAssertNil(stored[1].appliedAt)
+    }
+
+    func testIntroMustStartLower() async throws {
+        func rejection(_ promo: String, first: String = "2026-11-04", ends: String, now: Date? = nil, zone: TimeZone = .gmt) -> String? {
+            SubscriptionEditor.rejection(draft("11.99"), firstPayment: Day.parse(first)!, offer: .intro(price: promo, ends: Day.parse(ends)!),
+                                         now: now ?? self.now, zone: zone)
+        }
+        XCTAssertEqual(rejection("0", ends: "2026-12-04"), "form_introFree", "A free start is a trial, not an intro")
+        XCTAssertEqual(rejection("11.99", ends: "2026-12-04"), "form_introTooHigh")
+        XCTAssertEqual(rejection("15", ends: "2026-12-04"), "form_introTooHigh")
+        XCTAssertEqual(rejection("4.99", ends: "2026-11-04"), "form_introEndEarly", "An end on the first payment day discounts nothing")
+        XCTAssertNil(rejection("4.99", ends: "2026-11-05"))
+        XCTAssertEqual(rejection("4.99", first: "2026-10-20", ends: "2026-11-15"), "form_introEndEarly", "The next charge, the 20th, is after the end")
+        XCTAssertNil(rejection("4.99", first: "2026-10-20", ends: "2026-11-21"))
+        let lateUTC = Day.parse("2026-11-04T23:30:00.000Z")!
+        XCTAssertNil(rejection("4.99", first: "2026-10-04", ends: "2026-11-10", now: lateUTC, zone: .gmt))
+        XCTAssertEqual(rejection("4.99", first: "2026-10-04", ends: "2026-11-10", now: lateUTC, zone: TimeZone(identifier: "Europe/Kyiv")!),
+                       "form_introEndEarly", "Today is the preferred zone's: in Kyiv it is already the 5th, so the next charge is in December")
+        let lateInLosAngeles = Day.parse("2026-11-05T03:00:00.000Z")!
+        XCTAssertEqual(rejection("4.99", ends: "2026-11-05", now: lateInLosAngeles, zone: TimeZone(identifier: "America/Los_Angeles")!), "form_endTooSoon")
+        let document = try await store(draft("11.99"), firstPayment: today, offer: .intro(price: "4.99", ends: Day.parse("2026-11-05")!))
+        XCTAssertEqual(phases(document).map(\.kind), [.intro, .standard])
+    }
+
+    func testPreviewShowsTheFirstFullPriceCharge() {
+        let first = Day.parse("2026-11-15")!
+        let intro = SubscriptionEditor.plan(draft("11.99"), firstPayment: first, offer: .intro(price: "4.99", ends: Day.parse("2026-12-01")!))
+        XCTAssertEqual(intro.map { $0.date }, [first, Day.parse("2026-12-15")!], "The full price starts with the first charge after the intro ends")
+        XCTAssertEqual(intro.map { $0.amount }, ["$4.99", "$11.99"])
+        let trial = SubscriptionEditor.plan(draft("11.99"), firstPayment: today, offer: .trial(ends: Day.parse("2026-11-11")!))
+        XCTAssertEqual(trial.map { $0.date }, [today, Day.parse("2026-11-11")!])
+        let license = SubscriptionEditor.plan(draft("19", period: .year), firstPayment: today, offer: .license(price: "29"))
+        XCTAssertEqual(license.map { $0.date }, [today, Day.parse("2027-11-04")!])
+        XCTAssertEqual(license.map { $0.amount }, ["$29.00", "$19.00"])
     }
 
     func testTrialIsFreeUntilItsEndAndChargedThatDay() async throws {

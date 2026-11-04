@@ -4,7 +4,7 @@ import SubEyeCore
 struct SubscriptionEditor: View {
     enum Flow: String { case subscription, trial, license }
     enum Offer: Equatable { case none, intro(price: String, ends: Date), trial(ends: Date), license(price: String) }
-    private enum Page: Hashable { case brand, price, dates, terms, brandPicker }
+    private enum Page: Hashable { case brand, terms, brandPicker }
     private enum Field: Hashable { case name, price, offerPrice, notes }
     @FocusState private var focusedField: Field?
     let original: Subscription?
@@ -18,7 +18,7 @@ struct SubscriptionEditor: View {
     @State private var draft: Subscription
     @State private var date: Date
     @State private var steps: [Page] = []
-    @State private var offer = "none"
+    @State private var intro = false
     @State private var offerPrice = ""
     @State private var offerEnd: Date
     @State private var remindersOffer = false
@@ -43,8 +43,17 @@ struct SubscriptionEditor: View {
     }
 
     // The footnote key for the first rule the terms break, or nil. An empty or unparsable price is no rule: Save just waits.
-    static func rejection(_ draft: Subscription, firstPayment: Date, offer: Offer, now: Date) -> String? {
+    static func rejection(_ draft: Subscription, firstPayment: Date, offer: Offer, now: Date, zone: TimeZone = .current) -> String? {
         switch offer {
+        case .intro(let promo, let ends):
+            guard let promo = Money.parse(promo), let price = Money.parse(draft.cost) else { return nil }
+            if promo == 0 { return "form_introFree" }
+            if promo >= price { return "form_introTooHigh" }
+            // Core sets the subscription's cost to the promo whatever the end, so an intro that discounts no charge is refused here.
+            let anchor = Day.floor(firstPayment), end = Day.floor(ends)
+            let index = Recurrence.nextIndex(anchor: anchor, every: draft.every, period: draft.period, onOrAfter: Day.today(now, zone: zone))
+            if Recurrence.occurrence(anchor: anchor, every: draft.every, period: draft.period, index: index) >= end { return "form_introEndEarly" }
+            return end > now ? nil : "form_endTooSoon"
         case .trial(let ends):
             if Money.parse(draft.cost) == 0 { return "form_priceAboveZero" }
             return Day.floor(ends) > now ? nil : "form_endTooSoon"
@@ -56,8 +65,9 @@ struct SubscriptionEditor: View {
     }
 
     // `draft.cost` is the recurring price; an offer's first or one-off price travels in the `Offer`.
-    static func value(_ draft: Subscription, firstPayment: Date, offer: Offer, now: Date) throws -> (subscription: Subscription, offer: OfferInput?) {
-        if let rejection = rejection(draft, firstPayment: firstPayment, offer: offer, now: now) { throw DomainError.invalidField(L(rejection)) }
+    static func value(_ draft: Subscription, firstPayment: Date, offer: Offer, now: Date, zone: TimeZone = .current) throws
+        -> (subscription: Subscription, offer: OfferInput?) {
+        if let rejection = rejection(draft, firstPayment: firstPayment, offer: offer, now: now, zone: zone) { throw DomainError.invalidField(L(rejection)) }
         var value = draft
         value.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         value.cost = try Display.amount(draft.cost)
@@ -77,7 +87,7 @@ struct SubscriptionEditor: View {
     }
     private var dirty: Bool {
         draft != initial || Day.iso(date) != initial.paymentDate || variant != initialVariant
-            || offer != "none" || !offerPrice.isEmpty || offerEnd != initialOfferEnd
+            || intro || !offerPrice.isEmpty || offerEnd != initialOfferEnd
     }
     private var valid: Bool { !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && Money.parse(draft.cost) != nil }
     private var termsValid: Bool {
@@ -91,10 +101,11 @@ struct SubscriptionEditor: View {
         switch flow {
         case .trial: return .trial(ends: offerEnd)
         case .license: return .license(price: offerPrice)
-        case .subscription: return offer == "intro" ? .intro(price: offerPrice, ends: offerEnd) : .none
+        case .subscription: return intro ? .intro(price: offerPrice, ends: offerEnd) : .none
         }
     }
-    private var rejection: String? { valid ? Self.rejection(draft, firstPayment: date, offer: terms, now: Date()) : nil }
+    private var zone: TimeZone { TimeZone(identifier: state.presentation.preferences.preferredTimezone) ?? .current }
+    private var rejection: String? { valid ? Self.rejection(draft, firstPayment: date, offer: terms, now: Date(), zone: zone) : nil }
     private var root: Page { original == nil ? .brand : .terms }
     var body: some View {
         NavigationStack(path: $steps) {
@@ -116,6 +127,7 @@ struct SubscriptionEditor: View {
                 .environment(\.dynamicTypeSize, typeSize)
         }
         .sheet(isPresented: $paywall) { PaywallView(state: $state, services: services) }
+        .onChange(of: date) { _ in if intro { offerEnd = max(offerEnd, introEarliestEnd) } }
         .task(id: draft.brandDomain) {
             let saved = if let domain = draft.brandDomain { await services.logos.variant(for: domain) ?? "auto" } else { "auto" }
             guard !Task.isCancelled else { return }
@@ -125,10 +137,8 @@ struct SubscriptionEditor: View {
     private func heading(_ page: Page) -> (step: Int, total: Int, title: String)? {
         guard original == nil else { return nil }
         switch page {
-        case .brand: return (1, flow == .subscription ? 3 : 2, L("form_brand"))
-        case .price: return (2, 3, L("form_stepPrice"))
-        case .dates: return (3, 3, L("form_stepDates"))
-        case .terms: return (2, 2, L(flow == .trial ? "form_stepTrial" : "form_stepLicense"))
+        case .brand: return (1, 2, L("form_brand"))
+        case .terms: return (2, 2, L(flow == .trial ? "form_stepTrial" : flow == .license ? "form_stepLicense" : "form_stepPrice"))
         case .brandPicker: return nil
         }
     }
@@ -139,11 +149,10 @@ struct SubscriptionEditor: View {
                 KeyboardAwareScrollView(focusedField: focusedField) {
                     VStack(spacing: 24) {
                         if let heading = heading(page) { stepHeading(heading.step, of: heading.total, title: heading.title) }
-                        switch page {
-                        case .price: priceContent
-                        case .dates: datesContent
-                        default:
-                            if original != nil { priceContent; datesContent } else if flow == .trial { trialContent } else { licenseContent }
+                        switch original == nil ? flow : .subscription {
+                        case .subscription: subscriptionContent
+                        case .trial: trialContent
+                        case .license: licenseContent
                         }
                     }.padding(20).padding(.bottom, 20)
                 }
@@ -233,7 +242,7 @@ struct SubscriptionEditor: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Color.white.opacity(0.16), lineWidth: 1) }
     }
-    @ViewBuilder private var priceContent: some View {
+    @ViewBuilder private var subscriptionContent: some View {
         brandIdentity
         AppSection {
             nameField(next: nameNext)
@@ -243,20 +252,12 @@ struct SubscriptionEditor: View {
             categoryRow
         }
         CadenceField(every: $draft.every, period: $draft.period)
-    }
-    @ViewBuilder private var datesContent: some View {
         AppSection {
             dateRow(title: L("form_firstPayment"), selection: $date, identifier: "firstPayment")
         }
-        if original == nil {
-            VStack(spacing: 10) {
-                ForEach(["none", "intro"], id: \.self) { mode in
-                    offerChoice(mode)
-                }
-            }.animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: offer)
-        }
+        if original == nil { introCard }
         advancedSection
-        if original == nil, !plan.isEmpty { planPreview(plan) }
+        if original == nil, intro, !plan.isEmpty { planPreview(plan) }
     }
     @ViewBuilder private var trialContent: some View {
         brandIdentity
@@ -348,49 +349,63 @@ struct SubscriptionEditor: View {
             }.padding(.top, 12)
         }.appFont(14).foregroundStyle(AppTheme.muted)
     }
-    private func offerChoice(_ mode: String) -> some View {
-        let key = "form_offer" + mode.capitalized
-        let locked = mode != "none" && !state.settings.pro
-        let selected = offer == mode
-        let symbols = ["none": "arrow.triangle.2.circlepath", "trial": "hourglass", "intro": "tag", "license": "key"]
+    private var introCard: some View {
+        let locked = !state.settings.pro
+        var traits: AccessibilityTraits = intro ? .isSelected : []
+        if #available(iOS 17, *), !locked { traits.formUnion(.isToggle) }
         return VStack(spacing: 0) {
             Button {
                 if locked { paywall = true }
-                else { offer = mode; offerEnd = max(offerEnd, Day.shift(date, days: 1)) }
+                else {
+                    intro.toggle()
+                    if intro { offerEnd = max(offerEnd, introEarliestEnd) }
+                }
             } label: {
                 HStack(spacing: 14) {
-                    RowIcon(symbol: symbols[mode]!, color: selected ? AppTheme.accentBright : AppTheme.muted)
+                    RowIcon(symbol: "tag", color: intro ? AppTheme.accentBright : AppTheme.muted)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(L(key)).appFont(16, weight: .semibold)
-                        Text(L(key + "Hint")).appFont(13).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
+                        Text(L("form_intro")).appFont(16, weight: .semibold)
+                        Text(L("form_introHint")).appFont(13).foregroundStyle(AppTheme.muted).fixedSize(horizontal: false, vertical: true)
                     }.frame(maxWidth: .infinity, alignment: .leading)
-                    Image(systemName: locked ? "lock" : selected ? "checkmark.circle.fill" : "circle")
-                        .appFont(22).foregroundStyle(selected ? AppTheme.accentBright : AppTheme.muted)
+                    Image(systemName: locked ? "lock" : intro ? "checkmark.circle.fill" : "circle")
+                        .appFont(22).foregroundStyle(intro ? AppTheme.accentBright : AppTheme.muted)
                 }.padding(16).contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityIdentifier("offer-" + mode).accessibilityAddTraits(selected ? .isSelected : [])
-            if selected && mode != "none" {
+            }.buttonStyle(.plain).accessibilityIdentifier("introOffer").accessibilityAddTraits(traits)
+                .accessibilityValue(locked ? L("paywall_badge") : "")
+            if intro {
                 AppDivider(inset: 16)
-                offerTerms
+                amountField(title: L("form_offerCost"), text: $offerPrice, focus: .offerPrice, identifier: "offerPrice")
             }
-        }.appCard(radius: 18, border: selected ? AppTheme.accent : AppTheme.border)
+            // Built with the page and only revealed: a compact picker inserted into a page already on screen settles on its short
+            // "11/11/26" style, unlike every other date row.
+            VStack(spacing: 0) {
+                AppDivider(inset: 16)
+                dateRow(title: L("form_offerEndsAt"), selection: $offerEnd, range: introEarliestEnd..., identifier: "offerEnd")
+            }.frame(height: intro ? nil : 0, alignment: .top).clipped().opacity(intro ? 1 : 0).accessibilityHidden(!intro).disabled(!intro)
+        }.appCard(radius: 18, border: intro ? AppTheme.accent : AppTheme.border)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: intro)
     }
-    @ViewBuilder private var offerTerms: some View {
-        amountField(title: L("form_offerCost"), text: $offerPrice, focus: .offerPrice, identifier: "offerPrice")
-        AppDivider(inset: 16)
-        dateRow(title: L("form_offerEndsAt"), selection: $offerEnd, range: Day.shift(date, days: 1)..., identifier: "offerEnd")
-    }
+    private var introEarliestEnd: Date { max(Day.shift(Day.floor(date), days: 1), earliestEnd) }
     // A license includes updates for exactly one cycle, the window `Pricing.license` stores.
     private var nextCycle: Date { Recurrence.occurrence(anchor: Day.floor(date), every: draft.every, period: draft.period, index: 1) }
-    private var plan: [(title: String, date: Date, note: String?, amount: String)] {
-        guard let cost = Money.parse(draft.cost) else { return [] }
-        func money(_ value: Decimal) -> String { Display.money(NSDecimalNumber(decimal: value).doubleValue, draft.currency) }
-        let price = money(cost), promo = Money.parse(offerPrice).map(money) ?? "—"
-        let then = L("form_planThen", ["cadence": Display.cadence(draft)]), first = Day.floor(date)
-        switch original == nil && flow != .subscription ? flow.rawValue : offer {
-        case "trial": return [(L("form_offerTrial"), first, nil, L("pricing_free")), (then, offerEnd, nil, price)]
-        case "intro": return [(L("native_phase_intro"), first, nil, promo), (then, offerEnd, nil, price)]
-        case "license": return [(L("form_offerLicense"), first, nil, promo), (L("form_planUpdatesEnd"), nextCycle, L("form_planRenewal", ["cadence": Display.cadence(draft)]), price)]
-        default: return [(L("form_firstPayment"), first, nil, price), (then, nextCycle, nil, price)]
+    private var plan: [(title: String, date: Date, note: String?, amount: String)] { Self.plan(draft, firstPayment: date, offer: terms) }
+    static func plan(_ draft: Subscription, firstPayment: Date, offer: Offer) -> [(title: String, date: Date, note: String?, amount: String)] {
+        guard Money.parse(draft.cost) != nil else { return [] }
+        func money(_ text: String) -> String { Money.parse(text).map { Display.money(NSDecimalNumber(decimal: $0).doubleValue, draft.currency) } ?? "—" }
+        let first = Day.floor(firstPayment), price = money(draft.cost), then = L("form_planThen", ["cadence": Display.cadence(draft)])
+        func charge(_ index: Int) -> Date { Recurrence.occurrence(anchor: first, every: draft.every, period: draft.period, index: index) }
+        switch offer {
+        case .none:
+            return []
+        case .trial(let ends):
+            return [(L("form_offerTrial"), first, nil, L("pricing_free")), (then, Day.floor(ends), nil, price)]
+        case .intro(let promo, let ends):
+            // The intro ends on a picked day, but the full price starts with the first charge on or after it.
+            let full = charge(Recurrence.nextIndex(anchor: first, every: draft.every, period: draft.period, onOrAfter: Day.floor(ends)))
+            return [(L("native_phase_intro"), first, nil, money(promo)), (then, full, nil, price)]
+        case .license(let license):
+            return [(L("form_offerLicense"), first, nil, money(license)),
+                    (L("form_planUpdatesEnd"), charge(1), L("form_planRenewal", ["cadence": Display.cadence(draft)]), price)]
         }
     }
     private func planPreview(_ steps: [(title: String, date: Date, note: String?, amount: String)]) -> some View {
@@ -420,10 +435,10 @@ struct SubscriptionEditor: View {
             .accessibilityIdentifier("planPreview")
     }
     private func footer(_ page: Page) -> some View {
-        let saves = page == .dates || page == .terms
+        let saves = page == .terms
         return VStack(spacing: 0) {
             AppDivider()
-            if original == nil, page != .dates, let existing = Lifecycle.counterpart(name: draft.name, domain: draft.brandDomain, in: state.presentation.rows) {
+            if original == nil, let existing = Lifecycle.counterpart(name: draft.name, domain: draft.brandDomain, in: state.presentation.rows) {
                 existingBanner(existing).padding(.horizontal, 20).padding(.top, 14)
             }
             if saves, let rejection {
@@ -436,8 +451,8 @@ struct SubscriptionEditor: View {
                         .disabled(!valid || !termsValid || rejection != nil || saved).accessibilityIdentifier("saveSubscription")
                 } else {
                     Button(L(page == .brand && draft.brandDomain == nil ? "common_skip" : "common_next")) {
-                        focusedField = nil; steps.append(page == .brand ? (flow == .subscription ? .price : .terms) : .dates)
-                    }.disabled(page == .price && !valid).accessibilityIdentifier("nextSubscriptionStep")
+                        focusedField = nil; steps.append(.terms)
+                    }.accessibilityIdentifier("nextSubscriptionStep")
                 }
             }.buttonStyle(AppPrimaryButtonStyle()).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 12)
         }.background(AppTheme.background)
@@ -462,7 +477,7 @@ struct SubscriptionEditor: View {
     private func save() async throws {
         guard !saved else { return }
         focusedField = nil
-        let (value, offerInput) = try Self.value(draft, firstPayment: date, offer: terms, now: Date())
+        let (value, offerInput) = try Self.value(draft, firstPayment: date, offer: terms, now: Date(), zone: zone)
         try await services.repository.save(value, expected: original, offer: offerInput, rates: try await services.exchange.cached(), now: Date())
         saved = true
         if let domain = value.brandDomain {

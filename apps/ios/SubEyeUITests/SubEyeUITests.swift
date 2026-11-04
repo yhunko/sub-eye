@@ -60,19 +60,27 @@ final class SubEyeUITests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Draft survives back\n")
         let price = app.textFields["subscriptionPrice"]; price.typeText("1")
         XCTAssertGreaterThan(app.buttons["currencyPicker"].frame.minX, price.frame.maxX)
-        app.buttons["nextSubscriptionStep"].tap()
-        XCTAssertTrue(app.buttons["offer-none"].waitForExistence(timeout: 5))
-        capture(app, name: language + "-Add-dates")
-        app.buttons["offer-intro"].tap()
+        app.buttons["dismissEditorKeyboard"].tap()
+        // Pro gives the card the toggle trait, which XCUITest reports as a switch, not a button.
+        let intro = app.descendants(matching: .any)["introOffer"].firstMatch
+        for _ in 0..<4 where !intro.isHittable { app.swipeUp() }
+        intro.tap()
+        XCTAssertTrue(app.textFields["offerPrice"].waitForExistence(timeout: 5))
+        capture(app, name: language + "-Add-subscription-terms")
+        app.swipeUp(); capture(app, name: language + "-Add-subscription-terms-bottom")
         app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["nextSubscriptionStep"].waitForExistence(timeout: 5))
+        app.buttons["nextSubscriptionStep"].tap()
         XCTAssertTrue(name.waitForExistence(timeout: 5)); XCTAssertEqual(name.value as? String, "Draft survives back")
-        capture(app, name: language + "-Add-price")
-        app.buttons["subscriptionBrand"].tap()
+        for _ in 0..<4 where !intro.isHittable { app.swipeUp() }
+        XCTAssertTrue(app.textFields["offerPrice"].exists, "The lower start survives going back to the brand step")
+        let brand = app.buttons["subscriptionBrand"]
+        for _ in 0..<4 where !brand.isHittable { app.swipeDown() }
+        brand.tap()
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5))
         capture(app, name: language + "-Brand-picker")
         app.navigationBars.buttons.firstMatch.tap()
-        app.buttons["nextSubscriptionStep"].tap()
-        XCTAssertTrue(app.buttons["offer-intro"].isSelected)
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
         app.buttons["closeSubscriptionEditor"].tap()
         XCTAssertFalse(app.alerts.firstMatch.exists)
         capture(app, name: language + "-Discard-menu")
@@ -108,7 +116,7 @@ final class SubEyeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["categoryPicker"].label.contains("Native category"))
         app.buttons["Cancel"].firstMatch.tap()
         app.buttons["Discard changes"].firstMatch.tap()
-        XCTAssertTrue(app.buttons["nextSubscriptionStep"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["saveSubscription"].waitForNonExistence(timeout: 5))
         app.terminate(); app.launch()
         XCTAssertTrue(app.tabBars.buttons["Calendar"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Calendar"].tap()
@@ -184,7 +192,6 @@ final class SubEyeUITests: XCTestCase {
         let name = app.textFields["subscriptionName"]
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Native Flow Test\n")
         let price = app.textFields["subscriptionPrice"]; price.typeText("12.99")
-        app.buttons["nextSubscriptionStep"].tap()
         app.buttons["saveSubscription"].tap()
         XCTAssertTrue(app.tabBars.buttons["Subscriptions"].waitForExistence(timeout: 5)); app.tabBars.buttons["Subscriptions"].tap()
         let search = app.searchFields.firstMatch
@@ -368,7 +375,6 @@ final class SubEyeUITests: XCTestCase {
             app.buttons["nextEditorField"].tap()
             app.textFields["subscriptionPrice"].typeText("4.99")
             app.buttons["dismissEditorKeyboard"].tap()
-            app.buttons["nextSubscriptionStep"].tap()
             let save = app.buttons["saveSubscription"]
             XCTAssertTrue(save.isHittable)
             XCTAssertGreaterThan(save.frame.midY, app.frame.height * 0.7, "Save belongs in the same bottom action area as Next")
