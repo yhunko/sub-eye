@@ -317,7 +317,7 @@ struct SubscriptionEditor: View {
                 Rectangle().fill(AppTheme.border).frame(width: 1, height: 24).accessibilityHidden(true)
                 NavigationLink { CurrencyPicker(selection: $draft.currency) } label: {
                     HStack(spacing: 5) {
-                        Text(Display.currencyFlag(draft.currency)).accessibilityHidden(true)
+                        Text(Display.currencyFlag(draft.currency)).appFont(16).dynamicTypeSize(...DynamicTypeSize.xxxLarge).accessibilityHidden(true)
                         Text(draft.currency.uppercased())
                         Image(systemName: "chevron.up.chevron.down").appFont(12, weight: .semibold).foregroundStyle(AppTheme.muted)
                     }.foregroundStyle(AppTheme.text).fixedSize().frame(minHeight: 44).padding(.leading, 4)
@@ -336,9 +336,18 @@ struct SubscriptionEditor: View {
             Button { paywall = true } label: { SettingsRow(title: L("form_category"), value: L("paywall_badge")).frame(minHeight: 56) }.buttonStyle(.plain)
         }
     }
-    private func dateRow(title: String, selection: Binding<Date>, range: PartialRangeFrom<Date> = Date.distantPast..., identifier: String) -> some View {
-        DatePicker(title, selection: selection, in: range, displayedComponents: .date).environment(\.timeZone, .gmt).appFont(16).padding(.horizontal, 16).frame(minHeight: 56)
-            .accessibilityIdentifier(identifier)
+    @ViewBuilder private func dateRow(title: String, selection: Binding<Date>, range: PartialRangeFrom<Date> = Date.distantPast..., identifier: String) -> some View {
+        let picker = DatePicker(title, selection: selection, in: range, displayedComponents: .date).environment(\.timeZone, .gmt)
+        // The compact picker wraps neither its label nor its date, so at accessibility sizes either would widen the whole page
+        // past the screen: the label goes above it and the date stops growing at the first accessibility size.
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title).appFont(16).fixedSize(horizontal: false, vertical: true).accessibilityHidden(true)
+                picker.labelsHidden().dynamicTypeSize(...DynamicTypeSize.accessibility1).accessibilityIdentifier(identifier)
+            }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        } else {
+            picker.appFont(16).padding(.horizontal, 16).frame(minHeight: 56).accessibilityIdentifier(identifier)
+        }
     }
     private var advancedSection: some View {
         DisclosureGroup(L("native_advanced")) {
