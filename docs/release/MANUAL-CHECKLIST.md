@@ -354,10 +354,11 @@ deleted. The landing site is static assets and needs no WAF rule.
 2. **App Store Small Business Program** → enroll. 15% commission instead of 30%
    under $1M/yr. It is a form; there is no reason not to.
 3. Create the IAP: **Non-Consumable**, product id `cc.subeye.app.pro.lifetime`,
-   reference name "SubEye Pro (Lifetime)", price tier **$11.99** (decided
-   2026-07-27 — not a launch price, no promo codes). Leave per-storefront pricing
-   on Apple's default conversion so a Ukrainian storefront shows roughly ₴199;
-   the landing page states this outright as a trust signal.
+   reference name "SubEye Pro (Lifetime)", price **$14.99** (decided
+   2026-07-27 at $11.99, raised 2026-11-04 — not a launch price, no promo codes).
+   Per-storefront pricing stays on Apple's default conversion, except Ukraine's
+   dollar storefront, hand-set to $11.99; the landing page states this outright
+   as a trust signal.
 4. Add localized display name and description (en + uk).
 5. **RevenueCat**: create the project, add the iOS app with bundle id
    `cc.subeye.app`, upload the App Store Connect **In-App Purchase Key**, create
@@ -382,7 +383,7 @@ deleted. The landing site is static assets and needs no WAF rule.
 **Settled 2026-07-27:** **iOS only at launch** — Android later if it is ever
 warranted. Build `--platform ios`, and per DESIGN-BRIEF the landing page must not
 mention Android at all, not even as a greyed-out badge; raising the platform
-question only invites it. **Pro is $11.99 once**, always, no promo codes.
+question only invites it. **Pro is $14.99 once**, always, no promo codes.
 
 | Still open | Why it matters |
 | --- | --- |

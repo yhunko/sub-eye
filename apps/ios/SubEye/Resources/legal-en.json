@@ -293,7 +293,7 @@
     "locale": "en",
     "title": "Terms of service",
     "description": "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-    "updated": "2026-11-03",
+    "updated": "2026-11-04",
     "lead": [
       {
         "p": [
@@ -384,9 +384,9 @@
           {
             "p": [
               {
-                "b": "SubEye Pro is a single payment of $11.99"
+                "b": "SubEye Pro is a single payment of $14.99"
               },
-              ", or the equivalent set for your App Store storefront — about 199 ₴ in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen widgets, which then list the next installment payment too."
+              ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen widgets, which then list the next installment payment too."
             ]
           },
           {

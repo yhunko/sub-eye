@@ -175,10 +175,10 @@ product's actual differentiator.
 
 **Two content corrections to DESIGN-BRIEF:**
 
-- **Pricing is $11.99 once, always.** Not $19.99 (which the release checklist
+- **Pricing is $14.99 once, always** ($11.99 until 2026-11-04). Not $19.99 (which the release checklist
   used to say, now corrected), and **no launch-price framing and no
   "first 100 get Pro free" promo** — decided 2026-07-27. Per-storefront pricing
-  stays: roughly ₴199 in Ukraine, $11.99 in the US, adjusted elsewhere. That is
+  stays: $11.99 in Ukraine, $14.99 in the US, adjusted elsewhere. That is
   real, Apple supports it, and almost no indie app says it out loud — design it
   as the trust signal it is, not a footnote.
 - **Only claim what ships.** Pro is renewal reminders, trial-ending and
@@ -236,7 +236,7 @@ six pages.
 - Canonical per page, `hreflang` alternates, `@astrojs/sitemap` with the i18n
   config, `robots.txt`.
 - Open Graph and Twitter cards with a real generated OG image per locale.
-- JSON-LD: `SoftwareApplication` (with `offers` at 11.99 USD) and
+- JSON-LD: `SoftwareApplication` (with `offers` at 14.99 USD) and
   `Organization`.
 
 ---

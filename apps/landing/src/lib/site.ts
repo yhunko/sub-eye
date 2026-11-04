@@ -40,10 +40,13 @@ export const otherLocale = (locale: Locale): Locale =>
 
 /**
  * Pro is one payment, per storefront. One constant so the pricing section and
- * the JSON-LD `offers` cannot quote different numbers — $11.99 is the price,
- * not a launch price, so nothing here expires.
+ * the JSON-LD `offers` cannot quote different numbers — $14.99 is the price,
+ * not a launch price, so nothing here expires. Keys are the currency codes the
+ * page prints. Ukraine's storefront bills in dollars at a hand-set price rather
+ * than Apple's conversion, so it is not a currency key and has its own constant.
  */
-export const proPrice = { usd: 11.99, uah: 199, eur: 9.99 };
+export const proPrice = { usd: 14.99, eur: 17.99 };
+export const proPriceUkraine = 11.99;
 
 /**
  * The App Store product page.

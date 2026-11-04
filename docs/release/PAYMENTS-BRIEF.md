@@ -11,8 +11,10 @@ Read [SESSION-BRIEFS.md](SESSION-BRIEFS.md) for what else is outstanding and
 
 ## The model — decided, do not redesign
 
-**One non-consumable, `$11.99`, lifetime.** Per-storefront (~₴199 in Ukraine, on
-Apple's default conversion). Not a launch price, no promo codes, no
+**One non-consumable, `$14.99`, lifetime.** Per-storefront: Apple's default
+conversion everywhere except Ukraine, whose dollar storefront is hand-set to
+$11.99 (raised from $12.99 / Ukraine $9.99 on 2026-11-04 with the installments
+release). Not a launch price, no promo codes, no
 auto-renewable subscription in v1 — Guideline 3.1.2's paywall requirements,
 dunning and grace periods are ops a solo developer does not need on day one, and
 a subscription tracker charging a subscription is a joke reviewers make in
@@ -46,9 +48,9 @@ it must not appear in the paywall, the store listing or the catalogs. Earlier
 drafts of the B6 brief listed it; they were wrong.
 
 The prices live in one place on the marketing side —
-`apps/landing/src/lib/site.ts` exports `proPrice = { usd: 11.99, uah: 199, eur:
-9.99 }`. The app must read its price from the RevenueCat `Package`, never
-hardcode it: the storefront decides, and a hardcoded `$11.99` is wrong in
+`apps/landing/src/lib/site.ts` exports `proPrice = { usd: 14.99, eur: 17.99 }` and
+`proPriceUkraine = 11.99` (dollars). The app must read its price from the RevenueCat `Package`, never
+hardcode it: the storefront decides, and a hardcoded `$14.99` is wrong in
 Ukraine and illegal-looking everywhere else.
 
 ---
@@ -68,7 +70,7 @@ Program is already enrolled.
 3. **In-App Purchases** → new **Non-Consumable**:
    - Product ID `cc.subeye.app.pro.lifetime`
    - Reference name `SubEye Pro (Lifetime)`
-   - Price **$11.99** (Apple's default per-storefront conversion — do not hand-set ₴)
+   - Price **$14.99** (Apple's default per-storefront conversion; Ukraine is a manual $11.99)
    - Localized display name + description in **en** and **uk**
    - Leave it at "Ready to Submit". It does **not** need review approval to be
      purchasable in sandbox.

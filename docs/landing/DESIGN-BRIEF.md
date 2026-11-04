@@ -183,7 +183,7 @@ asset on the page after the bank line.
 lifecycle action. Installments and loans, with their progress and reminders.
 Multi-currency at daily rates. Not a trial, not a teaser.
 
-**Pro — $11.99 once** — Reminder lead days (the same day, or 1, 3 or 7 days
+**Pro — $14.99 once** — Reminder lead days (the same day, or 1, 3 or 7 days
 before), installment reminders included; the time of day is free. Trial-ending
 reminders. The price history on each subscription.
 Categories, the category filter and the spend breakdown. What a credit costs
@@ -196,13 +196,13 @@ Two things have to land:
 a joke people will make at your expense; declining to make it is the point. One
 dry line, then move on — don't over-wink at it.
 
-**Priced for where you live.** SubEye uses per-storefront pricing: about ₴199 in
-Ukraine, $11.99 in the US, adjusted elsewhere. This is real — Apple supports it
+**Priced for where you live.** SubEye uses per-storefront pricing: $11.99 in
+Ukraine, $14.99 in the US, adjusted elsewhere. This is real — Apple supports it
 — and almost no indie app says it out loud. It is a second trust signal of the
 same kind as the bank line, and it should be designed as one, not buried as a
-footnote. A visitor on a Ukrainian storefront should see hryvnia.
+footnote. A visitor on a Ukrainian storefront should see the Ukrainian price first.
 
-**$11.99 is the price, not a launch price** (decided 2026-07-27). No
+**$14.99 is the price, not a launch price** (decided 2026-07-27 at $11.99, raised 2026-11-04). No
 introductory framing, no promo codes, no first-100-free, no countdown and no
 "only N spots left". A page whose whole argument is that it will not surprise
 you later should not open with a price that expires.

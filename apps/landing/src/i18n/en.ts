@@ -145,7 +145,7 @@ export const en = {
     joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
     storefrontTitle: "Priced for where you live.",
     storefrontBody:
-      "SubEye uses per-storefront pricing. You pay your country's price, set in your country's currency — not a dollar price converted at the till.",
+      "SubEye uses per-storefront pricing. You pay the price set for your country's App Store — not the US price converted at the till.",
     storefrontUs: "United States",
     storefrontUa: "Ukraine",
     storefrontEu: "Euro zone",

@@ -12,7 +12,7 @@ import { copyFor } from "../i18n";
 import { money } from "../lib/format";
 import { spendPanel } from "../lib/panels";
 import type { Locale } from "../lib/site";
-import { proPrice } from "../lib/site";
+import { proPrice, proPriceUkraine } from "../lib/site";
 import Base from "./Base.astro";
 
 interface Props {
@@ -24,11 +24,11 @@ const c = copyFor(locale);
 const panel = spendPanel[locale];
 
 const us = { price: money(proPrice.usd, "usd"), where: c.pricing.storefrontUs };
-const ua = { price: money(proPrice.uah, "uah", 0), where: c.pricing.storefrontUa };
+const ua = { price: money(proPriceUkraine, "usd"), where: c.pricing.storefrontUa };
 const eu = { price: money(proPrice.eur, "eur"), where: c.pricing.storefrontEu };
 
-// A visitor on the Ukrainian storefront should see hryvnia first — the whole
-// point of the per-storefront line is that it is their price, not a conversion.
+// A visitor on the Ukrainian storefront should see their own price first — the
+// whole point of the per-storefront line is that it is their price, not a conversion.
 const home = locale === "uk" ? ua : us;
 const storefronts = locale === "uk" ? [ua, us, eu] : [us, ua, eu];
 // "Free" priced in the reader's own currency, not a dollar zero on a hryvnia page.

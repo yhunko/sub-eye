@@ -39,8 +39,8 @@ paying for. A change to either is a change to a promise, so:
   a stale translation.
 - Move `updated` on that document. The app shows it under the title and the site
   puts it in `<time datetime>`.
-- The terms quote the Pro price as formatted literals (`$11.99`, `199 ₴` with a
-  **non-breaking space**, as `apps/landing/src/lib/format.ts` emits). The price
+- The terms quote the Pro price as formatted literals (`$14.99`, and `$11.99`
+  for Ukraine's dollar storefront), as `apps/landing/src/lib/format.ts` emits. The price
   itself lives in `apps/landing/src/lib/site.ts`, which a package may not import;
   `apps/landing/test/pricing.test.ts` pins the two against each other instead, so
   a price change that misses this file fails there.

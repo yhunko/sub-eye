@@ -9,7 +9,7 @@ import { en } from "../src/i18n/en";
 import { uk } from "../src/i18n/uk";
 import { currencyMockup } from "../src/lib/currencies";
 import { money } from "../src/lib/format";
-import { proPrice } from "../src/lib/site";
+import { proPrice, proPriceUkraine } from "../src/lib/site";
 import { priceTimeline } from "../src/lib/timeline";
 
 describe("price timeline", () => {
@@ -91,12 +91,12 @@ describe("the currency claim", () => {
 
 describe("pro price", () => {
   it("is one number behind the pricing section and the JSON-LD offer", () => {
-    expect(proPrice.usd).toBe(11.99);
-    expect(money(proPrice.usd, "usd")).toBe("$11.99");
+    expect(proPrice.usd).toBe(14.99);
+    expect(money(proPrice.usd, "usd")).toBe("$14.99");
     // The euro storefront is quoted on the page too, so it is pinned here.
-    expect(money(proPrice.eur, "eur")).toBe("€9.99");
-    // Trailing symbol, non-breaking space — see the note in src/lib/format.ts.
-    expect(money(proPrice.uah, "uah", 0)).toBe("199\u00a0₴");
+    expect(money(proPrice.eur, "eur")).toBe("€17.99");
+    // Ukraine's storefront bills in dollars, not hryvnia.
+    expect(money(proPriceUkraine, "usd")).toBe("$11.99");
   });
 
   // `@subeye/legal` may not import this file — a package importing an app is a
@@ -122,7 +122,7 @@ describe("pro price", () => {
         .join("");
 
       expect(prose).toContain(money(proPrice.usd, "usd"));
-      expect(prose).toContain(money(proPrice.uah, "uah", 0));
+      expect(prose).toContain(money(proPriceUkraine, "usd"));
     }
   });
 });
