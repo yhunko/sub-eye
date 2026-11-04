@@ -22,6 +22,11 @@ rule.
   (`cc.subeye.app.native`, own store namespace, `NATIVE_DEVELOPMENT` defined —
   the developer screen and test fixtures compile only there). `Production` is
   `cc.subeye.app`, `group.cc.subeye.app`, widget kind `SubEyeWidget`.
+- The app does not require full screen, so the open iPhone Duo can resize it.
+  App Store validation (error 90474) then demands every orientation for iPad
+  multitasking: `UISupportedInterfaceOrientations~ipad` lists all four while the
+  iPhone key stays portrait-only. Losing either key fails the upload, not the
+  build.
 - User-facing copy exists in English and Ukrainian.
   `Shared/Resources/*.lproj/Localizable.strings` are hand-maintained and must
   keep identical keys; `L()` fills `{name}` placeholders, not printf specifiers.
