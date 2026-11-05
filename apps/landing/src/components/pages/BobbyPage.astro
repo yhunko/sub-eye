@@ -1,0 +1,192 @@
+---
+import { copyFor } from "../../i18n";
+import Article from "../../layouts/Article.astro";
+import { bobby, bobbyPriceRange, subeyeListing } from "../../lib/bobby";
+import { longDate, money } from "../../lib/format";
+import { type Locale, path, proPrice, proPriceUkraine } from "../../lib/site";
+import CloseCard from "../CloseCard.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const b = c.bobby;
+const read = longDate(locale, bobby.read);
+const range = bobbyPriceRange();
+const pro = money(locale === "uk" ? proPriceUkraine : proPrice.usd, "usd");
+const rating = new Intl.NumberFormat(c.intl).format(bobby.rating);
+
+const rows = [
+  [
+    b.rows.updated,
+    b.bobbyVersion(bobby.version, longDate(locale, bobby.versionDate)),
+    b.subeyeVersion(subeyeListing.version, longDate(locale, subeyeListing.versionDate)),
+  ],
+  [b.rows.price, b.bobbyPrice(money(range.min, "usd"), money(range.max, "usd")), b.subeyePrice(pro)],
+  [b.rows.freeLimit, b.bobbyFreeLimit, b.subeyeFreeLimit],
+  [b.rows.platforms, b.bobbyPlatforms(bobby.minimumIOS), b.subeyePlatforms(subeyeListing.minimumIOS)],
+  [b.rows.widgets, b.bobbyWidgets, b.subeyeWidgets],
+  [b.rows.timeline, b.bobbyTimeline, b.subeyeTimeline],
+  [b.rows.installments, b.bobbyInstallments, b.subeyeInstallments],
+];
+
+---
+
+<Article locale={locale} page="bobby-alternative" title={b.metaTitle} description={b.metaDescription}>
+  <div class="shell">
+    <h1 class="a-title">{b.title}</h1>
+    <p class="a-lead">{b.lead(read, rating, bobby.ratingCount)}</p>
+
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <caption class="sr-only">{b.tableCaption(read)}</caption>
+        <thead>
+          <tr>
+            <td></td>
+            <th scope="col">{b.bobbyColumn}</th>
+            <th scope="col">{b.subeyeColumn}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map(([label, theirs, ours]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                <td data-col={b.bobbyColumn}>{theirs}</td>
+                <td data-col={b.subeyeColumn}>{ours}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="cmp-read" aria-hidden="true">{b.tableCaption(read)}</p>
+    <p class="cmp-note">{b.noAccount}</p>
+    <p class="cmp-note">
+      <a class="link" href={bobby.listing} rel="noopener">{b.listingLink}</a>
+    </p>
+  </div>
+
+  <section class="shell a-section" aria-labelledby="switch-title">
+    <div class="switch">
+      <h2 class="a-h2" id="switch-title">{b.switchTitle}</h2>
+      <p class="a-lead">{b.switchBody}</p>
+    </div>
+  </section>
+
+  <section class="shell a-section" aria-labelledby="close-title">
+    <CloseCard
+      locale={locale}
+      id="close-title"
+      title={b.closeTitle}
+      body={b.closeBody}
+      href={path(locale)}
+      link={b.closeLink}
+      shot="price-rise"
+      alt={c.hero.alt}
+    />
+  </section>
+</Article>
+
+<style>
+  .cmp-wrap {
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  .cmp {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    text-align: left;
+  }
+
+  .cmp-read {
+    margin-top: 0.75rem;
+    font-size: var(--step-small);
+    color: var(--text-muted);
+  }
+
+  thead th {
+    padding: 0 1.25rem 0.5rem;
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: var(--step-lead);
+  }
+
+  thead th:last-child {
+    color: var(--accent-bright);
+  }
+
+  tbody th,
+  tbody td {
+    padding: 1.1rem 1.25rem;
+    vertical-align: top;
+    background: var(--surface);
+  }
+
+  tbody th {
+    font-weight: 500;
+    border-radius: 18px 0 0 18px;
+    width: 22%;
+  }
+
+  tbody td:last-child {
+    background: var(--surface-alt);
+    border-radius: 0 18px 18px 0;
+  }
+
+  .cmp-note {
+    margin-top: 1.5rem;
+    max-width: 62ch;
+  }
+
+  .switch {
+    display: grid;
+    gap: 0;
+  }
+
+  /* On a phone each row becomes a block: the label, then both answers, each
+     named by its column. */
+  @media (max-width: 47.99em) {
+    .cmp,
+    .cmp tbody,
+    .cmp tr,
+    .cmp th,
+    .cmp td {
+      display: block;
+    }
+
+    .cmp thead {
+      display: none;
+    }
+
+    .cmp tr {
+      margin-bottom: 8px;
+    }
+
+    tbody th {
+      width: auto;
+      border-radius: 18px 18px 0 0;
+      padding-bottom: 0.25rem;
+    }
+
+    tbody td {
+      padding-top: 0.5rem;
+    }
+
+    tbody td::before {
+      content: attr(data-col);
+      display: block;
+      font-size: var(--step-small);
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    tbody td:last-child {
+      border-radius: 0 0 18px 18px;
+    }
+  }
+</style>

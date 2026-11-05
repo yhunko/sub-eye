@@ -1,4 +1,5 @@
-import type { PricePhaseKind, SubscriptionStatus } from "@subeye/model";
+import type { PricePhaseKind } from "@subeye/model";
+import type { SourceKind } from "../lib/priceRises";
 
 /**
  * English is the shape of the whole dictionary. It lives here rather than in
@@ -17,31 +18,31 @@ export const en = {
   languages: "English and Ukrainian",
 
   nav: {
-    how: "How it works",
-    privacy: "Privacy",
+    timeline: "Timeline",
+    free: "Free",
+    installments: "Installments",
     price: "Price",
+    faq: "Questions",
   },
 
   meta: {
-    title: "SubEye — know what your subscriptions cost",
+    title: "SubEye — see a subscription's price rise before it lands",
     description:
-      "SubEye tracks every recurring charge you type in: what it costs now, what it becomes, and the day it leaves your account. No account, no bank login, works with the network off. iPhone.",
+      "An iPhone subscription tracker that plots each price forward: the trial, the intro price and the rise already on its way. Every subscription free, with no limit. Installments on the same calendar. No account, no bank.",
   },
 
   hero: {
-    title: "Know what your subscriptions cost. All of them.",
-    lead: "You type in what you pay. SubEye tells you what it costs now, what it becomes, and the day it leaves your account — with nothing to sign up for and no network to be on.",
-    platform: "iPhone",
-    ctaHow: "See how it works",
-    ctaPrice: (free: string, pro: string) => `${free} to start, ${pro} once`,
-    upcoming: "Leaving your account next",
-    upcomingNote:
-      "Every date is one you typed once. Nothing is guessed from a bank feed.",
+    title: "See the price rise before it hits.",
+    lead: "SubEye is an iPhone subscription tracker that plots every price forward: the trial, the intro price, and the rise already on its way.",
+    price: (pro: string) =>
+      `Every subscription is free, with no limit. The timeline is Pro: ${pro}, once.`,
+    secondary: "See the timeline",
+    alt: "SubEye on iPhone: Adobe Creative Cloud at $29.99 a month, with a rise to $34.99 scheduled for 6 December 2026, $60.00 more a year.",
   },
 
   timeline: {
-    kicker: "A subscription's price is a timeline, not a number.",
-    lede: "SubEye models the whole schedule — the trial, the discount, and the price the discount turns into — so the increase is on the screen months before it is on your statement.",
+    title: "A price is a timeline, not a number.",
+    lede: "SubEye keeps the whole schedule — the trial, the discount, and the price the discount turns into — so the increase is on screen months before it is on your statement. Pick a phase.",
     trial: "Free trial",
     intro: "Intro price",
     standard: "Standard",
@@ -49,113 +50,139 @@ export const en = {
     days: (n: number) => `${n} ${n === 1 ? "day" : "days"}`,
     months: (n: number) => `${n} ${n === 1 ? "month" : "months"}`,
     fromMonth: (n: number) => `from month ${n}`,
-    perMonth: "per month",
-    punch: "This is the part nobody sees coming. That is the whole app.",
+    perMonth: "a month",
+    yearly: (amount: string) => `${amount} over a year at this price`,
     blurb: {
       trial: "You are billed nothing, and you know when that ends.",
       intro: "The discount, and the month it stops being one.",
       standard: "The real price. On screen from the day you add it.",
       scheduledChange: "A change you recorded, already waiting for its date.",
     } satisfies Record<PricePhaseKind, string>,
+    proTitle: "The timeline is what Pro buys.",
+    pro: (pro: string) =>
+      `Trials, intro prices, one-time licenses and scheduled changes, each on its own date, are SubEye Pro: ${pro}, once. Every subscription, its renewal date and a reminder the day before stay free.`,
+    shotAlt:
+      "SubEye price history for a sample Netflix subscription: free trial from 6 May to 6 June 2026, introductory price $4.99 until 6 August, then $12.99.",
   },
 
-  bank: {
-    title: "SubEye never touches your bank. Or the network.",
-    body: "Every other tracker wants one of two things: credentials to your bank, or read access to your inbox. SubEye asks you to type in what you pay, and then keeps it on the phone — no account to create, no server holding a copy. The other half of that trade is honest: your subscriptions are on that phone. An iPhone backup carries them to a new one, and if you want a second device to see the same list, iCloud Sync is a switch in Settings — off until you turn it on, and it goes to your own iCloud, never to us.",
-    denials: [
-      "No bank linking",
-      "No email scanning",
-      "No “we found 3 subscriptions”",
+  free: {
+    title: "Every subscription. No limit.",
+    body: "The free app is not a trial and has no cap: the twentieth subscription goes in the way the first did.",
+    features: [
+      {
+        title: "Left this month",
+        body: "Home leads with what is still to leave your account, against what the whole month costs.",
+      },
+      {
+        title: "Next month, and the year",
+        body: "The forecast for next month, which way it moved, and what the next twelve months come to.",
+      },
+      {
+        title: "Pause, cancel, change your mind",
+        body: "Pause until a date, cancel at period end and keep what you paid for, or keep it after all.",
+      },
+      {
+        title: "A calendar for every month",
+        body: "Every renewal and payment on its day, with the month's total at the top.",
+      },
     ],
-    /** `languages` is appended at the call site — it is one string, not two. */
-    pills: [
-      "Nothing sold, nothing tracked",
-      "No sign-up, nothing to sign in to",
-      "Works with the network off",
-    ],
+    shotAlt:
+      "SubEye's subscription list with sample data: $218 a month, $2,789 a year, iCloud+, Adobe Creative Cloud, Netflix, Spotify, HelloFresh, Disney+.",
   },
 
   does: {
-    title: "What it does",
-    money: {
-      title: "One number, with a denominator.",
-      body: "The home screen shows what is still going to leave your account this month, and how much of the month is left to pay it. Under that: next month's forecast and whether it moved up or down, what the next twelve months come to, and where the money actually goes. Installment and loan payments count in this month's and next month's figures: each falls in its own month, and each plan shows what is paid and what is left.",
-    },
-    lifecycle: {
-      title: "Pause it, cancel it, change your mind.",
-      body: "Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Swipe a row and you are only ever offered the actions that are legal for that subscription right now.",
-    },
     currency: {
       title: "Every currency, one honest total.",
-      body: "155 currencies, re-denominated daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
+      body: "155 currencies, converted daily into the one you count in. A hryvnia subscription and a dollar subscription still add up to a number you can trust.",
     },
   },
 
   panel: {
-    leftThisMonth: "Left this month",
-    dayOf: (day: number, days: number) => `Day ${day} of ${days}`,
-    subscriptions: (n: number) => `${n} subscriptions`,
-    nextMonth: "Next month",
-    whereItGoes: "Where it goes",
-    categories: ["Video", "Software", "Fitness", "Music", "Other"],
-    today: "Today",
-    inDays: (n: number) => `in ${n} ${n === 1 ? "day" : "days"}`,
     totalThisMonth: "Total this month",
   },
 
-  status: {
-    active: "Active",
-    paused: "Paused",
-    cancelling: "Cancelling",
-    cancelled: "Cancelled",
-  } satisfies Record<SubscriptionStatus, string>,
+  installments: {
+    title: "Installments on the same calendar.",
+    body: "A pay-in-parts purchase, a card installment or a loan you already have sits next to your subscriptions. Each payment falls on its day, counts in that month's total, and says how many are left. Free, with no cap on plans.",
+    note: "SubEye tracks credit you already have. It never offers, compares or recommends a loan.",
+    calendarAlt:
+      "SubEye's November 2026 calendar with sample data: subscription logos and installment payments on their days, $1,487.24 for the month.",
+    dayAlt:
+      "14 November in SubEye: a car loan, payment 8 of 24, $520.00, next to Notion renewing for $96.00.",
+    plansAlt:
+      "SubEye's installment list with sample data: iPhone 17 Pro, 2 of 6 paid; a car loan, 7 of 24 paid; a sofa, 2 of 4 paid.",
+  },
+
+  reminders: {
+    title: "A reminder the day before.",
+    body: "Every renewal and installment payment gets a notification the day before, scheduled on the phone itself — there is no push server. On renewal day, a Live Activity puts Keep and Cancel on the Lock Screen.",
+    pro: "With Pro: the lead time you choose (the same day, or 1, 3 or 7 days before), trial-ending alerts, and your next payments in a Home Screen widget.",
+    alt: "A SubEye Live Activity on the iPhone Lock Screen: iCloud+ renews today for $2.99, with Keep and Cancel buttons.",
+  },
+
+  privacy: {
+    title: "Nothing to hand over.",
+    body: "You type in what you pay, and it stays on the phone.",
+    rows: [
+      {
+        title: "No bank login, no inbox access",
+        body: "SubEye never asks for the credentials to your bank or permission to read your email.",
+      },
+      {
+        title: "No account, no server",
+        body: "There is nothing to sign up for and no copy of your list anywhere but the phone.",
+      },
+      {
+        title: "iCloud Sync is off until you turn it on",
+        body: "It copies the list to your own iCloud for a second device. Apple's storage, never ours.",
+      },
+      {
+        title: "Erase means erase",
+        body: "Settings → Erase all data removes every subscription, reminder and setting, for real.",
+      },
+    ],
+    policy: "Read the privacy policy",
+  },
 
   pricing: {
     title: "Pay once, or not at all.",
+    joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
     freeName: "Free",
     freeSuffix: "always",
-    freeBody:
-      "Unlimited subscriptions. The whole dashboard. Search, sorting, every lifecycle action. A reminder the day before each renewal. Multi-currency at daily rates. iCloud Sync between your own devices. Not a trial and not a teaser.",
     freeItems: [
-      "No account, and it works offline",
-      "Unlimited subscriptions",
-      "Installments and loans, payment by payment",
-      "Spend, next month, and the year ahead",
-      "A payment calendar for every month",
-      "Pause, cancel, renew",
+      "Every subscription and installment, no limit",
+      "This month, next month and the year ahead",
+      "The payment calendar",
       "A reminder the day before each payment",
-      "Every currency at daily rates",
-      "iCloud Sync across your own devices",
-      "English and Ukrainian",
+      "Live Activities on renewal day",
+      "155 currencies and iCloud Sync",
     ],
-    proName: "Pro",
+    proName: "SubEye Pro",
     proSuffix: "once",
-    proTag: "One payment",
-    proBody:
-      "Everything above, plus the parts that watch the calendar for you.",
     proItems: [
-      "Choose when every reminder lands",
-      "Trial-ending alerts",
-      "Price history on every subscription",
-      "Categories, category filters and the breakdown",
-      "A year of spending, and each month against the last",
+      "The price timeline: trials, intro prices, licenses, scheduled changes",
+      "Reminders on the days you choose, trial-ending alerts",
+      "Categories and the spend breakdown",
+      "The calendar's year view, month against month",
       "What a credit costs over the purchase price",
-      "Home Screen widgets, next installment included",
+      "Home Screen widgets",
     ],
-    joke: "Charging a monthly fee to watch your monthly fees would be absurd.",
     storefrontTitle: "Priced for where you live.",
     storefrontBody:
-      "SubEye uses per-storefront pricing. You pay the price set for your country's App Store — not the US price converted at the till.",
+      "You pay the price set for your country's App Store, not the US price converted at the till.",
     storefrontUs: "United States",
     storefrontUa: "Ukraine",
     storefrontEu: "Euro zone",
-    storefrontElsewhere: "adjusted for every other storefront",
   },
 
   faq: {
     title: "Questions",
     heading: "The ones we get asked.",
     items: [
+      {
+        q: "Is the timeline free?",
+        a: "No — it is what Pro buys. A free subscription has one price and a renewal date. Pro adds trials, intro prices, one-time licenses and scheduled changes, each on its own date. Every subscription, every installment and the reminder the day before stay free, with no limit.",
+      },
       {
         q: "Why do I have to type everything in?",
         a: "Because the alternative is your bank password. Trackers that find subscriptions for you do it by holding a credential to your accounts or by reading your email. SubEye holds neither. Adding a subscription takes about twenty seconds, once.",
@@ -170,14 +197,15 @@ export const en = {
       },
       {
         q: "What happens when a price changes?",
-        a: "You add the new price with the date it starts. The old one stays on the timeline, so the forecast is right on both sides of the change — and if the change lands early, you can apply it on the day it actually happened.",
+        a: "With Pro, you add the new price with the date it starts. The old one stays on the timeline, so the forecast is right on both sides of the change — and if the change lands early, you can apply it on the day it actually happened.",
       },
     ],
   },
 
   cta: {
-    title: "SubEye is on the App Store.",
-    body: "Download it, type in the first subscription, and about twenty seconds later the number on the home screen is yours. Nothing to sign up for, nothing to sign in to.",
+    title: "On the App Store now.",
+    body: "Type in the first subscription, and about twenty seconds later the number on Home is yours. Nothing to sign up for.",
+    fact: (pro: string) => `Free, with no limit. Pro is ${pro}, once.`,
   },
 
   appStore: {
@@ -193,15 +221,109 @@ export const en = {
   },
 
   footer: {
+    product: "SubEye",
+    read: "Read",
+    legalTitle: "Help and legal",
     support: "Support",
     terms: "Terms of service",
     privacy: "Privacy policy",
     contact: "Contact",
+    bobby: "A Bobby alternative",
+    rises: "Price rises in 2026",
     rights: "SubEye. Made in Ukraine.",
   },
 
   legal: {
     updated: "Last updated",
     backHome: "Back to SubEye",
+  },
+
+  bobby: {
+    metaTitle: "A Bobby alternative, compared on dated facts — SubEye",
+    metaDescription:
+      "Bobby and SubEye side by side: last update, platforms, widgets, the free limit and the price, each read on the App Store and dated.",
+    title: "A Bobby alternative, on dated facts.",
+    lead: (date: string, rating: string, count: string) =>
+      `Bobby is a manual subscription tracker for iPhone by Yummygum, rated ${rating} from ${count} ratings on the US App Store. If you are weighing an alternative, here is what its listing said on ${date}, next to SubEye's own.`,
+    tableCaption: (date: string) =>
+      `Both columns were read on the US App Store listings on ${date}. Listings change; the current one is the authority.`,
+    rows: {
+      updated: "Latest version",
+      price: "Price",
+      freeLimit: "Free version",
+      platforms: "Runs on",
+      widgets: "Widgets",
+      timeline: "Price over time",
+      installments: "Installments and loans",
+    },
+    bobbyVersion: (version: string, date: string) => `${version}, ${date}`,
+    bobbyPrice: (min: string, max: string) =>
+      `Free, with in-app purchases from ${min} to ${max}`,
+    bobbyFreeLimit:
+      "The listing sells “Unlock Subscription Limit” and “Unlock Category Limit”; it does not state the numbers",
+    bobbyPlatforms: (os: string) =>
+      `iPhone and iPod touch (iOS ${os} or later); also Apple silicon Macs and Apple Vision. iPad is not listed`,
+    bobbyWidgets: "Not mentioned on the listing",
+    bobbyTimeline: "Not mentioned on the listing",
+    bobbyInstallments: "Not mentioned on the listing",
+    subeyeVersion: (version: string, date: string) => `${version}, ${date}`,
+    subeyePrice: (pro: string) =>
+      `Free; SubEye Pro is ${pro} once, priced per storefront`,
+    subeyeFreeLimit: "No limit on subscriptions or installment plans",
+    subeyePlatforms: (os: string) =>
+      `iPhone (iOS ${os} or later); also iPad and Apple silicon Macs`,
+    subeyeWidgets: "Home Screen widgets with Pro; Live Activities free",
+    subeyeTimeline:
+      "Trial, intro price, standard price and scheduled changes, each dated, with Pro",
+    subeyeInstallments: "Beside subscriptions on one calendar, free",
+    noAccount:
+      "SubEye also asks for no account, no bank login and no inbox access: you type in what you pay, and it stays on the phone.",
+    bobbyColumn: "Bobby",
+    subeyeColumn: "SubEye",
+    switchTitle: "Moving from Bobby.",
+    switchBody:
+      "There is no importer for Bobby's data. You type each subscription in once — about twenty seconds each — and from then on SubEye keeps the schedule. Nothing leaves the phone in either direction.",
+    listingLink: "Bobby on the App Store",
+    closeTitle: "See SubEye for yourself.",
+    closeBody:
+      "Every subscription is free, with no limit; the price timeline is Pro, paid once.",
+    closeLink: "Back to the SubEye home page",
+  },
+
+  rises: {
+    metaTitle:
+      "Subscription price rises in 2026, checked at the source — SubEye",
+    metaDescription:
+      "Every 2026 subscription price rise we could confirm on the service's own pricing page or announcement: plan, storefront, old and new price, the date, and the source.",
+    title: "Subscription price rises in 2026.",
+    lead: "Each rise below was checked on the service's own pricing page, its own announcement, or an archived copy of that pricing page — never a news roundup. US prices on each service's own website, per month.",
+    read: (date: string) => `Sources read on ${date}. Updated monthly.`,
+    columns: {
+      service: "Service and plan",
+      price: "Price",
+      year: "Per year",
+      when: "When",
+      sources: "Sources",
+    },
+    storefront: { us: "US" },
+    perYear: (amount: string) => `+${amount}`,
+    percent: (value: string) => `+${value}%`,
+    announced: (date: string) => `Announced ${date}`,
+    onPage: (date: string) => `On the US pricing page by ${date}`,
+    noDate: "The service published no date",
+    existingAfter: (date: string) =>
+      `Existing members: next bill after ${date}`,
+    existingMonth: (month: string) =>
+      `Existing members: from the ${month} bill`,
+    source: {
+      announcement: "Announcement",
+      pricingPage: "Pricing page",
+      archivedBefore: "Archived, before",
+      archivedAfter: "Archived, after",
+    } satisfies Record<SourceKind, string>,
+    closeTitle: "Put the next one on the calendar.",
+    closeBody:
+      "When a service emails you about a new price, SubEye Pro can hold it as a scheduled change on its date, so the forecast and the year ahead already include it.",
+    closeLink: "See how the timeline works",
   },
 };

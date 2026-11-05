@@ -24,12 +24,12 @@ interface Props {
 const { locale, page, title, description, structuredData = false } = Astro.props;
 const c = copyFor(locale);
 
-// The LCP element is the h1, so only the subset this locale will actually paint
-// is worth preloading. Preloading all three would be the same as preloading none.
+// The LCP element is the h1, set in the display face, so only the subset this
+// locale will actually paint is worth preloading.
 const textFont =
   locale === "uk"
-    ? "/fonts/nunito-400-800-cyrillic.woff2"
-    : "/fonts/nunito-400-800-latin.woff2";
+    ? "/fonts/fixeldisplay-semibold-cyrillic.woff2"
+    : "/fonts/fixeldisplay-semibold-latin.woff2";
 
 const schema = {
   "@context": "https://schema.org",

@@ -2,6 +2,7 @@
 import { LEGAL_CONTACT_EMAIL } from "@subeye/legal";
 import { copyFor } from "../i18n";
 import { type Locale, otherLocale, path, type SitePage } from "../lib/site";
+import Mark from "./Mark.astro";
 
 interface Props {
   locale: Locale;
@@ -11,72 +12,126 @@ interface Props {
 const { locale, page } = Astro.props;
 const c = copyFor(locale);
 const other = otherLocale(locale);
+const home = path(locale);
 ---
 
 <footer class="foot">
-  <div class="shell foot__inner">
-    <p class="foot__rights">&copy; 2026 {c.footer.rights}</p>
-    <nav class="foot__links" aria-label={c.footer.contact}>
-      <a href={path(locale, "support")}>{c.footer.support}</a>
-      <a href={path(locale, "terms-of-service")}>{c.footer.terms}</a>
-      <a href={path(locale, "privacy-policy")}>{c.footer.privacy}</a>
-      <a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>
-      <a href={path(other, page)} hreflang={other} lang={other} rel="alternate">
-        {c.otherLangName}
-      </a>
-    </nav>
-  </div>
-
-  {/* Apple requires the credit line once per site, wherever legal notice is
-      given, whenever the App Store badge is used — and it has to credit the
-      Apple logo too, because the badge carries one. */}
   <div class="shell">
+    <a class="foot__mark" href={home}>
+      <Mark height={18} />
+      <span>SubEye</span>
+    </a>
+
+    <div class="foot__cols">
+      <nav aria-label={c.footer.product}>
+        <p class="foot__title">{c.footer.product}</p>
+        <ul>
+          <li><a href={`${home}#timeline`}>{c.nav.timeline}</a></li>
+          <li><a href={`${home}#free`}>{c.nav.free}</a></li>
+          <li><a href={`${home}#installments`}>{c.nav.installments}</a></li>
+          <li><a href={`${home}#price`}>{c.nav.price}</a></li>
+          <li><a href={`${home}#faq`}>{c.nav.faq}</a></li>
+        </ul>
+      </nav>
+      <nav aria-label={c.footer.read}>
+        <p class="foot__title">{c.footer.read}</p>
+        <ul>
+          <li><a href={path(locale, "price-increases-2026")}>{c.footer.rises}</a></li>
+          <li><a href={path(locale, "bobby-alternative")}>{c.footer.bobby}</a></li>
+        </ul>
+      </nav>
+      <nav aria-label={c.footer.legalTitle}>
+        <p class="foot__title">{c.footer.legalTitle}</p>
+        <ul>
+          <li><a href={path(locale, "support")}>{c.footer.support}</a></li>
+          <li><a href={path(locale, "terms-of-service")}>{c.footer.terms}</a></li>
+          <li><a href={path(locale, "privacy-policy")}>{c.footer.privacy}</a></li>
+        </ul>
+      </nav>
+      <div>
+        <p class="foot__title">{c.footer.contact}</p>
+        <ul>
+          <li><a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a></li>
+          <li>
+            <a href={path(other, page)} hreflang={other} lang={other} rel="alternate">
+              {c.otherLangName}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="foot__rights">&copy; 2026 {c.footer.rights}</p>
+
+    {/* Apple requires the credit line once per site, wherever legal notice is
+        given, whenever the App Store badge is used — and it has to credit the
+        Apple logo too, because the badge carries one. */}
     <p class="foot__trademark">{c.appStore.trademark}</p>
   </div>
 </footer>
 
 <style>
   .foot {
-    margin-top: 6rem;
-    border-top: 1px solid var(--border);
-    padding-block: 1.75rem 3.5rem;
-    color: var(--text-muted);
-    font-size: var(--fs-small);
+    margin-top: clamp(5rem, 9vw, 8rem);
+    padding-block: clamp(3rem, 5vw, 4rem) 3rem;
+    background: var(--surface);
+    font-size: var(--step-small);
   }
 
-  .foot a {
-    transition: color 160ms var(--ease);
+  .foot__mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--accent);
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: var(--step-body);
   }
 
-  .foot a:hover {
+  .foot__mark span {
     color: var(--text);
   }
 
-  .foot__inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 2rem;
-    justify-content: space-between;
-    align-items: baseline;
+  .foot__cols {
+    margin-top: 2.5rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.5rem 1.5rem;
   }
 
-  .foot__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 1.5rem;
+  .foot__title {
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+  }
+
+  .foot__cols ul {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .foot__cols a {
+    color: var(--text-muted);
+    transition: color 160ms var(--ease);
+    overflow-wrap: anywhere;
+  }
+
+  .foot__cols a:hover {
+    color: var(--text);
   }
 
   .foot__rights {
-    margin: 0;
+    margin-top: 3.5rem;
   }
 
-  /* Left-aligned with the notice above it: `.shell` centres anything narrower
-     than itself, so the measure is capped inside the shell, not on it. */
   .foot__trademark {
-    margin-top: 1.75rem;
+    margin-top: 0.75rem;
     max-width: 82ch;
-    font-size: var(--fs-tiny);
-    line-height: 1.5;
     color: var(--text-muted);
+  }
+
+  @media (min-width: 52em) {
+    .foot__cols {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 </style>

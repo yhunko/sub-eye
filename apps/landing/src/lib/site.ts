@@ -22,7 +22,13 @@ export type LegalPage = (typeof legalPages)[number];
  * `legalPages`: that list is the four-URL contract the shipped binary opens, and
  * adding a fifth member would silently widen it.
  */
-export type SitePage = LegalPage | "support";
+export type SitePage = LegalPage | "support" | ContentPage;
+
+export const contentPages = [
+  "bobby-alternative",
+  "price-increases-2026",
+] as const;
+export type ContentPage = (typeof contentPages)[number];
 
 export const isLocale = (value: unknown): value is Locale =>
   locales.includes(value as Locale);

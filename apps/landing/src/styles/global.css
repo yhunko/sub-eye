@@ -1,7 +1,7 @@
 @import "./fonts.css";
 
-/* The app's shipped design tokens. The site has to look like the same product,
-   so the names here are the design system's names, not this page's. */
+/* The app's shipped colours: the site has to sit next to its own screenshots,
+   so the ground, ink and green are the app's, not this page's. */
 :root {
   --ink-950: #0f1115;
   --ink-900: #171a20;
@@ -10,19 +10,11 @@
   --ink-500: #98a0ae;
   --ink-100: #f2f4f8;
 
-  /* Green is brand and interaction only — never "money is good". Every amount
-     in a spend tracker is money leaving, so amounts stay neutral. */
+  /* Green is brand and interaction only — never "money is good". */
   --green-300: #6fd98c;
-  --green-400: #4fc06e;
   --green-500: #33a453;
   --green-600: #2b8a46;
   --green-700: #1f6634;
-
-  --danger: #f87171;
-  --warning: #fbbf24;
-
-  --border: rgb(255 255 255 / 10%);
-  --border-strong: rgb(255 255 255 / 16%);
 
   --bg: var(--ink-950);
   --surface: var(--ink-900);
@@ -32,32 +24,28 @@
 
   --accent: var(--green-500);
   --accent-bright: var(--green-300);
-  --accent-hover: var(--green-400);
-  /* A filled green button takes dark ink: near-black on #33a453 is 5.9:1,
-     white would be 3.2:1 and fail. */
+  /* Near-black on #33a453 is 5.9:1; white would be 3.2:1 and fail. */
   --on-accent: var(--ink-950);
 
-  --radius-control: 12px;
-  --radius-button: 14px;
-  --radius-card: 24px;
-  --radius-pill: 999px;
-
+  --radius: 28px;
+  --pupil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect y='43' width='28' height='57' rx='14'/%3E%3Crect x='36' width='28' height='100' rx='14'/%3E%3Crect x='72' y='32' width='28' height='68' rx='14'/%3E%3C/svg%3E");
   --ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --sans: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Fixel Display", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sans: "Fixel Text", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --shell: 71.25rem;
-  --gutter: clamp(1.25rem, 4vw, 1.5rem);
-  --section: clamp(4.5rem, 10vw, 7.5rem);
+  --shell: 84rem;
+  --gutter: clamp(1rem, 3.2vw, 2.5rem);
+  --section: clamp(7.5rem, 12vw, 12rem);
 
-  --fs-micro: 0.6875rem;
-  --fs-tiny: 0.78rem;
-  --fs-small: 0.845rem;
-  --fs-body: 0.9375rem;
-  --fs-lead: clamp(1.0625rem, 0.98rem + 0.4vw, 1.1875rem);
-  --fs-title: 1.25rem;
-  --fs-display: clamp(1.75rem, 1.3rem + 2.2vw, 2.75rem);
-  --fs-hero: clamp(2.4rem, 1.4rem + 4.4vw, 4.875rem);
+  /* Five steps. The price figure in the pricing section is the one exception,
+     set larger than the display step on purpose. */
+  --step-small: 0.875rem;
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(1.875rem, 1.2rem + 2.6vw, 3.5rem);
+  --step-display: clamp(2.2rem, 0.9rem + 5vw, 5.5rem);
 }
 
 *,
@@ -76,7 +64,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
-  line-height: 1.55;
+  font-size: var(--step-body);
+  line-height: 1.5;
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
@@ -86,13 +75,15 @@ h1,
 h2,
 h3 {
   margin: 0;
-  font-weight: 800;
-  line-height: 1.06;
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.04;
   letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
-p {
+p,
+figure {
   margin: 0;
 }
 
@@ -111,7 +102,7 @@ a {
 :focus-visible {
   outline: 2px solid var(--accent-bright);
   outline-offset: 3px;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 ::selection {
@@ -125,9 +116,13 @@ svg {
   max-width: 100%;
 }
 
-/* Every anchor target clears the fixed bar. */
+picture {
+  display: block;
+}
+
+/* The fixed bar is 4.5rem, so every anchor target clears it. */
 section[id] {
-  scroll-margin-top: 6rem;
+  scroll-margin-top: 4.5rem;
 }
 
 .shell {
@@ -135,90 +130,52 @@ section[id] {
   margin-inline: auto;
 }
 
-.band {
-  padding-top: var(--section);
-}
-
-/* Amounts, dates and counts. Digits align in columns; nothing else changes. */
 .num {
   font-variant-numeric: tabular-nums;
 }
 
-/* Section opener — accent, once per section. */
-.eyebrow {
-  font-size: var(--fs-micro);
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-/* Micro-label inside a card. Same type, muted, one step tighter. */
-.label {
-  font-size: var(--fs-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.muted {
   color: var(--text-muted);
 }
 
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: clamp(1.5rem, 3vw, 2rem);
+/* Running text links: the underline draws in from the left on hover. */
+.link {
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+  padding-bottom: 2px;
+  transition:
+    background-size 260ms var(--ease),
+    color 160ms var(--ease);
 }
 
-.lead {
-  color: var(--text-muted);
-  font-size: var(--fs-lead);
-  line-height: 1.55;
+.link:hover {
+  color: var(--accent-bright);
+  animation: underline-draw 420ms var(--ease-out);
 }
 
-.prose {
-  color: var(--text-muted);
-  font-size: var(--fs-body);
-  line-height: 1.55;
+@keyframes underline-draw {
+  from {
+    background-size: 0% 1px;
+  }
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
+/* The pupil of SubEye's eye at text size: three bars, short, tall, medium,
+   as in the app icon. It marks list items wherever a page has them. */
+.pupil-list li {
+  position: relative;
+  padding-left: 1.75em;
+}
+
+.pupil-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  width: 1em;
+  height: 0.9em;
   background: var(--accent);
-  color: var(--on-accent);
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 0.94rem 1.63rem;
-  border-radius: var(--radius-button);
-  transition: background-color 160ms var(--ease);
-}
-
-.btn:hover {
-  background: var(--accent-hover);
-}
-
-.btn--ghost {
-  background: none;
-  color: var(--text);
-  font-weight: 600;
-  border: 1px solid var(--border-strong);
-  padding: 0.875rem 1.5rem;
-  transition: border-color 160ms var(--ease);
-}
-
-.btn--ghost:hover {
-  background: none;
-  border-color: var(--text-muted);
-}
-
-.pill {
-  display: inline-block;
-  font-size: var(--fs-small);
-  font-weight: 600;
-  padding: 0.56rem 0.88rem;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
+  /* The icon's bars are capsules, so this is a mask, not a clip-path. */
+  mask: var(--pupil) center / contain no-repeat;
 }
 
 .sr-only {
@@ -247,6 +204,14 @@ section[id] {
   transform: translateY(0);
 }
 
+/* Entrance for the first screen only: it plays once on load, never on scroll. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -256,6 +221,7 @@ section[id] {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }

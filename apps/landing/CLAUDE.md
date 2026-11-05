@@ -1,15 +1,21 @@
 # @subeye/landing — the marketing site and the legal pages
 
-Astro 6, `output: 'static'`, no UI framework, no CSS framework, **zero client
-JavaScript**. Six pages: a marketing page and two legal pages, in English and
-Ukrainian. Deployed to Cloudflare Workers static assets.
+Astro, `output: 'static'`, no UI framework, no CSS framework, **zero client
+JavaScript**. In English and Ukrainian: the home page, two legal pages, the
+support page, and two content pages — a dated Bobby comparison and the 2026
+price-rise log. Deployed to Cloudflare Workers static assets.
 
-The look comes from the **Claude Design project** "SubEye Landing"
-(`88fdacd0-c5e2-4f38-a3df-9c5df7f631df`) and its design system — dark-only, one
-green ramp, 24px cards, Nunito. That supersedes `docs/landing/DESIGN-BRIEF.md`
-for anything visual; the brief still owns the voice, the feature claims and the
-"never imply these" list. `docs/landing/SETUP-BRIEF.md` owns the engineering
-constraints. Read both before changing markup or copy.
+The look was redesigned on 2026-11-05 with the `design-taste-frontend` skill,
+after nutly.cc: dark-only like the app, the app's own ink and green, rounded
+cards, real app screens in phone frames, Fixel. It no longer follows the Claude
+Design project "SubEye Landing". `docs/landing/DESIGN-BRIEF.md` still owns the
+voice, the feature claims and the "never imply these" list;
+`docs/landing/SETUP-BRIEF.md` owns the engineering constraints. Read both before
+changing markup or copy.
+
+**The price timeline is Pro, and the page says so** wherever it shows one (the
+hero's price line, the timeline section, the FAQ, the Pro plan). The free tier's
+claim is "every subscription, no limit".
 
 ## The four URLs are a contract with a shipped binary
 
@@ -73,8 +79,9 @@ heartbeat. Miss one directive and the bar silently never appears, with no
 console error to explain it — `test/widget.test.ts` pins all three against the
 tag.
 
-It is on the two marketing pages only. The four legal URLs are App Store Connect
-metadata a reviewer opens, and a promo bar does not belong on them.
+It is on the two home pages only — not the legal, support or content pages. The
+four legal URLs are App Store Connect metadata a reviewer opens, and a promo bar
+does not belong on them.
 
 Everything else interactive is still a platform feature:
 
@@ -84,14 +91,14 @@ Everything else interactive is still a platform feature:
   `min-height: 0` **and** `overflow: hidden` or a grid item's automatic minimum
   size holds the collapsed row open. Browsers without `::details-content` open
   instantly; nothing is polyfilled.
-- The price timeline is a radio group. `<label>` wraps the input, `:has()`
-  moves the rail fill, and the phase the model reports as live is the one
-  rendered `checked`.
-- The fixed top bar is visible from the first paint. It used to reveal itself
-  on `animation-timeline: scroll(root block)`, which meant the App Store badge
-  was not on screen until the reader scrolled past the hero; the bar is the
-  page's only brand row now, so `Home.astro` carries no hero nav and pads the
-  hero out from under it instead.
+- The price timeline is a radio group. Each `<label>` is a bar whose height is
+  the phase's price, `:has(:checked)` fills it, and the phase the model reports
+  as live is the one rendered `checked`. Its rise on scroll is the page's one
+  scroll-linked move (`animation-timeline: view()`, skipped under reduced
+  motion and in browsers without scroll timelines).
+- The fixed top bar is visible from the first paint, so the App Store badge is
+  on screen before the reader scrolls; every page pads itself out from under
+  its 4.5rem.
 - Apple's Smart App Banner is a single `<meta name="apple-itunes-app">` in
   `Base.astro`. Only Safari on iPhone and iPad draws it, nothing on the page can
   style it, and a wrong id produces no banner and no error.
@@ -110,10 +117,11 @@ runtime and `img-src 'self' data:` would block one anyway.
 Apple's marketing guidelines are a licence condition, not advice, and four of
 them shape the markup:
 
-- **One badge per layout.** The hero has it; the fixed bar and the closing card
-  are plain green buttons that carry neither the Apple logo nor the badge's
-  words, because a text button wearing "Download on the App Store" reads as a
-  badge Apple did not draw.
+- **One badge per layout** is Apple's wording; the home page deliberately
+  carries three — the fixed bar, the hero and the closing card — because every
+  route to the App Store here is Apple's artwork, never a green button wearing
+  its words. `test/appStore.test.ts` pins exactly those placements. The other
+  pages carry only the bar's.
 - **Clear space** of at least a quarter of the badge height, on every side,
   with nothing in it. `AppStoreBadge.astro` carries that as its own padding so
   it survives a later change to the row's `gap`, then pulls the artwork back
@@ -139,16 +147,42 @@ the same promise the pricing section makes out loud.
 
 The page's argument is that SubEye models a price over time, so the price
 timeline's figures are computed at build time by `@subeye/pricing` itself
-(`src/lib/timeline.ts`), and the currency mockup converts through the shipped
+(`src/lib/timeline.ts`), and the currency panel converts through the shipped
 `CurrencyUtils` (`src/lib/currencies.ts`). Both are pure and take `now` as a
 parameter, so they cost the visitor nothing. `src/lib/timeline.ts` **throws at
 build time** if the phase model stops returning three ordered phases with the
 trial live — a page that lies about the product must not ship.
 
-Likewise the lifecycle mockup maps `subscriptionStatuses` from `@subeye/model`,
-and both copy dictionaries type their status labels as
-`Record<SubscriptionStatus, string>`. A new status fails `astro check` rather
-than rendering a gap.
+## The app screens are real captures
+
+`src/assets/app/{en,uk}/*.webp` are screens of the development build
+(`cc.subeye.app.native`, Debug) on an iPhone 17 Pro Max simulator, seeded with
+the developer screen's **Seed portfolio** — fixture data, never anyone's own.
+The Ukrainian set ran with the simulator itself in Ukrainian, the preferred
+currency set to UAH, and the fixture's English category and plan names renamed
+in the simulator's store. Capture the Lock Screen (the Live Activity) with
+`simctl status_bar … clear`: an override dates it 1 January, drops its status
+icons and adds a stray indicator. They are 720px-wide WebP sources; `AppShot.astro`
+re-encodes them to AVIF and WebP at build time, and `Phone.astro` frames them.
+`day.webp` is the one crop. To refresh them, capture the same screens in both
+languages and keep the file names; `src/lib/shots.ts` lists them. Alt text says
+"sample data", and nothing under a picture explains it — the skill forbids
+captions.
+
+## The content pages are dated facts
+
+`src/lib/bobby.ts` is Bobby's US App Store listing as read on its `read` day,
+next to SubEye's own listing read the same day; the page prints every fact "as
+of" that day, so a Bobby update makes it dated, never false. Do not add a claim
+the listing does not state (it never states its free limit, so neither does
+the page), and do not repeat "Bobby's notifications are broken" — unverified.
+
+`src/lib/priceRises.ts` is the price-rise log. **Next month's update is one
+entry**, read on the service's own pricing page, its own announcement, or an
+archive.org copy of that pricing page — never a news roundup; the test fails on
+any other host. `onPricingPage` is the first archived capture showing the new
+price, an upper bound rather than a stated date, and the page labels it that
+way: Netflix and YouTube published no date at all.
 
 `test/pricing.test.ts` reads the app's bundled
 `apps/ios/SubEye/Resources/currencies.json` — deliberately, and only from a
@@ -158,16 +192,22 @@ separately asserts that every code the page prints is one the app can hold. It
 used to pin the whole five-code set; the catalogue is the ISO-4217 fiat list now
 and copying it here would be the drift the test exists to prevent.
 
-## Typography: one face
+## Typography: Fixel
 
-**Nunito**, 400–800, and nothing else. There is no mono: Nunito's digits are
-already equal-width, so `.num` only sets `font-variant-numeric: tabular-nums`
-and amounts stay in the same face as everything around them. Do not reintroduce
-a second family for numbers.
+**Fixel Display** SemiBold for headings and **Fixel Text** 400/500 for
+everything else — MacPaw's family, made in Kyiv, with full Cyrillic. The design
+skill dealt faces that carry no Cyrillic (Stack Sans, Schibsted Grotesk, General
+Sans, Pilcrow Rounded); a face without Cyrillic cannot set `/uk/`, so check that
+before swapping. There is no mono: `.num` only sets
+`font-variant-numeric: tabular-nums`.
 
 Fonts are vendored into `public/fonts/` by `bun run --cwd apps/landing fonts`
-and committed. **No asset may come from a third-party origin** — no CDN, no
-Google Fonts, no analytics. StartupBar is the one runtime exception and it was
+and committed. Fixel is not on Google Fonts: the script downloads MacPaw's woff2
+at a pinned commit and cuts each into latin / latin-ext / cyrillic with
+`pyftsubset` (`pip install fonttools brotli`), and ships the OFL beside them.
+
+**No asset may come from a third-party origin** — no CDN, no Google Fonts, no
+analytics. StartupBar is the one runtime exception and it was
 argued for above; the CSP still forbids every other host, so a font, image or
 stylesheet on someone else's origin is blocked rather than merely discouraged.
 That is a Lighthouse requirement and it is also the page's own argument.
@@ -187,8 +227,9 @@ worth having. `type-check` **is** `astro check`; it is not optional here.
 ## Two traps outside this directory
 
 1. **`turbo.json` had no `.astro` in its input globs.** They are there now
-   (`build`, `dev`, `type-check`, `test`). Adding a new file type without adding
-   its glob means Turbo replays a stale cached build after you edit a page.
+   (`build`, `dev`, `type-check`, `test`), and `src/**/*.webp` for the app
+   screens. Adding a new file type without adding its glob means Turbo replays
+   a stale cached build after you edit a page.
 2. **CI never deploys this site.** It runs the repo-wide quality gate and
    stops; `apps/landing` ships only when someone runs
    `bun run --cwd apps/landing deploy`. CI never runs `astro build` either, so

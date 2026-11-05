@@ -1,0 +1,219 @@
+---
+import { copyFor } from "../../i18n";
+import Article from "../../layouts/Article.astro";
+import { longDate, money, monthYear } from "../../lib/format";
+import { percentIncrease, priceRises, yearlyIncrease } from "../../lib/priceRises";
+import { type Locale, path } from "../../lib/site";
+import CloseCard from "../CloseCard.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const c = copyFor(locale);
+const r = c.rises;
+const percent = new Intl.NumberFormat(c.intl, { maximumFractionDigits: 1 });
+const lastRead = priceRises.map((rise) => rise.read).sort().at(-1) ?? "";
+
+const entries = priceRises.map((rise) => ({
+  ...rise,
+  price: `${money(rise.from, rise.currency)} → ${money(rise.to, rise.currency)}`,
+  year: r.perYear(money(yearlyIncrease(rise), rise.currency)),
+  percent: r.percent(percent.format(percentIncrease(rise))),
+  when: [
+    rise.announced ? r.announced(longDate(locale, rise.announced)) : r.noDate,
+    r.onPage(longDate(locale, rise.onPricingPage)),
+    rise.existing
+      ? "after" in rise.existing
+        ? r.existingAfter(longDate(locale, rise.existing.after))
+        : r.existingMonth(monthYear(locale, rise.existing.month))
+      : null,
+  ].filter((line): line is string => line !== null),
+}));
+
+---
+
+<Article locale={locale} page="price-increases-2026" title={r.metaTitle} description={r.metaDescription}>
+  <div class="shell">
+    <h1 class="a-title">{r.title}</h1>
+    <p class="a-lead">{r.lead}</p>
+    <p class="read">{r.read(longDate(locale, lastRead))}</p>
+
+    <table class="log">
+      <thead>
+        <tr>
+          <th scope="col">{r.columns.service}</th>
+          <th scope="col">{r.columns.price}</th>
+          <th scope="col">{r.columns.year}</th>
+          <th scope="col">{r.columns.when}</th>
+          <th scope="col">{r.columns.sources}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          entries.map((entry) => (
+            <tr>
+              <th scope="row">
+                <span class="log__service">{entry.service}</span>
+                <span class="log__plan">
+                  {entry.plan} · {r.storefront[entry.storefront]}
+                </span>
+              </th>
+              <td class="log__price num" data-col={r.columns.price}>
+                {entry.price}
+              </td>
+              <td class="num" data-col={r.columns.year}>
+                {entry.year}
+                <span class="log__pct">{entry.percent}</span>
+              </td>
+              <td data-col={r.columns.when}>
+                <ul class="log__when">
+                  {entry.when.map((line) => <li>{line}</li>)}
+                </ul>
+              </td>
+              <td data-col={r.columns.sources}>
+                <ul class="log__sources">
+                  {entry.sources.map((source) => (
+                    <li>
+                      <a class="link" href={source.url} rel="noopener">
+                        {r.source[source.kind]}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <section class="shell a-section" aria-labelledby="close-title">
+    <CloseCard
+      locale={locale}
+      id="close-title"
+      title={r.closeTitle}
+      body={r.closeBody}
+      href={`${path(locale)}#timeline`}
+      link={r.closeLink}
+      shot="price-rise"
+      alt={c.hero.alt}
+    />
+  </section>
+</Article>
+
+<style>
+  .read {
+    margin-top: 1rem;
+    font-size: var(--step-small);
+    color: var(--text-muted);
+  }
+
+  .log {
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    text-align: left;
+  }
+
+  thead th {
+    padding: 0 1.25rem 0.5rem;
+    font-size: var(--step-small);
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  tbody th,
+  tbody td {
+    padding: 1.1rem 1.25rem;
+    vertical-align: top;
+    background: var(--surface);
+  }
+
+  tbody th {
+    border-radius: 18px 0 0 18px;
+    font-weight: 400;
+  }
+
+  tbody td:last-child {
+    border-radius: 0 18px 18px 0;
+  }
+
+  .log__service {
+    display: block;
+    font-family: var(--display);
+    font-size: var(--step-lead);
+    line-height: 1.15;
+  }
+
+  .log__plan {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--step-small);
+  }
+
+  .log__price {
+    font-size: var(--step-lead);
+    font-family: var(--display);
+    white-space: nowrap;
+  }
+
+  .log__pct {
+    display: block;
+    font-size: var(--step-small);
+    color: var(--text-muted);
+  }
+
+  .log__when,
+  .log__sources {
+    display: grid;
+    gap: 0.25rem;
+    font-size: var(--step-small);
+  }
+
+  @media (max-width: 63.99em) {
+    .log,
+    .log tbody,
+    .log tr,
+    .log th,
+    .log td {
+      display: block;
+    }
+
+    .log thead {
+      display: none;
+    }
+
+    .log tr {
+      margin-bottom: 8px;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    tbody th,
+    tbody td,
+    tbody td:last-child {
+      border-radius: 0;
+      padding-block: 0.6rem;
+    }
+
+    tbody th {
+      padding-top: 1.1rem;
+    }
+
+    tbody td:last-child {
+      padding-bottom: 1.1rem;
+    }
+
+    tbody td::before {
+      content: attr(data-col);
+      display: block;
+      font-size: var(--step-small);
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+  }
+</style>

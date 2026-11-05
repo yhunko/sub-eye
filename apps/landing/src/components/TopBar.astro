@@ -1,33 +1,39 @@
 ---
 import { copyFor } from "../i18n";
-import { type Locale, otherLocale, path } from "../lib/site";
+import { type Locale, otherLocale, path, type SitePage } from "../lib/site";
 import AppStoreBadge from "./AppStoreBadge.astro";
 import Mark from "./Mark.astro";
 
 interface Props {
   locale: Locale;
+  /** Omitted on the home page, whose sections the links scroll to in place. */
+  page?: SitePage;
 }
 
-const { locale } = Astro.props;
+const { locale, page } = Astro.props;
 const c = copyFor(locale);
 const other = otherLocale(locale);
+const home = page ? path(locale) : "";
+const links = [
+  ["timeline", c.nav.timeline],
+  ["free", c.nav.free],
+  ["price", c.nav.price],
+  ["faq", c.nav.faq],
+] as const;
 ---
 
 <header class="bar">
   <div class="shell bar__inner">
-    <a class="bar__brand" href="#top" aria-label="SubEye">
-      <Mark height={20} />
+    <a class="bar__brand" href={page ? path(locale) : "#top"}>
+      <Mark height={18} />
+      <span>SubEye</span>
     </a>
 
-    <nav class="bar__nav">
-      <a class="bar__link" href="#how">{c.nav.how}</a>
-      <a class="bar__link" href="#privacy">{c.nav.privacy}</a>
-      <a class="bar__link" href="#price">{c.nav.price}</a>
-      <a class="bar__link" href="#faq">{c.faq.title}</a>
-      <span class="bar__rule" aria-hidden="true"></span>
+    <nav class="bar__nav" aria-label="SubEye">
+      {links.map(([id, label]) => <a class="bar__link" href={`${home}#${id}`}>{label}</a>)}
       <a
         class="bar__lang"
-        href={path(other)}
+        href={path(other, page)}
         hreflang={other}
         lang={other}
         rel="alternate"
@@ -39,17 +45,13 @@ const other = otherLocale(locale);
 </header>
 
 <style>
-  /* Visible from the first paint, so the App Store badge is on screen before
-     the reader scrolls. That makes this the page's only brand row — Home.astro
-     drops the hero's duplicate and pads the hero out from under it. */
+  /* Opaque and visible from the first paint, so the badge is on screen before
+     the reader scrolls. The page pads itself out from under it. */
   .bar {
     position: fixed;
     inset: 0 0 auto;
     z-index: 30;
-    /* Not `var(--bg)`: the bar is translucent over what scrolls under it. */
-    background: rgb(15 17 21 / 86%);
-    backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
+    padding-top: 0.75rem;
   }
 
   .bar__inner {
@@ -57,11 +59,25 @@ const other = otherLocale(locale);
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
-    height: 4.5rem;
+    height: 3.75rem;
+    padding-inline: 1.1rem 0.4rem;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 7%);
   }
 
   .bar__brand {
     display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--accent);
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: var(--step-body);
+    letter-spacing: -0.01em;
+  }
+
+  .bar__brand span {
     color: var(--text);
   }
 
@@ -69,13 +85,12 @@ const other = otherLocale(locale);
     display: flex;
     align-items: center;
     gap: 1.75rem;
-    font-size: var(--fs-small);
-    font-weight: 600;
+    font-size: var(--step-small);
+    font-weight: 500;
   }
 
-  /* Class, not `.bar__nav > a` — a descendant selector outranks `.bar__lang`
-     and repaints the language pill on hover along with the links. */
   .bar__link {
+    display: none;
     color: var(--text-muted);
     transition: color 160ms var(--ease);
   }
@@ -84,44 +99,26 @@ const other = otherLocale(locale);
     color: var(--text);
   }
 
-  .bar__rule {
-    width: 1px;
-    height: 1.25rem;
-    background: var(--border);
+  .bar__inner :global(.appstore) {
+    margin-inline-start: 0;
   }
 
   .bar__lang {
-    font-size: var(--fs-tiny);
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    padding: 0.3rem 0.6rem;
-    transition:
-      color 160ms var(--ease),
-      border-color 160ms var(--ease);
+    font-weight: 500;
+    color: var(--text);
+    background: var(--surface-alt);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    transition: background-color 160ms var(--ease);
   }
 
   .bar__lang:hover {
-    color: var(--text);
-    border-color: var(--border-strong);
+    background: var(--ink-700);
   }
 
-  /* Four anchors do not fit next to a price at 375px, and the sections they
-     point at are one scroll away regardless. */
-  .bar__link,
-  .bar__rule {
-    display: none;
-  }
-
-  @media (min-width: 60em) {
+  @media (min-width: 64em) {
     .bar__link {
       display: inline;
-    }
-
-    .bar__rule {
-      display: block;
     }
   }
 </style>

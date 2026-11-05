@@ -44,9 +44,19 @@ export const money = (
     : `${symbol}${formatted}`;
 };
 
-/** A short payment date, in the reader's own locale. */
-export const shortDate = (locale: Locale, iso: string): string =>
+/** A full calendar day. `timeZone: "UTC"` because an ISO day parses to UTC midnight. */
+export const longDate = (locale: Locale, iso: string): string =>
   new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
     day: "numeric",
-    month: "short",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(iso));
+
+/** "February 2026" from "2026-02". */
+export const monthYear = (locale: Locale, month: string): string =>
+  new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${month}-01T00:00:00.000Z`));

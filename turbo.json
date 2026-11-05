@@ -13,6 +13,7 @@
         "src/**/*.astro",
         "src/**/*.css",
         "src/**/*.md",
+        "src/**/*.webp",
         "public/**",
         "astro.config.*",
         "wrangler.jsonc",
@@ -33,6 +34,7 @@
         "src/**/*.jsx",
         "src/**/*.astro",
         "src/**/*.css",
+        "src/**/*.webp",
         "astro.config.*",
         "tsconfig.json",
         "package.json"
