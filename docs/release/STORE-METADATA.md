@@ -13,6 +13,13 @@ This is the 6.3.1 listing: 6.3.0's installments and loans, per-type + menu and
 iPhone Duo layout, with the legal and support pages moved to
 `subeye.yhunko.dev` and the contact to `subeye@yhunko.dev`. Pro rose to $14.99 (Ukraine $11.99) on 2026-11-04.
 
+The Promotional Text, Description and Keywords below are staged for the next
+version record (`docs/marketing/LAUNCH-PLAN.md` §1.2–1.5) and are not in App
+Store Connect yet. They lead with the uncapped free tier and say plainly that
+the price timeline is Pro. The free-tier claim leads the description's first
+line and the promotional text; the word "free" never goes in the Name, Subtitle
+or a screenshot caption (Guideline 2.3.7).
+
 ---
 
 ## Releasing a version
@@ -53,16 +60,16 @@ Subscriptions Tracker - SubEye
 Renewals, trials and spending
 ```
 
-### Promotional Text (170) — 6.3.0
+### Promotional Text (170) — next build
 
 ```
-New: installments and loans next to your subscriptions, and a + menu with its own short flow for each kind. No account, no bank login, no ads.
+Every subscription, no limit, for free — with installments and loans on the same calendar. SubEye Pro adds the timeline: a price rise, months before your statement.
 ```
 
 For when there is no news worth the slot:
 
 ```
-No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
+Every subscription, no limit, for free. No account, no bank login, no ads. Type in what you pay and see what leaves your account this month and what comes next.
 ```
 
 ### What's New in This Version (4000) — 6.3.1
@@ -80,15 +87,15 @@ No account, no bank login, no ads. Type in what you pay and see what leaves your
 ### Description (4000)
 
 ```
-SubEye tells you what your subscriptions cost — all of them, together, before the money leaves your account.
+Every subscription, no limit, for free. SubEye tells you what they cost — all of them, together, before the money leaves your account.
 
-You type in what you pay. SubEye keeps the whole schedule: what it costs now, what it becomes when the discount ends, and the exact day it renews.
+You type in what you pay. SubEye keeps the whole schedule: what it costs now and the exact day it renews — and, with Pro, what it becomes when the discount ends.
 
 WHAT YOU GET
 
 • One number that matters — what is still going to leave your account this month, and how much of the month is left to pay it.
 • Next month's forecast set against this one, and the single subscription costing you the most.
-• A price is a timeline, not a number. Free trial, intro price, the standard price it turns into, a license you bought once with its optional updates renewal, and any change you have scheduled — all on one line, months before it reaches your statement.
+• SubEye Pro makes a price a timeline, not a number. Free trial, intro price, the standard price it turns into, a license you bought once with its optional updates renewal, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
 • Installments and loans next to your subscriptions — a pay-in-parts purchase, buy now, pay later, a card installment or a bank loan. How many payments are made, what is left to pay and the day it ends, with every payment counted in its month and shown in the calendar.
 • Saved with SubEye — what pausing and cancelling has kept in your pocket, counted from the day each one stopped.
@@ -107,8 +114,8 @@ SUBEYE PRO — ONE PAYMENT
 The free app is not a trial and not a teaser. Unlimited subscriptions and installments, the whole dashboard, the payment calendar, every lifecycle action, renewal and installment reminders, Live Activities, every currency and iCloud Sync are free, and stay free.
 
 Pro is a single purchase that never renews. It adds:
-• Trial-ending alerts, and reminders on the days you choose — the same day, or 1, 3 or 7 days before — for installments too
 • Pricing phases — trials, intro discounts, one-time licenses and scheduled changes on one timeline
+• Trial-ending alerts, and reminders on the days you choose — the same day, or 1, 3 or 7 days before — for installments too
 • Categories, the category filter, and the spend breakdown grouped by them
 • The calendar's year view, and every month set against the one before it
 • What a credit really costs — the purchase price set against what you repay
@@ -125,12 +132,13 @@ Comma-separated, no spaces. Words already in the Name or Subtitle are indexed
 anyway, so they stay out.
 
 ```
-recurring,bill,payment,budget,expense,money,finance,reminder,cancel,loan,price,widget,due,calendar
+recurring,bill,payment,budget,expense,manager,reminder,cancel,loan,price,widget,due,calendar,bnpl
 ```
 
-6.3.0 swapped `manage` for `loan` (98 characters). `installment` is longer than
-every current word and would have to replace two that together have at least
-10 letters; `bnpl` fits in the two spare characters only by replacing a word.
+The next build drops `finance`, a category name, and `money`, the weakest term,
+for `manager` (the head phrase "subscription manager", which the Name does not
+index) and `bnpl`, the installment searcher's own word (97 characters). No
+brand names such as Klarna or Afterpay: trademarked keywords are a review risk.
 
 ### URLs
 
@@ -162,16 +170,16 @@ every current word and would have to replace two that together have at least
 Витрати, списання, нагадування
 ```
 
-### Promotional Text (170) — 6.3.0
+### Promotional Text (170) — next build
 
 ```
-Нове: розстрочки й кредити поруч із підписками та меню «+» з окремим коротким шляхом для кожного виду. Без акаунта, без доступу до банку, без реклами.
+Усі ваші підписки — без обмежень і безкоштовно, а розстрочки й кредити в тому ж календарі. SubEye Pro додає лінію часу: подорожчання видно за місяці до виписки.
 ```
 
 For when there is no news worth the slot:
 
 ```
-Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
+Усі ваші підписки — без обмежень і безкоштовно. Без акаунта, без доступу до банку, без реклами. Вводите те, що платите, — і бачите, скільки піде цього місяця і що далі.
 ```
 
 ### What's New in This Version (4000) — 6.3.1
@@ -189,15 +197,15 @@ For when there is no news worth the slot:
 ### Description (4000)
 
 ```
-SubEye показує, скільки коштують ваші підписки — усі разом і до того, як гроші підуть з рахунку.
+Усі ваші підписки — без обмежень і безкоштовно. SubEye показує, скільки вони коштують, — усі разом і до того, як гроші підуть з рахунку.
 
-Ви вводите те, що платите. SubEye тримає весь розклад: скільки це коштує зараз, скільки коштуватиме, коли закінчиться знижка, і в який саме день станеться списання.
+Ви вводите те, що платите. SubEye тримає весь розклад: скільки це коштує зараз і в який саме день станеться списання, а з Pro — ще й скільки коштуватиме, коли закінчиться знижка.
 
 ЩО ВСЕРЕДИНІ
 
 • Одне число, яке має значення, — скільки ще піде з рахунку цього місяця і скільки місяця лишилося.
 • Прогноз на наступний місяць у порівнянні з цим і найдорожча підписка.
-• Ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, ліцензія, куплена один раз, із необов’язковим продовженням оновлень, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
+• З SubEye Pro ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, ліцензія, куплена один раз, із необов’язковим продовженням оновлень, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
 • Розстрочки й кредити поруч із підписками — покупка частинами, розстрочка на картці чи банківський кредит. Скільки платежів уже зроблено, скільки лишилося сплатити і коли все закінчиться, а кожен платіж — у своєму місяці й у календарі.
 • Заощаджено з SubEye — скільки лишилося у вашій кишені завдяки паузам і скасуванням, від дня, коли кожна підписка зупинилася.
@@ -216,8 +224,8 @@ SUBEYE PRO — ОДИН ПЛАТІЖ
 Безкоштовна версія — це не тріал і не приманка. Необмежена кількість підписок, розстрочок і кредитів, уся панель, календар платежів, усі дії з підписками, нагадування про списання й платежі за розстрочками, активності поновлень наживо, усі валюти й синхронізація через iCloud безкоштовні й такими лишаються.
 
 Pro — це разова покупка, яка ніколи не поновлюється. Вона додає:
-• Сповіщення про кінець пробного періоду й нагадування в дні, які оберете ви, — у день платежу або за 1, 3 чи 7 днів, і для розстрочок та кредитів теж
 • Цінові періоди — пробні періоди, знижки, разові ліцензії та заплановані зміни на одній шкалі
+• Сповіщення про кінець пробного періоду й нагадування в дні, які оберете ви, — у день платежу або за 1, 3 чи 7 днів, і для розстрочок та кредитів теж
 • Категорії, фільтр за ними і розподіл витрат за категоріями
 • Річний огляд у календарі й порівняння кожного місяця з попереднім
 • Скільки насправді коштує кредит — переплата порівняно з ціною покупки
@@ -231,11 +239,17 @@ Pro — це разова покупка, яка ніколи не поновл�
 ### Keywords (100)
 
 ```
-підписки,платежі,бюджет,гроші,фінанси,скасувати,ціна,віджет,рахунки,облік,календар,кредит,пробний
+підписки,платежі,бюджет,гроші,частинами,скасувати,ціна,віджет,рахунки,облік,календар,кредит,пробний
 ```
 
-6.3.0 swapped `менеджер` (already indexed from the Name) for `кредит` (97
-characters). `розстрочка` can still replace only `скасувати`.
+The next build swaps `фінанси`, a category name, for `частинами` (99
+characters), which catches «оплата частинами» and «покупка частинами», the
+banks' own names for installments. `розстрочка` is the commoner search but is
+widely called a Russicism; `розстрочення` is the standard form. A native reader
+chooses (`docs/marketing/LAUNCH-PLAN.md` §1.2, §4): `розстрочка` fits only in
+place of `частинами` or `скасувати`, `розстрочення` only by dropping two words.
+`підписки` may duplicate the Name's `підписок` if Apple matches Ukrainian
+inflections; that is untested, so it stays.
 
 ### URLs
 
