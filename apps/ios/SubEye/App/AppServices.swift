@@ -6,6 +6,7 @@ final class AppServices {
     let repository: SubscriptionRepository
     let logos: LogoService
     let brands = BrandService()
+    let screenshots = ScreenshotReader()
     let exchange: ExchangeRateService
     let legacy: LegacyMMKVReader
     let cache: LaunchCacheWriter

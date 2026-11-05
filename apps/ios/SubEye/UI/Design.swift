@@ -155,13 +155,14 @@ struct SpendTrack: View {
 }
 
 enum AddKind: CaseIterable {
-    case subscription, trial, license, installment
+    case subscription, trial, license, installment, screenshot
     var title: String {
         switch self {
         case .subscription: L("subs_newSubscription")
         case .trial: L("subs_newTrial")
         case .license: L("subs_newLicense")
         case .installment: L("subs_newInstallment")
+        case .screenshot: L("import_menu")
         }
     }
     var identifier: String {
@@ -170,6 +171,7 @@ enum AddKind: CaseIterable {
         case .trial: "newTrial"
         case .license: "newLicense"
         case .installment: "newInstallment"
+        case .screenshot: "newFromScreenshot"
         }
     }
     var symbol: String {
@@ -178,6 +180,7 @@ enum AddKind: CaseIterable {
         case .trial: "hourglass"
         case .license: "key"
         case .installment: "creditcard"
+        case .screenshot: "text.viewfinder"
         }
     }
     var pro: Bool { self == .trial || self == .license }
@@ -187,6 +190,7 @@ enum AddKind: CaseIterable {
         case .trial: .editor(nil, .trial)
         case .license: .editor(nil, .license)
         case .installment: .installmentEditor(nil)
+        case .screenshot: .screenshotImport
         }
     }
 }
@@ -203,10 +207,10 @@ struct AddSubscriptionButton: View {
             ForEach(AddKind.allCases, id: \.self) { kind in
                 let locked = kind.pro && !pro
                 Button { sheet = locked ? .paywall : kind.sheet } label: {
-                    Label(kind.title, systemImage: locked ? "lock" : kind.symbol)
+                    Text(kind.title)
+                    if locked { Text(L("paywall_badge")) }
+                    Image(systemName: kind.symbol)
                 }.accessibilityIdentifier(kind.identifier)
-                    // The lock is only an image, which a menu row does not speak.
-                    .accessibilityLabel(locked ? kind.title + ", " + L("paywall_badge") : kind.title)
             }
         } label: { Label(L("subs_add"), systemImage: "plus") }
             .menuStyle(.button).labelStyle(.iconOnly).buttonStyle(.borderedProminent)

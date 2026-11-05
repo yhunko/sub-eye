@@ -26,6 +26,8 @@ public struct ExchangeRates: Codable, Equatable, Sendable {
 }
 
 public enum Money {
+    public static let symbols: [String: String] = ["afn": "؋", "amd": "֏", "aoa": "Kz", "ars": "$", "aud": "$", "azn": "₼", "bam": "KM", "bbd": "$", "bdt": "৳", "bmd": "$", "bnd": "$", "bob": "Bs", "brl": "R$", "bsd": "$", "bwp": "P", "bzd": "$", "cad": "$", "clp": "$", "cny": "¥", "cop": "$", "crc": "₡", "cup": "$", "czk": "Kč", "dkk": "kr", "dop": "$", "egp": "E£", "eur": "€", "fjd": "$", "fkp": "£", "gbp": "£", "gel": "₾", "ghs": "GH₵", "gip": "£", "gnf": "FG", "gtq": "Q", "gyd": "$", "hkd": "$", "hnl": "L", "huf": "Ft", "idr": "Rp", "ils": "₪", "inr": "₹", "isk": "kr", "jmd": "$", "jpy": "¥", "kgs": "⃀", "khr": "៛", "kmf": "CF", "kpw": "₩", "krw": "₩", "kyd": "$", "kzt": "₸", "lak": "₭", "lbp": "L£", "lkr": "Rs", "lrd": "$", "mga": "Ar", "mmk": "K", "mnt": "₮", "mur": "Rs", "mxn": "$", "myr": "RM", "nad": "$", "ngn": "₦", "nio": "C$", "nok": "kr", "npr": "Rs", "nzd": "$", "php": "₱", "pkr": "Rs", "pln": "zł", "pyg": "₲", "ron": "lei", "rwf": "RF", "sbd": "$", "sek": "kr", "sgd": "$", "shp": "£", "srd": "$", "ssp": "£", "stn": "Db", "syp": "£", "thb": "฿", "top": "T$", "try": "₺", "ttd": "$", "twd": "$", "uah": "₴", "usd": "$", "uyu": "$", "vnd": "₫", "xaf": "FCFA", "xcd": "$", "xcg": "Cg.", "xof": "F CFA", "xpf": "CFPF", "zar": "R", "zmw": "ZK"]
+
     public static func monthly(_ amount: Double, every: Int, period: BillingPeriod) -> Double {
         let interval = Double(max(1, every)), value = max(0, amount)
         switch period {

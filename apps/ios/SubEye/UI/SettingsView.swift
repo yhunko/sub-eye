@@ -83,6 +83,8 @@ struct SettingsView: View {
                     AppDivider(inset: 47)
                     Button { importing = true } label: { SettingsRow(icon: "square.and.arrow.down", title: L("native_import"), color: AppTheme.accentBright, chevron: false) }.buttonStyle(.plain)
                     AppDivider(inset: 47)
+                    Button { sheet = .screenshotImport } label: { SettingsRow(icon: "text.viewfinder", title: L("import_title"), color: AppTheme.accentBright, chevron: false) }.buttonStyle(.plain)
+                    AppDivider(inset: 47)
                     Button { erase = true } label: { SettingsRow(icon: "trash", title: L("settings_erase"), color: AppTheme.danger, chevron: false) }.buttonStyle(.plain)
                 }
                 if state.serviceIssue != nil { Text(L("native_serviceIssue")).appFont(12.5).foregroundStyle(AppTheme.muted) }

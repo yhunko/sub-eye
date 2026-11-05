@@ -7,6 +7,8 @@ struct SubscriptionDetail: View {
     @Binding var state: SceneState
     let services: AppServices
     @Binding var sheet: SheetRoute?
+    // Not in the store yet: the page shows it read-only and writes nothing.
+    var preview: SubscriptionRow? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.openURL) private var openURL
@@ -17,7 +19,7 @@ struct SubscriptionDetail: View {
     @State private var rates: ExchangeRates?
     @State private var reminderSet = false
     @State private var enabling: UUID?
-    private var row: SubscriptionRow? { state.presentation.rows.first { $0.id == id } }
+    private var row: SubscriptionRow? { preview ?? state.presentation.rows.first { $0.id == id } }
     private var currency: String { state.presentation.preferences.preferredCurrency }
     var body: some View {
         Group {
@@ -28,10 +30,10 @@ struct SubscriptionDetail: View {
                         hero(row).padding(.horizontal, -16)
                             .background { GeometryReader { heroGeometry in Color.clear.preference(key: HeroBottomKey.self, value: heroGeometry.frame(in: .named("subscriptionDetail")).maxY) } }
                         if let date = displayDate(row), row.status != .cancelled {
-                            PaymentCard(row: row, date: date, currency: currency, rates: rates, editable: state.settings.pro, logos: services.logos,
+                            PaymentCard(row: row, date: date, currency: currency, rates: rates, editable: state.settings.pro && preview == nil, logos: services.logos,
                                         cancel: { sheet = .cancellation(id) }, manage: { phase, apply in await managePhase(phase, apply: apply) })
                         }
-                        if let share = share(row) { shareCard(row, share: share) }
+                        if preview == nil, let share = share(row) { shareCard(row, share: share) }
                         details(row)
                         if !row.phases.isEmpty {
                             if state.settings.pro { history(row) }
@@ -64,25 +66,27 @@ struct SubscriptionDetail: View {
                     .appScreen().navigationTitle(typeSize.isAccessibilitySize ? L("native_subscriptionTitle") : "")
                     .toolbarBackground(.hidden, for: .navigationBar)
                     .toolbar {
-                        if reminderSet && reminded(row) || reminderOffer(row) != nil {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                ReminderBell(title: reminderSet ? reminderConfirmation : reminderOffer(row) ?? "", done: reminderSet) { if !reminderSet && enabling == nil { enabling = UUID() } }
+                        if preview == nil {
+                            if reminderSet && reminded(row) || reminderOffer(row) != nil {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    ReminderBell(title: reminderSet ? reminderConfirmation : reminderOffer(row) ?? "", done: reminderSet) { if !reminderSet && enabling == nil { enabling = UUID() } }
+                                }
                             }
-                        }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Menu {
-                                if row.allowedActions.contains(.edit) {
-                                    Button { sheet = .editor(row.subscription) } label: { Label(L("native_action_edit"), systemImage: "pencil") }.accessibilityIdentifier("editSubscription")
-                                }
-                                ForEach(row.allowedActions.filter { $0 != .edit && $0 != .delete }, id: \.self) { action in
-                                    Button { perform(action, row: row) } label: { Label(L(action == .cancel ? "action_cancel" : "native_action_" + action.rawValue), systemImage: icon(action)) }
-                                }
-                                Section {
-                                    Button(role: .destructive) { delete = true } label: {
-                                        DestructiveMenuLabel(title: L("native_delete"))
-                                    }.accessibilityIdentifier("deleteSubscription")
-                                }
-                            } label: { Label(L("detail_moreActions"), systemImage: "ellipsis") }.tint(AppTheme.text).disabled(deletion != nil).accessibilityIdentifier("subscriptionActions")
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Menu {
+                                    if row.allowedActions.contains(.edit) {
+                                        Button { sheet = .editor(row.subscription) } label: { Label(L("native_action_edit"), systemImage: "pencil") }.accessibilityIdentifier("editSubscription")
+                                    }
+                                    ForEach(row.allowedActions.filter { $0 != .edit && $0 != .delete }, id: \.self) { action in
+                                        Button { perform(action, row: row) } label: { Label(L(action == .cancel ? "action_cancel" : "native_action_" + action.rawValue), systemImage: icon(action)) }
+                                    }
+                                    Section {
+                                        Button(role: .destructive) { delete = true } label: {
+                                            DestructiveMenuLabel(title: L("native_delete"))
+                                        }.accessibilityIdentifier("deleteSubscription")
+                                    }
+                                } label: { Label(L("detail_moreActions"), systemImage: "ellipsis") }.tint(AppTheme.text).disabled(deletion != nil).accessibilityIdentifier("subscriptionActions")
+                            }
                         }
                     }
                 }
@@ -113,6 +117,7 @@ struct SubscriptionDetail: View {
             do {
                 let rates = try await services.exchange.cached()
                 self.rates = rates
+                guard preview == nil else { return }
                 try await services.repository.settleDetail(id: id, rates: rates, now: Date()); state.reload += 1
             } catch { state.notice = Notice(title: L("native_error"), message: Display.error(error)) }
         }

@@ -300,6 +300,7 @@ struct EmptySubscriptions: View {
             Text(L("native_emptyBody")).foregroundStyle(.secondary)
             Button(L("subs_emptyAddSubscription")) { sheet = .editor(nil) }.buttonStyle(.borderedProminent).foregroundStyle(.black).controlSize(.large).accessibilityIdentifier("emptyNewSubscription")
             Button(L("subs_addInstallment")) { sheet = .installmentEditor(nil) }.controlSize(.large).accessibilityIdentifier("emptyNewInstallment")
+            Button(L("import_emptyAction")) { sheet = .screenshotImport }.controlSize(.large).accessibilityIdentifier("emptyImportScreenshot")
         }.multilineTextAlignment(.center).padding(32).frame(maxWidth: .infinity)
     }
 }

@@ -12,6 +12,8 @@ struct SubscriptionEditor: View {
     @Binding var state: SceneState
     let services: AppServices
     let onExisting: @MainActor (SubscriptionRow, LifecycleAction?) -> Void
+    // Set for a draft that is not in the store yet: Save hands the value and logo style back instead of writing them.
+    var commit: (@MainActor (Subscription, String) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,8 +36,9 @@ struct SubscriptionEditor: View {
     @State private var initialOfferEnd: Date
 
     init(original: Subscription?, flow: Flow = .subscription, state: Binding<SceneState>, services: AppServices,
+         commit: (@MainActor (Subscription, String) -> Void)? = nil,
          onExisting: @escaping @MainActor (SubscriptionRow, LifecycleAction?) -> Void) {
-        self.original = original; self.flow = flow; _state = state; self.services = services; self.onExisting = onExisting
+        self.original = original; self.flow = flow; _state = state; self.services = services; self.commit = commit; self.onExisting = onExisting
         var initial = original ?? Subscription(id: UUID().uuidString, name: "", cost: "", currency: state.wrappedValue.presentation.preferences.preferredCurrency, paymentDate: Day.iso(Day.today()), now: Date())
         if original == nil, flow == .license { initial.period = .year }
         self.initial = initial; _draft = State(initialValue: initial); _date = State(initialValue: Day.parse(initial.paymentDate) ?? Day.today())
@@ -487,6 +490,7 @@ struct SubscriptionEditor: View {
         guard !saved else { return }
         focusedField = nil
         let (value, offerInput) = try Self.value(draft, firstPayment: date, offer: terms, now: Date(), zone: zone)
+        if let commit { saved = true; commit(value, variant); dismiss(); return }
         try await services.repository.save(value, expected: original, offer: offerInput, rates: try await services.exchange.cached(), now: Date())
         saved = true
         if let domain = value.brandDomain {

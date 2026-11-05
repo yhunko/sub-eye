@@ -69,6 +69,7 @@ enum SheetRoute: Identifiable {
     case prompt(UserPrompt)
     case installmentEditor(InstallmentPlan?)
     case installmentPayoff(String)
+    case screenshotImport
     var id: String {
         switch self {
         case .editor(let sub, let flow): "edit:" + (sub?.id ?? "new-" + flow.rawValue)
@@ -80,6 +81,7 @@ enum SheetRoute: Identifiable {
         case .prompt(let prompt): "prompt:" + prompt.rawValue
         case .installmentEditor(let plan): "installment:" + (plan?.id ?? "new")
         case .installmentPayoff(let id): "installmentPayoff:" + id
+        case .screenshotImport: "screenshotImport"
         }
     }
 }
