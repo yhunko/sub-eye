@@ -4,7 +4,7 @@
     "locale": "en",
     "title": "Privacy policy",
     "description": "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-    "updated": "2026-11-03",
+    "updated": "2026-11-05",
     "lead": [
       {
         "p": [
@@ -21,7 +21,7 @@
             "p": [
               "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine, acting as the data controller. For anything in this policy, write to ",
               {
-                "mailto": "privacy@subeye.cc"
+                "mailto": "subeye@yhunko.dev"
               },
               "."
             ]
@@ -253,7 +253,7 @@
             "p": [
               "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a purchase record held by one of the services above — write to ",
               {
-                "mailto": "privacy@subeye.cc"
+                "mailto": "subeye@yhunko.dev"
               },
               " and expect an answer within 30 days."
             ]
@@ -268,7 +268,7 @@
             "p": [
               "SubEye is not directed at children and does not knowingly collect data from anyone under 16. Since there is no account, and nothing is uploaded unless iCloud Sync is switched on, there is nothing held here to delete on a child's behalf — but if something about this concerns you, write to ",
               {
-                "mailto": "privacy@subeye.cc"
+                "mailto": "subeye@yhunko.dev"
               },
               "."
             ]
@@ -293,7 +293,7 @@
     "locale": "en",
     "title": "Terms of service",
     "description": "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-    "updated": "2026-11-04",
+    "updated": "2026-11-05",
     "lead": [
       {
         "p": [
@@ -310,7 +310,7 @@
             "p": [
               "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine. Contact: ",
               {
-                "mailto": "privacy@subeye.cc"
+                "mailto": "subeye@yhunko.dev"
               },
               "."
             ]
