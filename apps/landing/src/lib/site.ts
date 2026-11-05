@@ -7,7 +7,7 @@
  * `test/routes.test.ts` asserts the four strings against the page files that
  * actually exist.
  */
-export const SITE = "https://www.subeye.cc";
+export const SITE = "https://subeye.yhunko.dev";
 
 export const locales = ["en", "uk"] as const;
 export type Locale = (typeof locales)[number];

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.subeye.cc/sitemap-index.xml
+Sitemap: https://subeye.yhunko.dev/sitemap-index.xml

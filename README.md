@@ -16,7 +16,7 @@ the network off. Optional iCloud sync uses Apple's key-value store.
 | Package | What it is |
 | --- | --- |
 | [`apps/ios`](apps/ios) | The app. SwiftUI, iOS 16.4+; widget and Live Activities on iOS 17+ |
-| [`apps/landing`](apps/landing) | [subeye.cc](https://www.subeye.cc) — Astro, static, zero client JS |
+| [`apps/landing`](apps/landing) | [subeye.yhunko.dev](https://subeye.yhunko.dev) — Astro, static, zero client JS |
 | `packages/legal` | The privacy policy and terms of service as data, en + uk — the app and the site render the same words |
 | `packages/model` | The period, status and price-phase types |
 | `packages/money` | Currency codes, rate tables, conversion |

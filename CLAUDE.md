@@ -17,7 +17,7 @@ on your phone" is a promise the landing page makes.
 
 ```
 apps/ios           SwiftUI app, widget and Live Activity; SubEyeCore holds the domain rules and the SQLite store
-apps/landing       subeye.cc — Astro 6, static, zero client JS, en + uk
+apps/landing       subeye.yhunko.dev — Astro 6, static, zero client JS, en + uk
 packages/legal     the privacy policy and terms as data — the app and the site render the same words
 packages/model     the period, status and price-phase types
 packages/money     currency codes, rate tables, conversion

@@ -15,10 +15,10 @@ const ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
  * rejection before a human ever opens the app.
  */
 const CONTRACT = [
-  "https://www.subeye.cc/en/terms-of-service/",
-  "https://www.subeye.cc/en/privacy-policy/",
-  "https://www.subeye.cc/uk/terms-of-service/",
-  "https://www.subeye.cc/uk/privacy-policy/",
+  "https://subeye.yhunko.dev/en/terms-of-service/",
+  "https://subeye.yhunko.dev/en/privacy-policy/",
+  "https://subeye.yhunko.dev/uk/terms-of-service/",
+  "https://subeye.yhunko.dev/uk/privacy-policy/",
 ];
 
 describe("legal route contract", () => {
