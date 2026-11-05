@@ -18,7 +18,7 @@ Section 8 is the whole list in one place.
 
 ## The wedge moved, and the store record has not caught up
 
-The pitch on subeye.cc is *no bank, no account, no server*. That was the
+The pitch on the site is *no bank, no account, no server*. That was the
 differentiator when the design brief was written. It is now the category's
 default claim — the 2025–26 cohort of trackers ships it verbatim on their own
 pages. **[unverified: read the three listings yourself, five minutes]**
@@ -123,7 +123,7 @@ Counted alternatives, all ≤30:
 screenshots, and previews should not include prices, terms, or descriptions that
 are not specific to the metadata type."* So the "$11.99 once" argument cannot go
 in the subtitle or a screenshot caption. It belongs in the description and on
-subeye.cc, both of which already carry it.
+the site, both of which already carry it.
 
 ### 1.4 Screenshots: the first three are the ad
 
@@ -187,8 +187,9 @@ Connect measures the site for you.
   product page."* Available once the app has five first-time downloads.
   **[repo]** `apps/landing/public/_headers` sets
   `Referrer-Policy: strict-origin-when-cross-origin`, so a Safari tap on the
-  badge sends `https://www.subeye.cc/` — exactly the origin Apple needs.
-  **subeye.cc already appears in that report with no change to anything.**
+  badge sends `https://subeye.yhunko.dev/` — exactly the origin Apple needs.
+  **The site appears in that report with no change to anything** (as
+  `www.subeye.cc` before the 2026-11-05 move).
 - **A tap inside the Reddit app is an App Referrer, not a Web Referrer.** Apple
   attributes non-Safari browsers and StoreKit-using apps as the app. So Reddit,
   Telegram and Messages separate themselves automatically.
@@ -443,7 +444,7 @@ short check away, and acting on an unchecked one is how an evening gets wasted.*
 | claim | the check |
 | --- | --- |
 | Competitors now ship the no-bank/one-payment claim verbatim | Open the three closest listings on the App Store. 5 min. |
-| Competitor one-time prices sit at $1.99–$4.99 | Same pass. The "3–6× overpriced" framing was killed as unchecked — do not put a comparison on subeye.cc built on it. |
+| Competitor one-time prices sit at $1.99–$4.99 | Same pass. The "3–6× overpriced" framing was killed as unchecked — do not put a comparison on the site built on it. |
 | The decaying incumbent has ~7,900 ratings and broken notifications | Its listing and its recent reviews. 5 min. |
 | dev.ua published SubEye on ~29 Aug 2026 | Open the URL in §4. |
 | Any specific subreddit's self-promotion rule | The sidebar, the hour you post. Never a remembered rule. |

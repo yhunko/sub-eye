@@ -23,13 +23,14 @@ requires a resolving Privacy Policy URL, and Settings → Legal opens these in
 front of a reviewer.
 
 ```
-https://www.subeye.cc/en/terms-of-service/
-https://www.subeye.cc/en/privacy-policy/
-https://www.subeye.cc/uk/terms-of-service/
-https://www.subeye.cc/uk/privacy-policy/
+https://subeye.yhunko.dev/en/terms-of-service/
+https://subeye.yhunko.dev/en/privacy-policy/
+https://subeye.yhunko.dev/uk/terms-of-service/
+https://subeye.yhunko.dev/uk/privacy-policy/
 ```
 
-Exactly those. With the `/en` prefix, with trailing slashes, on the `www` host.
+Exactly those. With the `/en` prefix, with trailing slashes, on the
+`subeye.yhunko.dev` host.
 
 > **Correction to DESIGN-BRIEF.md.** That file states the contract as
 > `/terms-of-service/` and `/uk/terms-of-service/` — English at the bare root.
@@ -46,12 +47,8 @@ blocker; the marketing page is not.
 
 ## Stack
 
-**Astro 6, `output: 'static'`, deployed to Vercel.**
-
-Vercel, not Cloudflare Pages as DESIGN-BRIEF suggests: `subeye.cc` already
-resolves to Vercel today, DNS is pointed, and a static marketing site gains
-nothing from sharing a provider with the Worker. Moving hosts is churn on the
-critical path. If you disagree, say so before starting — do not switch silently.
+**Astro 6, `output: 'static'`, deployed to Cloudflare Workers static assets**
+(`apps/landing/wrangler.jsonc`).
 
 **No UI framework.** No React, Vue, Svelte, Solid — no islands at all. Astro
 components and scoped CSS only. If a piece of interactivity needs JavaScript, it
@@ -104,9 +101,9 @@ all of which will bite silently:
    files need Astro's own checker. Wire it as the workspace's `type-check`
    script so `turbo type-check` covers it.
 
-6. **Vercel needs to build one workspace out of a monorepo.** Set the project's
-   root directory and build command explicitly, and make sure the install step
-   runs at the repo root so workspace links resolve.
+6. **Deploying builds locally.** `bun run --cwd apps/landing deploy` runs
+   `astro build` and `wrangler deploy` from this checkout, so workspace links
+   resolve from the repo-root install; the Worker only receives `dist/`.
 
 ---
 
@@ -150,8 +147,8 @@ instead), or anything from `@subeye/currency`, which is a single type.
 Astro's built-in i18n routing, `defaultLocale: 'en'`, locales `['en', 'uk']`,
 and **`prefixDefaultLocale: true`** — that flag is what produces `/en/...` and it
 is exactly the contract above. `trailingSlash: 'always'` in the Astro config,
-plus the matching Vercel setting; a mismatch turns the app's links into redirects
-at best and 404s at worst.
+plus `assets.html_handling: "force-trailing-slash"` in `wrangler.jsonc`; a
+mismatch turns the app's links into redirects at best and 404s at worst.
 
 - `<html lang>` per locale.
 - `hreflang` alternates for both locales plus `x-default`.
@@ -227,7 +224,7 @@ six pages.
 - Alt text on every image; decorative art gets `alt=""`, not a description.
 
 **Best practices**
-- Security headers via `vercel.json`: a real CSP (achievable precisely *because*
+- Security headers via `public/_headers`: a real CSP (achievable precisely *because*
   there are no third-party requests), HSTS, `X-Content-Type-Options: nosniff`,
   `Referrer-Policy`, `Permissions-Policy`.
 - No console errors, no deprecated APIs, no mixed content.
@@ -244,7 +241,7 @@ six pages.
 ## Definition of done
 
 1. All four legal URLs return **200** on the deployed site, with trailing
-   slashes, on `www.subeye.cc`.
+   slashes, on `subeye.yhunko.dev`.
 2. `bun run type-check`, `bun run test`, `bun run lint`, `bun run check:boundaries`
    and `bun run check:circular` all green **from the repo root**, and `turbo build`
    with `--force` green — a cached pass proves nothing here.
@@ -268,10 +265,8 @@ state, at minimum:
 > Sentry, RevenueCat, Brandfetch, Google and **jsDelivr**, and deletion is
 > Settings → Erase all data.
 
-- **Collected:** ~~email address, name/username, Clerk user id, and~~ the
-  subscription data the user enters (service names, amounts, dates, notes).
-- **Processors, with regions:** ~~Clerk (auth), Neon (Postgres), Cloudflare (API
-  hosting), PostHog EU (error telemetry), and~~ **Brandfetch** (brand logo search).
+- **Collected:** the subscription data the user enters (service names, amounts, dates, notes).
+- **Processors, with regions:** **Brandfetch** (brand logo search).
 - **Brandfetch specifically:** when the user searches for a brand in the add/edit
   form, **what they type is sent to `api.brandfetch.io`** with their IP. Nothing
   else goes with it — no account id, no subscription data — and results are never
@@ -279,8 +274,8 @@ state, at minimum:
   has to be disclosed. Google is contacted for every logo image
   (`google.com/s2/favicons`), which discloses the domain and IP but nothing typed.
 - **Why:** operating the service. No advertising, no tracking, no data sale.
-- **Retention and deletion:** deleting the account in Settings removes the account
-  and every subscription in it; the Clerk `user.deleted` webhook purges Postgres.
+- **Retention and deletion:** Settings → Erase all data clears the device; there
+  is no copy anywhere else.
 - **Contact:** a real address for privacy requests.
 - **Rights:** GDPR access, erasure and portability — the product serves the EU
   and Ukraine.
