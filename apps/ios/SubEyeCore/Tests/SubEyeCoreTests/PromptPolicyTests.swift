@@ -15,9 +15,17 @@ final class PromptPolicyTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         XCTAssertNil(PromptPolicy.home(saved: 10, firstSeenAt: 1, now: now, pro: false, proPitched: false, reviewDue: true, interrupted: false, remindersPending: true))
         XCTAssertNil(PromptPolicy.home(saved: 10, firstSeenAt: 1, now: now, pro: false, proPitched: false, reviewDue: true, interrupted: true, remindersPending: false))
-        XCTAssertEqual(PromptPolicy.home(saved: 10, firstSeenAt: 1, now: now, pro: false, proPitched: false, reviewDue: true, interrupted: false, remindersPending: false), .pro)
+        XCTAssertEqual(PromptPolicy.home(saved: 10, firstSeenAt: 1, now: now, pro: false, proPitched: false, reviewDue: true, interrupted: false, remindersPending: false), .review)
         XCTAssertEqual(PromptPolicy.home(saved: 10, firstSeenAt: 1, now: now, pro: true, proPitched: false, reviewDue: true, interrupted: false, remindersPending: false), .review)
         XCTAssertEqual(PromptPolicy.home(saved: 10, firstSeenAt: 1, now: now, pro: false, proPitched: true, reviewDue: true, interrupted: false, remindersPending: false), .review)
+    }
+    func testADueReviewOutranksADuePitch() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let settled = now.timeIntervalSince1970 * 1000 - 14 * 86_400_000
+        XCTAssertEqual(PromptPolicy.home(saved: 10, firstSeenAt: settled, now: now, pro: false, proPitched: false, reviewDue: true, interrupted: false, remindersPending: false), .review,
+                       "Ratings show per storefront and the US one has almost none, so a rating is worth more than the pitch")
+        XCTAssertEqual(PromptPolicy.home(saved: 10, firstSeenAt: settled, now: now, pro: false, proPitched: false, reviewDue: false, interrupted: false, remindersPending: false), .pro,
+                       "The pitch still runs once the review is not due")
     }
     func testProWaitsForFirstSavingOrTwoWeeksNotForATrackedCount() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
