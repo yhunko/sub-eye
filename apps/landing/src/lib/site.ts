@@ -54,6 +54,12 @@ export const otherLocale = (locale: Locale): Locale =>
 export const proPrice = { usd: 14.99, eur: 17.99 };
 export const proPriceUkraine = 11.99;
 
+/** The download itself. Structured data needs the free offer stated as a price. */
+export const freePrice = 0;
+
+/** The day the two content pages were first written; their Article `datePublished`. */
+export const contentPublished = "2026-11-05";
+
 /**
  * The App Store product page.
  *

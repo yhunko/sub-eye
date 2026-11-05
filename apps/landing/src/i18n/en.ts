@@ -26,9 +26,25 @@ export const en = {
   },
 
   meta: {
-    title: "SubEye — see a subscription's price rise before it lands",
+    title: "iPhone subscription tracker, free with no limit — SubEye",
     description:
-      "An iPhone subscription tracker that plots each price forward: the trial, the intro price and the rise already on its way. Every subscription free, with no limit. Installments on the same calendar. No account, no bank.",
+      "Track every subscription on iPhone, free with no limit, installments included. With Pro, see each price rise before it lands. No bank login, no account.",
+  },
+
+  /** The share card's own words, so `og:image:alt` describes the card. */
+  og: {
+    home: {
+      title: "See the price rise before it hits.",
+      sub: "iPhone subscription tracker. Free, no limit. No bank login.",
+    },
+    bobby: {
+      title: "A Bobby alternative, on dated facts.",
+      sub: "Last update, platforms, widgets, free limit, price — read on the App Store.",
+    },
+    rises: {
+      title: "Subscription price increases in 2026.",
+      sub: "Netflix · Spotify · YouTube Premium · Crunchyroll — checked at the source.",
+    },
   },
 
   hero: {
@@ -63,11 +79,12 @@ export const en = {
       `Trials, intro prices, one-time licenses and scheduled changes, each on its own date, are SubEye Pro: ${pro}, once. Every subscription, its renewal date and a reminder the day before stay free.`,
     shotAlt:
       "SubEye price history for a sample Netflix subscription: free trial from 6 May to 6 June 2026, introductory price $4.99 until 6 August, then $12.99.",
+    risesLink: "See every 2026 price increase we checked",
   },
 
   free: {
     title: "Every subscription. No limit.",
-    body: "The free app is not a trial and has no cap: the twentieth subscription goes in the way the first did.",
+    body: "A subscription tracker with no cap on the free version: the twentieth subscription goes in the way the first did. Not a trial.",
     features: [
       {
         title: "Left this month",
@@ -87,7 +104,8 @@ export const en = {
       },
     ],
     shotAlt:
-      "SubEye's subscription list with sample data: $218 a month, $2,789 a year, iCloud+, Adobe Creative Cloud, Netflix, Spotify, HelloFresh, Disney+.",
+      "SubEye Home with sample data: $1,320.12 left to pay this month of $1,475, three subscriptions that need a decision, next month $946.",
+    bobbyLink: "Coming from Bobby? Compare the two on dated facts",
   },
 
   does: {
@@ -198,6 +216,12 @@ export const en = {
       {
         q: "What happens when a price changes?",
         a: "With Pro, you add the new price with the date it starts. The old one stays on the timeline, so the forecast is right on both sides of the change — and if the change lands early, you can apply it on the day it actually happened.",
+        link: "price-increases-2026" as const,
+        linkText: "This year's price increases, checked at the source",
+      },
+      {
+        q: "Will SubEye cancel a subscription for me?",
+        a: "No. It is a subscription tracker, not a subscription manager that cancels on your behalf. It reminds you the day before a renewal; you cancel with the service or in your Apple Account settings, and mark it cancelled in SubEye.",
       },
     ],
   },
@@ -206,6 +230,8 @@ export const en = {
     title: "On the App Store now.",
     body: "Type in the first subscription, and about twenty seconds later the number on Home is yours. Nothing to sign up for.",
     fact: (pro: string) => `Free, with no limit. Pro is ${pro}, once.`,
+    shotAlt:
+      "SubEye's subscription list with sample data: $218 a month, $2,789 a year, iCloud+, Adobe Creative Cloud, Netflix, Spotify, HelloFresh, Disney+.",
   },
 
   appStore: {
@@ -229,7 +255,7 @@ export const en = {
     privacy: "Privacy policy",
     contact: "Contact",
     bobby: "A Bobby alternative",
-    rises: "Price rises in 2026",
+    rises: "Subscription price increases 2026",
     rights: "SubEye. Made in Ukraine.",
   },
 
@@ -239,12 +265,12 @@ export const en = {
   },
 
   bobby: {
-    metaTitle: "A Bobby alternative, compared on dated facts — SubEye",
+    metaTitle: "Bobby app alternative for iPhone, on dated facts — SubEye",
     metaDescription:
-      "Bobby and SubEye side by side: last update, platforms, widgets, the free limit and the price, each read on the App Store and dated.",
+      "Bobby vs SubEye, read on the App Store: last update, platforms, widgets, free limit and price. Is Bobby still updated?",
     title: "A Bobby alternative, on dated facts.",
     lead: (date: string, rating: string, count: string) =>
-      `Bobby is a manual subscription tracker for iPhone by Yummygum, rated ${rating} from ${count} ratings on the US App Store. If you are weighing an alternative, here is what its listing said on ${date}, next to SubEye's own.`,
+      `Looking for a Bobby app alternative? Bobby is a manual subscription tracker for iPhone by Yummygum, rated ${rating} from ${count} ratings on the US App Store. Here is what its listing said on ${date}, next to SubEye's own.`,
     tableCaption: (date: string) =>
       `Both columns were read on the US App Store listings on ${date}. Listings change; the current one is the authority.`,
     rows: {
@@ -284,6 +310,18 @@ export const en = {
     switchBody:
       "There is no importer for Bobby's data. You type each subscription in once — about twenty seconds each — and from then on SubEye keeps the schedule. Nothing leaves the phone in either direction.",
     listingLink: "Bobby on the App Store",
+    risesText:
+      "Price over time is what this year's rises are about: every one we could confirm is in the",
+    risesLink: "2026 subscription price increases",
+    updatedTitle: "Is Bobby still updated?",
+    updatedBody: (version: string, date: string, read: string) =>
+      `The latest version on its US App Store listing is ${version}, released on ${date} — as read on ${read}. The listing is the place to check whether a newer one has shipped since.`,
+    fitTitle: "Which one fits.",
+    fit: (bobbyOS: string, subeyeOS: string) => [
+      `An older iPhone: Bobby's listing asks for iOS ${bobbyOS} or later, SubEye's for iOS ${subeyeOS}.`,
+      "Many subscriptions, free: SubEye's free version has no limit; Bobby sells an “Unlock Subscription Limit” purchase.",
+      "Installments and loans beside subscriptions: SubEye has them; Bobby's listing does not mention them.",
+    ],
     closeTitle: "See SubEye for yourself.",
     closeBody:
       "Every subscription is free, with no limit; the price timeline is Pro, paid once.",
@@ -291,15 +329,14 @@ export const en = {
   },
 
   rises: {
-    metaTitle:
-      "Subscription price rises in 2026, checked at the source — SubEye",
+    metaTitle: "Subscription price increases 2026, checked at source — SubEye",
     metaDescription:
-      "Every 2026 subscription price rise we could confirm on the service's own pricing page or announcement: plan, storefront, old and new price, the date, and the source.",
-    title: "Subscription price rises in 2026.",
+      "Netflix, Spotify, YouTube Premium and Crunchyroll price increases in 2026: old and new price, date, and each service's own source.",
+    title: "Subscription price increases in 2026.",
     lead: "Each rise below was checked on the service's own pricing page, its own announcement, or an archived copy of that pricing page — never a news roundup. US prices on each service's own website, per month.",
     read: (date: string) => `Sources read on ${date}. Updated monthly.`,
     columns: {
-      service: "Service and plan",
+      service: "Plan",
       price: "Price",
       year: "Per year",
       when: "When",

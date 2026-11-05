@@ -16,78 +16,116 @@ const r = c.rises;
 const percent = new Intl.NumberFormat(c.intl, { maximumFractionDigits: 1 });
 const lastRead = priceRises.map((rise) => rise.read).sort().at(-1) ?? "";
 
+const dated = (text: string, iso: string) => ({ text, iso });
+
 const entries = priceRises.map((rise) => ({
   ...rise,
   price: `${money(rise.from, rise.currency)} → ${money(rise.to, rise.currency)}`,
   year: r.perYear(money(yearlyIncrease(rise), rise.currency)),
   percent: r.percent(percent.format(percentIncrease(rise))),
   when: [
-    rise.announced ? r.announced(longDate(locale, rise.announced)) : r.noDate,
-    r.onPage(longDate(locale, rise.onPricingPage)),
-    rise.existing
-      ? "after" in rise.existing
-        ? r.existingAfter(longDate(locale, rise.existing.after))
-        : r.existingMonth(monthYear(locale, rise.existing.month))
-      : null,
-  ].filter((line): line is string => line !== null),
+    rise.announced
+      ? dated(r.announced(longDate(locale, rise.announced)), rise.announced)
+      : { text: r.noDate, iso: null },
+    dated(r.onPage(longDate(locale, rise.onPricingPage)), rise.onPricingPage),
+    ...(rise.existing
+      ? [
+          "after" in rise.existing
+            ? dated(
+                r.existingAfter(longDate(locale, rise.existing.after)),
+                rise.existing.after,
+              )
+            : dated(
+                r.existingMonth(monthYear(locale, rise.existing.month)),
+                rise.existing.month,
+              ),
+        ]
+      : []),
+  ],
 }));
 
+// One section per service, in the log's own order, so a search for one
+// service's rise lands on a heading that names it.
+const services = [...new Set(entries.map((entry) => entry.service))].map(
+  (service) => ({
+    service,
+    id: service.toLowerCase().replaceAll(" ", "-"),
+    rows: entries.filter((entry) => entry.service === service),
+  }),
+);
 ---
 
-<Article locale={locale} page="price-increases-2026" title={r.metaTitle} description={r.metaDescription}>
+<Article
+  locale={locale}
+  page="price-increases-2026"
+  title={r.metaTitle}
+  description={r.metaDescription}
+  modified={lastRead}
+>
   <div class="shell">
     <h1 class="a-title">{r.title}</h1>
     <p class="a-lead">{r.lead}</p>
-    <p class="read">{r.read(longDate(locale, lastRead))}</p>
+    <p class="read">
+      <time datetime={lastRead}>{r.read(longDate(locale, lastRead))}</time>
+    </p>
 
-    <table class="log">
-      <thead>
-        <tr>
-          <th scope="col">{r.columns.service}</th>
-          <th scope="col">{r.columns.price}</th>
-          <th scope="col">{r.columns.year}</th>
-          <th scope="col">{r.columns.when}</th>
-          <th scope="col">{r.columns.sources}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          entries.map((entry) => (
-            <tr>
-              <th scope="row">
-                <span class="log__service">{entry.service}</span>
-                <span class="log__plan">
-                  {entry.plan} · {r.storefront[entry.storefront]}
-                </span>
-              </th>
-              <td class="log__price num" data-col={r.columns.price}>
-                {entry.price}
-              </td>
-              <td class="num" data-col={r.columns.year}>
-                {entry.year}
-                <span class="log__pct">{entry.percent}</span>
-              </td>
-              <td data-col={r.columns.when}>
-                <ul class="log__when">
-                  {entry.when.map((line) => <li>{line}</li>)}
-                </ul>
-              </td>
-              <td data-col={r.columns.sources}>
-                <ul class="log__sources">
-                  {entry.sources.map((source) => (
-                    <li>
-                      <a class="link" href={source.url} rel="noopener">
-                        {r.source[source.kind]}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </td>
-            </tr>
-          ))
-        }
-      </tbody>
-    </table>
+    {
+      services.map((group) => (
+        <section class="svc" id={group.id} aria-labelledby={`${group.id}-title`}>
+          <h2 class="svc__title" id={`${group.id}-title`}>
+            {group.service}
+          </h2>
+          <table class="log">
+            <thead>
+              <tr>
+                <th scope="col">{r.columns.service}</th>
+                <th scope="col">{r.columns.price}</th>
+                <th scope="col">{r.columns.year}</th>
+                <th scope="col">{r.columns.when}</th>
+                <th scope="col">{r.columns.sources}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.rows.map((entry) => (
+                <tr>
+                  <th scope="row">
+                    <span class="log__plan">{entry.plan}</span>
+                    <span class="log__store">{r.storefront[entry.storefront]}</span>
+                  </th>
+                  <td class="log__price num" data-col={r.columns.price}>
+                    {entry.price}
+                  </td>
+                  <td class="num" data-col={r.columns.year}>
+                    {entry.year}
+                    <span class="log__pct">{entry.percent}</span>
+                  </td>
+                  <td data-col={r.columns.when}>
+                    <ul class="log__when">
+                      {entry.when.map((line) => (
+                        <li>
+                          {line.iso ? <time datetime={line.iso}>{line.text}</time> : line.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td data-col={r.columns.sources}>
+                    <ul class="log__sources">
+                      {entry.sources.map((source) => (
+                        <li>
+                          <a class="link" href={source.url} rel="noopener">
+                            {r.source[source.kind]}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))
+    }
   </div>
 
   <section class="shell a-section" aria-labelledby="close-title">
@@ -111,8 +149,18 @@ const entries = priceRises.map((rise) => ({
     color: var(--text-muted);
   }
 
+  .svc {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    scroll-margin-top: 5.5rem;
+  }
+
+  .svc__title {
+    font-size: var(--step-lead);
+    letter-spacing: -0.015em;
+  }
+
   .log {
-    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+    margin-top: 0.75rem;
     width: 100%;
     border-collapse: separate;
     border-spacing: 0 6px;
@@ -142,17 +190,16 @@ const entries = priceRises.map((rise) => ({
     border-radius: 0 18px 18px 0;
   }
 
-  .log__service {
+  .log__plan {
     display: block;
-    font-family: var(--display);
-    font-size: var(--step-lead);
-    line-height: 1.15;
+    font-weight: 500;
   }
 
-  .log__plan {
+  .log__store {
     display: block;
     margin-top: 0.25rem;
     font-size: var(--step-small);
+    color: var(--text-muted);
   }
 
   .log__price {

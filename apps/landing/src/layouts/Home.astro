@@ -8,6 +8,7 @@ import PriceTimeline from "../components/PriceTimeline.astro";
 import TopBar from "../components/TopBar.astro";
 import { copyFor } from "../i18n";
 import { money } from "../lib/format";
+import { homeSchema } from "../lib/schema";
 import type { Locale } from "../lib/site";
 import { path, proPrice, proPriceUkraine } from "../lib/site";
 import Base from "./Base.astro";
@@ -35,7 +36,7 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
   locale={locale}
   title={c.meta.title}
   description={c.meta.description}
-  structuredData
+  jsonLd={homeSchema(locale, c.meta.description)}
 >
   {/*
     StartupBar's directory widget. The only third-party origin this site loads
@@ -85,6 +86,9 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
             <h3 class="h3">{c.timeline.proTitle}</h3>
             <p>{c.timeline.pro(home.price)}</p>
           </div>
+          <p>
+            <a class="link" href={path(locale, "price-increases-2026")}>{c.timeline.risesLink} →</a>
+          </p>
         </div>
         <div class="split__device">
           <Phone locale={locale} shot="timeline" alt={c.timeline.shotAlt} width={360} />
@@ -112,6 +116,9 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
               <h3 class="h3">{c.does.currency.title}</h3>
               <p>{c.does.currency.body}</p>
               <CurrencyPanel locale={locale} />
+            </li>
+            <li class="features__fx">
+              <a class="link" href={path(locale, "bobby-alternative")}>{c.free.bobbyLink} →</a>
             </li>
           </ul>
           <div class="panel free__panel">
@@ -228,7 +235,14 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
                   <span>{item.q}</span>
                   <span class="faq__sign" aria-hidden="true" />
                 </summary>
-                <p class="faq__answer">{item.a}</p>
+                <div class="faq__answer">
+                  <p>{item.a}</p>
+                  {item.link && (
+                    <p class="faq__more">
+                      <a class="link" href={path(locale, item.link)}>{item.linkText} →</a>
+                    </p>
+                  )}
+                </div>
               </details>
             ))
           }
@@ -246,7 +260,7 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
             <AppStoreBadge locale={locale} />
           </div>
           <div class="end__device">
-            <Phone locale={locale} shot="subscriptions" alt={c.free.shotAlt} width={280} />
+            <Phone locale={locale} shot="subscriptions" alt={c.cta.shotAlt} width={280} />
           </div>
         </div>
       </div>
@@ -493,6 +507,10 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
 
   .features__fx {
     margin-top: 0.5rem;
+  }
+
+  .features .link {
+    justify-self: start;
   }
 
   .free__panel {
@@ -819,6 +837,11 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
       grid-template-rows 260ms var(--ease),
       opacity 180ms var(--ease),
       content-visibility 260ms allow-discrete;
+  }
+
+  .faq__more {
+    margin-top: 0.75rem;
+    color: var(--text);
   }
 
   .faq__item[open]::details-content {

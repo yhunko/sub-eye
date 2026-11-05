@@ -178,6 +178,12 @@ section[id] {
   mask: var(--pupil) center / contain no-repeat;
 }
 
+/* Language links name the other language in its own script. The system face
+   draws it, so an English page never downloads the Cyrillic subset for "УКР". */
+.lang-link {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

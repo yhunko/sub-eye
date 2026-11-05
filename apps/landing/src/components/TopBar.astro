@@ -32,7 +32,7 @@ const links = [
     <nav class="bar__nav" aria-label="SubEye">
       {links.map(([id, label]) => <a class="bar__link" href={`${home}#${id}`}>{label}</a>)}
       <a
-        class="bar__lang"
+        class="bar__lang lang-link"
         href={path(other, page)}
         hreflang={other}
         lang={other}

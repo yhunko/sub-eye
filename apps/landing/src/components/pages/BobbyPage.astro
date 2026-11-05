@@ -34,7 +34,13 @@ const rows = [
 
 ---
 
-<Article locale={locale} page="bobby-alternative" title={b.metaTitle} description={b.metaDescription}>
+<Article
+  locale={locale}
+  page="bobby-alternative"
+  title={b.metaTitle}
+  description={b.metaDescription}
+  modified={bobby.read}
+>
   <div class="shell">
     <h1 class="a-title">{b.title}</h1>
     <p class="a-lead">{b.lead(read, rating, bobby.ratingCount)}</p>
@@ -63,12 +69,35 @@ const rows = [
       </table>
     </div>
 
-    <p class="cmp-read" aria-hidden="true">{b.tableCaption(read)}</p>
+    <p class="cmp-read" aria-hidden="true">
+      <time datetime={bobby.read}>{b.tableCaption(read)}</time>
+    </p>
+    <p class="cmp-note">
+      {b.risesText}{" "}
+      <a class="link" href={path(locale, "price-increases-2026")}>{b.risesLink}</a>.
+    </p>
     <p class="cmp-note">{b.noAccount}</p>
     <p class="cmp-note">
       <a class="link" href={bobby.listing} rel="noopener">{b.listingLink}</a>
     </p>
   </div>
+
+  <section class="shell a-section split2" aria-labelledby="updated-title">
+    <div>
+      <h2 class="a-h2" id="updated-title">{b.updatedTitle}</h2>
+      <p class="a-lead">
+        <time datetime={bobby.versionDate}>
+          {b.updatedBody(bobby.version, longDate(locale, bobby.versionDate), read)}
+        </time>
+      </p>
+    </div>
+    <div>
+      <h2 class="a-h2" id="fit-title">{b.fitTitle}</h2>
+      <ul class="pupil-list fit">
+        {b.fit(bobby.minimumIOS, subeyeListing.minimumIOS).map((line) => <li>{line}</li>)}
+      </ul>
+    </div>
+  </section>
 
   <section class="shell a-section" aria-labelledby="switch-title">
     <div class="switch">
@@ -141,6 +170,26 @@ const rows = [
   .cmp-note {
     margin-top: 1.5rem;
     max-width: 62ch;
+  }
+
+  .split2 {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .fit {
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 0.9rem;
+    font-size: var(--step-lead);
+    line-height: 1.4;
+  }
+
+  @media (min-width: 64em) {
+    .split2 {
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+    }
   }
 
   .switch {

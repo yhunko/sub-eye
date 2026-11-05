@@ -169,6 +169,27 @@ languages and keep the file names; `src/lib/shots.ts` lists them. Alt text says
 "sample data", and nothing under a picture explains it — the skill forbids
 captions.
 
+## Search: structured data, share cards, sitemap
+
+- **Structured data** is built in `src/lib/schema.ts` and handed to `Base.astro`
+  as `jsonLd`. The home page is a `MobileApplication` with two offers — the free
+  download (`freePrice`) and Pro at the page's storefront price — because one
+  offer at the Pro price would say the app costs that. Never add a rating or
+  review the page does not show. The content pages are an `Article` plus a
+  `BreadcrumbList`, dated by the day their facts were read.
+- **Share cards** are `public/og/{locale}.png` for every page but the two content
+  pages, which have `{locale}-{page}.png`; `src/lib/og.ts` picks the file and
+  takes the alt text from `og` in the dictionaries. `scripts/build-og.py`
+  renders all six and `public/apple-touch-icon.png` (macOS, QuickLook) with the
+  card words duplicated in the script — change both together. `test/seo.test.ts`
+  fails if a page points at a card that does not exist.
+- **The sitemap** (`astro.config.mjs` `serialize`) adds the `x-default`
+  alternate the page heads carry, and a `lastmod` only on the two content pages,
+  from their read dates. A build date on every URL is a `lastmod` search engines
+  learn to ignore.
+- Language links carry `.lang-link` (the system face), so an English page never
+  downloads the Cyrillic subset to draw "УКР".
+
 ## The content pages are dated facts
 
 `src/lib/bobby.ts` is Bobby's US App Store listing as read on its `read` day,

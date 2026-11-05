@@ -1,6 +1,8 @@
 // @ts-check
 import sitemap from "@astrojs/sitemap";
 import { defineConfig } from "astro/config";
+import { bobby } from "./src/lib/bobby.ts";
+import { priceRises } from "./src/lib/priceRises.ts";
 
 // Duplicated from src/lib/site.ts rather than imported: this file is loaded by
 // Astro's own config loader before any path alias exists, and test/routes.test.ts
@@ -36,6 +38,28 @@ export default defineConfig({
   integrations: [
     sitemap({
       i18n: { defaultLocale: "en", locales: { en: "en", uk: "uk" } },
+      // Each page's head names an x-default alternate; the sitemap says the
+      // same. Only the two content pages get a `lastmod`, from the day their
+      // facts were read: a build date on every URL is a lastmod Google learns
+      // to ignore.
+      serialize(item) {
+        const english = item.url.replace(
+          /^(https:\/\/[^/]+)\/(en|uk)\//,
+          "$1/en/",
+        );
+        item.links = [
+          ...(item.links ?? []),
+          { url: english, lang: "x-default" },
+        ];
+        if (item.url.endsWith("/bobby-alternative/")) item.lastmod = bobby.read;
+        if (item.url.endsWith("/price-increases-2026/")) {
+          item.lastmod = priceRises
+            .map((rise) => rise.read)
+            .sort()
+            .at(-1);
+        }
+        return item;
+      },
     }),
   ],
 });

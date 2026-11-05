@@ -1,6 +1,7 @@
 ---
 import Footer from "../components/Footer.astro";
 import TopBar from "../components/TopBar.astro";
+import { articleSchema, pageHeadline } from "../lib/schema";
 import type { ContentPage, Locale } from "../lib/site";
 import Base from "./Base.astro";
 
@@ -9,12 +10,22 @@ interface Props {
   page: ContentPage;
   title: string;
   description: string;
+  /** ISO day the page's facts were last read; its Article `dateModified`. */
+  modified: string;
 }
 
-const { locale, page, title, description } = Astro.props;
+const { locale, page, title, description, modified } = Astro.props;
+const jsonLd = articleSchema(locale, page, pageHeadline(locale, page), modified);
 ---
 
-<Base locale={locale} page={page} title={title} description={description}>
+<Base
+  locale={locale}
+  page={page}
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  modified={modified}
+>
   <TopBar locale={locale} page={page} />
   <main id="main" class="article">
     <slot />

@@ -120,8 +120,8 @@ export const priceRises: PriceRise[] = [
   netflixPlan("Standard", 17.99, 19.99),
   netflixPlan("Premium", 24.99, 26.99),
   {
-    service: "YouTube",
-    plan: "Premium Individual",
+    service: "YouTube Premium",
+    plan: "Individual",
     storefront: "us",
     currency: "usd",
     from: 13.99,

@@ -13,7 +13,7 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 const OWN_HOSTS: Record<string, string[]> = {
   Netflix: ["help.netflix.com"],
   Spotify: ["newsroom.spotify.com", "www.spotify.com"],
-  YouTube: ["www.youtube.com"],
+  "YouTube Premium": ["www.youtube.com"],
   Crunchyroll: ["www.crunchyroll.com"],
 };
 

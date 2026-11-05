@@ -53,7 +53,7 @@ const home = path(locale);
         <ul>
           <li><a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a></li>
           <li>
-            <a href={path(other, page)} hreflang={other} lang={other} rel="alternate">
+            <a class="lang-link" href={path(other, page)} hreflang={other} lang={other} rel="alternate">
               {c.otherLangName}
             </a>
           </li>

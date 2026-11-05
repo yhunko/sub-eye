@@ -1,12 +1,12 @@
 ---
 import { copyFor } from "../i18n";
+import { ogCard } from "../lib/og";
 import {
   APP_STORE_ID,
-  appStoreUrl,
   canonical,
-  locales,
   type Locale,
-  proPrice,
+  locales,
+  otherLocale,
   SITE,
   type SitePage,
 } from "../lib/site";
@@ -17,49 +17,16 @@ interface Props {
   page?: SitePage;
   title: string;
   description: string;
-  /** Only the marketing pages carry product markup; the legal pages are documents. */
-  structuredData?: boolean;
+  /** A schema.org graph. The home and content pages carry one; the legal pages are documents. */
+  jsonLd?: Record<string, unknown>;
+  /** ISO day an article was last revised; marks the page `og:type` article. */
+  modified?: string;
 }
 
-const { locale, page, title, description, structuredData = false } = Astro.props;
+const { locale, page, title, description, jsonLd, modified } = Astro.props;
 const c = copyFor(locale);
-
-// The LCP element is the h1, set in the display face, so only the subset this
-// locale will actually paint is worth preloading.
-const textFont =
-  locale === "uk"
-    ? "/fonts/fixeldisplay-semibold-cyrillic.woff2"
-    : "/fonts/fixeldisplay-semibold-latin.woff2";
-
-const schema = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "SoftwareApplication",
-      name: "SubEye",
-      applicationCategory: "FinanceApplication",
-      operatingSystem: "iOS",
-      url: canonical(locale),
-      // `installUrl`, not `downloadUrl`: the App Store product page is where
-      // the app is installed from, and schema.org's `downloadUrl` means a binary.
-      installUrl: appStoreUrl,
-      inLanguage: locale,
-      description,
-      offers: {
-        "@type": "Offer",
-        price: proPrice.usd.toFixed(2),
-        priceCurrency: "USD",
-        category: "one-time purchase",
-      },
-    },
-    {
-      "@type": "Organization",
-      name: "SubEye",
-      url: SITE,
-      logo: `${SITE}/favicon.svg`,
-    },
-  ],
-};
+const card = ogCard(locale, page);
+const fontSubset = locale === "uk" ? "cyrillic" : "latin";
 ---
 
 <html lang={locale} dir="ltr">
@@ -68,6 +35,7 @@ const schema = {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content="max-image-preview:large" />
     <meta name="theme-color" content="#0f1115" />
     <meta name="color-scheme" content="dark" />
 
@@ -86,32 +54,50 @@ const schema = {
     <link rel="alternate" hreflang="x-default" href={canonical("en", page)} />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/* The h1 is the LCP element and is set in the display face; the body face
+        is preloaded too so running text does not reflow when it swaps in. Only
+        the subset this locale paints is worth the request. */}
     <link
       rel="preload"
       as="font"
       type="font/woff2"
-      href={textFont}
+      href={`/fonts/fixeldisplay-semibold-${fontSubset}.woff2`}
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={`/fonts/fixeltext-regular-${fontSubset}.woff2`}
       crossorigin
     />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={modified ? "article" : "website"} />
     <meta property="og:site_name" content="SubEye" />
     <meta property="og:locale" content={locale === "uk" ? "uk_UA" : "en_US"} />
+    <meta
+      property="og:locale:alternate"
+      content={otherLocale(locale) === "uk" ? "uk_UA" : "en_US"}
+    />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical(locale, page)} />
-    <meta property="og:image" content={`${SITE}/og/${locale}.png`} />
+    <meta property="og:image" content={`${SITE}${card.path}`} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={c.hero.title} />
+    <meta property="og:image:alt" content={card.alt} />
+    {modified && <meta property="article:modified_time" content={modified} />}
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image:alt" content={card.alt} />
 
     {
-      structuredData && (
+      jsonLd && (
         <script
           type="application/ld+json"
           is:inline
-          set:html={JSON.stringify(schema)}
+          set:html={JSON.stringify(jsonLd)}
         />
       )
     }
