@@ -30,8 +30,9 @@ final class PromptCoordinator {
         let celebrated = try await repository.setting("installments.celebrated", as: [String].self) ?? []
         let zone = TimeZone(identifier: model.preferences.preferredTimezone) ?? .current
         let celebration = Self.celebration(model.installments ?? [], celebrated: celebrated, today: Day.today(now, zone: zone))
+        // A sandbox build never records the ask, so a due review would stay due and outrank the Pro pitch for good.
         let decision = try await PromptPolicy.home(saved: model.dashboard.savings?.total ?? 0, firstSeenAt: review.firstSeenAt, now: now, pro: settings.pro, proPitched: proPitched,
-            reviewDue: review.isDue(now: now, tracked: tracked), interrupted: interrupted, remindersPending: remindersPending(settings, permissionAllowsNotifications: permissionAllowsNotifications),
+            reviewDue: !sandbox && review.isDue(now: now, tracked: tracked), interrupted: interrupted, remindersPending: remindersPending(settings, permissionAllowsNotifications: permissionAllowsNotifications),
             celebrating: celebration != nil, reviewCooled: review.cooled(now: now))
         try Task.checkCancellation()
         guard let decision else { return nil }
