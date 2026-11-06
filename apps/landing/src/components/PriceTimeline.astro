@@ -19,8 +19,11 @@ const phaseLabel: Record<PricePhaseKind, string> = {
   standard: c.timeline.standard,
 };
 
+const top = Math.max(...priceTimeline.map((step) => step.monthly));
+
 // Every number below comes out of @subeye/pricing at build time — see
-// src/lib/timeline.ts. Nothing here is typed in.
+// src/lib/timeline.ts. The bar heights are the prices themselves, over a floor
+// tall enough to hold the free trial's words.
 const steps = priceTimeline.map((step, i) => ({
   ...step,
   id: `phase-${i}`,
@@ -33,28 +36,17 @@ const steps = priceTimeline.map((step, i) => ({
         ? c.timeline.months(step.spanMonths)
         : c.timeline.fromMonth(step.startMonth),
   amount: money(step.monthly, step.currency),
-  // Dots sit in the middle of the stretch each card covers, so the axis reads
-  // as three spans of time rather than three instants.
-  at: `${((i + 0.5) / priceTimeline.length) * 100}%`,
+  yearly: step.monthly > 0 ? c.timeline.yearly(money(step.yearly, step.currency)) : null,
+  height: (0.42 + 0.58 * (step.monthly / top)).toFixed(3),
 }));
 ---
 
 <fieldset class="tl">
-  <legend class="sr-only">{c.timeline.kicker}</legend>
-
-  <div class="tl__rail" aria-hidden="true">
-    <span class="tl__fill"></span>
+  <legend class="sr-only">{c.timeline.title}</legend>
+  <div class="tl__bars">
     {
-      steps.map((step) => (
-        <span class="tl__dot" data-for={step.id} style={`left:${step.at}`} />
-      ))
-    }
-  </div>
-
-  <div class="tl__cards">
-    {
-      steps.map((step) => (
-        <label class="tl__card">
+      steps.map((step, i) => (
+        <label class:list={["tl__bar", `tl__bar--${i}`]} style={`--h:${step.height}`}>
           <input
             class="tl__input"
             type="radio"
@@ -62,11 +54,15 @@ const steps = priceTimeline.map((step, i) => ({
             id={step.id}
             checked={step.isActive}
           />
-          <span class="label">
+          <span class="tl__price">
+            <span class="tl__amount num">{step.amount}</span>
+            <span class="tl__per">{c.timeline.perMonth}</span>
+          </span>
+          <span class="tl__when">
             {step.label} · {step.span}
           </span>
-          <span class="tl__amount num">{step.amount}</span>
           <span class="tl__blurb">{step.blurb}</span>
+          {step.yearly && <span class="tl__year num">{step.yearly}</span>}
         </label>
       ))
     }
@@ -81,69 +77,45 @@ const steps = priceTimeline.map((step, i) => ({
     min-width: 0;
   }
 
-  .tl__rail {
-    display: none;
-    position: relative;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .tl__fill {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 0;
-    background: var(--accent);
-    transition: width 620ms var(--ease);
-  }
-
-  .tl__dot {
-    position: absolute;
-    top: -4.5px;
-    width: 10px;
-    height: 10px;
-    margin-left: -5px;
-    border-radius: var(--radius-pill);
-    background: var(--ink-700);
-    transition: background-color 280ms var(--ease);
-  }
-
-  .tl__cards {
+  .tl__bars {
     display: grid;
-    gap: 1rem;
+    gap: 8px;
+    overflow: clip;
+    overflow-clip-margin: 8px;
   }
 
-  /* An unselected phase recedes by losing its fill, never by `opacity`: opacity
-     dims the text along with the chrome, and at the 0.62 this used to carry it
-     put the label and the blurb at 3.3:1 against their own composited
-     background. Muted text on either ground is 6.6:1 (card) and 7.2:1 (page),
-     so the state now costs nothing to read. */
-  .tl__card {
+  .tl__bar {
     position: relative;
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 0.5rem;
-    justify-items: start;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: 1.75rem;
+    padding: clamp(1.25rem, 2.4vw, 2rem);
+    border-radius: var(--radius);
+    background: var(--surface-alt);
+    color: var(--text);
     cursor: pointer;
     transition:
-      background-color 280ms var(--ease),
-      border-color 280ms var(--ease);
+      background-color 240ms var(--ease),
+      color 240ms var(--ease);
   }
 
-  .tl__card:has(:checked) {
-    background: var(--surface);
-    border-color: var(--accent);
+  .tl__bar:hover {
+    background: var(--ink-700);
   }
 
-  .tl__card:has(:focus-visible) {
+  .tl__bar:has(:checked) {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .tl__bar:has(:focus-visible) {
     outline: 2px solid var(--accent-bright);
     outline-offset: 3px;
   }
 
-  /* The card is the control; the radio only has to stay focusable and keyboard
-     operable, which it is — arrow keys move between the three. */
+  /* The bar is the control; the radio stays focusable and arrow keys move
+     between the three. */
   .tl__input {
     position: absolute;
     width: 1px;
@@ -152,55 +124,104 @@ const steps = priceTimeline.map((step, i) => ({
     pointer-events: none;
   }
 
-  .tl__amount {
-    margin-top: 0.38rem;
-    font-size: clamp(2.13rem, 4vw, 2.75rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    color: var(--text-muted);
-    transition: color 280ms var(--ease);
+  .tl__when {
+    font-weight: 500;
+    font-size: var(--step-small);
   }
 
-  .tl__card:has(:checked) .tl__amount {
-    color: var(--text);
+  /* The escalation is the argument, so it is in the type itself: the free
+     trial at the lead step, the real price at the heading step, the intro
+     between them. src/lib/timeline.ts guarantees exactly three phases. */
+  .tl__amount {
+    font-family: var(--display);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .tl__bar--0 .tl__amount {
+    font-size: var(--step-lead);
+  }
+
+  .tl__bar--1 .tl__amount {
+    font-size: calc(var(--step-head) * 0.78);
+  }
+
+  .tl__bar--2 .tl__amount {
+    font-size: var(--step-head);
+  }
+
+  .tl__price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+  }
+
+  .tl__per {
+    font-size: var(--step-small);
   }
 
   .tl__blurb {
-    font-size: var(--fs-small);
-    color: var(--text-muted);
+    font-size: var(--step-small);
+    max-width: 30ch;
   }
 
-  /* Three phases, guaranteed: src/lib/timeline.ts throws at build time if the
-     model returns any other number, so these cannot go stale silently. */
-  .tl:has(#phase-0:checked) .tl__fill {
-    width: 16.66%;
+  .tl__year {
+    margin-top: auto;
+    font-size: var(--step-small);
+    font-weight: 500;
   }
 
-  .tl:has(#phase-1:checked) .tl__fill {
-    width: 50%;
+  .tl__bar--0 {
+    min-height: 9rem;
   }
 
-  .tl:has(#phase-2:checked) .tl__fill {
-    width: 83.33%;
+  .tl__bar--1 {
+    min-height: 12rem;
   }
 
-  .tl:has(#phase-0:checked) [data-for="phase-0"],
-  .tl:has(#phase-1:checked) [data-for="phase-1"],
-  .tl:has(#phase-2:checked) [data-for="phase-2"] {
-    background: var(--accent);
+  .tl__bar--2 {
+    min-height: 16rem;
   }
 
-  /* The rail only means something while the cards sit along it. Stacked, it is
-     a line with three dots pointing at nothing. */
-  @media (min-width: 46em) {
-    .tl__rail {
-      display: block;
-      margin-bottom: 1.25rem;
+  @media (min-width: 52em) {
+    .tl__bars {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: end;
+      height: clamp(22rem, 28vw, 27rem);
     }
 
-    .tl__cards {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .tl__bar {
+      height: calc(var(--h) * 100%);
+      min-height: 0;
+    }
+  }
+
+  /* The page's one scroll-linked move: the three bars rise into place as they
+     come into view, the tallest last. Text moves with its bar, so it is never
+     drawn off its own fill. Browsers without scroll timelines draw them risen. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .tl__bar {
+        animation: tl-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 35%;
+      }
+
+      .tl__bar--1 {
+        animation-range: entry 10% cover 42%;
+      }
+
+      .tl__bar--2 {
+        animation-range: entry 20% cover 50%;
+      }
+    }
+  }
+
+  @keyframes tl-rise {
+    from {
+      transform: translateY(28%);
     }
   }
 </style>

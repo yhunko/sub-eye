@@ -68,15 +68,14 @@ describe("App Store badge", () => {
 
   // What those placements are for: every route to the App Store is Apple's
   // artwork, never a button borrowing its job. An `href={appStoreUrl}` outside
-  // the component is that button. Base.astro is the one allowed reference —
-  // JSON-LD `installUrl` is metadata, and nobody clicks it.
+  // the component is that button. The JSON-LD `installUrl` is metadata nobody
+  // clicks, and it is built in src/lib/schema.ts, outside any template.
   it("is the only clickable route to the App Store", () => {
     const linkers = sources().filter(({ text }) =>
       text.includes("appStoreUrl"),
     );
     expect(linkers.map(({ path }) => path).sort()).toEqual([
       "src/components/AppStoreBadge.astro",
-      "src/layouts/Base.astro",
     ]);
   });
 

@@ -18,7 +18,7 @@ const other = otherLocale(locale);
     <Mark height={22} />
   </a>
   <a
-    class="brandrow__lang"
+    class="brandrow__lang lang-link"
     href={path(other, page)}
     hreflang={other}
     lang={other}
@@ -40,24 +40,19 @@ const other = otherLocale(locale);
 
   .brandrow__mark {
     display: flex;
-    color: var(--text);
+    color: var(--accent);
   }
 
   .brandrow__lang {
-    font-size: var(--fs-tiny);
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    padding: 0.35rem 0.7rem;
-    transition:
-      color 160ms var(--ease),
-      border-color 160ms var(--ease);
+    font-size: var(--step-small);
+    font-weight: 500;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    transition: background-color 160ms var(--ease);
   }
 
   .brandrow__lang:hover {
-    color: var(--text);
-    border-color: var(--border-strong);
+    background: var(--ink-700);
   }
 </style>

@@ -1,0 +1,40 @@
+---
+import type { Shot } from "../lib/shots";
+import type { Locale } from "../lib/site";
+import AppShot from "./AppShot.astro";
+
+interface Props {
+  locale: Locale;
+  shot: Shot;
+  alt: string;
+  /** Rendered width of the device in CSS pixels; the screen scales with it. */
+  width: number;
+  priority?: boolean;
+  class?: string;
+}
+
+const { locale, shot, alt, width, priority = false, class: className } = Astro.props;
+---
+
+<div class:list={["phone", className]} style={`--w:${width}px`}>
+  <AppShot locale={locale} shot={shot} alt={alt} width={Math.round(width * 0.94)} priority={priority} />
+</div>
+
+<style>
+  /* A plain bezel, no hardware drawn: the captures already carry the Dynamic
+     Island and the status bar, so the frame only has to round the corners the
+     way the iPhone 17 Pro Max does (about 12.5% of the screen's width). */
+  .phone {
+    width: min(var(--w), 100%);
+    padding: calc(var(--w) * 0.03);
+    border-radius: calc(var(--w) * 0.155);
+    background: #050607;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 12%);
+  }
+
+  .phone :global(img) {
+    width: 100%;
+    height: auto;
+    border-radius: calc(var(--w) * 0.125);
+  }
+</style>

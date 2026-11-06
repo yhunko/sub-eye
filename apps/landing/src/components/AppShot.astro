@@ -1,0 +1,48 @@
+---
+import type { ImageMetadata } from "astro";
+import { Picture } from "astro:assets";
+import type { Shot } from "../lib/shots";
+import type { Locale } from "../lib/site";
+
+/*
+  Real screens from the development build, seeded with the developer screen's
+  Portfolio fixture — never anyone's own data. Each source is a 2x crop of an
+  iPhone 17 Pro Max capture (440pt wide, so 880px), stored as lossless WebP and
+  re-encoded to AVIF and WebP at build time.
+*/
+interface Props {
+  locale: Locale;
+  shot: Shot;
+  alt: string;
+  /** CSS width at which the screen is drawn: 440 is the phone's own width. */
+  width: number;
+  priority?: boolean;
+  class?: string;
+}
+
+const { locale, shot, alt, width, priority = false, class: className } = Astro.props;
+
+const sources = import.meta.glob<{ default: ImageMetadata }>(
+  "../assets/app/*/*.webp",
+  { eager: true },
+);
+const src = sources[`../assets/app/${locale}/${shot}.webp`]?.default;
+if (!src) throw new Error(`no ${locale} capture for "${shot}"`);
+
+const height = Math.round((src.height / src.width) * width);
+---
+
+<Picture
+  src={src}
+  alt={alt}
+  formats={["avif", "webp"]}
+  fallbackFormat="webp"
+  widths={[width, Math.min(width * 2, src.width)]}
+  sizes={`(min-width: ${width + 32}px) ${width}px, calc(100vw - 32px)`}
+  width={width}
+  height={height}
+  loading={priority ? "eager" : "lazy"}
+  fetchpriority={priority ? "high" : "auto"}
+  decoding="async"
+  class={className}
+/>

@@ -1,13 +1,26 @@
 import { describe, expect, it } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
 const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), "utf8");
 
-const home = read("src", "layouts", "Home.astro");
 const base = read("src", "layouts", "Base.astro");
 const headers = read("public", "_headers");
+
+/** Every `.astro` file under `src/`, contents included. */
+const templates = (): { path: string; text: string }[] => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      return entry.name.endsWith(".astro") ? [full] : [];
+    });
+  return walk(join(ROOT, "src")).map((path) => ({
+    path: path.slice(ROOT.length + 1),
+    text: readFileSync(path, "utf8"),
+  }));
+};
 
 /** The single `Content-Security-Policy:` line in public/_headers, by directive. */
 const csp = (): Record<string, string[]> => {
@@ -15,7 +28,7 @@ const csp = (): Record<string, string[]> => {
     .split("\n")
     .filter((l) => l.trim().startsWith("Content-Security-Policy:"));
   // A second policy header would be intersected with the first by Cloudflare,
-  // not replace it, so the widget would break in a way no directive explains.
+  // not replace it, so a page could end up stricter than either says.
   expect([line !== undefined, extra]).toEqual([true, []]);
 
   return Object.fromEntries(
@@ -30,44 +43,42 @@ const csp = (): Record<string, string[]> => {
   );
 };
 
-describe("StartupBar widget", () => {
-  it("is mounted on the marketing pages and nowhere else", () => {
-    expect(home).toContain("https://startupbar.co/widget/loader.js");
-    expect(home).toContain(
-      'data-startup-id="5bebca65-f371-43e4-81c9-3475815f2c94"',
-    );
-    // Astro bundles and hoists a `<script>` it owns; the vendor tag has to
-    // survive verbatim, or `document.currentScript` reads no startup id.
-    expect(home).toMatch(/<script[^>]*\bis:inline\b/);
-
-    // The four legal URLs are App Store Connect metadata a reviewer opens.
-    for (const page of ["privacy-policy", "terms-of-service", "support"]) {
-      for (const locale of ["en", "uk"]) {
-        expect(read("src", "pages", locale, `${page}.astro`)).not.toContain(
-          "startupbar",
+// "It stays on your phone" is the page's own argument, so the page loads
+// nothing from anyone else: no script, no frame, no third-party host.
+describe("no third-party code", () => {
+  it("ships no script tag that loads code", () => {
+    for (const { path, text } of templates()) {
+      const loaders = [...text.matchAll(/<script\b[^>]*>/g)]
+        .map((m) => m[0])
+        .filter(
+          (tag) => /\bsrc=/.test(tag) || !/application\/ld\+json/.test(tag),
         );
-      }
+      expect({ path, loaders }).toEqual({ path, loaders: [] });
     }
-    expect(base).not.toContain("startupbar");
   });
 
-  // The loader adds a script, an iframe and an image pixel. Each one is a
-  // separate directive and a missing one fails silently at runtime.
-  it("is allowed by every CSP directive it needs", () => {
+  it("refuses scripts and frames in the CSP", () => {
     const policy = csp();
-    for (const directive of ["script-src", "frame-src", "img-src"]) {
-      expect([directive, policy[directive]]).toEqual([
-        directive,
-        expect.arrayContaining(["https://startupbar.co"]),
-      ]);
-    }
+    expect(policy["script-src"]).toEqual(["'none'"]);
+    expect(policy["frame-src"]).toEqual(["'none'"]);
+    expect(policy["default-src"]).toEqual(["'self'"]);
   });
 
-  it("is the only third-party origin the site loads", () => {
-    const origins = new Set(
-      [...headers.matchAll(/https:\/\/[a-z0-9.-]+/gi)].map((m) => m[0]),
-    );
-    expect([...origins]).toEqual(["https://startupbar.co"]);
+  it("names no origin but this one anywhere in the headers", () => {
+    expect(headers).not.toMatch(/https?:\/\//);
+    expect(headers.toLowerCase()).not.toContain("startupbar");
+  });
+
+  it("references no third-party host from a template", () => {
+    for (const { path, text } of templates()) {
+      expect({
+        path,
+        startupbar: text.toLowerCase().includes("startupbar"),
+      }).toEqual({
+        path,
+        startupbar: false,
+      });
+    }
   });
 });
 

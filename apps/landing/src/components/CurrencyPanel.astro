@@ -18,54 +18,49 @@ const { rows, total, homeCurrency } = currencyMockup(locale);
 const converted = rows.filter((row) => row.currency !== homeCurrency);
 ---
 
-<div class="fx">
+<div class="fx" data-ui>
   <ul>
     {
       converted.map((row) => (
         <li class="fx__row num">
-          <span class="fx__from">{money(row.amount, row.currency)}</span>
-          <span class="fx__to">{money(row.converted, homeCurrency)}</span>
+          <span class="fx__from">{row.name} · {money(row.amount, row.currency)}</span>
+          <span>{money(row.converted, homeCurrency)}</span>
         </li>
       ))
     }
     <li class="fx__row fx__row--total">
       <span>{c.panel.totalThisMonth}</span>
-      <span class="fx__sum num">{money(total, homeCurrency)}</span>
+      <span class="num">{money(total, homeCurrency)}</span>
     </li>
   </ul>
 </div>
 
 <style>
-  .fx {
-    background: var(--surface-alt);
-    border-radius: 16px;
-    padding: 0.5rem 1.13rem;
+  .fx ul {
+    display: grid;
+    gap: 4px;
   }
 
   .fx__row {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
-    padding-block: 0.69rem;
-    font-size: var(--fs-small);
-    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--surface-alt);
+    font-size: var(--step-small);
+  }
+
+  .fx__row:first-child {
+    border-radius: 16px 16px 4px 4px;
   }
 
   .fx__from {
     color: var(--text-muted);
   }
 
-  .fx__to {
-    font-weight: 600;
-  }
-
   .fx__row--total {
-    border-bottom: 0;
-    color: var(--text-muted);
-  }
-
-  .fx__sum {
-    font-weight: 700;
-    color: var(--text);
+    background: var(--ink-700);
+    border-radius: 4px 4px 16px 16px;
+    font-weight: 500;
   }
 </style>

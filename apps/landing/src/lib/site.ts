@@ -22,7 +22,13 @@ export type LegalPage = (typeof legalPages)[number];
  * `legalPages`: that list is the four-URL contract the shipped binary opens, and
  * adding a fifth member would silently widen it.
  */
-export type SitePage = LegalPage | "support";
+export type SitePage = LegalPage | "support" | ContentPage;
+
+export const contentPages = [
+  "bobby-alternative",
+  "price-increases-2026",
+] as const;
+export type ContentPage = (typeof contentPages)[number];
 
 export const isLocale = (value: unknown): value is Locale =>
   locales.includes(value as Locale);
@@ -47,6 +53,12 @@ export const otherLocale = (locale: Locale): Locale =>
  */
 export const proPrice = { usd: 14.99, eur: 17.99 };
 export const proPriceUkraine = 11.99;
+
+/** The download itself. Structured data needs the free offer stated as a price. */
+export const freePrice = 0;
+
+/** The day the two content pages were first written; their Article `datePublished`. */
+export const contentPublished = "2026-11-05";
 
 /**
  * The App Store product page.

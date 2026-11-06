@@ -28,6 +28,12 @@ describe("price timeline", () => {
     ).toEqual(["$0.00", "$4.99", "$12.99"]);
   });
 
+  it("costs $59.88 a year at the intro price and $155.88 at the standard one", () => {
+    expect(priceTimeline.map((step) => step.yearly)).toEqual([
+      0, 59.88, 155.88,
+    ]);
+  });
+
   it("spans 30 days, then 3 months, then opens in month 4", () => {
     expect(priceTimeline[0]?.spanDays).toBe(30);
     expect(priceTimeline[1]?.spanMonths).toBe(3);

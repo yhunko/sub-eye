@@ -30,7 +30,7 @@ const updatedLabel = updated
   : null;
 ---
 
-<Base locale={locale} page={page} title={title} description={description}>
+<Base locale={locale} page={page} title={`${title} — SubEye`} description={description}>
   <div class="shell">
     <Nav locale={locale} page={page} />
   </div>
@@ -68,19 +68,19 @@ const updatedLabel = updated
   }
 
   .legal__back {
-    font-size: var(--fs-small);
+    font-size: var(--step-small);
     color: var(--text-muted);
     margin-bottom: 1.75rem;
   }
 
   .legal h1 {
-    font-size: var(--fs-display);
+    font-size: var(--step-head);
   }
 
   .legal__updated {
     margin-top: 0.9rem;
     color: var(--text-muted);
-    font-size: var(--fs-small);
+    font-size: var(--step-small);
   }
 
   /* Slotted from the page, so the document rules have to be global. The legal
@@ -90,22 +90,20 @@ const updatedLabel = updated
   }
 
   .legal__body :global(h2) {
-    font-size: var(--fs-title);
-    margin-top: 2.75rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
+    font-size: var(--step-lead);
+    margin-top: 3rem;
   }
 
   .legal__body :global(h3) {
-    font-size: var(--fs-body);
-    font-weight: 700;
+    font-family: var(--sans);
+    font-size: var(--step-body);
+    font-weight: 500;
     letter-spacing: 0;
     margin-top: 1.75rem;
   }
 
   .legal__body :global(p),
   .legal__body :global(li) {
-    color: var(--text-muted);
     max-width: 68ch;
   }
 
@@ -132,8 +130,7 @@ const updatedLabel = updated
   }
 
   .legal__body :global(strong) {
-    color: var(--text);
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .legal__body :global(dl) {
@@ -143,7 +140,7 @@ const updatedLabel = updated
   }
 
   .legal__body :global(dt) {
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .legal__body :global(dd) {
