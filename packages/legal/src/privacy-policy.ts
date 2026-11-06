@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Privacy policy",
   description:
     "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-  updated: "2026-11-03",
+  updated: "2026-11-05",
   lead: [
     {
       p: [
@@ -22,7 +22,7 @@ const EN: LegalDoc = {
         {
           p: [
             "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine, acting as the data controller. For anything in this policy, write to ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -229,7 +229,7 @@ const EN: LegalDoc = {
         {
           p: [
             "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a purchase record held by one of the services above — write to ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             " and expect an answer within 30 days.",
           ],
         },
@@ -242,7 +242,7 @@ const EN: LegalDoc = {
         {
           p: [
             "SubEye is not directed at children and does not knowingly collect data from anyone under 16. Since there is no account, and nothing is uploaded unless iCloud Sync is switched on, there is nothing held here to delete on a child's behalf — but if something about this concerns you, write to ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -268,7 +268,7 @@ const UK: LegalDoc = {
   title: "Політика конфіденційності",
   description:
     "Які дані збирає SubEye, хто їх обробляє, скільки вони зберігаються і як їх видалити.",
-  updated: "2026-11-03",
+  updated: "2026-11-05",
   lead: [
     {
       p: [
@@ -284,7 +284,7 @@ const UK: LegalDoc = {
         {
           p: [
             "SubEye створює та підтримує Єгор Гунько, фізична особа в Україні, який є володільцем персональних даних. З будь-якого питання щодо цієї політики пишіть на ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -489,7 +489,7 @@ const UK: LegalDoc = {
         {
           p: [
             "На практиці більшість із цього вже у ваших руках, а не в чиїхось: ваші дані на вашому пристрої, і ви можете їх переглянути, виправити й стерти прямо в застосунку, ні в кого не питаючи дозволу. З усього іншого — зокрема щодо запису про покупку, який тримає котрийсь із перелічених вище сервісів, — пишіть на ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             " — відповідь буде протягом 30 днів.",
           ],
         },
@@ -502,7 +502,7 @@ const UK: LegalDoc = {
         {
           p: [
             "SubEye не призначений для дітей і свідомо не збирає дані осіб, молодших за 16 років. Оскільки акаунта немає, а без увімкненої синхронізації з iCloud нічого нікуди не вивантажується, тут просто немає що видаляти від імені дитини — але якщо вас щось у цьому непокоїть, напишіть на ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },

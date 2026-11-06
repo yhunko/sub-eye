@@ -5,7 +5,7 @@ import { defineConfig } from "astro/config";
 // Duplicated from src/lib/site.ts rather than imported: this file is loaded by
 // Astro's own config loader before any path alias exists, and test/routes.test.ts
 // asserts the two agree.
-const SITE = "https://www.subeye.cc";
+const SITE = "https://subeye.yhunko.dev";
 
 export default defineConfig({
   site: SITE,

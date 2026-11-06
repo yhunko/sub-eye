@@ -1,6 +1,6 @@
 {
   "name": "sub-eye",
-  "description": "SubEye — subscription tracking: the native iOS app and the subeye.cc site",
+  "description": "SubEye — subscription tracking: the native iOS app and its site",
   "author": "Yehor Hunko",
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",

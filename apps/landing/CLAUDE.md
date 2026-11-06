@@ -14,10 +14,10 @@ constraints. Read both before changing markup or copy.
 ## The four URLs are a contract with a shipped binary
 
 ```
-https://www.subeye.cc/en/terms-of-service/
-https://www.subeye.cc/en/privacy-policy/
-https://www.subeye.cc/uk/terms-of-service/
-https://www.subeye.cc/uk/privacy-policy/
+https://subeye.yhunko.dev/en/terms-of-service/
+https://subeye.yhunko.dev/en/privacy-policy/
+https://subeye.yhunko.dev/uk/terms-of-service/
+https://subeye.yhunko.dev/uk/privacy-policy/
 ```
 
 **App Store Connect rejects a 404 privacy policy**, so these four have to
@@ -213,7 +213,6 @@ An assets-only Worker — `wrangler.jsonc` has no `main`. Security headers live 
 both into `dist/` and the Workers asset runtime reads them from there. The same
 two files work unchanged on Cloudflare Pages.
 
-Two things cannot be expressed here and have to be done in the Cloudflare
-dashboard: pointing `www.subeye.cc` at this Worker (it resolves to Vercel
-today), and an apex `subeye.cc` → `www` Redirect Rule. The app only ever asks
-for `www`.
+`wrangler deploy` attaches the `subeye.yhunko.dev` custom domain itself. The
+old `www.subeye.cc` host is not this Worker: a Redirect Rule in the subeye.cc
+zone 301s it to the same path here until that domain lapses on 2027-01-09.

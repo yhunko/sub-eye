@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Terms of service",
   description:
     "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-  updated: "2026-11-04",
+  updated: "2026-11-05",
   lead: [
     {
       p: [
@@ -22,7 +22,7 @@ const EN: LegalDoc = {
         {
           p: [
             "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine. Contact: ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -169,7 +169,7 @@ const UK: LegalDoc = {
   title: "Умови користування",
   description:
     "Домовленість між вами і SubEye: що робить застосунок, скільки коштує Pro, кому належать дані та як припинити користування.",
-  updated: "2026-11-04",
+  updated: "2026-11-05",
   lead: [
     {
       p: [
@@ -185,7 +185,7 @@ const UK: LegalDoc = {
         {
           p: [
             "SubEye створює та підтримує Єгор Гунько, фізична особа в Україні. Контакт: ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },

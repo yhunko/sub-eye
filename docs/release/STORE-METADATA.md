@@ -9,8 +9,9 @@ Name, Subtitle and the Privacy Policy URL live on **App Information** and apply
 to every version; everything else is per version and per locale. An unfilled
 Ukrainian field shows the English text to Ukrainian users, so fill both.
 
-This is the 6.3.0 listing: installments and loans, the per-type + menu and the
-iPhone Duo layout. Pro rose to $14.99 (Ukraine $11.99) on 2026-11-04.
+This is the 6.3.1 listing: 6.3.0's installments and loans, per-type + menu and
+iPhone Duo layout, with the legal and support pages moved to
+`subeye.yhunko.dev` and the contact to `subeye@yhunko.dev`. Pro rose to $14.99 (Ukraine $11.99) on 2026-11-04.
 
 ---
 
@@ -31,9 +32,10 @@ iPhone Duo layout. Pro rose to $14.99 (Ukraine $11.99) on 2026-11-04.
    iPhone-only, so the iPad store shows the iPhone set.
 4. **Promotional Text** is the one field editable without a new build, so it
    carries the news and is rewritten between releases.
-5. **Contacts:** `support@subeye.cc` is the App Review contact;
-   `privacy@subeye.cc` is the address in the privacy policy. Both must keep
-   delivering.
+5. **Contact:** `subeye@yhunko.dev` is the App Review contact and the address
+   in the privacy policy, the terms and the support page. It must keep
+   delivering. Moved from `@subeye.cc` on 2026-11-05; that domain lapses on
+   2027-01-09.
 
 ---
 
@@ -63,7 +65,7 @@ For when there is no news worth the slot:
 No account, no bank login, no ads. Type in what you pay and see what leaves your account this month, what is next, and the day a trial turns into a charge.
 ```
 
-### What's New in This Version (4000) — 6.3.0
+### What's New in This Version (4000) — 6.3.1
 
 ```
 • Installments and loans: track a pay-in-parts purchase, a buy now, pay later plan, a card installment or a bank loan next to your subscriptions. See how many payments are made, what is paid, what is left and the day it ends.
@@ -72,11 +74,7 @@ No account, no bank login, no ads. Type in what you pay and see what leaves your
 • On iPhone Duo, unfolded, each tab shows its list and what you open side by side.
 • SubEye Pro: add the purchase price to see how much more the credit costs, choose how many days ahead installment reminders arrive, and keep the next payment in the Home Screen widget. Already have Pro? All of it is included.
 • Using iCloud Sync? Update SubEye on every device you sync — older versions do not show installments.
-```
-• Installments and loans: track a pay-in-parts purchase, a buy now, pay later plan, a card installment or a bank loan next to your subscriptions. See how many payments are made, what is paid, what is left and the day it ends.
-• Every payment counts in this month's total and shows in the calendar. A reminder the day before each payment — the one for the last payment says it is the last — and a note once the plan is paid off. Paid it off early? Record it and the schedule ends there.
-• SubEye Pro: add the purchase price to see how much more the credit costs, choose how many days ahead installment reminders arrive, and keep the next payment in the Home Screen widget.
-• Using iCloud Sync? Update SubEye on every device you sync — older versions do not show installments.
+• The privacy policy, terms and support page now live at subeye.yhunko.dev, and the contact address is subeye@yhunko.dev.
 ```
 
 ### Description (4000)
@@ -138,9 +136,9 @@ every current word and would have to replace two that together have at least
 
 | Field | Value |
 | --- | --- |
-| Support URL | `https://www.subeye.cc/en/support/` |
-| Marketing URL | `https://www.subeye.cc/en/` |
-| Privacy Policy URL (App Information) | `https://www.subeye.cc/en/privacy-policy/` |
+| Support URL | `https://subeye.yhunko.dev/en/support/` |
+| Marketing URL | `https://subeye.yhunko.dev/en/` |
+| Privacy Policy URL (App Information) | `https://subeye.yhunko.dev/en/privacy-policy/` |
 
 ### Copyright (200)
 
@@ -176,7 +174,7 @@ For when there is no news worth the slot:
 Без акаунта, без доступу до банку, без реклами. Ви вводите те, що платите, — і бачите, скільки піде цього місяця, що далі й коли пробний період стане списанням.
 ```
 
-### What's New in This Version (4000) — 6.3.0
+### What's New in This Version (4000) — 6.3.1
 
 ```
 • Розстрочки й кредити: відстежуйте покупку частинами, розстрочку на картці чи банківський кредит поруч із підписками. Видно, скільки платежів уже зроблено, скільки сплачено, скільки лишилося і коли все закінчиться.
@@ -185,11 +183,7 @@ For when there is no news worth the slot:
 • На iPhone Duo в розкладеному вигляді кожна вкладка показує список і те, що ви відкрили, поруч.
 • SubEye Pro: додайте ціну покупки, щоб побачити переплату, оберіть, за скільки днів до платежу нагадувати про розстрочки й кредити, і тримайте наступний платіж у віджеті на Початковому екрані. Уже маєте Pro? Усе це вже ваше.
 • Користуєтеся синхронізацією з iCloud? Оновіть SubEye на кожному пристрої, який синхронізуєте, — старіші версії розстрочок не показують.
-```
-• Розстрочки й кредити: відстежуйте покупку частинами, розстрочку на картці чи банківський кредит поруч із підписками. Видно, скільки платежів уже зроблено, скільки сплачено, скільки лишилося і коли все закінчиться.
-• Кожен платіж враховується в сумі за місяць і є в календарі. Нагадування за день до кожного платежу (про останній — що він останній) і повідомлення, коли розстрочку чи кредит погашено. Погасили достроково? Позначте це — і графік на цьому закінчиться.
-• SubEye Pro: додайте ціну покупки, щоб побачити переплату, оберіть, за скільки днів до платежу нагадувати про розстрочки й кредити, і тримайте наступний платіж у віджеті на Початковому екрані.
-• Користуєтеся синхронізацією з iCloud? Оновіть SubEye на кожному пристрої, який синхронізуєте, — старіші версії розстрочок не показують.
+• Політика конфіденційності, умови та сторінка підтримки тепер на subeye.yhunko.dev, а адреса для звʼязку — subeye@yhunko.dev.
 ```
 
 ### Description (4000)
@@ -247,9 +241,9 @@ characters). `розстрочка` can still replace only `скасувати`.
 
 | Field | Value |
 | --- | --- |
-| Support URL | `https://www.subeye.cc/uk/support/` |
-| Marketing URL | `https://www.subeye.cc/uk/` |
-| Privacy Policy URL (App Information) | `https://www.subeye.cc/uk/privacy-policy/` |
+| Support URL | `https://subeye.yhunko.dev/uk/support/` |
+| Marketing URL | `https://subeye.yhunko.dev/uk/` |
+| Privacy Policy URL (App Information) | `https://subeye.yhunko.dev/uk/privacy-policy/` |
 
 ### Copyright (200)
 
@@ -263,7 +257,7 @@ characters). `розстрочка` can still replace only `скасувати`.
 
 ### App Review Information
 
-**Sign-in required: NO.** Contact: Yehor Hunko, `support@subeye.cc`.
+**Sign-in required: NO.** Contact: Yehor Hunko, `subeye@yhunko.dev`.
 
 Notes (4000). A reviewer who has never seen the app gets only this field.
 Replace section 1 and the test devices per release and recheck every factual
@@ -273,12 +267,8 @@ line against the app: the external services and the Pro list drift.
 No account: no sign-up, no sign-in, no server, no backend. The app opens straight to the dashboard, so "Sign-In Required" is unticked.
 
 1. WHAT CHANGED IN THIS VERSION
-- Installments and loans: the user records a plan or loan they already have (pay in parts, buy now pay later, card installment, bank loan) by payment, number of payments and first date. SubEye shows progress, counts each payment in the month and calendar, and reminds the day before. Free; the Pro parts are in section 8.
-- It only tracks repayments of credit the user already has; it offers, brokers or advertises none (Guideline 3.2.1(viii)).
-To try it: Home, "+", "Installment or loan", any name, a payment and a number of payments, Save.
-- "+" now opens one flow per kind: Subscription, Free trial, One-time license, Installment or loan. Trials and licenses stay Pro and open the paywall for a free user.
-- iPhone Duo, unfolded: each tab is a two-column split view.
-- Pro is now $14.99 (Ukraine $11.99), shown from StoreKit.
+No functional change. The contact address in the bundled privacy policy and terms (Settings, Legal) is now subeye@yhunko.dev, and the Privacy Policy, Support and Marketing URLs moved to https://subeye.yhunko.dev/; the old www.subeye.cc URLs redirect there.
+Since 6.3.0: installments and loans the user already has, by payment, number of payments and first date; SubEye offers, brokers or advertises no credit (Guideline 3.2.1(viii)). To try it: Home, "+", "Installment or loan", any name, a payment and a number of payments, Save. "+" opens one flow per kind; Free trial and One-time license are Pro.
 
 2. TESTED ON
 iPhone 17, iOS 27.2; iPhone 17 Pro simulator, iOS 26.5. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.

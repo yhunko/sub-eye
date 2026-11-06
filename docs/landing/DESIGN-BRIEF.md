@@ -1,4 +1,4 @@
-# subeye.cc — landing page design brief (v2)
+# SubEye — landing page design brief (v2)
 
 Paste this into Claude Design as a fresh start. It supersedes an earlier brief.
 
@@ -471,11 +471,10 @@ budget — see `apps/landing/CLAUDE.md`.
 `apps/landing/` in the SubEye monorepo — Bun workspaces, Turbo, Biome (not
 ESLint, not Prettier), TypeScript.
 
-**Stack: Astro 6, static output, Vercel.** Functional reasoning, not aesthetic:
+**Stack: Astro 6, static output, Cloudflare Workers static assets.** Functional reasoning, not aesthetic:
 Astro's i18n routing with `prefixDefaultLocale: true` produces `/en/...` and
 `/uk/...` natively, which is the exact URL contract the shipped app depends on,
-and it ships zero JavaScript by default. Vercel because `subeye.cc` already
-resolves there and moving hosts is churn on the critical path.
+and it ships zero JavaScript by default.
 
 The engineering constraints — monorepo wiring, the Turbo cache trap, what to
 reuse from `packages/`, and the 100/100/100/100 acceptance bar — are in

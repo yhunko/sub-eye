@@ -4,8 +4,8 @@ Everything needed to ship the one in-app purchase, in the order it has to
 happen. Parts 1 and 4 are dashboard work only Yehor can do; part 2 is the Claude
 Code session; part 3 is how to prove it works without shipping to the store.
 
-Read [SESSION-BRIEFS.md](SESSION-BRIEFS.md) for what else is outstanding and
-[MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md) for the release steps around this one.
+Read [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md) for the release steps around
+this one.
 
 ---
 
@@ -151,14 +151,11 @@ the commit message that `eas env:create` is needed for `production` **and**
 Configure once at app start, in `src/app/_layout.tsx`, with
 **`appUserID: null`**.
 
-> **Superseded by the offline flip (v5).** This brief was written while Clerk
-> existed, and it went on to say the app should call `Purchases.logIn(clerkUserId)`
-> once a session resolved, so that the RevenueCat app user id **was** the Clerk
-> user id. Accounts are gone: `entities/pro/model/purchases.ts` configures with
+> **Accounts are gone (v5).** `entities/pro/model/purchases.ts` configures with
 > `appUserID: null` and never calls `logIn` or `logOut`, so **the app user id is
 > an anonymous, device-local `$RCAnonymousID:…`**. A purchase is tied to the
 > Apple Account that paid for it and is recovered with Restore purchases, not by
-> signing in. Part 4 below is affected: there is no Clerk id to search the
+> signing in. Part 4 below is affected: there is no account id to search the
 > dashboard by.
 
 ### The entitlement
