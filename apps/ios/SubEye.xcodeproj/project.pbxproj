@@ -37,6 +37,7 @@
 		6D3F5F4E7BB89AEC0F544FD9 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E3D9AD317E492EB337EA166 /* NotificationService.swift */; };
 		7569E4E27E10A49D1DC1046F /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A67BC8BC78FDBC4D97CA9B /* WidgetSnapshot.swift */; };
 		779DA88FAE9E12541D4632B9 /* RenewalActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA221CC9E8BA71801CC5745A /* RenewalActivity.swift */; };
+		794BA5CA7FA1629586EBA8B4 /* ScreenshotReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC5EBA409D381E75F8B4DCA /* ScreenshotReader.swift */; };
 		7F346CD3CDF61B91B13808D8 /* DeviceAcceptanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDCCA21E424E182F413F492 /* DeviceAcceptanceTests.swift */; };
 		7F92EADF5B9B976EC4A3F8FC /* InstallmentEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33845FAEB5B56D78B14F6C7C /* InstallmentEditorTests.swift */; };
 		8145146B724F2E031116A0B2 /* MemoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0137BFD6DD8604A5D29D369 /* MemoryTests.swift */; };
@@ -67,6 +68,7 @@
 		D1E277E278A7EFCD1A83F44B /* CategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DDDC88CF65555532F05F857 /* CategoriesView.swift */; };
 		D380C0D58C60ADCB1F7AB29E /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A67BC8BC78FDBC4D97CA9B /* WidgetSnapshot.swift */; };
 		DBAE8A32971935856BB3C5A5 /* WidgetPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669C001BAA32C247BD35F69D /* WidgetPublisher.swift */; };
+		DBD1311BCA7DB678CD578416 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 930E1AA68F05FD376D6FCCB8 /* ImportView.swift */; };
 		DC14FC2342E1785CEC88CF82 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = ED0748CFC9CABCAD7BF4AA6D /* Localizable.strings */; };
 		DC7B97827CDEB6BB0A527F45 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97270163DE2A09DF1F334C24 /* ExchangeRateService.swift */; };
 		DDF22B6CFC11CD702A86C02B /* SubscriptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC498684C894844AE9ADE6B8 /* SubscriptionsView.swift */; };
@@ -179,6 +181,7 @@
 		8C1948C21B208B7D5663C47A /* icon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = icon.icon; sourceTree = "<group>"; };
 		8E0562CD7B626AD8755C6651 /* SubEyeDeviceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SubEyeDeviceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8EDDC5A02900B03B002A3C15 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		930E1AA68F05FD376D6FCCB8 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		97270163DE2A09DF1F334C24 /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		9EE3EFE32A92228247EC7A8E /* SubscriptionEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionEditorTests.swift; sourceTree = "<group>"; };
 		A763D65E3FA47C79F451D7AB /* NativeTesting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTesting.swift; sourceTree = "<group>"; };
@@ -190,6 +193,7 @@
 		B21F81DE7FF654A769DFE0AC /* SubEyeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubEyeApp.swift; sourceTree = "<group>"; };
 		B2F3635B7FCCBA34A5B4EB2D /* EditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorView.swift; sourceTree = "<group>"; };
 		B5C0BB81DE3C9FCA8CB4AE64 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BBC5EBA409D381E75F8B4DCA /* ScreenshotReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotReader.swift; sourceTree = "<group>"; };
 		BC498684C894844AE9ADE6B8 /* SubscriptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionsView.swift; sourceTree = "<group>"; };
 		C18E2F05BADF7B5BD65EE8A5 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		C865F1F5D017BFD1A24976B7 /* SubEyeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubEyeUITests.swift; sourceTree = "<group>"; };
@@ -315,6 +319,7 @@
 				2E3D9AD317E492EB337EA166 /* NotificationService.swift */,
 				CFDC5229D5E24EE26E935E87 /* PromptCoordinator.swift */,
 				7468277959038767B20B9A74 /* PurchaseService.swift */,
+				BBC5EBA409D381E75F8B4DCA /* ScreenshotReader.swift */,
 				FCFC37D596AEED6E685016C6 /* UpdateService.swift */,
 				669C001BAA32C247BD35F69D /* WidgetPublisher.swift */,
 			);
@@ -379,6 +384,7 @@
 				03A1F35381A463B021F12311 /* DetailView.swift */,
 				B2F3635B7FCCBA34A5B4EB2D /* EditorView.swift */,
 				A8EEF3D873406E125F1E2825 /* HomeView.swift */,
+				930E1AA68F05FD376D6FCCB8 /* ImportView.swift */,
 				A897E4167D4538D4E20173F3 /* InstallmentDetail.swift */,
 				FF419AE529288167F612B5CD /* InstallmentEditor.swift */,
 				7216EA3F83AAC6DFCD41FBB7 /* InstallmentsList.swift */,
@@ -697,6 +703,7 @@
 				DC7B97827CDEB6BB0A527F45 /* ExchangeRateService.swift in Sources */,
 				30E4522A0D631EB7C466A5FF /* FirstFrame.swift in Sources */,
 				F6FDC2F8B33E8D4411C95165 /* HomeView.swift in Sources */,
+				DBD1311BCA7DB678CD578416 /* ImportView.swift in Sources */,
 				918203497FEF13C5886531BF /* InstallmentDetail.swift in Sources */,
 				84BECB1DC46876045E71254E /* InstallmentEditor.swift in Sources */,
 				CBDA167143C1CAFF9E28EFFC /* InstallmentStyle.swift in Sources */,
@@ -718,6 +725,7 @@
 				81D2E27577B21AB3692DE45A /* PurchaseService.swift in Sources */,
 				2FAF02DFFA642E7226F9AAB9 /* RenewalActivity.swift in Sources */,
 				0912FA5AC93BC070ADB1657A /* SceneState.swift in Sources */,
+				794BA5CA7FA1629586EBA8B4 /* ScreenshotReader.swift in Sources */,
 				00ACD5609211EAA84CFBD8A9 /* SettingsView.swift in Sources */,
 				AD49E75E5496645029650DC5 /* SubEyeApp.swift in Sources */,
 				DDF22B6CFC11CD702A86C02B /* SubscriptionsView.swift in Sources */,

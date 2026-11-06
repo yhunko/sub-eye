@@ -1,0 +1,226 @@
+[
+  {
+    "height": 0.0169,
+    "text": "22:07",
+    "width": 0.1171,
+    "x": 0.0564,
+    "y": 0.0203
+  },
+  {
+    "height": 0.0204,
+    "text": "< Apple ID",
+    "width": 0.2097,
+    "x": 0.0242,
+    "y": 0.0686
+  },
+  {
+    "height": 0.0204,
+    "text": "Subscriptions",
+    "width": 0.2742,
+    "x": 0.3589,
+    "y": 0.0686
+  },
+  {
+    "height": 0.0163,
+    "text": "ACTIVE",
+    "width": 0.1138,
+    "x": 0.0843,
+    "y": 0.131
+  },
+  {
+    "height": 0.0167,
+    "text": "Streamly",
+    "width": 0.1411,
+    "x": 0.2258,
+    "y": 0.1688
+  },
+  {
+    "height": 0.0131,
+    "text": "Premium",
+    "width": 0.1258,
+    "x": 0.2332,
+    "y": 0.1899
+  },
+  {
+    "height": 0.0148,
+    "text": "Renews 24 July",
+    "width": 0.2177,
+    "x": 0.2298,
+    "y": 0.2078
+  },
+  {
+    "height": 0.0172,
+    "text": "N1,500.00 >",
+    "width": 0.1817,
+    "x": 0.7257,
+    "y": 0.1871
+  },
+  {
+    "height": 0.0169,
+    "text": "INACTIVE",
+    "width": 0.1493,
+    "x": 0.0766,
+    "y": 0.267
+  },
+  {
+    "height": 0.0188,
+    "text": "Snapline",
+    "width": 0.1574,
+    "x": 0.2298,
+    "y": 0.306
+  },
+  {
+    "height": 0.0148,
+    "text": "Snapline+ (Monthly Plan)",
+    "width": 0.3669,
+    "x": 0.2258,
+    "y": 0.3265
+  },
+  {
+    "height": 0.0167,
+    "text": "Expired 11 September 2023",
+    "width": 0.3911,
+    "x": 0.2258,
+    "y": 0.3432
+  },
+  {
+    "height": 0.0204,
+    "text": "Tiles: Giant Grid, Templates",
+    "width": 0.4919,
+    "x": 0.2298,
+    "y": 0.3933
+  },
+  {
+    "height": 0.0148,
+    "text": "Weekly Plan",
+    "width": 0.1774,
+    "x": 0.2258,
+    "y": 0.4137
+  },
+  {
+    "height": 0.0167,
+    "text": "Expired 27 September 2023",
+    "width": 0.3911,
+    "x": 0.2298,
+    "y": 0.4304
+  },
+  {
+    "height": 0.0167,
+    "text": "ClipKeep: Video Saver",
+    "width": 0.4032,
+    "x": 0.2298,
+    "y": 0.4824
+  },
+  {
+    "height": 0.013,
+    "text": "Save & RePost Weekly",
+    "width": 0.4194,
+    "x": 0.2298,
+    "y": 0.5009
+  },
+  {
+    "height": 0.013,
+    "text": "Expired 16 September 2023",
+    "width": 0.3831,
+    "x": 0.2339,
+    "y": 0.5195
+  },
+  {
+    "height": 0.0223,
+    "text": "DeskPad: PDF, Docs, Sheets",
+    "width": 0.4919,
+    "x": 0.2298,
+    "y": 0.5677
+  },
+  {
+    "height": 0.014,
+    "text": "DeskPad Pro",
+    "width": 0.1255,
+    "x": 0.2296,
+    "y": 0.5876
+  },
+  {
+    "height": 0.013,
+    "text": "Expired 12 June",
+    "width": 0.2177,
+    "x": 0.2339,
+    "y": 0.6067
+  },
+  {
+    "height": 0.0167,
+    "text": "ReelGrab: Video Save & Download",
+    "width": 0.5323,
+    "x": 0.2298,
+    "y": 0.6549
+  },
+  {
+    "height": 0.0148,
+    "text": "ReelGrab Yearly Premium",
+    "width": 0.3387,
+    "x": 0.2339,
+    "y": 0.6753
+  },
+  {
+    "height": 0.0148,
+    "text": "Expired 13 September 2023",
+    "width": 0.3871,
+    "x": 0.2298,
+    "y": 0.692
+  },
+  {
+    "height": 0.0167,
+    "text": "Tidy Phone. Cleanup Storage",
+    "width": 0.5121,
+    "x": 0.2298,
+    "y": 0.744
+  },
+  {
+    "height": 0.013,
+    "text": "Tidy Cleaner +",
+    "width": 0.2258,
+    "x": 0.2298,
+    "y": 0.7625
+  },
+  {
+    "height": 0.0167,
+    "text": "Expired 26 September 2023",
+    "width": 0.3911,
+    "x": 0.2298,
+    "y": 0.7792
+  },
+  {
+    "height": 0.0137,
+    "text": "OPTIONS",
+    "width": 0.1294,
+    "x": 0.0926,
+    "y": 0.8419
+  },
+  {
+    "height": 0.0186,
+    "text": "Renewal Receipts",
+    "width": 0.2863,
+    "x": 0.0847,
+    "y": 0.8868
+  },
+  {
+    "height": 0.013,
+    "text": "A receipt will be sent to you each time one of your",
+    "width": 0.6976,
+    "x": 0.0887,
+    "y": 0.9351
+  },
+  {
+    "height": 0.0167,
+    "text": "subscriptions renews. Receipts are always available in",
+    "width": 0.7462,
+    "x": 0.0886,
+    "y": 0.9516
+  },
+  {
+    "height": 0.0167,
+    "text": "Apple Account settings > Purchase History.",
+    "width": 0.6008,
+    "x": 0.0887,
+    "y": 0.9703
+  }
+]
