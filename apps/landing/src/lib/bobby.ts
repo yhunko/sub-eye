@@ -36,7 +36,7 @@ export const bobbyPriceRange = () => {
 
 /** SubEye's own US listing, read the same day so the two columns compare like with like. */
 export const subeyeListing = {
-  version: "6.3.0",
-  versionDate: "2026-11-04",
+  version: "6.3.1",
+  versionDate: "2026-11-05",
   minimumIOS: "16.4",
 } as const;

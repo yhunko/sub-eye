@@ -347,7 +347,7 @@ export const en = {
     percent: (value: string) => `+${value}%`,
     announced: (date: string) => `Announced ${date}`,
     onPage: (date: string) => `On the US pricing page by ${date}`,
-    noDate: "The service published no date",
+    noDate: "No announcement from the service found",
     existingAfter: (date: string) =>
       `Existing members: next bill after ${date}`,
     existingMonth: (month: string) =>

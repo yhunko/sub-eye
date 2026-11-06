@@ -346,7 +346,7 @@ export const uk: Copy = {
     percent: (value: string) => `+${value}%`,
     announced: (date: string) => `Оголошено ${date}`,
     onPage: (date: string) => `На сторінці цін для США не пізніше ${date}`,
-    noDate: "Сервіс не оприлюднив дати",
+    noDate: "Оголошення від самого сервісу не знайшли",
     existingAfter: (date: string) =>
       `Для чинних підписників: з першого рахунку після ${date}`,
     existingMonth: (month: string) =>

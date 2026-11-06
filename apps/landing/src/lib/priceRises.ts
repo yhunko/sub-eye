@@ -7,8 +7,8 @@
  *
  * `onPricingPage` is the first archived capture of the service's own US
  * pricing page that shows the new price. It is an upper bound, not a stated
- * date: Netflix and YouTube published none, so for them it is the only date
- * there is, and the page says so.
+ * date: no announcement of their own was found for Netflix or YouTube, so for
+ * them it is the only date there is, and the page says so.
  */
 
 export type SourceKind =
