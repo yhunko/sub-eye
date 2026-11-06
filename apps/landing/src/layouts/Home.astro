@@ -38,24 +38,6 @@ const free = money(0, locale === "uk" ? "uah" : "usd", 0);
   description={c.meta.description}
   jsonLd={homeSchema(locale, c.meta.description)}
 >
-  {/*
-    StartupBar's directory widget. The only third-party origin this site loads
-    at runtime and the only JavaScript it ships, so `script-src`, `frame-src`
-    and `img-src` in public/_headers each name startupbar.co — the loader
-    injects an iframe and an image-pixel heartbeat, and the CSP blocks all three
-    silently if one is missing. The home pages only: the legal URLs are App
-    Store Connect metadata a reviewer opens.
-
-    It owns the very top of the viewport, pads the body out from under itself
-    and pushes any `position: fixed; top: 0` element down by its own height —
-    which is how the bar below survives it without a media query here.
-  */}
-  <script
-    is:inline
-    async
-    src="https://startupbar.co/widget/loader.js"
-    data-startup-id="5bebca65-f371-43e4-81c9-3475815f2c94"></script>
-
   <TopBar locale={locale} />
 
   <main id="main">

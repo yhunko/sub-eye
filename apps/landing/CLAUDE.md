@@ -63,27 +63,16 @@ and `LEGAL_OPERATOR`; the footer and both support pages import them from there.
 terms quote it as formatted literals and `test/pricing.test.ts` pins the two
 against each other.
 
-## One third-party script, and everything else is a platform feature
+## No JavaScript, and everything interactive is a platform feature
 
-The site's own JavaScript budget is still **0** — nothing here is bundled,
-hoisted or hydrated, and the only other `<script>` in the output is the JSON-LD
-data block, which browsers never execute.
+The site's JavaScript budget is **0**, with no exception — nothing here is
+bundled, hoisted or hydrated, and the only `<script>` in the output is the
+JSON-LD data block, which browsers never execute. The CSP in `public/_headers`
+says the same thing: `script-src 'none'`, `frame-src 'none'`, and no origin but
+this one anywhere in it. `test/widget.test.ts` fails if a script tag with a
+`src`, a third-party origin or a looser policy comes back.
 
-The exception is **StartupBar**, the directory widget mounted at the top of
-`Home.astro`. It is a vendor tag carried `is:inline` so Astro leaves it exactly
-as pasted — `document.currentScript` is how the loader reads its startup id, and
-a bundled copy would read nothing. It is the only third-party origin this site
-loads at runtime, so `public/_headers` names `startupbar.co` in `script-src`,
-`frame-src` **and** `img-src`: a loader, an iframe, and an image-pixel
-heartbeat. Miss one directive and the bar silently never appears, with no
-console error to explain it — `test/widget.test.ts` pins all three against the
-tag.
-
-It is on the two home pages only — not the legal, support or content pages. The
-four legal URLs are App Store Connect metadata a reviewer opens, and a promo bar
-does not belong on them.
-
-Everything else interactive is still a platform feature:
+Everything interactive is a platform feature:
 
 - The FAQ is `<details>`/`<summary>`. It animates on `::details-content` as a
   grid row `0fr → 1fr`, with `content-visibility` transitioned
@@ -228,9 +217,8 @@ at a pinned commit and cuts each into latin / latin-ext / cyrillic with
 `pyftsubset` (`pip install fonttools brotli`), and ships the OFL beside them.
 
 **No asset may come from a third-party origin** — no CDN, no Google Fonts, no
-analytics. StartupBar is the one runtime exception and it was
-argued for above; the CSP still forbids every other host, so a font, image or
-stylesheet on someone else's origin is blocked rather than merely discouraged.
+analytics. The CSP forbids every other host, so a font, image or stylesheet
+on someone else's origin is blocked rather than merely discouraged.
 That is a Lighthouse requirement and it is also the page's own argument.
 
 The hryvnia lives in the `latin-ext` subset, which every locale loads, so both
