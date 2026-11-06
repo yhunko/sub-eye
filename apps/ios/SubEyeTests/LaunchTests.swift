@@ -114,6 +114,24 @@ extension LaunchTests {
     }
 
     @MainActor
+    func testASandboxBuildStillPitchesProWhileAReviewIsDue() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let repository = SubscriptionRepository(url: directory.appendingPathComponent("test.sqlite"))
+        let tracked = Presentation(totalCount: 3)
+        let due = ReviewState(firstSeenAt: Self.now.addingTimeInterval(-15 * 86_400).timeIntervalSince1970 * 1000)
+        try await repository.setSetting("prompts.remindersAsked", value: true)
+        try await repository.setSetting("review.state", value: due)
+
+        let shown = try await PromptCoordinator(repository: repository, sandbox: false).home(tracked, settings: DeviceSettings(), now: Self.now)
+        XCTAssertEqual(shown, .review, "With both due, a store build asks for the rating first")
+        try await repository.setSetting("review.state", value: due)
+        let sandboxed = try await PromptCoordinator(repository: repository, sandbox: true).home(tracked, settings: DeviceSettings(), now: Self.now)
+        XCTAssertEqual(sandboxed, .pro, "A sandbox build never records the ask, so a due review must not hide the pitch for good")
+    }
+
+    @MainActor
     func testInstallmentRemindersAloneAnswerTheRemindersOffer() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
