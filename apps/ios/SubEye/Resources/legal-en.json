@@ -1,0 +1,459 @@
+[
+  {
+    "kind": "privacy-policy",
+    "locale": "en",
+    "title": "Privacy policy",
+    "description": "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
+    "updated": "2026-11-05",
+    "lead": [
+      {
+        "p": [
+          "SubEye is a subscription tracker for iPhone that follows installment plans and loans too. You type in what you pay and it tells you what that costs. There is no account, no sign-in and no SubEye server: everything you enter is stored on your own device and stays there unless you switch on iCloud Sync yourself, which copies it to your own iCloud and never to us. It has no access to your bank or your lender, no access to your email, and it does not go looking for subscriptions on your behalf."
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "id": "who-is-responsible",
+        "heading": "Who is responsible",
+        "blocks": [
+          {
+            "p": [
+              "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine, acting as the data controller. For anything in this policy, write to ",
+              {
+                "mailto": "subeye@yhunko.dev"
+              },
+              "."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "on-your-device",
+        "heading": "What stays on your device",
+        "blocks": [
+          {
+            "ul": [
+              [
+                {
+                  "b": "The subscriptions you enter:"
+                },
+                " service name, website, amount, currency, billing period, payment dates, category, price history and any note you write. All of it typed by you, all of it held in the app's own storage on the phone. SubEye never uploads it and has nowhere to upload it to. Only two things ever take any of it off the phone, both described below: the website domain, when the app fetches its logo, and iCloud Sync, which you switch on yourself."
+              ],
+              [
+                {
+                  "b": "The installment plans and loans you enter:"
+                },
+                " the plan's name, kind (pay in parts, card installment or loan) and purpose, the lender's name and website, the currency, the total, the regular payment, how many payments there are and how often they fall, the first payment date, the purchase price, the date and amount of an early payoff, and any note you write. They are typed by you and held exactly like your subscriptions: in the app's own storage on the phone, with only the lender's website domain sent out for its logo and the rest copied off only by iCloud Sync."
+              ],
+              [
+                {
+                  "b": "Your settings and reminders,"
+                },
+                " including the reminder schedule iOS holds for you."
+              ]
+            ]
+          },
+          {
+            "p": [
+              "None of this is collected by SubEye in the sense the word usually means. It is included in a device backup if you back your iPhone up, under Apple's own terms."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "what-leaves-the-device",
+        "heading": "What leaves the device, and to whom",
+        "blocks": [
+          {
+            "ul": [
+              [
+                {
+                  "b": "Your subscriptions and installment plans, but only if you turn on iCloud Sync:"
+                },
+                " the switch in Settings → Data copies them into your own iCloud so that your other devices can show the same list. It is off until you turn it on, it goes to Apple rather than to SubEye, and switching it off again leaves the copy already in your iCloud until you erase it."
+              ],
+              [
+                {
+                  "b": "Technical data that any web request carries"
+                },
+                " — an IP address and a device user agent — seen by the services listed below at the moment the app talks to one of them."
+              ],
+              [
+                {
+                  "b": "Your purchase, if you buy SubEye Pro:"
+                },
+                " the App Store receipt for it. It carries nothing you typed, and it is not tied to a name, an email address or an account. If you have chosen to share analytics with app developers in your iPhone's settings, Apple may also pass on a crash report, under Apple's terms; the app sends none itself."
+              ],
+              [
+                {
+                  "b": "The website domain of a subscription or of an installment plan's lender,"
+                },
+                " sent to Brandfetch, or to Google when Brandfetch has no logo, so the app can draw that logo. Nothing else you typed goes with it."
+              ],
+              [
+                {
+                  "b": "What you type into the brand logo search"
+                },
+                ", described in full below."
+              ]
+            ]
+          },
+          {
+            "p": [
+              "There is no advertising identifier, no location data, no contacts, no photos, and no advertising, product-analytics or crash-reporting SDK in the app. The one SDK that talks to a service is for purchases, and it is listed below."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "sub-processors",
+        "heading": "Who else processes it",
+        "blocks": [
+          {
+            "p": [
+              "These are every third party the app can reach, and each one is reached only when the app has a reason to. None of them receives your subscriptions or installment plans — the single exception is Apple's iCloud, and only once you have switched iCloud Sync on yourself. None of them is given a name, an email address or an account identifier, because SubEye holds none of those."
+            ]
+          },
+          {
+            "dl": [
+              {
+                "term": "RevenueCat — purchases (United States)",
+                "desc": [
+                  "Receives the App Store purchase receipt and the store transaction if you buy SubEye Pro. It is what makes \"you bought Pro\" survive a reinstall or a new phone. The app user id it works with is anonymous — generated on the device, not linked to any account — and it receives no subscription data and no email address."
+                ]
+              },
+              {
+                "term": "Brandfetch — brand logo search",
+                "desc": [
+                  "Receives the text you type into the brand picker, described in full below. To draw a logo, the app also asks ",
+                  {
+                    "code": "cdn.brandfetch.io"
+                  },
+                  " for the website domain of a subscription, or of an installment plan's lender. That request discloses the domain and your IP address, and carries nothing else you typed."
+                ]
+              },
+              {
+                "term": "Google — logo images",
+                "desc": [
+                  "A logo Brandfetch does not return is loaded as a favicon from ",
+                  {
+                    "code": "google.com/s2/favicons"
+                  },
+                  ". That request discloses the same website domain — a subscription's, or a lender's — and your IP address. It carries nothing else you typed."
+                ]
+              },
+              {
+                "term": "jsDelivr — exchange rates (global CDN)",
+                "desc": [
+                  "Once a day, the app downloads a public exchange-rate file from ",
+                  {
+                    "code": "cdn.jsdelivr.net"
+                  },
+                  " so that a hryvnia subscription and a dollar subscription can be added up. It is the same file for everyone and the request carries nothing but your IP address — no subscription data, no currencies you use, no identifier. If the download fails, the rates already on the device keep working, and so does the app."
+                ]
+              },
+              {
+                "term": "Apple — the App Store and iCloud",
+                "desc": [
+                  "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions and installment plans are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them. Once a day, the app also asks the App Store which version of SubEye is current, so it can tell you an update is out; that request carries only the app's ID, your store country and your IP address."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "brand-logo-search",
+        "heading": "The brand logo search, specifically",
+        "blocks": [
+          {
+            "p": [
+              "When you add or edit a subscription, or name an installment plan's lender, you can search by name to attach a logo. ",
+              {
+                "b": "What you type in that field is sent to "
+              },
+              {
+                "code": "api.brandfetch.io",
+                "b": true
+              },
+              ", along with your IP address, because that is how the search runs."
+            ]
+          },
+          {
+            "p": [
+              "Nothing else goes with it. No identifier, no email address, no subscription data, no token. The results are used to draw the list on screen and are never written to disk. If you would rather not use it, leave the website field empty and type the service name yourself, or leave the lender out of a plan — the app works exactly the same without a logo."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "why-it-is-held",
+        "heading": "Why any of this is held",
+        "blocks": [
+          {
+            "p": [
+              "Your subscriptions and installment plans are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, honouring a purchase you made, and converting currencies correctly."
+            ]
+          },
+          {
+            "p": [
+              "iCloud Sync is the exception, and it is consent: it does nothing until you turn it on, and turning it on is the permission. Even then the copy goes to your own iCloud rather than to SubEye, so there is no point at which SubEye is the recipient of it."
+            ]
+          },
+          {
+            "p": [
+              {
+                "b": "Your data is not sold, not shared with advertisers, not used to profile you, and not used to train anything."
+              },
+              " There is no tracking across apps or websites, and no third-party advertising or analytics SDK inside the app."
+            ]
+          },
+          {
+            "p": [
+              "Renewal and installment reminders are scheduled on your device by iOS. There is no push server and no notification token, so no one — including SubEye — learns when a reminder fires."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "retention-and-deletion",
+        "heading": "How long it is kept, and how to delete it",
+        "blocks": [
+          {
+            "p": [
+              "Your subscriptions and installment plans are kept on your device for as long as you keep them. Delete one in the app and it is gone from the phone. Delete the app and everything in it goes with it."
+            ]
+          },
+          {
+            "p": [
+              {
+                "b": "Settings → Erase all data removes every subscription, installment plan, reminder and setting from the device in one step."
+              },
+              " It is immediate, it is a real deletion rather than a flag, and it cannot be undone. With iCloud Sync on it clears the iCloud copy as well, which is what takes the data off your other devices. There is no further copy to ask anyone to delete — and because there is none, an iPhone backup you made earlier is the only thing that can bring the data back."
+            ]
+          },
+          {
+            "p": [
+              "Versions of SubEye before 6.0 sent crash reports to Sentry; a report already sent is kept under Sentry's own retention policy and then dropped, and the app sends none now. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "your-rights",
+        "heading": "Your rights",
+        "blocks": [
+          {
+            "p": [
+              "SubEye serves the European Union and Ukraine, so the GDPR and Ukraine's Law on Personal Data Protection apply. You have the right to access a copy of your data, to correct it, to have it erased, to receive it in a portable form, to restrict or object to processing, and to complain to your supervisory authority."
+            ]
+          },
+          {
+            "p": [
+              "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a purchase record held by one of the services above — write to ",
+              {
+                "mailto": "subeye@yhunko.dev"
+              },
+              " and expect an answer within 30 days."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "children",
+        "heading": "Children",
+        "blocks": [
+          {
+            "p": [
+              "SubEye is not directed at children and does not knowingly collect data from anyone under 16. Since there is no account, and nothing is uploaded unless iCloud Sync is switched on, there is nothing held here to delete on a child's behalf — but if something about this concerns you, write to ",
+              {
+                "mailto": "subeye@yhunko.dev"
+              },
+              "."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "changes",
+        "heading": "Changes",
+        "blocks": [
+          {
+            "p": [
+              "If this policy changes, the date at the top of this page changes with it. A change that materially affects what is collected or who processes it will be announced in the app before it takes effect."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "terms-of-service",
+    "locale": "en",
+    "title": "Terms of service",
+    "description": "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
+    "updated": "2026-11-05",
+    "lead": [
+      {
+        "p": [
+          "These terms are the agreement between you and SubEye. They are deliberately short, because the app is deliberately small."
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "id": "who-you-agree-with",
+        "heading": "Who you are agreeing with",
+        "blocks": [
+          {
+            "p": [
+              "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine. Contact: ",
+              {
+                "mailto": "subeye@yhunko.dev"
+              },
+              "."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "what-subeye-is",
+        "heading": "What SubEye is",
+        "blocks": [
+          {
+            "p": [
+              "An iPhone app for recording subscriptions, installment plans and loans you already have and seeing what they cost. It is a record of what you tell it. It has no connection to your bank or your lender, it does not read your email, it cannot see your actual charges, and it cannot cancel or repay anything on your behalf. It does not offer, arrange or recommend credit of any kind."
+            ]
+          },
+          {
+            "p": [
+              "There is no account and no SubEye server. Everything you enter is stored on your device, which means ",
+              {
+                "b": "the data exists in exactly one place and keeping it is up to you."
+              },
+              " An iPhone backup is what carries it to a new phone. iCloud Sync, off unless you turn it on, is the one way a second device sees the same list: it goes to your own iCloud under Apple's terms, not to a SubEye server, and nothing can be restored from here."
+            ]
+          },
+          {
+            "p": [
+              {
+                "b": "Every figure in the app is arithmetic on the numbers you entered."
+              },
+              " If a price you typed is wrong, or a merchant charges something different, or an exchange rate moves, the app will be wrong too. An installment schedule is worked out from the terms you entered, and SubEye assumes each payment is made on its date — it cannot see whether your lender received it. What you owe is what your lender says you owe. It is a tracker, not a statement, and it is not financial advice."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "using-it",
+        "heading": "Using it",
+        "blocks": [
+          {
+            "p": [
+              "You must be 16 or older, and you must not use SubEye to break the law or to attack the services it depends on."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "your-data-is-yours",
+        "heading": "Your data is yours",
+        "blocks": [
+          {
+            "p": [
+              "The subscriptions, installment plans, notes and categories you enter belong to you, and they stay on your device — SubEye never receives them, so there is nothing here to claim ownership of, nothing to sell, and nothing to hand to anyone else. See the ",
+              {
+                "doc": "privacy-policy",
+                "text": "privacy policy"
+              },
+              "."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "free-and-pro",
+        "heading": "Free and Pro",
+        "blocks": [
+          {
+            "p": [
+              "The free version is not a trial. Unlimited subscriptions, installment plans and loans, the progress of every plan, the whole dashboard, search and sorting, every lifecycle action, a reminder the day before each renewal or installment payment, multi-currency conversion, and iCloud Sync between your own devices are free and stay free."
+            ]
+          },
+          {
+            "p": [
+              {
+                "b": "SubEye Pro is a single payment of $14.99"
+              },
+              ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen widgets, which then list the next installment payment too."
+            ]
+          },
+          {
+            "p": [
+              "Purchases are made through Apple, under Apple's terms. Refunds are handled by Apple, not by SubEye."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "notifications",
+        "heading": "Notifications",
+        "blocks": [
+          {
+            "p": [
+              "Renewal and installment reminders are scheduled on your device by iOS. If you deny notification permission, turn the device off, or force-quit the app for a long time, iOS may not deliver them. ",
+              {
+                "b": "Do not rely on SubEye as your only defence against an unwanted renewal or a missed payment."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "availability",
+        "heading": "Availability",
+        "blocks": [
+          {
+            "p": [
+              "SubEye is provided as it is, with no warranty of any kind. It is a small independent app: it may change, may stop being updated, and may one day be withdrawn from the App Store. A copy already installed keeps working offline, because there is no service behind it to switch off. Nothing here excludes liability that cannot lawfully be excluded, but otherwise liability is limited to what you paid for SubEye Pro, if anything."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ending-it",
+        "heading": "Ending it",
+        "blocks": [
+          {
+            "p": [
+              "You can stop at any time: Settings → Erase all data clears the device, and deleting the app removes the rest. Neither needs anyone's permission and neither can be undone."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "changes",
+        "heading": "Changes",
+        "blocks": [
+          {
+            "p": [
+              "These terms may change. The date at the top of this page will change with them, and a material change will be announced in the app before it takes effect. Continuing to use SubEye after that means you accept the new terms."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "law",
+        "heading": "Law",
+        "blocks": [
+          {
+            "p": [
+              "These terms are governed by the law of Ukraine. If you are a consumer in the European Union or the United Kingdom, this does not remove the protections of your own country's law."
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

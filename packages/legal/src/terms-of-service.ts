@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Terms of service",
   description:
     "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-  updated: "2026-08-26",
+  updated: "2026-11-05",
   lead: [
     {
       p: [
@@ -22,7 +22,7 @@ const EN: LegalDoc = {
         {
           p: [
             "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine. Contact: ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -34,7 +34,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "An iPhone app for recording subscriptions you already have and seeing what they cost. It is a record of what you tell it. It has no connection to your bank, it does not read your email, it cannot see your actual charges, and it cannot cancel anything on your behalf.",
+            "An iPhone app for recording subscriptions, installment plans and loans you already have and seeing what they cost. It is a record of what you tell it. It has no connection to your bank or your lender, it does not read your email, it cannot see your actual charges, and it cannot cancel or repay anything on your behalf. It does not offer, arrange or recommend credit of any kind.",
           ],
         },
         {
@@ -51,7 +51,7 @@ const EN: LegalDoc = {
             {
               b: "Every figure in the app is arithmetic on the numbers you entered.",
             },
-            " If a price you typed is wrong, or a merchant charges something different, or an exchange rate moves, the app will be wrong too. It is a tracker, not a statement, and it is not financial advice.",
+            " If a price you typed is wrong, or a merchant charges something different, or an exchange rate moves, the app will be wrong too. An installment schedule is worked out from the terms you entered, and SubEye assumes each payment is made on its date — it cannot see whether your lender received it. What you owe is what your lender says you owe. It is a tracker, not a statement, and it is not financial advice.",
           ],
         },
       ],
@@ -73,7 +73,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "The subscriptions, notes and categories you enter belong to you, and they stay on your device — SubEye never receives them, so there is nothing here to claim ownership of, nothing to sell, and nothing to hand to anyone else. See the ",
+            "The subscriptions, installment plans, notes and categories you enter belong to you, and they stay on your device — SubEye never receives them, so there is nothing here to claim ownership of, nothing to sell, and nothing to hand to anyone else. See the ",
             { doc: "privacy-policy", text: "privacy policy" },
             ".",
           ],
@@ -86,14 +86,13 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "The free version is not a trial. Unlimited subscriptions, the whole dashboard, search and sorting, every lifecycle action, a renewal reminder the day before, multi-currency conversion, and iCloud Sync between your own devices are free and stay free.",
+            "The free version is not a trial. Unlimited subscriptions, installment plans and loans, the progress of every plan, the whole dashboard, search and sorting, every lifecycle action, a reminder the day before each renewal or installment payment, multi-currency conversion, and iCloud Sync between your own devices are free and stay free.",
           ],
         },
         {
           p: [
-            { b: "SubEye Pro is a single payment of $11.99" },
-            // \u00a0 is the site formatter's non-breaking space, not a plain one.
-            ", or the equivalent set for your App Store storefront — about 199\u00a0₴ in Ukraine. It is not a subscription and it does not renew. It unlocks control over when reminders land, trial-ending reminders, the payment calendar, the price history on each subscription, categories with their filter and the spend breakdown, and the Home Screen widgets.",
+            { b: "SubEye Pro is a single payment of $14.99" },
+            ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen widgets, which then list the next installment payment too.",
           ],
         },
         {
@@ -109,9 +108,9 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "Renewal reminders are scheduled on your device by iOS. If you deny notification permission, turn the device off, or force-quit the app for a long time, iOS may not deliver them. ",
+            "Renewal and installment reminders are scheduled on your device by iOS. If you deny notification permission, turn the device off, or force-quit the app for a long time, iOS may not deliver them. ",
             {
-              b: "Do not rely on SubEye as your only defence against an unwanted renewal.",
+              b: "Do not rely on SubEye as your only defence against an unwanted renewal or a missed payment.",
             },
           ],
         },
@@ -170,7 +169,7 @@ const UK: LegalDoc = {
   title: "Умови користування",
   description:
     "Домовленість між вами і SubEye: що робить застосунок, скільки коштує Pro, кому належать дані та як припинити користування.",
-  updated: "2026-08-26",
+  updated: "2026-11-05",
   lead: [
     {
       p: [
@@ -186,7 +185,7 @@ const UK: LegalDoc = {
         {
           p: [
             "SubEye створює та підтримує Єгор Гунько, фізична особа в Україні. Контакт: ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -198,7 +197,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Застосунок для iPhone, у якому ви записуєте підписки, що у вас уже є, і бачите, скільки вони коштують. Це запис того, що ви йому розповіли. Він не має зв’язку з вашим банком, не читає вашу пошту, не бачить ваших фактичних списань і не може нічого скасувати замість вас.",
+            "Застосунок для iPhone, у якому ви записуєте підписки, розстрочки й кредити, що у вас уже є, і бачите, скільки вони коштують. Це запис того, що ви йому розповіли. Він не має зв’язку ні з вашим банком, ні з кредитором, не читає вашу пошту, не бачить ваших фактичних списань і не може нічого скасувати чи погасити замість вас. Він не пропонує, не оформлює й не радить жодних кредитів чи розстрочок.",
           ],
         },
         {
@@ -215,7 +214,7 @@ const UK: LegalDoc = {
             {
               b: "Кожне число в застосунку — це арифметика над тими даними, які ввели ви.",
             },
-            " Якщо введена ціна неправильна, або сервіс списав іншу суму, або змінився курс валют — застосунок теж буде неправильним. Це трекер, а не виписка, і це не фінансова порада.",
+            " Якщо введена ціна неправильна, або сервіс списав іншу суму, або змінився курс валют — застосунок теж буде неправильним. Графік платежів за розстрочкою чи кредитом застосунок рахує з умов, які ввели ви, і вважає кожен платіж здійсненим у його дату — чи отримав його кредитор, застосунок не бачить. Скільки ви насправді винні, визначає ваш кредитор. Це трекер, а не виписка, і це не фінансова порада.",
           ],
         },
       ],
@@ -237,7 +236,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Підписки, нотатки та категорії, які ви вводите, належать вам і лишаються на вашому пристрої — SubEye їх не отримує, тож тут немає на що заявляти права власності, немає чого продавати і немає чого комусь передавати. Див. ",
+            "Підписки, розстрочки, кредити, нотатки та категорії, які ви вводите, належать вам і лишаються на вашому пристрої — SubEye їх не отримує, тож тут немає на що заявляти права власності, немає чого продавати і немає чого комусь передавати. Див. ",
             { doc: "privacy-policy", text: "політику конфіденційності" },
             ".",
           ],
@@ -250,14 +249,13 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Безкоштовна версія — це не тріал. Необмежена кількість підписок, уся панель, пошук і сортування, усі дії з підписками, нагадування за день до списання, мультивалютність та синхронізація з iCloud між вашими пристроями безкоштовні й такими лишаються.",
+            "Безкоштовна версія — це не тріал. Необмежена кількість підписок, розстрочок і кредитів, хід погашення кожної розстрочки чи кредиту, уся панель, пошук і сортування, усі дії з підписками, нагадування за день до кожного списання чи платежу за розстрочкою, мультивалютність та синхронізація з iCloud між вашими пристроями безкоштовні й такими лишаються.",
           ],
         },
         {
           p: [
-            // \u00a0 is the site formatter's non-breaking space, not a plain one.
-            { b: "SubEye Pro — це один платіж 199\u00a0₴" },
-            " в Україні або еквівалент, встановлений для вашої вітрини App Store — близько $11.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань, нагадування про кінець пробного періоду, календар платежів, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, а також віджети на екрані «Дім».",
+            { b: "SubEye Pro — це один платіж $11.99" },
+            " в Україні або еквівалент, встановлений для вашої вітрини App Store — $14.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань про списання й платежі за розстрочками та кредитами, нагадування про кінець пробного періоду, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, річний огляд і порівняння місяців у календарі, переплату за розстрочкою чи кредитом порівняно з ціною покупки, а також віджети на Початковому екрані, де серед найближчих платежів з’явиться й наступний платіж за розстрочкою чи кредитом.",
           ],
         },
         {
@@ -273,9 +271,9 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Нагадування про списання плануються на вашому пристрої силами iOS. Якщо ви заборонили сповіщення, вимкнули пристрій або надовго закрили застосунок примусово, iOS може їх не доставити. ",
+            "Нагадування про списання й платежі за розстрочками та кредитами плануються на вашому пристрої силами iOS. Якщо ви заборонили сповіщення, вимкнули пристрій або надовго закрили застосунок примусово, iOS може їх не доставити. ",
             {
-              b: "Не покладайтеся на SubEye як на єдиний захист від небажаного списання.",
+              b: "Не покладайтеся на SubEye як на єдиний захист від небажаного списання чи пропущеного платежу.",
             },
           ],
         },

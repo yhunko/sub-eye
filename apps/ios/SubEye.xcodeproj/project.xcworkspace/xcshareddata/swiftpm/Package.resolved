@@ -1,0 +1,24 @@
+{
+  "originHash" : "1c522611d66bf28f6a187f3af5994a7c0792138ddd447efd64155d6a03b8b79f",
+  "pins" : [
+    {
+      "identity" : "mmkv",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Tencent/MMKV.git",
+      "state" : {
+        "revision" : "007a393cd5e255e9aa68d6648f7179159bdf0f9d",
+        "version" : "2.4.3"
+      }
+    },
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios.git",
+      "state" : {
+        "revision" : "62df33e85b1aefaecbf7f19e89e71e2322ec15ac",
+        "version" : "5.96.0"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -144,7 +144,7 @@ describe("legal documents", () => {
       });
 
       // The source markup hard-wraps prose, and HTML collapses that on the way
-      // to the screen. Nothing collapses it in a React Native <Text>, so a
+      // to the screen. Nothing collapses it in SwiftUI's Text, so a
       // transcription that kept its newlines looks correct on the site and
       // ragged in the app.
       it("carries prose as single-spaced lines", () => {

@@ -1,0 +1,3 @@
+// Public client keys only. Never put Sentry auth tokens or private API keys here.
+REVENUECAT_API_KEY = appl_REPLACE_FROM_PRODUCTION_ENVIRONMENT
+BRANDFETCH_CLIENT_ID =

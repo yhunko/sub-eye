@@ -2,8 +2,8 @@ import type { Locale } from "./site";
 
 /**
  * The symbols this page actually PRINTS — the mockup's three and the Pro price's
- * three — with the same en-US grouping as `formatMoney` in
- * `apps/mobile/src/shared/lib/format/money.ts`. The app's own catalogue is 156
+ * three — with the same en-US grouping as `Display.money` in
+ * `apps/ios/Shared/Localization.swift`. The app's own catalogue is 155
  * currencies now; this is not a copy of it and must not become one. It is not
  * imported either: that file is app-internal, and this is five characters.
  * `test/pricing.test.ts` pins every code the page prints against the app's
@@ -44,9 +44,19 @@ export const money = (
     : `${symbol}${formatted}`;
 };
 
-/** A short payment date, in the reader's own locale. */
-export const shortDate = (locale: Locale, iso: string): string =>
+/** A full calendar day. `timeZone: "UTC"` because an ISO day parses to UTC midnight. */
+export const longDate = (locale: Locale, iso: string): string =>
   new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
     day: "numeric",
-    month: "short",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(iso));
+
+/** "February 2026" from "2026-02". */
+export const monthYear = (locale: Locale, month: string): string =>
+  new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${month}-01T00:00:00.000Z`));

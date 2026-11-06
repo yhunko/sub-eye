@@ -1,0 +1,583 @@
+{
+  "v": 1,
+  "usd": {
+    "usd": 1,
+    "eur": 0.9,
+    "uah": 41.2,
+    "jpy": 148.2
+  },
+  "recurrence": [
+    {
+      "anchor": "2024-01-31",
+      "target": "2024-02-28",
+      "every": 1,
+      "period": "month",
+      "expected": "2024-02-29"
+    },
+    {
+      "anchor": "2024-01-31",
+      "target": "2024-03-01",
+      "every": 1,
+      "period": "month",
+      "expected": "2024-03-31"
+    },
+    {
+      "anchor": "2026-01-31",
+      "target": "2026-02-01",
+      "every": 1,
+      "period": "month",
+      "expected": "2026-02-28"
+    },
+    {
+      "anchor": "2026-01-31",
+      "target": "2026-03-01",
+      "every": 1,
+      "period": "month",
+      "expected": "2026-03-31"
+    },
+    {
+      "anchor": "2024-02-29",
+      "target": "2028-02-01",
+      "every": 1,
+      "period": "year",
+      "expected": "2028-02-29"
+    },
+    {
+      "anchor": "2024-02-29",
+      "target": "2027-03-01",
+      "every": 1,
+      "period": "year",
+      "expected": "2028-02-29"
+    },
+    {
+      "anchor": "2025-11-30",
+      "target": "2026-03-01",
+      "every": 3,
+      "period": "month",
+      "expected": "2026-05-30"
+    },
+    {
+      "anchor": "2026-09-15",
+      "target": "2026-10-01",
+      "every": 2,
+      "period": "week",
+      "expected": "2026-10-13"
+    },
+    {
+      "anchor": "2026-09-15",
+      "target": "2026-10-01",
+      "every": 3,
+      "period": "day",
+      "expected": "2026-10-03"
+    },
+    {
+      "anchor": "2027-01-31",
+      "target": "2026-09-15",
+      "every": 1,
+      "period": "month",
+      "expected": "2027-01-31"
+    }
+  ],
+  "conversions": [
+    {
+      "amount": 19.99,
+      "from": "usd",
+      "to": "usd",
+      "expected": 19.99
+    },
+    {
+      "amount": 19.99,
+      "from": "usd",
+      "to": "eur",
+      "expected": 17.990999999999996
+    },
+    {
+      "amount": 19.99,
+      "from": "usd",
+      "to": "uah",
+      "expected": 823.588
+    },
+    {
+      "amount": 19.99,
+      "from": "usd",
+      "to": "jpy",
+      "expected": 2962.5179999999996
+    },
+    {
+      "amount": 19.99,
+      "from": "eur",
+      "to": "usd",
+      "expected": 22.21111111111111
+    },
+    {
+      "amount": 19.99,
+      "from": "eur",
+      "to": "eur",
+      "expected": 19.99
+    },
+    {
+      "amount": 19.99,
+      "from": "eur",
+      "to": "uah",
+      "expected": 915.0977777777777
+    },
+    {
+      "amount": 19.99,
+      "from": "eur",
+      "to": "jpy",
+      "expected": 3291.686666666666
+    },
+    {
+      "amount": 19.99,
+      "from": "uah",
+      "to": "usd",
+      "expected": 0.4851941747572815
+    },
+    {
+      "amount": 19.99,
+      "from": "uah",
+      "to": "eur",
+      "expected": 0.43667475728155336
+    },
+    {
+      "amount": 19.99,
+      "from": "uah",
+      "to": "uah",
+      "expected": 19.99
+    },
+    {
+      "amount": 19.99,
+      "from": "uah",
+      "to": "jpy",
+      "expected": 71.90577669902912
+    },
+    {
+      "amount": 19.99,
+      "from": "jpy",
+      "to": "usd",
+      "expected": 0.13488529014844805
+    },
+    {
+      "amount": 19.99,
+      "from": "jpy",
+      "to": "eur",
+      "expected": 0.12139676113360323
+    },
+    {
+      "amount": 19.99,
+      "from": "jpy",
+      "to": "uah",
+      "expected": 5.557273954116059
+    },
+    {
+      "amount": 19.99,
+      "from": "jpy",
+      "to": "jpy",
+      "expected": 19.99
+    }
+  ],
+  "monthly": [
+    {
+      "period": "day",
+      "every": 1,
+      "amount": 19.99,
+      "expected": 608.445625
+    },
+    {
+      "period": "day",
+      "every": 2,
+      "amount": 19.99,
+      "expected": 304.2228125
+    },
+    {
+      "period": "day",
+      "every": 7,
+      "amount": 19.99,
+      "expected": 86.92080357142856
+    },
+    {
+      "period": "day",
+      "every": 12,
+      "amount": 19.99,
+      "expected": 50.70380208333333
+    },
+    {
+      "period": "week",
+      "every": 1,
+      "amount": 19.99,
+      "expected": 86.85654999999998
+    },
+    {
+      "period": "week",
+      "every": 2,
+      "amount": 19.99,
+      "expected": 43.42827499999999
+    },
+    {
+      "period": "week",
+      "every": 7,
+      "amount": 19.99,
+      "expected": 12.40807857142857
+    },
+    {
+      "period": "week",
+      "every": 12,
+      "amount": 19.99,
+      "expected": 7.238045833333332
+    },
+    {
+      "period": "month",
+      "every": 1,
+      "amount": 19.99,
+      "expected": 19.99
+    },
+    {
+      "period": "month",
+      "every": 2,
+      "amount": 19.99,
+      "expected": 9.995
+    },
+    {
+      "period": "month",
+      "every": 7,
+      "amount": 19.99,
+      "expected": 2.8557142857142854
+    },
+    {
+      "period": "month",
+      "every": 12,
+      "amount": 19.99,
+      "expected": 1.6658333333333333
+    },
+    {
+      "period": "year",
+      "every": 1,
+      "amount": 19.99,
+      "expected": 1.6658333333333333
+    },
+    {
+      "period": "year",
+      "every": 2,
+      "amount": 19.99,
+      "expected": 0.8329166666666666
+    },
+    {
+      "period": "year",
+      "every": 7,
+      "amount": 19.99,
+      "expected": 0.23797619047619048
+    },
+    {
+      "period": "year",
+      "every": 12,
+      "amount": 19.99,
+      "expected": 0.13881944444444444
+    }
+  ],
+  "statuses": [
+    {
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Europe/Kyiv",
+      "expected": "active"
+    },
+    {
+      "willBeCancelledAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Europe/Kyiv",
+      "expected": "cancelled"
+    },
+    {
+      "pausedAt": "2026-09-15T23:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Europe/Kyiv",
+      "expected": "active"
+    },
+    {
+      "pausedAt": "2026-09-15T01:00:00Z",
+      "resumeAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Europe/Kyiv",
+      "expected": "active"
+    },
+    {
+      "pausedAt": "2026-09-15T01:00:00Z",
+      "willBeCancelledAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Europe/Kyiv",
+      "expected": "cancelled"
+    },
+    {
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "America/Los_Angeles",
+      "expected": "active"
+    },
+    {
+      "willBeCancelledAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "America/Los_Angeles",
+      "expected": "cancelling"
+    },
+    {
+      "pausedAt": "2026-09-15T23:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "America/Los_Angeles",
+      "expected": "active"
+    },
+    {
+      "pausedAt": "2026-09-15T01:00:00Z",
+      "resumeAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "America/Los_Angeles",
+      "expected": "paused"
+    },
+    {
+      "pausedAt": "2026-09-15T01:00:00Z",
+      "willBeCancelledAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "America/Los_Angeles",
+      "expected": "cancelling"
+    },
+    {
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Asia/Tokyo",
+      "expected": "active"
+    },
+    {
+      "willBeCancelledAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Asia/Tokyo",
+      "expected": "cancelled"
+    },
+    {
+      "pausedAt": "2026-09-15T23:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Asia/Tokyo",
+      "expected": "active"
+    },
+    {
+      "pausedAt": "2026-09-15T01:00:00Z",
+      "resumeAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Asia/Tokyo",
+      "expected": "active"
+    },
+    {
+      "pausedAt": "2026-09-15T01:00:00Z",
+      "willBeCancelledAt": "2026-09-16T00:00:00Z",
+      "now": "2026-09-15T22:00:00Z",
+      "zone": "Asia/Tokyo",
+      "expected": "cancelled"
+    }
+  ],
+  "pricing": [
+    {
+      "now": "2026-08-31T23:59:59Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": null,
+      "upcoming": "trial"
+    },
+    {
+      "now": "2026-09-01T00:00:00Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": "trial",
+      "upcoming": "intro"
+    },
+    {
+      "now": "2026-09-14T23:59:59Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": "trial",
+      "upcoming": "intro"
+    },
+    {
+      "now": "2026-09-15T00:00:00Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": "intro",
+      "upcoming": "standard"
+    },
+    {
+      "now": "2026-09-30T23:59:59Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": "intro",
+      "upcoming": "standard"
+    },
+    {
+      "now": "2026-10-01T00:00:00Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": "standard",
+      "upcoming": null
+    },
+    {
+      "now": "2027-01-01T00:00:00Z",
+      "phases": [
+        {
+          "id": "standard",
+          "startsAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "trial",
+          "startsAt": "2026-09-01T00:00:00Z",
+          "endsAt": "2026-09-15T00:00:00Z"
+        },
+        {
+          "id": "intro",
+          "startsAt": "2026-09-15T00:00:00Z",
+          "endsAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "effective": "standard",
+      "upcoming": null
+    }
+  ],
+  "pauses": [
+    {
+      "occurrence": "2026-09-15T00:00:00Z",
+      "expected": false
+    },
+    {
+      "occurrence": "2026-09-15T12:00:00Z",
+      "expected": false
+    },
+    {
+      "occurrence": "2026-09-30T23:59:59Z",
+      "expected": false
+    },
+    {
+      "occurrence": "2026-10-01T00:00:00Z",
+      "expected": false
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "occurrence": "2026-09-15T00:00:00Z",
+      "expected": false
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "occurrence": "2026-09-15T12:00:00Z",
+      "expected": true
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "occurrence": "2026-09-30T23:59:59Z",
+      "expected": true
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "occurrence": "2026-10-01T00:00:00Z",
+      "expected": true
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "resumeAt": "2026-10-01T00:00:00Z",
+      "occurrence": "2026-09-15T00:00:00Z",
+      "expected": false
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "resumeAt": "2026-10-01T00:00:00Z",
+      "occurrence": "2026-09-15T12:00:00Z",
+      "expected": true
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "resumeAt": "2026-10-01T00:00:00Z",
+      "occurrence": "2026-09-30T23:59:59Z",
+      "expected": true
+    },
+    {
+      "pausedAt": "2026-09-15T12:00:00Z",
+      "resumeAt": "2026-10-01T00:00:00Z",
+      "occurrence": "2026-10-01T00:00:00Z",
+      "expected": false
+    }
+  ]
+}

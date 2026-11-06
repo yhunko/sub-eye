@@ -2,7 +2,13 @@ import { describe, expect, it } from "bun:test";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import config from "../astro.config.mjs";
-import { canonical, legalPages, locales, SITE } from "../src/lib/site";
+import {
+  canonical,
+  contentPages,
+  legalPages,
+  locales,
+  SITE,
+} from "../src/lib/site";
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
 
@@ -15,10 +21,10 @@ const ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
  * rejection before a human ever opens the app.
  */
 const CONTRACT = [
-  "https://www.subeye.cc/en/terms-of-service/",
-  "https://www.subeye.cc/en/privacy-policy/",
-  "https://www.subeye.cc/uk/terms-of-service/",
-  "https://www.subeye.cc/uk/privacy-policy/",
+  "https://subeye.yhunko.dev/en/terms-of-service/",
+  "https://subeye.yhunko.dev/en/privacy-policy/",
+  "https://subeye.yhunko.dev/uk/terms-of-service/",
+  "https://subeye.yhunko.dev/uk/privacy-policy/",
 ];
 
 describe("legal route contract", () => {
@@ -49,6 +55,19 @@ describe("legal route contract", () => {
         url: `${SITE}/${locale}/support/`,
         exists: existsSync(join(ROOT, "src", "pages", locale, "support.astro")),
       }).toEqual({ url: `${SITE}/${locale}/support/`, exists: true });
+    }
+  });
+
+  it("serves every content page in both locales", () => {
+    for (const locale of locales) {
+      for (const page of contentPages) {
+        expect({
+          url: canonical(locale, page),
+          exists: existsSync(
+            join(ROOT, "src", "pages", locale, `${page}.astro`),
+          ),
+        }).toEqual({ url: canonical(locale, page), exists: true });
+      }
     }
   });
 

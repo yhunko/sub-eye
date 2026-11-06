@@ -9,6 +9,3 @@
   the app without throwing. `test/crossRates.test.ts` pins the direction.
 - A missing rate degrades to 1:1 and never throws. An unconverted amount on the
   dashboard beats an error screen. Do not make it throw.
-- This package parses an FX document; it never fetches one. The caller owns the
-  network, the timeout and the cache — that is what lets the same code run on a
-  Worker cron and on a phone.

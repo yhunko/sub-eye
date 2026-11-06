@@ -1,8 +1,9 @@
 # @subeye/legal — the two documents, once
 
 The privacy policy and the terms of service, in English and Ukrainian, as data.
-`apps/landing` renders them as pages and `apps/mobile` renders them in a sheet;
-neither owns a word of the copy, so the site and the shipped binary cannot
+`apps/landing` renders them as pages and `apps/ios` bundles them as JSON
+(regenerate with `bun apps/ios/Contracts/resources.ts`); neither owns a word of
+the copy, so the site and the shipped binary cannot
 disagree about what a user agreed to. Before this package they were two
 independent copies of the same prose in four `.astro` files.
 
@@ -22,7 +23,7 @@ independent copies of the same prose in four `.astro` files.
   pins the full ordered list per document, and pins it for BOTH locales — a
   translation that loses a section fails there and nowhere else.
 - **Prose is single-spaced and pre-joined.** The source markup used to hard-wrap
-  and let HTML collapse it; a React Native `<Text>` collapses nothing, so a
+  and let HTML collapse it; SwiftUI's `Text` collapses nothing, so a
   string carrying a newline reads correctly on the site and ragged in the app.
   Tested.
 - **`updated` is an ISO calendar day and is per document.** Both renderers must
@@ -38,8 +39,8 @@ paying for. A change to either is a change to a promise, so:
   a stale translation.
 - Move `updated` on that document. The app shows it under the title and the site
   puts it in `<time datetime>`.
-- The terms quote the Pro price as formatted literals (`$11.99`, `199 ₴` with a
-  **non-breaking space**, as `apps/landing/src/lib/format.ts` emits). The price
+- The terms quote the Pro price as formatted literals (`$14.99`, and `$11.99`
+  for Ukraine's dollar storefront), as `apps/landing/src/lib/format.ts` emits. The price
   itself lives in `apps/landing/src/lib/site.ts`, which a package may not import;
   `apps/landing/test/pricing.test.ts` pins the two against each other instead, so
   a price change that misses this file fails there.

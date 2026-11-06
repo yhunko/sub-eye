@@ -1,13 +1,4 @@
-import {
-  boolean,
-  type InferOutput,
-  nullable,
-  number,
-  picklist,
-  strictObject,
-  string,
-} from "valibot";
-import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
+import type { SubscriptionBillingDetails } from "./subscriptionBillingSchemas";
 
 /**
  * A subscription's price over time is a schedule of ordered phases:
@@ -19,7 +10,7 @@ import { subscriptionBillingDetailsSchema } from "./subscriptionBillingSchemas";
  * The subscription row's `cost`/`currency` always reflect "what you pay right
  * now"; phases only describe the transitions/overrides around it.
  */
-export const pricePhaseKinds = [
+const pricePhaseKinds = [
   "trial",
   "intro",
   "scheduledChange",
@@ -28,15 +19,13 @@ export const pricePhaseKinds = [
 
 export type PricePhaseKind = (typeof pricePhaseKinds)[number];
 
-export const PricePhaseDtoSchema = strictObject({
-  id: string(),
-  kind: picklist(pricePhaseKinds),
-  cost: number(),
-  currency: string(),
-  startsAt: string(),
-  endsAt: nullable(string()),
-  isActive: boolean(),
-  billing: subscriptionBillingDetailsSchema,
-});
-
-export type PricePhaseDto = InferOutput<typeof PricePhaseDtoSchema>;
+export type PricePhaseDto = {
+  id: string;
+  kind: PricePhaseKind;
+  cost: number;
+  currency: string;
+  startsAt: string;
+  endsAt: string | null;
+  isActive: boolean;
+  billing: SubscriptionBillingDetails;
+};

@@ -53,7 +53,7 @@ export type LegalDoc = {
 };
 
 /** The address named as the contact in both documents, and in the site footer. */
-export const LEGAL_CONTACT_EMAIL = "privacy@subeye.cc";
+export const LEGAL_CONTACT_EMAIL = "subeye@yhunko.dev";
 
 /** Named as the controller. GDPR Art. 13 wants an identifiable one. */
 export const LEGAL_OPERATOR = "Yehor Hunko";

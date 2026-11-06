@@ -1,0 +1,33 @@
+name: SubEyeCore
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - apps/ios/SubEyeCore/**
+      - .github/workflows/subeyecore.yml
+  pull_request:
+    paths:
+      - apps/ios/SubEyeCore/**
+      - .github/workflows/subeyecore.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Swift Test
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Test
+        run: swift test --package-path apps/ios/SubEyeCore

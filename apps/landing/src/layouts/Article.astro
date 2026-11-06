@@ -1,0 +1,60 @@
+---
+import Footer from "../components/Footer.astro";
+import TopBar from "../components/TopBar.astro";
+import { articleSchema, pageHeadline } from "../lib/schema";
+import type { ContentPage, Locale } from "../lib/site";
+import Base from "./Base.astro";
+
+interface Props {
+  locale: Locale;
+  page: ContentPage;
+  title: string;
+  description: string;
+  /** ISO day the page's facts were last read; its Article `dateModified`. */
+  modified: string;
+}
+
+const { locale, page, title, description, modified } = Astro.props;
+const jsonLd = articleSchema(locale, page, pageHeadline(locale, page), modified);
+---
+
+<Base
+  locale={locale}
+  page={page}
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  modified={modified}
+>
+  <TopBar locale={locale} page={page} />
+  <main id="main" class="article">
+    <slot />
+  </main>
+  <Footer locale={locale} page={page} />
+</Base>
+
+<style>
+  .article {
+    padding-top: calc(4.5rem + clamp(3rem, 8vw, 7rem));
+  }
+
+  .article :global(.a-title) {
+    font-size: var(--step-display);
+    max-width: 16ch;
+  }
+
+  .article :global(.a-lead) {
+    margin-top: 1.75rem;
+    max-width: 52ch;
+    font-size: var(--step-lead);
+    line-height: 1.4;
+  }
+
+  .article :global(.a-h2) {
+    font-size: var(--step-head);
+  }
+
+  .article :global(.a-section) {
+    padding-top: var(--section);
+  }
+</style>

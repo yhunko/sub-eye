@@ -1,0 +1,274 @@
+import XCTest
+@testable import SubEyeCore
+
+@MainActor
+final class RepositoryTests: XCTestCase {
+    let now = Day.parse("2026-09-15T12:00:00Z")!
+
+    func testInterruptedMigrationRollsBackAndResumesWithoutDuplicatingData() async throws {
+        let store = repository()
+        let doc = fixture()
+        let raw = try JSONCodec.string(doc)
+        let legacy = LegacySnapshot(pointer: "subeye.doc.b", slotA: "{torn", slotB: raw,
+                                    values: ["flags:pro.entitled": "true"], fingerprint: "test", sourceExists: true)
+        do { _ = try await store.migrate(legacy, now: now, failBeforeCommit: true); XCTFail("Expected rollback") }
+        catch DomainError.invalidDocument { }
+        let missing = try await store.migrationReceipt()
+        XCTAssertNil(missing)
+        let receipt = try await store.migrate(legacy, now: now)
+        let repeated = try await store.migrate(legacy, now: now.addingTimeInterval(1))
+        XCTAssertEqual(receipt, repeated)
+        XCTAssertEqual(receipt.sourceSlot, "subeye.doc.b")
+        let saved = try await store.document()
+        XCTAssertEqual(saved, doc)
+        let pro = try await store.setting("pro.entitled", as: Bool.self)
+        XCTAssertEqual(pro, true)
+    }
+
+    func testTornActiveSlotFallsBackButFutureSchemaDoesNotRollbackToOldData() throws {
+        let raw = try JSONCodec.string(fixture())
+        let recovered = try LegacyMigration.select(LegacySnapshot(slotA: "bad", slotB: raw, sourceExists: true), defaults: .init())
+        XCTAssertEqual(recovered.1, "subeye.doc.b")
+        XCTAssertThrowsError(try LegacyMigration.select(LegacySnapshot(slotA: "{\"v\":99}", slotB: raw, sourceExists: true), defaults: .init()))
+        XCTAssertThrowsError(try LegacyMigration.select(LegacySnapshot(slotA: "{\"v\":3}", slotB: raw, sourceExists: true), defaults: .init()))
+        XCTAssertEqual(try LegacyMigration.decode(Data("{\"v\":2}".utf8)).v, 2)
+        XCTAssertThrowsError(try LegacyMigration.select(LegacySnapshot(slotA: "bad", slotB: "bad", sourceExists: true), defaults: .init()))
+    }
+
+    func testCurrentAndOlderFixturesMigrateWithoutDependingOnRecordOrder() async throws {
+        for filename in ["legacy-current-v1", "legacy-older"] {
+            let url = try XCTUnwrap(Bundle.module.url(forResource: filename, withExtension: "json", subdirectory: "Fixtures"))
+            let bytes = try Data(contentsOf: url)
+            let expected = try LegacyMigration.decode(bytes)
+            let store = repository()
+            _ = try await store.migrate(.init(slotA: String(decoding: bytes, as: UTF8.self), sourceExists: true), now: now)
+            let actual = try await store.document()
+            XCTAssertEqual(try CloudRecords.entries(actual), try CloudRecords.entries(expected))
+            XCTAssertEqual(actual.subscriptions.count, expected.subscriptions.count)
+            XCTAssertEqual(actual.installments, [])
+        }
+    }
+
+    func testOlderDocumentDefaultsPreserveAllRecords() throws {
+        let raw = try JSONCodec.encode(fixture())
+        var doc = try JSONSerialization.jsonObject(with: raw) as! [String: Any]
+        doc.removeValue(forKey: "v"); doc.removeValue(forKey: "preferences"); doc.removeValue(forKey: "phases")
+        doc.removeValue(forKey: "installments")
+        var subs = doc["subscriptions"] as! [[String: Any]]
+        subs[0].removeValue(forKey: "autoPaid"); subs[0].removeValue(forKey: "status")
+        doc["subscriptions"] = subs
+        let result = try LegacyMigration.decode(JSONSerialization.data(withJSONObject: doc), defaults: .init(currency: "eur", timezone: "Europe/Kyiv"))
+        XCTAssertEqual(result.subscriptions.count, 1)
+        XCTAssertTrue(result.subscriptions[0].autoPaid)
+        XCTAssertEqual(result.preferences.preferredCurrency, "eur")
+        XCTAssertEqual(result.phases.count, 0)
+        XCTAssertEqual(result.installments, [])
+    }
+
+    func testArchivedPlansAreLowercasedAndValidated() throws {
+        let plan = try JSONSerialization.jsonObject(with: JSONCodec.encode(installment())) as! [String: Any]
+        func decode(_ plans: [[String: Any]]) throws -> StoreDocument {
+            try LegacyMigration.decode(JSONSerialization.data(withJSONObject: ["v": 2, "installments": plans]))
+        }
+        var upper = plan; upper["currency"] = "UAH"
+        XCTAssertEqual(try decode([upper]).installments.map(\.currency), ["uah"])
+        XCTAssertThrowsError(try decode([plan, plan]))
+        var invalid = plan; invalid["paymentCount"] = 0
+        XCTAssertThrowsError(try decode([invalid]))
+    }
+
+    func testInstallmentSavesQueueTheirRecordAndRejectStaleEdits() async throws {
+        let first = repository()
+        _ = try await first.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        let second = SubscriptionRepository(url: first.url)
+        let original = installment(), later = now.addingTimeInterval(60)
+        try await first.saveInstallment(original, expected: nil, now: now)
+        var edited = original; edited.name = "Edited"
+        try await first.saveInstallment(edited, expected: original, now: later)
+        var stale = original; stale.payment = "50.00"
+        do { try await second.saveInstallment(stale, expected: original, now: later); XCTFail("Lost update") }
+        catch DomainError.conflict { }
+        let saved = try await first.document().installments
+        XCTAssertEqual(saved.map(\.name), ["Edited"])
+        XCTAssertEqual(saved.first?.updatedAt, Day.iso(later))
+        let writes = try await first.pendingCloudWrites()
+        XCTAssertEqual(writes.first { $0.key == "installment.plan" }?.value, try JSONCodec.string(saved[0]))
+
+        var invalid = saved[0]; invalid.paymentCount = 0
+        do { try await first.saveInstallment(invalid, expected: saved[0], now: later); XCTFail("Saved an invalid plan") }
+        catch DomainError.invalidField { }
+
+        try await first.deleteInstallment(id: "plan")
+        let deleted = try await first.document().installments
+        let tombstones = try await first.pendingCloudWrites()
+        XCTAssertTrue(deleted.isEmpty)
+        XCTAssertTrue(tombstones.contains { $0.key == "installment.plan" && $0.value == nil })
+    }
+
+    func testCloudMergeAppliesValidPlansAndDeletesOnlyTheNamedOne() async throws {
+        let store = repository()
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        var overpaid = installment(id: "bad"); overpaid.payment = "400.00"
+        try await store.mergeCloud([
+            "installment.plan": try JSONCodec.string(installment()),
+            "installment.other": try JSONCodec.string(installment()),
+            "installment.bad": try JSONCodec.string(overpaid),
+            "installment.junk": "invalid JSON",
+        ])
+        var saved = try await store.document()
+        XCTAssertEqual(saved.installments.map(\.id), ["plan"])
+        try await store.mergeCloud(["installment.plan": nil])
+        saved = try await store.document()
+        XCTAssertTrue(saved.installments.isEmpty)
+        XCTAssertEqual(saved.subscriptions.map(\.id), ["s"])
+    }
+
+    func testPlanOutsideTheEditorsChoicesSyncsByteIdentically() async throws {
+        let store = repository()
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        var weekly = installment(); weekly.period = .week; weekly.paymentCount = 480; weekly.total = "48000.00"
+        XCTAssertFalse(Installments.editorAccepts(every: weekly.every, period: weekly.period, count: weekly.paymentCount))
+        let raw = try JSONCodec.string(weekly)
+        try await store.mergeCloud(["installment.plan": raw])
+        let union = try await store.prepareCloudLink()
+        XCTAssertEqual(union["installment.plan"], raw, "link() uploads every entry that differs, overwriting the later build's copy")
+    }
+
+    func testExportStaysVersionOneUntilAPlanExists() async throws {
+        let store = repository()
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        func version(_ archive: Data) throws -> Int? { (try JSONSerialization.jsonObject(with: archive) as? [String: Any])?["v"] as? Int }
+        let plain = try await store.exportArchive()
+        XCTAssertEqual(try version(plain), 1, "6.2.0 imports only v1")
+        try await store.saveInstallment(installment(), expected: nil, now: now)
+        let archive = try await store.exportArchive()
+        XCTAssertEqual(try version(archive), 2, "6.2.0 must refuse an archive whose plans it would drop")
+        let restored = repository()
+        _ = try await restored.migrate(.init(), now: now)
+        try await restored.importArchive(archive)
+        let imported = try await restored.document().installments
+        XCTAssertEqual(imported, [installment()])
+    }
+
+    func testTwoConnectionsRejectStaleEditsAndRetainBothIndependentWrites() async throws {
+        let first = repository()
+        _ = try await first.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        let second = SubscriptionRepository(url: first.url)
+        let original = fixture().subscriptions[0]
+        var edited = original; edited.name = "Edited"
+        try await first.save(edited, expected: original, rates: .init(), now: now)
+        var stale = original; stale.cost = "999.00"
+        do { try await second.save(stale, expected: original, rates: .init(), now: now); XCTFail("Lost update") }
+        catch DomainError.conflict { }
+        let other = Subscription(id: "other", name: "Other", cost: "3.00", currency: "usd", paymentDate: original.paymentDate, now: now)
+        try await second.save(other, expected: nil, rates: .init(), now: now)
+        let saved = try await first.document()
+        XCTAssertEqual(saved.subscriptions.count, 2)
+        XCTAssertEqual(saved.subscriptions.first(where: { $0.id == original.id })?.name, "Edited")
+    }
+
+    func testCloudUnionKeepsOfflineRowsAndChangedDeletionOnlyDeletesNamedRow() async throws {
+        let store = repository()
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        let other = Subscription(id: "remote", name: "Remote", cost: "3.00", currency: "usd", paymentDate: "2026-01-01T00:00:00Z", now: now)
+        try await store.mergeCloud(["sub.remote": try JSONCodec.string(other)], initialLink: true)
+        var saved = try await store.document()
+        XCTAssertEqual(saved.subscriptions.count, 2)
+        try await store.mergeCloud(["sub.remote": nil, "sub.s": "invalid JSON", "foreign": nil])
+        saved = try await store.document()
+        XCTAssertEqual(saved.subscriptions.map(\.id), ["s"])
+    }
+
+    func testListNeverSettlesPhasesAndDetailSettlesTransactionally() async throws {
+        let store = repository()
+        var doc = fixture()
+        doc.phases = [PricePhase(id: "phase", subscriptionId: "s", kind: .scheduledChange, cost: "50.00", currency: "usd", startsAt: "2026-09-01T00:00:00Z", now: now)]
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(doc), sourceExists: true), now: now)
+        _ = try await store.presentation(rates: .init(rates: ["usd": 1]), now: now)
+        let before = try await store.document()
+        XCTAssertEqual(before.subscriptions[0].cost, "20.00")
+        XCTAssertNil(before.phases[0].appliedAt)
+        try await store.settleDetail(id: "s", rates: .init(rates: ["usd": 1]), now: now)
+        let after = try await store.document()
+        XCTAssertEqual(after.subscriptions[0].cost, "50.00")
+        XCTAssertNotNil(after.phases[0].appliedAt)
+    }
+
+    func testLicenseEditsAndScheduledPricesKeepOnePurchaseAndItsRenewal() async throws {
+        let store = repository(), rates = ExchangeRates(rates: ["usd": 1])
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        let created = Subscription(id: "c", name: "CleanShot X", cost: "41.00", currency: "usd", period: .year, paymentDate: "2026-10-01T00:00:00Z", now: now)
+        try await store.save(created, expected: nil, offer: OfferInput(promoCost: "41.00", standardCost: "19.00", currency: "usd", license: true), rates: rates, now: now)
+        try await store.schedulePrice(id: "c", cost: "25.00", currency: "usd", date: nil, now: now)
+        func phases() async throws -> [PricePhase] { try await store.document().phases.filter { $0.subscriptionId == "c" }.sorted { $0.startsAt < $1.startsAt } }
+        let scheduled = try await phases()
+        XCTAssertEqual(scheduled.map(\.kind), [.license, .standard])
+        XCTAssertEqual(scheduled.map(\.cost), ["41.00", "25.00"])
+
+        let document = try await store.document()
+        let saved = try XCTUnwrap(document.subscriptions.first { $0.id == "c" })
+        var moved = saved; moved.paymentDate = "2026-03-01T00:00:00Z"
+        try await store.save(moved, expected: saved, rates: rates, now: now)
+        let realigned = try await phases()
+        XCTAssertEqual(realigned.map { $0.endsAt.flatMap(Day.parse).map(Day.key) }, ["2027-03-01", nil])
+        XCTAssertEqual(realigned.map(\.cost), ["41.00", "19.00"])
+    }
+
+    func testEraseCannotResurrectRetainedLegacyDocument() async throws {
+        let store = repository()
+        let legacy = LegacySnapshot(slotA: try JSONCodec.string(fixture()), sourceExists: true)
+        _ = try await store.migrate(legacy, now: now)
+        try await store.erase()
+        _ = try await store.migrate(legacy, now: now)
+        let saved = try await store.document()
+        let archive = try await store.legacyValues(prefix: "")
+        XCTAssertTrue(saved.subscriptions.isEmpty)
+        XCTAssertTrue(archive.isEmpty)
+    }
+
+    func testKeepAcknowledgesWithoutChangingSubscriptionAndRequiresOptIn() async throws {
+        let store = repository()
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        try await store.acknowledgeRenewal(day: "2026-09-15", now: now)
+        let disabled = try await store.setting("live.ack.2026-09-15", as: String.self)
+        XCTAssertNil(disabled)
+        try await store.setSetting("live.enabled", value: true)
+        try await store.acknowledgeRenewal(day: "2026-09-15", now: now)
+        let enabled = try await store.setting("live.ack.2026-09-15", as: String.self)
+        let saved = try await store.document()
+        XCTAssertNotNil(enabled)
+        XCTAssertEqual(saved, fixture())
+    }
+
+    func testOfflineEraseQueuesCloudTombstonesAndPreservesReviewCooldown() async throws {
+        let store = repository()
+        _ = try await store.migrate(.init(slotA: try JSONCodec.string(fixture()), sourceExists: true), now: now)
+        try await store.setSetting("review.state", value: ["firstSeenAt": 1.0, "askedAt": 2.0])
+        try await store.saveInstallment(installment(), expected: nil, now: now)
+        try await store.erase(additionalCloudKeys: ["sub.remote", "installment.remote", "foreign"])
+        let writes = try await store.pendingCloudWrites()
+        XCTAssertTrue(writes.contains { $0.key == "sub.s" && $0.value == nil })
+        XCTAssertTrue(writes.contains { $0.key == "sub.remote" && $0.value == nil })
+        XCTAssertTrue(writes.contains { $0.key == "installment.plan" && $0.value == nil })
+        XCTAssertTrue(writes.contains { $0.key == "installment.remote" && $0.value == nil })
+        XCTAssertFalse(writes.contains { $0.key == "foreign" })
+        try await store.mergeCloud(["sub.s": try JSONCodec.string(fixture().subscriptions[0])])
+        let document = try await store.document()
+        let review = try await store.setting("review.state", as: [String: Double].self)
+        XCTAssertTrue(document.subscriptions.isEmpty)
+        XCTAssertEqual(review?["askedAt"], 2)
+    }
+
+    private func repository() -> SubscriptionRepository {
+        SubscriptionRepository(url: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("store.sqlite"))
+    }
+    private func fixture() -> StoreDocument {
+        StoreDocument(preferences: .init(currency: "usd"), subscriptions: [
+            Subscription(id: "s", name: "Test", cost: "20.00", currency: "usd", paymentDate: "2026-01-20T00:00:00Z", now: now)
+        ])
+    }
+    private func installment(id: String = "plan") -> InstallmentPlan {
+        InstallmentPlan(id: id, name: "MacBook", symbol: "laptopcomputer", tint: "blue", currency: "uah",
+                        total: "300.00", payment: "100.00", paymentCount: 3, firstPaymentDate: "2026-09-04T00:00:00.000Z", now: now)
+    }
+}

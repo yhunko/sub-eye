@@ -8,18 +8,16 @@
   "assets": {
     "directory": "./dist/",
     // The shipped iOS binary requests `/en/privacy-policy/` **with** the slash.
-    // `force-trailing-slash` makes the slashless form a 308 to the canonical
+    // `force-trailing-slash` makes the slashless form a 307 to the canonical
     // path instead of a 404, and it matches `trailingSlash: "always"` in
     // astro.config.mjs. Changing either without the other breaks the contract
     // that `test/routes.test.ts` pins.
     "html_handling": "force-trailing-slash"
   },
   "route": {
-    "pattern": "www.subeye.cc",
+    "pattern": "subeye.yhunko.dev",
     "custom_domain": true
   }
   // Security headers live in public/_headers and the `/` → `/en/` redirect in
   // public/_redirects — both are read straight out of the asset directory.
-  // The apex `subeye.cc` → `www` redirect is a zone-level Redirect Rule; it
-  // cannot be expressed here, and the app only ever asks for `www`.
 }

@@ -1,16 +1,10 @@
 set -e
 
-echo "📦 Checking dependency consistency..."
-bun run deps:lint
-
 echo "🔎 Running lint across the repo..."
 bun run lint
 
 echo "🔎 Running type checks across the repo..."
 bun run type-check
-
-echo "🔄 Checking for circular dependencies..."
-bun run check:circular
 
 echo "🧪 Running tests..."
 bun run test
