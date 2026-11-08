@@ -179,8 +179,15 @@ public enum ScreenshotImport {
         return Money.parse(digits)
     }
 
+    // A phone formats a storefront currency that is not its locale's own with a country mark: "CA$" in English, "$CA" in French.
+    private static let marked: [String: String] = [
+        "US$": "usd", "$US": "usd", "CA$": "cad", "$CA": "cad", "A$": "aud", "AU$": "aud", "$AU": "aud", "NZ$": "nzd", "$NZ": "nzd",
+        "HK$": "hkd", "MX$": "mxn", "$MX": "mxn", "NT$": "twd", "$SG": "sgd", "EC$": "xcd", "CN¥": "cny", "JP¥": "jpy", "£GB": "gbp"
+    ]
+
     private static func markers(_ currencies: Set<String>) -> [String: [String]] {
         var table: [String: [String]] = currencies.contains("uah") ? ["грн": ["uah"]] : [:]
+        for (symbol, code) in marked where currencies.contains(code) { table[symbol] = [code] }
         for (code, symbol) in Money.symbols where currencies.contains(code) {
             table[symbol, default: []].append(code)
         }
