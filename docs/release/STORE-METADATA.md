@@ -299,11 +299,11 @@ line against the app: the external services and the Pro list drift.
 No account: no sign-up, no sign-in, no server, no backend. The app opens straight to the dashboard, so "Sign-In Required" is unticked.
 
 1. WHAT CHANGED IN THIS VERSION
-No functional change. The contact address in the bundled privacy policy and terms (Settings, Legal) is now subeye@yhunko.dev, and the Privacy Policy, Support and Marketing URLs moved to https://subeye.yhunko.dev/; the old www.subeye.cc URLs redirect there.
-Since 6.3.0: installments and loans the user already has, by payment, number of payments and first date; SubEye offers, brokers or advertises no credit (Guideline 3.2.1(viii)). To try it: Home, "+", "Installment or loan", any name, a payment and a number of payments, Save. "+" opens one flow per kind; Free trial and One-time license are Pro.
+Add from a screenshot (free). To try it: Home, "+", "From screenshot", then choose screenshots of Settings > [your name] > Subscriptions. The system photo picker is used, so no photo library permission is requested. Text is read on the device by Apple's Vision framework; only when its rules find no rows, and only on iOS 26 or later with Apple Intelligence on, Apple's on-device Foundation Models groups the text. Nothing is uploaded and the images are not stored. The user checks and edits the list before anything is added.
+Lock Screen widgets (Pro): the existing widget also comes in the Lock Screen's rectangular and inline sizes.
 
 2. TESTED ON
-iPhone 17, iOS 27.2; iPhone 17 Pro simulator, iOS 26.5. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.
+iPhone 17 Pro simulator, iOS 26.5; the previous version also on iPhone 17, iOS 27.2. iPhone only, portrait only, dark appearance only, by design. Minimum iOS 16.4.
 
 3. WHAT IT DOES
 A manual subscription tracker: the user types what they pay (name, amount, currency, cycle, start date) and sees what still leaves their account this month, next month's forecast, renewal dates and when a trial turns into a charge; they can pause, cancel or renew. It also tracks the user's own installment plans and loans. No bank credentials, no email access. Rated 4+.
@@ -317,7 +317,8 @@ No credentials, demo account or configuration. Empty on first launch by design: 
 - Brandfetch, with Google's favicon service as fallback: a logo for a domain the user typed or picked, a service's or a lender's.
 - Apple App Store lookup (itunes.apple.com/lookup, app ID and country only), at most daily, for a new-version notice; skipped for sandbox and TestFlight receipts.
 - Apple iCloud key-value storage: off by default, opt-in at Settings, Data; the user's own iCloud, which we cannot read.
-No authentication, analytics, crash-reporting, advertising or AI SDK, no payment processor other than Apple, and no server of ours.
+Screenshot import runs only on the device (Apple Vision, and Apple's on-device Foundation Models where available) and makes no network call.
+No authentication, analytics, crash-reporting, advertising or third-party AI SDK, no payment processor other than Apple, and no server of ours.
 
 6. REGIONAL DIFFERENCES
 None. English and Ukrainian from the device language; all 155 currencies; nothing geo-restricted. Only the purchase price varies by storefront.
@@ -327,7 +328,7 @@ Not regulated: no bank or lender connection, financial account, money movement, 
 Brand logos are fetched at runtime for a domain the user typed or picked, never bundled, and imply no affiliation.
 
 8. IN-APP PURCHASE
-"SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder days, installments too, pricing phases (trials, intro prices, scheduled changes and one-time licenses), categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, installment overpayment, and Home Screen widgets, installments included.
+"SubEye Pro", one non-consumable that never renews; no subscription in this app. It unlocks trial-ending alerts and custom reminder days, installments too, pricing phases (trials, intro prices, scheduled changes and one-time licenses), categories with the filter and spend breakdown, the calendar's year view and month-on-month figures, installment overpayment, and Home Screen and Lock Screen widgets, installments included.
 Buy at Settings, first row, "SubEye Pro". Locked features open the same paywall: Settings, Categories; Settings, Reminders, trial alerts; Calendar, year view; a subscription's Manage pricing; the + menu's Free trial and One-time license and a subscription's "Starts at a lower price"; an installment's purchase price and overpayment.
 The paywall shows Apple's storefront price, says it does not renew, and links the Terms of Use and Privacy Policy. Restore Purchases is on the paywall and in Settings.
 ```
