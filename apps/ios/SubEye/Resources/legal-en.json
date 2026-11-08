@@ -4,7 +4,7 @@
     "locale": "en",
     "title": "Privacy policy",
     "description": "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-    "updated": "2026-11-05",
+    "updated": "2026-11-08",
     "lead": [
       {
         "p": [
@@ -101,7 +101,7 @@
           },
           {
             "p": [
-              "There is no advertising identifier, no location data, no contacts, no photos, and no advertising, product-analytics or crash-reporting SDK in the app. The one SDK that talks to a service is for purchases, and it is listed below."
+              "There is no advertising identifier, no location data, no contacts, no access to your photo library, and no advertising, product-analytics or crash-reporting SDK in the app. Screenshots you pick to import subscriptions are read on the phone by Apple's text recognition and are neither kept nor sent anywhere. The one SDK that talks to a service is for purchases, and it is listed below."
             ]
           }
         ]
@@ -293,7 +293,7 @@
     "locale": "en",
     "title": "Terms of service",
     "description": "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-    "updated": "2026-11-05",
+    "updated": "2026-11-08",
     "lead": [
       {
         "p": [
@@ -386,7 +386,7 @@
               {
                 "b": "SubEye Pro is a single payment of $14.99"
               },
-              ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen widgets, which then list the next installment payment too."
+              ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen and Lock Screen widgets, which then list the next installment payment too."
             ]
           },
           {

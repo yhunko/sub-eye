@@ -21,7 +21,9 @@ struct SubscriptionWidgetView: View {
 
     var body: some View {
         Group {
-            if let snapshot = entry.snapshot {
+            if family == .accessoryInline || family == .accessoryRectangular {
+                LockScreenSubscriptionWidget(snapshot: entry.snapshot, date: entry.date)
+            } else if let snapshot = entry.snapshot {
                 if snapshot.locked {
                     LockedSubscriptionWidget(snapshot: snapshot)
                 } else if family == .systemMedium {
@@ -43,7 +45,7 @@ struct SubscriptionWidgetView: View {
 
     private var destination: URL {
         if entry.snapshot?.locked == true { return AppConfiguration.url("paywall") }
-        if family == .systemSmall, let item = entry.snapshot?.items.first {
+        if family != .systemMedium, let item = entry.snapshot?.items.first {
             return item.destination
         }
         return AppConfiguration.url("")
@@ -252,6 +254,51 @@ private struct WidgetRenewalRow: View {
     }
 }
 
+private struct LockScreenSubscriptionWidget: View {
+    let snapshot: WidgetSnapshot?
+    let date: Date
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        if family == .accessoryInline { inline } else { rectangular }
+    }
+
+    @ViewBuilder private var inline: some View {
+        if let snapshot, snapshot.locked {
+            Label(snapshot.lockCta, systemImage: "lock.fill")
+        } else if let snapshot, let item = snapshot.items.first {
+            Text(item.name + " · " + item.amount + " · " + item.dueText(locale: snapshot.locale, now: date))
+        } else if let snapshot {
+            Text(snapshot.monthLabel + " · " + snapshot.monthTotal)
+        } else {
+            Label(L("native_open"), systemImage: "eye")
+        }
+    }
+
+    private var rectangular: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            if let snapshot, snapshot.locked {
+                Text(snapshot.monthLabel).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text(snapshot.monthTotal).font(.headline).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                Label(snapshot.lockCta, systemImage: "lock.fill").font(.caption2.weight(.semibold)).lineLimit(1).widgetAccentable()
+            } else if let snapshot, let item = snapshot.items.first {
+                Text(item.dueText(locale: snapshot.locale, now: date)).font(.caption2.weight(.semibold)).textCase(.uppercase)
+                    .lineLimit(1).minimumScaleFactor(0.8).widgetAccentable()
+                Text(item.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
+                Text(item.amount + (snapshot.alsoDue.map { " · " + $0 } ?? "")).font(.caption).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+            } else if let snapshot {
+                Text(snapshot.monthLabel).font(.caption2.weight(.semibold)).textCase(.uppercase).lineLimit(1).widgetAccentable()
+                Text(snapshot.monthTotal).font(.headline).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                Text(snapshot.emptyLabel).font(.caption).lineLimit(1)
+            } else {
+                Label(L("native_open"), systemImage: "eye").font(.headline)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct LockedSubscriptionWidget: View {
     let snapshot: WidgetSnapshot
 
@@ -303,7 +350,7 @@ struct SubEyeWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "SubEyeWidget", provider: SubscriptionProvider()) { SubscriptionWidgetView(entry: $0) }
             .configurationDisplayName(L("native_widgetTitle")).description(L("native_widgetDescription"))
-            .supportedFamilies([.systemSmall, .systemMedium])
+            .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryInline])
             .containerBackgroundRemovable(true)
     }
 }
@@ -359,6 +406,15 @@ private enum WidgetPreview {
     SubscriptionEntry(date: WidgetPreview.date, snapshot: WidgetPreview.locked)
     SubscriptionEntry(date: WidgetPreview.date, snapshot: WidgetPreview.empty)
     SubscriptionEntry(date: WidgetPreview.date, snapshot: nil)
+}
+
+#Preview("Lock Screen", as: .accessoryRectangular) {
+    SubEyeWidget()
+} timeline: {
+    SubscriptionEntry(date: WidgetPreview.date, snapshot: WidgetPreview.english)
+    SubscriptionEntry(date: WidgetPreview.date, snapshot: WidgetPreview.ukrainian)
+    SubscriptionEntry(date: WidgetPreview.date, snapshot: WidgetPreview.locked)
+    SubscriptionEntry(date: WidgetPreview.date, snapshot: WidgetPreview.empty)
 }
 
 #Preview("Next payment", as: .systemSmall) {

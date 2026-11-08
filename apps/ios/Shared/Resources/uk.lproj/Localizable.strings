@@ -331,7 +331,7 @@
 "paywall_lockFilterBody" = "Категорії — частина SubEye Pro.";
 "paywall_lockTimeline" = "Історія цін";
 "paywall_lockTimelineBody" = "Пробні періоди, знижки та заплановані зміни на одній шкалі.";
-"paywall_lockWidgets" = "Віджети на екрані «Дім»";
+"paywall_lockWidgets" = "Віджети на Початковому й Замкненому екранах";
 "paywall_lockWidgetsBody" = "Наступні платежі — який сервіс, коли й скільки — без відкривання застосунку.";
 "paywall_oneTime" = "Разова покупка, а не підписка. Нічого не поновлюється.";
 "paywall_owned" = "У вас є SubEye Pro.";

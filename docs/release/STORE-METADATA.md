@@ -72,6 +72,14 @@ For when there is no news worth the slot:
 Every subscription, no limit, for free. No account, no bank login, no ads. Type in what you pay and see what leaves your account this month and what comes next.
 ```
 
+### What's New in This Version (4000) — 6.4.0
+
+```
+• Add from a screenshot: take screenshots of Settings → your name → Subscriptions, then tap + → From screenshot. SubEye reads the names, prices and renewal dates on the phone and shows you the list to check before anything is added. Nothing leaves the device.
+• SubEye Pro: Lock Screen widgets — your next payment, or the month's total, right under the clock.
+• The + button is a true circle again, and still opens the menu of what you can add.
+```
+
 ### What's New in This Version (4000) — 6.3.1
 
 ```
@@ -97,6 +105,7 @@ WHAT YOU GET
 • Next month's forecast set against this one, and the single subscription costing you the most.
 • SubEye Pro makes a price a timeline, not a number. Free trial, intro price, the standard price it turns into, a license you bought once with its optional updates renewal, and any change you have scheduled — all on one line, months before it reaches your statement.
 • Pause indefinitely or until a date. Cancel at period end and keep what you already paid for, or cancel immediately. Change your mind and renew.
+• Add from a screenshot — pick screenshots of your App Store subscriptions and SubEye reads them on the phone, ready for you to check.
 • Installments and loans next to your subscriptions — a pay-in-parts purchase, buy now, pay later, a card installment or a bank loan. How many payments are made, what is left to pay and the day it ends, with every payment counted in its month and shown in the calendar.
 • Saved with SubEye — what pausing and cancelling has kept in your pocket, counted from the day each one stopped.
 • A reminder the day before a renewal or an installment payment, so nothing is a surprise.
@@ -119,7 +128,7 @@ Pro is a single purchase that never renews. It adds:
 • Categories, the category filter, and the spend breakdown grouped by them
 • The calendar's year view, and every month set against the one before it
 • What a credit really costs — the purchase price set against what you repay
-• Home Screen widgets, with your next installment payment among the upcoming ones
+• Home and Lock Screen widgets, with your next installment payment among the upcoming ones
 
 Charging a monthly fee to watch your monthly fees would be absurd.
 
@@ -182,6 +191,14 @@ For when there is no news worth the slot:
 Усі ваші підписки — без обмежень і безкоштовно. Без акаунта, без доступу до банку, без реклами. Вводите те, що платите, — і бачите, скільки піде цього місяця і що далі.
 ```
 
+### What's New in This Version (4000) — 6.4.0
+
+```
+• Додавання зі знімка екрана: зробіть знімки екрана «Параметри → ваше ім’я → Передплати», а тоді торкніться «+» → «Зі знімка екрана». SubEye розпізнає назви, ціни й дати поновлення на телефоні й покаже список на перевірку, перш ніж щось додати. Нічого не залишає пристрій.
+• SubEye Pro: віджети на Замкненому екрані — наступний платіж або сума за місяць просто під годинником.
+• Кнопка «+» знову ідеально кругла й так само відкриває меню того, що можна додати.
+```
+
 ### What's New in This Version (4000) — 6.3.1
 
 ```
@@ -207,6 +224,7 @@ For when there is no news worth the slot:
 • Прогноз на наступний місяць у порівнянні з цим і найдорожча підписка.
 • З SubEye Pro ціна — це не число, а лінія часу. Пробний період, ціна на старт, стандартна ціна, на яку все перетвориться, ліцензія, куплена один раз, із необов’язковим продовженням оновлень, і будь-яка зміна, яку ви запланували, — на одній шкалі, за місяці до того, як це з’явиться у виписці.
 • Призупиніть безстроково або до певної дати. Скасуйте наприкінці оплаченого періоду й користуйтеся тим, за що вже заплатили, — або скасуйте одразу. Передумали? Відновіть.
+• Додавання зі знімка екрана — оберіть знімки своїх передплат з App Store, і SubEye розпізнає їх на телефоні, а ви перевірите перед додаванням.
 • Розстрочки й кредити поруч із підписками — покупка частинами, розстрочка на картці чи банківський кредит. Скільки платежів уже зроблено, скільки лишилося сплатити і коли все закінчиться, а кожен платіж — у своєму місяці й у календарі.
 • Заощаджено з SubEye — скільки лишилося у вашій кишені завдяки паузам і скасуванням, від дня, коли кожна підписка зупинилася.
 • Нагадування за день до списання чи платежу за розстрочкою, щоб нічого не було несподіванкою.
@@ -229,7 +247,7 @@ Pro — це разова покупка, яка ніколи не поновл�
 • Категорії, фільтр за ними і розподіл витрат за категоріями
 • Річний огляд у календарі й порівняння кожного місяця з попереднім
 • Скільки насправді коштує кредит — переплата порівняно з ціною покупки
-• Віджети на Початковому екрані — з наступним платежем за розстрочкою чи кредитом серед найближчих
+• Віджети на Початковому й Замкненому екранах — з наступним платежем за розстрочкою чи кредитом серед найближчих
 
 Брати щомісячну плату за те, щоб стежити за щомісячними платежами, було б абсурдом.
 

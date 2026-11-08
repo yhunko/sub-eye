@@ -331,7 +331,7 @@
 "paywall_lockFilterBody" = "Categories are part of SubEye Pro.";
 "paywall_lockTimeline" = "Price history";
 "paywall_lockTimelineBody" = "Trials, intro discounts and scheduled changes, on one timeline.";
-"paywall_lockWidgets" = "Home Screen widgets";
+"paywall_lockWidgets" = "Home and Lock Screen widgets";
 "paywall_lockWidgetsBody" = "See your next payments — which service, when, and how much — without opening the app.";
 "paywall_oneTime" = "A single purchase, not a subscription. Nothing renews.";
 "paywall_owned" = "You have SubEye Pro.";

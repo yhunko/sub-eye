@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Terms of service",
   description:
     "The agreement between you and SubEye: what the app does, what Pro costs, what you own, and how either side ends it.",
-  updated: "2026-11-05",
+  updated: "2026-11-08",
   lead: [
     {
       p: [
@@ -92,7 +92,7 @@ const EN: LegalDoc = {
         {
           p: [
             { b: "SubEye Pro is a single payment of $14.99" },
-            ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen widgets, which then list the next installment payment too.",
+            ", or the equivalent set for your App Store storefront — $11.99 in Ukraine. It is not a subscription and it does not renew. It unlocks control over when renewal and installment reminders land, trial-ending reminders, the price history on each subscription, categories with their filter and the spend breakdown, the year view and the month-on-month figures inside the calendar, what an installment plan or loan costs over its purchase price, and the Home Screen and Lock Screen widgets, which then list the next installment payment too.",
           ],
         },
         {
@@ -169,7 +169,7 @@ const UK: LegalDoc = {
   title: "Умови користування",
   description:
     "Домовленість між вами і SubEye: що робить застосунок, скільки коштує Pro, кому належать дані та як припинити користування.",
-  updated: "2026-11-05",
+  updated: "2026-11-08",
   lead: [
     {
       p: [
@@ -255,7 +255,7 @@ const UK: LegalDoc = {
         {
           p: [
             { b: "SubEye Pro — це один платіж $11.99" },
-            " в Україні або еквівалент, встановлений для вашої вітрини App Store — $14.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань про списання й платежі за розстрочками та кредитами, нагадування про кінець пробного періоду, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, річний огляд і порівняння місяців у календарі, переплату за розстрочкою чи кредитом порівняно з ціною покупки, а також віджети на Початковому екрані, де серед найближчих платежів з’явиться й наступний платіж за розстрочкою чи кредитом.",
+            " в Україні або еквівалент, встановлений для вашої вітрини App Store — $14.99 у США. Це не підписка, і вона не поновлюється. Pro відкриває власний графік нагадувань про списання й платежі за розстрочками та кредитами, нагадування про кінець пробного періоду, історію цін кожної підписки, категорії з фільтром за ними та розподілом витрат, річний огляд і порівняння місяців у календарі, переплату за розстрочкою чи кредитом порівняно з ціною покупки, а також віджети на Початковому й Замкненому екранах, де серед найближчих платежів з’явиться й наступний платіж за розстрочкою чи кредитом.",
           ],
         },
         {
