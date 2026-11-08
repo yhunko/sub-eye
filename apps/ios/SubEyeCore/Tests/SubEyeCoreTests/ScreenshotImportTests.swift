@@ -65,6 +65,30 @@ final class ScreenshotImportTests: XCTestCase {
         XCTAssertNil(price("Season 2 Pass"), "P is the pula only where no letter follows")
     }
 
+    func testACountryMarkNamesTheCurrencyWhateverTheRegion() {
+        let wide = catalogue.union(["nzd", "hkd", "mxn", "twd", "cny"])
+        let cases: [(String, Decimal, String)] = [
+            ("CA$12.99", 12.99, "cad"), ("A$14.99", 14.99, "aud"), ("AU$14.99", 14.99, "aud"), ("US$4.99", 4.99, "usd"),
+            ("NZ$9.99", 9.99, "nzd"), ("HK$48.00", 48, "hkd"), ("MX$99.00", 99, "mxn"), ("NT$150", 150, "twd"), ("CN¥30.00", 30, "cny"),
+            ("JP¥1,200", 1200, "jpy"), ("12,99 $CA", 12.99, "cad"), ("4,99 $US", 4.99, "usd"), ("Renews 3 January · CA$12.99/month", 12.99, "cad")
+        ]
+        for (text, amount, currency) in cases {
+            let parsed = ScreenshotImport.price(text, currencies: wide, region: "usd")
+            XCTAssertEqual(parsed.map { Money.canonical($0.amount) }, Money.canonical(amount), text)
+            XCTAssertEqual(parsed?.currency, currency, text)
+        }
+    }
+
+    func testACountryMarkOutsideTheCatalogueIsNoPrice() {
+        XCTAssertNil(price("HK$48.00"), "Without HKD the letters before $ make it no bare dollar either")
+    }
+
+    func testWordsWithoutAnAmountAreNotPrices() {
+        XCTAssertNil(price("Free Trial"))
+        XCTAssertNil(price("Free"))
+        XCTAssertNil(price("$"))
+    }
+
     func testOnlyCataloguedCodesAreCurrencies() {
         XCTAssertNil(price("RUB 100"))
         XCTAssertNil(price("100 BYN"))
@@ -137,6 +161,18 @@ final class ScreenshotImportTests: XCTestCase {
         XCTAssertNil(ScreenshotImport.renewal("Renews 31 November", now: now, zone: kyiv))
     }
 
+    func testALeapDayNeedsALeapYear() {
+        XCTAssertEqual(ScreenshotImport.renewal("Renews 29 February 2028", now: now, zone: kyiv)?.date, day("2028-02-29"))
+        XCTAssertNil(ScreenshotImport.renewal("Renews 29 February 2027", now: now, zone: kyiv))
+    }
+
+    func testCadenceWithAHyphenAndOutOfRangeCounts() {
+        XCTAssertEqual(ScreenshotImport.cadence("3-month plan")?.every, 3)
+        XCTAssertEqual(ScreenshotImport.cadence("3-month plan")?.period, .month)
+        XCTAssertNil(ScreenshotImport.cadence("0 months"))
+        XCTAssertNil(ScreenshotImport.cadence("90 days"), "A count past 60 is a trial length, not a billing cycle")
+    }
+
     func testStatusVerbs() {
         XCTAssertEqual(ScreenshotImport.renewal("Renews 12 December", now: now, zone: kyiv)?.status, .renews)
         XCTAssertEqual(ScreenshotImport.renewal("Expires 12 December", now: now, zone: kyiv)?.status, .ends)
@@ -149,6 +185,34 @@ final class ScreenshotImportTests: XCTestCase {
         let first = [ImportDraft(name: "iCloud+", renewal: day("2026-12-01")), ImportDraft(name: "Duolingo", renewal: day("2026-11-20"))]
         let second = [ImportDraft(name: "duolingo", renewal: day("2026-11-20")), ImportDraft(name: "Netflix", renewal: day("2026-11-30"))]
         XCTAssertEqual(ScreenshotImport.merge([first, second]).map(\.name), ["iCloud+", "Duolingo", "Netflix"])
+    }
+
+    func testMergeKeepsTheSameNameOnDifferentDates() {
+        let first = [ImportDraft(name: "Apple One", renewal: day("2026-12-01"))]
+        let second = [ImportDraft(name: "Apple One", renewal: day("2027-01-15")), ImportDraft(name: "Apple One", renewal: day("2026-12-01"))]
+        XCTAssertEqual(ScreenshotImport.merge([first, second]).map(\.renewal), [day("2026-12-01"), day("2027-01-15")])
+    }
+
+    func testNoTextReadsAsNoDrafts() {
+        XCTAssertEqual(ScreenshotImport.drafts([], now: now, zone: kyiv, currencies: catalogue, region: nil), [])
+        XCTAssertEqual(ScreenshotImport.drafts([line("  ", y: 0.3), line("", y: 0.4)], now: now, zone: kyiv, currencies: catalogue, region: nil), [])
+    }
+
+    func testRowsWithoutADateAreNotSubscriptions() {
+        let lines = [line("Subscriptions", y: 0.10, height: 0.03), line("See All", y: 0.2), line("Apple One", y: 0.3), line("$19.95/month", y: 0.325)]
+        XCTAssertEqual(ScreenshotImport.drafts(lines, now: now, zone: kyiv, currencies: catalogue, region: "usd"), [])
+    }
+
+    func testACanadianListReadInEnglishKeepsItsDollars() {
+        let lines = [line("Crave", y: 0.30), line("CA$9.99/month", y: 0.325), line("Renews 3 January", y: 0.35)]
+        XCTAssertEqual(ScreenshotImport.drafts(lines, now: now, zone: kyiv, currencies: catalogue, region: "usd"),
+                       [ImportDraft(name: "Crave", cost: Decimal(string: "9.99"), currency: "cad", period: .month, renewal: day("2027-01-03"))])
+    }
+
+    func testStructuredRowsNeedADate() {
+        let lines = [line("iCloud+", y: 0.30), line("$2.99/month", y: 0.33)]
+        let rows = [ScreenshotRow(name: "iCloud+", price: "$2.99/month", renewal: nil)]
+        XCTAssertEqual(ScreenshotImport.structured(rows, lines: lines, now: now, zone: kyiv, currencies: catalogue, region: nil), [])
     }
 
     func testStructuredRowsGoThroughTheSameRulesAndMustAppearInTheText() {

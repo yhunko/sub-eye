@@ -6,7 +6,7 @@ const EN: LegalDoc = {
   title: "Privacy policy",
   description:
     "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-  updated: "2026-11-05",
+  updated: "2026-11-08",
   lead: [
     {
       p: [
@@ -89,7 +89,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "There is no advertising identifier, no location data, no contacts, no photos, and no advertising, product-analytics or crash-reporting SDK in the app. The one SDK that talks to a service is for purchases, and it is listed below.",
+            "There is no advertising identifier, no location data, no contacts, no access to your photo library, and no advertising, product-analytics or crash-reporting SDK in the app. Screenshots you pick to import subscriptions are read on the phone by Apple's text recognition and are neither kept nor sent anywhere. The one SDK that talks to a service is for purchases, and it is listed below.",
           ],
         },
       ],
@@ -268,7 +268,7 @@ const UK: LegalDoc = {
   title: "Політика конфіденційності",
   description:
     "Які дані збирає SubEye, хто їх обробляє, скільки вони зберігаються і як їх видалити.",
-  updated: "2026-11-05",
+  updated: "2026-11-08",
   lead: [
     {
       p: [
@@ -349,7 +349,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Жодного рекламного ідентифікатора, даних про місцеперебування, контактів чи фотографій. У застосунку немає ні рекламного чи продуктово-аналітичного SDK, ні SDK для звітів про збої. Єдиний SDK, що звертається до сервісу, — для покупок, і він перелічений нижче.",
+            "Жодного рекламного ідентифікатора, даних про місцеперебування, контактів чи доступу до фототеки. Знімки екрана, які ви обираєте для імпорту підписок, розпізнаються на телефоні засобами Apple і ніде не зберігаються й не надсилаються. У застосунку немає ні рекламного чи продуктово-аналітичного SDK, ні SDK для звітів про збої. Єдиний SDK, що звертається до сервісу, — для покупок, і він перелічений нижче.",
           ],
         },
       ],

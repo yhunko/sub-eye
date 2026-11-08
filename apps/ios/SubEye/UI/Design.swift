@@ -195,14 +195,21 @@ enum AddKind: CaseIterable {
     }
 }
 
+struct AddSubscriptionItem: ToolbarContent {
+    let placement: ToolbarItemPlacement
+    @Binding var sheet: SheetRoute?
+    let pro: Bool
+    var body: some ToolbarContent {
+        if #available(iOS 26, *) {
+            ToolbarItem(placement: placement) { AddSubscriptionButton(sheet: $sheet, pro: pro) }.sharedBackgroundVisibility(.hidden)
+        } else { ToolbarItem(placement: placement) { AddSubscriptionButton(sheet: $sheet, pro: pro) } }
+    }
+}
+
 struct AddSubscriptionButton: View {
     @Binding var sheet: SheetRoute?
     let pro: Bool
     var body: some View {
-        if #available(iOS 17, *) { menu.buttonBorderShape(.circle) }
-        else { menu.buttonBorderShape(.capsule) }
-    }
-    private var menu: some View {
         Menu {
             ForEach(AddKind.allCases, id: \.self) { kind in
                 let locked = kind.pro && !pro
@@ -212,9 +219,19 @@ struct AddSubscriptionButton: View {
                     Image(systemName: kind.symbol)
                 }.accessibilityIdentifier(kind.identifier)
             }
-        } label: { Label(L("subs_add"), systemImage: "plus") }
-            .menuStyle(.button).labelStyle(.iconOnly).buttonStyle(.borderedProminent)
-            .tint(AppTheme.accent).foregroundStyle(AppTheme.background).accessibilityIdentifier("addSubscription")
+        } label: {
+            // A bordered style pads the glyph wider than tall, so the toolbar drew an oval; the circle is drawn here instead.
+            Label(L("subs_add"), systemImage: "plus").labelStyle(.iconOnly).font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(AppTheme.background).frame(width: 44, height: 44).modifier(AddButtonFill()).contentShape(Circle())
+        }
+        .menuStyle(.button).buttonStyle(.plain).accessibilityIdentifier("addSubscription")
+    }
+}
+
+private struct AddButtonFill: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) { content.glassEffect(.regular.tint(AppTheme.accent).interactive(), in: Circle()) }
+        else { content.background(AppTheme.accent, in: Circle()) }
     }
 }
 

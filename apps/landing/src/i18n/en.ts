@@ -134,7 +134,7 @@ export const en = {
   reminders: {
     title: "A reminder the day before.",
     body: "Every renewal and installment payment gets a notification the day before, scheduled on the phone itself — there is no push server. On renewal day, a Live Activity puts Keep and Cancel on the Lock Screen.",
-    pro: "With Pro: the lead time you choose (the same day, or 1, 3 or 7 days before), trial-ending alerts, and your next payments in a Home Screen widget.",
+    pro: "With Pro: the lead time you choose (the same day, or 1, 3 or 7 days before), trial-ending alerts, and your next payments in Home Screen and Lock Screen widgets.",
     alt: "A SubEye Live Activity on the iPhone Lock Screen: iCloud+ renews today for $2.99, with Keep and Cancel buttons.",
   },
 
@@ -169,6 +169,7 @@ export const en = {
     freeSuffix: "always",
     freeItems: [
       "Every subscription and installment, no limit",
+      "Import from a screenshot, read on the phone",
       "This month, next month and the year ahead",
       "The payment calendar",
       "A reminder the day before each payment",
@@ -183,7 +184,7 @@ export const en = {
       "Categories and the spend breakdown",
       "The calendar's year view, month against month",
       "What a credit costs over the purchase price",
-      "Home Screen widgets",
+      "Home and Lock Screen widgets",
     ],
     storefrontTitle: "Priced for where you live.",
     storefrontBody:
@@ -203,7 +204,7 @@ export const en = {
       },
       {
         q: "Why do I have to type everything in?",
-        a: "Because the alternative is your bank password. Trackers that find subscriptions for you do it by holding a credential to your accounts or by reading your email. SubEye holds neither. Adding a subscription takes about twenty seconds, once.",
+        a: "Because the alternative is your bank password. Trackers that find subscriptions for you do it by holding a credential to your accounts or by reading your email. SubEye holds neither. Adding a subscription takes about twenty seconds, once — or pick screenshots of your App Store subscriptions and SubEye reads them on the phone, for you to check before anything is added.",
       },
       {
         q: "Is my data safe?",
@@ -298,7 +299,8 @@ export const en = {
     subeyeFreeLimit: "No limit on subscriptions or installment plans",
     subeyePlatforms: (os: string) =>
       `iPhone (iOS ${os} or later); also iPad and Apple silicon Macs`,
-    subeyeWidgets: "Home Screen widgets with Pro; Live Activities free",
+    subeyeWidgets:
+      "Home and Lock Screen widgets with Pro; Live Activities free",
     subeyeTimeline:
       "Trial, intro price, standard price and scheduled changes, each dated, with Pro",
     subeyeInstallments: "Beside subscriptions on one calendar, free",

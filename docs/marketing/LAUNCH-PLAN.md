@@ -610,7 +610,7 @@ phone; **[repo]** marks what the app lacks today.
 
 **Next one or two releases**
 
-1. **Screenshot import, read on the device.** Settings → Apple Account →
+1. **Screenshot import, read on the device.** *Shipped in 6.4.0, free.* Settings → Apple Account →
    Subscriptions, or a bank's regular-payments screen, read with Vision text
    recognition (available on SubEye's iOS 16.4 floor) into an editable draft
    list; Apple's on-device model on iOS 26+ where Apple Intelligence is on.
@@ -626,9 +626,10 @@ phone; **[repo]** marks what the app lacks today.
    it.
 4. **A payment card on each subscription**, and a "card replaced" view listing
    every subscription to move.
-5. **More widget surfaces.** **[repo]** Only small and medium Home Screen
-   widgets ship (`supportedFamilies([.systemSmall, .systemMedium])`).
-   SubTrack'd's free tier has Lock Screen and StandBy.
+5. **More widget surfaces.** **[repo]** Lock Screen (rectangular and inline)
+   joined small and medium in 6.4.0, and StandBy shows the small one. Still
+   missing: a circular Lock Screen widget and Control Center. SubTrack'd gives
+   its widgets away free; SubEye's are Pro.
 6. **Real App Intents** — "due this week", "monthly total", "add a
    subscription" — for Siri, Shortcuts and Spotlight. **[repo]** Only
    `OpenSubEyeIntent` exists. Reopens r/shortcuts.

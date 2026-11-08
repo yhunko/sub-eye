@@ -62,7 +62,7 @@ struct SubscriptionsView: View {
         .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: L("subs_searchPlaceholder"))
         .appScreen().navigationTitle(L("tabs_subscriptions"))
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) { AddSubscriptionButton(sheet: $sheet, pro: state.settings.pro) }
+            AddSubscriptionItem(placement: .topBarLeading, sheet: $sheet, pro: state.settings.pro)
             if state.effectiveSegment == .subscriptions { ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Menu {
