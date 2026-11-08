@@ -1,16 +1,15 @@
 import { describe, expect, it } from "bun:test";
 import { getLegalDoc, type Inline } from "@subeye/legal";
-// Reaching into apps/mobile deliberately, and only from a test: that module
-// imports nothing at all, and its catalogue is the claim this page makes out
-// loud. The page names a COUNT now rather than five codes, so a currency added
-// or dropped in the app should fail here rather than ship a page that says 156
-// while the product ships something else.
-import { CURRENCY_CODES } from "../../mobile/src/shared/lib/format/money";
+// Reaching into apps/ios deliberately, and only from a test: the bundled
+// catalogue is the claim this page makes out loud. The page names a COUNT, so a
+// currency added or dropped in the app should fail here rather than ship a page
+// that says one number while the product ships another.
+import CURRENCY_CODES from "../../ios/SubEye/Resources/currencies.json";
 import { en } from "../src/i18n/en";
 import { uk } from "../src/i18n/uk";
 import { currencyMockup } from "../src/lib/currencies";
 import { money } from "../src/lib/format";
-import { proPrice } from "../src/lib/site";
+import { proPrice, proPriceUkraine } from "../src/lib/site";
 import { priceTimeline } from "../src/lib/timeline";
 
 describe("price timeline", () => {
@@ -27,6 +26,12 @@ describe("price timeline", () => {
     expect(
       priceTimeline.map((step) => money(step.monthly, step.currency)),
     ).toEqual(["$0.00", "$4.99", "$12.99"]);
+  });
+
+  it("costs $59.88 a year at the intro price and $155.88 at the standard one", () => {
+    expect(priceTimeline.map((step) => step.yearly)).toEqual([
+      0, 59.88, 155.88,
+    ]);
   });
 
   it("spans 30 days, then 3 months, then opens in month 4", () => {
@@ -92,12 +97,12 @@ describe("the currency claim", () => {
 
 describe("pro price", () => {
   it("is one number behind the pricing section and the JSON-LD offer", () => {
-    expect(proPrice.usd).toBe(11.99);
-    expect(money(proPrice.usd, "usd")).toBe("$11.99");
+    expect(proPrice.usd).toBe(14.99);
+    expect(money(proPrice.usd, "usd")).toBe("$14.99");
     // The euro storefront is quoted on the page too, so it is pinned here.
-    expect(money(proPrice.eur, "eur")).toBe("€9.99");
-    // Trailing symbol, non-breaking space — see the note in src/lib/format.ts.
-    expect(money(proPrice.uah, "uah", 0)).toBe("199\u00a0₴");
+    expect(money(proPrice.eur, "eur")).toBe("€17.99");
+    // Ukraine's storefront bills in dollars, not hryvnia.
+    expect(money(proPriceUkraine, "usd")).toBe("$11.99");
   });
 
   // `@subeye/legal` may not import this file — a package importing an app is a
@@ -123,7 +128,7 @@ describe("pro price", () => {
         .join("");
 
       expect(prose).toContain(money(proPrice.usd, "usd"));
-      expect(prose).toContain(money(proPrice.uah, "uah", 0));
+      expect(prose).toContain(money(proPriceUkraine, "usd"));
     }
   });
 });

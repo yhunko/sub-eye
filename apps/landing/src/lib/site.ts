@@ -7,7 +7,7 @@
  * `test/routes.test.ts` asserts the four strings against the page files that
  * actually exist.
  */
-export const SITE = "https://www.subeye.cc";
+export const SITE = "https://subeye.yhunko.dev";
 
 export const locales = ["en", "uk"] as const;
 export type Locale = (typeof locales)[number];
@@ -22,7 +22,13 @@ export type LegalPage = (typeof legalPages)[number];
  * `legalPages`: that list is the four-URL contract the shipped binary opens, and
  * adding a fifth member would silently widen it.
  */
-export type SitePage = LegalPage | "support";
+export type SitePage = LegalPage | "support" | ContentPage;
+
+export const contentPages = [
+  "bobby-alternative",
+  "price-increases-2026",
+] as const;
+export type ContentPage = (typeof contentPages)[number];
 
 export const isLocale = (value: unknown): value is Locale =>
   locales.includes(value as Locale);
@@ -40,10 +46,19 @@ export const otherLocale = (locale: Locale): Locale =>
 
 /**
  * Pro is one payment, per storefront. One constant so the pricing section and
- * the JSON-LD `offers` cannot quote different numbers — $11.99 is the price,
- * not a launch price, so nothing here expires.
+ * the JSON-LD `offers` cannot quote different numbers — $14.99 is the price,
+ * not a launch price, so nothing here expires. Keys are the currency codes the
+ * page prints. Ukraine's storefront bills in dollars at a hand-set price rather
+ * than Apple's conversion, so it is not a currency key and has its own constant.
  */
-export const proPrice = { usd: 11.99, uah: 199, eur: 9.99 };
+export const proPrice = { usd: 14.99, eur: 17.99 };
+export const proPriceUkraine = 11.99;
+
+/** The download itself. Structured data needs the free offer stated as a price. */
+export const freePrice = 0;
+
+/** The day the two content pages were first written; their Article `datePublished`. */
+export const contentPublished = "2026-11-05";
 
 /**
  * The App Store product page.

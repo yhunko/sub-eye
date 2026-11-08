@@ -6,11 +6,11 @@ const EN: LegalDoc = {
   title: "Privacy policy",
   description:
     "What SubEye collects, who processes it, how long it is kept, and how to have it deleted.",
-  updated: "2026-08-26",
+  updated: "2026-11-08",
   lead: [
     {
       p: [
-        "SubEye is a subscription tracker for iPhone. You type in what you pay and it tells you what that costs. There is no account, no sign-in and no SubEye server: everything you enter is stored on your own device and stays there unless you switch on iCloud Sync yourself, which copies it to your own iCloud and never to us. It has no access to your bank, no access to your email, and it does not go looking for subscriptions on your behalf.",
+        "SubEye is a subscription tracker for iPhone that follows installment plans and loans too. You type in what you pay and it tells you what that costs. There is no account, no sign-in and no SubEye server: everything you enter is stored on your own device and stays there unless you switch on iCloud Sync yourself, which copies it to your own iCloud and never to us. It has no access to your bank or your lender, no access to your email, and it does not go looking for subscriptions on your behalf.",
       ],
     },
   ],
@@ -22,7 +22,7 @@ const EN: LegalDoc = {
         {
           p: [
             "SubEye is built and operated by Yehor Hunko, an individual based in Ukraine, acting as the data controller. For anything in this policy, write to ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -36,7 +36,11 @@ const EN: LegalDoc = {
           ul: [
             [
               { b: "The subscriptions you enter:" },
-              " service name, website, amount, currency, billing period, payment dates, category, price history and any note you write. All of it typed by you, all of it held in the app's own storage on the phone. SubEye never uploads it and has nowhere to upload it to; the one thing that ever copies it off the phone is iCloud Sync, which you switch on yourself and which is described below.",
+              " service name, website, amount, currency, billing period, payment dates, category, price history and any note you write. All of it typed by you, all of it held in the app's own storage on the phone. SubEye never uploads it and has nowhere to upload it to. Only two things ever take any of it off the phone, both described below: the website domain, when the app fetches its logo, and iCloud Sync, which you switch on yourself.",
+            ],
+            [
+              { b: "The installment plans and loans you enter:" },
+              " the plan's name, kind (pay in parts, card installment or loan) and purpose, the lender's name and website, the currency, the total, the regular payment, how many payments there are and how often they fall, the first payment date, the purchase price, the date and amount of an early payoff, and any note you write. They are typed by you and held exactly like your subscriptions: in the app's own storage on the phone, with only the lender's website domain sent out for its logo and the rest copied off only by iCloud Sync.",
             ],
             [
               { b: "Your settings and reminders," },
@@ -58,7 +62,9 @@ const EN: LegalDoc = {
         {
           ul: [
             [
-              { b: "Your subscriptions, but only if you turn on iCloud Sync:" },
+              {
+                b: "Your subscriptions and installment plans, but only if you turn on iCloud Sync:",
+              },
               " the switch in Settings → Data copies them into your own iCloud so that your other devices can show the same list. It is off until you turn it on, it goes to Apple rather than to SubEye, and switching it off again leaves the copy already in your iCloud until you erase it.",
             ],
             [
@@ -66,8 +72,14 @@ const EN: LegalDoc = {
               " — an IP address and a device user agent — seen by the services listed below at the moment the app talks to one of them.",
             ],
             [
-              { b: "Diagnostics, when something goes wrong:" },
-              " if the app crashes, the stack trace with your device model and OS version. If you buy SubEye Pro, the App Store receipt for that purchase. Neither carries anything you typed, and neither is tied to a name, an email address or an account.",
+              { b: "Your purchase, if you buy SubEye Pro:" },
+              " the App Store receipt for it. It carries nothing you typed, and it is not tied to a name, an email address or an account. If you have chosen to share analytics with app developers in your iPhone's settings, Apple may also pass on a crash report, under Apple's terms; the app sends none itself.",
+            ],
+            [
+              {
+                b: "The website domain of a subscription or of an installment plan's lender,",
+              },
+              " sent to Brandfetch, or to Google when Brandfetch has no logo, so the app can draw that logo. Nothing else you typed goes with it.",
             ],
             [
               { b: "What you type into the brand logo search" },
@@ -77,7 +89,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "There is no advertising identifier, no location data, no contacts, no photos, and no advertising or product-analytics SDK in the app. Two SDKs do ship inside it — crash reporting and purchases — and both are listed below.",
+            "There is no advertising identifier, no location data, no contacts, no access to your photo library, and no advertising, product-analytics or crash-reporting SDK in the app. Screenshots you pick to import subscriptions are read on the phone by Apple's text recognition and are neither kept nor sent anywhere. The one SDK that talks to a service is for purchases, and it is listed below.",
           ],
         },
       ],
@@ -88,17 +100,11 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "These are every third party the app can reach, and each one is reached only when the app has a reason to. None of them receives your subscriptions — the single exception is Apple's iCloud, and only once you have switched iCloud Sync on yourself. None of them is given a name, an email address or an account identifier, because SubEye holds none of those.",
+            "These are every third party the app can reach, and each one is reached only when the app has a reason to. None of them receives your subscriptions or installment plans — the single exception is Apple's iCloud, and only once you have switched iCloud Sync on yourself. None of them is given a name, an email address or an account identifier, because SubEye holds none of those.",
           ],
         },
         {
           dl: [
-            {
-              term: "Sentry — crash reporting (European Union)",
-              desc: [
-                "Receives the stack trace of a crash in the app, with your device model and OS version. That is all of it: no subscription names, no amounts, no notes, no email address, no user identifier, no screenshots and no session recording.",
-              ],
-            },
             {
               term: "RevenueCat — purchases (United States)",
               desc: [
@@ -108,15 +114,17 @@ const EN: LegalDoc = {
             {
               term: "Brandfetch — brand logo search",
               desc: [
-                "Receives the text you type into the brand picker. Described in full below.",
+                "Receives the text you type into the brand picker, described in full below. To draw a logo, the app also asks ",
+                { code: "cdn.brandfetch.io" },
+                " for the website domain of a subscription, or of an installment plan's lender. That request discloses the domain and your IP address, and carries nothing else you typed.",
               ],
             },
             {
               term: "Google — logo images",
               desc: [
-                "Service logos are loaded as favicons from ",
+                "A logo Brandfetch does not return is loaded as a favicon from ",
                 { code: "google.com/s2/favicons" },
-                ". That request discloses the website domain of the subscription and your IP address. It carries nothing else you typed.",
+                ". That request discloses the same website domain — a subscription's, or a lender's — and your IP address. It carries nothing else you typed.",
               ],
             },
             {
@@ -130,7 +138,7 @@ const EN: LegalDoc = {
             {
               term: "Apple — the App Store and iCloud",
               desc: [
-                "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them.",
+                "Handles the purchase if you buy SubEye Pro, under Apple's own privacy policy. SubEye never sees your payment details. If you back up your iPhone to iCloud, your SubEye data is inside that backup, under Apple's terms. If you switch on iCloud Sync, your subscriptions and installment plans are also written to your own iCloud storage so your other devices can read them: they are held under your Apple Account, under Apple's terms, and SubEye still never receives them. Once a day, the app also asks the App Store which version of SubEye is current, so it can tell you an update is out; that request carries only the app's ID, your store country and your IP address.",
               ],
             },
           ],
@@ -143,7 +151,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "When you add or edit a subscription you can search for a service by name to attach its logo. ",
+            "When you add or edit a subscription, or name an installment plan's lender, you can search by name to attach a logo. ",
             { b: "What you type in that field is sent to " },
             { code: "api.brandfetch.io", b: true },
             ", along with your IP address, because that is how the search runs.",
@@ -151,7 +159,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "Nothing else goes with it. No identifier, no email address, no subscription data, no token. The results are used to draw the list on screen and are never written to disk. If you would rather not use it, leave the website field empty and type the service name yourself — the app works exactly the same without a logo.",
+            "Nothing else goes with it. No identifier, no email address, no subscription data, no token. The results are used to draw the list on screen and are never written to disk. If you would rather not use it, leave the website field empty and type the service name yourself, or leave the lender out of a plan — the app works exactly the same without a logo.",
           ],
         },
       ],
@@ -162,7 +170,7 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "Your subscriptions are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, fixing crashes, honouring a purchase you made, and converting currencies correctly.",
+            "Your subscriptions and installment plans are held on your device because that is the app: it cannot add up what it cannot store. Under the GDPR, data that stays on your own device and is never transmitted to SubEye is not processed by SubEye at all. For the few requests that do leave the phone, the legal basis is legitimate interest — keeping the app working, honouring a purchase you made, and converting currencies correctly.",
           ],
         },
         {
@@ -180,7 +188,7 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "Renewal reminders are scheduled on your device by iOS. There is no push server and no notification token, so no one — including SubEye — learns when a reminder fires.",
+            "Renewal and installment reminders are scheduled on your device by iOS. There is no push server and no notification token, so no one — including SubEye — learns when a reminder fires.",
           ],
         },
       ],
@@ -191,20 +199,20 @@ const EN: LegalDoc = {
       blocks: [
         {
           p: [
-            "Your subscriptions are kept on your device for as long as you keep them. Delete a subscription in the app and it is gone from the phone. Delete the app and everything in it goes with it.",
+            "Your subscriptions and installment plans are kept on your device for as long as you keep them. Delete one in the app and it is gone from the phone. Delete the app and everything in it goes with it.",
           ],
         },
         {
           p: [
             {
-              b: "Settings → Erase all data removes every subscription, reminder and setting from the device in one step.",
+              b: "Settings → Erase all data removes every subscription, installment plan, reminder and setting from the device in one step.",
             },
             " It is immediate, it is a real deletion rather than a flag, and it cannot be undone. With iCloud Sync on it clears the iCloud copy as well, which is what takes the data off your other devices. There is no further copy to ask anyone to delete — and because there is none, an iPhone backup you made earlier is the only thing that can bring the data back.",
           ],
         },
         {
           p: [
-            "A crash report already sent to Sentry is kept under Sentry's own retention policy and then dropped. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro.",
+            "Versions of SubEye before 6.0 sent crash reports to Sentry; a report already sent is kept under Sentry's own retention policy and then dropped, and the app sends none now. A purchase record at RevenueCat and Apple is kept as long as those services require, because it is what proves you own Pro.",
           ],
         },
       ],
@@ -220,8 +228,8 @@ const EN: LegalDoc = {
         },
         {
           p: [
-            "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a crash report or a purchase record held by one of the services above — write to ",
-            { mailto: "privacy@subeye.cc" },
+            "In practice most of those are already in your hands rather than in anyone else's: your data is on your device, you can read it, correct it and erase it in the app without asking permission. For anything else — including a purchase record held by one of the services above — write to ",
+            { mailto: "subeye@yhunko.dev" },
             " and expect an answer within 30 days.",
           ],
         },
@@ -234,7 +242,7 @@ const EN: LegalDoc = {
         {
           p: [
             "SubEye is not directed at children and does not knowingly collect data from anyone under 16. Since there is no account, and nothing is uploaded unless iCloud Sync is switched on, there is nothing held here to delete on a child's behalf — but if something about this concerns you, write to ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -260,11 +268,11 @@ const UK: LegalDoc = {
   title: "Політика конфіденційності",
   description:
     "Які дані збирає SubEye, хто їх обробляє, скільки вони зберігаються і як їх видалити.",
-  updated: "2026-08-26",
+  updated: "2026-11-08",
   lead: [
     {
       p: [
-        "SubEye — це застосунок для iPhone, який веде облік ваших підписок. Ви вводите те, що платите, а він показує, скільки це коштує. Тут немає ні акаунта, ні входу, ні сервера SubEye: усе, що ви вводите, зберігається на вашому власному пристрої і залишається там, доки ви самі не ввімкнете синхронізацію з iCloud, яка копіює ці дані у ваш власний iCloud, а не до нас. Застосунок не має доступу ні до вашого банку, ні до вашої пошти і не шукає підписки замість вас.",
+        "SubEye — це застосунок для iPhone, який веде облік ваших підписок, а також розстрочок і кредитів. Ви вводите те, що платите, а він показує, скільки це коштує. Тут немає ні акаунта, ні входу, ні сервера SubEye: усе, що ви вводите, зберігається на вашому власному пристрої і залишається там, доки ви самі не ввімкнете синхронізацію з iCloud, яка копіює ці дані у ваш власний iCloud, а не до нас. Застосунок не має доступу ні до вашого банку чи кредитора, ні до вашої пошти і не шукає підписки замість вас.",
       ],
     },
   ],
@@ -276,7 +284,7 @@ const UK: LegalDoc = {
         {
           p: [
             "SubEye створює та підтримує Єгор Гунько, фізична особа в Україні, який є володільцем персональних даних. З будь-якого питання щодо цієї політики пишіть на ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },
@@ -290,7 +298,11 @@ const UK: LegalDoc = {
           ul: [
             [
               { b: "Підписки, які ви вводите:" },
-              " назва сервісу, сайт, сума, валюта, період оплати, дати платежів, категорія, історія цін і будь-яка нотатка, яку ви написали. Усе це вводите ви, і все це лежить у власному сховищі застосунку на телефоні. SubEye нікуди його не вивантажує, та й вивантажувати нікуди; єдине, що взагалі копіює ці дані з телефона, — синхронізація з iCloud, яку вмикаєте ви самі і яку описано нижче.",
+              " назва сервісу, сайт, сума, валюта, період оплати, дати платежів, категорія, історія цін і будь-яка нотатка, яку ви написали. Усе це вводите ви, і все це лежить у власному сховищі застосунку на телефоні. SubEye нікуди його не вивантажує, та й вивантажувати нікуди. З телефона щось із цього потрапляє лише двома шляхами, і обидва описано нижче: домен сайту, коли застосунок завантажує логотип, і синхронізація з iCloud, яку вмикаєте ви самі.",
+            ],
+            [
+              { b: "Розстрочки та кредити, які ви вводите:" },
+              " назва, вид (покупка частинами, розстрочка на картці чи кредит) і призначення, назва та сайт кредитора, валюта, загальна сума, сума регулярного платежу, кількість платежів та їхня періодичність, дата першого платежу, ціна покупки, дата й сума дострокового погашення і будь-яка нотатка, яку ви написали. Їх теж вводите ви, і зберігаються вони так само, як підписки: у власному сховищі застосунку на телефоні. Назовні йде лише домен сайту кредитора, щоб завантажити логотип, а все інше копіює звідти тільки синхронізація з iCloud.",
             ],
             [
               { b: "Ваші налаштування та нагадування," },
@@ -313,7 +325,7 @@ const UK: LegalDoc = {
           ul: [
             [
               {
-                b: "Ваші підписки — але лише якщо ви ввімкнете синхронізацію з iCloud:",
+                b: "Ваші підписки, розстрочки й кредити — але лише якщо ви ввімкнете синхронізацію з iCloud:",
               },
               " перемикач у «Налаштування → Дані» копіює їх у ваш власний iCloud, щоб інші ваші пристрої показували той самий список. Він вимкнений, доки ви його не ввімкнете, дані йдуть до Apple, а не до SubEye, і після вимкнення копія лишається у вашому iCloud, доки ви її не зітрете.",
             ],
@@ -322,8 +334,12 @@ const UK: LegalDoc = {
               " — IP-адресу та user agent пристрою. Їх бачать перелічені нижче сервіси в той момент, коли застосунок звертається до одного з них.",
             ],
             [
-              { b: "Діагностику, коли щось ламається:" },
-              " якщо застосунок аварійно завершується — стек виклику разом із моделлю вашого пристрою та версією ОС. Якщо ви купуєте SubEye Pro — чек App Store за цю покупку. Жодне з цього не несе нічого з набраного вами і не прив’язане ні до імені, ні до пошти, ні до акаунта.",
+              { b: "Вашу покупку, якщо ви купуєте SubEye Pro:" },
+              " чек App Store за неї. Він не несе нічого з набраного вами і не прив’язаний ні до імені, ні до пошти, ні до акаунта. Якщо в налаштуваннях iPhone ви дозволили ділитися аналітикою з розробниками, Apple може також передати звіт про збій — на умовах Apple; сам застосунок таких звітів не надсилає.",
+            ],
+            [
+              { b: "Домен сайту підписки чи кредитора" },
+              " — його отримує Brandfetch, а якщо там логотипу немає, то Google, щоб застосунок міг показати логотип. Більше нічого з набраного вами з ним не йде.",
             ],
             [
               { b: "Текст, який ви вводите в пошук логотипів" },
@@ -333,7 +349,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Жодного рекламного ідентифікатора, даних про місцеперебування, контактів, фотографій, рекламного чи продуктово-аналітичного SDK у застосунку немає. Усередині нього є два SDK — звіти про збої та покупки — і обидва перелічені нижче.",
+            "Жодного рекламного ідентифікатора, даних про місцеперебування, контактів чи доступу до фототеки. Знімки екрана, які ви обираєте для імпорту підписок, розпізнаються на телефоні засобами Apple і ніде не зберігаються й не надсилаються. У застосунку немає ні рекламного чи продуктово-аналітичного SDK, ні SDK для звітів про збої. Єдиний SDK, що звертається до сервісу, — для покупок, і він перелічений нижче.",
           ],
         },
       ],
@@ -344,17 +360,11 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Ось усі треті сторони, до яких застосунок узагалі може звернутися, і звертається він до кожної лише тоді, коли має для цього причину. Жодна з них не отримує ваших підписок — єдиний виняток це iCloud від Apple, і тільки після того, як ви самі ввімкнете синхронізацію. Жодній із них не передають ні імені, ні пошти, ні ідентифікатора акаунта — бо нічого з цього SubEye не має.",
+            "Ось усі треті сторони, до яких застосунок узагалі може звернутися, і звертається він до кожної лише тоді, коли має для цього причину. Жодна з них не отримує ваших підписок, розстрочок і кредитів — єдиний виняток це iCloud від Apple, і тільки після того, як ви самі ввімкнете синхронізацію. Жодній із них не передають ні імені, ні пошти, ні ідентифікатора акаунта — бо нічого з цього SubEye не має.",
           ],
         },
         {
           dl: [
-            {
-              term: "Sentry — звіти про збої (Європейський Союз)",
-              desc: [
-                "Отримує стек виклику збою в застосунку разом із моделлю вашого пристрою та версією ОС. І це все: ні назв підписок, ні сум, ні нотаток, ні пошти, ні ідентифікатора користувача, ні знімків екрана, ні запису сесій.",
-              ],
-            },
             {
               term: "RevenueCat — покупки (США)",
               desc: [
@@ -364,15 +374,17 @@ const UK: LegalDoc = {
             {
               term: "Brandfetch — пошук логотипів",
               desc: [
-                "Отримує текст, який ви вводите в пошук бренду. Детально — нижче.",
+                "Отримує текст, який ви вводите в пошук бренду, — детально про це нижче. Щоб показати логотип, застосунок також надсилає на ",
+                { code: "cdn.brandfetch.io" },
+                " домен сайту підписки чи кредитора. Цей запит розкриває домен і вашу IP-адресу, а більше нічого з набраного вами не несе.",
               ],
             },
             {
               term: "Google — зображення логотипів",
               desc: [
-                "Логотипи сервісів завантажуються як фавікони з ",
+                "Логотип, якого Brandfetch не повернув, завантажується як фавікон з ",
                 { code: "google.com/s2/favicons" },
-                ". Цей запит розкриває домен сайту підписки та вашу IP-адресу. Більше нічого з набраного вами він не несе.",
+                ". Цей запит розкриває той самий домен — підписки чи кредитора — і вашу IP-адресу. Більше нічого з набраного вами він не несе.",
               ],
             },
             {
@@ -386,7 +398,7 @@ const UK: LegalDoc = {
             {
               term: "Apple — App Store та iCloud",
               desc: [
-                "Обробляє покупку, якщо ви купуєте SubEye Pro, згідно з власною політикою конфіденційності Apple. SubEye ніколи не бачить ваших платіжних даних. Якщо ви робите резервну копію iPhone в iCloud, ваші дані SubEye лежать усередині цієї копії — на умовах Apple. А якщо ви ввімкнете синхронізацію з iCloud, ваші підписки також записуються у ваше власне сховище iCloud, щоб їх бачили інші ваші пристрої: вони лежать під вашим Apple Account, на умовах Apple, і SubEye їх усе одно не отримує.",
+                "Обробляє покупку, якщо ви купуєте SubEye Pro, згідно з власною політикою конфіденційності Apple. SubEye ніколи не бачить ваших платіжних даних. Якщо ви робите резервну копію iPhone в iCloud, ваші дані SubEye лежать усередині цієї копії — на умовах Apple. А якщо ви ввімкнете синхронізацію з iCloud, ваші підписки, розстрочки й кредити також записуються у ваше власне сховище iCloud, щоб їх бачили інші ваші пристрої: вони лежать під вашим Apple Account, на умовах Apple, і SubEye їх усе одно не отримує. Раз на день застосунок також питає App Store, яка версія SubEye зараз актуальна, щоб підказати вам про оновлення; цей запит містить лише ID застосунку, країну вашого App Store і вашу IP-адресу.",
               ],
             },
           ],
@@ -399,7 +411,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Коли ви додаєте або редагуєте підписку, ви можете знайти сервіс за назвою, щоб підтягнути його логотип. ",
+            "Коли ви додаєте або редагуєте підписку чи вказуєте кредитора для розстрочки або кредиту, ви можете знайти сервіс чи кредитора за назвою, щоб підтягнути логотип. ",
             { b: "Текст, який ви вводите в це поле, надсилається на " },
             { code: "api.brandfetch.io", b: true },
             " разом із вашою IP-адресою — інакше пошук просто не працює.",
@@ -407,7 +419,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Більше нічого з цим запитом не йде. Ні ідентифікатора, ні пошти, ні даних про підписки, ні токена. Результати використовуються лише для того, щоб намалювати список на екрані, і ніколи не записуються на диск. Якщо ви не хочете цим користуватися — залиште поле сайту порожнім і введіть назву сервісу вручну: без логотипа застосунок працює точно так само.",
+            "Більше нічого з цим запитом не йде. Ні ідентифікатора, ні пошти, ні даних про підписки, ні токена. Результати використовуються лише для того, щоб намалювати список на екрані, і ніколи не записуються на диск. Якщо ви не хочете цим користуватися — залиште поле сайту порожнім і введіть назву сервісу вручну або не вказуйте кредитора: без логотипу застосунок працює точно так само.",
           ],
         },
       ],
@@ -418,7 +430,7 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Ваші підписки лежать на вашому пристрої, бо в цьому й полягає застосунок: він не може порахувати те, чого не зберігає. За GDPR дані, які залишаються на вашому власному пристрої і ніколи не передаються до SubEye, SubEye не обробляє взагалі. Для тих небагатьох запитів, які таки залишають телефон, підставою є законний інтерес — щоб застосунок працював, щоб збої виправляли, щоб покупка, яку ви зробили, залишалася вашою, і щоб валюти переводилися правильно.",
+            "Ваші підписки, розстрочки й кредити лежать на вашому пристрої, бо в цьому й полягає застосунок: він не може порахувати те, чого не зберігає. За GDPR дані, які залишаються на вашому власному пристрої і ніколи не передаються до SubEye, SubEye не обробляє взагалі. Для тих небагатьох запитів, які таки залишають телефон, підставою є законний інтерес — щоб застосунок працював, щоб покупка, яку ви зробили, залишалася вашою, і щоб валюти переводилися правильно.",
           ],
         },
         {
@@ -436,7 +448,7 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "Нагадування про списання плануються на вашому пристрої силами iOS. Ні push-сервера, ні токена сповіщень немає, тож ніхто — включно із SubEye — не дізнається, коли спрацювало нагадування.",
+            "Нагадування про списання й платежі за розстрочками та кредитами плануються на вашому пристрої силами iOS. Ні push-сервера, ні токена сповіщень немає, тож ніхто — включно із SubEye — не дізнається, коли спрацювало нагадування.",
           ],
         },
       ],
@@ -447,20 +459,20 @@ const UK: LegalDoc = {
       blocks: [
         {
           p: [
-            "Ваші підписки лежать на пристрої стільки, скільки ви їх там тримаєте. Видалена в застосунку підписка зникає з телефона. Видаліть застосунок — і разом із ним зникне все, що в ньому було.",
+            "Ваші підписки, розстрочки й кредити лежать на пристрої стільки, скільки ви їх там тримаєте. Видалений у застосунку запис — підписка, розстрочка чи кредит — зникає з телефона. Видаліть застосунок — і разом із ним зникне все, що в ньому було.",
           ],
         },
         {
           p: [
             {
-              b: "«Налаштування → Стерти всі дані» прибирає з пристрою всі підписки, нагадування й налаштування за один крок.",
+              b: "«Налаштування → Стерти всі дані» прибирає з пристрою всі підписки, розстрочки, кредити, нагадування й налаштування за один крок.",
             },
             " Це відбувається одразу, це справжнє видалення, а не позначка, і скасувати його неможливо. Якщо синхронізація з iCloud ввімкнена, стирається й копія в iCloud — саме це прибирає дані з інших ваших пристроїв. Іншої копії, яку треба було б у когось просити видалити, немає, — і саме тому єдине, що може повернути ці дані, це резервна копія iPhone, зроблена раніше.",
           ],
         },
         {
           p: [
-            "Звіт про збій, уже надісланий до Sentry, зберігається згідно з політикою зберігання самої Sentry, а потім видаляється. Запис про покупку в RevenueCat і в Apple зберігається стільки, скільки вимагають ці сервіси, бо саме він підтверджує, що Pro ваш.",
+            "Версії SubEye до 6.0 надсилали звіти про збої до Sentry; уже надісланий звіт зберігається згідно з політикою зберігання самої Sentry, а потім видаляється, а тепер застосунок таких звітів не надсилає. Запис про покупку в RevenueCat і в Apple зберігається стільки, скільки вимагають ці сервіси, бо саме він підтверджує, що Pro ваш.",
           ],
         },
       ],
@@ -476,8 +488,8 @@ const UK: LegalDoc = {
         },
         {
           p: [
-            "На практиці більшість із цього вже у ваших руках, а не в чиїхось: ваші дані на вашому пристрої, і ви можете їх переглянути, виправити й стерти прямо в застосунку, ні в кого не питаючи дозволу. З усього іншого — зокрема щодо звіту про збій чи запису про покупку, які тримає котрийсь із перелічених вище сервісів, — пишіть на ",
-            { mailto: "privacy@subeye.cc" },
+            "На практиці більшість із цього вже у ваших руках, а не в чиїхось: ваші дані на вашому пристрої, і ви можете їх переглянути, виправити й стерти прямо в застосунку, ні в кого не питаючи дозволу. З усього іншого — зокрема щодо запису про покупку, який тримає котрийсь із перелічених вище сервісів, — пишіть на ",
+            { mailto: "subeye@yhunko.dev" },
             " — відповідь буде протягом 30 днів.",
           ],
         },
@@ -490,7 +502,7 @@ const UK: LegalDoc = {
         {
           p: [
             "SubEye не призначений для дітей і свідомо не збирає дані осіб, молодших за 16 років. Оскільки акаунта немає, а без увімкненої синхронізації з iCloud нічого нікуди не вивантажується, тут просто немає що видаляти від імені дитини — але якщо вас щось у цьому непокоїть, напишіть на ",
-            { mailto: "privacy@subeye.cc" },
+            { mailto: "subeye@yhunko.dev" },
             ".",
           ],
         },

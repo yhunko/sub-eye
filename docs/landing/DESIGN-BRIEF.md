@@ -1,4 +1,4 @@
-# subeye.cc — landing page design brief (v2)
+# SubEye — landing page design brief (v2)
 
 Paste this into Claude Design as a fresh start. It supersedes an earlier brief.
 
@@ -110,12 +110,36 @@ Exhaustive. Do not invent features.
 - Swipe a row for the action; only actions legal for that subscription's current
   state are ever offered.
 
+**Tracks installments and loans** (added 2026-11-03)
+- A pay-in-parts plan from a bank, buy now pay later, a card installment or a
+  bank loan the user already has, typed in like a subscription: the regular
+  payment, the number of payments, how often they fall and the first payment
+  date. The last payment carries the rounding remainder, as a lender's
+  statement does.
+- Progress on each plan: how many payments are made, what is paid, what is left
+  to pay, the day it ends. A purpose icon, and the lender's logo when the user
+  names one.
+- Every payment counts in the month's total and appears in the calendar, but
+  never in the monthly or yearly subscription cost.
+- A reminder the day before each payment; for the final payment that reminder
+  says it is the last one, instead of a second notice. A note the day after the
+  last payment that the plan is paid off, and "Paid off early" with its date
+  and amount. All free, with no cap on plans.
+- Pro: the purchase price and how much more the credit costs than it; when
+  installment reminders arrive (the same day, or 1, 3 or 7 days before); the
+  next payment in the Home Screen widget.
+- It appears only once a plan exists: a Subscriptions | Installments switch on
+  the Subscriptions tab and a card on Home.
+- No mockup with figures. The page's numbers come from the product
+  (`apps/landing/CLAUDE.md`), and the payment schedule exists only in Swift.
+
 **Reminds you**
-- A notification the day before a renewal, at 9am, scheduled on the device.
+- A notification the day before a renewal or an installment payment, at 9am,
+  scheduled on the device.
 - No push server, no notification tokens.
 
 **Handles real money**
-- 156 currencies — the ISO-4217 fiat set. State the number; don't list codes,
+- 155 currencies — the ISO-4217 fiat set. State the number; don't list codes,
   and don't render a row of flags. The flags belong in the app's own picker,
   where each one labels a row the reader can tap.
 - Daily exchange rates. Everything re-denominates into your home currency, so a
@@ -138,7 +162,10 @@ Exhaustive. Do not invent features.
 No bank linking. No email scanning. No "we'll cancel it for you." No shared or
 family plans. No SubEye account, ever — iCloud Sync rides the user's own Apple
 Account and is never described as signing in. No web app. No CSV export yet. No
-ads. No data sale.
+ads. No data sale. No credit: SubEye tracks repayments of credit the user
+already has and never offers, compares, recommends or advertises a loan, a
+lender or a pay-later service. No lender connection, no interest-rate
+calculator, no confirming each payment.
 **No Android — do not mention it at all**, not in copy, not in an FAQ, not as a
 greyed-out badge. The product is an iPhone app. Raising the platform question
 only invites it.
@@ -153,11 +180,15 @@ work out how to charge you later," so answering up front is the strongest trust
 asset on the page after the bank line.
 
 **Free** — Unlimited subscriptions. The full dashboard. Search, filters, every
-lifecycle action. Multi-currency at daily rates. Not a trial, not a teaser.
+lifecycle action. Installments and loans, with their progress and reminders.
+Multi-currency at daily rates. Not a trial, not a teaser.
 
-**Pro — $11.99 once** — Control over when reminders land. Trial-ending
-reminders. The price history on each subscription. Categories, the category
-filter and the spend breakdown. Home Screen widgets.
+**Pro — $14.99 once** — Reminder lead days (the same day, or 1, 3 or 7 days
+before), installment reminders included; the time of day is free. Trial-ending
+reminders. The price history on each subscription.
+Categories, the category filter and the spend breakdown. What a credit costs
+over the purchase price. Home Screen widgets, with the next installment payment
+among the upcoming ones.
 
 Two things have to land:
 
@@ -165,13 +196,13 @@ Two things have to land:
 a joke people will make at your expense; declining to make it is the point. One
 dry line, then move on — don't over-wink at it.
 
-**Priced for where you live.** SubEye uses per-storefront pricing: about ₴199 in
-Ukraine, $11.99 in the US, adjusted elsewhere. This is real — Apple supports it
+**Priced for where you live.** SubEye uses per-storefront pricing: $11.99 in
+Ukraine, $14.99 in the US, adjusted elsewhere. This is real — Apple supports it
 — and almost no indie app says it out loud. It is a second trust signal of the
 same kind as the bank line, and it should be designed as one, not buried as a
-footnote. A visitor on a Ukrainian storefront should see hryvnia.
+footnote. A visitor on a Ukrainian storefront should see the Ukrainian price first.
 
-**$11.99 is the price, not a launch price** (decided 2026-07-27). No
+**$14.99 is the price, not a launch price** (decided 2026-07-27 at $11.99, raised 2026-11-04). No
 introductory framing, no promo codes, no first-100-free, no countdown and no
 "only N spots left". A page whose whole argument is that it will not surprise
 you later should not open with a price that expires.
@@ -378,6 +409,7 @@ I have it.
 3. **The price timeline** — the signature moment.
 4. **What it does** — three blocks, each with one legible screen or component:
    see the money · manage the lifecycle · mixed currencies, one total.
+   Installments get one line in "see the money", not a block of their own.
 5. **Pricing** — two columns, one payment, priced for where you live.
 6. **Closing card.** There is no email capture and no waiting list — the page
    ships with zero client JavaScript and nothing to POST to.
@@ -439,11 +471,10 @@ budget — see `apps/landing/CLAUDE.md`.
 `apps/landing/` in the SubEye monorepo — Bun workspaces, Turbo, Biome (not
 ESLint, not Prettier), TypeScript.
 
-**Stack: Astro 6, static output, Vercel.** Functional reasoning, not aesthetic:
+**Stack: Astro 6, static output, Cloudflare Workers static assets.** Functional reasoning, not aesthetic:
 Astro's i18n routing with `prefixDefaultLocale: true` produces `/en/...` and
 `/uk/...` natively, which is the exact URL contract the shipped app depends on,
-and it ships zero JavaScript by default. Vercel because `subeye.cc` already
-resolves there and moving hosts is churn on the critical path.
+and it ships zero JavaScript by default.
 
 The engineering constraints — monorepo wiring, the Turbo cache trap, what to
 reuse from `packages/`, and the 100/100/100/100 acceptance bar — are in

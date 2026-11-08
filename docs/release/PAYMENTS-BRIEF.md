@@ -4,15 +4,17 @@ Everything needed to ship the one in-app purchase, in the order it has to
 happen. Parts 1 and 4 are dashboard work only Yehor can do; part 2 is the Claude
 Code session; part 3 is how to prove it works without shipping to the store.
 
-Read [SESSION-BRIEFS.md](SESSION-BRIEFS.md) for what else is outstanding and
-[MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md) for the release steps around this one.
+Read [MANUAL-CHECKLIST.md](MANUAL-CHECKLIST.md) for the release steps around
+this one.
 
 ---
 
 ## The model — decided, do not redesign
 
-**One non-consumable, `$11.99`, lifetime.** Per-storefront (~₴199 in Ukraine, on
-Apple's default conversion). Not a launch price, no promo codes, no
+**One non-consumable, `$14.99`, lifetime.** Per-storefront: Apple's default
+conversion everywhere except Ukraine, whose dollar storefront is hand-set to
+$11.99 (raised from $12.99 / Ukraine $9.99 on 2026-11-04 with the installments
+release). Not a launch price, no promo codes, no
 auto-renewable subscription in v1 — Guideline 3.1.2's paywall requirements,
 dunning and grace periods are ops a solo developer does not need on day one, and
 a subscription tracker charging a subscription is a joke reviewers make in
@@ -20,11 +22,22 @@ public.
 
 | Free, forever | Pro |
 | --- | --- |
-| Unlimited subscriptions | Renewal reminders |
-| The whole Home dashboard | Pricing phases — trial / intro / scheduled change |
-| List, search, filter, sort | Categories, the breakdown and the filter |
-| Every lifecycle action | |
+| Unlimited subscriptions | Trial-ending reminders, and renewal reminder lead days (same day, 1, 3, 7) |
+| The whole Home dashboard and the payment calendar | Pricing phases — trial / intro / one-time license / scheduled change — and the price history |
+| List, search, status filter, sort | Categories, the breakdown and the filter |
+| Every lifecycle action | The calendar's year view and month-on-month figures |
+| A renewal reminder the day before, and Live Activities | Home Screen widgets |
 | Multi-currency at daily rates | |
+| iCloud Sync between the user's own devices | |
+| **Installments:** unlimited plans; progress (x of N, paid, left to pay, end date); purpose icon and lender logo; counted in Home month totals and the calendar | **Installments:** the overpayment over the purchase price |
+| **Installments:** a reminder the day before; last-payment and paid-off notices; "Paid off early" | **Installments:** reminder lead days (same day, 1, 3, 7) |
+| | **Installments:** the next payment in the Home Screen widget's upcoming list |
+
+Renewal reminders moved to the free tier after this brief was written; the
+table is the split the app ships, plus installments as decided on 2026-11-03.
+Existing
+owners get the installment Pro features with the same non-consumable and the
+same `pro` entitlement.
 
 The gate is **features, not a count cap**. Nothing gated costs anything at
 runtime, so the free tier cannot be griefed into a bill and the cap never
@@ -35,9 +48,9 @@ it must not appear in the paywall, the store listing or the catalogs. Earlier
 drafts of the B6 brief listed it; they were wrong.
 
 The prices live in one place on the marketing side —
-`apps/landing/src/lib/site.ts` exports `proPrice = { usd: 11.99, uah: 199, eur:
-9.99 }`. The app must read its price from the RevenueCat `Package`, never
-hardcode it: the storefront decides, and a hardcoded `$11.99` is wrong in
+`apps/landing/src/lib/site.ts` exports `proPrice = { usd: 14.99, eur: 17.99 }` and
+`proPriceUkraine = 11.99` (dollars). The app must read its price from the RevenueCat `Package`, never
+hardcode it: the storefront decides, and a hardcoded `$14.99` is wrong in
 Ukraine and illegal-looking everywhere else.
 
 ---
@@ -57,7 +70,7 @@ Program is already enrolled.
 3. **In-App Purchases** → new **Non-Consumable**:
    - Product ID `cc.subeye.app.pro.lifetime`
    - Reference name `SubEye Pro (Lifetime)`
-   - Price **$11.99** (Apple's default per-storefront conversion — do not hand-set ₴)
+   - Price **$14.99** (Apple's default per-storefront conversion; Ukraine is a manual $11.99)
    - Localized display name + description in **en** and **uk**
    - Leave it at "Ready to Submit". It does **not** need review approval to be
      purchasable in sandbox.
@@ -138,14 +151,11 @@ the commit message that `eas env:create` is needed for `production` **and**
 Configure once at app start, in `src/app/_layout.tsx`, with
 **`appUserID: null`**.
 
-> **Superseded by the offline flip (v5).** This brief was written while Clerk
-> existed, and it went on to say the app should call `Purchases.logIn(clerkUserId)`
-> once a session resolved, so that the RevenueCat app user id **was** the Clerk
-> user id. Accounts are gone: `entities/pro/model/purchases.ts` configures with
+> **Accounts are gone (v5).** `entities/pro/model/purchases.ts` configures with
 > `appUserID: null` and never calls `logIn` or `logOut`, so **the app user id is
 > an anonymous, device-local `$RCAnonymousID:…`**. A purchase is tied to the
 > Apple Account that paid for it and is recovered with Restore purchases, not by
-> signing in. Part 4 below is affected: there is no Clerk id to search the
+> signing in. Part 4 below is affected: there is no account id to search the
 > dashboard by.
 
 ### The entitlement

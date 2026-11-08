@@ -1,23 +1,29 @@
 # @subeye/landing — the marketing site and the legal pages
 
-Astro 6, `output: 'static'`, no UI framework, no CSS framework, **zero client
-JavaScript**. Six pages: a marketing page and two legal pages, in English and
-Ukrainian. Deployed to Cloudflare Workers static assets.
+Astro, `output: 'static'`, no UI framework, no CSS framework, **zero client
+JavaScript**. In English and Ukrainian: the home page, two legal pages, the
+support page, and two content pages — a dated Bobby comparison and the 2026
+price-rise log. Deployed to Cloudflare Workers static assets.
 
-The look comes from the **Claude Design project** "SubEye Landing"
-(`88fdacd0-c5e2-4f38-a3df-9c5df7f631df`) and its design system — dark-only, one
-green ramp, 24px cards, Nunito. That supersedes `docs/landing/DESIGN-BRIEF.md`
-for anything visual; the brief still owns the voice, the feature claims and the
-"never imply these" list. `docs/landing/SETUP-BRIEF.md` owns the engineering
-constraints. Read both before changing markup or copy.
+The look was redesigned on 2026-11-05 with the `design-taste-frontend` skill,
+after nutly.cc: dark-only like the app, the app's own ink and green, rounded
+cards, real app screens in phone frames, Fixel. It no longer follows the Claude
+Design project "SubEye Landing". `docs/landing/DESIGN-BRIEF.md` still owns the
+voice, the feature claims and the "never imply these" list;
+`docs/landing/SETUP-BRIEF.md` owns the engineering constraints. Read both before
+changing markup or copy.
+
+**The price timeline is Pro, and the page says so** wherever it shows one (the
+hero's price line, the timeline section, the FAQ, the Pro plan). The free tier's
+claim is "every subscription, no limit".
 
 ## The four URLs are a contract with a shipped binary
 
 ```
-https://www.subeye.cc/en/terms-of-service/
-https://www.subeye.cc/en/privacy-policy/
-https://www.subeye.cc/uk/terms-of-service/
-https://www.subeye.cc/uk/privacy-policy/
+https://subeye.yhunko.dev/en/terms-of-service/
+https://subeye.yhunko.dev/en/privacy-policy/
+https://subeye.yhunko.dev/uk/terms-of-service/
+https://subeye.yhunko.dev/uk/privacy-policy/
 ```
 
 **App Store Connect rejects a 404 privacy policy**, so these four have to
@@ -40,8 +46,8 @@ fails, do not "fix" the test — a scheme change costs a new App Store build.
 Both documents live in [`@subeye/legal`](../../packages/legal) as data, and the
 four `.astro` pages are ten lines each: fetch the doc, hand it to
 `components/LegalBody.astro`, which maps blocks onto the `h2`/`p`/`ul`/`dl`/
-`strong`/`code` tags `layouts/Legal.astro` already styles. `apps/mobile` renders
-the same object natively in its legal sheet, so **editing the words here is
+`strong`/`code` tags `layouts/Legal.astro` already styles. `apps/ios` bundles
+the same object (`apps/ios/Contracts/resources.ts`), so **editing the words here is
 impossible by design** — change them in the package or the app and the site say
 different things to the same user.
 
@@ -57,11 +63,16 @@ and `LEGAL_OPERATOR`; the footer and both support pages import them from there.
 terms quote it as formatted literals and `test/pricing.test.ts` pins the two
 against each other.
 
-## Zero client JavaScript, and it has to stay zero
+## No JavaScript, and everything interactive is a platform feature
 
-The budget is under 5 KB on any route and the current figure is **0**. The only
-`<script>` in the output is the JSON-LD data block, which browsers never
-execute. Everything interactive is a platform feature:
+The site's JavaScript budget is **0**, with no exception — nothing here is
+bundled, hoisted or hydrated, and the only `<script>` in the output is the
+JSON-LD data block, which browsers never execute. The CSP in `public/_headers`
+says the same thing: `script-src 'none'`, `frame-src 'none'`, and no origin but
+this one anywhere in it. `test/widget.test.ts` fails if a script tag with a
+`src`, a third-party origin or a looser policy comes back.
+
+Everything interactive is a platform feature:
 
 - The FAQ is `<details>`/`<summary>`. It animates on `::details-content` as a
   grid row `0fr → 1fr`, with `content-visibility` transitioned
@@ -69,13 +80,17 @@ execute. Everything interactive is a platform feature:
   `min-height: 0` **and** `overflow: hidden` or a grid item's automatic minimum
   size holds the collapsed row open. Browsers without `::details-content` open
   instantly; nothing is polyfilled.
-- The price timeline is a radio group. `<label>` wraps the input, `:has()`
-  moves the rail fill, and the phase the model reports as live is the one
-  rendered `checked`.
-- The fixed top bar reveals itself with `animation-timeline: scroll(root
-  block)` inside `@supports`. Where that is unsupported the bar just starts
-  visible, and `Home.astro` drops the hero's duplicate brand row to match —
-  the page always shows exactly one.
+- The price timeline is a radio group. Each `<label>` is a bar whose height is
+  the phase's price, `:has(:checked)` fills it, and the phase the model reports
+  as live is the one rendered `checked`. Its rise on scroll is the page's one
+  scroll-linked move (`animation-timeline: view()`, skipped under reduced
+  motion and in browsers without scroll timelines).
+- The fixed top bar is visible from the first paint, so the App Store badge is
+  on screen before the reader scrolls; every page pads itself out from under
+  its 4.5rem.
+- Apple's Smart App Banner is a single `<meta name="apple-itunes-app">` in
+  `Base.astro`. Only Safari on iPhone and iPad draws it, nothing on the page can
+  style it, and a wrong id produces no banner and no error.
 - The language switch is an `<a>`.
 
 If something seems to need an island, it does not. There is no framework
@@ -91,10 +106,11 @@ runtime and `img-src 'self' data:` would block one anyway.
 Apple's marketing guidelines are a licence condition, not advice, and four of
 them shape the markup:
 
-- **One badge per layout.** The hero has it; the fixed bar and the closing card
-  are plain green buttons that carry neither the Apple logo nor the badge's
-  words, because a text button wearing "Download on the App Store" reads as a
-  badge Apple did not draw.
+- **One badge per layout** is Apple's wording; the home page deliberately
+  carries three — the fixed bar, the hero and the closing card — because every
+  route to the App Store here is Apple's artwork, never a green button wearing
+  its words. `test/appStore.test.ts` pins exactly those placements. The other
+  pages carry only the bar's.
 - **Clear space** of at least a quarter of the badge height, on every side,
   with nothing in it. `AppStoreBadge.astro` carries that as its own padding so
   it survives a later change to the row's `gap`, then pulls the artwork back
@@ -120,36 +136,90 @@ the same promise the pricing section makes out loud.
 
 The page's argument is that SubEye models a price over time, so the price
 timeline's figures are computed at build time by `@subeye/pricing` itself
-(`src/lib/timeline.ts`), and the currency mockup converts through the shipped
+(`src/lib/timeline.ts`), and the currency panel converts through the shipped
 `CurrencyUtils` (`src/lib/currencies.ts`). Both are pure and take `now` as a
 parameter, so they cost the visitor nothing. `src/lib/timeline.ts` **throws at
 build time** if the phase model stops returning three ordered phases with the
 trial live — a page that lies about the product must not ship.
 
-Likewise the lifecycle mockup maps `subscriptionStatuses` from `@subeye/model`,
-and both copy dictionaries type their status labels as
-`Record<SubscriptionStatus, string>`. A new status fails `astro check` rather
-than rendering a gap.
+## The app screens are real captures
 
-`test/pricing.test.ts` reaches into
-`apps/mobile/src/shared/lib/format/money.ts` — deliberately, and only from a
-test. The page names the SIZE of the catalogue out loud ("156 currencies"), so
-the test pins that number against `CURRENCY_CODES.length` in both locales, and
+`src/assets/app/{en,uk}/*.webp` are screens of the development build
+(`cc.subeye.app.native`, Debug) on an iPhone 17 Pro Max simulator, seeded with
+the developer screen's **Seed portfolio** — fixture data, never anyone's own.
+The Ukrainian set ran with the simulator itself in Ukrainian, the preferred
+currency set to UAH, and the fixture's English category and plan names renamed
+in the simulator's store. Capture the Lock Screen (the Live Activity) with
+`simctl status_bar … clear`: an override dates it 1 January, drops its status
+icons and adds a stray indicator. They are 720px-wide WebP sources; `AppShot.astro`
+re-encodes them to AVIF and WebP at build time, and `Phone.astro` frames them.
+`day.webp` is the one crop. To refresh them, capture the same screens in both
+languages and keep the file names; `src/lib/shots.ts` lists them. Alt text says
+"sample data", and nothing under a picture explains it — the skill forbids
+captions.
+
+## Search: structured data, share cards, sitemap
+
+- **Structured data** is built in `src/lib/schema.ts` and handed to `Base.astro`
+  as `jsonLd`. The home page is a `MobileApplication` with two offers — the free
+  download (`freePrice`) and Pro at the page's storefront price — because one
+  offer at the Pro price would say the app costs that. Never add a rating or
+  review the page does not show. The content pages are an `Article` plus a
+  `BreadcrumbList`, dated by the day their facts were read.
+- **Share cards** are `public/og/{locale}.png` for every page but the two content
+  pages, which have `{locale}-{page}.png`; `src/lib/og.ts` picks the file and
+  takes the alt text from `og` in the dictionaries. `scripts/build-og.py`
+  renders all six and `public/apple-touch-icon.png` (macOS, QuickLook) with the
+  card words duplicated in the script — change both together. `test/seo.test.ts`
+  fails if a page points at a card that does not exist.
+- **The sitemap** (`astro.config.mjs` `serialize`) adds the `x-default`
+  alternate the page heads carry, and a `lastmod` only on the two content pages,
+  from their read dates. A build date on every URL is a `lastmod` search engines
+  learn to ignore.
+- Language links carry `.lang-link` (the system face), so an English page never
+  downloads the Cyrillic subset to draw "УКР".
+
+## The content pages are dated facts
+
+`src/lib/bobby.ts` is Bobby's US App Store listing as read on its `read` day,
+next to SubEye's own listing read the same day; the page prints every fact "as
+of" that day, so a Bobby update makes it dated, never false. Do not add a claim
+the listing does not state (it never states its free limit, so neither does
+the page), and do not repeat "Bobby's notifications are broken" — unverified.
+
+`src/lib/priceRises.ts` is the price-rise log. **Next month's update is one
+entry**, read on the service's own pricing page, its own announcement, or an
+archive.org copy of that pricing page — never a news roundup; the test fails on
+any other host. `onPricingPage` is the first archived capture showing the new
+price, an upper bound rather than a stated date, and the page labels it that
+way: Netflix and YouTube published no date at all.
+
+`test/pricing.test.ts` reads the app's bundled
+`apps/ios/SubEye/Resources/currencies.json` — deliberately, and only from a
+test. The page names the SIZE of the catalogue out loud ("155 currencies"), so
+the test pins that number against the catalogue's length in both locales, and
 separately asserts that every code the page prints is one the app can hold. It
 used to pin the whole five-code set; the catalogue is the ISO-4217 fiat list now
 and copying it here would be the drift the test exists to prevent.
 
-## Typography: one face
+## Typography: Fixel
 
-**Nunito**, 400–800, and nothing else. There is no mono: Nunito's digits are
-already equal-width, so `.num` only sets `font-variant-numeric: tabular-nums`
-and amounts stay in the same face as everything around them. Do not reintroduce
-a second family for numbers.
+**Fixel Display** SemiBold for headings and **Fixel Text** 400/500 for
+everything else — MacPaw's family, made in Kyiv, with full Cyrillic. The design
+skill dealt faces that carry no Cyrillic (Stack Sans, Schibsted Grotesk, General
+Sans, Pilcrow Rounded); a face without Cyrillic cannot set `/uk/`, so check that
+before swapping. There is no mono: `.num` only sets
+`font-variant-numeric: tabular-nums`.
 
 Fonts are vendored into `public/fonts/` by `bun run --cwd apps/landing fonts`
-and committed. **Nothing may reference a third-party origin at runtime** — no
-CDN, no Google Fonts, no analytics. That is a Lighthouse requirement and it is
-also the page's own argument.
+and committed. Fixel is not on Google Fonts: the script downloads MacPaw's woff2
+at a pinned commit and cuts each into latin / latin-ext / cyrillic with
+`pyftsubset` (`pip install fonttools brotli`), and ships the OFL beside them.
+
+**No asset may come from a third-party origin** — no CDN, no Google Fonts, no
+analytics. The CSP forbids every other host, so a font, image or stylesheet
+on someone else's origin is blocked rather than merely discouraged.
+That is a Lighthouse requirement and it is also the page's own argument.
 
 The hryvnia lives in the `latin-ext` subset, which every locale loads, so both
 pages render it. `src/lib/format.ts` still trails the symbol for UAH and PLN
@@ -166,12 +236,13 @@ worth having. `type-check` **is** `astro check`; it is not optional here.
 ## Two traps outside this directory
 
 1. **`turbo.json` had no `.astro` in its input globs.** They are there now
-   (`build`, `dev`, `type-check`, `test`). Adding a new file type without adding
-   its glob means Turbo replays a stale cached build after you edit a page.
-2. **CI never deploys this site.** Both release workflows run the repo-wide
-   quality gate and semantic-release and stop; `apps/landing` ships only when
-   someone runs `bun run --cwd apps/landing deploy`. A landing type error still
-   fails CI — it just cannot block a release.
+   (`build`, `dev`, `type-check`, `test`), and `src/**/*.webp` for the app
+   screens. Adding a new file type without adding its glob means Turbo replays
+   a stale cached build after you edit a page.
+2. **CI never deploys this site.** It runs the repo-wide quality gate and
+   stops; `apps/landing` ships only when someone runs
+   `bun run --cwd apps/landing deploy`. CI never runs `astro build` either, so
+   a build-only failure first shows up at deploy time.
 
 ## Commands
 
@@ -192,7 +263,6 @@ An assets-only Worker — `wrangler.jsonc` has no `main`. Security headers live 
 both into `dist/` and the Workers asset runtime reads them from there. The same
 two files work unchanged on Cloudflare Pages.
 
-Two things cannot be expressed here and have to be done in the Cloudflare
-dashboard: pointing `www.subeye.cc` at this Worker (it resolves to Vercel
-today), and an apex `subeye.cc` → `www` Redirect Rule. The app only ever asks
-for `www`.
+`wrangler deploy` attaches the `subeye.yhunko.dev` custom domain itself. The
+old `www.subeye.cc` host is not this Worker: a Redirect Rule in the subeye.cc
+zone 301s it to the same path here until that domain lapses on 2027-01-09.

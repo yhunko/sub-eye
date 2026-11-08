@@ -6,19 +6,14 @@ No agent can do any of it.
 ⛔ = blocks App Store submission. Steps are in the order they should happen.
 
 > **Written for v4, and v5 removed the server.** There is no API, no database
-> and no account any more. M1 and M4 are history and are kept as such; M2, M5,
-> M6 and M7 have corrections inline. Three Apple obligations disappear with
-> accounts, and they were the expensive ones:
+> and no account any more. M2, M5 and M6 have corrections inline. Two Apple
+> obligations disappear with accounts, and they were the expensive ones:
 >
 > - **Guideline 4.8 — Sign in with Apple.** Required only because the app
 >   offered Google and GitHub sign-in. No third-party sign-in, no obligation.
 > - **Guideline 5.1.1(v) — in-app account deletion.** Required only because the
 >   app created accounts. Settings → Erase all data is now a courtesy, not a
 >   compliance surface.
-> - **Token revocation.** 4.8 also required calling Apple's `/auth/revoke` on
->   deletion, which the app never implemented — it deleted at Clerk and let a
->   webhook purge Postgres, leaving the Apple token live. That gap is gone
->   rather than fixed.
 >
 > The Sign in with Apple capability stays enabled on the App ID. The entitlement
 > itself is gone as of the offline flip, but the capability cannot be switched
@@ -30,46 +25,8 @@ No agent can do any of it.
 | Step | State |
 | --- | --- |
 | `eas init` | ✅ 2026-07-27 — `projectId e52f6dbb-…`, `owner yehor.hunko`. The project had never been linked, and with `appVersionSource: "remote"` that had been blocking every EAS build of every profile. |
-| Sign in with Apple — Apple Developer capability + Clerk SSO connection | ✅ 2026-07-27, and **obsolete since v5**. The entitlement is gone: `app.json` no longer asks for it and prebuild writes only `aps-environment` and the App Group into `ios/SubEye/SubEye.entitlements`. The capability is still enabled on the App ID and cannot be removed — Apple answers "The bundle 'NS5LM36RJ8' cannot be deleted" to the console and to EAS alike, because the bundle has an App Store Connect app record. That mismatch is why every iOS build needs `EXPO_NO_CAPABILITY_SYNC=1`: EAS derives the capabilities from the entitlements and cannot apply the `APPLE_ID_AUTH: OFF` it computes. Leave the capability alone — see the banner above. Retried 2026-08-25 from the console with only that box unticked: same error. It is not worth another attempt — the only route is deleting the App Store Connect record, which is a far bigger loss than an inert checkbox. |
-| iCloud — key-value storage | ✅ 2026-08-25, enabled **by hand** on `cc.subeye.app` (with CloudKit support and a container; only the key-value half is used). **It had to be by hand, and so will the next one.** `EXPO_NO_CAPABILITY_SYNC=1` is permanent for this app because of the Sign-in-with-Apple mismatch above, so EAS never pushes a capability to the portal again: from here on, **every new entitlement means a manual portal step, or the build dies in "Planning build"**. Enabling it does not fix a build on its own either — Xcode reuses the cached profile it already has, so the locally cached profile must be deleted too (same step 4 as the App Group in TESTFLIGHT-STEPS). |
-
----
-
-## M1 — Ship v4 to production (server + database)  ✅ done 2026-07-27, then deleted in v5
-
-*Historical. The server and the database this describes no longer exist.*
-
-Production ran the **v3 API** until this landed: `origin/main` sat on v3.11.0
-from 2026-06-05 while `dev` was 50 commits ahead, so the v4 mobile client had no
-backend that could pause, resume, or manage a pricing phase.
-
-The order was the point — the destructive half ran by hand, under supervision,
-so the merge was only a deploy:
-
-1. A Neon branch of production as the backup, and a second branch to rehearse
-   on. (A branch you rehearse on stops being a backup the moment you migrate it.)
-2. `db:reset-ledger`, then `db:migrate`. The v4 baseline is migration `0000` of a
-   squashed journal while production's ledger still held the v3 entries, so
-   without the reset, whether drizzle-kit applied it at all came down to
-   timestamp luck.
-3. `test/status-backfill-parity.test.ts` with `PARITY_DATABASE_URL`, against real
-   production rows — **2 pass**. This is the only step that transforms data
-   rather than shape (`status` derived from a naive-UTC `cancelled_at`), which is
-   why it is worth running against real rows and not fixtures.
-4. `db:backfill-users`, to copy preferences out of Clerk `publicMetadata`. The
-   migration seeds defaults-only rows, and a missing value fails *silently* —
-   `UserService.getUserPreferences` returns defaults for an unpopulated row.
-5. PR #41 merged → CI's own `db:migrate` found the baseline already in the ledger
-   and no-opped → **v4.0.0** tagged and deployed.
-
-Verified after: `POST /api/subscriptions/:id/resume` → `401` (v4 route present),
-`GET /api/subscriptions/:id/history` → `404` (v3 route gone).
-
-**Reuse this shape for any future breaking migration.** The release workflow
-still does not run `db:reset-ledger` or `db:backfill-users`, so a migration
-needing either must be done by hand before the merge, never left to CI. And note
-the deploy window: between the migration and the new Worker going live, the old
-code is serving traffic against the new schema.
+| Sign in with Apple — Apple Developer capability | ✅ 2026-07-27, and **obsolete since v5**. The entitlement is gone: `app.json` no longer asks for it and prebuild writes only `aps-environment` and the App Group into `ios/SubEye/SubEye.entitlements`. The capability is still enabled on the App ID and cannot be removed — Apple answers "The bundle 'NS5LM36RJ8' cannot be deleted" to the console and to EAS alike, because the bundle has an App Store Connect app record. That mismatch is why every iOS build needs `EXPO_NO_CAPABILITY_SYNC=1`: EAS derives the capabilities from the entitlements and cannot apply the `APPLE_ID_AUTH: OFF` it computes. Leave the capability alone — see the banner above. Retried 2026-08-25 from the console with only that box unticked: same error. It is not worth another attempt — the only route is deleting the App Store Connect record, which is a far bigger loss than an inert checkbox. |
+| iCloud — key-value storage | ✅ 2026-08-25, enabled **by hand** on `cc.subeye.app` (with CloudKit support and a container; only the key-value half is used). **It had to be by hand, and so will the next one.** `EXPO_NO_CAPABILITY_SYNC=1` is permanent for this app because of the Sign-in-with-Apple mismatch above, so EAS never pushes a capability to the portal again: from here on, **every new entitlement means a manual portal step, or the build dies in "Planning build"**. Enabling it does not fix a build on its own either — Xcode reuses the cached profile it already has, so the locally cached profile must be deleted too. |
 
 ---
 
@@ -84,7 +41,7 @@ That is not a degraded build, it is a dead one:
 A production build made today launches to the splash screen and then the error
 boundary.
 
-**v5:** `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` are no
+**v5:** `EXPO_PUBLIC_API_URL` and the old auth publishable key are no
 longer read by anything — `apps/mobile/src/shared/config/env.ts` is the source of
 truth and asks for `BRANDFETCH_CLIENT_ID`, `REVENUECAT_IOS_KEY` and
 `SENTRY_DSN` only. Delete the two stale entries from the EAS `production` and
@@ -113,25 +70,9 @@ cannot be reconfigured. The picker still lets you type a domain by hand.
 
 ## M3 — Write and publish the legal pages  ⛔
 
-**Verified 2026-07-27 — all four URLs the app links are 404:**
-
-| URL | Status |
-| --- | --- |
-| `https://www.subeye.cc/en/terms-of-service/` | **404** ⛔ |
-| `https://www.subeye.cc/en/privacy-policy/` | **404** ⛔ |
-| `https://www.subeye.cc/uk/terms-of-service/` | **404** ⛔ |
-| `https://www.subeye.cc/uk/privacy-policy/` | **404** ⛔ |
-
-The unprefixed `https://www.subeye.cc/terms-of-service/` still returns 200, and
-it is the only legal page that exists. The privacy policy does not exist at any
-path, and the site serves no Ukrainian locale at all.
-
-**This is work in another repo.** `subeye.cc` is a Vercel deployment; nothing
-about it lives in this monorepo. `docs/landing/DESIGN-BRIEF.md` is the brief for
-the redesign that serves these routes.
-
-**Decided 2026-07-27:** the redesign serves `/en` and `/uk`, so every locale is
-prefixed, English included. `apps/landing/test/routes.test.ts` pins the four.
+**Served by `apps/landing` at `https://subeye.yhunko.dev`** (moved from
+`www.subeye.cc` on 2026-11-05). **Decided 2026-07-27:** the site serves `/en`
+and `/uk`, so every locale is prefixed, English included. `apps/landing/test/routes.test.ts` pins the four.
 
 **Superseded 2026-08-25** for the app half: `@subeye/legal` puts both documents
 in the bundle, and Settings → Legal and the paywall now open a native sheet
@@ -149,11 +90,8 @@ truth. What changed: nothing is collected but diagnostics and a purchase, the
 processor list is Sentry, RevenueCat, Brandfetch, Google and **jsDelivr** (the
 daily FX document), and deletion is Settings → Erase all data.
 
-- **What is collected:** ~~email address, name/username, Clerk user id, and~~ the
-  subscription data you enter — which stays on the device.
-- **Who processes it:** ~~Clerk (authentication), Neon (Postgres), Cloudflare (API
-  hosting), PostHog EU (error telemetry), and~~ **Brandfetch** (brand logo
-  search). Name them and their regions.
+- **What is collected:** the subscription data you enter — which stays on the device.
+- **Who processes it:** **Brandfetch** (brand logo search). Name them and their regions.
 - **Brandfetch specifically:** when the user searches for a brand in the
   add/edit form, **what they type is sent to `api.brandfetch.io`** along with
   their IP. Nothing else goes with it — no account id, no subscription data —
@@ -172,84 +110,21 @@ useless here because the processor list is specific to your stack.
 
 ---
 
-## M4 — Clerk production instance  ✅ done 2026-07-27, then removed in v5
-
-*Historical. Kept for the record of what was configured, so it can be recognised
-when the instance is torn down. Nothing below is a live instruction.*
-
-The production instance exists with Sign in with Apple configured. What remains
-is not dashboard work: the **`pk_live_` key has to reach the build** via M2, and
-the flow has to be exercised on a real device in M6. A `pk_test_` key in a store
-build is a total silent failure.
-
-Steps kept for the day the instance is rebuilt:
-
-1. Create/promote the Clerk **production** instance.
-2. Configure the same providers: email+password, Google, GitHub, and Apple.
-3. **Enable the Native SDK on the production instance.** This one is invisible
-   when it is wrong: `clerk-expo` never finishes its handshake, `isLoaded` stays
-   false forever, and Clerk raises no error a client can catch — so every guard
-   written as `if (!isLoaded) return` becomes a button that does nothing and
-   says nothing. It cost three TestFlight builds on 2026-07-29, with a healthy
-   `/v1/environment` answering 200 the whole time. A development instance has it
-   on by default; a production instance does not.
-4. Confirm `subeye://` and the SSO redirect URL are registered under Native
-   Applications. For Apple, register the **native bundle id `cc.subeye.app`** in
-   the Apple connection — a native identity token's `aud` claim is the bundle
-   identifier, not the Services ID, so a web-only connection rejects every token
-   the app sends.
-5. **Webhook** → `https://app.subeye.cc/api/webhooks/clerk`, event
-   `user.deleted`. Copy the signing secret. Account deletion depends on it
-   (`apps/server/src/routes/webhooks/clerk/handlers/userDeleted.ts`) — without
-   it, deleted accounts leave orphaned Postgres rows, which is a GDPR problem
-   rather than a tidiness one.
-6. Put the production values in Cloudflare via the GitHub environment —
-   `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` as **secrets**,
-   `CLERK_PUBLISHABLE_KEY` as a **var** — under the `production` environment.
-   The release workflow pushes them with `wrangler secret bulk`.
-
----
-
 ## M5 — App Store Connect: app record and privacy label  ⛔
 
 Bundle id `cc.subeye.app` is already correct in `app.json` for **both**
-platforms. Your `app.subeye.cc` API host and the `subeye.cc` landing site are
-consistent with it.
+platforms.
 
 1. Create the app record. Bundle id `cc.subeye.app`, SKU your choice, primary
    language English.
-2. **Privacy Policy URL:** `https://www.subeye.cc/en/privacy-policy/` (M3).
-3. **App Privacy label** — must match the manifest in `app.json`. Each is
-   "App Functionality" and **not** used for tracking:
-
-   | Category | Type | Linked to the user |
-   | --- | --- | --- |
-   | Contact Info | Email Address | yes |
-   | Contact Info | Name | yes |
-   | Identifiers | User ID | yes |
-   | User Content | Other User Content | yes |
-   | Diagnostics | Crash Data | yes |
-   | Purchases | Purchase History | yes |
-   | Browsing/Search | Search History | **no** |
-
-   Crash Data is there because the Worker posts exceptions to PostHog keyed by
-   your Clerk user id. It is real collection even though no SDK ships in the
-   binary today — brief B3 would add one.
-
-   Purchase History is RevenueCat (brief B6, landed). It is linked because the
-   RevenueCat app user id **is** the Clerk user id. The matching manifest entry
-   is `NSPrivacyCollectedDataTypePurchaseHistory` in `app.json`.
-
-   Search History is the brand picker: the text typed into it goes to
-   Brandfetch. **Not** linked — no account id or Clerk token travels with that
-   request, and the app never stores the results.
-
-   ### The table above is superseded by the offline flip (Plan B)
+2. **Privacy Policy URL:** `https://subeye.yhunko.dev/en/privacy-policy/` (M3).
+3. **App Privacy label** — each is "App Functionality" and **not** used for
+   tracking.
 
    With accounts and the API gone, there is no email address, no name and no
    user id to collect, and the subscriptions you type never leave the device —
    data that stays on the device is not "collected" under Apple's definition.
-   Declare this instead:
+   Declare:
 
    | Category | Type | Linked to the user |
    | --- | --- | --- |
@@ -273,7 +148,7 @@ consistent with it.
    standard HTTPS.
 6. Screenshots: 6.9" iPhone required. The app is dark-only and portrait-only —
    capture on a real device, not the simulator's default frame.
-7. Support URL and marketing URL on `subeye.cc`.
+7. Support URL and marketing URL on `subeye.yhunko.dev` (STORE-METADATA.md).
 
 ---
 
@@ -284,12 +159,7 @@ credentials, provisioning, the Apple Sign in entitlement in a *signed* binary,
 and `eas submit` are all completely unexercised, and `eas.json` has no `submit`
 block at all. Budget a cycle for credentials alone.
 
-`apps/mobile/.env` points at a LAN wrangler-dev host, so the app has never talked
-to a deployed backend of any kind. M1 is done, so the backend is finally real —
-but M2 has to be green first or this step only proves the error boundary works.
-
-Batch any native change (brief B3 adds a module) into the prebuild before
-burning a build.
+Batch any native change into the prebuild before burning a build.
 
 ```bash
 bunx eas build --profile production --platform ios
@@ -322,8 +192,8 @@ notification permission or the native tab bar the same way:
       Sort by and Category each apply live, Reset clears them, and the button
       renders filled + green while any filter is on**
 - [ ] **Pause a subscription, then find it under the Paused filter**
-- [ ] Add a subscription with a free trial; check the detail screen's price
-      timeline
+- [ ] Add a free trial from the + menu; check that the detail screen's first
+      payment is the trial's end day and its price timeline
 - [ ] Pause with a date, resume, cancel at period end, cancel now, renew, delete
 - [ ] **A cancelled subscription reads as finished**, and Home's attention card
       surfaces what needs attention rather than a trend chart
@@ -339,13 +209,6 @@ notification permission or the native tab bar the same way:
 
 ---
 
-## M7 — Cloudflare rate limiting  ✅ moot since v5
-
-There is no API to rate-limit. `app.subeye.cc` serves nothing once the Worker is
-deleted. The landing site is static assets and needs no WAF rule.
-
----
-
 ## M8 — App Store Connect: in-app purchase (before brief B6)
 
 1. **Agreements, Tax, and Banking** → accept the Paid Applications agreement and
@@ -354,10 +217,11 @@ deleted. The landing site is static assets and needs no WAF rule.
 2. **App Store Small Business Program** → enroll. 15% commission instead of 30%
    under $1M/yr. It is a form; there is no reason not to.
 3. Create the IAP: **Non-Consumable**, product id `cc.subeye.app.pro.lifetime`,
-   reference name "SubEye Pro (Lifetime)", price tier **$11.99** (decided
-   2026-07-27 — not a launch price, no promo codes). Leave per-storefront pricing
-   on Apple's default conversion so a Ukrainian storefront shows roughly ₴199;
-   the landing page states this outright as a trust signal.
+   reference name "SubEye Pro (Lifetime)", price **$14.99** (decided
+   2026-07-27 at $11.99, raised 2026-11-04 — not a launch price, no promo codes).
+   Per-storefront pricing stays on Apple's default conversion, except Ukraine's
+   dollar storefront, hand-set to $11.99; the landing page states this outright
+   as a trust signal.
 4. Add localized display name and description (en + uk).
 5. **RevenueCat**: create the project, add the iOS app with bundle id
    `cc.subeye.app`, upload the App Store Connect **In-App Purchase Key**, create
@@ -382,7 +246,7 @@ deleted. The landing site is static assets and needs no WAF rule.
 **Settled 2026-07-27:** **iOS only at launch** — Android later if it is ever
 warranted. Build `--platform ios`, and per DESIGN-BRIEF the landing page must not
 mention Android at all, not even as a greyed-out badge; raising the platform
-question only invites it. **Pro is $11.99 once**, always, no promo codes.
+question only invites it. **Pro is $14.99 once**, always, no promo codes.
 
 | Still open | Why it matters |
 | --- | --- |
@@ -402,6 +266,5 @@ removes everything that scaled with users:
 | EAS | limited queued builds, or build locally for $0 | $19/mo |
 | Apple Developer | — | **$99/yr** |
 
-~~Neon $19/mo, Clerk $25/mo + $0.02/MAU, PostHog~~ — all gone with the server.
 Nothing left bills per user, so the floor is the Apple Developer Program and
 whatever EAS costs, and it does not move as the app grows.

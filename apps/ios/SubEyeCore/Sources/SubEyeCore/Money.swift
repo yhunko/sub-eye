@@ -1,0 +1,65 @@
+import Foundation
+
+public struct ExchangeRates: Codable, Equatable, Sendable {
+    public var base: String
+    public var rates: [String: Double]
+    public var rateDate: String
+
+    public init(rates: [String: Double] = ["usd": 1, "uah": 1], rateDate: String = "", base: String = "usd") {
+        self.base = base; self.rates = rates; self.rateDate = rateDate
+    }
+
+    public func convert(_ amount: Double, from: String, to: String) -> Double {
+        let source = from.lowercased(), target = to.lowercased()
+        guard source != target, amount != 0,
+              let fromRate = rates[source], let toRate = rates[target],
+              fromRate.isFinite, toRate.isFinite, fromRate > 0, toRate > 0 else { return amount }
+        return amount / fromRate * toRate
+    }
+
+    // Nil when a currency has no usable rate, where `convert` would hand the amount back unconverted.
+    public func converted(_ amount: Double, from: String, to: String) -> Double? {
+        guard from.lowercased() == to.lowercased()
+                || [from, to].allSatisfy({ rates[$0.lowercased()].map { $0.isFinite && $0 > 0 } == true }) else { return nil }
+        return convert(amount, from: from, to: to)
+    }
+}
+
+public enum Money {
+    public static let symbols: [String: String] = ["afn": "؋", "amd": "֏", "aoa": "Kz", "ars": "$", "aud": "$", "azn": "₼", "bam": "KM", "bbd": "$", "bdt": "৳", "bmd": "$", "bnd": "$", "bob": "Bs", "brl": "R$", "bsd": "$", "bwp": "P", "bzd": "$", "cad": "$", "clp": "$", "cny": "¥", "cop": "$", "crc": "₡", "cup": "$", "czk": "Kč", "dkk": "kr", "dop": "$", "egp": "E£", "eur": "€", "fjd": "$", "fkp": "£", "gbp": "£", "gel": "₾", "ghs": "GH₵", "gip": "£", "gnf": "FG", "gtq": "Q", "gyd": "$", "hkd": "$", "hnl": "L", "huf": "Ft", "idr": "Rp", "ils": "₪", "inr": "₹", "isk": "kr", "jmd": "$", "jpy": "¥", "kgs": "⃀", "khr": "៛", "kmf": "CF", "kpw": "₩", "krw": "₩", "kyd": "$", "kzt": "₸", "lak": "₭", "lbp": "L£", "lkr": "Rs", "lrd": "$", "mga": "Ar", "mmk": "K", "mnt": "₮", "mur": "Rs", "mxn": "$", "myr": "RM", "nad": "$", "ngn": "₦", "nio": "C$", "nok": "kr", "npr": "Rs", "nzd": "$", "php": "₱", "pkr": "Rs", "pln": "zł", "pyg": "₲", "ron": "lei", "rwf": "RF", "sbd": "$", "sek": "kr", "sgd": "$", "shp": "£", "srd": "$", "ssp": "£", "stn": "Db", "syp": "£", "thb": "฿", "top": "T$", "try": "₺", "ttd": "$", "twd": "$", "uah": "₴", "usd": "$", "uyu": "$", "vnd": "₫", "xaf": "FCFA", "xcd": "$", "xcg": "Cg.", "xof": "F CFA", "xpf": "CFPF", "zar": "R", "zmw": "ZK"]
+
+    public static func monthly(_ amount: Double, every: Int, period: BillingPeriod) -> Double {
+        let interval = Double(max(1, every)), value = max(0, amount)
+        switch period {
+        case .day: return value * 30.4375 / interval
+        case .week: return value * 4.345 / interval
+        case .month: return value / interval
+        case .year: return value / 12 / interval
+        }
+    }
+
+    public static func parse(_ text: String, below ceiling: Decimal = 100_000_000) -> Decimal? {
+        let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\u{00a0}", with: "")
+            .replacingOccurrences(of: "\u{202f}", with: "")
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: ",", with: ".")
+        guard !cleaned.isEmpty, cleaned.range(of: #"^\d+(\.\d{1,2})?$"#, options: .regularExpression) != nil,
+              let value = Decimal(string: cleaned, locale: Locale(identifier: "en_US_POSIX")),
+              value >= 0, value < ceiling else { return nil }
+        return value
+    }
+
+    public static func canonical(_ amount: Decimal) -> String {
+        var source = amount, rounded = Decimal()
+        NSDecimalRound(&rounded, &source, 2, .plain)
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.minimumFractionDigits = 2; formatter.maximumFractionDigits = 2
+        formatter.usesGroupingSeparator = false
+        return formatter.string(from: NSDecimalNumber(decimal: rounded))!
+    }
+    public static func display(_ amount: Double, currency: String, locale: Locale = .current, decimals: Int = 2) -> String {
+        amount.formatted(.currency(code: currency.uppercased()).locale(locale).precision(.fractionLength(decimals)))
+    }
+}

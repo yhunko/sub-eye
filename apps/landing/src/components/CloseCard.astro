@@ -1,0 +1,75 @@
+---
+import type { Shot } from "../lib/shots";
+import type { Locale } from "../lib/site";
+import Phone from "./Phone.astro";
+
+interface Props {
+  locale: Locale;
+  id: string;
+  title: string;
+  body: string;
+  href: string;
+  link: string;
+  shot: Shot;
+  alt: string;
+}
+
+const { locale, id, title, body, href, link, shot, alt } = Astro.props;
+---
+
+<div class="close">
+  <div class="close__text">
+    <h2 class="close__title" id={id}>{title}</h2>
+    <p class="close__body">{body}</p>
+    <a class="link" href={href}>{link}</a>
+  </div>
+  <div class="close__device">
+    <Phone locale={locale} shot={shot} alt={alt} width={280} />
+  </div>
+</div>
+
+<style>
+  .close {
+    display: grid;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .close__text {
+    display: grid;
+    gap: 1.25rem;
+    align-content: center;
+    justify-items: start;
+    padding: clamp(1.75rem, 5vw, 4rem);
+  }
+
+  .close__title {
+    font-size: var(--step-head);
+  }
+
+  .close__body {
+    font-size: var(--step-lead);
+    line-height: 1.4;
+    color: var(--text-muted);
+    max-width: 40ch;
+  }
+
+  .close__device {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2.5rem 1rem;
+    background: var(--green-700);
+  }
+
+  @media (min-width: 64em) {
+    .close {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .close__device {
+      padding-block: 3.5rem;
+    }
+  }
+</style>

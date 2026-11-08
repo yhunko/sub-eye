@@ -61,6 +61,8 @@ export type TimelineStep = {
   kind: PricePhaseKind;
   /** Monthly cost in the preferred currency, straight off the phase DTO. */
   monthly: number;
+  /** Twelve months at `monthly`, rounded to the cent. */
+  yearly: number;
   currency: string;
   /** Length of a bounded phase; `null` for the open-ended standard price. */
   spanDays: number | null;
@@ -95,9 +97,11 @@ const build = (): TimelineStep[] => {
     const startsAt = new Date(phase.startsAt);
     const endsAt = phase.endsAt ? new Date(phase.endsAt) : null;
 
+    const monthly = phase.billing.preferred.monthly;
     return {
       kind: phase.kind,
-      monthly: phase.billing.preferred.monthly,
+      monthly,
+      yearly: Math.round(monthly * 12 * 100) / 100,
       currency: phase.billing.preferred.currencyCode,
       spanDays: endsAt ? calendarDaysBetween(startsAt, endsAt) : null,
       spanMonths: endsAt ? calendarMonthsBetween(startsAt, endsAt) : null,
